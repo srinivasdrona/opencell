@@ -1,8 +1,24 @@
 {
   "process": "tRNAAminoacylation",
-  "formula_version": "1.0.0",
+  "formula_version": "2.0.0",
   "predictor_source_path": "scripts/l22_evidence/h12.py",
-  "predictor_source_sha256": "a8ecca0dbc3d2a72c7fc49d118bce69873f602abb08d6174c18f65eb8a6c8b9b",
+  "predictor_source_sha256_lf_normalized": "1d002cbb14199abcdd59e4aee9a8e027382a17eb9cf658b17435efa66679512a",
+  "karr_source_citation": {
+    "vendored_path": "data/karr_vendored_source/tRNAAminoacylation.m",
+    "vendored_sha256_lf_normalized": "5ec65795e46dbe06bcf03a894e6d0ebfc4b62474583e677f56488a3aa95c857b",
+    "upstream_repo": "https://github.com/CovertLab/WholeCell",
+    "upstream_commit": "6cdee6b355aa0f5ff2953b1ab356eea049108e07",
+    "upstream_original_path": "tRNAAminoacylation.m",
+    "line_ranges": [
+      [
+        387,
+        464
+      ]
+    ],
+    "symbols": [
+      "evolveState"
+    ]
+  },
   "fixture_path": "data/karr_fixtures/per_process/tRNAAminoacylation_flat.mat",
   "fixture_sha256": "5e7fe972081172c196542029ae76eef939f88dc891b355492a13e3206c3aa3fa",
   "oracle_seed_file_sha256": {
@@ -57,6 +73,58 @@
     "48": "4e54c0f38943d5dc795a9c092cc95f88ea89f085a4da4c49151ea437ee8a3e10",
     "49": "3e57d70e1ed77119fcd24335a85e95b2c6f3030276c41d0dddeb64e0d4cc02a0"
   },
+  "oracle_manifest_cross_check": {
+    "0": "match",
+    "1": "match",
+    "2": "match",
+    "3": "match",
+    "4": "match",
+    "5": "match",
+    "6": "match",
+    "7": "match",
+    "8": "match",
+    "9": "match",
+    "10": "match",
+    "11": "match",
+    "12": "match",
+    "13": "match",
+    "14": "match",
+    "15": "match",
+    "16": "match",
+    "17": "match",
+    "18": "match",
+    "19": "match",
+    "20": "match",
+    "21": "match",
+    "22": "match",
+    "23": "match",
+    "24": "match",
+    "25": "match",
+    "26": "match",
+    "27": "match",
+    "28": "match",
+    "29": "match",
+    "30": "match",
+    "31": "match",
+    "32": "match",
+    "33": "match",
+    "34": "match",
+    "35": "match",
+    "36": "match",
+    "37": "match",
+    "38": "match",
+    "39": "match",
+    "40": "match",
+    "41": "match",
+    "42": "match",
+    "43": "match",
+    "44": "match",
+    "45": "match",
+    "46": "match",
+    "47": "match",
+    "48": "match",
+    "49": "match"
+  },
   "n_seeds": 50,
   "m_ticks": 50,
   "catalog_n_seeds": 50,
@@ -65,11 +133,24 @@
   "nontrivial_sample_count": 2500,
   "exact_match_count": 2500,
   "exact_match_rate": 1.0,
+  "trivial_checked_count": 0,
+  "trivial_mismatch_count": 0,
   "mismatch_examples": [],
+  "trivial_mismatch_examples": [],
+  "required_branches": [
+    "aminoacylation_fires"
+  ],
+  "branches_confirmed": [
+    "aminoacylation_fires"
+  ],
+  "branches_observed": [
+    "aminoacylation_fires"
+  ],
+  "missing_required_branches": [],
   "raw_prediction_hash": "70256a0016f7707391c4fa6d56f3a53b4100c008b72cc06aa24edfc70ab20d47",
   "verdict": "H12_CONFIRMED",
-  "verdict_reason": "nontrivial_sample_count>0 and 100% exact match",
-  "generated_at": "2026-07-30T06:36:04.858725+00:00",
+  "verdict_reason": "nontrivial_sample_count>0, 100% exact match, full required branch coverage",
+  "generated_at": "2026-07-30T17:25:53.899674+00:00",
   "anti_laundering_attestation": {
     "predictor_inputs": [
       "states_before",

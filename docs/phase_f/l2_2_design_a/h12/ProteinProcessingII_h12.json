@@ -1,8 +1,24 @@
 {
   "process": "ProteinProcessingII",
-  "formula_version": "1.0.0",
+  "formula_version": "2.0.0",
   "predictor_source_path": "scripts/l22_evidence/h12.py",
-  "predictor_source_sha256": "956108653250f0305a93d4ba81e8d67c9b5773d3c5933db9dcfa56ac21c0d817",
+  "predictor_source_sha256_lf_normalized": "1d002cbb14199abcdd59e4aee9a8e027382a17eb9cf658b17435efa66679512a",
+  "karr_source_citation": {
+    "vendored_path": "data/karr_vendored_source/ProteinProcessingII.m",
+    "vendored_sha256_lf_normalized": "2082bd39cf1e0dfba52de7ddf33a5690cf6368ff8f4eca7eaa457eee4d46e0ca",
+    "upstream_repo": "https://github.com/CovertLab/WholeCell",
+    "upstream_commit": "6cdee6b355aa0f5ff2953b1ab356eea049108e07",
+    "upstream_original_path": "ProteinProcessingII.m",
+    "line_ranges": [
+      [
+        348,
+        446
+      ]
+    ],
+    "symbols": [
+      "evolveState"
+    ]
+  },
   "fixture_path": "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
   "fixture_sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af",
   "oracle_seed_file_sha256": {
@@ -57,6 +73,58 @@
     "48": "c11f49aab2972aecb592cae8bfb2068fc244d02553d001d3d5b8adffd4a16dc1",
     "49": "0347c4fec06a29927acfea3311ab93a6d4f3db3e9f62955cdf3be5d5bed20cdf"
   },
+  "oracle_manifest_cross_check": {
+    "0": "match",
+    "1": "match",
+    "2": "match",
+    "3": "match",
+    "4": "match",
+    "5": "match",
+    "6": "match",
+    "7": "match",
+    "8": "match",
+    "9": "match",
+    "10": "match",
+    "11": "match",
+    "12": "match",
+    "13": "match",
+    "14": "match",
+    "15": "match",
+    "16": "match",
+    "17": "match",
+    "18": "match",
+    "19": "match",
+    "20": "match",
+    "21": "match",
+    "22": "match",
+    "23": "match",
+    "24": "match",
+    "25": "match",
+    "26": "match",
+    "27": "match",
+    "28": "match",
+    "29": "match",
+    "30": "match",
+    "31": "match",
+    "32": "match",
+    "33": "match",
+    "34": "match",
+    "35": "match",
+    "36": "match",
+    "37": "match",
+    "38": "match",
+    "39": "match",
+    "40": "match",
+    "41": "match",
+    "42": "match",
+    "43": "match",
+    "44": "match",
+    "45": "match",
+    "46": "match",
+    "47": "match",
+    "48": "match",
+    "49": "match"
+  },
   "n_seeds": 50,
   "m_ticks": 20,
   "catalog_n_seeds": 50,
@@ -65,11 +133,30 @@
   "nontrivial_sample_count": 560,
   "exact_match_count": 560,
   "exact_match_rate": 1.0,
+  "trivial_checked_count": 407,
+  "trivial_mismatch_count": 0,
   "mismatch_examples": [],
+  "trivial_mismatch_examples": [],
+  "required_branches": [
+    "passthrough_fires",
+    "peptidase_fires",
+    "transferase_fires"
+  ],
+  "branches_confirmed": [
+    "passthrough_fires",
+    "peptidase_fires"
+  ],
+  "branches_observed": [
+    "passthrough_fires",
+    "peptidase_fires"
+  ],
+  "missing_required_branches": [
+    "transferase_fires"
+  ],
   "raw_prediction_hash": "a1d6e30537c2b4d141ce5ee7aee499bca91551eb8c401df4f40a4861bf5f2684",
-  "verdict": "H12_CONFIRMED",
-  "verdict_reason": "nontrivial_sample_count>0 and 100% exact match",
-  "generated_at": "2026-07-30T08:49:50.463488+00:00",
+  "verdict": "H12_OBSERVED_REGIME",
+  "verdict_reason": "100% exact match on 560 nontrivial samples but required branch coverage incomplete: missing=['transferase_fires'] (this process may not be used to clear H12_CONFIRMED-gated sentinels until every required regime is independently confirmed)",
+  "generated_at": "2026-07-30T17:26:09.866185+00:00",
   "anti_laundering_attestation": {
     "predictor_inputs": [
       "states_before",

@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "8aae3000e44ca6f91b28264afa12763e7b05578670ce16ab8f85b8092909c5f2",
+  "content_hash": "ae7af770c844de56baab3ab64f7af09ce45f90df3c090c92e677ea2c78e0b987",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-07-30T10:42:18.212574+00:00",
+  "generated_at": "2026-07-30T17:29:24.085625+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -186,7 +186,7 @@
       "process": "MacromolecularComplexation",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without valid machine-checked h12_evidence_ref (h12 artifact verdict != H12_CONFIRMED (got 'H12_OBSERVED_REGIME')); treated as non-green"
       ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
@@ -307,14 +307,12 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinFolding/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "ProteinFolding",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 2,
@@ -393,14 +391,12 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingI/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "ProteinProcessingI",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 2,
@@ -444,7 +440,7 @@
       "process": "ProteinProcessingII",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
+        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without valid machine-checked h12_evidence_ref (h12 artifact verdict != H12_CONFIRMED (got 'H12_OBSERVED_REGIME')); treated as non-green"
       ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
@@ -842,14 +838,12 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/tRNAAminoacylation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "tRNAAminoacylation",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without a machine-checked h12_evidence_ref (nontrivial_sample_count > 0); treated as non-green"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 2,
@@ -865,8 +859,8 @@
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 7,
+    "FAIL": 4,
     "MISSING_EVIDENCE": 4,
-    "PASS": 11
+    "PASS": 14
   }
 }

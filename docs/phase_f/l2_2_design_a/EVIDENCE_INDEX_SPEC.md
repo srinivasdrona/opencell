@@ -1953,166 +1953,213 @@ MISSING_EVIDENCE: 4` to `PASS: 11, FAIL: 7, MISSING_EVIDENCE: 4`
 (`n_in_scope: 22` unchanged). `DNASupercoiling` is the only row affected;
 every FAIL/MISSING_EVIDENCE/other-PASS row from §13.14 is untouched.
 
-### 13.16 H12 evidence: independently-derived closed-form predictors for the 5 deterministic-convergence rows
+### 13.16 H12 evidence (repair round): index-masked comparison, source-faithful ProteinFolding guard, `H12_OBSERVED_REGIME`, and vendored/pinned provenance
 
-This session produced genuine, machine-checked H12 evidence for the 5
+This section describes a **repair** of an earlier H12 delivery (frozen
+baseline `0e6ddaf`, rebased onto this `main` at `fdefdb5`) for the 5
 `PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` rows (`MacromolecularComplexation`,
 `ProteinFolding`, `ProteinProcessingI`, `ProteinProcessingII`,
-`tRNAAminoacylation`) whose catalog `closed_form_dominant` flag was
-previously hand-set with no producer. Per the task's explicit
-anti-laundering rule, the predictor for each process is transcribed solely
-from the Karr MATLAB source (`data/m1_sources/WholeCell/src/+edu/.../+process/*.m`)
-plus static fixture parameters plus `states_before` — never from the OC
-port, the runner, `states_after`, or `result.json` outputs, and never fit
-to observed outcomes.
+`tRNAAminoacylation`), following an Opus5 review that found six concrete
+defects in the original methodology. The anti-laundering rule is
+unchanged from the original delivery: each process's predictor is
+transcribed solely from the Karr MATLAB source plus static fixture
+parameters plus `states_before` — never from the OC port, the runner,
+`states_after`, or `result.json` outputs, and never fit to observed
+outcomes (`FORMULA_VERSION` bumped `1.0.0 → 2.0.0` for this repair).
 
-**Framework (`scripts/l22_evidence/h12.py`, ~930 lines).** A per-process
-predictor registry (`predict_macromolecular_complexation`,
-`predict_protein_folding`, `predict_protein_processing_i`,
-`predict_protein_processing_ii`, `predict_trna_aminoacylation`) implements
-a strict two-phase API: each `predict_*` function receives only
-`before`/fixture-derived static parameters and returns a `UnitPrediction`
-before any `after` state is touched; a separate `compare_predictions()`
-function is the sole reader of `states_after`, invoked only once
-predictions are already frozen. `decide_verdict(nontrivial, exact_match,
-exact_match_rate)` is a pure, standalone function (no I/O) implementing
-the verdict rule: `H12_CONFIRMED` requires `nontrivial_sample_count > 0`
-**and** `exact_match_rate == 1.0` exactly — no tolerance, because none of
-the 5 processes' MATLAB source defines a pre-registered integer/float
-tolerance. Even a single mismatch out of hundreds of samples (99% match)
-is a hard `H12_FAIL`.
+**What was wrong with v1, and the fix, in order of severity:**
+
+1. **Unscoped compare for multi-network processes.** `compare_predictions`
+   diffed full-width `substrates`/`complexs` arrays; when two
+   `MacromolecularComplexation` networks are active in the same tick, a
+   unit's zero-padded prediction outside its own indices collided with
+   real nonzero activity written by the *other* network, misclassifying
+   real mismatches as matches (the earlier "814/814" figure reflected this
+   miscount, not a correct result). Fixed by adding
+   `UnitPrediction.index_mask` and scoping every diff in
+   `compare_predictions()` to each unit's own claimed indices via a new
+   `_scoped()` helper.
+2. **ProteinFolding's chaperone/enzyme guard was not modeled.** The real
+   MATLAB (`ProteinFolding.m`, vendored — see below) computes
+   `max(0, [...; enzymes*Inf; ...])`; a chaperone at exactly zero count
+   yields `0*Inf == NaN`, and MATLAB's `max(0, NaN)` evaluates to `0` (a
+   **per-species** exclusion from folding that tick), not `Inf` or a
+   whole-tick guard failure. Fixed by loading `proteinChaperoneMatrix` and
+   gating `eligible_flux` per species in `predict_protein_folding`;
+   covered by 2 new synthetic zero-chaperone tests in
+   `test_h12_formulas.py` (real oracle data essentially never hits a
+   count-zero chaperone).
+3. **No distinction between "confirmed on every regime the process can
+   exhibit" and "confirmed on every regime observed in this dataset".**
+   `MacromolecularComplexation`'s network≥2-with-nonzero-sampling-bound
+   branch is Monte-Carlo by construction (never closed-form, at any N/M);
+   `ProteinProcessingII`'s diacylglyceryl-transferase branch never fires
+   in the real Karr population. Fixed by adding a `REQUIRED_BRANCHES`
+   registry, `branch_tags` on every `UnitPrediction`, and
+   `branches_confirmed`/`branches_observed` aggregation in
+   `compare_predictions`, plus a new **non-gating** verdict,
+   `H12_OBSERVED_REGIME`: 100% exact match, zero tolerance, but missing
+   required branch coverage. `validate_h12_support()` accepts only the
+   literal string `H12_CONFIRMED`; `H12_OBSERVED_REGIME` never clears the
+   gate.
+4. **Freshness hashing was raw-byte and `predictor_source_path` was
+   soft-trusted as an attestation string.** Fixed: `_sha256_lf_normalized()`
+   is now used for the predictor module and the vendored Karr source (raw
+   `_sha256_file()` retained only for binary `.mat` fixtures);
+   `EXPECTED_PREDICTOR_SOURCE_PATH = "scripts/l22_evidence/h12.py"` is
+   hard-pinned, and any recorded path that doesn't match it, or doesn't
+   resolve on disk, is a hard fail — no soft-trust fallback for tracked
+   files.
+5. **Karr `.m` source was never vendored/tracked**, so its recorded
+   hashes were unverifiable in a fresh clone. Fixed: the 5 relevant `.m`
+   files (plus the upstream license) are now vendored under the tracked
+   `data/karr_vendored_source/` directory, sourced from upstream
+   `sunilg/WholeCell` commit `6cdee6b355aa0f5ff2953b1ab356eea049108e07`
+   (MIT license); `karr_source_citation()` hard-fails if the vendored file
+   is missing, and `validate_h12_support()` re-verifies its LF-normalized
+   hash against the artifact's recorded value plus its cited line ranges.
+6. **Trivial mismatches were not distinguished from nontrivial ones.**
+   Fixed: `trivial_checked_count`/`trivial_mismatch_count` are now tracked
+   separately in `compare_predictions`, and any nonzero
+   `trivial_mismatch_count` is an unconditional `H12_FAIL` regardless of
+   the nontrivial exact-match rate — a predictor that is wrong about "the
+   guard says nothing happens" is a harder failure than a wrong
+   closed-form value, and is now surfaced as such.
+
+**Framework (`scripts/l22_evidence/h12.py`).** Same per-process predictor
+registry and strict two-phase API as before (`predict_*` functions receive
+only `before`/fixture-derived static parameters and return a
+`UnitPrediction` — now carrying `index_mask` and `branch_tags` — before
+`after` is touched; `compare_predictions()` is the sole reader of
+`states_after`). `decide_verdict()` now takes the trivial-mismatch count
+and branch-coverage sets as additional pure inputs and returns one of
+`H12_FAIL` (any trivial mismatch, zero nontrivial samples, or any
+nontrivial mismatch), `H12_OBSERVED_REGIME` (100% exact match but
+incomplete required-branch coverage), or `H12_CONFIRMED` (100% exact
+match and full required-branch coverage) — still zero tolerance
+throughout; no process's MATLAB source defines a pre-registered
+integer/float tolerance. `run_h12()` additionally cross-checks each
+process's fixture hash against `oracle_population_manifest.json` (the
+canonical, already-fresh population-manifest record) rather than trusting
+a stale, hand-maintained per-process trace manifest, and hard-fails if the
+recorded `predictor_source_path` does not equal
+`EXPECTED_PREDICTOR_SOURCE_PATH`.
 
 **Anti-laundering enforcement (`tests/scripts/test_h12_anticheat.py`, 15
-tests).** A static AST guard over every `predict_*` function's source:
-rejects any import of or call into the runner (`run_oc_tick`), the SUT's
-`next_update`, or any identifier reading `states_after`/`result.json`
-inside a predictor; verifies restricted function signatures; verifies
-`compare_predictions` is the sole function that reads `after`; verifies an
-anti-laundering docstring is present. This is a hard, mechanical guard,
-not a convention.
+tests, unchanged in spirit).** Static AST guard over every `predict_*`
+function: rejects any import of/call into the runner (`run_oc_tick`), the
+SUT's `next_update`, or any identifier reading `states_after`/
+`result.json`; verifies `compare_predictions` is the sole `after`-reading
+function; verifies an anti-laundering docstring is present. The two-phase
+API (predict from `before`-only inputs, compare only afterward, in a
+distinct phase) is the structural enforcement mechanism beyond the
+denylist itself.
 
 **Real-data runs, full catalog N/M scale, mandated risk order.** Run
-against the real oracle `.mat` trace data (copied read-only,
-process-scoped, from the sibling `l22-final-sweep`/`l22-evidence-gate`
-worktrees into gitignored `data/m1_sources/karr_native/`; sources never
-modified) in the task's mandated highest-risk-first order
+against the real oracle `.mat` trace data (copied read-only, process-
+scoped, from the sibling `l22-final-sweep` worktree; sources never
+modified) in the mandated highest-risk-first order
 (`tRNAAminoacylation`, `ProteinProcessingII`, `ProteinFolding`,
 `MacromolecularComplexation`, `ProteinProcessingI`), at each process's
-real catalog `N_seeds`/`M_ticks`. **All 5 processes verdict
-`H12_CONFIRMED` at 100% exact match** on every nontrivial sample. One
-methodology caveat: `MacromolecularComplexation`'s genuinely-stochastic
-branch (network-size ≥ 2 with a nonzero sampling bound) never fires
-anywhere in the available oracle dataset — every observed sample lands
-either in the network-size-1 closed-form-exact regime or the
-network-size-≥2-all-zero-bounds regime (which is deterministic by
-construction, not merely closed-form-dominant), so this predictor's
-Monte-Carlo-adjacent branch is formula-complete but empirically
-unexercised by this run.
+real catalog `N_seeds`/`M_ticks`:
+
+| Process | seeds × ticks | nontrivial | exact matches | trivial mismatches | required branches | verdict |
+|---|---|---|---|---|---|---|
+| tRNAAminoacylation | 50 × 50 | 2500 | 2500 (100%) | 0 | 1/1 | **H12_CONFIRMED** |
+| ProteinProcessingII | 50 × 20 | 560 | 560 (100%) | 0 | 2/3 (missing `transferase_fires`) | **H12_OBSERVED_REGIME** |
+| ProteinFolding | 50 × 100 | 2639 | 2639 (100%) | 0 | 2/2 | **H12_CONFIRMED** |
+| MacromolecularComplexation | 50 × 100 | 814 | 814 (100%) | 0 | 1/2 (missing `network_ge2_fires`) | **H12_OBSERVED_REGIME** |
+| ProteinProcessingI | 50 × 20 | 635 | 635 (100%) | 0 | 2/2 | **H12_CONFIRMED** |
+
+Every process's predictor logic itself is shown 100% exact on every
+nontrivial sample with zero trivial mismatches; the 2
+`H12_OBSERVED_REGIME` verdicts reflect a structural/sampling branch-
+coverage gap, not a correctness gap — see
+`docs/phase_f/l2_2_design_a/h12/H12_REPORT.md` for the full per-process
+rationale (network≥2 is Monte-Carlo by construction for
+MacromolecularComplexation; the transferase branch is unobserved-but-
+possibly-samplable for ProteinProcessingII).
 
 **Evidence artifacts (`docs/phase_f/l2_2_design_a/h12/<Process>_h12.json`,
-5 files).** Each records: process name, `FORMULA_VERSION`, sha256 of the
-predictor source file, sha256 + citation line ranges of the Karr `.m`
-source file(s) the formula was transcribed from, sha256 of the fixture
-file consumed, seed/tick/`N`/`M` actually used (matches catalog), total
-and nontrivial sample counts, exact-match count and rate, up to a bounded
-number of mismatch examples (empty here — no mismatches occurred), a
-`raw_prediction_hash` (sha256 over the full frozen prediction set, for
-independent reproducibility checking), and the final verdict string.
+5 files, regenerated).** Each now additionally records: `index_mask`-
+scoped comparison provenance, `trivial_checked_count`/
+`trivial_mismatch_count`, `branches_confirmed`/`branches_observed` against
+the `REQUIRED_BRANCHES` registry, the vendored Karr source's LF-normalized
+sha256 + cited line ranges (path under `data/karr_vendored_source/`), the
+oracle-population-manifest cross-check result, and the pinned
+`predictor_source_path` (hard-checked against
+`EXPECTED_PREDICTOR_SOURCE_PATH`) alongside its LF-normalized sha256 — in
+addition to the original process/`FORMULA_VERSION`/fixture-hash/N/M/
+sample-count/match-rate/`raw_prediction_hash`/verdict fields.
 
-**Formula/artifact/reproducibility unit tests
-(`tests/scripts/test_h12_formulas.py` — 11 tests,
-`tests/scripts/test_h12_artifact.py` — 6 tests).** Hand-constructed
-minimal `before`/fixture inputs with hand-computed expected deltas
-(worked out independently of the implementation, in code comments) verify
-each predictor's formula and guard-failure paths, including
-`MacromolecularComplexation`'s 3-way regime split. `test_h12_artifact.py`
-separately proves: 100%-match acceptance, single-mismatch-out-of-100
-(99%) hard rejection (no tolerance), zero-nontrivial-samples rejection,
-guard-bug detection even on trivially-predicted samples, `write_artifact`
-round-trip fidelity, and byte-identical `raw_prediction_hash` reproduction
-across two independent runs on frozen synthetic inputs (fresh-clone
-reproducibility, at unit-test scale; full-scale reproducibility against
-real oracle data for one process was separately verified ad hoc during
-this session by re-running `h12.py` and diffing the resulting verdict/
-`raw_prediction_hash`/`exact_match_rate` against the already-committed
-artifact — identical).
+**Unit tests (formula, artifact, anti-tamper).**
+`tests/scripts/test_h12_formulas.py` (13: original formula/guard tests +
+2 new zero-chaperone synthetic tests exercising the corrected
+ProteinFolding guard). `tests/scripts/test_h12_artifact.py` (9: original
+tolerance/round-trip tests + 3 new — an `index_mask`-scoping regression
+test reproducing the exact "other unit's real activity misread as
+mismatch" failure mode from defect 1 above, and 2 branch-coverage verdict
+tests distinguishing `H12_CONFIRMED` from `H12_OBSERVED_REGIME`).
+`tests/scripts/test_l22_evidence_verdict.py` (H12 section rewritten to
+build payloads from a real process's real on-disk hashes rather than a
+synthetic fake process, since `validate_h12_support()` now hard-requires
+`payload["process"]` to be a real `REQUIRED_BRANCHES` key; 6 new tests
+covering observed-regime-never-clears-gate, trivial-mismatch rejection,
+incomplete-branch-coverage rejection, wrong-pinned-path rejection, stale
+Karr-citation-hash rejection, and missing-fixture-file rejection; 1
+obsolete soft-trust test removed, since no tracked file is ever
+soft-trusted now). `tests/scripts/test_h12_evidence_wiring.py` (11,
+rewritten to use real hashes instead of synthetic tmp-path files, same
+wiring/side-index behavior as before — a separate tracked
+`h12_evidence_index.json`, never a `result.json` mutation).
 
 **Gate strengthening (`scripts/l22_evidence/verdict.py`,
-`EVALUATOR_SCHEMA_VERSION` bumped `2 → 3`).** `h12_support_reason()`
-replaces the old bare `nontrivial_sample_count > 0` check with the full
-rule described in Section 6.5: verdict must literally be
-`H12_CONFIRMED`, `exact_match_rate` must be exactly `1.0`, and the
-artifact's own recorded `predictor_source_path`/`fixture_path` hashes
-must still match the corresponding files' *current* on-disk sha256
-(soft-trust fallback only when those files are genuinely absent, e.g. a
-fresh clone without the gitignored oracle fixtures). A stale, tampered,
-or dangling H12 ref is rejected exactly like a missing one — this is the
-same current-tree-staleness philosophy already applied to
-`input_manifest.json` (Section 6.5) and `sweep_provenance.json`
-(Section 13.1), now extended to H12 artifacts.
-`tests/scripts/test_l22_evidence_verdict.py` covers tamper (mismatched
-hash), staleness (source/fixture file changed since artifact generation),
-wrong-verdict, sub-100%-match, and zero-nontrivial-sample rejection paths
-(5 new tests, plus 2 rewritten to the stricter contract). Bumping
-`EVALUATOR_SCHEMA_VERSION` correctly stales every already-generated
-`sweep_provenance.json` in the repo (all 22 in-scope processes recorded
-`evaluator_schema_version=2`) until each is re-run through the hardened
-sweep — an expected, honest consequence of tightening the evaluator, not
-a bug, and out of this task's scope to clear (no expensive OC sweeps).
+`EVALUATOR_SCHEMA_VERSION` bumped `3 → 4` for this repair — preserving the
+`main`-tip v3 evaluator semantics from Section 13.14/13.15 unchanged, then
+bumping once more for the H12 hardening).** `h12_support_reason()` now
+delegates entirely to `h12.validate_h12_support()`, which requires:
+verdict literally `H12_CONFIRMED` (never `H12_OBSERVED_REGIME`),
+`exact_match_rate == 1.0`, `trivial_mismatch_count == 0`, full required-
+branch coverage, `process` a known `REQUIRED_BRANCHES` key, the pinned
+predictor path, and current on-disk LF-normalized hashes for the
+predictor module, the vendored Karr source, and the fixture file (no
+soft-trust for any tracked file — only genuinely-untracked/gitignored
+oracle inputs may be absent in a fresh clone, per Section 6.5's existing
+philosophy).
 
-**Wiring: a separate tracked side-index, never a `result.json` mutation.**
-Per this task's explicit stated preference ("prefer separate
-evidence-index linkage; do not mutate stored result verdict"), the H12
-artifacts are wired into the real gate-consumption path via a new tracked
-file, `docs/phase_f/l2_2_design_a/h12/h12_evidence_index.json`, mapping
-each of the 5 process names to its artifact path. `generator.py` adds
-`_load_h12_evidence_index()` (soft-fails to an empty mapping if the file
-is missing or malformed) and `_with_h12_evidence_ref(process_name,
-result_payload)`, which returns the process's `result_payload` completely
-unchanged (same object identity where safe) if it already carries its own
-`h12_evidence_ref` or has no side-index entry, and otherwise returns a
-**shallow copy** with `h12_evidence_ref` injected — the on-disk
-`result.json` for any process is never written to or altered by this
-mechanism. `rederive_process()`'s call site now receives
-`_with_h12_evidence_ref(entry.name, result_payload)` instead of the raw
-loaded payload. `tests/scripts/test_h12_evidence_wiring.py` (11 tests)
-covers: missing-file/malformed/no-`entries`-key index soft-fail; the real
-tracked index parsing and resolving all 5 process names; identity
-preservation when a process's own ref is already present or no side-index
-entry exists; an end-to-end green-row test exercising the real gate
-through the side-index; a dangling-ref-stays-non-green test; a
-**stale-artifact-stays-non-green** test (proving the Section 6.5/13.14
-freshness check is genuinely exercised through this wiring path, not
-bypassed by it); and an own-`result.json`-ref-takes-priority-over-side-index
-test.
+**Wiring (unchanged from the original delivery): a separate tracked
+side-index, never a `result.json` mutation.** `h12_evidence_index.json`
+maps each of the 5 process names to its artifact path;
+`_with_h12_evidence_ref()` returns a result payload unchanged (same
+identity) if it already carries its own ref or has no side-index entry,
+otherwise a shallow copy with the ref injected. No on-disk `result.json`
+is ever written to by this mechanism.
 
-**Net effect on `evidence_index.json` today.** These 5 rows do **not**
-turn green as a direct consequence of this session's work — each still
-carries a `STALE_SWEEP_PROVENANCE` reason (the `EVALUATOR_SCHEMA_VERSION`
-bump above), which requires an actual `sweep.py run` re-execution to
-clear, out of scope per "no expensive OC sweeps" for this task. What this
-session's work *does* prove, mechanically and reproducibly, is that the
-`SENTINEL_FAIL: ... without a machine-checked h12_evidence_ref` reason
-that previously applied to all 5 rows is gone, replaced by the sweep-
-staleness reason — i.e. the H12-support half of the gate (Section 6.5) is
-now genuinely satisfied for all 5 processes; only the unrelated sweep-
-provenance freshness gate remains, and it is unrelated to whether the
-catalog's `closed_form_dominant` claim is trustworthy.
+**Net effect on `evidence_index.json` after this repair (mechanically
+derived, not hardcoded).** Regenerating the index from the unchanged
+tracked `evidence_bundle` + current catalog + the 5 fresh H12 artifacts
+yields, across all 22 in-scope rows: `PASS: 14, FAIL: 4,
+MISSING_EVIDENCE: 4`. The 3 `H12_CONFIRMED` rows (`tRNAAminoacylation`,
+`ProteinFolding`, `ProteinProcessingI`) are green; the 2
+`H12_OBSERVED_REGIME` rows (`MacromolecularComplexation`,
+`ProteinProcessingII`) correctly remain non-green, alongside other
+pre-existing FAIL/MISSING_EVIDENCE rows unrelated to this task.
+`bin\oc-py scripts/l22_evidence/generator.py audit` confirms
+`integrity: OK`.
 
-**No catalog/runner/threshold changes.** Per the task's constraint, no
-edits were made to `PROCESS_CATALOG.yaml`, the runner, biology code, or
-any threshold. Based on these 5 processes' 100% exact-match results, no
-`closed_form_dominant` demotion appears warranted — but that
-determination is explicitly left to the reviewer/maintainer, not decided
-unilaterally by this session.
+**No catalog/runner/threshold changes.** No edits were made to
+`PROCESS_CATALOG.yaml`, the runner, biology code, or any threshold. Two
+non-binding demotion recommendations are left for reviewer/maintainer
+decision: `ProteinProcessingII` (transferase branch has zero empirical
+support in any available real data) and `MacromolecularComplexation`
+(network≥2 is provably never closed-form under any amount of additional
+sampling, a structural rather than sampling limitation). No demotion is
+recommended for the other 3 processes — their `H12_CONFIRMED` verdicts
+are full, genuine support for the existing catalog flag.
 
-**One pre-existing, unrelated bug surfaced during this session's
-end-to-end verification (not introduced, not fixed, flagged for the
-maintainer):** `tRNAAminoacylation`'s row independently fails
-`PRIMARY_CHANNEL_VACUOUS` — the catalog's declared `primary_channel`
-(`rnas`, lowercase) does not match the actual channel key present in its
-`result.json` (`RNAs`). Present on the untouched pristine baseline too
-(verified via `git stash`); out of scope to fix here (catalog edit).
+See `docs/phase_f/l2_2_design_a/h12/H12_REPORT.md` for the complete
+narrative (defect-by-defect rationale, full results table, per-process
+demotion reasoning, methodology caveats, and verification log).
 
 ## 14. Files
 

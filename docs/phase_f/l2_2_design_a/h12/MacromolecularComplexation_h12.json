@@ -1,8 +1,29 @@
 {
   "process": "MacromolecularComplexation",
-  "formula_version": "1.0.0",
+  "formula_version": "2.0.0",
   "predictor_source_path": "scripts/l22_evidence/h12.py",
-  "predictor_source_sha256": "a8ecca0dbc3d2a72c7fc49d118bce69873f602abb08d6174c18f65eb8a6c8b9b",
+  "predictor_source_sha256_lf_normalized": "1d002cbb14199abcdd59e4aee9a8e027382a17eb9cf658b17435efa66679512a",
+  "karr_source_citation": {
+    "vendored_path": "data/karr_vendored_source/MacromolecularComplexation.m",
+    "vendored_sha256_lf_normalized": "2e840ac13b65f0dbd027ef2a425dc3a7a7d23fbd505589eee0b30faedf02d087",
+    "upstream_repo": "https://github.com/CovertLab/WholeCell",
+    "upstream_commit": "6cdee6b355aa0f5ff2953b1ab356eea049108e07",
+    "upstream_original_path": "MacromolecularComplexation.m",
+    "line_ranges": [
+      [
+        290,
+        314
+      ],
+      [
+        390,
+        392
+      ]
+    ],
+    "symbols": [
+      "evolveState",
+      "buildProteinComplexs_bounds"
+    ]
+  },
   "fixture_path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
   "fixture_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
   "oracle_seed_file_sha256": {
@@ -57,6 +78,58 @@
     "48": "47fdaffcabb1b281d6b152ed93bd5f350e18264af3b4c356831535dbfa5e98bf",
     "49": "89274629fad555773484eb7aab28e5dc1bb6e5c79b4b187594430bb680fe5d3f"
   },
+  "oracle_manifest_cross_check": {
+    "0": "match",
+    "1": "match",
+    "2": "match",
+    "3": "match",
+    "4": "match",
+    "5": "match",
+    "6": "match",
+    "7": "match",
+    "8": "match",
+    "9": "match",
+    "10": "match",
+    "11": "match",
+    "12": "match",
+    "13": "match",
+    "14": "match",
+    "15": "match",
+    "16": "match",
+    "17": "match",
+    "18": "match",
+    "19": "match",
+    "20": "match",
+    "21": "match",
+    "22": "match",
+    "23": "match",
+    "24": "match",
+    "25": "match",
+    "26": "match",
+    "27": "match",
+    "28": "match",
+    "29": "match",
+    "30": "match",
+    "31": "match",
+    "32": "match",
+    "33": "match",
+    "34": "match",
+    "35": "match",
+    "36": "match",
+    "37": "match",
+    "38": "match",
+    "39": "match",
+    "40": "match",
+    "41": "match",
+    "42": "match",
+    "43": "match",
+    "44": "match",
+    "45": "match",
+    "46": "match",
+    "47": "match",
+    "48": "match",
+    "49": "match"
+  },
   "n_seeds": 50,
   "m_ticks": 100,
   "catalog_n_seeds": 50,
@@ -65,72 +138,27 @@
   "nontrivial_sample_count": 814,
   "exact_match_count": 814,
   "exact_match_rate": 1.0,
-  "mismatch_examples": [
-    {
-      "seed": 0,
-      "tick": 8,
-      "unit": "network_2",
-      "trivial": true
-    },
-    {
-      "seed": 0,
-      "tick": 10,
-      "unit": "network_2",
-      "trivial": true
-    },
-    {
-      "seed": 0,
-      "tick": 15,
-      "unit": "network_2",
-      "trivial": true
-    },
-    {
-      "seed": 0,
-      "tick": 17,
-      "unit": "network_2",
-      "trivial": true
-    },
-    {
-      "seed": 0,
-      "tick": 20,
-      "unit": "network_2",
-      "trivial": true
-    },
-    {
-      "seed": 0,
-      "tick": 24,
-      "unit": "network_2",
-      "trivial": true
-    },
-    {
-      "seed": 0,
-      "tick": 28,
-      "unit": "network_2",
-      "trivial": true
-    },
-    {
-      "seed": 0,
-      "tick": 29,
-      "unit": "network_2",
-      "trivial": true
-    },
-    {
-      "seed": 0,
-      "tick": 32,
-      "unit": "network_2",
-      "trivial": true
-    },
-    {
-      "seed": 0,
-      "tick": 43,
-      "unit": "network_2",
-      "trivial": true
-    }
+  "trivial_checked_count": 9186,
+  "trivial_mismatch_count": 0,
+  "mismatch_examples": [],
+  "trivial_mismatch_examples": [],
+  "required_branches": [
+    "network_1_fires",
+    "network_ge2_fires"
+  ],
+  "branches_confirmed": [
+    "network_1_fires"
+  ],
+  "branches_observed": [
+    "network_1_fires"
+  ],
+  "missing_required_branches": [
+    "network_ge2_fires"
   ],
   "raw_prediction_hash": "ff9044992976ec9c072edf1ca175abc22d4e8b451fcf3f3cbc5ef8765a7f92a7",
-  "verdict": "H12_CONFIRMED",
-  "verdict_reason": "nontrivial_sample_count>0 and 100% exact match",
-  "generated_at": "2026-07-30T06:41:24.944727+00:00",
+  "verdict": "H12_OBSERVED_REGIME",
+  "verdict_reason": "100% exact match on 814 nontrivial samples but required branch coverage incomplete: missing=['network_ge2_fires'] (this process may not be used to clear H12_CONFIRMED-gated sentinels until every required regime is independently confirmed)",
+  "generated_at": "2026-07-30T17:28:01.508717+00:00",
   "anti_laundering_attestation": {
     "predictor_inputs": [
       "states_before",

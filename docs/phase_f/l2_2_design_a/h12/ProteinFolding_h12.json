@@ -1,8 +1,29 @@
 {
   "process": "ProteinFolding",
-  "formula_version": "1.0.0",
+  "formula_version": "2.0.0",
   "predictor_source_path": "scripts/l22_evidence/h12.py",
-  "predictor_source_sha256": "a8ecca0dbc3d2a72c7fc49d118bce69873f602abb08d6174c18f65eb8a6c8b9b",
+  "predictor_source_sha256_lf_normalized": "1d002cbb14199abcdd59e4aee9a8e027382a17eb9cf658b17435efa66679512a",
+  "karr_source_citation": {
+    "vendored_path": "data/karr_vendored_source/ProteinFolding.m",
+    "vendored_sha256_lf_normalized": "ca7435cc20552b2128d6f8fc94372986a400df9389d1b92499ef48a2b0fc82f5",
+    "upstream_repo": "https://github.com/CovertLab/WholeCell",
+    "upstream_commit": "6cdee6b355aa0f5ff2953b1ab356eea049108e07",
+    "upstream_original_path": "ProteinFolding.m",
+    "line_ranges": [
+      [
+        507,
+        517
+      ],
+      [
+        519,
+        576
+      ]
+    ],
+    "symbols": [
+      "calcResourceRequirements_Current",
+      "evolveState"
+    ]
+  },
   "fixture_path": "data/karr_fixtures/per_process/ProteinFolding_flat.mat",
   "fixture_sha256": "d91be6c57d1cce69cd16898a6e414fc3cecf9563aa48c67bde732e9caf1ae63c",
   "oracle_seed_file_sha256": {
@@ -57,6 +78,58 @@
     "48": "4a3810d144614b239cb38a1b6040ea9b160cac97e2970ce43aa51b8e0c7dd5e1",
     "49": "b4830e2f979585ebb2e34dc1e4007dd28fb975b1ae8e18fadd54a06af48f533e"
   },
+  "oracle_manifest_cross_check": {
+    "0": "match",
+    "1": "match",
+    "2": "match",
+    "3": "match",
+    "4": "match",
+    "5": "match",
+    "6": "match",
+    "7": "match",
+    "8": "match",
+    "9": "match",
+    "10": "match",
+    "11": "match",
+    "12": "match",
+    "13": "match",
+    "14": "match",
+    "15": "match",
+    "16": "match",
+    "17": "match",
+    "18": "match",
+    "19": "match",
+    "20": "match",
+    "21": "match",
+    "22": "match",
+    "23": "match",
+    "24": "match",
+    "25": "match",
+    "26": "match",
+    "27": "match",
+    "28": "match",
+    "29": "match",
+    "30": "match",
+    "31": "match",
+    "32": "match",
+    "33": "match",
+    "34": "match",
+    "35": "match",
+    "36": "match",
+    "37": "match",
+    "38": "match",
+    "39": "match",
+    "40": "match",
+    "41": "match",
+    "42": "match",
+    "43": "match",
+    "44": "match",
+    "45": "match",
+    "46": "match",
+    "47": "match",
+    "48": "match",
+    "49": "match"
+  },
   "n_seeds": 50,
   "m_ticks": 100,
   "catalog_n_seeds": 50,
@@ -65,11 +138,27 @@
   "nontrivial_sample_count": 2639,
   "exact_match_count": 2639,
   "exact_match_rate": 1.0,
+  "trivial_checked_count": 1772,
+  "trivial_mismatch_count": 0,
   "mismatch_examples": [],
+  "trivial_mismatch_examples": [],
+  "required_branches": [
+    "complex_folding_fires",
+    "monomer_folding_fires"
+  ],
+  "branches_confirmed": [
+    "complex_folding_fires",
+    "monomer_folding_fires"
+  ],
+  "branches_observed": [
+    "complex_folding_fires",
+    "monomer_folding_fires"
+  ],
+  "missing_required_branches": [],
   "raw_prediction_hash": "9900cd4accba88a9e09676cfa8fcd8501b92b493edb7f708f50fe1c867a6ce96",
   "verdict": "H12_CONFIRMED",
-  "verdict_reason": "nontrivial_sample_count>0 and 100% exact match",
-  "generated_at": "2026-07-30T06:39:35.868449+00:00",
+  "verdict_reason": "nontrivial_sample_count>0, 100% exact match, full required branch coverage",
+  "generated_at": "2026-07-30T17:27:20.429382+00:00",
   "anti_laundering_attestation": {
     "predictor_inputs": [
       "states_before",
