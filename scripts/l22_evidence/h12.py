@@ -42,6 +42,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import re
 import sys
 from dataclasses import dataclass, field
 from datetime import datetime, timezone
@@ -114,7 +115,7 @@ KARR_SOURCE_CITATIONS = {
     },
     "ProteinFolding": {
         "file": "ProteinFolding.m",
-        "line_ranges": [[507, 517], [519, 576]],
+        "line_ranges": [[507, 517], [519, 581]],
         "symbols": ["calcResourceRequirements_Current", "evolveState"],
     },
     "tRNAAminoacylation": {
@@ -140,6 +141,30 @@ REQUIRED_BRANCHES = {
     "ProteinFolding": frozenset({"monomer_folding_fires", "complex_folding_fires"}),
     "tRNAAminoacylation": frozenset({"aminoacylation_fires"}),
 }
+
+# Well-formed lowercase-hex SHA256 (64 hex chars). Used to reject a forged/
+# truncated/non-hex `raw_prediction_hash` (or any other claimed hash field)
+# without needing to recompute it -- a cheap structural check, distinct
+# from the freshness re-hashes below which DO recompute against on-disk
+# files.
+_SHA256_HEX_RE = re.compile(r"^[0-9a-f]{64}$")
+
+
+def _is_plain_nonneg_int(value) -> bool:
+    """True iff `value` is a real (non-bool) int and is >= 0.
+
+    `bool` is a subtype of `int` in Python (`isinstance(True, int) is
+    True`, `True == 1`, `False == 0`) -- every count/rate field an H12
+    artifact carries must reject a boolean masquerading as a numeric count,
+    or a hand-tampered payload could pass `trivial_mismatch_count == 0` by
+    writing `False`, or `exact_match_rate == 1.0` by writing `True`.
+    """
+    return isinstance(value, int) and not isinstance(value, bool) and value >= 0
+
+
+def _is_plain_number(value) -> bool:
+    """True iff `value` is a real (non-bool) int or float."""
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
 
 
 def _sha256_file(path: Path) -> str:
@@ -1245,7 +1270,7 @@ def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
     return artifact
 
 
-def validate_h12_support(payload: dict, *, repo_root: Path = REPO_ROOT) -> str | None:
+def validate_h12_support(payload: dict, *, expected_process: str | None = None, repo_root: Path = REPO_ROOT) -> str | None:
     """Centralized H12-artifact acceptance gate. Returns None if `payload`
     (an already-loaded H12 artifact JSON dict) is valid, fresh, machine-
     checked support for clearing a PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE
@@ -1256,6 +1281,17 @@ def validate_h12_support(payload: dict, *, repo_root: Path = REPO_ROOT) -> str |
     than re-implementing the schema/hash checks, so the producer (this
     module) and the consumer (the evidence gate) cannot drift apart.
 
+    `expected_process`, when given (verdict.py always supplies it: the
+    process name under which the row's `h12_evidence_ref` was resolved,
+    whether directly or via the `h12_evidence_index.json` side-index), is
+    cross-checked against the artifact's own `process` field. Without this
+    check, a side-index entry could point one process's key at a
+    DIFFERENT process's real, valid H12_CONFIRMED artifact (cross-process
+    substitution) and the gate would incorrectly accept it, since every
+    other check here only validates that the artifact is internally
+    self-consistent -- never that it is evidence for the row actually
+    being scored.
+
     Hard requirements (no soft-trust for any of these -- all 3 referenced
     source files are git-tracked, so a missing file is a hard fail, not an
     attestation-only pass):
@@ -1263,38 +1299,113 @@ def validate_h12_support(payload: dict, *, repo_root: Path = REPO_ROOT) -> str |
          FAIL variant -- observed-regime artifacts are honest, non-laundered
          evidence that a process's non-required-branch coverage exists, but
          they must never clear the gate).
-      2. ``nontrivial_sample_count > 0`` and ``exact_match_rate == 1.0``
-         (no tolerance).
-      3. ``trivial_mismatch_count == 0`` (a guard-logic mismatch on a
-         predicted no-op is disqualifying regardless of the nontrivial rate).
-      4. Full required branch coverage: ``REQUIRED_BRANCHES[process]``
+      2. ``process`` is a real `REQUIRED_BRANCHES` key AND (if supplied)
+         equals `expected_process` exactly -- rejects cross-process
+         substitution via a mis-keyed or tampered side-index entry.
+      3. ``nontrivial_sample_count > 0`` and ``exact_match_rate == 1.0``
+         (no tolerance), both real (non-bool) numeric types.
+      4. ``trivial_mismatch_count == 0``, a real (non-bool) int (a
+         guard-logic mismatch on a predicted no-op is disqualifying
+         regardless of the nontrivial rate).
+      5. Count consistency: ``exact_match_count``/``total_sample_count``/
+         ``trivial_checked_count`` are all real nonnegative ints, with
+         ``exact_match_count == nontrivial_sample_count`` (required for a
+         genuine 100% rate) and ``nontrivial_sample_count +
+         trivial_checked_count <= total_sample_count``.
+      6. Coverage floor: ``n_seeds``/``m_ticks`` equal the catalog's real
+         `CATALOG_N_M[process]` -- a degenerate artifact regenerated with
+         e.g. ``--n-seeds 1 --m-ticks 1`` must not pass even if 100%
+         "matched" on that shrunken domain.
+      7. Full required branch coverage: ``REQUIRED_BRANCHES[process]``
          subset of ``branches_confirmed``.
-      5. ``predictor_source_path`` is EXACTLY ``EXPECTED_PREDICTOR_SOURCE_PATH``
+      8. ``predictor_source_path`` is EXACTLY ``EXPECTED_PREDICTOR_SOURCE_PATH``
          (a dangling/substituted path hard-fails).
-      6. Fresh-clone-stable hashes: LF-normalized SHA256 for the predictor
+      9. Fresh-clone-stable hashes: LF-normalized SHA256 for the predictor
          module and vendored Karr source, raw-byte SHA256 for the fixture,
          each re-computed from the CURRENT on-disk file and compared to the
          value recorded in the artifact -- any mismatch, or any referenced
          file missing on disk, is a hard fail (stale/tampered evidence).
+      10. ``oracle_manifest_cross_check`` is a nonempty dict whose every
+          value is ``"match"``/``"accepted"`` -- any ``"mismatch"``,
+          ``"not_in_manifest"``, or an empty/missing cross-check record is
+          a hard fail.
+      11. ``oracle_seed_file_sha256`` is a nonempty dict with per-seed
+          coverage equal to ``n_seeds`` (every seed hashed; no gaps).
+      12. ``raw_prediction_hash`` is a well-formed lowercase-hex SHA256
+          string.
+      13. ``formula_version`` and the ``karr_source_citation``'s
+          ``upstream_repo``/``upstream_commit``/``line_ranges`` are pinned
+          to this module's own `FORMULA_VERSION`/`KARR_UPSTREAM_REPO`/
+          `KARR_UPSTREAM_COMMIT`/`KARR_SOURCE_CITATIONS` registry values --
+          any forged/mismatched value is a hard fail, independent of
+          whether the vendored file's hash happens to still match.
+      14. ``anti_laundering_attestation`` fields must be their literal
+          expected (non-negated, non-false) values -- ``no_sut_import``
+          and ``no_result_json_access`` must be exactly ``True``, and
+          ``states_after_access`` must be exactly ``"compare_phase_only"``.
     """
     process = payload.get("process")
     if process not in REQUIRED_BRANCHES:
         return f"h12 artifact process {process!r} unknown to REQUIRED_BRANCHES registry"
 
+    if expected_process is not None and process != expected_process:
+        return (
+            f"h12 artifact process {process!r} does not match the process this evidence is being "
+            f"consulted for ({expected_process!r}) -- cross-process substitution via a mis-keyed "
+            "side-index entry or tampered artifact"
+        )
+
     if payload.get("verdict") != "H12_CONFIRMED":
         return f"h12 artifact verdict != H12_CONFIRMED (got {payload.get('verdict')!r})"
 
     nontrivial = payload.get("nontrivial_sample_count")
-    if not (isinstance(nontrivial, (int, float)) and not isinstance(nontrivial, bool) and nontrivial > 0):
+    if not (_is_plain_nonneg_int(nontrivial) and nontrivial > 0):
         return f"h12 artifact nontrivial_sample_count invalid/zero (got {nontrivial!r})"
 
     match_rate = payload.get("exact_match_rate")
-    if match_rate != 1.0:
-        return f"h12 artifact exact_match_rate != 1.0 (got {match_rate!r})"
+    if not (_is_plain_number(match_rate) and match_rate == 1.0):
+        return f"h12 artifact exact_match_rate is not a real number ==1.0 (got {match_rate!r})"
 
     trivial_mismatch_count = payload.get("trivial_mismatch_count")
-    if trivial_mismatch_count != 0:
-        return f"h12 artifact trivial_mismatch_count != 0 (got {trivial_mismatch_count!r})"
+    if not (_is_plain_nonneg_int(trivial_mismatch_count) and trivial_mismatch_count == 0):
+        return f"h12 artifact trivial_mismatch_count is not a real nonnegative int ==0 (got {trivial_mismatch_count!r})"
+
+    exact_match_count = payload.get("exact_match_count")
+    total_sample_count = payload.get("total_sample_count")
+    trivial_checked_count = payload.get("trivial_checked_count")
+    for field_name, value in (
+        ("exact_match_count", exact_match_count),
+        ("total_sample_count", total_sample_count),
+        ("trivial_checked_count", trivial_checked_count),
+    ):
+        if not _is_plain_nonneg_int(value):
+            return f"h12 artifact {field_name} is not a real nonnegative int (got {value!r})"
+    if exact_match_count != nontrivial:
+        return (
+            f"h12 artifact exact_match_count ({exact_match_count!r}) != nontrivial_sample_count "
+            f"({nontrivial!r}) despite claimed exact_match_rate==1.0"
+        )
+    if nontrivial + trivial_checked_count > total_sample_count:
+        return (
+            f"h12 artifact nontrivial_sample_count+trivial_checked_count "
+            f"({nontrivial!r}+{trivial_checked_count!r}) exceeds total_sample_count ({total_sample_count!r})"
+        )
+
+    catalog_n_seeds, catalog_m_ticks = CATALOG_N_M[process]
+    n_seeds = payload.get("n_seeds")
+    m_ticks = payload.get("m_ticks")
+    if not (_is_plain_nonneg_int(n_seeds) and n_seeds == catalog_n_seeds):
+        return (
+            f"h12 artifact n_seeds ({n_seeds!r}) does not cover the catalog's real N_seeds "
+            f"({catalog_n_seeds!r}) for {process!r} -- a shrunken/degenerate sample domain is not "
+            "sufficient evidence even at 100% match"
+        )
+    if not (_is_plain_nonneg_int(m_ticks) and m_ticks == catalog_m_ticks):
+        return (
+            f"h12 artifact m_ticks ({m_ticks!r}) does not cover the catalog's real M_ticks "
+            f"({catalog_m_ticks!r}) for {process!r} -- a shrunken/degenerate sample domain is not "
+            "sufficient evidence even at 100% match"
+        )
 
     branches_confirmed = set(payload.get("branches_confirmed") or [])
     missing = sorted(REQUIRED_BRANCHES[process] - branches_confirmed)
@@ -1349,6 +1460,82 @@ def validate_h12_support(payload: dict, *, repo_root: Path = REPO_ROOT) -> str |
     current_karr_hash = _sha256_lf_normalized(karr_path_on_disk)
     if current_karr_hash != recorded_karr_hash:
         return f"h12 artifact is STALE: karr_source_citation hash recorded={recorded_karr_hash} current={current_karr_hash}"
+
+    # --- Pin formula_version and Karr citation metadata to THIS module's own
+    # predictor-registry expected values -- a forged/edited artifact could
+    # otherwise claim an arbitrary formula_version or citation line range
+    # while its hashes still happen to match (the hashes only prove the
+    # FILES weren't tampered, not that the artifact's CLAIMS about them are
+    # honest).
+    recorded_formula_version = payload.get("formula_version")
+    if recorded_formula_version != FORMULA_VERSION:
+        return (
+            f"h12 artifact formula_version ({recorded_formula_version!r}) does not match the predictor "
+            f"registry's current FORMULA_VERSION ({FORMULA_VERSION!r})"
+        )
+    expected_citation = KARR_SOURCE_CITATIONS[process]
+    if karr_citation.get("upstream_repo") != KARR_UPSTREAM_REPO:
+        return (
+            f"h12 artifact karr_source_citation.upstream_repo ({karr_citation.get('upstream_repo')!r}) "
+            f"!= expected {KARR_UPSTREAM_REPO!r}"
+        )
+    if karr_citation.get("upstream_commit") != KARR_UPSTREAM_COMMIT:
+        return (
+            f"h12 artifact karr_source_citation.upstream_commit ({karr_citation.get('upstream_commit')!r}) "
+            f"!= expected {KARR_UPSTREAM_COMMIT!r}"
+        )
+    recorded_line_ranges = karr_citation.get("line_ranges")
+    expected_line_ranges = [list(r) for r in expected_citation["line_ranges"]]
+    if recorded_line_ranges != expected_line_ranges:
+        return (
+            f"h12 artifact karr_source_citation.line_ranges ({recorded_line_ranges!r}) != predictor "
+            f"registry's pinned citation ({expected_line_ranges!r}) for {process!r}"
+        )
+
+    # --- oracle_manifest_cross_check: reject empty/missing, or any entry
+    # that is not an accepted status.
+    cross_check = payload.get("oracle_manifest_cross_check")
+    if not isinstance(cross_check, dict) or not cross_check:
+        return "h12 artifact oracle_manifest_cross_check missing/empty (no cross-checked oracle provenance)"
+    bad_entries = {seed: status for seed, status in cross_check.items() if status not in ("match", "accepted")}
+    if bad_entries:
+        return f"h12 artifact oracle_manifest_cross_check has non-accepted entries: {bad_entries}"
+
+    # --- Per-seed raw oracle hash coverage: every seed in [0, n_seeds) must
+    # have been hashed -- no gaps, no soft-trust for an unhashed seed.
+    seed_hashes = payload.get("oracle_seed_file_sha256")
+    if not isinstance(seed_hashes, dict) or not seed_hashes:
+        return "h12 artifact oracle_seed_file_sha256 missing/empty (no per-seed raw oracle hash coverage)"
+    if len(seed_hashes) != n_seeds:
+        return (
+            f"h12 artifact oracle_seed_file_sha256 covers {len(seed_hashes)} seed(s), expected {n_seeds!r} "
+            "(gap in per-seed raw oracle hash coverage)"
+        )
+
+    # --- raw_prediction_hash: cheap structural well-formedness check (a
+    # full recomputation would require reloading every seed's oracle trace
+    # and rerunning the predictor, which is exercised by the dedicated
+    # regeneration-determinism test, not by this gate-time validator).
+    raw_prediction_hash = payload.get("raw_prediction_hash")
+    if not isinstance(raw_prediction_hash, str) or not _SHA256_HEX_RE.match(raw_prediction_hash):
+        return f"h12 artifact raw_prediction_hash is not a well-formed sha256 hex string (got {raw_prediction_hash!r})"
+
+    # --- anti_laundering_attestation: fields must be their literal expected
+    # (non-negated, non-false) values -- a negated attestation must fail
+    # closed, not be treated as a soft/optional field.
+    attestation = payload.get("anti_laundering_attestation") or {}
+    if attestation.get("no_sut_import") is not True:
+        return f"h12 artifact anti_laundering_attestation.no_sut_import is not True (got {attestation.get('no_sut_import')!r})"
+    if attestation.get("no_result_json_access") is not True:
+        return (
+            "h12 artifact anti_laundering_attestation.no_result_json_access is not True "
+            f"(got {attestation.get('no_result_json_access')!r})"
+        )
+    if attestation.get("states_after_access") != "compare_phase_only":
+        return (
+            "h12 artifact anti_laundering_attestation.states_after_access != 'compare_phase_only' "
+            f"(got {attestation.get('states_after_access')!r})"
+        )
 
     return None
 

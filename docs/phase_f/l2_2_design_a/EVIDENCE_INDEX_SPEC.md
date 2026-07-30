@@ -2014,7 +2014,7 @@ outcomes (`FORMULA_VERSION` bumped `1.0.0 → 2.0.0` for this repair).
    hashes were unverifiable in a fresh clone. Fixed: the 5 relevant `.m`
    files (plus the upstream license) are now vendored under the tracked
    `data/karr_vendored_source/` directory, sourced from upstream
-   `sunilg/WholeCell` commit `6cdee6b355aa0f5ff2953b1ab356eea049108e07`
+   `CovertLab/WholeCell` commit `6cdee6b355aa0f5ff2953b1ab356eea049108e07`
    (MIT license); `karr_source_citation()` hard-fails if the vendored file
    is missing, and `validate_h12_support()` re-verifies its LF-normalized
    hash against the artifact's recorded value plus its cited line ranges.

@@ -93,8 +93,9 @@ from scripts.l22_evidence.channel_names import normalize_channel_name  # noqa: E
 # sufficient -- a hand-edited artifact with a nonzero nontrivial count but
 # a real mismatch, or an artifact documenting only a partially-observed
 # regime, could previously launder a row); (b) the artifact's recorded
-# `predictor_source_git_blob_sha256`/`fixture_sha256`/Karr-source hashes
-# match a fresh re-hash (git-blob/LF-normalized, not raw file bytes) of
+# `predictor_source_sha256_lf_normalized`/`fixture_sha256`/Karr-source
+# hashes match a fresh re-hash (LF-normalized for text sources, raw bytes
+# for binary `.mat` fixtures -- NOT a git-blob-object hash) of
 # the on-disk predictor source / fixture / vendored Karr source referenced
 # by the artifact (stale-evidence detection: if h12.py, the fixture, or
 # the vendored Karr source has changed since the artifact was generated,
@@ -109,6 +110,26 @@ from scripts.l22_evidence.channel_names import normalize_channel_name  # noqa: E
 # newly fail under v4), so any H12 evidence generated/verified under v3
 # semantics must be treated as stale, not silently re-scored as
 # equivalent.
+# v4 artifact-gate hardening (Opus5 round-3 follow-up, same v4 tag --
+# these are within-v4 gate-hardening fixes, not a further semantic verdict
+# change requiring a version bump): `validate_h12_support` additionally
+# now (d) cross-checks the artifact's own `process` field against the
+# `expected_process` the caller resolved it for, rejecting cross-process
+# substitution via a mis-keyed `h12_evidence_index.json` side-index entry;
+# (e) requires `n_seeds`/`m_ticks` to equal the catalog's real
+# `CATALOG_N_M[process]` (a shrunken/degenerate sample domain no longer
+# passes even at 100% match); (f) explicitly rejects `bool` values for
+# every numeric count/rate field (Python's `bool` is an `int` subtype, so
+# `True == 1.0`/`False == 0` could otherwise silently satisfy those
+# checks); (g) requires internal count consistency
+# (`exact_match_count == nontrivial_sample_count`,
+# `nontrivial_sample_count + trivial_checked_count <= total_sample_count`);
+# (h) requires a fully-`match`/`accepted` `oracle_manifest_cross_check`
+# and full per-seed `oracle_seed_file_sha256` coverage; (i) requires a
+# well-formed `raw_prediction_hash`; and (j) pins `formula_version` and
+# the Karr citation's `upstream_repo`/`upstream_commit`/`line_ranges` to
+# this module's own registry constants, rejecting a forged/edited claim
+# even where the referenced files' hashes still happen to match.
 EVALUATOR_SCHEMA_VERSION = 4
 
 
@@ -119,10 +140,20 @@ class ProcessVerdict:
     reasons: list[str]
 
 
-def h12_support_reason(result_payload: dict[str, Any]) -> str | None:
+def h12_support_reason(result_payload: dict[str, Any], expected_process: str | None = None) -> str | None:
     """Return None if the linked H12 artifact is valid, else a short reason
     string explaining why it was rejected (used by both the gate below and
     by tests/diagnostics that want the "why").
+
+    `expected_process` (the process name this evidence is being consulted
+    for -- callers should always pass the row's own catalog process name)
+    is forwarded to `h12.validate_h12_support` so it can reject cross-
+    process substitution: without it, a `h12_evidence_ref` resolved via a
+    mis-keyed `h12_evidence_index.json` side-index entry could point one
+    process's row at a DIFFERENT process's real, valid H12_CONFIRMED
+    artifact, and every other check below would still pass (they only
+    validate the artifact's own internal consistency, not that it is
+    actually evidence for the row being scored).
 
     Requirements (see scripts/l22_evidence/h12.py:validate_h12_support for
     the authoritative schema/hash checks -- this function is a thin loader
@@ -130,12 +161,18 @@ def h12_support_reason(result_payload: dict[str, Any]) -> str | None:
     actual acceptance logic there so the producer and consumer of the H12
     artifact schema cannot drift apart):
       1. ``h12_evidence_ref`` resolves to a readable JSON file.
-      2. ``scripts.l22_evidence.h12.validate_h12_support(payload)`` returns
-         None (verdict == H12_CONFIRMED, 100% exact match, zero trivial
-         mismatches, full required branch coverage, pinned predictor path,
-         and fresh git-blob/LF-normalized hashes for the predictor module,
-         the fixture, and the vendored Karr source -- no soft-trust for any
-         of these three tracked files).
+      2. ``scripts.l22_evidence.h12.validate_h12_support(payload,
+         expected_process=expected_process)`` returns None (verdict ==
+         H12_CONFIRMED, artifact's own `process` field matches
+         `expected_process`, 100% exact match, zero trivial mismatches,
+         numerically-typed (non-bool) counts/rates, full required branch
+         coverage, catalog N/M coverage floor met, pinned predictor path,
+         fresh LF-normalized hashes for the predictor module/fixture/
+         vendored Karr source, a fully-accepted oracle-manifest cross-
+         check, full per-seed raw-oracle hash coverage, a well-formed
+         `raw_prediction_hash`, formula_version/Karr-citation pinned to
+         the predictor registry, and non-negated anti-laundering
+         attestation fields -- no soft-trust for any of these).
     """
     ref = result_payload.get("h12_evidence_ref")
     if not ref:
@@ -152,13 +189,15 @@ def h12_support_reason(result_payload: dict[str, Any]) -> str | None:
 
     from scripts.l22_evidence import h12  # local import: avoid import cost when H12 isn't invoked
 
-    return h12.validate_h12_support(payload, repo_root=REPO_ROOT)
+    return h12.validate_h12_support(payload, expected_process=expected_process, repo_root=REPO_ROOT)
 
 
-def _has_valid_h12_support(result_payload: dict[str, Any]) -> bool:
+def _has_valid_h12_support(result_payload: dict[str, Any], expected_process: str | None = None) -> bool:
     """True iff a linked H12 evidence file exists, is not stale relative to
-    the current predictor/fixture on disk, and machine-confirms a 100%
-    exact-match rate on a nonzero count of nontrivial samples.
+    the current predictor/fixture on disk, is bound to `expected_process`
+    (no cross-process substitution), and machine-confirms a 100%
+    exact-match rate on a nonzero count of nontrivial samples covering the
+    catalog's real N/M.
 
     This is the *only* way ``PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE`` is
     allowed to avoid demoting a row to non-green (per
@@ -166,7 +205,7 @@ def _has_valid_h12_support(result_payload: dict[str, Any]) -> bool:
     Catalog-level ``closed_form_dominant: confirmed*`` alone is a soft flag
     and is NOT sufficient support on its own.
     """
-    return h12_support_reason(result_payload) is None
+    return h12_support_reason(result_payload, expected_process) is None
 
 
 _SCALED_DISTANCE_EPSILON = 1e-12
@@ -763,7 +802,7 @@ def rederive_process(process_name: str, entry: ProcessEntry, result_payload: dic
     # H12 support; catalog closed_form_dominant alone is not enough.
     for warning in warnings:
         if warning.startswith(schema.DETERMINISTIC_CONVERGENCE_PREFIX):
-            rejection_reason = h12_support_reason(result_payload)
+            rejection_reason = h12_support_reason(result_payload, process_name)
             if rejection_reason is not None:
                 reasons.append(
                     f"{schema.STATUS_SENTINEL_FAIL}: {schema.DETERMINISTIC_CONVERGENCE_PREFIX} demotion claimed "

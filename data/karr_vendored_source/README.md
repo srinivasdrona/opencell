@@ -21,7 +21,7 @@ predictors cite, **tracked in git**, so:
 1. `scripts/l22_evidence/h12.py` hashes and cites line ranges against
    these tracked files (not the gitignored clone target).
 2. A fresh clone can always re-verify every H12 artifact's
-   `karr_source_git_blob_sha256` / line-range citations without needing
+   `vendored_sha256_lf_normalized` / line-range citations without needing
    network access or a separate MATLAB source clone.
 
 ## Provenance

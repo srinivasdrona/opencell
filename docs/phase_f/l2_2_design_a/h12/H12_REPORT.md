@@ -100,7 +100,7 @@ in the first attempt.
 
 For each process, the closed-form prediction is transcribed directly from
 the Karr MATLAB source (now vendored at `data/karr_vendored_source/*.m`,
-upstream `sunilg/WholeCell` commit `6cdee6b355aa0f5ff2953b1ab356eea049108e07`,
+upstream `CovertLab/WholeCell` commit `6cdee6b355aa0f5ff2953b1ab356eea049108e07`,
 MIT license) plus static fixture parameters
 (`data/karr_fixtures/per_process/*_flat.mat`) plus `states_before` only —
 never from the OC vivarium port, the runner, `states_after`, or any
@@ -179,10 +179,14 @@ MISSING_EVIDENCE:  4
 The 3 newly-`H12_CONFIRMED` rows (`tRNAAminoacylation`, `ProteinFolding`,
 `ProteinProcessingI`) are now `PASS`/green; the 2
 `H12_OBSERVED_REGIME` rows (`MacromolecularComplexation`,
-`ProteinProcessingII`) correctly remain `FAIL`/non-green, alongside
-`ProteinDecay`/whichever other pre-existing FAIL rows are unrelated to
-this task. `bin\oc-py scripts/l22_evidence/generator.py audit` confirms
-`integrity: OK`.
+`ProteinProcessingII`) correctly remain `FAIL`/non-green. The other 2
+FAIL rows (`Replication`, `DNASupercoiling`) are pre-existing, unrelated
+evaluator-guard findings untouched by this task (see
+`tests/scripts/test_l22_evidence_generator.py`); `ProteinDecay` is not a
+FAIL row at all -- it is, and remains, `PASS`/green, uninvolved in H12
+entirely (it carries no `PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE`
+sentinel and was never one of the 5 target processes). `bin\oc-py
+scripts/l22_evidence/generator.py audit` confirms `integrity: OK`.
 
 ## Catalog demotion recommendation
 
