@@ -19,7 +19,6 @@ Run via `bin\\oc-pytest tests/scripts/test_h12_evidence_wiring.py -v`.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import sys
 from pathlib import Path
@@ -44,11 +43,23 @@ def _write_json(path: Path, payload: dict) -> None:
 
 
 def _write_valid_h12_artifact(path: Path, *, process: str) -> None:
+    """Build a fully-valid (per `h12.validate_h12_support`) H12 artifact for
+    a REAL catalog process, using REAL on-disk hashes (the actual
+    `scripts/l22_evidence/h12.py`, the actual process fixture, and the
+    actual vendored Karr source file) -- predictor_source_path is now
+    hard-pinned and all three hashes are hard-verified against the CURRENT
+    on-disk files, so fake tmp-path files can no longer be made to pass.
+    `branches_confirmed` is fabricated here (a synthetic wiring-mechanism
+    test, not a real machine-evidence run) to cover every branch
+    `REQUIRED_BRANCHES[process]` names, purely so this file's own
+    `verdict == H12_CONFIRMED` claim is internally self-consistent.
+    """
+    from scripts.l22_evidence import h12
+
     path.parent.mkdir(parents=True, exist_ok=True)
-    source_path = path.parent / "fake_predictor.py"
-    source_path.write_text("# fake predictor\n", encoding="utf-8")
-    fixture_path = path.parent / "fake_fixture.mat"
-    fixture_path.write_bytes(b"fake fixture bytes")
+    predictor_path_on_disk = REPO_ROOT / h12.EXPECTED_PREDICTOR_SOURCE_PATH
+    fixture = h12.load_fixture(process)
+    karr_citation = h12.karr_source_citation(process)
     _write_json(
         path,
         {
@@ -56,10 +67,13 @@ def _write_valid_h12_artifact(path: Path, *, process: str) -> None:
             "verdict": "H12_CONFIRMED",
             "nontrivial_sample_count": 100,
             "exact_match_rate": 1.0,
-            "predictor_source_path": str(source_path),
-            "predictor_source_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
-            "fixture_path": str(fixture_path),
-            "fixture_sha256": hashlib.sha256(fixture_path.read_bytes()).hexdigest(),
+            "trivial_mismatch_count": 0,
+            "branches_confirmed": sorted(h12.REQUIRED_BRANCHES[process]),
+            "predictor_source_path": h12.EXPECTED_PREDICTOR_SOURCE_PATH,
+            "predictor_source_sha256_lf_normalized": h12._sha256_lf_normalized(predictor_path_on_disk),
+            "fixture_path": fixture["__fixture_path__"],
+            "fixture_sha256": fixture["__fixture_sha256__"],
+            "karr_source_citation": karr_citation,
         },
     )
 
@@ -201,19 +215,26 @@ def test_closed_form_row_stays_non_green_when_side_index_entry_is_dangling(monke
 
 
 def test_closed_form_row_stays_non_green_when_h12_artifact_is_stale(monkeypatch, tmp_path):
-    """If the artifact's recorded predictor_source_sha256 no longer matches
-    the on-disk predictor file, the row must stay non-green even though the
-    side-index entry resolves and the artifact's own verdict says
-    H12_CONFIRMED -- proving the freshness check is actually exercised via
-    this wiring path, not just bypassed by the side-index shortcut."""
+    """If the artifact's recorded predictor_source_sha256_lf_normalized no
+    longer matches the on-disk predictor file, the row must stay non-green
+    even though the side-index entry resolves and the artifact's own
+    verdict says H12_CONFIRMED -- proving the freshness check is actually
+    exercised via this wiring path, not just bypassed by the side-index
+    shortcut. Simulated via a deliberately-wrong recorded hash written
+    directly into the artifact JSON (the real production h12.py is never
+    mutated by this test, since predictor_source_path is now hard-pinned
+    to it)."""
     evidence_root = tmp_path / "evidence"
     _write_closed_form_evidence_dir(evidence_root)
 
     h12_dir = tmp_path / "h12_artifacts"
     h12_path = h12_dir / f"{_CLOSED_FORM_PROCESS}_h12.json"
     _write_valid_h12_artifact(h12_path, process=_CLOSED_FORM_PROCESS)
-    # Mutate the predictor source AFTER the artifact recorded its hash.
-    (h12_dir / "fake_predictor.py").write_text("# tampered predictor\n", encoding="utf-8")
+    # Tamper: overwrite the recorded predictor hash with a wrong value,
+    # simulating an artifact generated against a since-edited predictor.
+    payload = json.loads(h12_path.read_text(encoding="utf-8"))
+    payload["predictor_source_sha256_lf_normalized"] = "0" * 64
+    _write_json(h12_path, payload)
 
     index_path = tmp_path / "h12_evidence_index.json"
     _write_json(index_path, {"entries": {_CLOSED_FORM_PROCESS: str(h12_path)}})

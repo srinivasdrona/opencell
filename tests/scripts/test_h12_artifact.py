@@ -72,8 +72,14 @@ def test_compare_predictions_100_percent_match():
     assert result["exact_match_count"] == 5
     assert result["exact_match_rate"] == 1.0
     assert result["mismatch_examples"] == []
+    assert result["trivial_mismatch_count"] == 0
     verdict, reason = h12.decide_verdict(
-        result["nontrivial_sample_count"], result["exact_match_count"], result["exact_match_rate"]
+        result["nontrivial_sample_count"],
+        result["exact_match_count"],
+        result["exact_match_rate"],
+        result["trivial_mismatch_count"],
+        result["branches_confirmed"],
+        frozenset(),  # no required branches registered for this synthetic "FakeProcess"
     )
     assert verdict == "H12_CONFIRMED"
     assert "100% exact match" in reason
@@ -97,7 +103,12 @@ def test_compare_predictions_single_mismatch_out_of_100_fails_no_tolerance():
     assert result["mismatch_examples"][0]["tick"] == 42
     assert result["mismatch_examples"][0]["channel"] == "channel_a"
     verdict, reason = h12.decide_verdict(
-        result["nontrivial_sample_count"], result["exact_match_count"], result["exact_match_rate"]
+        result["nontrivial_sample_count"],
+        result["exact_match_count"],
+        result["exact_match_rate"],
+        result["trivial_mismatch_count"],
+        result["branches_confirmed"],
+        frozenset(),
     )
     # No tolerance: 99% is still a hard H12_FAIL, never silently rounded up.
     assert verdict == "H12_FAIL"
@@ -118,7 +129,12 @@ def test_compare_predictions_zero_nontrivial_samples_is_h12_fail():
     assert result["nontrivial_sample_count"] == 0
     assert result["exact_match_rate"] is None
     verdict, reason = h12.decide_verdict(
-        result["nontrivial_sample_count"], result["exact_match_count"], result["exact_match_rate"]
+        result["nontrivial_sample_count"],
+        result["exact_match_count"],
+        result["exact_match_rate"],
+        result["trivial_mismatch_count"],
+        result["branches_confirmed"],
+        frozenset(),
     )
     assert verdict == "H12_FAIL"
     assert "nontrivial_sample_count==0" in reason
@@ -126,10 +142,11 @@ def test_compare_predictions_zero_nontrivial_samples_is_h12_fail():
 
 def test_compare_predictions_trivial_predictions_are_still_correctness_checked():
     """A trivial (nontrivial=False) prediction whose predicted (zero) delta
-    does NOT match the actual delta must be caught as a mismatch (excluded
-    from the headline nontrivial rate, but never silently ignored -- this
-    is how a guard bug that wrongly predicts "nothing happens" would be
-    caught)."""
+    does NOT match the actual delta must be caught as a `trivial_mismatch`
+    (excluded from the headline nontrivial rate, but never silently
+    ignored -- this is how a guard bug that wrongly predicts "nothing
+    happens" would be caught), and it must hard-fail the verdict
+    unconditionally, regardless of the nontrivial match rate."""
     n = 3
     before = {"channel_a": np.zeros((n, 2))}
     after = {"channel_a": np.zeros((n, 2))}
@@ -137,7 +154,107 @@ def test_compare_predictions_trivial_predictions_are_still_correctness_checked()
     predictions = [_prediction(seed=0, tick=t, nontrivial=False, delta=[0.0, 0.0]) for t in range(n)]
     result = h12.compare_predictions("FakeProcess", predictions, after, before)
     assert result["nontrivial_sample_count"] == 0
-    assert any(m.get("trivial") and m["tick"] == 1 for m in result["mismatch_examples"])
+    assert result["trivial_mismatch_count"] == 1
+    assert any(m["tick"] == 1 for m in result["trivial_mismatch_examples"])
+    verdict, reason = h12.decide_verdict(
+        result["nontrivial_sample_count"],
+        result["exact_match_count"],
+        result["exact_match_rate"],
+        result["trivial_mismatch_count"],
+        result["branches_confirmed"],
+        frozenset(),
+    )
+    assert verdict == "H12_FAIL"
+    assert "trivial_mismatch_count=1" in reason
+
+
+# ---------------------------------------------------------------------------
+# compare_predictions: index_mask scoping (the MacromolecularComplexation
+# "814 false failures" regression fix)
+# ---------------------------------------------------------------------------
+
+
+def test_compare_predictions_index_mask_ignores_other_units_activity():
+    """Two units in the SAME tick each own disjoint index slices of the
+    SAME channel (mirrors MacromolecularComplexation's network_1/network_2
+    both writing into the shared `substrates` array). Unit A's `index_mask`
+    must scope its comparison to ONLY its own indices; a real, nonzero
+    actual delta at unit B's (unmasked-by-A) indices must NOT be treated as
+    a mismatch for unit A. This regression-tests the compare-scoping bug
+    that previously produced false failures when a full-width compare saw
+    a different unit's legitimate activity."""
+    before = {"substrates": np.zeros((1, 4))}
+    after = {"substrates": np.zeros((1, 4))}
+    # unit A (network_1) owns indices [0, 1]; predicts delta -10 at idx0, -5 at idx1
+    # unit B (network_2) owns indices [2, 3]; predicts delta -30 at idx2, -3 at idx3
+    after["substrates"][0] = [-10.0, -5.0, -30.0, -3.0]
+    pred_a = h12.UnitPrediction(
+        seed=0,
+        tick=0,
+        unit="network_1",
+        regime_valid=True,
+        regime_reason="test",
+        nontrivial=True,
+        predicted_delta={"substrates": np.array([-10.0, -5.0, 0.0, 0.0])},
+        index_mask={"substrates": np.array([0, 1])},
+    )
+    pred_b = h12.UnitPrediction(
+        seed=0,
+        tick=0,
+        unit="network_2",
+        regime_valid=True,
+        regime_reason="test",
+        nontrivial=True,
+        predicted_delta={"substrates": np.array([0.0, 0.0, -30.0, -3.0])},
+        index_mask={"substrates": np.array([2, 3])},
+    )
+    result = h12.compare_predictions("FakeProcess", [pred_a, pred_b], after, before)
+    # Without index_mask scoping, unit A's full-width predicted_delta
+    # ([-10,-5,0,0]) would mismatch the real full-width actual delta
+    # ([-10,-5,-30,-3]) at indices 2/3 -- a false failure. Scoped, both
+    # units match on their own indices only.
+    assert result["nontrivial_sample_count"] == 2
+    assert result["exact_match_count"] == 2
+    assert result["exact_match_rate"] == 1.0
+    assert result["mismatch_examples"] == []
+
+
+# ---------------------------------------------------------------------------
+# decide_verdict: incomplete required branch coverage -> H12_OBSERVED_REGIME
+# ---------------------------------------------------------------------------
+
+
+def test_decide_verdict_missing_required_branch_is_observed_regime_not_confirmed():
+    """100% exact match on every nontrivial sample is necessary but NOT
+    sufficient for H12_CONFIRMED: if a `REQUIRED_BRANCHES`-registered
+    dynamical regime was never exercised (never appears in
+    `branches_confirmed`), the correct verdict is the non-gating
+    `H12_OBSERVED_REGIME`, not `H12_CONFIRMED` -- this is the mechanism
+    that permanently caps MacromolecularComplexation (network>=2 never
+    fires) and ProteinProcessingII (transferase never fires) below
+    H12_CONFIRMED even at a perfect match rate."""
+    verdict, reason = h12.decide_verdict(
+        100,
+        100,
+        1.0,
+        0,
+        {"branch_a"},
+        frozenset({"branch_a", "branch_b"}),
+    )
+    assert verdict == "H12_OBSERVED_REGIME"
+    assert "branch_b" in reason
+
+
+def test_decide_verdict_full_branch_coverage_confirms():
+    verdict, reason = h12.decide_verdict(
+        100,
+        100,
+        1.0,
+        0,
+        {"branch_a", "branch_b"},
+        frozenset({"branch_a", "branch_b"}),
+    )
+    assert verdict == "H12_CONFIRMED"
 
 
 # ---------------------------------------------------------------------------

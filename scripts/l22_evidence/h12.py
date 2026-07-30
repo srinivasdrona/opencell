@@ -56,8 +56,19 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURE_ROOT = REPO_ROOT / "data" / "karr_fixtures" / "per_process"
 ORACLE_ROOT = REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2"
 OUT_ROOT = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "h12"
+KARR_SOURCE_ROOT = REPO_ROOT / "data" / "karr_vendored_source"
+ORACLE_MANIFEST_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "oracle_population_manifest.json"
 
-FORMULA_VERSION = "1.0.0"
+# H12 v2 (post-Opus5-repair): bumped from 1.0.0 because of the compare-phase
+# scoping fix, the ProteinFolding chaperone-guard fix, and the introduction of
+# H12_OBSERVED_REGIME. See docs/phase_f/l2_2_design_a/h12/H12_REPORT.md.
+FORMULA_VERSION = "2.0.0"
+
+# This module IS the predictor source artifact. Its path is pinned (not just
+# discovered via __file__) so that verdict.py can hard-fail if an artifact
+# claims support from a module at any other path -- a dangling/wrong
+# predictor_source_path is a tamper signal, not a soft-trust case.
+EXPECTED_PREDICTOR_SOURCE_PATH = "scripts/l22_evidence/h12.py"
 
 # Catalog N_seeds/M_ticks for the 5 target processes (docs/phase_f/l2_2_design_a/
 # PROCESS_CATALOG.yaml, read-only citation — do not edit that file from here).
@@ -78,13 +89,86 @@ RISK_ORDER = [
     "ProteinProcessingI",
 ]
 
+# Karr WholeCell MATLAB source citations. The gitignored clone target
+# (data/m1_sources/WholeCell/) is NOT a reproducible provenance root (a fresh
+# clone of THIS repo does not populate it) -- these 5 files are vendored
+# verbatim (MIT license, see data/karr_vendored_source/README.md) under a
+# tracked path instead, from the real upstream mirror.
+KARR_UPSTREAM_REPO = "https://github.com/CovertLab/WholeCell"
+KARR_UPSTREAM_COMMIT = "6cdee6b355aa0f5ff2953b1ab356eea049108e07"
+KARR_SOURCE_CITATIONS = {
+    "MacromolecularComplexation": {
+        "file": "MacromolecularComplexation.m",
+        "line_ranges": [[290, 314], [390, 392]],
+        "symbols": ["evolveState", "buildProteinComplexs_bounds"],
+    },
+    "ProteinProcessingI": {
+        "file": "ProteinProcessingI.m",
+        "line_ranges": [[236, 320]],
+        "symbols": ["evolveState"],
+    },
+    "ProteinProcessingII": {
+        "file": "ProteinProcessingII.m",
+        "line_ranges": [[348, 446]],
+        "symbols": ["evolveState"],
+    },
+    "ProteinFolding": {
+        "file": "ProteinFolding.m",
+        "line_ranges": [[507, 517], [519, 576]],
+        "symbols": ["calcResourceRequirements_Current", "evolveState"],
+    },
+    "tRNAAminoacylation": {
+        "file": "tRNAAminoacylation.m",
+        "line_ranges": [[387, 464]],
+        "symbols": ["evolveState"],
+    },
+}
+
+# Required branch-coverage tags per process. A process may only reach
+# H12_CONFIRMED if, across all (seed, tick, unit) samples that are
+# regime_valid AND nontrivial AND exact-matched, the UNION of branch_tags
+# covers every tag in this set. This is derived from the Karr source's own
+# documented dynamical regimes (not fit to observed pass/fail outcomes):
+# MacromolecularComplexation's "network_ge2_fires" tag is structurally
+# unreachable under this predictor design (see predict_macromolecular_
+# complexation docstring) -- that process can therefore never leave
+# H12_OBSERVED_REGIME, honestly, without laundering the requirement away.
+REQUIRED_BRANCHES = {
+    "MacromolecularComplexation": frozenset({"network_1_fires", "network_ge2_fires"}),
+    "ProteinProcessingI": frozenset({"deformylase_fires", "metap_cleavage_fires"}),
+    "ProteinProcessingII": frozenset({"passthrough_fires", "peptidase_fires", "transferase_fires"}),
+    "ProteinFolding": frozenset({"monomer_folding_fires", "complex_folding_fires"}),
+    "tRNAAminoacylation": frozenset({"aminoacylation_fires"}),
+}
+
 
 def _sha256_file(path: Path) -> str:
+    """Raw-byte SHA256. Appropriate ONLY for binary artifacts (fixture .mat
+    files) where CRLF/LF normalization is meaningless/harmful. Do not use
+    this for text source files -- use `_sha256_lf_normalized` instead so
+    hashes are stable across a Windows (CRLF-checkout) vs. Linux (LF-checkout)
+    clone of the same git blob.
+    """
     h = hashlib.sha256()
     with open(path, "rb") as fh:
         for chunk in iter(lambda: fh.read(1 << 20), b""):
             h.update(chunk)
     return h.hexdigest()
+
+
+def _sha256_lf_normalized(path: Path) -> str:
+    """SHA256 of a text file's content after CRLF/CR -> LF normalization.
+
+    This matches what `git hash-object` would see for a blob checked out
+    under this repo's `* text=auto eol=lf` attribute (see .gitattributes),
+    without shelling out to git at verification time -- so hashes are
+    reproducible on a fresh clone regardless of the checkout's line-ending
+    conversion, and independent of whether git itself is available/configured
+    identically in the verifying environment.
+    """
+    data = path.read_bytes()
+    normalized = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
+    return hashlib.sha256(normalized).hexdigest()
 
 
 def _sha256_bytes(data: bytes) -> str:
@@ -93,6 +177,54 @@ def _sha256_bytes(data: bytes) -> str:
 
 def _sha256_array(arr: np.ndarray) -> str:
     return hashlib.sha256(np.ascontiguousarray(arr).tobytes()).hexdigest()
+
+
+def karr_source_citation(process: str) -> dict:
+    """Build the vendored-Karr-source citation record for `process`,
+    hard-failing (no soft-trust) if the vendored file is missing. Never
+    claim a source hash for a file we cannot actually read.
+    """
+    spec = KARR_SOURCE_CITATIONS[process]
+    path = KARR_SOURCE_ROOT / spec["file"]
+    if not path.is_file():
+        raise FileNotFoundError(
+            f"vendored Karr source missing for {process!r}: {path} "
+            "(H12 must not claim a source hash for a file it cannot read)"
+        )
+    return {
+        "vendored_path": path.relative_to(REPO_ROOT).as_posix(),
+        "vendored_sha256_lf_normalized": _sha256_lf_normalized(path),
+        "upstream_repo": KARR_UPSTREAM_REPO,
+        "upstream_commit": KARR_UPSTREAM_COMMIT,
+        "upstream_original_path": spec["file"],
+        "line_ranges": spec["line_ranges"],
+        "symbols": spec["symbols"],
+    }
+
+
+def _load_oracle_manifest() -> dict:
+    if not ORACLE_MANIFEST_PATH.is_file():
+        return {}
+    with open(ORACLE_MANIFEST_PATH, "r", encoding="utf-8") as fh:
+        manifest = json.load(fh)
+    lookup: dict[tuple[str, str], str] = {}
+    for process, entry in manifest.get("processes", {}).items():
+        for f in entry.get("files", []):
+            lookup[(process, f["relative_path"])] = f["sha256"]
+    return lookup
+
+
+def cross_check_oracle_manifest(process: str, relative_path: str, computed_sha256: str, manifest_lookup: dict) -> str:
+    """Cross-check a freshly-computed oracle trace hash against the existing,
+    mechanically-generated `oracle_population_manifest.json` (built by
+    populate.py). Returns "match" | "mismatch" | "not_in_manifest". This is a
+    cross-check, not blind trust: H12 always computes its OWN hash from the
+    file it actually read; the manifest is corroborating evidence only.
+    """
+    expected = manifest_lookup.get((process, relative_path))
+    if expected is None:
+        return "not_in_manifest"
+    return "match" if expected == computed_sha256 else "mismatch"
 
 
 # ---------------------------------------------------------------------------
@@ -119,7 +251,7 @@ def load_fixture(process: str) -> dict:
     """
     struct, path = _mat_struct(process)
     sha = _sha256_file(path)
-    out: dict = {"__fixture_path__": str(path.relative_to(REPO_ROOT)), "__fixture_sha256__": sha}
+    out: dict = {"__fixture_path__": path.relative_to(REPO_ROOT).as_posix(), "__fixture_sha256__": sha}
 
     if process == "MacromolecularComplexation":
         out["complexComposition"] = _field(struct, "complexComposition").astype(np.int64)
@@ -166,6 +298,7 @@ def load_fixture(process: str) -> dict:
         out["substrateIndexs_water_0b"] = int(_field(struct, "substrateIndexs_water").ravel()[0]) - 1
         out["substrateIndexs_hydrogen_0b"] = int(_field(struct, "substrateIndexs_hydrogen").ravel()[0]) - 1
         out["proteinProstheticGroupMatrix"] = _field(struct, "proteinProstheticGroupMatrix").astype(np.float64)
+        out["proteinChaperoneMatrix"] = _field(struct, "proteinChaperoneMatrix").astype(np.float64)
         out["monomerComplexIndexs_folded_0b"] = (
             _field(struct, "monomerComplexIndexs_folded").astype(np.int64).ravel() - 1
         )
@@ -238,7 +371,19 @@ def load_oracle_seed(process: str, seed: int, n_ticks: int) -> tuple[dict, dict,
 
 @dataclass
 class UnitPrediction:
-    """One independently-verifiable (seed, tick, unit) prediction."""
+    """One independently-verifiable (seed, tick, unit) prediction.
+
+    `index_mask` scopes the comparison: for a channel present in
+    `index_mask`, ONLY those indices of `predicted_delta[channel]` are
+    diffed against `states_after`; indices this unit does not claim to
+    predict are simply not this unit's business (a DIFFERENT unit, e.g. a
+    different MacromolecularComplexation network active in the same tick,
+    may legitimately have produced a nonzero actual delta there). A channel
+    absent from `index_mask` is compared full-width (this is correct for
+    every process except MacromolecularComplexation, where each unit's
+    `predicted_delta` arrays are already zero-elsewhere-scoped to its own
+    network but the ACTUAL delta array is not).
+    """
 
     seed: int
     tick: int
@@ -247,6 +392,8 @@ class UnitPrediction:
     regime_reason: str
     nontrivial: bool
     predicted_delta: dict = field(default_factory=dict)  # channel -> np.ndarray (full-width delta)
+    index_mask: dict = field(default_factory=dict)  # channel -> np.ndarray of indices this unit owns
+    branch_tags: frozenset = field(default_factory=frozenset)  # named sub-mechanisms exercised this sample
 
 
 # ---------------------------------------------------------------------------
@@ -263,8 +410,9 @@ class UnitPrediction:
 
 
 def predict_macromolecular_complexation(seed: int, before: dict, fixture: dict) -> list[UnitPrediction]:
-    """MacromolecularComplexation.m evolveState (source lines ~290-315) +
-    buildProteinComplexs_bounds (line ~390-391):
+    """MacromolecularComplexation.m evolveState (source lines 290-314) +
+    buildProteinComplexs_bounds (lines 390-392, vendored at
+    data/karr_vendored_source/MacromolecularComplexation.m):
 
         newComplexs(complexs2complexNetworks==1) = buildProteinComplexs_bounds(
             substrates(substrates2complexNetworks==1), complexNetworks{1})
@@ -273,13 +421,29 @@ def predict_macromolecular_complexation(seed: int, before: dict, fixture: dict) 
     Network 1 ("no competition") is Karr's OWN deterministic ground truth —
     not an approximation of a stochastic process. For network>=2 (genuine
     Monte Carlo competition, buildProteinComplexs_montecarlokinetic, lines
-    ~334-358), the same upper-bound formula applies; per-tick substrate
+    334-357), the same upper-bound formula applies; per-tick substrate
     consumption for a network's rows can only shrink `ub` monotonically
     within a tick (never grow it), so if pre-tick `ub[c]==0` for every
     complex in a connected network component, that component is *provably*
     guaranteed to build 0 new complexes this tick, regardless of RNG path.
     If any `ub[c]>0` in a network>=2 component, the outcome is genuinely
     stochastic and that component's samples are excluded (regime_valid=False).
+
+    STRUCTURAL LIMIT (see H12_REPORT.md): for network>=2, `nontrivial=True`
+    can only co-occur with `regime_valid=False` (the "genuine competition"
+    case) -- the `regime_valid=True` branch for network>=2 is BY
+    CONSTRUCTION the all-`ub==0` (trivial) case. So a network>=2 unit can
+    NEVER be simultaneously regime_valid, nontrivial, and therefore never
+    contributes to `branches_confirmed`; "network_ge2_fires" is a required
+    branch (REQUIRED_BRANCHES) that is structurally unreachable under this
+    predictor design, which is why this process is capped at
+    H12_OBSERVED_REGIME, not a temporary gap to be closed later without a
+    genuinely new Monte-Carlo-aware predictor extraction.
+
+    Each unit's `index_mask` scopes comparison to ONLY this network's own
+    substrate/complex indices -- a different network active in the same
+    tick must not cause a false mismatch here (the bug that produced "814
+    false failures" under a naive full-width compare).
     """
     comp = fixture["complexComposition"]  # (n_substrates, n_complexes)
     sub_net = fixture["substrates2complexNetworks"]  # (n_substrates,)
@@ -324,6 +488,8 @@ def predict_macromolecular_complexation(seed: int, before: dict, fixture: dict) 
                         regime_reason="network_1_karr_ground_truth_no_competition",
                         nontrivial=nontrivial,
                         predicted_delta={"complexs": complexs_delta, "substrates": substrates_delta},
+                        index_mask={"complexs": cx_idx, "substrates": sub_idx},
+                        branch_tags=frozenset({"network_1_fires"}) if nontrivial else frozenset(),
                     )
                 )
             else:
@@ -337,6 +503,8 @@ def predict_macromolecular_complexation(seed: int, before: dict, fixture: dict) 
                             regime_reason="network_ge2_all_bounds_zero_monotonic_guarantee",
                             nontrivial=False,
                             predicted_delta={"complexs": complexs_delta, "substrates": substrates_delta},
+                            index_mask={"complexs": cx_idx, "substrates": sub_idx},
+                            branch_tags=frozenset(),
                         )
                     )
                 else:
@@ -349,6 +517,8 @@ def predict_macromolecular_complexation(seed: int, before: dict, fixture: dict) 
                             regime_reason="network_ge2_nonzero_bound_genuine_monte_carlo_competition",
                             nontrivial=False,
                             predicted_delta={},
+                            index_mask={},
+                            branch_tags=frozenset({"network_ge2_fires"}),
                         )
                     )
     return out
@@ -434,13 +604,21 @@ def predict_protein_processing_i(seed: int, before: dict, fixture: dict) -> list
                     "substrates": substrates_delta,
                     "enzymes": np.zeros_like(enzymes),
                 },
+                branch_tags=frozenset(
+                    tag
+                    for tag, active in (
+                        ("deformylase_fires", total > 0.0),
+                        ("metap_cleavage_fires", cleave_sum > 0.0),
+                    )
+                    if active
+                ),
             )
         )
     return out
 
 
 def predict_protein_processing_ii(seed: int, before: dict, fixture: dict) -> list[UnitPrediction]:
-    """ProteinProcessingII.m evolveState (source lines 348-440).
+    """ProteinProcessingII.m evolveState (source lines 348-446).
 
     Unconditional pass-through of `unprocessedMonomerIndexs` (no processing
     needed) always happens first, deterministically. The remaining
@@ -536,33 +714,67 @@ def predict_protein_processing_ii(seed: int, before: dict, fixture: dict) -> lis
                     "substrates": substrates_delta,
                     "enzymes": np.zeros_like(enzymes),
                 },
+                branch_tags=frozenset(
+                    tag
+                    for tag, active in (
+                        ("passthrough_fires", float(unproc[passthrough_idx].sum()) > 0.0),
+                        ("peptidase_fires", peptidase_demand > 0.0),
+                        ("transferase_fires", transferase_demand > 0.0),
+                    )
+                    if active
+                ),
             )
         )
     return out
 
 
 def predict_protein_folding(seed: int, before: dict, fixture: dict) -> list[UnitPrediction]:
-    """ProteinFolding.m evolveState (source lines 519-575).
+    """ProteinFolding.m evolveState (source lines 519-575), species vector
+    construction at line ~535 (vendored, data/karr_vendored_source/
+    ProteinFolding.m):
+
+        species = max(0, [substrates; enzymes*Inf; unfoldedMonomers;
+                           unfoldedComplexs(complexIndexs_folding)]')
+
+    CORRECTED chaperone-guard semantics (this was WRONG in H12 v1, which
+    claimed chaperones are unconditionally non-limiting -- Opus5 review):
+    `enzymes * Inf` gives `Inf` for a chaperone present in nonzero count
+    (non-limiting, matches v1's assumption) but `0 * Inf == NaN` (IEEE 754)
+    for a chaperone at EXACTLY zero count, and MATLAB's `max(0, NaN)` returns
+    the non-NaN operand, i.e. `0` -- NOT `Inf`/non-limiting. A species row
+    `i` whose `substrateLimits(i, c)` ratio touches a zero-count required
+    chaperone column `c` (`proteinChaperoneMatrix(i,c) > 0`) therefore gets
+    `species(c)/proteinChaperoneMatrix(i,c) == 0/positive == 0`, which
+    dominates that row's `min()` and is then floored to exactly 0 by the
+    `substrateLimits<1 -> 0` clamp (line ~543) -- so species `i` can NEVER
+    be selected by the `randsample` loop this tick, deterministically. This
+    is a PER-SPECIES exclusion (`chaperone_ok[i]`), not a whole-tick guard
+    failure: species that do not require the zero-count chaperone are
+    unaffected and may still fold fully.
 
     `complexIndexs_notFolding` complexes pass through unconditionally
-    (lines 520-523, always deterministic). For the 487 folding-eligible
-    species (all 482 monomers + 5 folding complexes), Karr's own species
-    vector treats chaperones as non-limiting by construction
-    (`this.enzymes * Inf`; a zero-count required chaperone yields NaN,
-    which MATLAB's min() ignores unless every column is NaN/Inf — line
-    535). Only the 11 prosthetic-group substrate columns (excluding water
-    [NaN'd at line 546] and hydrogen [line 547]) can be genuinely limiting.
-    If, for every prosthetic-group substrate column (excl. water/H), the
-    aggregate demand from folding ALL unfolded species this tick does not
-    exceed the pre-tick available amount, the resource never reaches zero
-    before every species' own self-column (its unfolded count) does —
-    guaranteeing full folding of the entire unfolded pool this tick,
-    regardless of RNG path (see H12 derivation notes for the invariant
-    argument).
+    (lines 520-523, always deterministic, independent of chaperones/
+    substrates). For the chaperone-ELIGIBLE subset of the 487
+    folding-eligible species (all 482 monomers + 5 folding complexes), if,
+    for every prosthetic-group substrate column (excl. water/hydrogen,
+    non-limiting per lines 546-547), the aggregate demand from folding ALL
+    chaperone-eligible unfolded species this tick does not exceed the
+    pre-tick available amount, every eligible species folds fully this
+    tick, deterministically, regardless of RNG path (the same invariant
+    argument as v1, now correctly scoped to the eligible subset only).
+    Chaperone-blocked species are asserted to NOT fold (delta=0) regardless
+    of the substrate guard, since that exclusion is unconditional.
+
+    On real oracle data (chaperones are constitutively-expressed enzymes,
+    virtually never at exactly zero count), this fix is expected to be a
+    no-op relative to v1's predictions; it is required for correctness and
+    is exercised by synthetic zero-chaperone/prosthetic-scarcity unit tests
+    (tests/scripts/test_h12_formulas.py) that v1 could not have passed.
     """
     water_0b = fixture["substrateIndexs_water_0b"]
     hydrogen_0b = fixture["substrateIndexs_hydrogen_0b"]
     ppg = fixture["proteinProstheticGroupMatrix"]  # (683, 11) rows = ALL monomers+complexes
+    pcm = fixture["proteinChaperoneMatrix"]  # (683, 5) rows = ALL monomers+complexes
     folded_rows = fixture["monomerComplexIndexs_folded_0b"]  # (487,) into the 683-row space
     complex_folding_0b = fixture["complexIndexs_folding_0b"]  # (5,) into 201-complex space
     complex_notfolding_0b = fixture["complexIndexs_notFolding_0b"]  # (196,)
@@ -570,7 +782,9 @@ def predict_protein_folding(seed: int, before: dict, fixture: dict) -> list[Unit
     species_idx_complexs = fixture["speciesIndexs_complexs_0b"]  # (5,)
 
     ppg_folded = ppg[folded_rows, :]  # (487, 11)
+    pcm_folded = pcm[folded_rows, :]  # (487, 5)
     n_substrate_cols = ppg.shape[1]
+    n_enz_cols = pcm.shape[1]
     guard_cols = [c for c in range(n_substrate_cols) if c not in (water_0b, hydrogen_0b)]
 
     n_ticks = before["unfoldedMonomers"].shape[0]
@@ -579,18 +793,27 @@ def predict_protein_folding(seed: int, before: dict, fixture: dict) -> list[Unit
         unfolded_monomers = before["unfoldedMonomers"][tick].astype(np.float64)
         unfolded_complexs = before["unfoldedComplexs"][tick].astype(np.float64)
         substrates_before = before["substrates"][tick].astype(np.float64)
+        enzymes_before = before["enzymes"][tick].astype(np.float64)
 
-        flux = np.zeros(len(folded_rows), dtype=np.float64)
-        flux[species_idx_monomers] = unfolded_monomers
-        flux[species_idx_complexs] = unfolded_complexs[complex_folding_0b]
+        flux_upper = np.zeros(len(folded_rows), dtype=np.float64)
+        flux_upper[species_idx_monomers] = unfolded_monomers
+        flux_upper[species_idx_complexs] = unfolded_complexs[complex_folding_0b]
 
-        demand = ppg_folded.T @ flux  # (11,)
+        # max(0, enzymes*Inf) == 0 iff enzymes[c]==0 (see docstring): any
+        # species requiring a zero-count chaperone is unconditionally
+        # excluded from folding this tick, regardless of substrate supply.
+        zero_chaperones = enzymes_before[:n_enz_cols] == 0.0
+        if np.any(zero_chaperones):
+            chaperone_blocked = np.any(pcm_folded[:, zero_chaperones] > 0.0, axis=1)
+        else:
+            chaperone_blocked = np.zeros(len(folded_rows), dtype=bool)
+        chaperone_ok = ~chaperone_blocked
+
+        eligible_flux = np.where(chaperone_ok, flux_upper, 0.0)
+
+        demand = ppg_folded.T @ eligible_flux  # (11,)
         regime_valid = all(demand[c] <= substrates_before[c] for c in guard_cols)
-        nontrivial = bool(np.any(flux > 0))
-
-        # notFolding complexes pass through unconditionally regardless of guard
-        complexs_delta = np.zeros_like(unfolded_complexs)
-        complexs_delta[complex_notfolding_0b] = 0.0  # tracked via foldedComplexs below
+        nontrivial = bool(np.any(eligible_flux > 0))
 
         if not regime_valid:
             out.append(
@@ -610,14 +833,20 @@ def predict_protein_folding(seed: int, before: dict, fixture: dict) -> list[Unit
             continue
 
         substrates_delta = np.zeros_like(substrates_before)
-        substrates_delta[:] = -(ppg_folded.T @ flux)
+        substrates_delta[:] = -demand
+
+        eligible_monomers = eligible_flux[species_idx_monomers]
+        eligible_complexs = eligible_flux[species_idx_complexs]
+
+        unfolded_monomers_delta = -eligible_monomers
+        folded_monomers_delta = eligible_monomers.copy()
 
         unfolded_complexs_delta = np.zeros_like(unfolded_complexs)
-        unfolded_complexs_delta[complex_folding_0b] = -flux[species_idx_complexs]
+        unfolded_complexs_delta[complex_folding_0b] = -eligible_complexs
         unfolded_complexs_delta[complex_notfolding_0b] = -unfolded_complexs[complex_notfolding_0b]
 
         folded_complexs_delta = np.zeros_like(unfolded_complexs)
-        folded_complexs_delta[complex_folding_0b] = flux[species_idx_complexs]
+        folded_complexs_delta[complex_folding_0b] = eligible_complexs
         folded_complexs_delta[complex_notfolding_0b] = unfolded_complexs[complex_notfolding_0b]
 
         out.append(
@@ -626,16 +855,24 @@ def predict_protein_folding(seed: int, before: dict, fixture: dict) -> list[Unit
                 tick=tick,
                 unit="all",
                 regime_valid=True,
-                regime_reason="full_saturating_closed_form_chaperones_nonlimiting",
+                regime_reason="full_saturating_closed_form_chaperone_gated",
                 nontrivial=nontrivial,
                 predicted_delta={
-                    "unfoldedMonomers": -unfolded_monomers,
-                    "foldedMonomers": unfolded_monomers.copy(),
+                    "unfoldedMonomers": unfolded_monomers_delta,
+                    "foldedMonomers": folded_monomers_delta,
                     "unfoldedComplexs": unfolded_complexs_delta,
                     "foldedComplexs": folded_complexs_delta,
                     "substrates": substrates_delta,
-                    "enzymes": np.zeros_like(before["enzymes"][tick]),
+                    "enzymes": np.zeros_like(enzymes_before),
                 },
+                branch_tags=frozenset(
+                    tag
+                    for tag, active in (
+                        ("monomer_folding_fires", bool(np.any(eligible_monomers > 0))),
+                        ("complex_folding_fires", bool(np.any(eligible_complexs > 0))),
+                    )
+                    if active
+                ),
             )
         )
     return out
@@ -724,6 +961,7 @@ def predict_trna_aminoacylation(seed: int, before: dict, fixture: dict) -> list[
                     "substrates": substrates_delta,
                     "enzymes": np.zeros_like(enzymes_before),
                 },
+                branch_tags=frozenset({"aminoacylation_fires"}) if nontrivial else frozenset(),
             )
         )
     return out
@@ -746,34 +984,63 @@ PREDICTORS: dict[str, Callable[[int, dict, dict], list]] = {
 def compare_predictions(process: str, predictions: list[UnitPrediction], after: dict, before: dict) -> dict:
     """Compare frozen predictions against states_after. Never called before
     predictions are fully computed; states_after must not leak into predict_*.
+
+    Each unit's comparison is scoped by its `index_mask` (per-channel index
+    subset it actually claims to predict); a channel with no mask entry is
+    compared full-width. This fixes the MacromolecularComplexation cross-
+    network false-failure bug: a network's unit no longer sees a different,
+    simultaneously-active network's real contribution at indices it never
+    claimed.
+
+    ANY mismatch on a trivial (regime_valid AND NOT nontrivial, i.e.
+    predicted-no-op) sample is tracked as a `trivial_mismatch`, separate
+    from `mismatch` (nontrivial prediction mismatches) -- a trivial mismatch
+    means the guard logic itself is wrong (it thought nothing would happen,
+    but something did), which is a harder failure than a nontrivial exact-
+    match miss and must hard-fail the verdict regardless of the nontrivial
+    match rate.
     """
     total = 0
     nontrivial = 0
     exact_match = 0
+    trivial_checked = 0
+    trivial_mismatch_count = 0
     mismatches = []
+    trivial_mismatches = []
+    branches_confirmed: set = set()
+    branches_observed: set = set()
 
     by_tick: dict[int, list[UnitPrediction]] = {}
     for p in predictions:
         by_tick.setdefault(p.tick, []).append(p)
 
+    def _scoped(channel: str, arr: np.ndarray, unit: UnitPrediction) -> np.ndarray:
+        mask = unit.index_mask.get(channel)
+        return arr if mask is None else arr[mask]
+
     for tick, units in by_tick.items():
         for u in units:
             total += 1
+            branches_observed |= u.branch_tags
             if not u.regime_valid:
                 continue
             if not u.nontrivial:
                 # still verify trivial (all-zero) predictions to catch guard bugs,
                 # but exclude from the headline nontrivial_sample_count.
+                trivial_checked += 1
                 ok = True
                 for channel, delta in u.predicted_delta.items():
                     if channel.endswith("_only"):
                         continue
-                    actual = after[channel][tick] - before[channel][tick]
-                    if not np.array_equal(actual, delta):
+                    actual = _scoped(channel, after[channel][tick] - before[channel][tick], u)
+                    delta_scoped = _scoped(channel, delta, u)
+                    if not np.array_equal(actual, delta_scoped):
                         ok = False
                         break
-                if not ok and len(mismatches) < 10:
-                    mismatches.append({"seed": u.seed, "tick": tick, "unit": u.unit, "trivial": True})
+                if not ok:
+                    trivial_mismatch_count += 1
+                    if len(trivial_mismatches) < 10:
+                        trivial_mismatches.append({"seed": u.seed, "tick": tick, "unit": u.unit})
                 continue
 
             nontrivial += 1
@@ -781,11 +1048,13 @@ def compare_predictions(process: str, predictions: list[UnitPrediction], after: 
             for channel, delta in u.predicted_delta.items():
                 if channel.endswith("_only"):
                     continue
-                actual = after[channel][tick] - before[channel][tick]
-                if not np.array_equal(actual, delta):
+                actual = _scoped(channel, after[channel][tick] - before[channel][tick], u)
+                delta_scoped = _scoped(channel, delta, u)
+                if not np.array_equal(actual, delta_scoped):
                     ok = False
                     if len(mismatches) < 10:
-                        idx = np.where(actual != delta)[0][:5]
+                        mismatch_mask = actual != delta_scoped
+                        idx = np.where(mismatch_mask)[0][:5]
                         mismatches.append(
                             {
                                 "seed": u.seed,
@@ -793,20 +1062,26 @@ def compare_predictions(process: str, predictions: list[UnitPrediction], after: 
                                 "unit": u.unit,
                                 "channel": channel,
                                 "mismatch_indices": idx.tolist(),
-                                "predicted": delta[idx].tolist(),
+                                "predicted": delta_scoped[idx].tolist(),
                                 "actual": actual[idx].tolist(),
                             }
                         )
                     break
             if ok:
                 exact_match += 1
+                branches_confirmed |= u.branch_tags
 
     return {
         "total_sample_count": total,
         "nontrivial_sample_count": nontrivial,
         "exact_match_count": exact_match,
         "exact_match_rate": (exact_match / nontrivial) if nontrivial > 0 else None,
+        "trivial_checked_count": trivial_checked,
+        "trivial_mismatch_count": trivial_mismatch_count,
         "mismatch_examples": mismatches,
+        "trivial_mismatch_examples": trivial_mismatches,
+        "branches_confirmed": branches_confirmed,
+        "branches_observed": branches_observed,
     }
 
 
@@ -815,34 +1090,69 @@ def compare_predictions(process: str, predictions: list[UnitPrediction], after: 
 # ---------------------------------------------------------------------------
 
 
-def decide_verdict(nontrivial: int, exact_match: int, exact_match_rate: float | None) -> tuple[str, str]:
+def decide_verdict(
+    nontrivial: int,
+    exact_match: int,
+    exact_match_rate: float | None,
+    trivial_mismatch_count: int,
+    branches_confirmed: set,
+    required_branches: frozenset,
+) -> tuple[str, str]:
     """Pure H12 verdict decision, factored out of `run_h12` so it is
     independently unit-testable without oracle/fixture I/O (see
     `tests/scripts/test_h12_artifact.py`).
 
-    H12_CONFIRMED requires BOTH `nontrivial_sample_count > 0` AND a 100%
-    exact match on those nontrivial samples -- no tolerance, per the task's
-    "no tolerance unless source defines integer/float tolerance
-    pre-registered" rule (no process here defines one).
+    H12_CONFIRMED requires ALL of:
+      - `trivial_mismatch_count == 0` (the guard logic never wrongly
+        predicted "nothing happens" when something did -- ANY such mismatch
+        is a harder failure than a nontrivial miss and hard-fails outright).
+      - `nontrivial_sample_count > 0` AND a 100% exact match on those
+        nontrivial samples -- no tolerance, per the task's "no tolerance
+        unless source defines integer/float tolerance pre-registered" rule
+        (no process here defines one).
+      - full required branch coverage (`REQUIRED_BRANCHES[process]` subset
+        of `branches_confirmed`) -- otherwise H12_OBSERVED_REGIME: the
+        predictor is 100% correct on every sample it could evaluate, but has
+        not exercised every dynamical regime the Karr source defines for
+        this process, so it may not be used to clear the evidence gate.
     """
-    if nontrivial > 0 and exact_match == nontrivial:
-        return "H12_CONFIRMED", "nontrivial_sample_count>0 and 100% exact match"
+    if trivial_mismatch_count > 0:
+        return (
+            "H12_FAIL",
+            f"trivial_mismatch_count={trivial_mismatch_count} > 0 "
+            "(guard logic predicted a no-op but states_after shows nonzero activity)",
+        )
     if nontrivial == 0:
         return "H12_FAIL", "nontrivial_sample_count==0 (no samples exercised the guard-satisfied regime)"
-    return "H12_FAIL", f"exact_match_rate={exact_match_rate:.6f} < 1.0"
+    if exact_match != nontrivial:
+        return "H12_FAIL", f"exact_match_rate={exact_match_rate:.6f} < 1.0"
+    missing = sorted(required_branches - branches_confirmed)
+    if missing:
+        return (
+            "H12_OBSERVED_REGIME",
+            f"100% exact match on {nontrivial} nontrivial samples but required branch coverage "
+            f"incomplete: missing={missing} (this process may not be used to clear H12_CONFIRMED-gated "
+            "sentinels until every required regime is independently confirmed)",
+        )
+    return "H12_CONFIRMED", "nontrivial_sample_count>0, 100% exact match, full required branch coverage"
+
 
 
 def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
     fixture = load_fixture(process)
     predictor = PREDICTORS[process]
+    manifest_lookup = _load_oracle_manifest()
 
     all_predictions: list[UnitPrediction] = []
     oracle_hashes: dict[str, str] = {}
+    oracle_manifest_cross_check: dict[str, str] = {}
     prediction_hash_parts = []
 
     for seed in range(n_seeds):
         before, after, sha = load_oracle_seed(process, seed, m_ticks)
         oracle_hashes[str(seed)] = sha
+        rel_path = _resolve_oracle_path(process, seed).relative_to(ORACLE_ROOT.parent).as_posix()
+        oracle_manifest_cross_check[str(seed)] = cross_check_oracle_manifest(process, rel_path, sha, manifest_lookup)
         preds = predictor(seed, before, fixture)
         all_predictions.extend(preds)
         for p in preds:
@@ -856,8 +1166,11 @@ def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
     raw_prediction_hash = _sha256_bytes("\n".join(prediction_hash_parts).encode("utf-8"))
 
     # Compare phase: reload per-seed (states_after untouched until here)
-    total = nontrivial = exact_match = 0
+    total = nontrivial = exact_match = trivial_checked = trivial_mismatch_count = 0
     mismatches: list = []
+    trivial_mismatches: list = []
+    branches_confirmed: set = set()
+    branches_observed: set = set()
     preds_by_seed: dict[int, list[UnitPrediction]] = {}
     for p in all_predictions:
         preds_by_seed.setdefault(p.seed, []).append(p)
@@ -868,21 +1181,40 @@ def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
         total += result["total_sample_count"]
         nontrivial += result["nontrivial_sample_count"]
         exact_match += result["exact_match_count"]
+        trivial_checked += result["trivial_checked_count"]
+        trivial_mismatch_count += result["trivial_mismatch_count"]
+        branches_confirmed |= result["branches_confirmed"]
+        branches_observed |= result["branches_observed"]
         if len(mismatches) < 10:
             mismatches.extend(result["mismatch_examples"][: 10 - len(mismatches)])
+        if len(trivial_mismatches) < 10:
+            trivial_mismatches.extend(result["trivial_mismatch_examples"][: 10 - len(trivial_mismatches)])
 
     exact_match_rate = (exact_match / nontrivial) if nontrivial > 0 else None
-    verdict, verdict_reason = decide_verdict(nontrivial, exact_match, exact_match_rate)
+    required_branches = REQUIRED_BRANCHES[process]
+    verdict, verdict_reason = decide_verdict(
+        nontrivial, exact_match, exact_match_rate, trivial_mismatch_count, branches_confirmed, required_branches
+    )
 
     module_path = Path(__file__).resolve()
+    module_rel_path = module_path.relative_to(REPO_ROOT).as_posix()
+    if module_rel_path != EXPECTED_PREDICTOR_SOURCE_PATH:
+        raise RuntimeError(
+            f"predictor_source_path mismatch: running module resolved to {module_rel_path!r}, "
+            f"expected {EXPECTED_PREDICTOR_SOURCE_PATH!r} -- refusing to emit an artifact that "
+            "would claim support from the wrong pinned module path"
+        )
+
     artifact = {
         "process": process,
         "formula_version": FORMULA_VERSION,
-        "predictor_source_path": str(module_path.relative_to(REPO_ROOT)),
-        "predictor_source_sha256": _sha256_file(module_path),
+        "predictor_source_path": module_rel_path,
+        "predictor_source_sha256_lf_normalized": _sha256_lf_normalized(module_path),
+        "karr_source_citation": karr_source_citation(process),
         "fixture_path": fixture["__fixture_path__"],
         "fixture_sha256": fixture["__fixture_sha256__"],
         "oracle_seed_file_sha256": oracle_hashes,
+        "oracle_manifest_cross_check": oracle_manifest_cross_check,
         "n_seeds": n_seeds,
         "m_ticks": m_ticks,
         "catalog_n_seeds": CATALOG_N_M[process][0],
@@ -891,7 +1223,14 @@ def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
         "nontrivial_sample_count": nontrivial,
         "exact_match_count": exact_match,
         "exact_match_rate": exact_match_rate,
+        "trivial_checked_count": trivial_checked,
+        "trivial_mismatch_count": trivial_mismatch_count,
         "mismatch_examples": mismatches,
+        "trivial_mismatch_examples": trivial_mismatches,
+        "required_branches": sorted(required_branches),
+        "branches_confirmed": sorted(branches_confirmed),
+        "branches_observed": sorted(branches_observed),
+        "missing_required_branches": sorted(required_branches - branches_confirmed),
         "raw_prediction_hash": raw_prediction_hash,
         "verdict": verdict,
         "verdict_reason": verdict_reason,
@@ -904,6 +1243,114 @@ def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
         },
     }
     return artifact
+
+
+def validate_h12_support(payload: dict, *, repo_root: Path = REPO_ROOT) -> str | None:
+    """Centralized H12-artifact acceptance gate. Returns None if `payload`
+    (an already-loaded H12 artifact JSON dict) is valid, fresh, machine-
+    checked support for clearing a PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE
+    sentinel; otherwise a short rejection reason string.
+
+    This is the single source of truth for "what does a valid H12 artifact
+    look like" -- verdict.py's `h12_support_reason` delegates here rather
+    than re-implementing the schema/hash checks, so the producer (this
+    module) and the consumer (the evidence gate) cannot drift apart.
+
+    Hard requirements (no soft-trust for any of these -- all 3 referenced
+    source files are git-tracked, so a missing file is a hard fail, not an
+    attestation-only pass):
+      1. ``verdict == "H12_CONFIRMED"`` (never "H12_OBSERVED_REGIME" or a
+         FAIL variant -- observed-regime artifacts are honest, non-laundered
+         evidence that a process's non-required-branch coverage exists, but
+         they must never clear the gate).
+      2. ``nontrivial_sample_count > 0`` and ``exact_match_rate == 1.0``
+         (no tolerance).
+      3. ``trivial_mismatch_count == 0`` (a guard-logic mismatch on a
+         predicted no-op is disqualifying regardless of the nontrivial rate).
+      4. Full required branch coverage: ``REQUIRED_BRANCHES[process]``
+         subset of ``branches_confirmed``.
+      5. ``predictor_source_path`` is EXACTLY ``EXPECTED_PREDICTOR_SOURCE_PATH``
+         (a dangling/substituted path hard-fails).
+      6. Fresh-clone-stable hashes: LF-normalized SHA256 for the predictor
+         module and vendored Karr source, raw-byte SHA256 for the fixture,
+         each re-computed from the CURRENT on-disk file and compared to the
+         value recorded in the artifact -- any mismatch, or any referenced
+         file missing on disk, is a hard fail (stale/tampered evidence).
+    """
+    process = payload.get("process")
+    if process not in REQUIRED_BRANCHES:
+        return f"h12 artifact process {process!r} unknown to REQUIRED_BRANCHES registry"
+
+    if payload.get("verdict") != "H12_CONFIRMED":
+        return f"h12 artifact verdict != H12_CONFIRMED (got {payload.get('verdict')!r})"
+
+    nontrivial = payload.get("nontrivial_sample_count")
+    if not (isinstance(nontrivial, (int, float)) and not isinstance(nontrivial, bool) and nontrivial > 0):
+        return f"h12 artifact nontrivial_sample_count invalid/zero (got {nontrivial!r})"
+
+    match_rate = payload.get("exact_match_rate")
+    if match_rate != 1.0:
+        return f"h12 artifact exact_match_rate != 1.0 (got {match_rate!r})"
+
+    trivial_mismatch_count = payload.get("trivial_mismatch_count")
+    if trivial_mismatch_count != 0:
+        return f"h12 artifact trivial_mismatch_count != 0 (got {trivial_mismatch_count!r})"
+
+    branches_confirmed = set(payload.get("branches_confirmed") or [])
+    missing = sorted(REQUIRED_BRANCHES[process] - branches_confirmed)
+    if missing:
+        return f"h12 artifact missing required branch coverage: {missing}"
+
+    predictor_source_path = payload.get("predictor_source_path")
+    if predictor_source_path != EXPECTED_PREDICTOR_SOURCE_PATH:
+        return (
+            "h12 artifact predictor_source_path != expected pinned path "
+            f"(got {predictor_source_path!r}, expected {EXPECTED_PREDICTOR_SOURCE_PATH!r})"
+        )
+
+    recorded_predictor_hash = payload.get("predictor_source_sha256_lf_normalized")
+    if not recorded_predictor_hash:
+        return "h12 artifact missing predictor_source_sha256_lf_normalized"
+    predictor_path_on_disk = repo_root / predictor_source_path
+    if not predictor_path_on_disk.is_file():
+        return f"h12 artifact predictor_source_path does not exist on disk: {predictor_source_path!r}"
+    current_predictor_hash = _sha256_lf_normalized(predictor_path_on_disk)
+    if current_predictor_hash != recorded_predictor_hash:
+        return (
+            "h12 artifact is STALE: predictor_source_sha256_lf_normalized "
+            f"recorded={recorded_predictor_hash} current={current_predictor_hash}"
+        )
+
+    recorded_fixture_hash = payload.get("fixture_sha256")
+    recorded_fixture_path = payload.get("fixture_path")
+    if not recorded_fixture_hash or not recorded_fixture_path:
+        return "h12 artifact missing fixture_sha256/fixture_path"
+    fixture_path_on_disk = repo_root / recorded_fixture_path
+    if not fixture_path_on_disk.is_file():
+        return f"h12 artifact fixture_path does not exist on disk: {recorded_fixture_path!r}"
+    current_fixture_hash = _sha256_file(fixture_path_on_disk)
+    if current_fixture_hash != recorded_fixture_hash:
+        return f"h12 artifact is STALE: fixture_sha256 recorded={recorded_fixture_hash} current={current_fixture_hash}"
+
+    karr_citation = payload.get("karr_source_citation") or {}
+    recorded_karr_hash = karr_citation.get("vendored_sha256_lf_normalized")
+    recorded_karr_path = karr_citation.get("vendored_path")
+    if not recorded_karr_hash or not recorded_karr_path:
+        return "h12 artifact missing karr_source_citation vendored hash/path"
+    expected_karr_path = f"data/karr_vendored_source/{KARR_SOURCE_CITATIONS[process]['file']}"
+    if recorded_karr_path != expected_karr_path:
+        return (
+            "h12 artifact karr_source_citation.vendored_path != expected pinned path "
+            f"(got {recorded_karr_path!r}, expected {expected_karr_path!r})"
+        )
+    karr_path_on_disk = repo_root / recorded_karr_path
+    if not karr_path_on_disk.is_file():
+        return f"h12 artifact vendored Karr source does not exist on disk: {recorded_karr_path!r}"
+    current_karr_hash = _sha256_lf_normalized(karr_path_on_disk)
+    if current_karr_hash != recorded_karr_hash:
+        return f"h12 artifact is STALE: karr_source_citation hash recorded={recorded_karr_hash} current={current_karr_hash}"
+
+    return None
 
 
 def write_artifact(artifact: dict, out_dir: Path = OUT_ROOT) -> Path:

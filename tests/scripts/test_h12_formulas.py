@@ -253,12 +253,39 @@ def _folding_fixture() -> dict:
                 [0.0, 0.0, 999.0],
             ]
         ),
+        # single chaperone column, required by all 3 folding-eligible rows
+        # (mirrors real trigger-factor semantics: every monomer requires it).
+        "proteinChaperoneMatrix": np.array(
+            [
+                [1.0],
+                [1.0],
+                [1.0],
+                [0.0],
+            ]
+        ),
         "monomerComplexIndexs_folded_0b": np.array([0, 1, 2]),
         "complexIndexs_folding_0b": np.array([0]),
         "complexIndexs_notFolding_0b": np.array([1]),
         "speciesIndexs_monomers_0b": np.array([0, 1]),
         "speciesIndexs_complexs_0b": np.array([2]),
     }
+
+
+def _folding_fixture_two_chaperones() -> dict:
+    """Variant with 2 chaperone columns: chaperone0 required by ALL 3
+    folding-eligible species (trigger-factor-like); chaperone1 required
+    ONLY by monomerB (row 1) -- lets a single zero-count chaperone block
+    exactly one species while the others remain eligible."""
+    fixture = _folding_fixture()
+    fixture["proteinChaperoneMatrix"] = np.array(
+        [
+            [1.0, 0.0],  # monomerA: needs chaperone0 only
+            [1.0, 1.0],  # monomerB: needs chaperone0 AND chaperone1
+            [1.0, 0.0],  # complexC: needs chaperone0 only
+            [0.0, 0.0],  # unused row
+        ]
+    )
+    return fixture
 
 
 def test_protein_folding_full_saturation_matches_hand_computed_deltas():
@@ -300,6 +327,78 @@ def test_protein_folding_guard_fails_when_prosthetic_group_substrate_insufficien
     assert p.regime_reason == "prosthetic_group_guard_failed"
     # only the unconditional not-folding passthrough is asserted in the fail branch
     np.testing.assert_array_equal(p.predicted_delta["unfoldedComplexs_notfolding_only"], fixture["complexIndexs_notFolding_0b"])
+
+
+def test_protein_folding_zero_count_chaperone_blocks_only_the_dependent_species():
+    """Source-faithful MATLAB semantics (ProteinFolding.m ~line 535):
+    `species = max(0, [substrates; enzymes*Inf; ...]')`. A present
+    chaperone (count>0) gives `count*Inf == Inf` (non-limiting); an
+    ABSENT chaperone (count==0) gives `0*Inf == NaN`, and
+    `max(0, NaN) == 0` in MATLAB -- forcing that species' flux to zero
+    WITHOUT failing the whole tick. This is a PER-SPECIES guard: only
+    monomerB (the sole species requiring the scarce chaperone1) is
+    excluded; monomerA and complexC -- which don't need chaperone1 --
+    still fold at full flux.
+
+    Hand-computed with `_folding_fixture_two_chaperones()`
+    (chaperone0 present=50, chaperone1 absent=0):
+      eligible_flux = [5 (monomerA, chap0 only), 0 (monomerB, needs
+      chap1 too -> blocked), 4 (complexC, chap0 only)]
+      demand (col2 of proteinProstheticGroupMatrix) = 2*5 + 3*0 + 1*4 = 14
+      <= substrates[2]=100 -> regime_valid=True (guard satisfied, not failed)
+      nontrivial=True (5 and 4 still nonzero)
+    """
+    fixture = _folding_fixture_two_chaperones()
+    before = {
+        "unfoldedMonomers": _arr([5.0, 7.0])[None, :],
+        "unfoldedComplexs": _arr([4.0, 9.0])[None, :],
+        "substrates": _arr([100.0, 100.0, 100.0])[None, :],
+        "enzymes": _arr([50.0, 0.0])[None, :],  # chaperone0 present, chaperone1 absent
+    }
+    preds = h12.predict_protein_folding(seed=0, before=before, fixture=fixture)
+    assert len(preds) == 1
+    p = preds[0]
+    assert p.regime_valid is True
+    assert p.regime_reason != "prosthetic_group_guard_failed"
+    assert p.nontrivial is True
+    # monomerA (idx0) unaffected; monomerB (idx1) zeroed by the absent chaperone1
+    np.testing.assert_array_equal(p.predicted_delta["unfoldedMonomers"], _arr(-5.0, 0.0))
+    np.testing.assert_array_equal(p.predicted_delta["foldedMonomers"], _arr(5.0, 0.0))
+    # complexC (folding-network idx0) unaffected by chaperone1 (only needs chaperone0)
+    np.testing.assert_array_equal(p.predicted_delta["unfoldedComplexs"], _arr(-4.0, -9.0))
+    np.testing.assert_array_equal(p.predicted_delta["foldedComplexs"], _arr(4.0, 9.0))
+    # demand = 2*5 + 3*0 + 1*4 = 14 (monomerB's contribution excluded)
+    np.testing.assert_array_equal(p.predicted_delta["substrates"], _arr(0.0, 0.0, -14.0))
+    assert "monomer_folding_fires" in p.branch_tags
+    assert "complex_folding_fires" in p.branch_tags
+
+
+def test_protein_folding_all_chaperones_zero_yields_trivial_no_op_not_a_guard_failure():
+    """When EVERY chaperone a species depends on is present at count zero,
+    `eligible_flux` collapses to all zeros for every folding-eligible
+    species. Per MATLAB's `max(0, 0*Inf) == 0` semantics this is a
+    trivial (nothing folds) tick, NOT a failed/invalid regime -- the
+    demand computed over an empty eligible set is trivially `0 <=
+    substrates`, so the guard is satisfied, just satisfied vacuously."""
+    fixture = _folding_fixture_two_chaperones()
+    before = {
+        "unfoldedMonomers": _arr([5.0, 7.0])[None, :],
+        "unfoldedComplexs": _arr([4.0, 9.0])[None, :],
+        "substrates": _arr([100.0, 100.0, 100.0])[None, :],
+        "enzymes": _arr([0.0, 0.0])[None, :],  # both chaperones absent
+    }
+    preds = h12.predict_protein_folding(seed=0, before=before, fixture=fixture)
+    assert len(preds) == 1
+    p = preds[0]
+    assert p.regime_valid is True
+    assert p.nontrivial is False
+    np.testing.assert_array_equal(p.predicted_delta["unfoldedMonomers"], _arr(0.0, 0.0))
+    np.testing.assert_array_equal(p.predicted_delta["foldedMonomers"], _arr(0.0, 0.0))
+    # folding-network complex (idx0) blocked too (needs chaperone0); not-folding (idx1) is unconditional
+    np.testing.assert_array_equal(p.predicted_delta["unfoldedComplexs"], _arr(0.0, -9.0))
+    np.testing.assert_array_equal(p.predicted_delta["foldedComplexs"], _arr(0.0, 9.0))
+    np.testing.assert_array_equal(p.predicted_delta["substrates"], _arr(0.0, 0.0, 0.0))
+    assert p.branch_tags == frozenset()
 
 
 # ---------------------------------------------------------------------------

@@ -882,10 +882,11 @@ def test_process_deterministic_convergence_without_h12_support_is_non_green():
 
 
 def _write_h12_fixture_files(tmp_path):
-    """Create a fake predictor-source file and fixture file on disk plus the
-    matching sha256 hashes, mimicking what scripts/l22_evidence/h12.py
-    records for a real process. Returns (source_path, source_sha, fixture_path, fixture_sha).
-    """
+    """Retained for API compatibility; no longer used to build valid H12
+    payloads (see `_valid_h12_payload` below) now that predictor_source_path
+    is hard-pinned to the real `scripts/l22_evidence/h12.py` and the
+    fixture/vendored-Karr-source hashes must match REAL on-disk repo files
+    -- fake tmp-path files can no longer pass `validate_h12_support`."""
     source_path = tmp_path / "h12_predictor_source.py"
     source_path.write_text("# fake predictor source\n", encoding="utf-8")
     fixture_path = tmp_path / "fixture.mat"
@@ -897,17 +898,35 @@ def _write_h12_fixture_files(tmp_path):
     return source_path, source_sha, fixture_path, fixture_sha
 
 
-def _valid_h12_payload(tmp_path, **overrides) -> dict:
-    source_path, source_sha, fixture_path, fixture_sha = _write_h12_fixture_files(tmp_path)
+_H12_REAL_PROCESS = "tRNAAminoacylation"
+
+
+def _valid_h12_payload(tmp_path=None, *, process: str = _H12_REAL_PROCESS, **overrides) -> dict:
+    """Build a fully-valid H12 artifact payload for a REAL catalog process,
+    using REAL on-disk hashes (the actual `scripts/l22_evidence/h12.py`,
+    the actual process fixture, and the actual vendored Karr source file) --
+    `validate_h12_support` now hard-pins `predictor_source_path` to the
+    real module and hard-verifies all three referenced file hashes, so a
+    synthetic tmp-path fixture can no longer be made to pass. `tmp_path` is
+    accepted (but unused) for call-site compatibility.
+    """
+    from scripts.l22_evidence import h12
+
+    predictor_path_on_disk = REPO_ROOT / h12.EXPECTED_PREDICTOR_SOURCE_PATH
+    fixture = h12.load_fixture(process)
+    karr_citation = h12.karr_source_citation(process)
     base = dict(
-        process="FakeProcess",
+        process=process,
         verdict="H12_CONFIRMED",
         nontrivial_sample_count=7,
         exact_match_rate=1.0,
-        predictor_source_path=str(source_path),
-        predictor_source_sha256=source_sha,
-        fixture_path=str(fixture_path),
-        fixture_sha256=fixture_sha,
+        trivial_mismatch_count=0,
+        branches_confirmed=sorted(h12.REQUIRED_BRANCHES[process]),
+        predictor_source_path=h12.EXPECTED_PREDICTOR_SOURCE_PATH,
+        predictor_source_sha256_lf_normalized=h12._sha256_lf_normalized(predictor_path_on_disk),
+        fixture_path=fixture["__fixture_path__"],
+        fixture_sha256=fixture["__fixture_sha256__"],
+        karr_source_citation=karr_citation,
     )
     base.update(overrides)
     return base
@@ -956,6 +975,27 @@ def test_process_h12_support_rejected_when_verdict_is_not_confirmed(tmp_path):
     assert any("H12_CONFIRMED" in reason for reason in outcome.reasons)
 
 
+def test_process_h12_observed_regime_never_clears_gate(tmp_path):
+    """H12_OBSERVED_REGIME is honest, non-laundered evidence (100% exact
+    match on every sample the predictor COULD evaluate) but explicitly must
+    never be accepted as sentinel-clearing support -- only H12_CONFIRMED
+    (full required branch coverage) may clear
+    PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE."""
+    h12_path = tmp_path / "h12_evidence.json"
+    h12_path.write_text(
+        json.dumps(_valid_h12_payload(tmp_path, verdict="H12_OBSERVED_REGIME")), encoding="utf-8"
+    )
+    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("H12_CONFIRMED" in reason for reason in outcome.reasons)
+
+
 def test_process_h12_support_rejected_when_match_rate_not_exactly_one(tmp_path):
     h12_path = tmp_path / "h12_evidence.json"
     h12_path.write_text(json.dumps(_valid_h12_payload(tmp_path, exact_match_rate=0.99)), encoding="utf-8")
@@ -970,16 +1010,70 @@ def test_process_h12_support_rejected_when_match_rate_not_exactly_one(tmp_path):
     assert any("exact_match_rate" in reason for reason in outcome.reasons)
 
 
+def test_process_h12_support_rejected_when_trivial_mismatch_count_nonzero(tmp_path):
+    """ANY trivial (predicted-no-op) mismatch is a harder failure than a
+    nontrivial miss and must hard-fail the gate regardless of a perfect
+    nontrivial exact_match_rate."""
+    h12_path = tmp_path / "h12_evidence.json"
+    h12_path.write_text(json.dumps(_valid_h12_payload(tmp_path, trivial_mismatch_count=1)), encoding="utf-8")
+    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("trivial_mismatch_count" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_required_branch_coverage_incomplete(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    h12_path.write_text(
+        json.dumps(_valid_h12_payload(tmp_path, branches_confirmed=[])), encoding="utf-8"
+    )
+    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("required branch coverage" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_predictor_source_path_is_wrong(tmp_path):
+    """A dangling/substituted predictor_source_path must hard-fail, never
+    fall back to hash-only trust of an arbitrary file."""
+    h12_path = tmp_path / "h12_evidence.json"
+    h12_path.write_text(
+        json.dumps(_valid_h12_payload(tmp_path, predictor_source_path="scripts/l22_evidence/h12_fake.py")),
+        encoding="utf-8",
+    )
+    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("pinned path" in reason for reason in outcome.reasons)
+
+
 def test_process_h12_support_rejected_when_predictor_source_is_stale(tmp_path):
     """If h12.py (the predictor source) is edited after the artifact was
-    generated, the recorded predictor_source_sha256 no longer matches the
-    on-disk file -- the artifact must be treated as stale, not trusted.
+    generated, the recorded predictor_source_sha256_lf_normalized no longer
+    matches the current on-disk file -- the artifact must be treated as
+    stale, not trusted. Simulated via a deliberately-wrong recorded hash
+    (the real production h12.py is never mutated by this test).
     """
     h12_path = tmp_path / "h12_evidence.json"
-    payload = _valid_h12_payload(tmp_path)
+    payload = _valid_h12_payload(
+        tmp_path, predictor_source_sha256_lf_normalized="0" * 64
+    )
     h12_path.write_text(json.dumps(payload), encoding="utf-8")
-    # tamper: mutate the predictor source AFTER the artifact recorded its hash
-    Path(payload["predictor_source_path"]).write_text("# mutated predictor!\n", encoding="utf-8")
 
     entry = _entry(closed_form_dominant="confirmed_biology_validated")
     result = _result(
@@ -993,11 +1087,11 @@ def test_process_h12_support_rejected_when_predictor_source_is_stale(tmp_path):
 
 
 def test_process_h12_support_rejected_when_fixture_is_stale(tmp_path):
+    """Simulated via a deliberately-wrong recorded fixture hash (the real
+    production fixture .mat file is never mutated by this test)."""
     h12_path = tmp_path / "h12_evidence.json"
-    payload = _valid_h12_payload(tmp_path)
+    payload = _valid_h12_payload(tmp_path, fixture_sha256="0" * 64)
     h12_path.write_text(json.dumps(payload), encoding="utf-8")
-    # tamper: mutate the fixture file AFTER the artifact recorded its hash
-    Path(payload["fixture_path"]).write_bytes(b"mutated fixture bytes")
 
     entry = _entry(closed_form_dominant="confirmed_biology_validated")
     result = _result(
@@ -1010,17 +1104,12 @@ def test_process_h12_support_rejected_when_fixture_is_stale(tmp_path):
     assert any("STALE" in reason for reason in outcome.reasons)
 
 
-def test_process_h12_support_trusts_recorded_hash_when_source_files_absent(tmp_path):
-    """When the predictor-source/fixture files referenced by the artifact are
-    not present on disk at all (e.g. a minimal checkout), verification is
-    skipped for that file and the recorded hash is trusted as an
-    attestation -- mirroring the existing sweep_provenance trust pattern.
-    """
+def test_process_h12_support_rejected_when_karr_source_citation_is_stale(tmp_path):
+    """Simulated via a deliberately-wrong recorded vendored-Karr-source
+    hash (the real vendored .m file is never mutated by this test)."""
     h12_path = tmp_path / "h12_evidence.json"
     payload = _valid_h12_payload(tmp_path)
-    # delete the on-disk files entirely; keep the (now-unverifiable) hashes
-    Path(payload["predictor_source_path"]).unlink()
-    Path(payload["fixture_path"]).unlink()
+    payload["karr_source_citation"]["vendored_sha256_lf_normalized"] = "0" * 64
     h12_path.write_text(json.dumps(payload), encoding="utf-8")
 
     entry = _entry(closed_form_dominant="confirmed_biology_validated")
@@ -1030,7 +1119,33 @@ def test_process_h12_support_trusts_recorded_hash_when_source_files_absent(tmp_p
         h12_evidence_ref=str(h12_path),
     )
     outcome = vd.rederive_process("FakeProcess", entry, result)
-    assert outcome.mechanical_verdict == schema.STATUS_PASS
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("STALE" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_fixture_missing_from_disk(tmp_path):
+    """A referenced fixture (a git-tracked file) that does not exist on
+    disk at all -- e.g. a substituted/dangling path -- is a hard fail, NOT
+    a soft-trust-the-recorded-hash attestation. Fixtures are tracked files;
+    per the anti-tamper mandate there is no soft trust for any tracked
+    file this artifact references."""
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(
+        tmp_path,
+        fixture_path="data/karr_fixtures/per_process/DoesNotExist_flat.mat",
+        fixture_sha256="0" * 64,
+    )
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process("FakeProcess", entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("does not exist on disk" in reason for reason in outcome.reasons)
 
 
 def test_process_deferred_is_always_non_green_even_with_decision_and_evidence(tmp_path):

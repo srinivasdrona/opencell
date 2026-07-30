@@ -251,12 +251,12 @@ def test_closed_form_confirmed_without_h12_support_is_non_green(tmp_path):
 
 def test_closed_form_confirmed_with_valid_h12_support_is_green(tmp_path):
     entry = _ENTRIES["tRNAAminoacylation"]
+    from scripts.l22_evidence import h12
+
     h12_path = tmp_path / "h12_evidence.json"
-    source_path = tmp_path / "h12_predictor_source.py"
-    source_path.write_text("# fake predictor source\n", encoding="utf-8")
-    fixture_path = tmp_path / "fixture.mat"
-    fixture_path.write_bytes(b"fake fixture bytes")
-    import hashlib
+    predictor_path_on_disk = REPO_ROOT / h12.EXPECTED_PREDICTOR_SOURCE_PATH
+    fixture = h12.load_fixture("tRNAAminoacylation")
+    karr_citation = h12.karr_source_citation("tRNAAminoacylation")
 
     _write_json(
         h12_path,
@@ -265,10 +265,13 @@ def test_closed_form_confirmed_with_valid_h12_support_is_green(tmp_path):
             "verdict": "H12_CONFIRMED",
             "nontrivial_sample_count": 7,
             "exact_match_rate": 1.0,
-            "predictor_source_path": str(source_path),
-            "predictor_source_sha256": hashlib.sha256(source_path.read_bytes()).hexdigest(),
-            "fixture_path": str(fixture_path),
-            "fixture_sha256": hashlib.sha256(fixture_path.read_bytes()).hexdigest(),
+            "trivial_mismatch_count": 0,
+            "branches_confirmed": sorted(h12.REQUIRED_BRANCHES["tRNAAminoacylation"]),
+            "predictor_source_path": h12.EXPECTED_PREDICTOR_SOURCE_PATH,
+            "predictor_source_sha256_lf_normalized": h12._sha256_lf_normalized(predictor_path_on_disk),
+            "fixture_path": fixture["__fixture_path__"],
+            "fixture_sha256": fixture["__fixture_sha256__"],
+            "karr_source_citation": karr_citation,
         },
     )
     _write_evidence_dir(
