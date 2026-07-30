@@ -52,7 +52,13 @@ def _write_valid_h12_artifact(path: Path, *, process: str) -> None:
     `branches_confirmed` is fabricated here (a synthetic wiring-mechanism
     test, not a real machine-evidence run) to cover every branch
     `REQUIRED_BRANCHES[process]` names, purely so this file's own
-    `verdict == H12_CONFIRMED` claim is internally self-consistent.
+    `verdict == H12_CONFIRMED` claim is internally self-consistent. Also
+    includes every round-3 (Opus5 blocker/integrity-hardening) field:
+    catalog-matching `n_seeds`/`m_ticks` (coverage floor), consistent
+    sample counts, a fully-accepted `oracle_manifest_cross_check`/
+    `oracle_seed_file_sha256`, a well-formed `raw_prediction_hash`,
+    `formula_version` pinned to the module constant, and a non-negated
+    `anti_laundering_attestation`.
     """
     from scripts.l22_evidence import h12
 
@@ -60,13 +66,21 @@ def _write_valid_h12_artifact(path: Path, *, process: str) -> None:
     predictor_path_on_disk = REPO_ROOT / h12.EXPECTED_PREDICTOR_SOURCE_PATH
     fixture = h12.load_fixture(process)
     karr_citation = h12.karr_source_citation(process)
+    catalog_n_seeds, catalog_m_ticks = h12.CATALOG_N_M[process]
+    seed_keys = [str(s) for s in range(catalog_n_seeds)]
     _write_json(
         path,
         {
             "process": process,
             "verdict": "H12_CONFIRMED",
+            "formula_version": h12.FORMULA_VERSION,
+            "n_seeds": catalog_n_seeds,
+            "m_ticks": catalog_m_ticks,
+            "total_sample_count": 100,
             "nontrivial_sample_count": 100,
+            "exact_match_count": 100,
             "exact_match_rate": 1.0,
+            "trivial_checked_count": 0,
             "trivial_mismatch_count": 0,
             "branches_confirmed": sorted(h12.REQUIRED_BRANCHES[process]),
             "predictor_source_path": h12.EXPECTED_PREDICTOR_SOURCE_PATH,
@@ -74,6 +88,15 @@ def _write_valid_h12_artifact(path: Path, *, process: str) -> None:
             "fixture_path": fixture["__fixture_path__"],
             "fixture_sha256": fixture["__fixture_sha256__"],
             "karr_source_citation": karr_citation,
+            "oracle_manifest_cross_check": {seed: "match" for seed in seed_keys},
+            "oracle_seed_file_sha256": {seed: "0" * 64 for seed in seed_keys},
+            "raw_prediction_hash": "a" * 64,
+            "anti_laundering_attestation": {
+                "predictor_inputs": ["states_before", "static_fixture_params"],
+                "states_after_access": "compare_phase_only",
+                "no_sut_import": True,
+                "no_result_json_access": True,
+            },
         },
     )
 

@@ -909,17 +909,33 @@ def _valid_h12_payload(tmp_path=None, *, process: str = _H12_REAL_PROCESS, **ove
     real module and hard-verifies all three referenced file hashes, so a
     synthetic tmp-path fixture can no longer be made to pass. `tmp_path` is
     accepted (but unused) for call-site compatibility.
+
+    Includes every field the round-3 (Opus5 blocker/integrity-hardening)
+    checks require: real catalog-matching `n_seeds`/`m_ticks` (coverage
+    floor), internally-consistent nonnegative-int sample counts, a fully
+    per-seed `oracle_manifest_cross_check`/`oracle_seed_file_sha256`, a
+    well-formed `raw_prediction_hash`, `formula_version` pinned to the
+    module's current constant, and a non-negated
+    `anti_laundering_attestation`.
     """
     from scripts.l22_evidence import h12
 
     predictor_path_on_disk = REPO_ROOT / h12.EXPECTED_PREDICTOR_SOURCE_PATH
     fixture = h12.load_fixture(process)
     karr_citation = h12.karr_source_citation(process)
+    catalog_n_seeds, catalog_m_ticks = h12.CATALOG_N_M[process]
+    seed_keys = [str(s) for s in range(catalog_n_seeds)]
     base = dict(
         process=process,
         verdict="H12_CONFIRMED",
+        formula_version=h12.FORMULA_VERSION,
+        n_seeds=catalog_n_seeds,
+        m_ticks=catalog_m_ticks,
+        total_sample_count=7,
         nontrivial_sample_count=7,
+        exact_match_count=7,
         exact_match_rate=1.0,
+        trivial_checked_count=0,
         trivial_mismatch_count=0,
         branches_confirmed=sorted(h12.REQUIRED_BRANCHES[process]),
         predictor_source_path=h12.EXPECTED_PREDICTOR_SOURCE_PATH,
@@ -927,6 +943,15 @@ def _valid_h12_payload(tmp_path=None, *, process: str = _H12_REAL_PROCESS, **ove
         fixture_path=fixture["__fixture_path__"],
         fixture_sha256=fixture["__fixture_sha256__"],
         karr_source_citation=karr_citation,
+        oracle_manifest_cross_check={seed: "match" for seed in seed_keys},
+        oracle_seed_file_sha256={seed: "0" * 64 for seed in seed_keys},
+        raw_prediction_hash="a" * 64,
+        anti_laundering_attestation={
+            "predictor_inputs": ["states_before", "static_fixture_params"],
+            "states_after_access": "compare_phase_only",
+            "no_sut_import": True,
+            "no_result_json_access": True,
+        },
     )
     base.update(overrides)
     return base
@@ -935,13 +960,14 @@ def _valid_h12_payload(tmp_path=None, *, process: str = _H12_REAL_PROCESS, **ove
 def test_process_deterministic_convergence_with_valid_h12_support_is_clean(tmp_path):
     h12_path = tmp_path / "h12_evidence.json"
     h12_path.write_text(json.dumps(_valid_h12_payload(tmp_path)), encoding="utf-8")
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_PASS
     assert outcome.reasons == []
 
@@ -951,26 +977,28 @@ def test_process_h12_support_rejected_when_nontrivial_sample_count_is_zero(tmp_p
     h12_path.write_text(
         json.dumps(_valid_h12_payload(tmp_path, nontrivial_sample_count=0)), encoding="utf-8"
     )
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
 
 
 def test_process_h12_support_rejected_when_verdict_is_not_confirmed(tmp_path):
     h12_path = tmp_path / "h12_evidence.json"
     h12_path.write_text(json.dumps(_valid_h12_payload(tmp_path, verdict="H12_FAIL")), encoding="utf-8")
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("H12_CONFIRMED" in reason for reason in outcome.reasons)
 
@@ -985,13 +1013,14 @@ def test_process_h12_observed_regime_never_clears_gate(tmp_path):
     h12_path.write_text(
         json.dumps(_valid_h12_payload(tmp_path, verdict="H12_OBSERVED_REGIME")), encoding="utf-8"
     )
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("H12_CONFIRMED" in reason for reason in outcome.reasons)
 
@@ -999,13 +1028,14 @@ def test_process_h12_observed_regime_never_clears_gate(tmp_path):
 def test_process_h12_support_rejected_when_match_rate_not_exactly_one(tmp_path):
     h12_path = tmp_path / "h12_evidence.json"
     h12_path.write_text(json.dumps(_valid_h12_payload(tmp_path, exact_match_rate=0.99)), encoding="utf-8")
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("exact_match_rate" in reason for reason in outcome.reasons)
 
@@ -1016,13 +1046,14 @@ def test_process_h12_support_rejected_when_trivial_mismatch_count_nonzero(tmp_pa
     nontrivial exact_match_rate."""
     h12_path = tmp_path / "h12_evidence.json"
     h12_path.write_text(json.dumps(_valid_h12_payload(tmp_path, trivial_mismatch_count=1)), encoding="utf-8")
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("trivial_mismatch_count" in reason for reason in outcome.reasons)
 
@@ -1032,13 +1063,14 @@ def test_process_h12_support_rejected_when_required_branch_coverage_incomplete(t
     h12_path.write_text(
         json.dumps(_valid_h12_payload(tmp_path, branches_confirmed=[])), encoding="utf-8"
     )
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("required branch coverage" in reason for reason in outcome.reasons)
 
@@ -1051,13 +1083,14 @@ def test_process_h12_support_rejected_when_predictor_source_path_is_wrong(tmp_pa
         json.dumps(_valid_h12_payload(tmp_path, predictor_source_path="scripts/l22_evidence/h12_fake.py")),
         encoding="utf-8",
     )
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("pinned path" in reason for reason in outcome.reasons)
 
@@ -1075,13 +1108,14 @@ def test_process_h12_support_rejected_when_predictor_source_is_stale(tmp_path):
     )
     h12_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("STALE" in reason for reason in outcome.reasons)
 
@@ -1093,13 +1127,14 @@ def test_process_h12_support_rejected_when_fixture_is_stale(tmp_path):
     payload = _valid_h12_payload(tmp_path, fixture_sha256="0" * 64)
     h12_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("STALE" in reason for reason in outcome.reasons)
 
@@ -1112,13 +1147,14 @@ def test_process_h12_support_rejected_when_karr_source_citation_is_stale(tmp_pat
     payload["karr_source_citation"]["vendored_sha256_lf_normalized"] = "0" * 64
     h12_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("STALE" in reason for reason in outcome.reasons)
 
@@ -1137,15 +1173,305 @@ def test_process_h12_support_rejected_when_fixture_missing_from_disk(tmp_path):
     )
     h12_path.write_text(json.dumps(payload), encoding="utf-8")
 
-    entry = _entry(closed_form_dominant="confirmed_biology_validated")
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
     result = _result(
         channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
         warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
         h12_evidence_ref=str(h12_path),
     )
-    outcome = vd.rederive_process("FakeProcess", entry, result)
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
     assert outcome.mechanical_verdict == schema.STATUS_FAIL
     assert any("does not exist on disk" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_on_cross_process_artifact_substitution(tmp_path):
+    """A side-index (or tampered result.json) could point one process's
+    `h12_evidence_ref` key at a DIFFERENT process's real, otherwise fully
+    valid H12_CONFIRMED artifact. Every other check only validates internal
+    self-consistency, so without the `expected_process` cross-check this
+    would incorrectly clear the gate for the WRONG row. Build a valid
+    ProteinFolding artifact but reference it from a tRNAAminoacylation row."""
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path, process="ProteinFolding")
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("cross-process substitution" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_sample_domain_shrunk_to_1x1(tmp_path):
+    """A degenerate artifact regenerated with e.g. --n-seeds 1 --m-ticks 1
+    must not pass even at a perfect 100% match on that shrunken domain --
+    the coverage floor pins n_seeds/m_ticks to the catalog's real N/M."""
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(
+        tmp_path,
+        n_seeds=1,
+        m_ticks=1,
+        oracle_manifest_cross_check={"0": "match"},
+        oracle_seed_file_sha256={"0": "0" * 64},
+    )
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("does not cover the catalog's real N_seeds" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_exact_match_rate_is_bool(tmp_path):
+    """`True == 1.0` numerically in Python -- exact_match_rate must be
+    rejected as a literal bool even though it would pass a naive `== 1.0`
+    check, since a bool is not a genuine measured float/int rate."""
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path, exact_match_rate=True)
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("exact_match_rate is not a real number" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_trivial_mismatch_count_is_bool(tmp_path):
+    """`False == 0` numerically -- trivial_mismatch_count must be rejected
+    as a literal bool even though it would pass a naive `== 0` check."""
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path, trivial_mismatch_count=False)
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any(
+        "trivial_mismatch_count is not a real nonnegative int" in reason for reason in outcome.reasons
+    )
+
+
+def test_process_h12_support_rejected_when_oracle_manifest_cross_check_has_mismatch(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path)
+    payload["oracle_manifest_cross_check"]["0"] = "mismatch"
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("non-accepted entries" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_oracle_manifest_cross_check_empty(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path, oracle_manifest_cross_check={})
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("oracle_manifest_cross_check missing/empty" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_oracle_seed_hash_coverage_gapped(tmp_path):
+    """Fewer per-seed raw oracle hashes than n_seeds is a coverage gap --
+    no soft-trust for an unhashed seed."""
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path)
+    seed_hashes = dict(payload["oracle_seed_file_sha256"])
+    seed_hashes.pop(next(iter(seed_hashes)))
+    payload["oracle_seed_file_sha256"] = seed_hashes
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("gap in per-seed raw oracle hash coverage" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_raw_prediction_hash_malformed(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path, raw_prediction_hash="not-a-sha256")
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("raw_prediction_hash is not a well-formed sha256" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_formula_version_forged(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path, formula_version="v0-fake")
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("formula_version" in reason and "does not match" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_karr_upstream_repo_forged(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path)
+    payload["karr_source_citation"]["upstream_repo"] = "someone-else/WholeCell-fork"
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("upstream_repo" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_karr_upstream_commit_forged(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path)
+    payload["karr_source_citation"]["upstream_commit"] = "0" * 40
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("upstream_commit" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_karr_line_ranges_forged(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path)
+    payload["karr_source_citation"]["line_ranges"] = [[1, 2]]
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("line_ranges" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_attestation_no_sut_import_negated(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path)
+    payload["anti_laundering_attestation"]["no_sut_import"] = False
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("no_sut_import is not True" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_attestation_no_result_json_access_negated(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path)
+    payload["anti_laundering_attestation"]["no_result_json_access"] = False
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("no_result_json_access is not True" in reason for reason in outcome.reasons)
+
+
+def test_process_h12_support_rejected_when_attestation_states_after_access_wrong(tmp_path):
+    h12_path = tmp_path / "h12_evidence.json"
+    payload = _valid_h12_payload(tmp_path)
+    payload["anti_laundering_attestation"]["states_after_access"] = "predict_phase"
+    h12_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    entry = _entry(name=_H12_REAL_PROCESS, closed_form_dominant="confirmed_biology_validated")
+    result = _result(
+        channels={"substrates": _channel()},
+        process=_H12_REAL_PROCESS,
+        warnings=["PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched Karr exactly"],
+        h12_evidence_ref=str(h12_path),
+    )
+    outcome = vd.rederive_process(_H12_REAL_PROCESS, entry, result)
+    assert outcome.mechanical_verdict == schema.STATUS_FAIL
+    assert any("states_after_access" in reason for reason in outcome.reasons)
 
 
 def test_process_deferred_is_always_non_green_even_with_decision_and_evidence(tmp_path):

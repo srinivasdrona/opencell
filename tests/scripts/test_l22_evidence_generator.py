@@ -1,12 +1,14 @@
 """Coverage + determinism tests for scripts/l22_evidence/generator.py against
 the REAL PROCESS_CATALOG.yaml and the real evidence tree.
 
-As of this commit the tree is honestly all MISSING_EVIDENCE: the Phase-A
-provenance-hardening rules (mandatory `sweep_provenance.json` completion
-sentinel) just landed, and the pre-hardening evidence on disk does not
-carry that sentinel yet, so it is correctly demoted rather than
-grandfathered in as compliant -- see
-docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md.
+As of this commit the real, mechanically re-derived tally is
+PASS=14 / FAIL=4 / MISSING_EVIDENCE=4 (see
+`test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation` below
+for the full row-by-row provenance of every non-PASS row, including the
+H12 machine-evidence delivery that moved 3 of the 5 original
+PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE SENTINEL_FAIL rows to real PASS)
+-- see docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md and
+docs/phase_f/l2_2_design_a/h12/H12_REPORT.md.
 
 Run via `bin\\oc-pytest tests/scripts/test_l22_evidence_generator.py -v`.
 """
@@ -120,17 +122,30 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
       `_rederive_w1_channel`, `_rederive_per_component_scaled_channel`, and
       `_rederive_hurdle_channel`.
 
-    The remaining 5 FAIL rows (MacromolecularComplexation, ProteinFolding,
-    ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation) are
-    pre-existing, unrelated `SENTINEL_FAIL:
-    PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE` H12 evidence gaps, untouched
-    by this evaluator-only commit. The 4 MISSING_EVIDENCE rows (Cytokinesis,
-    DNADamage, FtsZPolymerization, RibosomeAssembly) have no evidence
-    directory at all and are likewise untouched. If this test ever needs to
-    change again, that change must be driven by real evidence (a sweep
-    rerun populating/changing rows under the evidence tree, or a further
-    cited evaluator correctness fix), not by editing this assertion to make
-    it pass."""
+    A FOURTH change (the H12 machine-evidence delivery, see
+    docs/phase_f/l2_2_design_a/h12/H12_REPORT.md) moved 3 of the 5
+    pre-existing `SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE`
+    rows to real, machine-checked PASS by supplying an independently
+    derived (Karr-source + fixture + states_before only, never touching
+    SUT/runner/states_after during prediction) H12_CONFIRMED predictor
+    artifact with 100% exact match on a nontrivial sample domain:
+    ProteinFolding, ProteinProcessingI, tRNAAminoacylation. The remaining 2
+    of those 5 rows -- MacromolecularComplexation, ProteinProcessingII --
+    have real H12 artifacts too, but the machine-checked verdict for both
+    is `H12_OBSERVED_REGIME` (not `H12_CONFIRMED`): MacromolecularComplexation's
+    network2 branch and ProteinProcessingII's transferase branch are never
+    exercised by the accepted raw oracle sample population, so full branch
+    coverage cannot be claimed and the SENTINEL_FAIL demotion is correctly
+    rejected -- they remain FAIL, non-green, pending either a broader
+    sample population or a maintainer-reviewed catalog demotion.
+
+    The 2 unrelated FAIL rows (Replication, DNASupercoiling) and the 4
+    MISSING_EVIDENCE rows (Cytokinesis, DNADamage, FtsZPolymerization,
+    RibosomeAssembly) are untouched by the H12 delivery. If this test ever
+    needs to change again, that change must be driven by real evidence (a
+    sweep rerun populating/changing rows under the evidence tree, a new/
+    broader H12 artifact regeneration, or a further cited evaluator
+    correctness fix), not by editing this assertion to make it pass."""
     payload = gen.build_evidence_index()
     assert payload["aggregate_verdict"] == "NON_GREEN"
     for row in payload["rows"]:
@@ -139,8 +154,8 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 11,
-        schema.STATUS_FAIL: 7,
+        schema.STATUS_PASS: 14,
+        schema.STATUS_FAIL: 4,
         schema.STATUS_MISSING_EVIDENCE: 4,
     }
     fail_rows = {
@@ -150,10 +165,7 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     }
     assert set(fail_rows) == {
         "MacromolecularComplexation",
-        "ProteinFolding",
-        "ProteinProcessingI",
         "ProteinProcessingII",
-        "tRNAAminoacylation",
         "Replication",
         "DNASupercoiling",
     }
@@ -165,15 +177,18 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     )
     for process in (
         "MacromolecularComplexation",
-        "ProteinFolding",
-        "ProteinProcessingI",
         "ProteinProcessingII",
-        "tRNAAminoacylation",
     ):
         assert any(
             "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE" in reason
             for reason in fail_rows[process]
         )
+        assert any(
+            "H12_OBSERVED_REGIME" in reason for reason in fail_rows[process]
+        )
+    pass_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_PASS}
+    for process in ("ProteinFolding", "ProteinProcessingI", "tRNAAminoacylation"):
+        assert process in pass_rows, f"{process} expected real H12_CONFIRMED PASS"
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -209,12 +224,20 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     index_path = tmp_path / "evidence_index.json"
     gen.write_index(payload, index_path)
 
-    result = gen.audit(index_path=index_path, evidence_root=schema.EVIDENCE_ROOT)
+    # `evidence_root=None` mirrors the default `build_evidence_index()` call
+    # above: both resolve via `schema.default_evidence_root()` (live
+    # sweep-output tree if mounted locally, otherwise the tracked portable
+    # bundle). Hardcoding `evidence_root=schema.EVIDENCE_ROOT` here is wrong
+    # on a fresh clone / any worktree that has never run the live sweep --
+    # EVIDENCE_ROOT is gitignored machine-local state, so `audit` would see
+    # an empty/missing tree and every row would spuriously read
+    # MISSING_EVIDENCE regardless of what the tracked portable bundle says.
+    result = gen.audit(index_path=index_path, evidence_root=None)
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 11,
-        schema.STATUS_FAIL: 7,
+        schema.STATUS_PASS: 14,
+        schema.STATUS_FAIL: 4,
         schema.STATUS_MISSING_EVIDENCE: 4,
     }
 

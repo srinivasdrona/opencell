@@ -323,3 +323,29 @@ def test_predictor_hash_is_reproducible_across_independent_calls():
     preds_1 = h12.predict_trna_aminoacylation(seed=0, before=before, fixture=fixture)
     preds_2 = h12.predict_trna_aminoacylation(seed=0, before=before, fixture=fixture)
     assert _hash_predictions(preds_1) == _hash_predictions(preds_2)
+
+
+def test_catalog_n_m_matches_real_process_catalog():
+    """`h12.CATALOG_N_M` is a hand-transcribed citation of
+    `PROCESS_CATALOG.yaml`'s real N_seeds/M_ticks, used both to generate
+    artifacts AND (per the Opus5 round-3 coverage-floor gate) to REJECT
+    degenerate/shrunken artifacts. If this citation ever drifts out of
+    sync with the real catalog, the coverage-floor check would silently
+    validate against the wrong number instead of failing loudly -- so the
+    citation itself must be kept honest by a test, for all 5 target
+    processes."""
+    from scripts.l22_evidence import catalog
+
+    real_processes = catalog.in_scope_processes()
+    for process in h12.RISK_ORDER:
+        assert process in real_processes, f"{process!r} missing from real PROCESS_CATALOG.yaml"
+        entry = real_processes[process]
+        expected_n_seeds, expected_m_ticks = h12.CATALOG_N_M[process]
+        assert entry.n_seeds == expected_n_seeds, (
+            f"h12.CATALOG_N_M[{process!r}] n_seeds={expected_n_seeds!r} does not match the real "
+            f"catalog's N_seeds={entry.n_seeds!r}"
+        )
+        assert entry.m_ticks == expected_m_ticks, (
+            f"h12.CATALOG_N_M[{process!r}] m_ticks={expected_m_ticks!r} does not match the real "
+            f"catalog's M_ticks={entry.m_ticks!r}"
+        )
