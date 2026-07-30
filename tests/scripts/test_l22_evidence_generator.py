@@ -104,6 +104,22 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
       `PRIMARY_ACTIVITY_MISSING` guard added to `_rederive_w1_channel`,
       `_rederive_per_component_scaled_channel`, and `_rederive_hurdle_channel`.
 
+    A THIRD, later evaluator correctness fix (the Opus5 follow-up review
+    closing the "primary low-sample false-green" gap) changed one more row:
+
+    - P5 (primary insufficient-samples guard): DNASupercoiling moved
+      PASS -> FAIL. Its stored `chromosome` channel's primary per_component
+      comparison on component `linkingNumbers.delta_nnz` has
+      n_oc=17, n_karr=24 -- both nonzero (so neither VACUOUS nor
+      ACTIVITY_MISSING applies) but both below `MIN_NONZERO_EVENTS=30`. The
+      pre-fix evaluator still computed and passed a W1 statistic
+      (scaled_w1=0.007) on this component despite the sample size being far
+      too small to trust that statistic -- a false green. Fixed via the new
+      `PRIMARY_INSUFFICIENT_SAMPLES` guard (gating, unlike the pre-existing
+      generic non-primary `INSUFFICIENT_SAMPLES` fallback) added to
+      `_rederive_w1_channel`, `_rederive_per_component_scaled_channel`, and
+      `_rederive_hurdle_channel`.
+
     The remaining 5 FAIL rows (MacromolecularComplexation, ProteinFolding,
     ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation) are
     pre-existing, unrelated `SENTINEL_FAIL:
@@ -123,8 +139,8 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 12,
-        schema.STATUS_FAIL: 6,
+        schema.STATUS_PASS: 11,
+        schema.STATUS_FAIL: 7,
         schema.STATUS_MISSING_EVIDENCE: 4,
     }
     fail_rows = {
@@ -139,9 +155,13 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         "ProteinProcessingII",
         "tRNAAminoacylation",
         "Replication",
+        "DNASupercoiling",
     }
     assert any(
         "PRIMARY_ACTIVITY_MISSING" in reason for reason in fail_rows["Replication"]
+    )
+    assert any(
+        "PRIMARY_INSUFFICIENT_SAMPLES" in reason for reason in fail_rows["DNASupercoiling"]
     )
     for process in (
         "MacromolecularComplexation",
@@ -193,8 +213,8 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 12,
-        schema.STATUS_FAIL: 6,
+        schema.STATUS_PASS: 11,
+        schema.STATUS_FAIL: 7,
         schema.STATUS_MISSING_EVIDENCE: 4,
     }
 

@@ -306,13 +306,16 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     `sweep_provenance.json` completion sentinel -- never existence-only, and
     never true for evidence that predates the provenance hardening (missing
     sweep_provenance.json) or was generated against a since-changed
-    runner/helpers/projections/catalog source file. An unknown/missing git
-    SHA does NOT alone invalidate evidence whose source hashes still match
-    (see build_sweep_provenance below). Nor does a since-changed
-    `evaluator_schema_version` alone invalidate otherwise-current evidence
-    (as of v3): that field is still recorded on the sentinel purely
-    informationally -- whether stored raw evidence needs a sweep RERUN is
-    answered by content hashes (source/sidecar) alone; whether it can be
+    runner/helpers/projections/catalog source file OR a since-changed
+    `schema.RESULT_SCHEMA_VERSION` raw-evidence field contract (an absent
+    `result_schema_version` on the sentinel is treated as version 1, never
+    as invalid). An unknown/missing git SHA does NOT alone invalidate
+    evidence whose source hashes still match (see build_sweep_provenance
+    below). Nor does a since-changed `evaluator_schema_version` alone
+    invalidate otherwise-current evidence (as of v3): that field is still
+    recorded on the sentinel purely informationally -- whether stored raw
+    evidence needs a sweep RERUN is answered by content hashes
+    (source/sidecar) and `result_schema_version` alone; whether it can be
     safely re-scored under newer mechanical-verdict logic is a separate,
     evaluator-side question answered by `verdict.py`'s own per-channel
     `required_fields` checks, never by this launcher-side rerun gate.
@@ -394,6 +397,23 @@ def evidence_is_valid(job: SweepJob) -> tuple[bool, str | None]:
     # every sentinel by `build_sweep_provenance` below, purely
     # informationally.
 
+    # `result_schema_version` IS gating, unlike `evaluator_schema_version`
+    # above: it means the STORED RAW result.json/sidecar BYTES were
+    # produced under a different raw-evidence field contract than the one
+    # this sweep launcher and the current evaluator both assume -- content
+    # hashes alone cannot detect that (they only prove the bytes were
+    # produced by the code currently on disk, not that their field SHAPE
+    # matches). Absent (every sentinel written before this field existed)
+    # is treated as version 1, never as missing/invalid -- see
+    # `schema.RESULT_SCHEMA_VERSION`'s own docstring.
+    recorded_result_schema_version = sweep_prov.get("result_schema_version", 1)
+    if recorded_result_schema_version != schema.RESULT_SCHEMA_VERSION:
+        return (
+            False,
+            f"{schema.SWEEP_PROVENANCE_FILE} result_schema_version={recorded_result_schema_version!r} "
+            f"!= current schema.RESULT_SCHEMA_VERSION={schema.RESULT_SCHEMA_VERSION!r}",
+        )
+
     return True, None
 
 
@@ -410,11 +430,14 @@ def build_sweep_provenance(
     worktree-gitdir resolution in `populate.py`, since the runner's own
     `provenance.json["git_sha"]` is permanently "unknown" in this project's
     WSL/Windows-linked-worktree environment) purely informationally --
-    gating authority is `source_hashes` + `sidecar_hashes` below (as of
-    v3, `evaluator_schema_version` is recorded but no longer gating; see
-    `evidence_is_valid`'s docstring), since content hashes are what
-    actually prove the evidence was generated against the code now on disk
-    (see `evidence_is_valid`). Deliberately does NOT track
+    gating authority is `source_hashes` + `sidecar_hashes` + (unlike
+    `evaluator_schema_version`, which is recorded but no longer gating; see
+    `evidence_is_valid`'s docstring) `result_schema_version` below, since
+    content hashes are what actually prove the evidence was generated
+    against the code now on disk, and `result_schema_version` is what
+    proves the stored raw bytes' FIELD CONTRACT still matches what the
+    current evaluator expects (see `evidence_is_valid`,
+    `schema.RESULT_SCHEMA_VERSION`). Deliberately does NOT track
     `allocator_inputs.json`: it is large diagnostic bulk that no verdict
     calculation ever reads, so hashing it would be authority theater, not
     evidence (see `schema.INFORMATIONAL_ONLY_FILES`).
@@ -459,6 +482,7 @@ def build_sweep_provenance(
         "sidecar_hashes": sidecar_hashes,
         "inputs_verified": bool(inputs_verified),
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,
+        "result_schema_version": schema.RESULT_SCHEMA_VERSION,
         "written_at": datetime.now(UTC).isoformat(),
     }
 

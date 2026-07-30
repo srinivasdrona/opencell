@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "fe5276c1bb2539f03a7aa0e21619950cb18c596228d24c0d7bf20ca3822461ec",
+  "content_hash": "8aae3000e44ca6f91b28264afa12763e7b05578670ce16ab8f85b8092909c5f2",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-07-30T07:36:19.027558+00:00",
+  "generated_at": "2026-07-30T10:42:18.212574+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -85,7 +85,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -110,22 +111,25 @@
         "primary_distance": "per_component_scaled"
       },
       "channel_verdicts": {
-        "chromosome": "PASS",
+        "chromosome": "PRIMARY_INSUFFICIENT_SAMPLES",
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/latest",
-      "green": true,
+      "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "PASS",
+      "mechanical_verdict": "FAIL",
       "process": "DNASupercoiling",
       "provenance_git_sha": "unknown",
-      "reasons": [],
+      "reasons": [
+        "PRIMARY_INSUFFICIENT_SAMPLES: channel 'chromosome' component 'linkingNumbers.delta_nnz' has n_oc=17, n_karr=24; below MIN_NONZERO_EVENTS=30 on at least one side (primary component comparison not validated at adequate sample size)"
+      ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -189,7 +193,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
@@ -230,7 +235,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -271,7 +277,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -313,7 +320,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
@@ -355,7 +363,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -397,7 +406,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
@@ -441,7 +451,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
@@ -483,7 +494,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -523,7 +535,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -563,7 +576,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -603,7 +617,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -649,7 +664,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -689,7 +705,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -751,7 +768,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": []
     },
@@ -792,7 +810,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": [
         "SEED_ALIGNMENT_DIAGNOSTIC: OC outputs align better to a shifted Karr seed index on channel=monomers (shift=+47, observed_w1=0.006671, shifted_w1=0.006165)."
@@ -836,7 +855,8 @@
         "evaluator_schema_version": 2,
         "git_dirty": null,
         "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
-        "inputs_verified": true
+        "inputs_verified": true,
+        "result_schema_version": null
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=RNAs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
@@ -845,8 +865,8 @@
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 6,
+    "FAIL": 7,
     "MISSING_EVIDENCE": 4,
-    "PASS": 12
+    "PASS": 11
   }
 }

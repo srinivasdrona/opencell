@@ -69,40 +69,44 @@ def test_committed_evidence_index_passes_integrity_audit():
 
 def test_committed_evidence_index_is_honestly_non_green_today():
     """This task MUST report a truthful non-green index, never a fabricated
-    PASS. The tally hardcoded here has moved twice since this test was first
-    written (see the historical narrative that used to live in this
+    PASS. The tally hardcoded here has moved three times since this test was
+    first written (see the historical narrative that used to live in this
     docstring, now superseded -- the full evaluator-only re-derivation
-    history for the most recent move is
-    docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13.14):
+    history for the earlier moves is
+    docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13.14, and for
+    this move Section 13.15):
 
-    As of this commit (evaluator schema v3) the tally is
-    PASS: 12, FAIL: 6, MISSING_EVIDENCE: 4, n_in_scope: 22:
-      - PASS (12): DNARepair, DNASupercoiling, Metabolism, ProteinDecay,
+    As of this commit (the Opus5 follow-up review closing the "primary
+    low-sample false-green" gap) the tally is
+    PASS: 11, FAIL: 7, MISSING_EVIDENCE: 4, n_in_scope: 22:
+      - PASS (11): DNARepair, Metabolism, ProteinDecay,
         ProteinModification, ProteinTranslocation, RNADecay,
         RNAModification, RNAProcessing, ReplicationInitiation,
-        Transcription, Translation. RNADecay/RNAModification/
-        RNAProcessing/Transcription moved FAIL -> PASS in this commit: their
-        stored `result.json` raw metrics were always PASS-worthy (nonzero
-        n_nonzero_oc/n_nonzero_karr with W1 under threshold), but the
-        evaluator's primary-channel-name check compared the runner's
-        alias-normalized channel name (e.g. `RNAs`) byte-exact against the
-        un-normalized catalog primary channel (`rnas`), so it always fired
-        SENTINEL_FAIL for a vacuous-looking mismatch that was really just a
-        naming-convention difference already handled by the runner. Fixed
-        by `scripts/l22_evidence/channel_names.py` (shared, evaluator-only,
-        parity-tested against the runner's own alias table).
-      - FAIL (6): MacromolecularComplexation, ProteinFolding,
+        Transcription, Translation.
+      - FAIL (7): MacromolecularComplexation, ProteinFolding,
         ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation (all
         pre-existing `SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE`
-        H12 gaps, untouched by this task) plus Replication, which moved
-        PASS -> FAIL in this commit: its stored `result.json` shows the OC
-        run never exercised the primary `chromosome` channel's
+        H12 gaps, untouched by this task) and Replication (moved
+        PASS -> FAIL in the evaluator-v3 commit: its stored `result.json`
+        shows the OC run never exercised the primary `chromosome` channel's
         `polymerizedRegions.*` components at all (n_nonzero_oc == 0) while
-        Karr shows real nonzero activity (420-4265 events per component)
-        -- an asymmetric-activity case the pre-v3 evaluator silently
-        treated as vacuously-equal-so-PASS instead of mechanically
-        non-green. Fixed by the new `PRIMARY_ACTIVITY_MISSING` guard in
-        `verdict.py`.
+        Karr shows real nonzero activity (420-4265 events per component) --
+        an asymmetric-activity case the pre-v3 evaluator silently treated as
+        vacuously-equal-so-PASS instead of mechanically non-green; fixed by
+        the `PRIMARY_ACTIVITY_MISSING` guard in `verdict.py`), plus
+        DNASupercoiling, which moves PASS -> FAIL in THIS commit: its
+        stored `result.json` primary `chromosome` channel's per_component
+        comparison on component `linkingNumbers.delta_nnz` has
+        n_oc=17, n_karr=24 -- both genuinely nonzero (neither VACUOUS nor
+        ACTIVITY_MISSING), but both below `MIN_NONZERO_EVENTS=30`. The
+        pre-fix evaluator still computed and passed a W1 statistic
+        (scaled_w1=0.007) on this severely under-sampled component -- a
+        false green closed by the new, gating `PRIMARY_INSUFFICIENT_SAMPLES`
+        guard added to `_rederive_w1_channel`,
+        `_rederive_per_component_scaled_channel`, and
+        `_rederive_hurdle_channel` in `verdict.py` (distinct from, and
+        gating unlike, the pre-existing generic non-primary
+        `INSUFFICIENT_SAMPLES` fallback).
       - MISSING_EVIDENCE (4): Cytokinesis, DNADamage, FtsZPolymerization,
         RibosomeAssembly -- no sweep evidence directory exists for these
         processes at all; unrelated to and untouched by this task.
@@ -118,8 +122,8 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 12,
-        schema.STATUS_FAIL: 6,
+        schema.STATUS_PASS: 11,
+        schema.STATUS_FAIL: 7,
         schema.STATUS_MISSING_EVIDENCE: 4,
     }
 

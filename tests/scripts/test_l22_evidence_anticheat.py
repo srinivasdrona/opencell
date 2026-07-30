@@ -204,9 +204,15 @@ def test_insufficient_primary_samples_is_non_green(tmp_path):
     _write_evidence_dir(tmp_path, "Metabolism", channel_overrides={"n_nonzero_oc": 3, "n_nonzero_karr": 3})
     payload = gen.build_evidence_index(evidence_root=tmp_path)
     row = _row_for(payload, "Metabolism")
-    # Only channel is INSUFFICIENT_SAMPLES -> no gateable channels -> non-green.
+    # Both sides nonzero but below MIN_NONZERO_EVENTS on the primary channel:
+    # PRIMARY_INSUFFICIENT_SAMPLES is gating (unlike the generic, non-primary
+    # "INSUFFICIENT_SAMPLES" fallback), so this is a mechanical FAIL, not a
+    # NO_GATEABLE_CHANNELS pass-through -- closing the false-green window
+    # where a low-sample primary channel used to be silently excluded from
+    # aggregation instead of counted as evidence against the process.
     assert row["green"] is False
-    assert row["mechanical_verdict"] == schema.STATUS_NO_GATEABLE_CHANNELS
+    assert row["mechanical_verdict"] == schema.STATUS_FAIL
+    assert any(schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES in reason for reason in row["reasons"])
 
 
 # --- Missing evaluator: projection-distance primary channel -------------------
@@ -516,6 +522,96 @@ def test_evaluator_schema_version_mismatch_with_missing_raw_field_is_still_non_g
     row = _row_for(payload, "Metabolism")
     assert row["green"] is False
     assert any(schema.STATUS_MISSING_EVALUATOR in reason for reason in row["reasons"])
+
+
+def test_result_schema_version_absent_from_sentinel_is_treated_as_version_1(tmp_path):
+    """R1/item-1: `RESULT_SCHEMA_VERSION` is a distinct, DISTINCT-from-
+    `evaluator_schema_version` gating field for the raw runner evidence
+    contract. Existing sweep sentinels that predate this field entirely
+    (no `result_schema_version` key at all) must be treated as version 1 --
+    exactly the CURRENT `schema.RESULT_SCHEMA_VERSION` -- so real evidence
+    written before this commit does NOT go stale just because this field
+    didn't exist yet."""
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
+    prov = json.loads(prov_path.read_text(encoding="utf-8"))
+    assert schema.RESULT_SCHEMA_VERSION == 1
+    del prov["result_schema_version"]
+    prov_path.write_text(json.dumps(prov), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is True
+    assert not any(schema.STATUS_STALE_PROVENANCE in reason for reason in row["reasons"])
+    assert row["sweep_provenance"]["result_schema_version"] is None
+
+
+def test_result_schema_version_mismatch_is_stale_provenance(tmp_path):
+    """UNLIKE `evaluator_schema_version` (v3 policy: informational only), a
+    `result_schema_version` mismatch on the sentinel means the raw
+    result.json/sidecar FIELD CONTRACT itself may have changed since this
+    evidence was generated -- that must gate as `STATUS_STALE_PROVENANCE`,
+    forcing a rerun, because the mechanical re-derivation logic cannot
+    safely assume the fields it needs are present/mean the same thing."""
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
+    prov = json.loads(prov_path.read_text(encoding="utf-8"))
+    assert prov["result_schema_version"] == schema.RESULT_SCHEMA_VERSION
+    prov["result_schema_version"] = schema.RESULT_SCHEMA_VERSION + 1
+    prov_path.write_text(json.dumps(prov), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is False
+    assert any(
+        schema.STATUS_STALE_PROVENANCE in reason and "result_schema_version" in reason
+        for reason in row["reasons"]
+    )
+    assert row["sweep_provenance"]["result_schema_version"] == schema.RESULT_SCHEMA_VERSION + 1
+
+
+def test_evaluator_schema_bump_alone_does_not_stale_when_result_schema_matches(tmp_path):
+    """Combining both axes: an `evaluator_schema_version` mismatch (v3:
+    informational only) alongside a MATCHING `result_schema_version` must
+    still rederive cleanly without staleness -- the two fields are
+    orthogonal, and only `result_schema_version` is gating."""
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
+    prov = json.loads(prov_path.read_text(encoding="utf-8"))
+    prov["evaluator_schema_version"] = -1
+    assert prov["result_schema_version"] == schema.RESULT_SCHEMA_VERSION
+    prov_path.write_text(json.dumps(prov), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is True
+    assert not any(schema.STATUS_STALE_PROVENANCE in reason for reason in row["reasons"])
+
+
+def test_result_schema_version_mismatch_with_missing_raw_field_is_still_non_green(tmp_path):
+    """A `result_schema_version` mismatch alone already gates as
+    STALE_PROVENANCE; a genuinely missing raw field must independently also
+    be flagged (both reasons visible), never masked by the other."""
+    evidence_dir = _write_evidence_dir(tmp_path, "Metabolism")
+    prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
+    prov = json.loads(prov_path.read_text(encoding="utf-8"))
+    prov["result_schema_version"] = schema.RESULT_SCHEMA_VERSION + 1
+    prov_path.write_text(json.dumps(prov), encoding="utf-8")
+
+    result_path = evidence_dir / "result.json"
+    result = json.loads(result_path.read_text(encoding="utf-8"))
+    primary_name = next(iter(result["channels"]))
+    del result["channels"][primary_name]["n_nonzero_oc"]
+    result_path.write_text(json.dumps(result), encoding="utf-8")
+
+    payload = gen.build_evidence_index(evidence_root=tmp_path)
+    row = _row_for(payload, "Metabolism")
+    assert row["green"] is False
+    assert any(schema.STATUS_MISSING_EVALUATOR in reason for reason in row["reasons"])
+    assert any(
+        schema.STATUS_STALE_PROVENANCE in reason and "result_schema_version" in reason
+        for reason in row["reasons"]
+    )
 
 
 def test_missing_sweep_provenance_file_is_missing_evidence(tmp_path):

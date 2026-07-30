@@ -8,12 +8,15 @@ considered valid/current when it carries the four mandatory sidecars
 AND a tracked `sweep_provenance.json` completion sentinel whose
 process/n_seeds/m_ticks/completion_status, per-sidecar-file sha256
 (`sidecar_hashes`), source hashes (runner/helpers/projections/catalog +
-this process's own oc_module), evaluator schema version, and
-`inputs_verified` attestation all match the CURRENT tree/evidence -- the
-gating authority. Git SHA/dirty are recorded for human inspection but are
-informational only, never gating. These helpers build exactly that --
-using the REAL current `sweep.current_source_hashes()` /
-`populate._git_sha` / `populate._git_dirty` / `verdict.EVALUATOR_SCHEMA_VERSION`
+this process's own oc_module), `result_schema_version` (the raw-evidence
+field contract; gating), and `inputs_verified` attestation all match the
+CURRENT tree/evidence -- the gating authority. Git SHA/dirty and
+`evaluator_schema_version` (the mechanical re-derivation logic version) are
+recorded for human inspection but are informational only, never gating (as
+of v3 -- see `verdict.EVALUATOR_SCHEMA_VERSION`'s docstring). These helpers
+build exactly that -- using the REAL current `sweep.current_source_hashes()`
+/ `populate._git_sha` / `populate._git_dirty` /
+`verdict.EVALUATOR_SCHEMA_VERSION` / `schema.RESULT_SCHEMA_VERSION`
 -- so tests exercise the real staleness-detection code path rather than a
 parallel hand-rolled one that could silently drift from it.
 
@@ -91,9 +94,10 @@ def valid_sweep_provenance_payload(
 ) -> dict[str, Any]:
     """A `sweep_provenance.json` payload that will pass EVERY staleness
     check against the CURRENT tree (real current source hashes, real
-    current evaluator schema version -- the gating authority; git SHA is
-    included for realism but is informational only) -- exactly what
-    `sweep.build_sweep_provenance` would have produced right now.
+    current `result_schema_version` -- the gating authority; git SHA and
+    `evaluator_schema_version` are included for realism but are
+    informational only) -- exactly what `sweep.build_sweep_provenance`
+    would have produced right now.
 
     `harness_type` defaults to `"design_a_per_tick"` (every current caller
     exercises a design_a_per_tick fixture process); pass `"event_class"`
@@ -119,6 +123,7 @@ def valid_sweep_provenance_payload(
         "sidecar_hashes": sidecar_hashes or {},
         "inputs_verified": inputs_verified,
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,
+        "result_schema_version": schema.RESULT_SCHEMA_VERSION,
         "written_at": "2026-01-01T00:00:00+00:00",
     }
 

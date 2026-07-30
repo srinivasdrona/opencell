@@ -250,6 +250,13 @@ def _check_sweep_provenance_staleness(
     `input_manifest.json`'s inputs at generation time; see
     `sweep._verify_input_manifest`).
 
+    R4 result-schema attestation -- `result_schema_version` must match
+    `schema.RESULT_SCHEMA_VERSION` (absent is treated as version 1). This
+    IS gating, unlike `evaluator_schema_version` below: it means the
+    STORED RAW result.json/sidecar bytes were produced under a different
+    raw-evidence field contract, which content hashes cannot detect on
+    their own (see `schema.RESULT_SCHEMA_VERSION`'s docstring).
+
     An unknown/missing real git SHA is recorded on the row informationally
     (see `row["sweep_provenance"]["git_sha"]` in `build_process_row`) but
     does NOT by itself add a reason here: content hashes are the gating
@@ -352,6 +359,24 @@ def _check_sweep_provenance_staleness(
     # logic is a separate question, answered by each `_rederive_*_channel`
     # function's own `required_fields`/`missing_fields` checks
     # (`schema.STATUS_MISSING_EVALUATOR`), not by this staleness gate.
+
+    # UNLIKE `evaluator_schema_version` above, `result_schema_version` IS
+    # gating: it means the STORED RAW result.json/sidecar BYTES themselves
+    # were produced under a different raw-evidence field contract than the
+    # one the current evaluator assumes, which content hashes cannot
+    # detect (they only prove the bytes match the code currently on disk,
+    # never that their field SHAPE matches what that code now expects).
+    # Absent (every sentinel written before this field existed) is treated
+    # as version 1, never as missing/invalid -- see
+    # `schema.RESULT_SCHEMA_VERSION`'s own docstring.
+    recorded_result_schema_version = payload.get("result_schema_version", 1)
+    if recorded_result_schema_version != schema.RESULT_SCHEMA_VERSION:
+        reasons.append(
+            f"{schema.STATUS_STALE_PROVENANCE}: sweep_provenance.json result_schema_version="
+            f"{recorded_result_schema_version!r} != current schema.RESULT_SCHEMA_VERSION="
+            f"{schema.RESULT_SCHEMA_VERSION!r}"
+        )
+
     return reasons
 
 
@@ -489,6 +514,10 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path, *, strict_in
         "git_sha": sweep_provenance_payload.get("git_sha"),
         "git_dirty": sweep_provenance_payload.get("git_dirty"),
         "evaluator_schema_version": sweep_provenance_payload.get("evaluator_schema_version"),
+        # UNLIKE the field above, a `result_schema_version` mismatch IS
+        # gating (see `_check_sweep_provenance_staleness`) -- still
+        # surfaced here for human inspection alongside the reason string.
+        "result_schema_version": sweep_provenance_payload.get("result_schema_version"),
         "completion_status": sweep_provenance_payload.get("completion_status"),
         "inputs_verified": sweep_provenance_payload.get("inputs_verified"),
     }

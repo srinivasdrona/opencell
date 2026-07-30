@@ -605,6 +605,50 @@ def test_evidence_is_valid_accepts_stale_evaluator_schema_version_when_hashes_ma
     assert reason is None
 
 
+def test_evidence_is_valid_accepts_missing_result_schema_version_as_version_1(tmp_path):
+    """Item 1: `RESULT_SCHEMA_VERSION` versions the raw runner evidence
+    contract, distinct from `evaluator_schema_version`. A sentinel written
+    before this field existed (no `result_schema_version` key at all) must
+    be treated as version 1 -- exactly the current
+    `schema.RESULT_SCHEMA_VERSION` -- so it does not spuriously invalidate."""
+    job = _make_valid_job_with_provenance(tmp_path)
+    payload = json.loads((job.output_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
+    assert schema.RESULT_SCHEMA_VERSION == 1
+    del payload["result_schema_version"]
+    (job.output_dir / schema.SWEEP_PROVENANCE_FILE).write_text(json.dumps(payload), encoding="utf-8")
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is True
+    assert reason is None
+
+
+def test_evidence_is_valid_rejects_result_schema_version_mismatch(tmp_path):
+    """UNLIKE `evaluator_schema_version`, `result_schema_version` IS gating:
+    a mismatch means the raw result.json/sidecar field contract itself may
+    have changed since this evidence was generated, so a rerun is required."""
+    job = _make_valid_job_with_provenance(tmp_path, result_schema_version=schema.RESULT_SCHEMA_VERSION + 1)
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is False
+    assert "result_schema_version" in reason
+
+
+def test_evidence_is_valid_accepts_evaluator_bump_when_result_schema_matches(tmp_path):
+    """Combining both axes: an `evaluator_schema_version` mismatch alongside
+    a MATCHING `result_schema_version` must still be accepted -- the two
+    fields are orthogonal, and only `result_schema_version` is gating."""
+    job = _make_valid_job_with_provenance(
+        tmp_path, evaluator_schema_version=-999, result_schema_version=schema.RESULT_SCHEMA_VERSION
+    )
+    valid, reason = sweep.evidence_is_valid(job)
+    assert valid is True
+    assert reason is None
+
+
+def test_build_sweep_provenance_records_current_result_schema_version(tmp_path):
+    job = _make_valid_job_with_provenance(tmp_path)
+    payload = json.loads((job.output_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
+    assert payload["result_schema_version"] == schema.RESULT_SCHEMA_VERSION
+
+
 def test_evidence_is_valid_rejects_missing_sweep_provenance_file(tmp_path):
     """Evidence written before the provenance hardening (no
     sweep_provenance.json at all) must be treated as stale, never DONE_VALID."""

@@ -153,7 +153,7 @@ name them all" convention already used by the L2.2 divergence taxonomy in
 | `MISSING_EVIDENCE` | One or more of the mandatory files (`result.json`/`input_manifest.json`/`provenance.json`/`thresholds.json`/`null_calibration.json`/`SUMMARY.json`/`analytical_check.json`/`sweep_provenance.json`) is absent -- including evidence generated before the provenance hardening landed, which never wrote `sweep_provenance.json` and is therefore honestly demoted here rather than grandfathered in. | no |
 | `SCHEMA_INVALID` | A mandatory file exists but is not parseable JSON, or `result.json` has no channel marked `is_primary`. | no |
 | `NO_GATEABLE_CHANNELS` | Every channel is `EVENT_CHANNEL_DEFERRED` or `INSUFFICIENT_SAMPLES`. | no |
-| `FAIL` | Any other non-green condition (raw `w1 > threshold`, `NM_MISMATCH`, `STALE_VS_TREE`, `STALE_SWEEP_PROVENANCE` (see Section 13), `SENTINEL_FAIL`, `MISSING_EVALUATOR`, `PRIMARY_CHANNEL_VACUOUS`, `PRIMARY_ACTIVITY_MISSING` (see Section 13.14), `PROCESS_NAME_MISMATCH`, `DEFERRED`). See `reasons[]` for exactly which. | no |
+| `FAIL` | Any other non-green condition (raw `w1 > threshold`, `NM_MISMATCH`, `STALE_VS_TREE`, `STALE_SWEEP_PROVENANCE` (see Section 13), `SENTINEL_FAIL`, `MISSING_EVALUATOR`, `PRIMARY_CHANNEL_VACUOUS`, `PRIMARY_ACTIVITY_MISSING` (see Section 13.14), `PRIMARY_INSUFFICIENT_SAMPLES` (see Section 13.15), `PROCESS_NAME_MISMATCH`, `DEFERRED`). See `reasons[]` for exactly which. | no |
 
 ## 6. Mechanical verdict re-derivation (`scripts/l22_evidence/verdict.py`)
 
@@ -172,7 +172,12 @@ mechanically re-derivable today:
   real (nonzero) activity → `PRIMARY_ACTIVITY_MISSING` (checked BEFORE
   the `n_nonzero < 30` branch below, so it is never silently absorbed
   into non-gating `INSUFFICIENT_SAMPLES`; see Section 13.14).
-- `n_nonzero < 30` (either side) → `INSUFFICIENT_SAMPLES` (non-gating).
+- Primary channel with genuinely nonzero activity on BOTH sides but below
+  `MIN_NONZERO_EVENTS=30` on either side → `PRIMARY_INSUFFICIENT_SAMPLES`
+  (checked after the two cases above, before the non-primary fallback
+  below; gating, unlike the non-primary case; see Section 13.15).
+- `n_nonzero < 30` (either side, non-primary channel) → `INSUFFICIENT_SAMPLES`
+  (non-gating).
 - `w1 <= q95_null` → `SEED_NOISE`; `w1 <= threshold` → `PASS`; else `FAIL`.
 
 ### 6.2 `per_component_scaled` (chromosome-primary; `Replication`, `DNASupercoiling`)
@@ -193,7 +198,14 @@ zero nonzero observations on OC while Karr has real (nonzero) activity,
 the component is marked `PRIMARY_ACTIVITY_MISSING` and its `scaled_w1` is
 never computed/PASSed (Section 13.14) -- this is independent of, and
 checked in addition to, the both-sides-zero channel-level check below, and
-never fires for a component where both sides are genuinely zero. Otherwise:
+never fires for a component where both sides are genuinely zero.
+Otherwise, if the channel is primary and that component has genuinely
+nonzero counts on both sides but either is below `MIN_NONZERO_EVENTS=30`,
+the component is marked `PRIMARY_INSUFFICIENT_SAMPLES` and its
+`scaled_w1` is likewise never computed (Section 13.15) -- this trivial-
+both-zero-component exemption is the same one used by
+`PRIMARY_ACTIVITY_MISSING`, so an always-inactive component never trips
+either guard. Otherwise:
 `scaled_w1 = raw_w1 / max(scale, 1e-12)`; component verdict is `PASS` iff
 `scaled_w1 <= scaled_distance_threshold`, else `FAIL` (exactly the runner's
 own formula, independently recomputed here rather than read from the
@@ -201,9 +213,11 @@ stored `component_verdicts` dict). If the channel is primary and **every**
 component has zero nonzero observations on both OC and Karr →
 `PRIMARY_CHANNEL_VACUOUS` (a single trivial-always-zero component
 alongside otherwise-real components is not vacuous by itself). Otherwise:
-any component `FAIL`/`PRIMARY_ACTIVITY_MISSING` → channel `FAIL`/
-`PRIMARY_ACTIVITY_MISSING` respectively; all components `PASS` → channel
-`PASS`.
+any component `PRIMARY_ACTIVITY_MISSING` → channel `PRIMARY_ACTIVITY_MISSING`;
+else any component `PRIMARY_INSUFFICIENT_SAMPLES` (JOINT semantics -- ANY
+ONE under-sampled primary component gates the whole channel) → channel
+`PRIMARY_INSUFFICIENT_SAMPLES`; else any component `FAIL` → channel `FAIL`;
+all components `PASS` → channel `PASS`.
 
 ### 6.3 `hurdle_event_rate_plus_conditional_scaled_distance` (chromosome-primary; `DNARepair`)
 
@@ -228,9 +242,14 @@ trivial `0.0` in that case (there is nothing to compare), so its
 `joint_verdict` is a vacuous `PASS` that this re-derivation refuses to
 launder into green. If instead `n_events_oc == 0` while `n_events_karr > 0`
 (OC never fired at all, but Karr did) → `PRIMARY_ACTIVITY_MISSING` (Section
-13.14), distinct from and checked in addition to the symmetric case above.
-Otherwise the channel verdict is `PASS` iff the event-rate check and every
-conditional component all pass.
+13.14), distinct from and checked in addition to the symmetric case above
+(reasons already accumulated from the event-rate/conditional-component
+checks above are preserved, not discarded, on this return path). Otherwise,
+if `n_events_oc < MIN_NONZERO_EVENTS or n_events_karr < MIN_NONZERO_EVENTS`
+(genuinely nonzero on both sides, but under-sampled) → `PRIMARY_INSUFFICIENT_SAMPLES`
+(Section 13.15; same accumulated-reasons preservation). Otherwise the
+channel verdict is `PASS` iff the event-rate check and every conditional
+component all pass.
 
 ### 6.4 `fva_feasibility` (Metabolism substrates, when FVA-gated)
 
@@ -1773,12 +1792,16 @@ recording (unchanged: still surfaced on every row via
 `row["sweep_provenance"]["evaluator_schema_version"]` and written into
 every fresh sentinel by `build_sweep_provenance`), never for staleness/
 rerun-necessity. `source_hashes`/`sidecar_hashes` (content hashes) remain
-the sole gating authority for both "was this evidence produced by the code
+the gating authority for both "was this evidence produced by the code
 currently on disk" (staleness) and "does this job need a sweep rerun"
-(`evidence_is_valid`) -- whether ALREADY-CURRENT raw evidence can be
-safely RE-SCORED under newer mechanical-verdict logic is a separate
-question, answered per-channel by each `_rederive_*_channel` function's
-own `required_fields`/`missing_fields` check (`MISSING_EVALUATOR`), never
+(`evidence_is_valid`) -- joined, in a later follow-up commit, by
+`result_schema_version` (Section 13.15) as a second, distinct gating
+field for the raw evidence FIELD CONTRACT itself (as opposed to
+`source_hashes`, which versions the CODE that produced the evidence).
+Whether ALREADY-CURRENT raw evidence can be safely RE-SCORED under newer
+mechanical-verdict logic is a separate question, answered per-channel by
+each `_rederive_*_channel` function's own `required_fields`/
+`missing_fields` check (`MISSING_EVALUATOR`), never
 by the sweep-provenance/launcher staleness gate. Tests
 (`test_evaluator_schema_version_mismatch_alone_does_not_demote`,
 `test_evidence_is_valid_accepts_stale_evaluator_schema_version_when_hashes_match`)
@@ -1793,7 +1816,7 @@ correctly yields `MISSING_EVALUATOR` regardless of the recorded
 field SHAPE did not change, only which of its already-existing fields
 gate.
 
-**Net result: no sweep rerun, five FAIL rows promoted, one PASS row
+**Net result: no sweep rerun, four FAIL rows promoted, one PASS row
 correctly demoted.** With no process/oracle/catalog/threshold change and
 zero sweep reruns, regenerating `evidence_index.json` purely by re-running
 this hardened evaluator against the SAME stored raw bytes moves the tally
@@ -1805,7 +1828,112 @@ unaffected by either fix). The remaining 4 `MISSING_EVIDENCE` rows
 (`Cytokinesis`, `DNADamage`, `FtsZPolymerization`, `RibosomeAssembly`) are
 untouched -- no evidence directory exists for them either way.
 
-## 14. Files
+### 13.15 Opus5 follow-up review: `RESULT_SCHEMA_VERSION` (raw-evidence
+contract versioning) + closing the "primary low-sample false-green" gap
+
+A follow-up review of the 13.14 evaluator-v3 commit identified two further
+gaps, both closed in this same commit (still zero sweep reruns, zero
+process/catalog/threshold changes):
+
+**(a) `RESULT_SCHEMA_VERSION` — a distinct gating version for the raw
+runner evidence contract.** `verdict.EVALUATOR_SCHEMA_VERSION` (13.10/13.14)
+versions the mechanical RE-DERIVATION LOGIC and is deliberately
+non-gating as of v3 (§13.14 above). That left no versioning at all for the
+raw `result.json`/sidecar FIELD CONTRACT itself — the actual shape of
+`n_nonzero_oc`, `per_component.*`, `hurdle.*`, etc. that the runner writes
+and the evaluator reads. `schema.RESULT_SCHEMA_VERSION` (currently `1`,
+the version already in effect for every existing sentinel) fills this
+gap: unlike `evaluator_schema_version`, a `result_schema_version` mismatch
+on `sweep_provenance.json` DOES gate, in both
+`sweep.evidence_is_valid` (forces a rerun) and
+`generator._check_sweep_provenance_staleness` (forces `STALE_PROVENANCE`
+non-green). Absent-on-existing-sentinels is treated as version 1 (the
+current value), so no existing evidence goes stale from this commit alone.
+`build_sweep_provenance` now records `result_schema_version` on every
+fresh sentinel, and `build_process_row` surfaces it informationally on
+every row's `sweep_provenance` block (alongside, but independent of,
+`evaluator_schema_version`). Tests: `test_result_schema_version_absent_
+from_sentinel_is_treated_as_version_1`, `test_result_schema_version_
+mismatch_is_stale_provenance`/`..._mismatch_is_non_green` (generator +
+sweep flavors), `test_evaluator_schema_bump_alone_does_not_stale_when_
+result_schema_matches`/`test_evidence_is_valid_accepts_evaluator_bump_
+when_result_schema_matches` (the two axes are orthogonal), and a
+missing-required-raw-field case that stays non-green regardless of which
+schema version is recorded.
+
+**(b) `PRIMARY_INSUFFICIENT_SAMPLES` — closing the primary low-sample
+false-green window.** Before this commit, a primary channel with SOME
+nonzero activity on both OC and Karr, but below
+`MIN_NONZERO_EVENTS=30` on one or both sides, fell through to the
+generic, NON-GATING `"INSUFFICIENT_SAMPLES"` verdict
+(`schema.NON_GATING_CHANNEL_VERDICTS`) — the same verdict correctly used
+for non-primary channels. For a PRIMARY channel this is a false green: the
+process's own defining comparison was never actually validated at
+adequate sample size, yet it was silently excluded from aggregation
+instead of counted as evidence against the process (worst case: the
+process still goes green off its other, non-primary channels alone). Fix:
+a new gating `schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES` verdict, checked
+in `verdict.py` AFTER the existing both-zero `PRIMARY_CHANNEL_VACUOUS` and
+OC-zero/Karr-nonzero `PRIMARY_ACTIVITY_MISSING` checks (so it only fires
+once both of those more-specific cases are ruled out — reaching it
+guarantees both sides are genuinely nonzero), in all three
+per-channel aggregation flavors:
+
+- `_rederive_w1_channel`: fires when `is_primary` and
+  `n_nonzero_oc < MIN_NONZERO_EVENTS or n_nonzero_karr < MIN_NONZERO_EVENTS`.
+- `_rederive_per_component_scaled_channel`: fires per-component (JOINT
+  semantics — ANY ONE primary component below `MIN_NONZERO_EVENTS` on
+  either side gates the WHOLE channel, matching the existing
+  `activity_missing_components`/`joint_verdict` pattern), with the
+  pre-existing trivial-both-zero-component exemption preserved (a
+  component where BOTH sides are genuinely zero is "always inactive", not
+  "under-sampled", and must not trip this guard — see
+  `test_per_component_not_vacuous_when_only_one_component_is_zero_nonzero`
+  and its `PRIMARY_INSUFFICIENT_SAMPLES` counterpart
+  `test_per_component_primary_insufficient_samples_trivial_zero_component_exempt`).
+- `_rederive_hurdle_channel`: fires when `is_primary` and
+  `n_events_oc < MIN_NONZERO_EVENTS or n_events_karr < MIN_NONZERO_EVENTS`
+  (whole-ensemble hurdle event count, the natural per-channel analogue of
+  `n_nonzero_oc`/`n_nonzero_karr`).
+
+This guard never applies to non-primary channels (which keep falling
+through to the pre-existing generic `INSUFFICIENT_SAMPLES` fallback) and
+never applies to `EVENT_CHANNEL_DEFERRED` rows. `MIN_NONZERO_EVENTS=30`
+itself is unchanged (still mirrors
+`PROCESS_CATALOG.yaml`'s `universals.min_events_for_distribution`); this
+task explicitly did not tune it.
+
+As part of fixing the hurdle flavor, a related bug in the pre-existing
+`PRIMARY_ACTIVITY_MISSING` branch of `_rederive_hurdle_channel` was also
+corrected: it previously REPLACED `reasons` with a fresh single-item list
+on that return path instead of appending, silently discarding any FAIL
+reasons already accumulated from the event-rate/conditional-component
+checks earlier in the same function. It now appends and preserves them
+(see `test_hurdle_activity_missing_preserves_accumulated_reasons`).
+
+**Real transition found by re-deriving the current evidence bundle
+(honest, not tuned):** `DNASupercoiling` moves `PASS -> FAIL`. Its primary
+`chromosome` channel's `per_component_scaled` comparison on component
+`linkingNumbers.delta_nnz` has `n_oc=17, n_karr=24` — both genuinely
+nonzero (so neither `PRIMARY_CHANNEL_VACUOUS` nor
+`PRIMARY_ACTIVITY_MISSING` applies) but both below
+`MIN_NONZERO_EVENTS=30`. Before this fix the evaluator still computed and
+passed a W1 statistic (`scaled_w1=0.007`, `threshold=1.0`) on this
+severely under-sampled component; after this fix it is
+`PRIMARY_INSUFFICIENT_SAMPLES`, gating the whole channel/process
+non-green. No other row's mechanical verdict changes (confirmed by a full
+scan of every currently-PASS process's primary channel(s) for
+sub-threshold nonzero counts, and a full scan of every W1 channel
+repo-wide for negative/NaN nonzero counts — none found beyond this one
+case).
+
+**Net result: no sweep rerun, no process/catalog/threshold change, one
+PASS row correctly demoted.** Tally moves from `PASS: 12, FAIL: 6,
+MISSING_EVIDENCE: 4` to `PASS: 11, FAIL: 7, MISSING_EVIDENCE: 4`
+(`n_in_scope: 22` unchanged). `DNASupercoiling` is the only row affected;
+every FAIL/MISSING_EVIDENCE/other-PASS row from §13.14 is untouched.
+
+
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).
 - `scripts/l22_evidence/schema.py` — versioned constants (paths, required

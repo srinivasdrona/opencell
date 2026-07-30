@@ -147,6 +147,95 @@ def test_channel_activity_missing_check_skipped_for_non_primary():
     assert reasons == []
 
 
+@pytest.mark.parametrize("n_nonzero_oc", [-1, -100])
+def test_channel_negative_nonzero_count_is_missing_evaluator(n_nonzero_oc):
+    """`_is_nonnegative_count` validation (mirrors the pre-existing
+    per_component-level check): a negative n_nonzero_oc/karr is impossible
+    raw evidence and must not be silently coerced into any real verdict."""
+    payload = _channel(n_nonzero_oc=n_nonzero_oc, n_nonzero_karr=100)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+    assert any("n_nonzero_oc" in reason for reason in reasons)
+
+
+@pytest.mark.parametrize("bad_value", [float("nan"), float("inf"), float("-inf")])
+def test_channel_non_finite_nonzero_count_is_missing_evaluator(bad_value):
+    payload = _channel(n_nonzero_karr=bad_value)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+    assert any("n_nonzero_karr" in reason for reason in reasons)
+
+
+def test_channel_negative_nonzero_count_check_applies_to_non_primary_too():
+    payload = _channel(n_nonzero_oc=-1, n_nonzero_karr=100)
+    verdict, reasons = vd.rederive_channel("secondary", payload, is_primary=False)
+    assert verdict == schema.STATUS_MISSING_EVALUATOR
+
+
+@pytest.mark.parametrize("low_count", list(range(1, 30)))
+def test_channel_primary_insufficient_samples_low_oc_count(low_count):
+    """Primary low-sample false-green fix: OC below MIN_NONZERO_EVENTS=30
+    (Karr healthy) must gate, for every count from 1 through 29."""
+    payload = _channel(n_nonzero_oc=low_count, n_nonzero_karr=100)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES
+    assert any(str(low_count) in reason for reason in reasons)
+
+
+@pytest.mark.parametrize("low_count", list(range(1, 30)))
+def test_channel_primary_insufficient_samples_low_karr_count(low_count):
+    """Same as above, mirrored on the Karr side (OC healthy)."""
+    payload = _channel(n_nonzero_oc=100, n_nonzero_karr=low_count)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES
+    assert any(str(low_count) in reason for reason in reasons)
+
+
+@pytest.mark.parametrize("low_count", list(range(1, 30)))
+def test_channel_primary_insufficient_samples_both_sides_low(low_count):
+    """Both sides equally low (and nonzero) must also gate, not just the
+    asymmetric single-side cases above."""
+    payload = _channel(n_nonzero_oc=low_count, n_nonzero_karr=low_count)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES
+
+
+def test_channel_primary_insufficient_samples_exactly_min_nonzero_events_passes_through():
+    """Exactly MIN_NONZERO_EVENTS=30 on both sides is NOT insufficient (the
+    comparison is strict `<`, matching the pre-existing non-primary
+    INSUFFICIENT_SAMPLES boundary convention) -- falls through to the real
+    w1-vs-threshold computation."""
+    payload = _channel(n_nonzero_oc=schema.MIN_NONZERO_EVENTS, n_nonzero_karr=schema.MIN_NONZERO_EVENTS)
+    verdict, reasons = vd.rederive_channel("substrates", payload, is_primary=True)
+    assert verdict == "PASS"
+    assert reasons == []
+
+
+def test_channel_primary_insufficient_samples_skipped_for_non_primary():
+    """A non-primary channel with the exact same low counts falls through to
+    the pre-existing, non-gating generic INSUFFICIENT_SAMPLES fallback
+    instead -- PRIMARY_INSUFFICIENT_SAMPLES only ever applies to is_primary
+    channels."""
+    payload = _channel(n_nonzero_oc=5, n_nonzero_karr=5)
+    verdict, reasons = vd.rederive_channel("secondary", payload, is_primary=False)
+    assert verdict == "INSUFFICIENT_SAMPLES"
+    assert reasons == []
+
+
+def test_channel_primary_insufficient_samples_checked_after_vacuous_and_activity_missing():
+    """Ordering: both-zero must still resolve to PRIMARY_VACUOUS (not
+    PRIMARY_INSUFFICIENT_SAMPLES), and OC-zero/Karr-nonzero must still
+    resolve to PRIMARY_ACTIVITY_MISSING -- PRIMARY_INSUFFICIENT_SAMPLES only
+    fires once both of those more specific cases are ruled out."""
+    both_zero = _channel(n_nonzero_oc=0, n_nonzero_karr=0)
+    verdict, _ = vd.rederive_channel("substrates", both_zero, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_VACUOUS
+
+    activity_missing = _channel(n_nonzero_oc=0, n_nonzero_karr=5)
+    verdict, _ = vd.rederive_channel("substrates", activity_missing, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_ACTIVITY_MISSING
+
+
 def test_channel_insufficient_samples_below_min_nonzero():
     payload = _channel(n_nonzero_oc=5, n_nonzero_karr=5, is_primary=False)
     verdict, reasons = vd.rederive_channel("secondary", payload, is_primary=False)
@@ -332,6 +421,80 @@ def test_per_component_vacuous_check_skipped_for_non_primary():
     assert verdict == "PASS"
 
 
+@pytest.mark.parametrize("low_count", list(range(1, 30)))
+def test_per_component_primary_insufficient_samples_low_oc_count(low_count):
+    """Primary low-sample false-green fix, per_component flavor -- this is
+    the real DNASupercoiling bug case (n_oc=17, n_karr=24 on component
+    'linkingNumbers.delta_nnz'): a single primary component below
+    MIN_NONZERO_EVENTS=30 on either side must gate the WHOLE channel
+    (joint semantics), even though comp_b is healthy."""
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": low_count, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": 100, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES
+    assert any("comp_a" in reason for reason in reasons)
+
+
+@pytest.mark.parametrize("low_count", list(range(1, 30)))
+def test_per_component_primary_insufficient_samples_low_karr_count(low_count):
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": 100, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": low_count, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES
+    assert any("comp_a" in reason for reason in reasons)
+
+
+def test_per_component_primary_insufficient_samples_exactly_min_nonzero_events_passes_through():
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": schema.MIN_NONZERO_EVENTS, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": schema.MIN_NONZERO_EVENTS, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+def test_per_component_primary_insufficient_samples_trivial_zero_component_exempt():
+    """A component where BOTH sides are genuinely zero (the pre-existing
+    trivial-always-zero exemption -- see
+    test_per_component_not_vacuous_when_only_one_component_is_zero_nonzero)
+    must NOT be treated as insufficient-samples either: 0 < 30 is
+    technically true, but this is the documented "always inactive, not
+    under-sampled" case, distinct from a component that fired a FEW times."""
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": 0, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": 0, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+    assert not any(schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES in reason for reason in reasons)
+
+
+def test_per_component_primary_insufficient_samples_skipped_for_non_primary():
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": 3, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": 3, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=False)
+    assert verdict == "PASS"
+    assert not any(schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES in reason for reason in reasons)
+
+
+def test_per_component_primary_insufficient_samples_checked_after_activity_missing():
+    """Ordering: the OC-zero/Karr-nonzero asymmetric case on comp_a must
+    still resolve to PRIMARY_ACTIVITY_MISSING, not PRIMARY_INSUFFICIENT_SAMPLES,
+    even though 0 < MIN_NONZERO_EVENTS is also true."""
+    payload = _per_component_payload(
+        component_n_nonzero_oc={"comp_a": 0, "comp_b": 100},
+        component_n_nonzero_karr={"comp_a": 4000, "comp_b": 100},
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_ACTIVITY_MISSING
+
+
 # --- hurdle_event_rate_plus_conditional_scaled_distance ---------------------------
 
 
@@ -470,6 +633,85 @@ def test_hurdle_activity_missing_check_skipped_for_non_primary():
     payload = _hurdle_payload(n_events_oc=0, n_events_karr=42)
     verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=False)
     assert verdict == "PASS"
+
+
+def test_hurdle_activity_missing_preserves_accumulated_reasons():
+    """Item 3 fix: the PRIMARY_ACTIVITY_MISSING return branch used to
+    REPLACE `reasons` with a fresh single-item list, silently discarding any
+    FAIL reasons already accumulated from the event-rate/conditional-
+    component checks above it (e.g. a hand-tampered stored PASS on those
+    earlier checks). It must now APPEND and preserve them."""
+    payload = _hurdle_payload(
+        event_rate_diff=0.9,  # accumulates a FAIL reason before the OC/Karr check runs
+        conditional_w1_per_component={"component_1": 50.0, "component_2": 0.5},  # accumulates a 2nd
+        n_events_oc=0,
+        n_events_karr=42,
+        joint_verdict="PASS",
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_ACTIVITY_MISSING
+    assert any("event_rate_diff" in reason for reason in reasons)
+    assert any("component_1" in reason for reason in reasons)
+    assert any(schema.STATUS_PRIMARY_ACTIVITY_MISSING in reason for reason in reasons)
+    assert len(reasons) == 3
+
+
+@pytest.mark.parametrize("low_count", list(range(1, 30)))
+def test_hurdle_primary_insufficient_samples_low_oc_event_count(low_count):
+    """Primary low-sample false-green fix, hurdle flavor: a nonzero-but-low
+    OC event count (Karr healthy) must gate."""
+    payload = _hurdle_payload(n_events_oc=low_count, n_events_karr=42)
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES
+    assert any(str(low_count) in reason for reason in reasons)
+
+
+@pytest.mark.parametrize("low_count", list(range(1, 30)))
+def test_hurdle_primary_insufficient_samples_low_karr_event_count(low_count):
+    payload = _hurdle_payload(n_events_oc=40, n_events_karr=low_count)
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES
+    assert any(str(low_count) in reason for reason in reasons)
+
+
+def test_hurdle_primary_insufficient_samples_exactly_min_nonzero_events_passes_through():
+    payload = _hurdle_payload(
+        n_events_oc=schema.MIN_NONZERO_EVENTS,
+        n_events_karr=schema.MIN_NONZERO_EVENTS,
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == "PASS"
+
+
+def test_hurdle_primary_insufficient_samples_preserves_accumulated_reasons():
+    payload = _hurdle_payload(
+        event_rate_diff=0.9,
+        n_events_oc=5,
+        n_events_karr=42,
+        joint_verdict="PASS",
+    )
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES
+    assert any("event_rate_diff" in reason for reason in reasons)
+    assert any(schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES in reason for reason in reasons)
+    assert len(reasons) == 2
+
+
+def test_hurdle_primary_insufficient_samples_skipped_for_non_primary():
+    payload = _hurdle_payload(n_events_oc=5, n_events_karr=5)
+    verdict, reasons = vd.rederive_channel("chromosome", payload, is_primary=False)
+    assert verdict == "PASS"
+
+
+def test_hurdle_primary_insufficient_samples_checked_after_vacuous_and_activity_missing():
+    both_zero = _hurdle_payload(n_events_oc=0, n_events_karr=0, event_rate_diff=0.0,
+                                 conditional_w1_per_component={"component_1": 0.0, "component_2": 0.0})
+    verdict, _ = vd.rederive_channel("chromosome", both_zero, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_VACUOUS
+
+    activity_missing = _hurdle_payload(n_events_oc=0, n_events_karr=5)
+    verdict, _ = vd.rederive_channel("chromosome", activity_missing, is_primary=True)
+    assert verdict == schema.STATUS_PRIMARY_ACTIVITY_MISSING
 
 
 def test_hurdle_no_conditional_components_gates_on_event_rate_alone():
