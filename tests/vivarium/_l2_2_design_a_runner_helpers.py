@@ -3341,7 +3341,11 @@ def _chromosome_projection_component(
     Supported tokens:
       - '<field>.delta_value_sum'           — sum of all values
       - '<field>.delta_nnz'                 — count of distinct sparse positions
-      - '<field>.delta_value_sum_strand_<N>' — sum of values where strand == N (1-based)
+      - '<field>.delta_value_sum_strand_<N>' — sum of values where strand ==
+                                              N (N is 1-based per catalog
+                                              convention; converted to
+                                              0-based before comparing
+                                              against SparseTriplet storage)
       - 'repair_event_present'              — 1.0 if any DNARepair damage field
                                               changed nnz this tick, else 0.0
     """
@@ -3374,8 +3378,20 @@ def _chromosome_projection_component(
             strand_n = int(op.removeprefix("delta_value_sum_strand_"))
         except ValueError as exc:
             raise ValueError(f"Bad strand index in token {spec_token!r}") from exc
-        b_sum = float(b.values[b.strands == strand_n].sum()) if len(b.strands) > 0 else 0.0
-        a_sum = float(a.values[a.strands == strand_n].sum()) if len(a.strands) > 0 else 0.0
+        # PROCESS_CATALOG.yaml's `strand_1..strand_4` tokens are MATLAB's
+        # 1-based strand numbering, but ChromosomeStore/SparseTriplet always
+        # store 0-based strand indices (opencell/state/chromosome_store.py:
+        # 226-231 subtracts 1 from every MATLAB-sourced `strands` array on
+        # load; opencell/vivarium/karr_replication.py:385-386 does the same
+        # for `leadingStrandIndexs`/`laggingStrandIndexs`). Comparing the raw
+        # 1-based token directly against 0-based storage silently shifts every
+        # strand by one (strand_1 token picks 0-based index 1, i.e. Karr's
+        # strand 2) and leaves strand_4 permanently dead (0-based index 4 is
+        # out of the valid 0..3 range for a 4-strand chromosome). Convert the
+        # catalog token to 0-based before comparing.
+        strand_idx = strand_n - 1
+        b_sum = float(b.values[b.strands == strand_idx].sum()) if len(b.strands) > 0 else 0.0
+        a_sum = float(a.values[a.strands == strand_idx].sum()) if len(a.strands) > 0 else 0.0
         return a_sum - b_sum
     raise ValueError(f"Unsupported chromosome projection op: {op!r} (token {spec_token!r})")
 

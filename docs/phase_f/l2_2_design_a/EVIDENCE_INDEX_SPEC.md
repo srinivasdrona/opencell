@@ -2161,6 +2161,56 @@ See `docs/phase_f/l2_2_design_a/h12/H12_REPORT.md` for the complete
 narrative (defect-by-defect rationale, full results table, per-process
 demotion reasoning, methodology caveats, and verification log).
 
+### 13.17 Replication `strand_1..strand_4` projection off-by-one (Phase A,
+`l22-replication-topology`)
+
+**Bug.** `_chromosome_projection_component` (`tests/vivarium/
+_l2_2_design_a_runner_helpers.py`) implements the Replication row's
+`polymerizedRegions.delta_value_sum_strand_<N>` catalog tokens
+(`PROCESS_CATALOG.yaml`'s `strand_1..strand_4`) by comparing the raw
+catalog integer `N` directly against `SparseTriplet.strands`. But
+`PROCESS_CATALOG.yaml`'s `strand_1..strand_4` naming follows MATLAB's
+1-based strand numbering (Replication.m's `leadingStrandIndexs`/
+`laggingStrandIndexs` are 1-based), while `ChromosomeStore`/
+`SparseTriplet` always store 0-based strand indices
+(`opencell/state/chromosome_store.py:226-231` subtracts 1 from every
+MATLAB-sourced `strands` array on load; `opencell/vivarium/
+karr_replication.py:385-386` does the same for the process's own strand
+index fixtures). Comparing the raw 1-based token against 0-based storage
+silently shifted every strand token by one: `strand_1` read 0-based
+index 1 (Karr's strand 2), `strand_2` read index 2 (strand 3), `strand_3`
+read index 3 (strand 4), and `strand_4` read index 4 -- which is out of
+range for a 4-strand chromosome (valid 0-based range is 0..3) and was
+therefore permanently dead (always 0 on both OC and Karr, regardless of
+actual replication activity). This is consistent with the previously
+documented (13.14, P2) observation that `strand_4` was "genuinely zero on
+both sides" while `strand_1..3` showed `n_nonzero_oc = 0` against
+nonzero Karr activity in the stored `Replication/latest/result.json` --
+part of that asymmetry was this mapping bug (the rest is a separate,
+pre-existing OC replisome-activity gap tracked under Phase B of the same
+task).
+
+**Fix.** Subtract 1 from the catalog token before comparing against
+`SparseTriplet.strands`, so `strand_1..strand_4` map onto the full valid
+0-based range `0..3` with no gap and no out-of-range dead component.
+`delta_nnz`/`delta_value_sum`/`repair_event_present` are untouched.
+
+**Tests.** `tests/vivarium/test_l2_2_chromosome_projection_strand_tokens.py`
+(new): each catalog token maps to its correct 0-based strand exactly
+once, all 4 real strands are simultaneously reachable (no dead
+`strand_4`), a component that is genuinely zero on both OC and Karr
+remains distinguishable from one that merely looks zero due to a mapping
+bug, and the non-strand ops (`delta_nnz`, `delta_value_sum`,
+`repair_event_present`) are unaffected.
+
+**Scope.** Projection/runner-helper fix only -- no `PROCESS_CATALOG.yaml`
+threshold or scale change, no Replication process-code change (see Phase
+B for the separate `_build_polymerized_regions` topology work), and no
+tracked `evidence_bundle`/`evidence_index.json` regeneration in this
+commit (stored evidence is stale independent of this fix -- see the
+following Phase B commits for the diagnostic-only re-run and honest
+non-PASS framing).
+
 ## 14. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).
