@@ -11,19 +11,36 @@ natural 50-seed catalog-domain oracle trace:
 - `MacromolecularComplexation`: `network_ge2_fires`
 - `ProteinProcessingII`: `transferase_fires`
 
-## Why Octave, not MATLAB
+## Why Octave, not MATLAB, and why an isolated harness rather than the full `Simulation` graph
 
 MATLAB execution in this project is documented **BOOTSTRAP-ONLY**
 (`scripts/matlab/README.md`) -- it requires a human-driven MATLAB Online
-browser session and is not available to an autonomous agent. This sandboxed
-environment also has no local checkout of the full WholeCell `Simulation`
-classdef object graph (`data/m1_sources/karr_native/` only contains
-extraction *outputs*, not the source class hierarchy), so the existing
-`extract_per_process_traces_v2.m` pattern (instantiate a full fitted
-`Simulation`, then call one process's `evolveState()`) cannot be replayed
-here regardless of engine.
+browser session, which was not used here.
 
-Both target code paths, however, are isolable **without** the full
+This is **not** because Karr/WholeCell source is unavailable. The full
+upstream WholeCell source tree -- including the complete `Simulation`
+classdef object graph and the real `edu.stanford.covert.util.RandStream.m`
+-- **is** present locally at `E:\opencell-mirrors\WholeCell` (a mirror
+outside this git worktree; `data/m1_sources/karr_native/` and
+`data/karr_vendored_source/` only contain, respectively, prior extraction
+*outputs* and pinned per-process source extracts, not a copy of the full
+tree). Isolating the two target code paths below into a minimal harness,
+rather than replaying the existing `extract_per_process_traces_v2.m`
+pattern (instantiate a full fitted `Simulation` via the KnowledgeBase
+construction pipeline, then call one process's `evolveState()`), was a
+deliberate **tractability** choice: that pipeline is a heavyweight,
+long-running, MATLAB-only fitting process not reproducible in this
+Octave-only sandboxed session, regardless of source availability.
+
+The real `RandStream.m` was read (`E:\opencell-mirrors\WholeCell\src\+edu\
++stanford\+covert\+util\RandStream.m`, method `stochasticRound`, line 236)
+and confirmed to match `stochasticRoundStub.m`'s formula exactly:
+`roundUp = rand(...) < mod(value,1); value(roundUp)=ceil(...);
+value(~roundUp)=floor(...)`. `mnrnd` is MATLAB's Statistics Toolbox
+builtin (not custom WholeCell code); `mnrndStub.m` reimplements its
+documented multinomial-sampling semantics.
+
+Both target code paths are isolable **without** the full
 `Simulation` object:
 
 - `ProteinProcessingII.evolveState` only reads/writes `this.*` **data**
@@ -62,24 +79,72 @@ see the RNG-fidelity caveat below.
   **provably irrelevant** to this scenario's outcome, and the resulting
   evidence is claimed as exact-match H12 evidence.
 - **MacromolecularComplexation network>=2** genuinely consumes RNG draws
-  (`randStream.rand()` inside the Monte Carlo competition loop). Octave's
-  Mersenne-Twister implementation is not guaranteed bit-identical to
-  MATLAB's `RandStream`/WholeCell's wrapper, so a specific seed's *exact*
-  sequence of complexes built is **not** claimed to reproduce what MATLAB
-  would produce for "the same seed" -- only that the *algorithm* (the
-  literal, unmodified Karr collision-theory rate formula and selection
-  loop) runs for real, on 50 independent RNG realizations, and its
-  structural/distributional invariants are checked. This is exactly the
-  "distributional... rather than H12 exact closed form" evidence profile
-  the task calls for.
+  (`randStream.rand()` inside the Monte Carlo competition loop).
+  `run_macromol_network2.m` seeds via Octave/MATLAB's **legacy**
+  `rand('seed', k)` API (kept for MATLAB backward compatibility), not
+  Octave's modern `rng()`/`rand('state', ...)` path. This legacy API's
+  underlying generator is not asserted to reproduce MATLAB's `RandStream`/
+  WholeCell's wrapper bit-for-bit, so a specific seed's *exact* sequence of
+  complexes built is **not** claimed to reproduce what MATLAB would produce
+  for "the same seed" -- only that the *algorithm* (the literal, unmodified
+  Karr collision-theory rate formula and selection loop) runs for real, on
+  50 independent RNG realizations, and its structural/distributional
+  invariants are checked. This is exactly the "distributional... rather
+  than H12 exact closed form" evidence profile the task calls for.
+
+## Prerequisites
+
+- **GNU Octave 6.4.0** (Ubuntu 22.04 `apt` package `octave=6.4.0-2`).
+  Install inside WSL with: `sudo apt-get update && sudo apt-get install -y octave`.
+  Not installed on the Windows side; the Octave steps below must run inside WSL.
+- The repo's WSL Python venv already set up per the top-level project
+  conventions (`.venv-wsl`, activated automatically by `bin\oc-py.cmd` /
+  `bin\oc-pytest.cmd` on the Windows side, or manually via
+  `source .venv-wsl/bin/activate` inside WSL).
+- Source/raw prerequisites that must already exist before running (all
+  tracked in git, none regenerated by these steps):
+  `data/karr_vendored_source/{MacromolecularComplexation,ProteinProcessingII}.m`,
+  `data/karr_fixtures/per_process/{MacromolecularComplexation,ProteinProcessingII}_flat.mat`
+  (gitignored but hash-pinned; must be present on disk), and
+  `docs/phase_f/l2_2_design_a/h12/perturbation/PERTURBATION_SPEC.json`.
 
 ## Running
 
+All commands below are given relative to the repository root -- substitute
+your actual clone/worktree path (there is nothing worktree-specific in the
+commands themselves).
+
+**Step 1 (generate inputs) -- from Windows PowerShell, or from WSL:**
+
+```powershell
+# Windows PowerShell, from the repo root:
+.\bin\oc-py.cmd scripts\l22_evidence\h12_perturbation.py generate-inputs
 ```
-wsl -e bash -lc "cd /mnt/e/opencell-worktrees/l22-h12 && bin/oc-py.cmd scripts/l22_evidence/h12_perturbation.py generate-inputs"
-wsl -e bash -lc "cd /mnt/e/opencell-worktrees/l22-h12/scripts/octave_h12_perturbation && octave --no-gui --quiet run_ppii_scenario_a.m"
-wsl -e bash -lc "cd /mnt/e/opencell-worktrees/l22-h12/scripts/octave_h12_perturbation && octave --no-gui --quiet run_macromol_network2.m"
-bin\oc-py.cmd scripts\l22_evidence\h12_perturbation.py ingest-and-compare
+
+```bash
+# Equivalent, from inside WSL (no .cmd wrapper -- call the venv python directly):
+cd /mnt/e/opencell-worktrees/<your-worktree>   # or your actual repo path under /mnt/e or /mnt/c
+source .venv-wsl/bin/activate
+python scripts/l22_evidence/h12_perturbation.py generate-inputs
+```
+
+**Step 2 (run Octave) -- WSL only** (Octave is not installed/invoked on the
+Windows side by this project):
+
+```bash
+cd /mnt/e/opencell-worktrees/<your-worktree>/scripts/octave_h12_perturbation
+octave --no-gui --quiet run_ppii_scenario_a.m
+octave --no-gui --quiet run_macromol_network2.m
+```
+
+**Step 3 (ingest and compare) -- from Windows PowerShell, or from WSL:**
+
+```powershell
+.\bin\oc-py.cmd scripts\l22_evidence\h12_perturbation.py ingest-and-compare
+```
+
+```bash
+python scripts/l22_evidence/h12_perturbation.py ingest-and-compare
 ```
 
 Raw Octave inputs/outputs are written under

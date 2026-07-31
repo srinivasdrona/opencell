@@ -434,8 +434,26 @@ def build_ppii_perturbation_artifact(compare_result: dict, ppii_fixture: dict, g
         "scenario": "protein_processing_ii_scenario_a_full_saturating",
         "perturbation_spec_path": SPEC_PATH.relative_to(REPO_ROOT).as_posix(),
         "perturbation_spec_sha256_lf_normalized": _sha256_lf_normalized(SPEC_PATH),
-        "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity caveat)",
+        "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity "
+        "caveat -- this scenario is constructed so stochasticRound/mnrnd are provable no-ops regardless of "
+        "RNG algorithm/seed, so the harness stub's RNG behavior is irrelevant here)",
         "harness_source_hashes": _harness_hashes(),
+        "evidence_scope_caveats": [
+            "effective N=1 distinct pre-registered before-state: all 50 seeds are independent RNG "
+            "realizations of the SAME frozen initial state (PERTURBATION_SPEC.json), not 50 distinct "
+            "states -- this is sufficient to demonstrate the branch fires and exact-matches under this one "
+            "constructed regime, not general robustness across arbitrary states.",
+            "the regime is provably RNG-invariant by construction (frac(x)==0 for every transformed "
+            "quantity), so this scenario provides no evidence about RNG/enzyme-kinetics interaction in any "
+            "other (non-saturating) regime of this process -- enzyme-kinetics stochasticity itself is "
+            "unmeasured here.",
+            "the scarcity-guard branch (insufficient peptidase/transferase capacity or water/PG160) is "
+            "validated only by a synthetic Python unit test against the predictor's own guard arithmetic "
+            "(tests/scripts/test_h12_perturbation.py), not by this or any Octave execution -- see "
+            "PERTURBATION_SPEC.json explicitly_out_of_scope_for_octave_execution.",
+            "this artifact is OBSERVED evidence for one constructed regime, not a general confirmation "
+            "claim; it remains NON_GATING regardless.",
+        ],
         "predictor_source_path": "scripts/l22_evidence/h12.py",
         "predictor_source_sha256_lf_normalized": _sha256_lf_normalized(REPO_ROOT / "scripts" / "l22_evidence" / "h12.py"),
         "karr_source_citation": h12.karr_source_citation("ProteinProcessingII"),
@@ -489,9 +507,22 @@ def build_macromol_perturbation_artifact(invariant_result: dict, macromol_fixtur
         "perturbation_spec_path": SPEC_PATH.relative_to(REPO_ROOT).as_posix(),
         "perturbation_spec_sha256_lf_normalized": _sha256_lf_normalized(SPEC_PATH),
         "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity caveat "
-        "-- RNG draws are genuinely consumed by this scenario; Octave's Mersenne-Twister is NOT claimed "
-        "bit-identical to MATLAB's RandStream, so results are structural/distributional, never exact-match)",
+        "-- RNG draws are genuinely consumed by this scenario; the driver seeds via Octave/MATLAB's legacy "
+        "rand('seed', k) API, which is NOT asserted to reproduce MATLAB's RandStream algorithm bit-for-bit, "
+        "so results are structural/distributional, never exact-match)",
         "harness_source_hashes": _harness_hashes(),
+        "evidence_scope_caveats": [
+            "invariants checked (non-negative integer builds, built<=ub, mass-balance, termination, "
+            "seed-to-seed variation) are STRUCTURAL only -- they confirm the branch executes correctly and "
+            "is genuinely stochastic, not that any specific per-seed complex-build distribution matches "
+            "MATLAB.",
+            "matching the actual split distribution across (complex0, complex1) to MATLAB ground truth "
+            "would require running the real edu.stanford.covert.util.RandStream (E:\\opencell-mirrors\\"
+            "WholeCell) with the same seeding convention WholeCell itself uses -- not available from this "
+            "Octave harness -- so no distributional-fidelity claim is made, only structural correctness.",
+            "this artifact is OBSERVED_STOCHASTIC evidence only; it NEVER claims H12_CONFIRMED and remains "
+            "NON_GATING regardless.",
+        ],
         "karr_source_citation": {
             # Overrides h12.karr_source_citation("MacromolecularComplexation")'s narrower
             # evolveState/buildProteinComplexs_bounds citation (that citation is scoped to
