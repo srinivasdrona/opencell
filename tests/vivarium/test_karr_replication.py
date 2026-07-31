@@ -98,6 +98,106 @@ def test_idle_state_no_progress_no_request() -> None:
     assert "substrates" not in update
 
 
+def test_genuinely_idle_state_still_no_ops_with_boundenzymes_present() -> None:
+    """Negative control for the L2.2 root-cause fix below: with the
+    ``boundEnzymes``/``enzymes`` ports actually present (as the L2.1/L2.2
+    oracle-replay harness always provides them) but showing no bound
+    helicase and no fork progress, ``next_update`` must remain a true
+    no-op -- the idle-gate fallback must not fire on a genuinely idle
+    chromosome. (This mirrors `test_idle_state_no_progress_no_request`
+    without its unrelated, pre-existing `"substrates" not in update`
+    assertion, which fails on `main` independent of this change.)"""
+    p = KarrReplicationProcess({})
+    state = _base_state(p, replication_state="idle", initial_substrate=1e6)
+    state["boundEnzymes"] = {wid: 0.0 for wid in p.enzyme_wids}
+    state["enzymes"] = {}
+    update = p.next_update(1.0, state)
+    assert update.get("chromosome", {}).get("fork_position_bp", {}) == {}
+    assert "polymerizedRegions" not in update.get("chromosome", {})
+    assert all(v == 0.0 for v in update["requests"][p.name].values())
+
+
+def test_idle_state_with_bound_helicase_but_no_other_enzyme_stays_idle() -> None:
+    """Specificity check: only the helicase (`enzyme_wid_helicase`) should
+    be able to promote an idle tick to elongating. A different bound
+    enzyme must not falsely trigger the fallback."""
+    p = KarrReplicationProcess({})
+    other_enzyme_wids = [wid for wid in p.enzyme_wids if wid != p.enzyme_wid_helicase]
+    assert other_enzyme_wids, "expected at least one non-helicase enzyme_wid"
+    state = _base_state(p, replication_state="idle", initial_substrate=1e6)
+    state["boundEnzymes"] = {wid: 0.0 for wid in p.enzyme_wids}
+    state["boundEnzymes"][other_enzyme_wids[0]] = 2.0
+    update = p.next_update(1.0, state)
+    assert "polymerizedRegions" not in update.get("chromosome", {})
+    assert update.get("chromosome", {}).get("fork_position_bp", {}) == {}
+
+
+def test_idle_state_with_bound_helicase_promotes_to_elongating_root_cause_fix() -> None:
+    """Root-cause regression for the L2.2 Replication port gap: OC's
+    ``chromosome.replication_state`` flag is an OC-only coordination flag
+    with no Karr counterpart (Karr's ``evolveState``/``initiateReplication``
+    recompute "is a replisome active" fresh every tick from live
+    ``boundEnzymes``/chromosome state -- Replication.m:594,616-621). The
+    isolated per-process L2.1/L2.2 oracle-replay harness overlays Karr's
+    real chromosome/boundEnzymes each tick but runs no
+    `KarrReplicationInitiationProcess` coordinator, so this flag was stuck
+    at its schema default "idle" forever and `next_update` silently
+    returned a no-op on every sampled tick -- even while the overlaid
+    boundEnzymes/chromosome state showed an active replisome. This test
+    reproduces exactly that shape (idle flag + real bound helicase, no
+    coordinator) and asserts the process now advances the fork instead of
+    no-op'ing."""
+    p = KarrReplicationProcess({})
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    state = _base_state(
+        p,
+        replication_state="idle",
+        initial_substrate=1e9,
+        allocated_override=alloc,
+    )
+    state["boundEnzymes"] = {wid: 0.0 for wid in p.enzyme_wids}
+    state["boundEnzymes"][p.enzyme_wid_helicase] = 2.0
+
+    update = p.next_update(1.0, state)
+
+    fork_delta = update.get("chromosome", {}).get("fork_position_bp", {})
+    assert fork_delta.get("left", 0.0) == 100.0
+    assert fork_delta.get("right", 0.0) == 100.0
+    assert "polymerizedRegions" in update["chromosome"]
+    advanced = SparseTriplet.from_state(update["chromosome"]["polymerizedRegions"], shape=p.chromosome_shape)
+    assert advanced.calc_num_edges() > 0
+    assert any(v > 0.0 for v in update["requests"][p.name].values())
+
+
+def test_idle_state_with_fork_already_started_promotes_to_elongating() -> None:
+    """Same root cause, triggered via the other real-data signal: the
+    overlaid chromosome already shows fork progress beyond the
+    unreplicated mother baseline (e.g. helicase transiently unbound
+    mid-tick in Karr's own trace) even though `replication_state` reads
+    "idle". Karr never "forgets" fork progress just because a coordination
+    flag is stale, so this must also continue elongating rather than
+    reset to the mother baseline."""
+    p = KarrReplicationProcess({})
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    state = _base_state(
+        p,
+        replication_state="idle",
+        initial_substrate=1e9,
+        allocated_override=alloc,
+    )
+    state["chromosome"]["polymerizedRegions"] = p._build_polymerized_regions(
+        left_progress_bp=500,
+        right_progress_bp=500,
+    ).to_state()
+    state["boundEnzymes"] = {wid: 0.0 for wid in p.enzyme_wids}
+
+    update = p.next_update(1.0, state)
+
+    fork_delta = update.get("chromosome", {}).get("fork_position_bp", {})
+    assert fork_delta.get("left", 0.0) == 100.0
+    assert fork_delta.get("right", 0.0) == 100.0
+
+
 def test_initiating_transitions_to_elongating_and_seeds_polymerized_regions() -> None:
     p = KarrReplicationProcess({})
     state = _base_state(

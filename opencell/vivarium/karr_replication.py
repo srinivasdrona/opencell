@@ -1269,6 +1269,26 @@ class KarrReplicationProcess(Process):
         polymerized_regions = chromosome_store.get_field("polymerizedRegions")
         left_pos_bp, right_pos_bp = self._infer_fork_positions_from_polymerized(polymerized_regions)
 
+        # `chromosome.replication_state` is an OC-only coordination flag
+        # (written by `KarrReplicationInitiationProcess` for whole-chassis
+        # composition) with no Karr counterpart -- Karr's `evolveState`
+        # recomputes "is a replisome currently active" fresh every tick from
+        # live `boundEnzymes`/chromosome state (`isAnyHelicaseBound`,
+        # `leadingStrandElongating`; Replication.m:594,616-621), it never
+        # persists a categorical phase. The flag defaults to "idle"
+        # whenever nothing upstream has advanced it yet -- e.g. per-process
+        # oracle replay, which overlays Karr's real chromosome/boundEnzymes
+        # each tick but runs no `ReplicationInitiation` coordinator. When
+        # the real overlaid state already shows an active replisome (bound
+        # helicase, per `enzyme_wid_helicase`) or fork progress beyond the
+        # unreplicated mother baseline, the flag was simply never advanced;
+        # treat this tick as elongating instead of silently no-op'ing on a
+        # chromosome Karr is actively replicating underneath us.
+        replisome_bound = float(bound_now.get(self.enzyme_wid_helicase, 0.0)) > 0.0
+        fork_started = left_pos_bp > 0 or right_pos_bp > 0
+        if replication_state == "idle" and (replisome_bound or fork_started):
+            replication_state = "elongating"
+
         # Reset one-shot completion emitter if an upstream coordinator restarts the cycle.
         if replication_state in {"idle", "initiating", "elongating"}:
             self._completion_emitted = False
