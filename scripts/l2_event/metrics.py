@@ -1,0 +1,447 @@
+"""Count / timing / payload metrics, Karr-only clustered null bootstrap, and
+spurious-firing detection for the L2.event gate (D2, D3, D4, C6).
+
+Every statistic here is computed the same way regardless of which process
+supplies the timelines -- process-specific behavior lives entirely in the
+adapter layer (``scripts/l2_event/adapters``), not here.
+"""
+
+from __future__ import annotations
+
+import math
+from dataclasses import dataclass
+
+import numpy as np
+from scipy.stats import wasserstein_distance
+
+from scripts.l2_event.schema import EventTimeline, GateChannelResult
+
+# Default Karr-only two-sample cluster-bootstrap replicate count (D4).
+DEFAULT_B_RESAMPLES = 1000
+
+# Default engineering multiplier on the null ceiling (spec's `k_eng`).
+DEFAULT_K_ENG = 3.0
+
+
+# ---------------------------------------------------------------------------
+# Small numeric helpers
+# ---------------------------------------------------------------------------
+
+
+def per_seed_total_counts(timelines: list[EventTimeline]) -> np.ndarray:
+    return np.array([t.total_fire_count for t in timelines], dtype=float)
+
+
+def pooled_fire_ticks(timelines: list[EventTimeline]) -> np.ndarray:
+    """Bag of all fire-tick indices across every seed's timeline (D2
+    addendum semantics: one entry per (seed, tick) firing, not
+    deduplicated)."""
+    out: list[int] = []
+    for timeline in timelines:
+        out.extend(timeline.fire_ticks)
+    return np.array(out, dtype=float)
+
+
+def _safe_wasserstein(a: np.ndarray, b: np.ndarray, *, max_support: float) -> float:
+    """Wasserstein-1 distance that degrades gracefully on empty inputs
+    instead of raising, so bootstrap resamples that happen to draw an
+    all-zero-fire cohort don't crash the calibration loop.
+
+    Both empty -> 0.0 (identical "no events" distributions). Exactly one
+    empty -> ``max_support`` (maximal disagreement, bounded by the window
+    length so it does not blow up the null ceiling to infinity).
+    """
+    if len(a) == 0 and len(b) == 0:
+        return 0.0
+    if len(a) == 0 or len(b) == 0:
+        return float(max_support)
+    return float(wasserstein_distance(a, b))
+
+
+@dataclass(frozen=True)
+class CountSupportGuard:
+    """D3's explicit count-guard bounds: ``T_oc`` must land in
+    ``[floor, ceiling]`` around ``T_karr`` for the count gate to even be
+    eligible for a statistical PASS (independent of the W1 comparison)."""
+
+    t_karr: int
+    t_oc: int
+    floor: int
+    ceiling: int
+    ok: bool
+
+
+def count_support_guard(t_karr: int, t_oc: int) -> CountSupportGuard:
+    floor = max(1, math.floor(0.5 * t_karr))
+    ceiling = math.ceil(2.0 * t_karr)
+    return CountSupportGuard(t_karr=t_karr, t_oc=t_oc, floor=floor, ceiling=ceiling, ok=floor <= t_oc <= ceiling)
+
+
+# ---------------------------------------------------------------------------
+# Karr-only clustered null bootstrap (D4)
+# ---------------------------------------------------------------------------
+
+
+def clustered_bootstrap_scalar(
+    pool: np.ndarray,
+    *,
+    n: int | None = None,
+    b: int = DEFAULT_B_RESAMPLES,
+    rng: np.random.Generator,
+) -> float:
+    """Two-sample Karr-only cluster bootstrap for a per-seed scalar
+    statistic (used by the count gate). Resamples two independent cohorts
+    of size ``n`` (default: ``len(pool)``) from ``pool`` with the seed as
+    the cluster unit, computes W1 between the cohorts, repeats ``b`` times,
+    and returns the 95th percentile (``q95_null``)."""
+    n = n if n is not None else len(pool)
+    if n == 0:
+        return 0.0
+    stats = np.empty(b)
+    max_support = float(max(1.0, pool.max() - pool.min())) if len(pool) else 1.0
+    for i in range(b):
+        cohort_a = pool[rng.integers(0, len(pool), size=n)]
+        cohort_b = pool[rng.integers(0, len(pool), size=n)]
+        stats[i] = _safe_wasserstein(cohort_a, cohort_b, max_support=max_support)
+    return float(np.quantile(stats, 0.95))
+
+
+def clustered_bootstrap_bag(
+    seed_bags: list[np.ndarray],
+    *,
+    max_support: float,
+    n: int | None = None,
+    b: int = DEFAULT_B_RESAMPLES,
+    rng: np.random.Generator,
+) -> float:
+    """Two-sample Karr-only cluster bootstrap for a pooled-bag statistic
+    (used by the timing gate). Resamples whole per-seed fire-tick bags
+    (the cluster unit) with replacement into two independent cohorts of
+    ``n`` seeds each, pools each cohort's ticks, computes W1 between the
+    two pooled bags, repeats ``b`` times, returns the 95th percentile."""
+    n = n if n is not None else len(seed_bags)
+    if n == 0:
+        return 0.0
+    stats = np.empty(b)
+    for i in range(b):
+        idx_a = rng.integers(0, len(seed_bags), size=n)
+        idx_b = rng.integers(0, len(seed_bags), size=n)
+        bag_a = np.concatenate([seed_bags[j] for j in idx_a]) if len(idx_a) else np.array([])
+        bag_b = np.concatenate([seed_bags[j] for j in idx_b]) if len(idx_b) else np.array([])
+        stats[i] = _safe_wasserstein(bag_a, bag_b, max_support=max_support)
+    return float(np.quantile(stats, 0.95))
+
+
+# ---------------------------------------------------------------------------
+# Spurious OC-only firing detection (C6)
+# ---------------------------------------------------------------------------
+
+
+def oc_only_fire_ticks(karr_timeline: EventTimeline, oc_timeline: EventTimeline) -> list[int]:
+    """Ticks where OC fired but Karr did not, for one (process, seed) pair.
+
+    This is the check a firing-tick-only design can never produce (spec
+    claim C6): OC-only firings between Karr firing ticks must be visible
+    and able to fail the run, not silently dropped between sampled ticks.
+    """
+    karr_fired_ticks = {o.tick for o in karr_timeline.observations if o.fired}
+    return sorted(
+        {
+            o.tick
+            for o in oc_timeline.observations
+            if o.fired and o.tick not in karr_fired_ticks
+        }
+    )
+
+
+# ---------------------------------------------------------------------------
+# Count gate (D3)
+# ---------------------------------------------------------------------------
+
+
+def count_gate(
+    karr_timelines: list[EventTimeline],
+    oc_timelines: list[EventTimeline],
+    *,
+    rng: np.random.Generator,
+    b_resamples: int = DEFAULT_B_RESAMPLES,
+    k_eng: float = DEFAULT_K_ENG,
+) -> GateChannelResult:
+    t_karr = int(per_seed_total_counts(karr_timelines).sum())
+    t_oc = int(per_seed_total_counts(oc_timelines).sum())
+    n_nonzero_karr = int(np.count_nonzero(per_seed_total_counts(karr_timelines)))
+    n_nonzero_oc = int(np.count_nonzero(per_seed_total_counts(oc_timelines)))
+
+    if t_karr == 0:
+        if t_oc == 0:
+            return GateChannelResult(
+                channel="count",
+                verdict="NO_KARR_SUPPORT",
+                statistic_name="w1_per_seed_count",
+                statistic_value=None,
+                q95_null=None,
+                k_eng=k_eng,
+                threshold=None,
+                n_nonzero_oc=n_nonzero_oc,
+                n_nonzero_karr=n_nonzero_karr,
+                reasons=["T_karr == 0 and T_oc == 0: no Karr event support in this window (D3 precedence)."],
+            )
+        return GateChannelResult(
+            channel="count",
+            verdict="FAIL",
+            statistic_name="w1_per_seed_count",
+            statistic_value=None,
+            q95_null=None,
+            k_eng=k_eng,
+            threshold=None,
+            n_nonzero_oc=n_nonzero_oc,
+            n_nonzero_karr=n_nonzero_karr,
+            reasons=[f"T_karr == 0 but T_oc == {t_oc} > 0: hard FAIL per D3 precedence (no zero==zero PASS)."],
+        )
+
+    guard = count_support_guard(t_karr, t_oc)
+    karr_counts = per_seed_total_counts(karr_timelines)
+    oc_counts = per_seed_total_counts(oc_timelines)
+    max_support = float(max(1.0, karr_counts.max() if len(karr_counts) else 1.0))
+    w1 = _safe_wasserstein(karr_counts, oc_counts, max_support=max_support)
+    q95_null = clustered_bootstrap_scalar(karr_counts, b=b_resamples, rng=rng)
+    threshold = k_eng * q95_null
+
+    reasons: list[str] = []
+    if not guard.ok:
+        verdict = "FAIL"
+        reasons.append(
+            f"T_oc={t_oc} outside D3 support guard [{guard.floor}, {guard.ceiling}] "
+            f"around T_karr={t_karr}."
+        )
+    elif w1 <= q95_null:
+        verdict = "SEED_NOISE"
+    elif w1 <= threshold:
+        verdict = "PASS"
+    else:
+        verdict = "FAIL"
+        reasons.append(f"w1={w1:.4g} exceeds threshold={threshold:.4g} (k_eng * q95_null).")
+
+    return GateChannelResult(
+        channel="count",
+        verdict=verdict,
+        statistic_name="w1_per_seed_count",
+        statistic_value=w1,
+        q95_null=q95_null,
+        k_eng=k_eng,
+        threshold=threshold,
+        n_nonzero_oc=n_nonzero_oc,
+        n_nonzero_karr=n_nonzero_karr,
+        reasons=reasons,
+        extra={"t_karr": t_karr, "t_oc": t_oc, "guard_floor": guard.floor, "guard_ceiling": guard.ceiling},
+    )
+
+
+# ---------------------------------------------------------------------------
+# Timing gate (D2 + addendum)
+# ---------------------------------------------------------------------------
+
+
+def timing_gate_repeated_firing(
+    karr_timelines: list[EventTimeline],
+    oc_timelines: list[EventTimeline],
+    *,
+    rng: np.random.Generator,
+    b_resamples: int = DEFAULT_B_RESAMPLES,
+    k_eng: float = DEFAULT_K_ENG,
+) -> GateChannelResult:
+    """RibosomeAssembly-style timing statistic: W1 on the pooled
+    firing-tick bag (NOT hazard, NOT inter-arrival -- see D2 addendum)."""
+    karr_seed_bags = [np.array(t.fire_ticks, dtype=float) for t in karr_timelines]
+    oc_seed_bags = [np.array(t.fire_ticks, dtype=float) for t in oc_timelines]
+    karr_bag = pooled_fire_ticks(karr_timelines)
+    oc_bag = pooled_fire_ticks(oc_timelines)
+    n_nonzero_karr = int(sum(1 for b in karr_seed_bags if len(b)))
+    n_nonzero_oc = int(sum(1 for b in oc_seed_bags if len(b)))
+
+    if len(karr_bag) == 0:
+        if len(oc_bag) == 0:
+            return GateChannelResult(
+                channel="timing",
+                verdict="NO_KARR_SUPPORT",
+                statistic_name="w1_pooled_fire_tick_bag",
+                statistic_value=None,
+                q95_null=None,
+                k_eng=k_eng,
+                threshold=None,
+                n_nonzero_oc=n_nonzero_oc,
+                n_nonzero_karr=n_nonzero_karr,
+                reasons=["No Karr fire ticks in window: timing statistic is undefined (D3 precedence applied to timing)."],
+            )
+        return GateChannelResult(
+            channel="timing",
+            verdict="FAIL",
+            statistic_name="w1_pooled_fire_tick_bag",
+            statistic_value=None,
+            q95_null=None,
+            k_eng=k_eng,
+            threshold=None,
+            n_nonzero_oc=n_nonzero_oc,
+            n_nonzero_karr=n_nonzero_karr,
+            reasons=["Karr has zero fire ticks but OC fired: hard FAIL, no zero==zero PASS."],
+        )
+
+    max_support = float(max(1.0, karr_bag.max() - karr_bag.min())) if len(karr_bag) > 1 else 1.0
+    w1 = _safe_wasserstein(karr_bag, oc_bag, max_support=max_support)
+    q95_null = clustered_bootstrap_bag(karr_seed_bags, max_support=max_support, b=b_resamples, rng=rng)
+    threshold = k_eng * q95_null
+
+    if w1 <= q95_null:
+        verdict = "SEED_NOISE"
+    elif w1 <= threshold:
+        verdict = "PASS"
+    else:
+        verdict = "FAIL"
+
+    return GateChannelResult(
+        channel="timing",
+        verdict=verdict,
+        statistic_name="w1_pooled_fire_tick_bag",
+        statistic_value=w1,
+        q95_null=q95_null,
+        k_eng=k_eng,
+        threshold=threshold,
+        n_nonzero_oc=n_nonzero_oc,
+        n_nonzero_karr=n_nonzero_karr,
+        reasons=[] if verdict != "FAIL" else [f"w1={w1:.4g} exceeds threshold={threshold:.4g}."],
+        extra={"n_karr_fire_ticks": int(len(karr_bag)), "n_oc_fire_ticks": int(len(oc_bag))},
+    )
+
+
+def timing_gate_single_firing(
+    karr_offsets: np.ndarray,
+    oc_offsets: np.ndarray,
+    *,
+    rng: np.random.Generator,
+    b_resamples: int = DEFAULT_B_RESAMPLES,
+    k_eng: float = DEFAULT_K_ENG,
+) -> GateChannelResult:
+    """Cytokinesis-style timing statistic: W1 on pooled relative
+    firing-tick offsets (``t_fire - t_reference``), one observation per
+    seed that fired (D2 addendum)."""
+    n_nonzero_karr = int(len(karr_offsets))
+    n_nonzero_oc = int(len(oc_offsets))
+
+    if n_nonzero_karr == 0:
+        if n_nonzero_oc == 0:
+            verdict = "NO_KARR_SUPPORT"
+            reasons = ["No Karr firing offsets available: timing statistic is undefined."]
+        else:
+            verdict = "FAIL"
+            reasons = ["Karr has zero firing offsets but OC fired: hard FAIL."]
+        return GateChannelResult(
+            channel="timing",
+            verdict=verdict,
+            statistic_name="w1_relative_firing_offset",
+            statistic_value=None,
+            q95_null=None,
+            k_eng=k_eng,
+            threshold=None,
+            n_nonzero_oc=n_nonzero_oc,
+            n_nonzero_karr=n_nonzero_karr,
+            reasons=reasons,
+        )
+
+    max_support = float(max(1.0, karr_offsets.max() - karr_offsets.min())) if len(karr_offsets) > 1 else 1.0
+    w1 = _safe_wasserstein(karr_offsets, oc_offsets, max_support=max_support)
+    # Single-firing null: resample individual seed-offsets (each offset IS
+    # already the cluster unit here, since one seed contributes one offset).
+    q95_null = clustered_bootstrap_scalar(karr_offsets, b=b_resamples, rng=rng)
+    threshold = k_eng * q95_null
+
+    if w1 <= q95_null:
+        verdict = "SEED_NOISE"
+    elif w1 <= threshold:
+        verdict = "PASS"
+    else:
+        verdict = "FAIL"
+
+    return GateChannelResult(
+        channel="timing",
+        verdict=verdict,
+        statistic_name="w1_relative_firing_offset",
+        statistic_value=w1,
+        q95_null=q95_null,
+        k_eng=k_eng,
+        threshold=threshold,
+        n_nonzero_oc=n_nonzero_oc,
+        n_nonzero_karr=n_nonzero_karr,
+        reasons=[] if verdict != "FAIL" else [f"w1={w1:.4g} exceeds threshold={threshold:.4g}."],
+    )
+
+
+# ---------------------------------------------------------------------------
+# Payload gate (D6 -- generic; process-specific gateability is a registry
+# flag, not something this module decides)
+# ---------------------------------------------------------------------------
+
+
+def payload_gate(
+    karr_payloads: list[dict[str, float]],
+    oc_payloads: list[dict[str, float]],
+    *,
+    rng: np.random.Generator,
+    b_resamples: int = DEFAULT_B_RESAMPLES,
+    k_eng: float = DEFAULT_K_ENG,
+) -> GateChannelResult:
+    """W1 per payload component at matched firings. Callers for a process
+    whose registry entry declares ``magnitude_gateable: false`` (e.g.
+    Cytokinesis per D6) must not call this and should instead emit a
+    ``NOT_GATEABLE_REDUNDANT`` :class:`GateChannelResult` directly."""
+    if not karr_payloads:
+        n_nonzero_karr = 0
+        n_nonzero_oc = int(len(oc_payloads))
+        verdict = "NO_KARR_SUPPORT" if n_nonzero_oc == 0 else "FAIL"
+        return GateChannelResult(
+            channel="payload",
+            verdict=verdict,
+            statistic_name="w1_per_component_at_matched_firings",
+            statistic_value=None,
+            q95_null=None,
+            k_eng=k_eng,
+            threshold=None,
+            n_nonzero_oc=n_nonzero_oc,
+            n_nonzero_karr=n_nonzero_karr,
+            reasons=["No matched Karr firings with payload to compare."],
+        )
+
+    components = sorted({key for payload in karr_payloads for key in payload})
+    per_component_w1: dict[str, float] = {}
+    worst = 0.0
+    for component in components:
+        karr_vals = np.array([p.get(component, 0.0) for p in karr_payloads], dtype=float)
+        oc_vals = np.array([p.get(component, 0.0) for p in oc_payloads], dtype=float)
+        max_support = float(max(1.0, karr_vals.max() - karr_vals.min())) if len(karr_vals) > 1 else 1.0
+        w1 = _safe_wasserstein(karr_vals, oc_vals, max_support=max_support)
+        per_component_w1[component] = w1
+        worst = max(worst, w1)
+
+    pooled_karr = np.array([p.get(c, 0.0) for p in karr_payloads for c in components], dtype=float)
+    q95_null = clustered_bootstrap_scalar(pooled_karr, b=b_resamples, rng=rng)
+    threshold = k_eng * q95_null
+
+    if worst <= q95_null:
+        verdict = "SEED_NOISE"
+    elif worst <= threshold:
+        verdict = "PASS"
+    else:
+        verdict = "FAIL"
+
+    return GateChannelResult(
+        channel="payload",
+        verdict=verdict,
+        statistic_name="w1_per_component_at_matched_firings",
+        statistic_value=worst,
+        q95_null=q95_null,
+        k_eng=k_eng,
+        threshold=threshold,
+        n_nonzero_oc=int(len(oc_payloads)),
+        n_nonzero_karr=int(len(karr_payloads)),
+        reasons=[] if verdict != "FAIL" else [f"worst-component w1={worst:.4g} exceeds threshold={threshold:.4g}."],
+        extra={"per_component_w1": per_component_w1},
+    )
