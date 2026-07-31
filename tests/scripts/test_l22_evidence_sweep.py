@@ -363,6 +363,60 @@ def test_write_status_snapshot_is_compact_and_tallies(tmp_path):
     assert "channels" not in json.dumps(payload)
 
 
+def test_committed_sweep_status_is_not_a_stale_pre_run_snapshot():
+    """Regression test for a real incident (l22-projection-rerun, 2026-07-31):
+    a `sweep.py status` snapshot generated BEFORE a `sweep.py run --force`
+    invocation had finished was committed alongside that same run's
+    `sweep_report.json`, so the tracked `sweep_status.json` spuriously
+    showed every just-reran process as IN_PROGRESS_OR_UNKNOWN even though
+    the tracked report recorded a successful RAN_EXIT_0 for each of them.
+    That mismatch went unnoticed until an external review caught it.
+
+    Guard: for every process the tracked `sweep_report.json` records as
+    RAN_EXIT_0 or SKIPPED_VALID (i.e. valid evidence existed on disk as of
+    that report), the tracked `sweep_status.json` snapshot must show
+    DONE_VALID_EVIDENCE for that same process -- never NOT_STARTED,
+    IN_PROGRESS_OR_UNKNOWN, or DONE_NO_VALID_EVIDENCE. A process that is
+    absent from the report (not part of that sweep invocation -- e.g.
+    deliberately excluded, such as Replication pending its own rerun) is
+    not constrained by this check. Also guards the simpler, complementary
+    invariant that the status snapshot's own `generated_at` is not older
+    than the report's, since a report generated after the status snapshot
+    is the direct signature of "status was captured before the run"."""
+    report_path = sweep.DEFAULT_REPORT_PATH
+    status_path = sweep.DEFAULT_STATUS_PATH
+    if not report_path.is_file() or not status_path.is_file():
+        pytest.skip("no tracked sweep_report.json/sweep_status.json committed yet")
+
+    report = json.loads(report_path.read_text(encoding="utf-8"))
+    status = json.loads(status_path.read_text(encoding="utf-8"))
+
+    assert status["generated_at"] >= report["generated_at"], (
+        f"sweep_status.json generated_at ({status['generated_at']!r}) is "
+        f"older than sweep_report.json generated_at ({report['generated_at']!r}) "
+        "-- the committed status snapshot predates the run it's committed "
+        "alongside; regenerate `sweep.py status` after the run completes."
+    )
+
+    status_by_process = {row["process"]: row["status"] for row in status["jobs"]}
+    valid_job_statuses = {sweep.JOB_STATUS_RAN_OK, sweep.JOB_STATUS_SKIPPED_VALID}
+    for job in report["jobs"]:
+        if job["status"] not in valid_job_statuses:
+            continue
+        process = job["process"]
+        assert process in status_by_process, (
+            f"{process} succeeded ({job['status']}) in the tracked "
+            "sweep_report.json but has no corresponding row in the tracked "
+            "sweep_status.json at all"
+        )
+        assert status_by_process[process] == sweep.STATUS_DONE_VALID, (
+            f"{process} recorded {job['status']!r} in the tracked "
+            f"sweep_report.json, but the tracked sweep_status.json shows "
+            f"{status_by_process[process]!r} for it -- this is exactly the "
+            "stale-pre-run-snapshot bug this test guards against."
+        )
+
+
 def test_cli_status_is_read_only_and_reports_real_catalog_processes(tmp_path, capsys):
     exit_code = sweep.main(
         [

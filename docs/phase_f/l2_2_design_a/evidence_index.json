@@ -3,8 +3,8 @@
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
   "content_hash": "6c99381519abe65fc5cd22f39482a133ac5d8e5fb811f0acecb77b22ddd241f1",
-  "evidence_root": "artifacts/l2_2_gates",
-  "generated_at": "2026-07-31T16:45:27.585928+00:00",
+  "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
+  "generated_at": "2026-07-31T18:57:04.331307+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -19,7 +19,7 @@
         "primary_channel": "substrates",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Cytokinesis/latest_event",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Cytokinesis/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -40,7 +40,7 @@
         "primary_channel": "chromosome",
         "primary_distance": "hurdle_event_rate_plus_conditional_scaled_distance"
       },
-      "evidence_dir": "artifacts/l2_2_gates/DNADamage/latest_event",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -73,7 +73,7 @@
         "chromosome": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/DNARepair/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNARepair/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -114,7 +114,7 @@
         "chromosome": "PRIMARY_INSUFFICIENT_SAMPLES",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -145,7 +145,7 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "artifacts/l2_2_gates/FtsZPolymerization/latest_event",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/FtsZPolymerization/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -179,7 +179,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/MacromolecularComplexation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/MacromolecularComplexation/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -223,7 +223,7 @@
       "channel_verdicts": {
         "substrates": "PASS"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Metabolism/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Metabolism/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -265,7 +265,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinDecay/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -306,7 +306,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinFolding/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinFolding/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -349,7 +349,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinModification/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -390,7 +390,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingI/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingI/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -433,7 +433,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingII/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -478,7 +478,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -519,7 +519,7 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/RNADecay/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNADecay/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -560,7 +560,7 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/RNAModification/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -601,7 +601,7 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/RNAProcessing/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -643,7 +643,7 @@
         "chromosome": "PRIMARY_ACTIVITY_MISSING",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Replication/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Replication/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -692,7 +692,7 @@
         "complexs": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ReplicationInitiation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -721,7 +721,7 @@
         "primary_channel": "complexs",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "artifacts/l2_2_gates/RibosomeAssembly/latest_event",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RibosomeAssembly/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -755,7 +755,7 @@
         "boundEnzymes": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Transcription/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Transcription/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -797,7 +797,7 @@
         "monomers": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/Translation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Translation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -840,7 +840,7 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "artifacts/l2_2_gates/tRNAAminoacylation/latest",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/tRNAAminoacylation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",

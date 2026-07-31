@@ -1,135 +1,169 @@
 {
-  "generated_at": "2026-07-31T12:38:10.222674+00:00",
+  "generated_at": "2026-07-31T18:43:59.893097+00:00",
   "jobs": [
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/DNARepair.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'DNARepair', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/DNARepair/.latest.rebuild-348-1785365246271278610']\n# started_at: 2026-07-29T22:47:26.274108+00:00\nDNARepair PASS substrates=SEED_NOISE@0.000623 chromosome=PASS@0.000000",
       "m_ticks": 200,
       "output_dir": "artifacts/l2_2_gates/DNARepair/latest",
       "process": "DNARepair",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_DEEP",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/DNASupercoiling.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'DNASupercoiling', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/DNASupercoiling/.latest.rebuild-348-1785365246271568718']\n# started_at: 2026-07-29T22:47:26.276114+00:00\nDNASupercoiling PASS substrates=SEED_NOISE@16.095600 chromosome=PASS@0.000000",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
       "process": "DNASupercoiling",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/MacromolecularComplexation.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'MacromolecularComplexation', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/MacromolecularComplexation/.latest.rebuild-348-1785365246271459415']\n# started_at: 2026-07-29T22:47:26.276161+00:00\nMacromolecularComplexation PASS substrates=SEED_NOISE@0.000000 monomers=SEED_NOISE@0.000000 complexs=SEED_NOISE@0.000000",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/MacromolecularComplexation/latest",
       "process": "MacromolecularComplexation",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/Metabolism.log",
-      "log_tail": "GM: min|aij| =  3.575e-02  max|aij| =  2.797e+01  ratio =  7.824e+02\nEQ: min|aij| =  1.278e-03  max|aij| =  1.000e+00  ratio =  7.824e+02\nConstructing initial basis...\nSize of triangular part is 360\nMetabolism PASS substrates=PASS@158.504463",
       "m_ticks": 20,
       "output_dir": "artifacts/l2_2_gates/Metabolism/latest",
       "process": "Metabolism",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "TRIVIAL_RNG",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinDecay.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinDecay', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/ProteinDecay/.latest.rebuild-348-1785367603239903202']\n# started_at: 2026-07-29T23:26:43.241431+00:00\nProteinDecay PASS substrates=SEED_NOISE@10.240258 monomers=SEED_NOISE@0.000780 complexs=SEED_NOISE@0.000000",
       "m_ticks": 200,
       "output_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
       "process": "ProteinDecay",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinFolding.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinFolding', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/ProteinFolding/.latest.rebuild-348-1785369058137914884']\n# started_at: 2026-07-29T23:50:58.139690+00:00\nProteinFolding PASS substrates=SEED_NOISE@0.000018 monomers=SEED_NOISE@0.000000",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/ProteinFolding/latest",
       "process": "ProteinFolding",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinModification.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinModification', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/ProteinModification/.latest.rebuild-348-1785370760392934553']\n# started_at: 2026-07-30T00:19:20.394344+00:00\nProteinModification PASS substrates=SEED_NOISE@0.035027 monomers=SEED_NOISE@0.002893",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/ProteinModification/latest",
       "process": "ProteinModification",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinProcessingI.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinProcessingI', '--seeds', '50', '--ticks', '20', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/ProteinProcessingI/.latest.rebuild-348-1785370958134184831']\n# started_at: 2026-07-30T00:22:38.135816+00:00\nProteinProcessingI PASS substrates=SEED_NOISE@0.000000 monomers=SEED_NOISE@0.000000",
       "m_ticks": 20,
       "output_dir": "artifacts/l2_2_gates/ProteinProcessingI/latest",
       "process": "ProteinProcessingI",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "TRIVIAL_RNG",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinProcessingII.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinProcessingII', '--seeds', '50', '--ticks', '20', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/ProteinProcessingII/.latest.rebuild-348-1785371284683630649']\n# started_at: 2026-07-30T00:28:04.685793+00:00\nProteinProcessingII PASS substrates=SEED_NOISE@0.000000 monomers=SEED_NOISE@0.000000",
       "m_ticks": 20,
       "output_dir": "artifacts/l2_2_gates/ProteinProcessingII/latest",
       "process": "ProteinProcessingII",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "TRIVIAL_RNG",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinTranslocation.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinTranslocation', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/ProteinTranslocation/.latest.rebuild-348-1785371642838367821']\n# started_at: 2026-07-30T00:34:02.839780+00:00\nProteinTranslocation PASS substrates=SEED_NOISE@0.327114 monomers=SEED_NOISE@0.000344",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
       "process": "ProteinTranslocation",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/RNADecay.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'RNADecay', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/RNADecay/.latest.rebuild-348-1785373003027866443']\n# started_at: 2026-07-30T00:56:43.029186+00:00\nRNADecay PASS substrates=SEED_NOISE@63.640277 RNAs=SEED_NOISE@0.000686",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/RNADecay/latest",
       "process": "RNADecay",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/RNAModification.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'RNAModification', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/RNAModification/.latest.rebuild-348-1785373626936129092']\n# started_at: 2026-07-30T01:07:06.937887+00:00\nRNAModification PASS substrates=SEED_NOISE@0.071317 RNAs=SEED_NOISE@0.001152",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/RNAModification/latest",
       "process": "RNAModification",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/RNAProcessing.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'RNAProcessing', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/RNAProcessing/.latest.rebuild-348-1785374060661256751']\n# started_at: 2026-07-30T01:14:20.662711+00:00\nRNAProcessing PASS substrates=SEED_NOISE@0.000000 RNAs=SEED_NOISE@0.000444",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/RNAProcessing/latest",
       "process": "RNAProcessing",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/Replication.log",
@@ -143,47 +177,60 @@
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ReplicationInitiation.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ReplicationInitiation', '--seeds', '50', '--ticks', '200', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/ReplicationInitiation/.latest.rebuild-348-1785375991278209087']\n# started_at: 2026-07-30T01:46:31.279751+00:00\nReplicationInitiation PASS substrates=SEED_NOISE@0.128120 complexs=PASS@0.162707",
       "m_ticks": 200,
       "output_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
       "process": "ReplicationInitiation",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_DEEP",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/Transcription.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'Transcription', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/Transcription/.latest.rebuild-348-1785376980090069351']\n# started_at: 2026-07-30T02:03:00.091796+00:00\nTranscription PASS substrates=SEED_NOISE@578.384867 RNAs=PASS@0.009042 boundEnzymes=SEED_NOISE@0.243467",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/Transcription/latest",
       "process": "Transcription",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_DEEP",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/Translation.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'Translation', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/Translation/.latest.rebuild-348-1785377382770854956']\n# started_at: 2026-07-30T02:09:42.772318+00:00\nTranslation PASS substrates=SEED_NOISE@18.850770 monomers=PASS@0.006671 boundEnzymes=SEED_NOISE@0.477038",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/Translation/latest",
       "process": "Translation",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_DEEP",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "SEED_ALIGNMENT_DIAGNOSTIC: OC outputs align better to a shifted Karr seed index on channel=monomers (shift=+47, observed_w1=0.006671, shifted_w1=0.006165)."
+      ]
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/tRNAAminoacylation.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'tRNAAminoacylation', '--seeds', '50', '--ticks', '50', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/tRNAAminoacylation/.latest.rebuild-348-1785378539799850846']\n# started_at: 2026-07-30T02:28:59.801250+00:00\ntRNAAminoacylation PASS substrates=SEED_NOISE@0.000000 RNAs=SEED_NOISE@0.000000",
       "m_ticks": 50,
       "output_dir": "artifacts/l2_2_gates/tRNAAminoacylation/latest",
       "process": "tRNAAminoacylation",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=RNAs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
     }
   ],
   "n_jobs": 18,
   "tally": {
-    "IN_PROGRESS_OR_UNKNOWN": 18
+    "DONE_VALID_EVIDENCE": 17,
+    "IN_PROGRESS_OR_UNKNOWN": 1
   }
 }
