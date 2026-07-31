@@ -1018,6 +1018,31 @@ class KarrReplicationProcess(Process):
             and bound_now[self.enzyme_wid_core_beta_clamp_primase] == 1
         )
 
+    def _is_replisome_polymerase_capacity_present(self, bound_now: dict[str, float]) -> bool:
+        """Both-replisomes leading-strand polymerase capacity check, matching
+        Karr's own `evolveState` sync-check invariant (Replication.m:566-578):
+        `totPolCnts = [2 1 1] * cnts(1:3)` must be 0 (idle) or 4 (both forks'
+        worth of leading-strand polymerase machinery present), where cnts is
+        [``2coreBetaClampGammaComplexPrimase``, ``coreBetaClampGammaComplex``,
+        ``coreBetaClampPrimase``]. `_is_pre_split_replisome_state`/
+        `_is_post_split_replisome_state` each recognize only one narrow
+        instantaneous composition snapshot (combined-holoenzyme==2, or the
+        brief single-count post-split transition==1/1/1) used to calibrate
+        dNTP partitioning right at that transition -- they under-fire across
+        the bulk of a real elongating replisome's lifetime, where the fully
+        split steady state is typically 2 `coreBetaClampGammaComplex` + 2
+        `coreBetaClampPrimase` (one leading + one lagging complex per fork,
+        `core2==0`). Use the same weighted-sum invariant Karr itself checks,
+        rather than either narrow snapshot, so the gate fires whenever a
+        genuine two-fork replisome polymerase composition exists in any of
+        its valid bound forms.
+        """
+        core2 = float(bound_now.get(self.enzyme_wid_2core_beta_clamp_gamma_complex_primase, 0.0))
+        core_gamma = float(bound_now.get(self.enzyme_wid_core_beta_clamp_gamma_complex, 0.0))
+        core_primase = float(bound_now.get(self.enzyme_wid_core_beta_clamp_primase, 0.0))
+        total_leading_pol_capacity = 2.0 * core2 + core_gamma + core_primase
+        return total_leading_pol_capacity >= 4.0
+
     def _pre_lagging_dntp_counts(self, bound_now: dict[str, int]) -> np.ndarray | None:
         if not (1 <= self._replay_tick <= len(_PRE_LAGGING_DNTP_COUNTS)):
             return None
@@ -1264,34 +1289,58 @@ class KarrReplicationProcess(Process):
             return update_payload
 
         chromosome_state = states.get("chromosome", {})
-        replication_state = str(chromosome_state.get("replication_state", "idle"))
+        raw_replication_state = str(chromosome_state.get("replication_state", "idle"))
         chromosome_store = self._resolve_chromosome_store(chromosome_state)
         polymerized_regions = chromosome_store.get_field("polymerizedRegions")
         left_pos_bp, right_pos_bp = self._infer_fork_positions_from_polymerized(polymerized_regions)
+
+        # Reset one-shot completion emitter if an upstream coordinator restarts
+        # the cycle. This MUST key off the raw upstream `replication_state`
+        # flag, not the locally-promoted value computed below -- otherwise a
+        # chromosome that is genuinely "complete" (forks already at terC,
+        # replisome enzymes already released) but whose flag was simply never
+        # advanced past "idle" by a missing coordinator (the isolated
+        # per-process replay harness runs no `ReplicationInitiation`) would
+        # have its one-shot guard cleared on every tick by the promotion
+        # below, and could re-emit `replication_complete` repeatedly instead
+        # of exactly once.
+        if raw_replication_state in {"idle", "initiating", "elongating"}:
+            self._completion_emitted = False
 
         # `chromosome.replication_state` is an OC-only coordination flag
         # (written by `KarrReplicationInitiationProcess` for whole-chassis
         # composition) with no Karr counterpart -- Karr's `evolveState`
         # recomputes "is a replisome currently active" fresh every tick from
-        # live `boundEnzymes`/chromosome state (`isAnyHelicaseBound`,
-        # `leadingStrandElongating`; Replication.m:594,616-621), it never
-        # persists a categorical phase. The flag defaults to "idle"
-        # whenever nothing upstream has advanced it yet -- e.g. per-process
-        # oracle replay, which overlays Karr's real chromosome/boundEnzymes
-        # each tick but runs no `ReplicationInitiation` coordinator. When
-        # the real overlaid state already shows an active replisome (bound
-        # helicase, per `enzyme_wid_helicase`) or fork progress beyond the
-        # unreplicated mother baseline, the flag was simply never advanced;
-        # treat this tick as elongating instead of silently no-op'ing on a
-        # chromosome Karr is actively replicating underneath us.
-        replisome_bound = float(bound_now.get(self.enzyme_wid_helicase, 0.0)) > 0.0
-        fork_started = left_pos_bp > 0 or right_pos_bp > 0
-        if replication_state == "idle" and (replisome_bound or fork_started):
+        # live `complexBoundSites` (`isAnyHelicaseBound`, Replication.m:1301;
+        # `leadingStrandElongating`, Replication.m:1314; gate, Replication.m:596:
+        # `isAnyHelicaseBound && all(leadingStrandElongating)`), it never
+        # persists a categorical phase. The flag defaults to "idle" whenever
+        # nothing upstream has advanced it yet -- e.g. per-process oracle
+        # replay, which overlays Karr's real chromosome/boundEnzymes each tick
+        # but runs no `ReplicationInitiation` coordinator. Mirror Karr's own
+        # gate faithfully: a helicase must actually be bound somewhere on the
+        # chromosome (`isAnyHelicaseBound` is an `any(...)`, so a single bound
+        # helicase -- e.g. one fork's helicase already displaced near terC --
+        # is sufficient, matching Replication.m:1301) AND the leading-strand
+        # polymerase composition must carry both-forks' worth of capacity
+        # (`_is_replisome_polymerase_capacity_present`, matching Karr's own
+        # `evolveState` sync-check invariant, Replication.m:566-578, which is
+        # what `all(leadingStrandElongating)` at Replication.m:1314/596
+        # ultimately depends on being in sync with). No OR-shortcut on stale
+        # polymerizedRegions data: a "complete" or otherwise-inert chromosome
+        # with no live helicase/polymerase bound must stay idle regardless of
+        # what the region layout looks like.
+        complex_bound_sites = chromosome_store.get_field("complexBoundSites")
+        helicase_global_index = int(self.enzyme_global_indexs[self.enzyme_index_helicase])
+        replisome_helicase_present = bool(np.any(complex_bound_sites.values == helicase_global_index))
+        replisome_polymerases_present = self._is_replisome_polymerase_capacity_present(bound_next)
+        replication_state = raw_replication_state
+        if (
+            replication_state == "idle"
+            and replisome_helicase_present
+            and replisome_polymerases_present
+        ):
             replication_state = "elongating"
-
-        # Reset one-shot completion emitter if an upstream coordinator restarts the cycle.
-        if replication_state in {"idle", "initiating", "elongating"}:
-            self._completion_emitted = False
 
         zero_requests = self._zero_requests()
         update: dict[str, Any] = {"requests": {self.name: zero_requests}}

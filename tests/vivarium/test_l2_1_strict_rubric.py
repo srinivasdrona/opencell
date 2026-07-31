@@ -60,10 +60,12 @@ from l2_replay_common import (  # type: ignore
 # processes (oracle_type=bit_identity). This is the correct rubric per
 # process class and restores the L2.2 ⊆ L2.1 hierarchy expectation.
 EXPECTED_VERDICTS = {
-    # GENUINE: 18 (was 16; Day-37 PM: +TerminalOrg from schema-v2.1 fallback,
-    # +TranscriptionalRegulation and +Metabolism from non-standard channel
-    # detection — their biology fires on tf_binding/tx_rate_fold_change/
-    # metabolic_reaction.fluxs which the strict rubric now recognizes)
+    # GENUINE: 19 (was 16 at Day-37 PM: +TerminalOrg from schema-v2.1
+    # fallback, +TranscriptionalRegulation and +Metabolism from
+    # non-standard channel detection — their biology fires on
+    # tf_binding/tx_rate_fold_change/metabolic_reaction.fluxs which the
+    # strict rubric now recognizes; +Replication, see its inline comment
+    # below for the corrected-activity-gate root cause and evidence)
     #
     # DNARepair stays COINCIDENTAL, but NOT because the harness lacks its inputs:
     # `_classify()` now injects the chromosome hidden-read surface (states_before,
@@ -85,6 +87,19 @@ EXPECTED_VERDICTS = {
     "ProteinTranslocation": "GENUINE",
     "RNADecay": "GENUINE",
     "RNAProcessing": "GENUINE",
+    # Replication: was COINCIDENTAL (idle-gate stuck at schema default "idle"
+    # masked live Karr activity behind an OC-only coordination flag with no
+    # Karr counterpart, per commit e4474c6 + correction; the corrected gate
+    # derives activity from `complexBoundSites`/`boundEnzymes`, matching
+    # Karr's own `isAnyHelicaseBound`/`leadingStrandElongating` getters,
+    # Replication.m:1301/1314, gate Replication.m:596). Measured on seed 0:
+    # karr_active=99/100, OC fire_rate_when_karr_active~=0.99. Per-tick
+    # stochastic bit-identity is intentionally NOT asserted here (Replication
+    # is ORACLE_DISTRIBUTIONAL) -- only Karr-active/OC-fire correlation is;
+    # L2.2's own distributional-rate comparison remains FAIL (a separate,
+    # deeper `_build_polymerized_regions` topology-reconstruction fidelity
+    # gap, out of scope for this fix; see docs/phase_f L2.2 sweep evidence).
+    "Replication": "GENUINE",
     "ReplicationInitiation": "GENUINE",
     "TerminalOrganelleAssembly": "GENUINE",
     "Transcription": "GENUINE",
@@ -98,11 +113,11 @@ EXPECTED_VERDICTS = {
     "HostInteraction": "UNINFORMATIVE",
     "RNAModification": "UNINFORMATIVE",
     "RibosomeAssembly": "UNINFORMATIVE",
-    # COINCIDENTAL: 3 (Metabolism + TxReg now GENUINE via non-standard channels;
-    # DNARepair, ProteinDecay, and Replication are still biology-silent on this
+    # COINCIDENTAL: 2 (Metabolism + TxReg now GENUINE via non-standard channels;
+    # Replication now GENUINE via the corrected activity gate above;
+    # DNARepair and ProteinDecay are still biology-silent on this
     # standard-observable-only strict-rubric surface — real gaps)
     "ProteinDecay": "COINCIDENTAL",
-    "Replication": "COINCIDENTAL",
     # FAIL: 1 (bit-identity broken for deterministic process)
     "ChromosomeCondensation": "FAIL",
     # ERROR: 0 (was 1 — TerminalOrg moved to GENUINE Day-37 PM after schema v2.1 fallback)
