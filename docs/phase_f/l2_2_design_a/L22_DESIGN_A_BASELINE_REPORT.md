@@ -33,9 +33,11 @@ DNARepair/ProteinDecay/ReplicationInitiation traces).
   layout by seed count).
 - No `per_process_traces_v2_s000/` directory exists (verified directly;
   confirms the no-competing-`_s000` policy).
-- Raw `.mat` data under `data/m1_sources/karr_native/` is gitignored
-  (`.gitignore:38`); only `oracle_population_manifest.json` (sha256 per
-  copied file, per-source git SHA) is tracked and committed.
+- Generic v2 raw `.mat` directories under `data/m1_sources/karr_native/`
+  are gitignored. The specialized Transcription/Translation ensemble
+  subtree (100 MAT files) and one historical Translation seed-1 file are
+  tracked separately. `oracle_population_manifest.json` records the
+  process-scoped population used by this sweep.
 - **Preflight — all 18 `load_karr_oracle(process)` calls, before the
   sweep:** `canonical_seed_count == 50` and `warnings == []` for every one
   of the 18 `design_a_per_tick` processes (DNARepair, DNASupercoiling,
@@ -50,10 +52,10 @@ DNARepair/ProteinDecay/ReplicationInitiation traces).
 
 `scripts/l22_evidence/sweep.py run --max-workers 3` (bounded 3-lane
 `ThreadPoolExecutor`, existing hardened locks/atomic-swap/staleness
-semantics, unmodified). WSL: 16 vCPU / 31GiB RAM available; observed
-combined RSS across all concurrent job processes stayed in the
-0.6–2.6 GiB range throughout the entire run (far under the 24 GiB safety
-ceiling); no job was killed or intervened on.
+semantics, unmodified). WSL: 16 vCPU / 31GiB RAM available. No job was
+killed or intervened on. **UNVERIFIED observation:** the operator observed
+combined RSS remaining below the 24 GiB safety ceiling, but no run-wide RSS
+timeseries was retained, so an exact memory range is not claimed.
 
 | Process | Ticks | Duration | Notes |
 |---|---:|---:|---|
@@ -74,7 +76,7 @@ ceiling); no job was killed or intervened on.
 | DNARepair | 200 | 63m21s | |
 | RNADecay | 100 | 66m07s | |
 | ReplicationInitiation | 200 | 81m32s | |
-| ProteinDecay | 200 | 107m27s | memory stayed bounded (~0.6GiB), no leak |
+| ProteinDecay | 200 | 107m27s | completed without exhausting memory; exact run RSS was not retained |
 
 **Sentinel/hash discipline:** every job wrote a `sweep_provenance.json`
 completion sentinel binding `sidecar_hashes` for every fixed authority/
