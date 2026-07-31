@@ -1,27 +1,28 @@
 {
   "completion_status": "COMPLETE",
-  "evaluator_schema_version": 2,
+  "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
   "inputs_verified": true,
   "m_ticks": 20,
   "n_seeds": 50,
   "process": "Metabolism",
+  "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "0cafc9f19138a2bdb36211911082dcef920f9218f4fd838538b4da8459560559",
+    "SUMMARY.json": "b08ed206539bbdf74774f372e079dd97f0db918750e8d27c4404f8a5e07eff56",
     "analytical_check.json": "64e9f45a7d21897111c42017dd901c9baf696c13fce7cdd86d8831788d689fc5",
-    "input_manifest.json": "eec672bb67c7ea4a71fa4a9f6a95e8a7abb13bf179292f287ce1e67f48bb4be3",
-    "null_calibration.json": "39948ee547592bf9b01cadad378d5e74f608676d8a231837c4361c88182329af",
-    "provenance.json": "0385a1deb7a671219111c9494d57cf78abcd480cc3b9d4d727b7e46eae34910f",
-    "result.json": "c002a38dd0ac6dcb76818ea24869d5a0f30ade7946cfe87bbd70ac7ae1bdbc79",
+    "input_manifest.json": "4fcb2930139f457d208d8d79eecc420645753e6014550f0c23bc3e08045ac4d1",
+    "null_calibration.json": "29d8f82acab79c05b4f6a9700782cd26ba259eb2635ca9551d187b206d920d87",
+    "provenance.json": "1bcd8dbb90b078121e0b70d4defa04fc7410087ee538f78fa6abe9e41e31e910",
+    "result.json": "0f8e867970b569b2334c55e6bd90b63e4337f97c7d07665ec6af2b564e581fd4",
     "thresholds.json": "ef387d2d1ccc0d1aa2e6ba8b251dd3385f465b309be6842a2327649073290751"
   },
   "source_hashes": {
     "calc_flux_bounds_module": "8c17bae8821133dc2bb624874c233902215e600a684ec739793b436ffc7c36b7",
     "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
     "fva_module": "6e6ba906174d6ecde9c8f7291094690492f9f54b1a48a11972534d5c5204a5e2",
-    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
     "karr_metabolism_writeback_module": "4ad9e284952dbad05af47681369f405ea77174081ead533ee4ebbedc8ada562e",
     "karr_protein_decay_light_module": "be5a606f2971cd22c4ec03369b5e01e26f0d43b2c52dd04a8cfd103e2c4e5de0",
     "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
@@ -32,5 +33,5 @@
     "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-30T00:19:20.364539+00:00"
+  "written_at": "2026-07-31T14:12:36.702410+00:00"
 }

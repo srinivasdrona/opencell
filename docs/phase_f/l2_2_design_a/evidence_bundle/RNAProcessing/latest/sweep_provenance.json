@@ -1,25 +1,26 @@
 {
   "completion_status": "COMPLETE",
-  "evaluator_schema_version": 2,
+  "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
   "inputs_verified": true,
   "m_ticks": 100,
   "n_seeds": 50,
   "process": "RNAProcessing",
+  "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "bf52120c1c73bcae56804359583a0da6c9dd3a745bff592a08f82a92ff7fe6ab",
+    "SUMMARY.json": "7257d810823d50fed43042ef938c17e9e880e3359c68ac5d83b2c624655ad466",
     "analytical_check.json": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
-    "input_manifest.json": "bdd0eea0b78854ed47ac5dafe574c176ea91495e1f86b303f22c36399d62f95b",
-    "null_calibration.json": "1e77e416a0fd5a87ddbd9d0f3cbfab94dd6ed787ba068b2796caf0371cbf0ec5",
-    "provenance.json": "0387532c2fcd559604e368b92a97a69d4605bb963c103efb2023f237cff6aefe",
-    "result.json": "e2abfa3d6d9d2ce82a482ca68e98302d5ddf5fd604fc62b09ca64eb9c0e950e7",
+    "input_manifest.json": "ea70f5027263273297795eb19d59b3e647a572fd1a0826f82021a38a65072c6f",
+    "null_calibration.json": "9cfae7e843172da60b49036b52cbad8598d9b8dcf71f82bb9a3a661ff091c611",
+    "provenance.json": "84b1ef2188cbb10d1dfa3dda494c34b8ca160323d927cec6a8d3a159b84315b0",
+    "result.json": "6302cd51b8b5ce4c3e45dfed0c5a841cf135b5415b88182879a93458b34faa15",
     "thresholds.json": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59"
   },
   "source_hashes": {
     "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
     "karr_trna_aminoacylation_module": "075c47e59397bc21ac76943be1e63abf351bec68df559ca61b1564c58eaa8787",
     "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
     "oc_module": "e51c9d643b1ca9be56087d79482311cd59ab102d97bdb796dcc85f3f8b443331",
@@ -27,5 +28,5 @@
     "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-30T01:46:31.249501+00:00"
+  "written_at": "2026-07-31T15:29:43.703902+00:00"
 }

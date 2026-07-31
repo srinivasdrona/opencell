@@ -1,25 +1,26 @@
 {
   "completion_status": "COMPLETE",
-  "evaluator_schema_version": 2,
+  "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
   "inputs_verified": true,
   "m_ticks": 100,
   "n_seeds": 50,
   "process": "Translation",
+  "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "3742815834bed7b256b96ae6f123611afc04d31d05e2ed6925e5184971c97151",
+    "SUMMARY.json": "9fc332466041cf2dc3a2cb1c3e611d4185ff729ea62cdb4a5dee103c4269e538",
     "analytical_check.json": "a26c6baaedf445667a47cb0063e3fdf9567a7995e4b960688339f2680d34f770",
-    "input_manifest.json": "19ff081fccdabd4586b33a53ac7a069670f2d79d0658943eb71ccccf73780d18",
-    "null_calibration.json": "fc616e9a54f6faa3f24be264f11dcbe0537eab145cfca99aa9e76a4c9e67ae1a",
-    "provenance.json": "5edb6a613b338350fc0f28d405d50caee2c31938a58eae990e032e65ceb7d9b3",
-    "result.json": "eeddf74990bd9b8492651ad5f66a1a47ae06e14e6d6b052e5445c29f201feb89",
+    "input_manifest.json": "8debf2e19100c47cb928449dc966947a1fa3f295242edc43d24c70f07a354737",
+    "null_calibration.json": "cacd95b97f88987b0813252a52d54520f1926cdff9bb59205d850e442018ae77",
+    "provenance.json": "c095e0cc7a3be2ae6d339779e46e5dac388bbf0adb504b2e393cd09c5e00eaa4",
+    "result.json": "53db3ba60c62f01148e03d9598070962c49ea4216e3445c95bae8845de4d7943",
     "thresholds.json": "336ed5353c949d53ada1ca567556de7c9f987edaee54eb647a139ae1112ddcbe"
   },
   "source_hashes": {
     "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
     "karr_translation_v3_module": "bd4e07e45eea74cbf3f5afe08c4e7cfcf002e53045fb45006edbe1c5c40d1ac8",
     "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
     "m3_init_module": "44b0421d576777eece614aca2280d919a4f3df82a5baacecdb6509e4480aa88f",
@@ -29,5 +30,5 @@
     "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-30T02:28:59.772298+00:00"
+  "written_at": "2026-07-31T16:10:11.669112+00:00"
 }

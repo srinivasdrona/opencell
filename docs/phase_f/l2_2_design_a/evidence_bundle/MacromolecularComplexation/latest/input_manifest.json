@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-29T23:20:42.613619+00:00",
+  "generated_at": "2026-07-31T13:13:23.235826+00:00",
   "inputs": [
     {
       "path": "data/m1_sources/karr_native/per_process_traces_v2/MacromolecularComplexation_100ticks.mat",
@@ -11,7 +11,7 @@
     },
     {
       "path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
-      "sha256": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075"
+      "sha256": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a"
     }
   ],
   "m_ticks": 100,

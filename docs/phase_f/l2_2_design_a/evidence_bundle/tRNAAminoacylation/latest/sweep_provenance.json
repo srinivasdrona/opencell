@@ -1,30 +1,31 @@
 {
   "completion_status": "COMPLETE",
-  "evaluator_schema_version": 2,
+  "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
   "inputs_verified": true,
   "m_ticks": 50,
   "n_seeds": 50,
   "process": "tRNAAminoacylation",
+  "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "9eebf8a20da10a0f7b167fe61190f72eb5b959636ccf4081174a8a7ff126ec0d",
+    "SUMMARY.json": "e0b9a2aed56305d4e06be02f205aa67a9fcc02a4fcf76aa790ebcd5fe5e2917f",
     "analytical_check.json": "9a8a426330b338e822497eabc298181dc0518c457c35037365935f7b59f84647",
-    "input_manifest.json": "06734fbf1bf365e30c062d58a2544a5bfc88cc1d44f9736b448e02d6f27ea09c",
-    "null_calibration.json": "7e4a735612f89b1c5ae93d689e90c8c75d56a8bc15b876b9ba5d90fe5954d756",
-    "provenance.json": "2ac8ab9dc2ccab424df93402a70b7f441ed211d16c5e78c9c1288ae399029236",
-    "result.json": "cbd4d7cf2654004dfe0be5f2d451958e591ce71b379589643e975349569fd824",
+    "input_manifest.json": "12334e4570e7c60f9bd94caaea104b523a5f9f07a01c4ff904c96dd7ea7fceaa",
+    "null_calibration.json": "76a26db868273a280bde367aa609754cd58d8c797a106628c29fc39952de92b8",
+    "provenance.json": "7d52bacc101d088d734035cbcb2c421ef66bd8d57d6f57ba2aa50540206c9d4f",
+    "result.json": "704c8b7af4bac6ec38b40ee3ed296145e265b4b0ad9199d8c3b8cf6f8a2f5001",
     "thresholds.json": "f07ff6164266532d8986ad48c8fb9c50700f7503d7f6955e664b2fff51d90f97"
   },
   "source_hashes": {
     "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
     "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
     "oc_module": "075c47e59397bc21ac76943be1e63abf351bec68df559ca61b1564c58eaa8787",
     "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
     "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-30T02:42:43.978286+00:00"
+  "written_at": "2026-07-31T16:14:30.003103+00:00"
 }

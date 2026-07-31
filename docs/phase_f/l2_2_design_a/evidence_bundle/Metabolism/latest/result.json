@@ -18,34 +18,34 @@
           "adv_pse": {
             "attempts": 284052,
             "failures": 3454,
-            "iterations": 107012642,
+            "iterations": 106957646,
             "successes": 280598,
-            "wall_time_s": 1884.0747254358912
+            "wall_time_s": 1888.5563051591735
           },
           "adv_pse_presolve": {
             "attempts": 8,
             "failures": 0,
             "iterations": 1411,
             "successes": 8,
-            "wall_time_s": 0.022758205001082388
+            "wall_time_s": 0.02519002599910891
           },
           "adv_std": {
             "attempts": 3392,
             "failures": 63,
-            "iterations": 21078547,
+            "iterations": 20887368,
             "successes": 3329,
-            "wall_time_s": 653.9181511720176
+            "wall_time_s": 654.3840146969883
           },
           "std_pse": {
             "attempts": 125,
             "failures": 8,
-            "iterations": 3098750,
+            "iterations": 3048475,
             "successes": 117,
-            "wall_time_s": 80.86309200200094
+            "wall_time_s": 80.88493183399987
           }
         },
         "total_solves": 284052,
-        "total_wall_time_s": 2618.878726814911
+        "total_wall_time_s": 2623.8504417161607
       },
       "fva_threshold": 0.99,
       "fva_tolerance": 2.0,
@@ -149,7 +149,7 @@
     49
   ],
   "ticks": 20,
-  "timestamp": "2026-07-30T00:19:09.122193+00:00",
+  "timestamp": "2026-07-31T14:12:25.745656+00:00",
   "verdict": "PASS",
   "warnings": []
 }

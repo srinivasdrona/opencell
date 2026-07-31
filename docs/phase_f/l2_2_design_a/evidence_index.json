@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "ae7af770c844de56baab3ab64f7af09ce45f90df3c090c92e677ea2c78e0b987",
-  "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-07-30T21:43:07.297619+00:00",
+  "content_hash": "6c99381519abe65fc5cd22f39482a133ac5d8e5fb811f0acecb77b22ddd241f1",
+  "evidence_root": "artifacts/l2_2_gates",
+  "generated_at": "2026-07-31T16:45:27.585928+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -19,7 +19,7 @@
         "primary_channel": "substrates",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Cytokinesis/latest_event",
+      "evidence_dir": "artifacts/l2_2_gates/Cytokinesis/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -40,7 +40,7 @@
         "primary_channel": "chromosome",
         "primary_distance": "hurdle_event_rate_plus_conditional_scaled_distance"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event",
+      "evidence_dir": "artifacts/l2_2_gates/DNADamage/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -51,12 +51,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "37e974bc0a8a34a2d7722514a9e2856aaacdd838f2451adf6aceb636730bfc5c",
+        "SUMMARY.json": "f216a616f1b59f575bf9629671c75565162cc5d264cb4be2f96dc38e3c415741",
         "analytical_check.json": "c37ae0ef71b6663479d1f59b5ee26f798f0eb7846541192f35b7b0f52ea5264c",
-        "null_calibration.json": "a5dc723fa59e88e6bdaefe25d3d523177cb1fc2a26c416b9d730d0886aaeee0f",
-        "provenance.json": "e31fec9878b9c45ada74b1aeb86691438f82467937b9669bb8894c4e6d78afa0",
-        "result.json": "1f91271d556fdffa94ec607c94bce70b63c219b0c804918174ba74f7968ce25c",
-        "sweep_provenance.json": "c81b75fdd72088985acab8144be63d73ec0dbd5589a4529b1cd624fbf9cf30bf",
+        "null_calibration.json": "ed4af3833ba184d9ae117b7b9d42ea9517be60bf32208bc2b2835b3584c70861",
+        "provenance.json": "33525ba965ce111dff452843deebee00fd7e0aaeef381cc6285831d418ba141a",
+        "result.json": "79f8e7d322f36a092e0f919fc0c08161339f4dc3e5419214671aaa7542e49a39",
+        "sweep_provenance.json": "8b32a34cb063346c9d18668654133ba8e8d96a13fd3508034b37733ec5feabab",
         "thresholds.json": "beeba9da08cbc55b29ef3e231904f67e3a4ec6f9e741d00aa4c58b188238051b"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -73,7 +73,7 @@
         "chromosome": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNARepair/latest",
+      "evidence_dir": "artifacts/l2_2_gates/DNARepair/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -82,22 +82,22 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "306e87263b5bc46c737aadab5a5e747942ed8b36121cec7b108671ebf8889656",
+        "SUMMARY.json": "90b6067172ba3f6267628865f01a05e19e1414098fb56acd9b8cae9a12ce3807",
         "analytical_check.json": "fe7776df0a449ac6226e4a97dddce8cd8b17225d60ad090c4ed22d459aa01733",
-        "null_calibration.json": "98bc45fe86a58cd6841cac3ca441b3a36bf11a5a237051dd2d4e4dda3c265d01",
-        "provenance.json": "985b32a1d7b23f94caa0287553803b31328edb1299b9cb47d25b129a10f9e6a0",
-        "result.json": "d9aa3c6e4efa1c3ff73744874ebe1a109137674611fa673bb34fc203a18d98a5",
-        "sweep_provenance.json": "e383058e74c6b30827aae385430c172da1fa7c9acd168d55941c379502b0fad2",
+        "null_calibration.json": "30810716682f4a90805e938f469d15b437b3a1fb617956a6b87a4377733ed9b2",
+        "provenance.json": "62db0df15459d2f4ceb1217ff3342ca881ea1b20e3f39c9b7dd1883277250a24",
+        "result.json": "63ea1524acbc32e206af97805f3e3e39031e71c02550b9843e985084fe0b1529",
+        "sweep_provenance.json": "28dbcc40dfbbc6e57cc7427a7ca5ea238d468f7eb15ed2c137447215fedfab40",
         "thresholds.json": "49bf0423b5e7bbe588caf3f013cf72d2fd7af96b8267859c52eee7914f8ae0cc"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -114,7 +114,7 @@
         "chromosome": "PRIMARY_INSUFFICIENT_SAMPLES",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/latest",
+      "evidence_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -125,11 +125,11 @@
       ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
@@ -145,7 +145,7 @@
         "primary_channel": "monomers",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/FtsZPolymerization/latest_event",
+      "evidence_dir": "artifacts/l2_2_gates/FtsZPolymerization/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -156,12 +156,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "6e71877217354864aa30487022a88dc201473552cedcd854766e320fbe9ec8e5",
+        "SUMMARY.json": "9c1c7790c64aa93c69e55fe8e678769a0e802b98cbc1dad8bfdfe6487989d727",
         "analytical_check.json": "851bafe04f1a87092a83b1f2f9ea2f84cb9cf2fcfcb2b45899ff5a6c10f22a86",
-        "null_calibration.json": "116ee7dc7970443c15457cfcac718f4e391ecf0476f15d57d27c37440669e7f3",
-        "provenance.json": "3ef4a5d9063caf0ad35c014899565ab3c82933b54a8e105b610823e226e41f05",
-        "result.json": "afed7c42d72954491465ece769677ec3a6f85f9aee90f8acadf60684b6578978",
-        "sweep_provenance.json": "fcb6ee9d39a322cb39fce42f8e84f6f6a129884f48438ed573941118466cfdc6",
+        "null_calibration.json": "99809dc885233be5774da38db4360f3910124ca858f19bacca6a4be243206489",
+        "provenance.json": "8e2edaf2ed9dd28887ca38fe427727244c7a08235df07e0d456ed04d7c46dfe2",
+        "result.json": "c06e3829d57d0af899fba42eb9316f168a19598f197136e996e4b633d4654246",
+        "sweep_provenance.json": "efc34971e1783094fac368b42cef37972797f762a018863b29ea2d2330dd8ce6",
         "thresholds.json": "3a3e291235e4d91a90f68fcf684c42dc3c74ede86b0130a58a65aae0f944231a"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -179,7 +179,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/MacromolecularComplexation/latest",
+      "evidence_dir": "artifacts/l2_2_gates/MacromolecularComplexation/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -190,11 +190,11 @@
       ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
@@ -202,12 +202,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "0cafc9f19138a2bdb36211911082dcef920f9218f4fd838538b4da8459560559",
+        "SUMMARY.json": "b08ed206539bbdf74774f372e079dd97f0db918750e8d27c4404f8a5e07eff56",
         "analytical_check.json": "64e9f45a7d21897111c42017dd901c9baf696c13fce7cdd86d8831788d689fc5",
-        "null_calibration.json": "39948ee547592bf9b01cadad378d5e74f608676d8a231837c4361c88182329af",
-        "provenance.json": "0385a1deb7a671219111c9494d57cf78abcd480cc3b9d4d727b7e46eae34910f",
-        "result.json": "c002a38dd0ac6dcb76818ea24869d5a0f30ade7946cfe87bbd70ac7ae1bdbc79",
-        "sweep_provenance.json": "597b7bee2b1e89165b1af200d4cf24f0f2b7291beb45a36b54712b59cb4e7bff",
+        "null_calibration.json": "29d8f82acab79c05b4f6a9700782cd26ba259eb2635ca9551d187b206d920d87",
+        "provenance.json": "1bcd8dbb90b078121e0b70d4defa04fc7410087ee538f78fa6abe9e41e31e910",
+        "result.json": "0f8e867970b569b2334c55e6bd90b63e4337f97c7d07665ec6af2b564e581fd4",
+        "sweep_provenance.json": "6f4d54652994c6deeb248888840e8f57db2cc65422ed32faa007239dc0456a85",
         "thresholds.json": "ef387d2d1ccc0d1aa2e6ba8b251dd3385f465b309be6842a2327649073290751"
       },
       "bucket": "TRIVIAL_RNG",
@@ -223,7 +223,7 @@
       "channel_verdicts": {
         "substrates": "PASS"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Metabolism/latest",
+      "evidence_dir": "artifacts/l2_2_gates/Metabolism/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -232,22 +232,22 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "914fea4aba21e1e2e7388865c5d8ffbdc94c6a8d987ea5b952dc80e54f1fac76",
+        "SUMMARY.json": "769d23b17160b16586522d219f601181e3dc7efeda2da7f0d24f95faae971be2",
         "analytical_check.json": "2654dd797b75612697b074688d1708a61fd3c46cf50b15cf24ef13918061446b",
-        "null_calibration.json": "94d2d33d04fc973a80ab4fa31f28395e353945303c5dcce0b60f1ed52c54ffd3",
-        "provenance.json": "4f2da52857847a8d89069990d9909db2bf80147f300e6d1ecb93e7d9a0386e24",
-        "result.json": "8a9308924affb121f87e028e5ba85e121df733fd37d8295d38cf6e673cb91ec5",
-        "sweep_provenance.json": "5824138dd52a2bb01d447657178a261aaf2e65618d249ebc3cf1092cdb918973",
+        "null_calibration.json": "780098d7e63f0d671aa8bd78bcb7ab46d0206f0e20af41b674db6cc84401abcc",
+        "provenance.json": "c8b44016abbe8a8f3ee024cba479e17558c333c3a3ddb63ee63053067d8d8f6d",
+        "result.json": "7f728fc8f817682d36fa4b7275816d92d683fcea022b5cc10931c1975a117118",
+        "sweep_provenance.json": "189159ebf34b8539fadd3d191fcd3fbdc9d9fdd7ab5307dda524db1aebf6a6e8",
         "thresholds.json": "d3f39cdbc83c5bd6e95713c30bd263c71761bb46e1477e95bee0158dbe85e322"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -265,7 +265,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinDecay/latest",
+      "evidence_dir": "artifacts/l2_2_gates/ProteinDecay/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -274,22 +274,22 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "e3d3277e9677a02de2d7987677acbaa45b325f4b49f3c6849f12e8e28c01bbd7",
+        "SUMMARY.json": "ecb834b52f872385a93b78ef3f615991d912eddb2fc3243b70c93d031b981340",
         "analytical_check.json": "030974782242b9c2037a6286ef5fbb72009f65fa3189ddfa836f54bd0dcbdeb5",
-        "null_calibration.json": "7f59f422ce3e2974d4d2a789a88600f3a465498cd3276b8931a3b663e859258f",
-        "provenance.json": "5ac03fd07201914574fcb3c71583293a0f9bf17bd44098b804ed476d70f57977",
-        "result.json": "6c9031f301a1a29ab43bbcfdb5e812e623bfd185ad1a806e7e0c7a3f2c469b12",
-        "sweep_provenance.json": "038f756df041021722925a0f28bcf708d10ffb5d01f6dc1b29e14f3e8eb011a5",
+        "null_calibration.json": "ef1b0df25ea1f9a014576cd3febcf6c7e2b39a5a4c592f907a0ed947a10e35e4",
+        "provenance.json": "8ff4aa231d9cf7d22a8c6ddacbdc27341c1fe1308b14f695acac8386df1b05e7",
+        "result.json": "a25a8fa236f89755c6b2fa3752402cef6f88a65c8142986f7a154b19da38a120",
+        "sweep_provenance.json": "30cce9651688a1eb788f6186063fb869ca1a480d1cc43bca38bb012656ac5ea7",
         "thresholds.json": "67ad0137cbe88e6927828160e3882c366311cd8ab2f9c58cb47940de500adbf9"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -306,7 +306,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinFolding/latest",
+      "evidence_dir": "artifacts/l2_2_gates/ProteinFolding/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -315,11 +315,11 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
@@ -327,12 +327,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "f68a607f82f3e257b2c8da0c2dc946f04e7683ee52dbcbf864f63ea82785cdb9",
+        "SUMMARY.json": "79581fd249e44bb7d7a7ca0a6183a1b63ff2a85a4fa5917d302522e2d33f0ab8",
         "analytical_check.json": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
-        "null_calibration.json": "9f63b16569dbf17120ca42065174052df4cae8e79195558437bfc970a43019a1",
-        "provenance.json": "bddce368eb7e2416c50f19f41b50d6e6facd7d0a2268276e626e868b95f442c7",
-        "result.json": "3aa704004de11f1250e81b1e97cade5bc3a49e9529f623f7e3153d2c9609771d",
-        "sweep_provenance.json": "91f80915b8b59895ed07e28e5fa4e410fb7260597a350af0ce221c8acb9c415e",
+        "null_calibration.json": "47b62f22bf93f7455540566575a0c321c1872c3f124f37fac68fe599daed6ff3",
+        "provenance.json": "411c8486a4887eb63bb7291db455e214551781e03b2337c8e3d8a2ba585cb7e5",
+        "result.json": "ae0ab997c899b3a0464569d7e5446b4956983a92eb438b98c68026141e423380",
+        "sweep_provenance.json": "4e4ca2aee643b76873bcbce2ed0508040e06b0b3c332fe7b1ecb4fd02e364e4b",
         "thresholds.json": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -349,7 +349,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest",
+      "evidence_dir": "artifacts/l2_2_gates/ProteinModification/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -358,22 +358,22 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "8f1b0a32800c7da6ce939422935229c03ae017ffa6238aa882ae4a5fb102dabb",
+        "SUMMARY.json": "f5f6f80e8f83e8e6fa048cf5775ba3367f6ac669ddab4e4cd57be0259c90f660",
         "analytical_check.json": "3141f86a582c7d209a199137ca1795b7d7e9cc0cad1a673eda28079ee33b1c4b",
-        "null_calibration.json": "2c8e91a75a3f21ed88d342244e8fe991c1038340c3c951f100822b83a30f6c70",
-        "provenance.json": "5107997c57d689e1d9f6b2431f3fed6de69571c01be714b8a9ffb843df3d9f01",
-        "result.json": "3fe3f2a2573baf0d4f06e78b5b24092e2c58a06a013b6534d3f0a3633af5a93a",
-        "sweep_provenance.json": "44d46f787dbac62117bd62e474d284bf6bbe5c3128c37a9d802066317e19d4f3",
+        "null_calibration.json": "e0bfa622476ee35c8e6dcbf99ef7325ac63c5aa176590bcf6c67d4168099f219",
+        "provenance.json": "40423507ed870977475088f7f3721ea2821bedd77f90700f632c4dd6a13b16b0",
+        "result.json": "1f88141fa36b32f0eeac11903dfa67fae10680f03067fa63ba6adee132610857",
+        "sweep_provenance.json": "b935012f4319a346960a7733d4ac4829ef0d9dc8282455468be32d6b3fd38b3e",
         "thresholds.json": "9a7d816fb435dfa8ca266fb56ae9a85f02c2cbb75c48d6b91e2697bf007fe37b"
       },
       "bucket": "TRIVIAL_RNG",
@@ -390,7 +390,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingI/latest",
+      "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingI/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -399,11 +399,11 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
@@ -411,12 +411,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "3a6851ea08ada6781b9dd54da80c986f4ee79900c2c1b1abdffbae686fc5c1f3",
+        "SUMMARY.json": "505962e7ee8960f0ef61e7a9e178c17a1a025b45211578333851e2326f551d99",
         "analytical_check.json": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
-        "null_calibration.json": "a63a763470db1ca4be7e18000218d666371a9531c2c62db90ad87f502cb65e4c",
-        "provenance.json": "6080ac11fdb2798ccbfc626ecd6943e593a81638bd276168d4eed2140cf5e042",
-        "result.json": "4f56aa15e412995bac47e8ff2fb054ff498a7ae0e90ea8d14c1636aefbefeb85",
-        "sweep_provenance.json": "5d35032e53afd2c5d60941ba2a005ea315e25bc67e426e0ef0e60cd804d0e1f9",
+        "null_calibration.json": "33c8dba6a7b0c864feacdd46c01ccea3df71ff67ae05390e3f8925fec7cbb51e",
+        "provenance.json": "acfdf1df9ff4363d91ea64df5741c896934831fb12b430eda49411ac97a689b4",
+        "result.json": "63b2ff6024e2b71cfedd76858eb71175a017bd2605aaa7c8c490a6633cbe24a8",
+        "sweep_provenance.json": "c1647027a9df013f5ea767b99853409db1894730344faa7cefa15bbdcc9de808",
         "thresholds.json": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be"
       },
       "bucket": "TRIVIAL_RNG",
@@ -433,7 +433,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest",
+      "evidence_dir": "artifacts/l2_2_gates/ProteinProcessingII/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
@@ -444,11 +444,11 @@
       ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
@@ -456,12 +456,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "e6a2486030332899e43fdcfa182e60a97e486268610153af4154835026a5e80d",
+        "SUMMARY.json": "9b9fed43d6967d6ca0ad0dccc54c03387d5a7783c40dce811d248537a2a6c325",
         "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
-        "null_calibration.json": "e588966ec7698df18cbebf83675d58aa6aab748ca795ef0b054ab4bf7a6bd755",
-        "provenance.json": "e5c55dfe66e81f9d22ef846ec4121141550ad3ea6722647dc7f7c7fe974dc5d1",
-        "result.json": "9446fb0273af2ba67a90b5ee9d078f8baf3b63adee6d7142ef25d42df057279e",
-        "sweep_provenance.json": "d2f48ff5bc51b4ae7c60b454ff454c3b9a34ff1f6401a1058df13e3f0f4f41af",
+        "null_calibration.json": "fbf90a1ce925e1e2f7e855c6f46f760fef372e20f88890b60d339053f70f99a2",
+        "provenance.json": "f21fe79f7ef5a22678a9747f54074f31bcd30abc21bd263c292076397ea8797f",
+        "result.json": "164d620560c09fd1ae5b891f5dd298dc014a356184541fddfdb675f266429f56",
+        "sweep_provenance.json": "3f914a4ce627181dab7dadaf30e0c6daaab17c1a6ac00818db50780bb5db3464",
         "thresholds.json": "3848dfed718368ea5355509c548b2151c4f4881030bee4a28ebf8c809835d87f"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -478,7 +478,7 @@
         "monomers": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
+      "evidence_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -487,22 +487,22 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "a5e31c7419580fc4bee016c586fd3d5ef90ee5d356223458b32386da6e0260ad",
+        "SUMMARY.json": "f2d8a89b7e168cc56c5b7dff1839eb0c0a0d49dede397f660c215499f903ac0f",
         "analytical_check.json": "7f609509cd697e8cb411798205cea7f7d07a5a12444d9e18e9daf6d10a38f7be",
-        "null_calibration.json": "05a94e20e45e728db0f89de74f6a02168e9e28f829abe96a94199a84b038776a",
-        "provenance.json": "0bfdd728aed214ed77eb8f2be5ca0923d35356524c4689ddce3a5d8abbdeeee1",
-        "result.json": "9bb7b84fa93678736902536869d56c4718a48a49823d8f2f40028a287dd5c573",
-        "sweep_provenance.json": "b911814f04b32fcbcf959301eeac7117145c4840004a95fa50cf006d6a433bf9",
+        "null_calibration.json": "09dc5feee1c0dc278cee48851edc79a9bd2c8ce654f229049997fd71feedff5c",
+        "provenance.json": "a533540c41849da48bdfa169fce1dd611598b2fece73b1b1939c8e42482bb05f",
+        "result.json": "2a0830a0b3b863745d287dd7e84d656707344e68c1987e7f73fa38c55f809175",
+        "sweep_provenance.json": "d0fba3e2ad33694428f19a1bcc2e64809357802d07a2bbde91545ae6937b0478",
         "thresholds.json": "10ae0c5de9bc6e7643d0b762c9938ba4d0b0c19779969228f812cf4e84953c83"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -519,7 +519,7 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNADecay/latest",
+      "evidence_dir": "artifacts/l2_2_gates/RNADecay/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -528,22 +528,22 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "9ea03b217a8eaea0b8a79e9cf56c736f300de473b742a30e951d7b1ec121dae3",
+        "SUMMARY.json": "58d2adb6ede479432fa186abb39376de932d5e93563a3fd89e4730d4c20b97fd",
         "analytical_check.json": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
-        "null_calibration.json": "331a0a033d6b03533c8dbf18c57881a82146dd080cb572d536b0525b5da4d616",
-        "provenance.json": "c9baf59502570429be8cb7a1e0487d406d9a579eeba46bed223365619bb00c79",
-        "result.json": "98b95d20c17ba14462cb937a160897e81fc1dc9c5221109f28c583eef7fbd285",
-        "sweep_provenance.json": "bf25a3f404d027d2c55511495e3773d637e4e0008acf1f440c726fac592729eb",
+        "null_calibration.json": "e6dc6a7f4aa9cb95a885c54cb39355cd22c9c9dfbcd318d3a2cf62035bd67e89",
+        "provenance.json": "fb564a8979b41a2bb4bb4f03ebca4bdc27c89e03cbf34e503a1929878556ebdc",
+        "result.json": "2380822049a385b7dffc006c522449c9e1c61f3e1e390c610df12d59f4501c23",
+        "sweep_provenance.json": "917fa0694d9a165b76b63d16e54c3742c4bfffa890901e125a2ef55cffa65a73",
         "thresholds.json": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -560,7 +560,7 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest",
+      "evidence_dir": "artifacts/l2_2_gates/RNAModification/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -569,22 +569,22 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "bf52120c1c73bcae56804359583a0da6c9dd3a745bff592a08f82a92ff7fe6ab",
+        "SUMMARY.json": "7257d810823d50fed43042ef938c17e9e880e3359c68ac5d83b2c624655ad466",
         "analytical_check.json": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
-        "null_calibration.json": "1e77e416a0fd5a87ddbd9d0f3cbfab94dd6ed787ba068b2796caf0371cbf0ec5",
-        "provenance.json": "0387532c2fcd559604e368b92a97a69d4605bb963c103efb2023f237cff6aefe",
-        "result.json": "e2abfa3d6d9d2ce82a482ca68e98302d5ddf5fd604fc62b09ca64eb9c0e950e7",
-        "sweep_provenance.json": "a00388060764baf8f3a4d227db714ff4e32e58ff942268307e2f2b387cc9a699",
+        "null_calibration.json": "9cfae7e843172da60b49036b52cbad8598d9b8dcf71f82bb9a3a661ff091c611",
+        "provenance.json": "84b1ef2188cbb10d1dfa3dda494c34b8ca160323d927cec6a8d3a159b84315b0",
+        "result.json": "6302cd51b8b5ce4c3e45dfed0c5a841cf135b5415b88182879a93458b34faa15",
+        "sweep_provenance.json": "369e45763b92a0550ffa615f5aaa42f6ee7524eed98117b3090f7813c5ae2c0e",
         "thresholds.json": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -601,7 +601,7 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest",
+      "evidence_dir": "artifacts/l2_2_gates/RNAProcessing/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -610,11 +610,11 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
@@ -643,13 +643,16 @@
         "chromosome": "PRIMARY_ACTIVITY_MISSING",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Replication/latest",
+      "evidence_dir": "artifacts/l2_2_gates/Replication/latest",
       "green": false,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "FAIL",
       "process": "Replication",
       "provenance_git_sha": "unknown",
       "reasons": [
+        "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a60a3de8c440.., current=d0657a1e2a55..)",
+        "STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=a60a3de8c440.., current=d0657a1e2a55..)",
+        "STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=e250d519ec35.., current=8becff08ec37..)",
         "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_nnz' has zero nonzero observations on OC while Karr has 420 (OC never exhibited this primary component's activity at all)",
         "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_1' has zero nonzero observations on OC while Karr has 3118 (OC never exhibited this primary component's activity at all)",
         "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_2' has zero nonzero observations on OC while Karr has 4155 (OC never exhibited this primary component's activity at all)",
@@ -667,12 +670,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "0009f39d9e8be573ef4b71fd54651f9d4cb25b7751bb61717f8e8cf9108cb228",
+        "SUMMARY.json": "7157aec44e734bc205346c9bb52e94a208faeb6d1057a2fc30d77c4c1e62fa89",
         "analytical_check.json": "d40b24b7383e02c3833fabb799ed0d2e28709559cf7c34245fa9331fefeda6f7",
-        "null_calibration.json": "9b50b6920e8816db2300671bd51261174177e27de43ec46e2270c0fe5a9e7671",
-        "provenance.json": "735337696f5ead9b9b6f0f281f925f638b8c6721987891c6a6c289cd27cc3837",
-        "result.json": "19eae933a94b5bd5ca77a2c3d66a832dd381102ccf2a4d08df3ff7f414ab0566",
-        "sweep_provenance.json": "3cb1efce68717c5528b92ffda9f27b77d7cc4fedad5165ffc5a51f7bb357f303",
+        "null_calibration.json": "f8d54c8c1a70910763301edd91cbbc34a82e13075f7d6bd3b0597699b534ec5d",
+        "provenance.json": "d3290c7b69a75d2977249702ddcc897da09bd3a7509d25ac759c852636ca2f7a",
+        "result.json": "8a2e7a2ed89af8e1a2681e4818a86977a99ad6e9a0cce900328b0ec2c89439eb",
+        "sweep_provenance.json": "5a6aded6ef825994fcf11626948c59aac3299a0cf9ed2af968d38ab4820bd84a",
         "thresholds.json": "f371d2d65e25e1cf7d577adb812aeb79fa5f5824ede2d7d73628b3e37d33dd6c"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -689,7 +692,7 @@
         "complexs": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ReplicationInitiation/latest",
+      "evidence_dir": "artifacts/l2_2_gates/ReplicationInitiation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -698,11 +701,11 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
@@ -718,7 +721,7 @@
         "primary_channel": "complexs",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RibosomeAssembly/latest_event",
+      "evidence_dir": "artifacts/l2_2_gates/RibosomeAssembly/latest_event",
       "green": false,
       "harness_type": "event_class",
       "mechanical_verdict": "MISSING_EVIDENCE",
@@ -729,12 +732,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "045d2dcf066430f1464b13652d4caf5e8700d453073f15fec2ee0fa416f25339",
+        "SUMMARY.json": "3cf0070e0808c6ae3e29e2868988a8a0ebb3385c4150bd10138fc307f9b14800",
         "analytical_check.json": "8a74b208cdfd2fa3a50ce1a6ea99471bfd657ba3aa918e1c4de159105a114a12",
-        "null_calibration.json": "e1df92579ab1a7fe116638dcedde53d4aedd6b32153134b846a789cf0953188d",
-        "provenance.json": "f0fc6dd22c655674b1fe84d5682375ca0f7fbbfd50ca4032cb107e21d1d649e5",
-        "result.json": "08abebd152f4df6965f0b763dd8cf9bbb22e8fc3e3b2006eb08688fc60144909",
-        "sweep_provenance.json": "f57ee4a6bf4910b5d55a0b56657d70a2ebee1b6dd8ee28c6694d02e4d156b25d",
+        "null_calibration.json": "3717f42bb0c48914b4a98acd0e86087cb97880de4311bc6860e38c65080ad9f3",
+        "provenance.json": "564613787e33fe3d5eef3e107a0975517d3b6b585f007c256b367708da26054d",
+        "result.json": "cedba05b3c40398959f3cbf008023d32e944ba2308478ff4556d00d2e71e6d8d",
+        "sweep_provenance.json": "7d676cdaf3eab15f333665a447c82ae0ee2bf3ee4bfa1a353a9d163da2df7cf2",
         "thresholds.json": "7e0139c961df6278c1a2b951bd86ad360fe1a88f4cad12d5c4b0dbd94021eaa2"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -752,7 +755,7 @@
         "boundEnzymes": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Transcription/latest",
+      "evidence_dir": "artifacts/l2_2_gates/Transcription/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -761,22 +764,22 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "3742815834bed7b256b96ae6f123611afc04d31d05e2ed6925e5184971c97151",
+        "SUMMARY.json": "9fc332466041cf2dc3a2cb1c3e611d4185ff729ea62cdb4a5dee103c4269e538",
         "analytical_check.json": "a26c6baaedf445667a47cb0063e3fdf9567a7995e4b960688339f2680d34f770",
-        "null_calibration.json": "fc616e9a54f6faa3f24be264f11dcbe0537eab145cfca99aa9e76a4c9e67ae1a",
-        "provenance.json": "5edb6a613b338350fc0f28d405d50caee2c31938a58eae990e032e65ceb7d9b3",
-        "result.json": "eeddf74990bd9b8492651ad5f66a1a47ae06e14e6d6b052e5445c29f201feb89",
-        "sweep_provenance.json": "ccd94293269e469a1c6d3c6ccfe9bdea7e673815836f467a4c9832ab50c6a419",
+        "null_calibration.json": "cacd95b97f88987b0813252a52d54520f1926cdff9bb59205d850e442018ae77",
+        "provenance.json": "c095e0cc7a3be2ae6d339779e46e5dac388bbf0adb504b2e393cd09c5e00eaa4",
+        "result.json": "53db3ba60c62f01148e03d9598070962c49ea4216e3445c95bae8845de4d7943",
+        "sweep_provenance.json": "1cd84fed67ae858b50ffa75aa9e3b786e7698d0ffc311530199d818dac30347a",
         "thresholds.json": "336ed5353c949d53ada1ca567556de7c9f987edaee54eb647a139ae1112ddcbe"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -794,7 +797,7 @@
         "monomers": "PASS",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Translation/latest",
+      "evidence_dir": "artifacts/l2_2_gates/Translation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -803,11 +806,11 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": [
         "SEED_ALIGNMENT_DIAGNOSTIC: OC outputs align better to a shifted Karr seed index on channel=monomers (shift=+47, observed_w1=0.006671, shifted_w1=0.006165)."
@@ -815,12 +818,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "9eebf8a20da10a0f7b167fe61190f72eb5b959636ccf4081174a8a7ff126ec0d",
+        "SUMMARY.json": "e0b9a2aed56305d4e06be02f205aa67a9fcc02a4fcf76aa790ebcd5fe5e2917f",
         "analytical_check.json": "9a8a426330b338e822497eabc298181dc0518c457c35037365935f7b59f84647",
-        "null_calibration.json": "7e4a735612f89b1c5ae93d689e90c8c75d56a8bc15b876b9ba5d90fe5954d756",
-        "provenance.json": "2ac8ab9dc2ccab424df93402a70b7f441ed211d16c5e78c9c1288ae399029236",
-        "result.json": "cbd4d7cf2654004dfe0be5f2d451958e591ce71b379589643e975349569fd824",
-        "sweep_provenance.json": "9adaca53cc2cb4d92473319fc5997ace6dc89e4bf83696e1be600791abf041a5",
+        "null_calibration.json": "76a26db868273a280bde367aa609754cd58d8c797a106628c29fc39952de92b8",
+        "provenance.json": "7d52bacc101d088d734035cbcb2c421ef66bd8d57d6f57ba2aa50540206c9d4f",
+        "result.json": "704c8b7af4bac6ec38b40ee3ed296145e265b4b0ad9199d8c3b8cf6f8a2f5001",
+        "sweep_provenance.json": "35a613558c23ead8e40732c1779655328e55c6abe5ba40e22e856983bfcdef3a",
         "thresholds.json": "f07ff6164266532d8986ad48c8fb9c50700f7503d7f6955e664b2fff51d90f97"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -837,7 +840,7 @@
         "RNAs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/tRNAAminoacylation/latest",
+      "evidence_dir": "artifacts/l2_2_gates/tRNAAminoacylation/latest",
       "green": true,
       "harness_type": "design_a_per_tick",
       "mechanical_verdict": "PASS",
@@ -846,11 +849,11 @@
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": [
         "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=RNAs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."

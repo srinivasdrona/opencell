@@ -1,30 +1,31 @@
 {
   "completion_status": "COMPLETE",
-  "evaluator_schema_version": 2,
+  "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
   "inputs_verified": true,
   "m_ticks": 200,
   "n_seeds": 50,
   "process": "ProteinDecay",
+  "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "914fea4aba21e1e2e7388865c5d8ffbdc94c6a8d987ea5b952dc80e54f1fac76",
+    "SUMMARY.json": "769d23b17160b16586522d219f601181e3dc7efeda2da7f0d24f95faae971be2",
     "analytical_check.json": "2654dd797b75612697b074688d1708a61fd3c46cf50b15cf24ef13918061446b",
-    "input_manifest.json": "30c5e0e2b2b5d5db6933f76cf0d449aede3390546e66d8332c868fe9d10e1b7d",
-    "null_calibration.json": "94d2d33d04fc973a80ab4fa31f28395e353945303c5dcce0b60f1ed52c54ffd3",
-    "provenance.json": "4f2da52857847a8d89069990d9909db2bf80147f300e6d1ecb93e7d9a0386e24",
-    "result.json": "8a9308924affb121f87e028e5ba85e121df733fd37d8295d38cf6e673cb91ec5",
+    "input_manifest.json": "22d7a5cc92bff962efbc6c64dd47b354857ca2c8fce224ae0bb27febe39fceda",
+    "null_calibration.json": "780098d7e63f0d671aa8bd78bcb7ab46d0206f0e20af41b674db6cc84401abcc",
+    "provenance.json": "c8b44016abbe8a8f3ee024cba479e17558c333c3a3ddb63ee63053067d8d8f6d",
+    "result.json": "7f728fc8f817682d36fa4b7275816d92d683fcea022b5cc10931c1975a117118",
     "thresholds.json": "d3f39cdbc83c5bd6e95713c30bd263c71761bb46e1477e95bee0158dbe85e322"
   },
   "source_hashes": {
     "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
     "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
     "oc_module": "be5a606f2971cd22c4ec03369b5e01e26f0d43b2c52dd04a8cfd103e2c4e5de0",
     "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
     "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-30T01:14:20.634547+00:00"
+  "written_at": "2026-07-31T14:58:28.840938+00:00"
 }

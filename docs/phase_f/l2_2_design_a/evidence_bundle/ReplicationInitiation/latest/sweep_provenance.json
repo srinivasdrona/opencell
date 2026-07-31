@@ -1,26 +1,27 @@
 {
   "completion_status": "COMPLETE",
-  "evaluator_schema_version": 2,
+  "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
   "inputs_verified": true,
   "m_ticks": 200,
   "n_seeds": 50,
   "process": "ReplicationInitiation",
+  "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "0009f39d9e8be573ef4b71fd54651f9d4cb25b7751bb61717f8e8cf9108cb228",
+    "SUMMARY.json": "7157aec44e734bc205346c9bb52e94a208faeb6d1057a2fc30d77c4c1e62fa89",
     "analytical_check.json": "d40b24b7383e02c3833fabb799ed0d2e28709559cf7c34245fa9331fefeda6f7",
-    "input_manifest.json": "82ea057467b7274fc19dcb85f70146214d9c5e976a8d10b3d6c2eabd4f855a04",
-    "null_calibration.json": "9b50b6920e8816db2300671bd51261174177e27de43ec46e2270c0fe5a9e7671",
-    "provenance.json": "735337696f5ead9b9b6f0f281f925f638b8c6721987891c6a6c289cd27cc3837",
-    "result.json": "19eae933a94b5bd5ca77a2c3d66a832dd381102ccf2a4d08df3ff7f414ab0566",
+    "input_manifest.json": "71da3774a6a4dc061edecbc81dc73f395059b8470bb2d0263c23a945e0004cab",
+    "null_calibration.json": "f8d54c8c1a70910763301edd91cbbc34a82e13075f7d6bd3b0597699b534ec5d",
+    "provenance.json": "d3290c7b69a75d2977249702ddcc897da09bd3a7509d25ac759c852636ca2f7a",
+    "result.json": "8a2e7a2ed89af8e1a2681e4818a86977a99ad6e9a0cce900328b0ec2c89439eb",
     "thresholds.json": "f371d2d65e25e1cf7d577adb812aeb79fa5f5824ede2d7d73628b3e37d33dd6c"
   },
   "source_hashes": {
     "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
     "chromosome_store_module": "7066d68f8b3a3dfd0a1be6d446800445583f17381779adbb03562510ffdae22a",
-    "helpers": "a60a3de8c440029bd8639d5f561dad1a47a18b0a69dee894b9c75b1bbafc7075",
+    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
     "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
     "m_gen_constants_module": "bbfea3ac477e4a3eb93edcfae355350c9d5b8c1501ea574ef9b83acfaebce8ae",
     "oc_module": "3b0fa69ce3614ee4cadaba2baee1d4b6ec12c35d5cf94b73bcf66f28a59b8334",
@@ -29,5 +30,5 @@
     "state_init_module": "6f1ff7401f505cfcc68d89d912d2af35776adb08643069e176e922ac912b50ec",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-30T03:08:14.036944+00:00"
+  "written_at": "2026-07-31T16:43:07.694369+00:00"
 }

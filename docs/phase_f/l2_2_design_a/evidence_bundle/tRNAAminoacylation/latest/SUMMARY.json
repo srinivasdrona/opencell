@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-30T02:42:32.839288+00:00",
+  "generated_at": "2026-07-31T16:14:19.140990+00:00",
   "schema_version": "1.4",
   "harness_version": "design_a_v1_3",
   "k_eng": {
@@ -10,7 +10,7 @@
   "processes": {
     "tRNAAminoacylation": {
       "verdict": "PASS",
-      "latest_run": "2026-07-30T02:42:32.839288+00:00",
+      "latest_run": "2026-07-31T16:14:19.140990+00:00",
       "bucket": "ALGORITHMIC_SHALLOW",
       "failed_channels": [],
       "n_channels_gated": 2,
