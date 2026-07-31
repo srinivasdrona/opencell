@@ -1,0 +1,17 @@
+{
+  "adapter_id": "ribosome_assembly.smoke.v1",
+  "channels": [],
+  "event_timing_model": "repeated_firing",
+  "mode": "structural_smoke",
+  "n_seeds_karr": 1,
+  "n_seeds_oc": 1,
+  "oc_only_fire_ticks": {},
+  "process": "RibosomeAssembly",
+  "reasons": [
+    "structural_smoke_only: proves the loader/adapter/OC-port round-trip works on one real seed; this is NOT a calibrated ensemble gate verdict.",
+    "karr_total_fires=2 oc_total_fires=2"
+  ],
+  "schema_version": 1,
+  "verdict": "NOT_APPLICABLE",
+  "warnings": []
+}

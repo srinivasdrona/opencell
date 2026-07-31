@@ -1,0 +1,23 @@
+{
+  "content_hash": "3038196f151bb44c2e31a52b0a843ec4f8c6956fca0b56e6d29c6ece381ee8d9",
+  "evidence_root": "docs/phase_f/l2_event/evidence_bundle",
+  "generated_at": "2026-07-31T21:54:17.690977+00:00",
+  "git_sha": "766f42c64c5c8a515eea573343c107407e8a0f2c",
+  "n_rows": 1,
+  "rows": [
+    {
+      "artifact_hashes": {
+        "SUMMARY.json": "34b401aef0847f64e12836e61e7b00ebc3a43b9dd23fb38284bbf6654329a282",
+        "input_manifest.json": "b34cdd1dd48747d25d68e60ceaee8e7fef4e0b5e13494b8efe7e415b78f81514",
+        "null_calibration.json": "5ad7371957835afe89a5dc4b3bb207f58479f8d86d92697827628919472d1e47",
+        "provenance.json": "17366c8589250d9fd387c76acee727b40f47243185d2d424c9ca2c676c76b329",
+        "result.json": "ae900c98693b2c5f2c4d910766767c3d8dc64b0be49442879746c83e7d88a633"
+      },
+      "evidence_dir": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly",
+      "mode": "structural_smoke",
+      "process": "RibosomeAssembly",
+      "verdict": "NOT_APPLICABLE"
+    }
+  ],
+  "schema_version": 1
+}
