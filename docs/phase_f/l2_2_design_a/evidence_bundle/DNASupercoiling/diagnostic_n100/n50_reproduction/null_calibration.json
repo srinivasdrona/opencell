@@ -1,0 +1,20 @@
+{
+  "generated_at": "2026-07-31T03:27:53.343458+00:00",
+  "process": "DNASupercoiling",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 344787.31996399997,
+      "bootstrap_values_summary": {
+        "mean": 317826.22213143995,
+        "stddev": 16119.950660001241,
+        "min": 258030.5570799999,
+        "max": 372747.94811999996
+      }
+    }
+  },
+  "warnings": []
+}

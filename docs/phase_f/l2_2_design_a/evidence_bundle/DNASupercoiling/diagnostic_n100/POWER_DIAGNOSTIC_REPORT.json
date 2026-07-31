@@ -1,0 +1,1375 @@
+{
+  "generated_at": "2026-07-31T02:41:55.629888+00:00",
+  "process": "DNASupercoiling",
+  "pre_registration": "docs/phase_f/l2_2_design_a/L22_DNAS_POWER_PREREG.md",
+  "extension_validation": {
+    "process": "DNASupercoiling",
+    "seeds": [
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99
+    ],
+    "n_ticks": 100,
+    "structural": {
+      "50": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s050/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 50,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:47:07"
+        },
+        "sha256": "695cdcff7fac0c4abc2aa090d7b8b1bf96882b436e57071508fa2541460a8725",
+        "size_bytes": 10178128
+      },
+      "51": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s051/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 51,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:47:06"
+        },
+        "sha256": "22b9bbe2d76cb28f51c9260fd415d0e803e1d08938cea28d1b2d514e0509842d",
+        "size_bytes": 10178816
+      },
+      "52": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s052/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 52,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:47:33"
+        },
+        "sha256": "7e0123d996a4ac7e372a17dd215ef7fc2a6557dcc09c8205332709f4151025b0",
+        "size_bytes": 10176376
+      },
+      "53": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s053/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 53,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:47:33"
+        },
+        "sha256": "8bb042e6515c7db95de51024c7e78bb74abe8238605442e491449148771b1a4b",
+        "size_bytes": 10172592
+      },
+      "54": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s054/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 54,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:47:56"
+        },
+        "sha256": "d45a07b1c26ccc8b823a699169a2c7873c5a5b164a314b059b68551a07af668e",
+        "size_bytes": 10174368
+      },
+      "55": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s055/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 55,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:47:56"
+        },
+        "sha256": "523ad31902e2a461268ced3571a9af3d1c8794eb5390faab0f7ef5a17d2b66ba",
+        "size_bytes": 10164664
+      },
+      "56": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s056/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 56,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:48:19"
+        },
+        "sha256": "c74b738d3881ec6f39cfb7e9eb3449b10434ed0a5e31e6fce4160975847c14f7",
+        "size_bytes": 10169792
+      },
+      "57": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s057/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 57,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:48:19"
+        },
+        "sha256": "170387eb61d53b15fa87aa11e5bae1d75debadae58fd5ef78b1381b5bd653cef",
+        "size_bytes": 10175624
+      },
+      "58": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s058/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 58,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:48:44"
+        },
+        "sha256": "94ca96d2c83f1f11fdc71a609a429fa6eaf02eed814532224804b25f65636106",
+        "size_bytes": 10175920
+      },
+      "59": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s059/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 59,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:48:44"
+        },
+        "sha256": "95807d982d6dbd1e6239adc1e3d86613700b66439ffaa64533f75e9e46f03e11",
+        "size_bytes": 10173056
+      },
+      "60": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s060/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 60,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:49:12"
+        },
+        "sha256": "1071c5ba8ad6f482549f695dbdbd099ba4ac6d6754f0a3295f399dd2f57b1801",
+        "size_bytes": 10171992
+      },
+      "61": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s061/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 61,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:49:12"
+        },
+        "sha256": "fdf7532a807679a845037eaf6d63f7e6f8bd05e6f42bf7eee12d683451f72710",
+        "size_bytes": 10174056
+      },
+      "62": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s062/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 62,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:49:37"
+        },
+        "sha256": "1a388e93ed89e5631b3061c550e77e06fa9e2a8e82a2e61dcdfafeb0d7ba04e9",
+        "size_bytes": 10167928
+      },
+      "63": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s063/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 63,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:49:36"
+        },
+        "sha256": "7fdf4075d0536547620d315f997deca492a418be58642fad209139caf5fbd7ff",
+        "size_bytes": 10174144
+      },
+      "64": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s064/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 64,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:50:02"
+        },
+        "sha256": "83a8ba585415c558559801aab045dce18f85fef7d2f9e281ae8dc8f72f257c08",
+        "size_bytes": 10172464
+      },
+      "65": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s065/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 65,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:49:59"
+        },
+        "sha256": "537697d2e109aba7833339074826cf2c2a6be8cc6527501e8e8ea82e0ed683d1",
+        "size_bytes": 10173512
+      },
+      "66": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s066/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 66,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:50:28"
+        },
+        "sha256": "ae9443d599aa5770755ce3edfcb4c93f96e39401a8b2107dbcb2ded1db86d1ed",
+        "size_bytes": 10167840
+      },
+      "67": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s067/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 67,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:50:24"
+        },
+        "sha256": "c8c9ca9ba0b2bf9815b93c5b1cdb93afcfbce52e04d9cd3d675a950b31f19678",
+        "size_bytes": 10175568
+      },
+      "68": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s068/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 68,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:50:53"
+        },
+        "sha256": "d18b0409f84d6a7f7179146ecfdbd87187a70ae061fba8b402520da2ce85d821",
+        "size_bytes": 10170568
+      },
+      "69": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s069/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 69,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:50:48"
+        },
+        "sha256": "93a3cfab241038f254abdfd88eb4b2b1459da48ac25da1f6a1fa8a9bcbd80483",
+        "size_bytes": 10174424
+      },
+      "70": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s070/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 70,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:51:23"
+        },
+        "sha256": "dd0aec473f264beb11a058e9ad71cbc55978922fc881bcbf3d98ef7800d38865",
+        "size_bytes": 10173552
+      },
+      "71": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s071/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 71,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:51:20"
+        },
+        "sha256": "3f8af7cff550eda7f67ab6c55111c67ddd2dec3532f0c0cd02fdfb64b7841647",
+        "size_bytes": 10170176
+      },
+      "72": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s072/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 72,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:51:49"
+        },
+        "sha256": "e36e0684e1d21091cfeecfae8565f4f2b8e93eddf550e9a2478f64ffc77d84c2",
+        "size_bytes": 10167176
+      },
+      "73": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s073/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 73,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:51:47"
+        },
+        "sha256": "6fb8ed1611ee341cb506e462e80c3b8565a913efacd7df86f9ee5dde1b2a6001",
+        "size_bytes": 10170152
+      },
+      "74": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s074/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 74,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:52:14"
+        },
+        "sha256": "58760093a87ad47d3dd479d24988d94f93db671c1a2da9ab0c7f17be5346485c",
+        "size_bytes": 10176120
+      },
+      "75": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s075/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 75,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:52:11"
+        },
+        "sha256": "42fa258d7a780332d3be4f98fc5f9c61af02f3dcbb3e4dd0ddfa357cda4ec7a7",
+        "size_bytes": 10178856
+      },
+      "76": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s076/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 76,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:52:40"
+        },
+        "sha256": "3c9f9ca619e98a6439079d0f456cfa557c0a9dcba4a5f62b8933485c884e40ec",
+        "size_bytes": 10177160
+      },
+      "77": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s077/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 77,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:52:37"
+        },
+        "sha256": "f25a5e16a44a448de1b0559fe8853a7a7150ed9ca54d9ca6f430803dde8cc357",
+        "size_bytes": 10169120
+      },
+      "78": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s078/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 78,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:53:07"
+        },
+        "sha256": "159a8297f8d00fc1e860f23d55a4f46b89e98025aed78dcf9789319b3454db02",
+        "size_bytes": 10172488
+      },
+      "79": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s079/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 79,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:53:04"
+        },
+        "sha256": "3bb4655fa281d71695ef862f12bbbebf703f35806f5759fd02295c9f2d183bca",
+        "size_bytes": 10169880
+      },
+      "80": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s080/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 80,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:53:38"
+        },
+        "sha256": "703c09df137af02eec0692f9732f1730056d6c5d42905a15c0913e0a9ee79a01",
+        "size_bytes": 10175456
+      },
+      "81": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s081/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 81,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:53:36"
+        },
+        "sha256": "e77ea9373ad222e066f10d4a6f133d857201c3315bca73989ae2602661cc0fd1",
+        "size_bytes": 10173448
+      },
+      "82": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s082/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 82,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:54:14"
+        },
+        "sha256": "dc0036429a414a88b700131162d57c0655e4f3f065c2590c51c5ca170653706e",
+        "size_bytes": 10171504
+      },
+      "83": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s083/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 83,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:54:12"
+        },
+        "sha256": "bda290637f72cff773e3e7ff7989119e49e2c165cea1686ce5f577ba9c700a37",
+        "size_bytes": 10171952
+      },
+      "84": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s084/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 84,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:54:40"
+        },
+        "sha256": "eeaf1bad8f96f6b48f10d29d4c09edc1e885adad2215af084a2d99b17cbe7eb1",
+        "size_bytes": 10171944
+      },
+      "85": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s085/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 85,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:54:37"
+        },
+        "sha256": "6ea33eedee075cee2aa3742a9e2af808a136b8bdfd9fa81488ae421961898b3a",
+        "size_bytes": 10172872
+      },
+      "86": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s086/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 86,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:55:05"
+        },
+        "sha256": "9c1227688e8fe3d9d2d46640ad0d4178e51eb784718de86d27b5855877edf6f4",
+        "size_bytes": 10177000
+      },
+      "87": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s087/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 87,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:55:03"
+        },
+        "sha256": "a56c3e19fbd1ba051d7331f3b8f300d987fc38cd85228fe3c9e1c38e2cad9ee5",
+        "size_bytes": 10179992
+      },
+      "88": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s088/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 88,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:55:31"
+        },
+        "sha256": "ed3aa921b927f1d40c3168c7ec3fcb246f1f843e8e5f6d29761ea87fb56a50f4",
+        "size_bytes": 10176320
+      },
+      "89": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s089/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 89,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:55:29"
+        },
+        "sha256": "6d62c1b1b3887321fc368b26864c183219c46913242c01f8aabfd9b29f963986",
+        "size_bytes": 10174696
+      },
+      "90": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s090/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 90,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:55:57"
+        },
+        "sha256": "652172f79bc42b27715ec1fe2f711adf6d9b133aaee6824bb880781a328efa9b",
+        "size_bytes": 10173152
+      },
+      "91": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s091/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 91,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:55:55"
+        },
+        "sha256": "3b7bf5020179d5df376faa7d209019fcccc8822f835a749e56f2e242198c3900",
+        "size_bytes": 10176552
+      },
+      "92": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s092/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 92,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:56:23"
+        },
+        "sha256": "61625030835f46ac9e32550c2e290177dbbf1ce50ca7bb93ea75c67d0afacd8c",
+        "size_bytes": 10176040
+      },
+      "93": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s093/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 93,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:56:22"
+        },
+        "sha256": "5dc5e3f220d09b0a2cbde6d8276dab6700cdb2db28e6d66ad0416dc9193613b3",
+        "size_bytes": 10175232
+      },
+      "94": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s094/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 94,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:56:49"
+        },
+        "sha256": "cab8b1ee1d64eb73d76d52747927005eae1717b034a60a56d8d2c8558e6d4eac",
+        "size_bytes": 10174952
+      },
+      "95": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s095/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 95,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:56:46"
+        },
+        "sha256": "da5b08e2088c151151e60af9063d7e3e70a9388915846abd4cf0788f6441c5d3",
+        "size_bytes": 10169272
+      },
+      "96": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s096/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 96,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:57:15"
+        },
+        "sha256": "dceb6aae969c9c7cfe3783ba320949b47970848ba386c19f828ee7e1fd072f74",
+        "size_bytes": 10169416
+      },
+      "97": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s097/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 97,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:57:11"
+        },
+        "sha256": "3ee31632e01370854f1ec91b4e3776fe33a8040742e74d983c9771642e35da58",
+        "size_bytes": 10170272
+      },
+      "98": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s098/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 98,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:57:40"
+        },
+        "sha256": "37f2f1d7bef7a8cee17905bf47316310f570fbc815b87be81044d67013669306",
+        "size_bytes": 10168680
+      },
+      "99": {
+        "path": "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s099/DNASupercoiling_100ticks.mat",
+        "ok": true,
+        "errors": [],
+        "metadata": {
+          "process_name": "DNASupercoiling",
+          "n_ticks": 100.0,
+          "rng_seed": 99,
+          "tick_offset": 0.0,
+          "timestamp": "2026-07-31 07:57:38"
+        },
+        "sha256": "bd95625fee3449e0a4ce0380abd50f33311ef914bd6e8afb355a7d50aaba0579",
+        "size_bytes": 10176456
+      }
+    },
+    "schema_preflight": {
+      "ok": true,
+      "paths": [
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s050/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s051/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s052/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s053/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s054/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s055/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s056/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s057/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s058/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s059/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s060/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s061/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s062/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s063/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s064/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s065/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s066/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s067/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s068/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s069/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s070/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s071/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s072/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s073/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s074/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s075/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s076/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s077/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s078/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s079/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s080/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s081/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s082/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s083/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s084/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s085/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s086/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s087/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s088/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s089/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s090/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s091/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s092/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s093/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s094/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s095/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s096/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s097/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s098/DNASupercoiling_100ticks.mat",
+        "/mnt/e/opencell-worktrees/l22-dnas-power/data/m1_sources/karr_native/per_process_traces_v2_s099/DNASupercoiling_100ticks.mat"
+      ]
+    },
+    "non_vacuity": {
+      "linkingNumbers.delta_value_sum": {
+        "per_seed_nonzero_ticks": {
+          "50": 99,
+          "51": 99,
+          "52": 100,
+          "53": 99,
+          "54": 98,
+          "55": 98,
+          "56": 100,
+          "57": 99,
+          "58": 99,
+          "59": 100,
+          "60": 98,
+          "61": 100,
+          "62": 100,
+          "63": 100,
+          "64": 100,
+          "65": 100,
+          "66": 100,
+          "67": 99,
+          "68": 98,
+          "69": 99,
+          "70": 97,
+          "71": 99,
+          "72": 100,
+          "73": 100,
+          "74": 100,
+          "75": 99,
+          "76": 98,
+          "77": 100,
+          "78": 100,
+          "79": 99,
+          "80": 100,
+          "81": 98,
+          "82": 100,
+          "83": 99,
+          "84": 98,
+          "85": 99,
+          "86": 100,
+          "87": 99,
+          "88": 100,
+          "89": 100,
+          "90": 100,
+          "91": 98,
+          "92": 98,
+          "93": 99,
+          "94": 97,
+          "95": 100,
+          "96": 99,
+          "97": 99,
+          "98": 100,
+          "99": 99
+        },
+        "total_nonzero_ticks": 4959,
+        "all_zero_seeds": []
+      },
+      "linkingNumbers.delta_nnz": {
+        "per_seed_nonzero_ticks": {
+          "50": 0,
+          "51": 1,
+          "52": 1,
+          "53": 0,
+          "54": 0,
+          "55": 1,
+          "56": 0,
+          "57": 0,
+          "58": 0,
+          "59": 0,
+          "60": 0,
+          "61": 0,
+          "62": 0,
+          "63": 1,
+          "64": 1,
+          "65": 0,
+          "66": 1,
+          "67": 0,
+          "68": 1,
+          "69": 0,
+          "70": 0,
+          "71": 0,
+          "72": 1,
+          "73": 1,
+          "74": 0,
+          "75": 1,
+          "76": 1,
+          "77": 0,
+          "78": 0,
+          "79": 0,
+          "80": 0,
+          "81": 0,
+          "82": 0,
+          "83": 1,
+          "84": 0,
+          "85": 0,
+          "86": 0,
+          "87": 1,
+          "88": 0,
+          "89": 0,
+          "90": 2,
+          "91": 0,
+          "92": 0,
+          "93": 0,
+          "94": 1,
+          "95": 0,
+          "96": 0,
+          "97": 1,
+          "98": 0,
+          "99": 1
+        },
+        "total_nonzero_ticks": 18,
+        "all_zero_seeds": [
+          50,
+          53,
+          54,
+          56,
+          57,
+          58,
+          59,
+          60,
+          61,
+          62,
+          65,
+          67,
+          69,
+          70,
+          71,
+          74,
+          77,
+          78,
+          79,
+          80,
+          81,
+          82,
+          84,
+          85,
+          86,
+          88,
+          89,
+          91,
+          92,
+          93,
+          95,
+          96,
+          98
+        ]
+      }
+    },
+    "blockers": [],
+    "result": "PASS"
+  },
+  "loader_diagnostic_count": 100,
+  "n50_reproduction": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "channel_verdict": "PASS",
+    "per_component": {
+      "component_raw_w1": {
+        "linkingNumbers.delta_value_sum": 50.3856,
+        "linkingNumbers.delta_nnz": 0.013999999999999827
+      },
+      "component_scales": {
+        "linkingNumbers.delta_value_sum": 92.0,
+        "linkingNumbers.delta_nnz": 2.0
+      },
+      "component_verdicts": {
+        "linkingNumbers.delta_value_sum": "PASS",
+        "linkingNumbers.delta_nnz": "PASS"
+      },
+      "scaled_distance_threshold": 1.0,
+      "component_n_nonzero_oc": {
+        "linkingNumbers.delta_value_sum": 4924,
+        "linkingNumbers.delta_nnz": 17
+      },
+      "component_n_nonzero_karr": {
+        "linkingNumbers.delta_value_sum": 4961,
+        "linkingNumbers.delta_nnz": 24
+      },
+      "linkingNumbers.delta_value_sum": 0.5476695652173913,
+      "linkingNumbers.delta_nnz": 0.006999999999999913,
+      "joint_verdict": "PASS"
+    }
+  },
+  "n100_combined": {
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49,
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99
+    ],
+    "channel_verdict": "PASS",
+    "per_component": {
+      "component_raw_w1": {
+        "linkingNumbers.delta_value_sum": 50.8392,
+        "linkingNumbers.delta_nnz": 0.01300000000000007
+      },
+      "component_scales": {
+        "linkingNumbers.delta_value_sum": 94.0,
+        "linkingNumbers.delta_nnz": 2.0
+      },
+      "component_verdicts": {
+        "linkingNumbers.delta_value_sum": "PASS",
+        "linkingNumbers.delta_nnz": "PASS"
+      },
+      "scaled_distance_threshold": 1.0,
+      "component_n_nonzero_oc": {
+        "linkingNumbers.delta_value_sum": 9851,
+        "linkingNumbers.delta_nnz": 31
+      },
+      "component_n_nonzero_karr": {
+        "linkingNumbers.delta_value_sum": 9920,
+        "linkingNumbers.delta_nnz": 42
+      },
+      "linkingNumbers.delta_value_sum": 0.5408425531914893,
+      "linkingNumbers.delta_nnz": 0.006500000000000035,
+      "joint_verdict": "PASS"
+    }
+  },
+  "half_split_a_is_n50_reproduction": true,
+  "half_split_b": {
+    "seeds": [
+      50,
+      51,
+      52,
+      53,
+      54,
+      55,
+      56,
+      57,
+      58,
+      59,
+      60,
+      61,
+      62,
+      63,
+      64,
+      65,
+      66,
+      67,
+      68,
+      69,
+      70,
+      71,
+      72,
+      73,
+      74,
+      75,
+      76,
+      77,
+      78,
+      79,
+      80,
+      81,
+      82,
+      83,
+      84,
+      85,
+      86,
+      87,
+      88,
+      89,
+      90,
+      91,
+      92,
+      93,
+      94,
+      95,
+      96,
+      97,
+      98,
+      99
+    ],
+    "channel_verdict": "PASS",
+    "per_component": {
+      "component_raw_w1": {
+        "linkingNumbers.delta_value_sum": 51.2928,
+        "linkingNumbers.delta_nnz": 0.012000000000000094
+      },
+      "component_scales": {
+        "linkingNumbers.delta_value_sum": 94.0,
+        "linkingNumbers.delta_nnz": 2.0
+      },
+      "component_verdicts": {
+        "linkingNumbers.delta_value_sum": "PASS",
+        "linkingNumbers.delta_nnz": "PASS"
+      },
+      "scaled_distance_threshold": 1.0,
+      "component_n_nonzero_oc": {
+        "linkingNumbers.delta_value_sum": 4927,
+        "linkingNumbers.delta_nnz": 14
+      },
+      "component_n_nonzero_karr": {
+        "linkingNumbers.delta_value_sum": 4959,
+        "linkingNumbers.delta_nnz": 18
+      },
+      "linkingNumbers.delta_value_sum": 0.545668085106383,
+      "linkingNumbers.delta_nnz": 0.006000000000000047,
+      "joint_verdict": "PASS"
+    }
+  },
+  "power_decision": {
+    "linkingNumbers.delta_value_sum": {
+      "n_nonzero_oc": 9851,
+      "n_nonzero_karr": 9920,
+      "min_nonzero_events": 30,
+      "powered": true,
+      "decision": "EVALUATE_METRIC"
+    },
+    "linkingNumbers.delta_nnz": {
+      "n_nonzero_oc": 31,
+      "n_nonzero_karr": 42,
+      "min_nonzero_events": 30,
+      "powered": true,
+      "decision": "EVALUATE_METRIC"
+    }
+  },
+  "rate_projection": {
+    "linkingNumbers.delta_value_sum::oc": {
+      "observed_n_nonzero": 4924,
+      "observed_n_trials": 5000,
+      "observed_rate": 0.9848,
+      "rate_ci95": [
+        0.98101750739618,
+        0.9878381287978928
+      ],
+      "target_n_trials": 10000,
+      "projected_count_point": 9848.0,
+      "projected_count_ci95": [
+        9810.1750739618,
+        9878.381287978928
+      ],
+      "actual_n100_count": 9851,
+      "actual_within_projected_ci95": true
+    },
+    "linkingNumbers.delta_nnz::oc": {
+      "observed_n_nonzero": 17,
+      "observed_n_trials": 5000,
+      "observed_rate": 0.0034,
+      "rate_ci95": [
+        0.0021239367958294426,
+        0.005438544776001294
+      ],
+      "target_n_trials": 10000,
+      "projected_count_point": 34.0,
+      "projected_count_ci95": [
+        21.239367958294427,
+        54.38544776001294
+      ],
+      "actual_n100_count": 31,
+      "actual_within_projected_ci95": true
+    },
+    "linkingNumbers.delta_value_sum::karr": {
+      "observed_n_nonzero": 4961,
+      "observed_n_trials": 5000,
+      "observed_rate": 0.9922,
+      "rate_ci95": [
+        0.9893555304144359,
+        0.9942887437908499
+      ],
+      "target_n_trials": 10000,
+      "projected_count_point": 9922.0,
+      "projected_count_ci95": [
+        9893.55530414436,
+        9942.8874379085
+      ],
+      "actual_n100_count": 9920,
+      "actual_within_projected_ci95": true
+    },
+    "linkingNumbers.delta_nnz::karr": {
+      "observed_n_nonzero": 24,
+      "observed_n_trials": 5000,
+      "observed_rate": 0.0048,
+      "rate_ci95": [
+        0.003227780878929331,
+        0.007132551127455244
+      ],
+      "target_n_trials": 10000,
+      "projected_count_point": 47.99999999999999,
+      "projected_count_ci95": [
+        32.27780878929331,
+        71.32551127455244
+      ],
+      "actual_n100_count": 42,
+      "actual_within_projected_ci95": true
+    }
+  },
+  "seed_half_split_stability": {
+    "linkingNumbers.delta_value_sum": {
+      "half_a_raw_w1": 50.3856,
+      "half_b_raw_w1": 51.2928,
+      "half_a_verdict": "PASS",
+      "half_b_verdict": "PASS",
+      "half_a_n_nonzero_oc": 4924,
+      "half_b_n_nonzero_oc": 4927,
+      "half_a_n_nonzero_karr": 4961,
+      "half_b_n_nonzero_karr": 4959
+    },
+    "linkingNumbers.delta_nnz": {
+      "half_a_raw_w1": 0.013999999999999827,
+      "half_b_raw_w1": 0.012000000000000094,
+      "half_a_verdict": "PASS",
+      "half_b_verdict": "PASS",
+      "half_a_n_nonzero_oc": 17,
+      "half_b_n_nonzero_oc": 14,
+      "half_a_n_nonzero_karr": 24,
+      "half_b_n_nonzero_karr": 18
+    }
+  },
+  "decision": "POWERED_AT_N100",
+  "mechanical_metric_verdict": "PASS",
+  "result": "COMPLETE"
+}

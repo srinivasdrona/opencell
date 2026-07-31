@@ -1,0 +1,14 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "DNASupercoiling",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "q95_null": 344787.31996399997,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 689574.6399279999
+    }
+  }
+}

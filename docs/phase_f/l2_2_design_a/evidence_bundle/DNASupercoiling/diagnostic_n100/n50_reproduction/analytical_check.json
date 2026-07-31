@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "DNASupercoiling has no closed-form per-tick check"
+}

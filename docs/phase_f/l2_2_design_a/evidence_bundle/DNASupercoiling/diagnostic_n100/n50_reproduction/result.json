@@ -1,0 +1,146 @@
+{
+  "process": "DNASupercoiling",
+  "verdict": "PASS",
+  "timestamp": "2026-07-31T03:27:53.343458+00:00",
+  "harness_version": "design_a_v1_3",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "ticks": 100,
+  "n_observations_per_channel": 5000,
+  "bootstrap_B": 1000,
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "canonical_seed_count": 100,
+  "k_eng": {
+    "TRIVIAL_RNG": 2.0,
+    "ALGORITHMIC_SHALLOW": 2.0,
+    "ALGORITHMIC_DEEP": 3.0
+  },
+  "channels": {
+    "substrates": {
+      "verdict": "SEED_NOISE",
+      "w1_oc_vs_karr": 16.0956,
+      "w1_oc_vs_karr_ci95": [
+        286072.9368679999,
+        349273.8336919999
+      ],
+      "q95_null": 344787.31996399997,
+      "threshold": 689574.6399279999,
+      "absolute_floor": 1.0,
+      "ks_stat": 0.13164000000000003,
+      "ks_pvalue": 2.435372194732168e-189,
+      "n_nonzero_oc": 25000,
+      "n_nonzero_karr": 25000,
+      "samples_oc": {
+        "mean": 2534318.19932,
+        "stddev": 5283744.240768495,
+        "skew": 1.7613437292092815,
+        "kurtosis": 1.4054748410385267,
+        "min": 60.0,
+        "max": 16833005.0
+      },
+      "samples_karr": {
+        "mean": 2534315.80548,
+        "stddev": 5283751.109247527,
+        "skew": 1.7613430763660738,
+        "kurtosis": 1.4054720246669632,
+        "min": 60.0,
+        "max": 16832959.0
+      },
+      "is_primary": false,
+      "is_event_channel": false,
+      "aggregation": "per_tick_vector_w1_mean",
+      "per_sample_w1_summary": {
+        "mean": 16.0956,
+        "max": 68.0,
+        "min": 0.0
+      }
+    },
+    "chromosome": {
+      "aggregation": "per_component_scaled",
+      "w1_oc_vs_karr": 0.0,
+      "is_primary": true,
+      "is_event_channel": false,
+      "per_component": {
+        "component_raw_w1": {
+          "linkingNumbers.delta_value_sum": 50.3856,
+          "linkingNumbers.delta_nnz": 0.013999999999999827
+        },
+        "component_scales": {
+          "linkingNumbers.delta_value_sum": 92.0,
+          "linkingNumbers.delta_nnz": 2.0
+        },
+        "component_verdicts": {
+          "linkingNumbers.delta_value_sum": "PASS",
+          "linkingNumbers.delta_nnz": "PASS"
+        },
+        "scaled_distance_threshold": 1.0,
+        "component_n_nonzero_oc": {
+          "linkingNumbers.delta_value_sum": 4924,
+          "linkingNumbers.delta_nnz": 17
+        },
+        "component_n_nonzero_karr": {
+          "linkingNumbers.delta_value_sum": 4961,
+          "linkingNumbers.delta_nnz": 24
+        },
+        "linkingNumbers.delta_value_sum": 0.5476695652173913,
+        "linkingNumbers.delta_nnz": 0.006999999999999913,
+        "joint_verdict": "PASS"
+      },
+      "verdict": "PASS"
+    }
+  },
+  "joint_check": null,
+  "warnings": [],
+  "allocator_inputs_ref": "/mnt/e/opencell-worktrees/l22-dnas-power/docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/diagnostic_n100/n50_reproduction/allocator_inputs.json",
+  "provenance_ref": "/mnt/e/opencell-worktrees/l22-dnas-power/docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/diagnostic_n100/n50_reproduction/provenance.json"
+}
