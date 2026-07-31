@@ -1,0 +1,114 @@
+{
+  "artifact_kind": "h12_perturbation_evidence",
+  "gating": "NON_GATING -- distributional/structural evidence only; NEVER claims H12_CONFIRMED or exact-match. Not consumed by verdict.py / the H12_CONFIRMED evidence gate.",
+  "process": "MacromolecularComplexation",
+  "scenario": "macromolecular_complexation_network2_competition",
+  "perturbation_spec_path": "docs/phase_f/l2_2_design_a/h12/perturbation/PERTURBATION_SPEC.json",
+  "perturbation_spec_sha256_lf_normalized": "8cb2883c7b9594b1bb4d98915127249dc61e77e9041f42a2665fcf1ca8efeeba",
+  "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity caveat -- RNG draws are genuinely consumed by this scenario; Octave's Mersenne-Twister is NOT claimed bit-identical to MATLAB's RandStream, so results are structural/distributional, never exact-match)",
+  "harness_source_hashes": {
+    "evolveState_ppii.m": "fcd2a16bbb1860a9c02ff8deb816361291203f39d0bc942610fc15fa642fa1ec",
+    "stochasticRoundStub.m": "cd4d4871ee0dc052859186a0683948e02026a06436c24bdca60d494e13714a1d",
+    "mnrndStub.m": "a6ca4dd5c7491d62659bf00d43bb4724144e01ae7f9f86ec86b3c2fef3cff9d8",
+    "buildProteinComplexs_bounds.m": "25930db8476c8cfd2b8247be1a13ad4116d71aa5d54ae194a1b82f952d529535",
+    "buildProteinComplexs_rates_collisionTheory.m": "abac7c05ec5544c6812ffafb2573d7644b010f64b327861e229e3f02a3076897",
+    "buildProteinComplexs_montecarlokinetic.m": "ee994f2a828bf0d5fd7399d5869fe7f5e94a70e7144b2cc6bba3a609d72881be",
+    "run_ppii_scenario_a.m": "2510a43b75da16ec177ed54dda18aee757b026e02f32586a1a4b40a530addda1",
+    "run_macromol_network2.m": "667fb96cc4694bb906486ceafb1f449e496db80bfa83d739b9dfba17f469dea6"
+  },
+  "karr_source_citation": {
+    "vendored_path": "data/karr_vendored_source/MacromolecularComplexation.m",
+    "vendored_sha256_lf_normalized": "2e840ac13b65f0dbd027ef2a425dc3a7a7d23fbd505589eee0b30faedf02d087",
+    "upstream_repo": "https://github.com/CovertLab/WholeCell",
+    "upstream_commit": "6cdee6b355aa0f5ff2953b1ab356eea049108e07",
+    "upstream_original_path": "MacromolecularComplexation.m",
+    "line_ranges": [
+      [
+        290,
+        314
+      ],
+      [
+        334,
+        392
+      ]
+    ],
+    "symbols": [
+      "evolveState",
+      "buildProteinComplexs_montecarlokinetic",
+      "buildProteinComplexs_rates_collisionTheory",
+      "buildProteinComplexs_bounds"
+    ]
+  },
+  "fixture_path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+  "fixture_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+  "network": 2,
+  "substrate_indices_0b": [
+    23,
+    37,
+    42,
+    192
+  ],
+  "complex_indices_0b": [
+    22,
+    23
+  ],
+  "pool_values": [
+    51.0,
+    34.0,
+    31.0,
+    40.0
+  ],
+  "stoichiometry_block": [
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      2,
+      2
+    ]
+  ],
+  "ub": [
+    17,
+    15
+  ],
+  "n_seeds": 50,
+  "bound_violations": [],
+  "mass_balance_violations": [],
+  "distinct_outcome_count": 6,
+  "seeds_vary": true,
+  "min_built_per_complex": [
+    7.0,
+    7.0
+  ],
+  "max_built_per_complex": [
+    13.0,
+    13.0
+  ],
+  "mean_built_per_complex": [
+    10.72,
+    9.28
+  ],
+  "raw_octave_output_sha256": "21cb25c090836987436bedfa954ced1af538e0e8dc47b163740c6e5f64379f32",
+  "target_branch": "network_ge2_fires",
+  "target_branch_exercised": true,
+  "verdict": "H12_PERTURBATION_OBSERVED_STOCHASTIC",
+  "verdict_reason": "network_ge2's Monte Carlo competition branch was genuinely exercised (ub>0 for both complexes) across 50 independent seeds; all structural invariants held (bound, mass-balance, termination) and outcomes varied across 6 distinct (complex0,complex1) tuples, confirming genuine RNG-dependence -- this is DISTRIBUTIONAL evidence for branch behavior, not H12 exact-match evidence, and does NOT confirm H12 for this process/branch.",
+  "generated_at": "2026-07-31T03:16:47.015845+00:00",
+  "anti_laundering_attestation": {
+    "predictor_inputs": [
+      "pre_registered_pool_and_stoichiometry_only"
+    ],
+    "states_after_access": "invariant_check_phase_only",
+    "no_sut_import": true,
+    "no_result_json_access": true
+  }
+}

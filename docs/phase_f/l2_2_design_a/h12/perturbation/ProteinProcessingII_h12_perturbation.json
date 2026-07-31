@@ -1,0 +1,123 @@
+{
+  "artifact_kind": "h12_perturbation_evidence",
+  "gating": "NON_GATING -- not consumed by verdict.py / the H12_CONFIRMED evidence gate; a reviewer decision is required to fold this into the primary H12 artifact/catalog.",
+  "process": "ProteinProcessingII",
+  "scenario": "protein_processing_ii_scenario_a_full_saturating",
+  "perturbation_spec_path": "docs/phase_f/l2_2_design_a/h12/perturbation/PERTURBATION_SPEC.json",
+  "perturbation_spec_sha256_lf_normalized": "8cb2883c7b9594b1bb4d98915127249dc61e77e9041f42a2665fcf1ca8efeeba",
+  "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity caveat)",
+  "harness_source_hashes": {
+    "evolveState_ppii.m": "fcd2a16bbb1860a9c02ff8deb816361291203f39d0bc942610fc15fa642fa1ec",
+    "stochasticRoundStub.m": "cd4d4871ee0dc052859186a0683948e02026a06436c24bdca60d494e13714a1d",
+    "mnrndStub.m": "a6ca4dd5c7491d62659bf00d43bb4724144e01ae7f9f86ec86b3c2fef3cff9d8",
+    "buildProteinComplexs_bounds.m": "25930db8476c8cfd2b8247be1a13ad4116d71aa5d54ae194a1b82f952d529535",
+    "buildProteinComplexs_rates_collisionTheory.m": "abac7c05ec5544c6812ffafb2573d7644b010f64b327861e229e3f02a3076897",
+    "buildProteinComplexs_montecarlokinetic.m": "ee994f2a828bf0d5fd7399d5869fe7f5e94a70e7144b2cc6bba3a609d72881be",
+    "run_ppii_scenario_a.m": "2510a43b75da16ec177ed54dda18aee757b026e02f32586a1a4b40a530addda1",
+    "run_macromol_network2.m": "667fb96cc4694bb906486ceafb1f449e496db80bfa83d739b9dfba17f469dea6"
+  },
+  "predictor_source_path": "scripts/l22_evidence/h12.py",
+  "predictor_source_sha256_lf_normalized": "aee4b9b89219284c9cd570d4208f39e95a89d657f3604c683a9908fdf883fd10",
+  "karr_source_citation": {
+    "vendored_path": "data/karr_vendored_source/ProteinProcessingII.m",
+    "vendored_sha256_lf_normalized": "2082bd39cf1e0dfba52de7ddf33a5690cf6368ff8f4eca7eaa457eee4d46e0ca",
+    "upstream_repo": "https://github.com/CovertLab/WholeCell",
+    "upstream_commit": "6cdee6b355aa0f5ff2953b1ab356eea049108e07",
+    "upstream_original_path": "ProteinProcessingII.m",
+    "line_ranges": [
+      [
+        348,
+        446
+      ]
+    ],
+    "symbols": [
+      "evolveState"
+    ]
+  },
+  "fixture_path": "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+  "fixture_sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af",
+  "generated_input_sha256": {
+    "ppii_scenario_a_state.m": "632f60af043b985b4061625266ba416c27406c50f182fe4376473166fc62904d"
+  },
+  "n_seeds": 50,
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "total_sample_count": 50,
+  "nontrivial_sample_count": 50,
+  "exact_match_count": 50,
+  "exact_match_rate": 1.0,
+  "trivial_checked_count": 0,
+  "trivial_mismatch_count": 0,
+  "mismatch_examples": [],
+  "branches_confirmed": [
+    "passthrough_fires",
+    "peptidase_fires",
+    "transferase_fires"
+  ],
+  "target_branch": "transferase_fires",
+  "target_branch_confirmed": true,
+  "raw_octave_output_sha256": "93d59a4fa16de5a6b8d5eb1602577d281101fbff06e34566fdbd795cc56b7ea2",
+  "verdict": "H12_PERTURBATION_CONFIRMED",
+  "verdict_reason": "50/50 nontrivial samples exact-matched across 50 independent RNG seeds of the SAME pre-registered perturbed initial state (regime is provably RNG-independent by construction -- see PERTURBATION_SPEC.json); trivial_mismatch_count=0.",
+  "generated_at": "2026-07-31T03:16:46.743752+00:00",
+  "anti_laundering_attestation": {
+    "predictor_inputs": [
+      "states_before",
+      "static_fixture_params",
+      "perturbation_spec_constants"
+    ],
+    "states_after_access": "compare_phase_only",
+    "no_sut_import": true,
+    "no_result_json_access": true
+  }
+}
