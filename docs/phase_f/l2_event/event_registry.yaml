@@ -1,0 +1,116 @@
+# L2.event registry (schema_version 1)
+#
+# This is a NEW, separate file from
+# docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml. It must never be merged
+# into that catalog or edited by process-branch tasks without going through
+# scripts/l2_event/registry.py's validate_against_catalog() cross-check --
+# see docs/phase_f/l2_event/EVENT_REGISTRY_SCHEMA.md for the full field
+# reference and docs/phase_f/l2_event/L2_EVENT_FOUNDATION_STATUS.md for the
+# ground-truth data-availability audit this registry was built against.
+#
+# Fields per process row:
+#   process             - canonical Karr process name (must match
+#                          PROCESS_CATALOG.yaml processes[].name exactly)
+#   in_scope_v4         - true only for the two processes
+#                          L2_EVENT_GATE_SPEC_v4.md §8 puts in scope
+#                          (Cytokinesis, RibosomeAssembly)
+#   adapter_id          - stable adapter identifier (D7). null if no adapter
+#                          implementation exists yet.
+#   adapter_status      - one of:
+#                           not_implemented       - no adapter code exists
+#                           structural_smoke_only - a read-only adapter
+#                                                    exists for loader/shape
+#                                                    smoke tests ONLY; it
+#                                                    must never be used to
+#                                                    compute a gate verdict
+#                           gating_ready           - (not used yet by any
+#                                                     process in this task)
+#   event_timing_model  - "single_firing" | "repeated_firing" | null
+#                          (D2 addendum)
+#   magnitude_gateable  - whether a non-redundant payload channel exists to
+#                          gate on (D6). false => runner must emit
+#                          NOT_GATEABLE_REDUNDANT for the payload channel,
+#                          never skip it silently.
+#   required_n_seeds    - ensemble size the catalog's universals/N_seeds
+#                          field requires for this process; the runner
+#                          refuses to compute a gate verdict from fewer
+#                          seeds (requirement 4).
+#   deferred_reason     - non-null only for out-of-v4-scope processes.
+#   notes               - free-text provenance/audit trail.
+
+schema_version: 1
+generated_from_catalog: docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml
+spec_ref: docs/phase_f/L2_EVENT_GATE_SPEC_v4.md
+
+processes:
+  - process: Cytokinesis
+    in_scope_v4: true
+    adapter_id: null
+    adapter_status: not_implemented
+    event_timing_model: single_firing
+    magnitude_gateable: false
+    required_n_seeds: 50
+    deferred_reason: null
+    notes: >
+      In v4 scope (spec §8, D6). No event-window trace exists on disk for
+      Cytokinesis (0 seeds under any per_process_traces_v2_event_s* dir at
+      time of writing) -- see L2_EVENT_FOUNDATION_STATUS.md matrix. Per D6,
+      magnitude is NOT_GATEABLE_REDUNDANT until the OC port grows a
+      non-redundant payload; count + timing are the two gating channels.
+
+  - process: RibosomeAssembly
+    in_scope_v4: true
+    adapter_id: ribosome_assembly.smoke.v1
+    adapter_status: structural_smoke_only
+    event_timing_model: repeated_firing
+    magnitude_gateable: true
+    required_n_seeds: 50
+    deferred_reason: null
+    notes: >
+      In v4 scope (spec §8, D2). Exactly 1 of 50 required event-window
+      seeds exists on disk (seed 000 under
+      data/m1_sources/karr_native/per_process_traces_v2_event_s000/). The
+      registered adapter is a read-only structural smoke adapter only
+      (scripts/l2_event/adapters/ribosome_assembly_smoke.py); the runner
+      refuses to compute a gate verdict from it (single-seed ensemble
+      refusal, requirement 4) and this task does not implement a
+      gating-ready adapter.
+
+  - process: DNADamage
+    in_scope_v4: false
+    adapter_id: null
+    adapter_status: not_implemented
+    event_timing_model: null
+    magnitude_gateable: false
+    required_n_seeds: 50
+    deferred_reason: >
+      Out of v4 scope (spec §8 out-of-scope #2): deferred to a future
+      L2.stress gate because baseline Karr cycles do not spontaneously
+      exercise DNADamage. No event-window trace exists on disk for
+      DNADamage under any per_process_traces_v2_event_s* directory.
+    notes: >
+      PROCESS_CATALOG.yaml currently annotates this process "L2.2 GREEN"
+      based on a *standard* quiescent per-tick replay (both OC and Karr
+      produce 0 events under no-stimulus conditions). Per this spec's own
+      D3 rule (T_karr=0 precedence), that pattern is exactly the vacuous
+      zero==zero PASS the L2.event design exists to refuse -- it is not
+      evidence of a calibrated event-gate PASS. See
+      L2_EVENT_FOUNDATION_STATUS.md for the full correction.
+
+  - process: FtsZPolymerization
+    in_scope_v4: false
+    adapter_id: null
+    adapter_status: not_implemented
+    event_timing_model: null
+    magnitude_gateable: false
+    required_n_seeds: 50
+    deferred_reason: >
+      Out of v4 scope (spec §8 out-of-scope #1): gradient/continuous
+      polymerization process, not a binary firing event; v0.3 already
+      deferred it and v4 does not reopen the decision. No event-window
+      trace exists on disk for FtsZPolymerization under any
+      per_process_traces_v2_event_s* directory.
+    notes: >
+      Catalog carries a seed_window (tick_range_from_division [-200, 0])
+      but no event_adapter_id or event-window extraction has ever run for
+      this process.
