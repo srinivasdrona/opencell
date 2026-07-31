@@ -4,18 +4,24 @@
   "process": "ProteinProcessingII",
   "scenario": "protein_processing_ii_scenario_a_full_saturating",
   "perturbation_spec_path": "docs/phase_f/l2_2_design_a/h12/perturbation/PERTURBATION_SPEC.json",
-  "perturbation_spec_sha256_lf_normalized": "8cb2883c7b9594b1bb4d98915127249dc61e77e9041f42a2665fcf1ca8efeeba",
-  "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity caveat)",
+  "perturbation_spec_sha256_lf_normalized": "5b982f52970cf00582fb78a9403a1878ed80bd73c52519c13d79887fd323fd80",
+  "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity caveat -- this scenario is constructed so stochasticRound/mnrnd are provable no-ops regardless of RNG algorithm/seed, so the harness stub's RNG behavior is irrelevant here)",
   "harness_source_hashes": {
     "evolveState_ppii.m": "fcd2a16bbb1860a9c02ff8deb816361291203f39d0bc942610fc15fa642fa1ec",
     "stochasticRoundStub.m": "cd4d4871ee0dc052859186a0683948e02026a06436c24bdca60d494e13714a1d",
     "mnrndStub.m": "a6ca4dd5c7491d62659bf00d43bb4724144e01ae7f9f86ec86b3c2fef3cff9d8",
-    "buildProteinComplexs_bounds.m": "25930db8476c8cfd2b8247be1a13ad4116d71aa5d54ae194a1b82f952d529535",
+    "buildProteinComplexs_bounds.m": "b26166092ba05f2e8fd5ee0be54d523f442501ae6fa0d7fca48ac9995ae48a69",
     "buildProteinComplexs_rates_collisionTheory.m": "abac7c05ec5544c6812ffafb2573d7644b010f64b327861e229e3f02a3076897",
     "buildProteinComplexs_montecarlokinetic.m": "ee994f2a828bf0d5fd7399d5869fe7f5e94a70e7144b2cc6bba3a609d72881be",
     "run_ppii_scenario_a.m": "2510a43b75da16ec177ed54dda18aee757b026e02f32586a1a4b40a530addda1",
     "run_macromol_network2.m": "667fb96cc4694bb906486ceafb1f449e496db80bfa83d739b9dfba17f469dea6"
   },
+  "evidence_scope_caveats": [
+    "effective N=1 distinct pre-registered before-state: all 50 seeds are independent RNG realizations of the SAME frozen initial state (PERTURBATION_SPEC.json), not 50 distinct states -- this is sufficient to demonstrate the branch fires and exact-matches under this one constructed regime, not general robustness across arbitrary states.",
+    "the regime is provably RNG-invariant by construction (frac(x)==0 for every transformed quantity), so this scenario provides no evidence about RNG/enzyme-kinetics interaction in any other (non-saturating) regime of this process -- enzyme-kinetics stochasticity itself is unmeasured here.",
+    "the scarcity-guard branch (insufficient peptidase/transferase capacity or water/PG160) is validated only by a synthetic Python unit test against the predictor's own guard arithmetic (tests/scripts/test_h12_perturbation.py), not by this or any Octave execution -- see PERTURBATION_SPEC.json explicitly_out_of_scope_for_octave_execution.",
+    "this artifact is OBSERVED evidence for one constructed regime, not a general confirmation claim; it remains NON_GATING regardless."
+  ],
   "predictor_source_path": "scripts/l22_evidence/h12.py",
   "predictor_source_sha256_lf_normalized": "aee4b9b89219284c9cd570d4208f39e95a89d657f3604c683a9908fdf883fd10",
   "karr_source_citation": {
@@ -109,7 +115,7 @@
   "raw_octave_output_sha256": "93d59a4fa16de5a6b8d5eb1602577d281101fbff06e34566fdbd795cc56b7ea2",
   "verdict": "H12_PERTURBATION_CONFIRMED",
   "verdict_reason": "50/50 nontrivial samples exact-matched across 50 independent RNG seeds of the SAME pre-registered perturbed initial state (regime is provably RNG-independent by construction -- see PERTURBATION_SPEC.json); trivial_mismatch_count=0.",
-  "generated_at": "2026-07-31T03:16:46.743752+00:00",
+  "generated_at": "2026-07-31T05:11:23.730896+00:00",
   "anti_laundering_attestation": {
     "predictor_inputs": [
       "states_before",

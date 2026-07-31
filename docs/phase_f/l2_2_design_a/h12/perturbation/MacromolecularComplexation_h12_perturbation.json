@@ -4,18 +4,23 @@
   "process": "MacromolecularComplexation",
   "scenario": "macromolecular_complexation_network2_competition",
   "perturbation_spec_path": "docs/phase_f/l2_2_design_a/h12/perturbation/PERTURBATION_SPEC.json",
-  "perturbation_spec_sha256_lf_normalized": "8cb2883c7b9594b1bb4d98915127249dc61e77e9041f42a2665fcf1ca8efeeba",
-  "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity caveat -- RNG draws are genuinely consumed by this scenario; Octave's Mersenne-Twister is NOT claimed bit-identical to MATLAB's RandStream, so results are structural/distributional, never exact-match)",
+  "perturbation_spec_sha256_lf_normalized": "5b982f52970cf00582fb78a9403a1878ed80bd73c52519c13d79887fd323fd80",
+  "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity caveat -- RNG draws are genuinely consumed by this scenario; the driver seeds via Octave/MATLAB's legacy rand('seed', k) API, which is NOT asserted to reproduce MATLAB's RandStream algorithm bit-for-bit, so results are structural/distributional, never exact-match)",
   "harness_source_hashes": {
     "evolveState_ppii.m": "fcd2a16bbb1860a9c02ff8deb816361291203f39d0bc942610fc15fa642fa1ec",
     "stochasticRoundStub.m": "cd4d4871ee0dc052859186a0683948e02026a06436c24bdca60d494e13714a1d",
     "mnrndStub.m": "a6ca4dd5c7491d62659bf00d43bb4724144e01ae7f9f86ec86b3c2fef3cff9d8",
-    "buildProteinComplexs_bounds.m": "25930db8476c8cfd2b8247be1a13ad4116d71aa5d54ae194a1b82f952d529535",
+    "buildProteinComplexs_bounds.m": "b26166092ba05f2e8fd5ee0be54d523f442501ae6fa0d7fca48ac9995ae48a69",
     "buildProteinComplexs_rates_collisionTheory.m": "abac7c05ec5544c6812ffafb2573d7644b010f64b327861e229e3f02a3076897",
     "buildProteinComplexs_montecarlokinetic.m": "ee994f2a828bf0d5fd7399d5869fe7f5e94a70e7144b2cc6bba3a609d72881be",
     "run_ppii_scenario_a.m": "2510a43b75da16ec177ed54dda18aee757b026e02f32586a1a4b40a530addda1",
     "run_macromol_network2.m": "667fb96cc4694bb906486ceafb1f449e496db80bfa83d739b9dfba17f469dea6"
   },
+  "evidence_scope_caveats": [
+    "invariants checked (non-negative integer builds, built<=ub, mass-balance, termination, seed-to-seed variation) are STRUCTURAL only -- they confirm the branch executes correctly and is genuinely stochastic, not that any specific per-seed complex-build distribution matches MATLAB.",
+    "matching the actual split distribution across (complex0, complex1) to MATLAB ground truth would require running the real edu.stanford.covert.util.RandStream (E:\\opencell-mirrors\\WholeCell) with the same seeding convention WholeCell itself uses -- not available from this Octave harness -- so no distributional-fidelity claim is made, only structural correctness.",
+    "this artifact is OBSERVED_STOCHASTIC evidence only; it NEVER claims H12_CONFIRMED and remains NON_GATING regardless."
+  ],
   "karr_source_citation": {
     "vendored_path": "data/karr_vendored_source/MacromolecularComplexation.m",
     "vendored_sha256_lf_normalized": "2e840ac13b65f0dbd027ef2a425dc3a7a7d23fbd505589eee0b30faedf02d087",
@@ -102,7 +107,7 @@
   "target_branch_exercised": true,
   "verdict": "H12_PERTURBATION_OBSERVED_STOCHASTIC",
   "verdict_reason": "network_ge2's Monte Carlo competition branch was genuinely exercised (ub>0 for both complexes) across 50 independent seeds; all structural invariants held (bound, mass-balance, termination) and outcomes varied across 6 distinct (complex0,complex1) tuples, confirming genuine RNG-dependence -- this is DISTRIBUTIONAL evidence for branch behavior, not H12 exact-match evidence, and does NOT confirm H12 for this process/branch.",
-  "generated_at": "2026-07-31T03:16:47.015845+00:00",
+  "generated_at": "2026-07-31T05:11:23.997382+00:00",
   "anti_laundering_attestation": {
     "predictor_inputs": [
       "pre_registered_pool_and_stoichiometry_only"
