@@ -399,6 +399,100 @@ def test_audit_index_accepts_karr_source_consistent_with_input_manifest(tmp_path
     assert not any("karr_source" in p for p in problems)
 
 
+# ---------------------------------------------------------------------------
+# Opus5 review round 4, item #1: karr_source multi-seed ancestor/prefix
+# semantics (single file, common parent, root, forged sibling/traversal)
+# ---------------------------------------------------------------------------
+
+
+def test_audit_index_karr_source_single_file_exact_parent_accepted(tmp_path, monkeypatch):
+    """Single-file/single-seed convention: karr_source equal to the one
+    recorded input's own parent directory must be accepted."""
+    artifacts = _fake_artifacts()
+    artifacts["input_manifest.json"]["inputs"][0]["path"] = (
+        "data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat"
+    )
+    artifacts["provenance.json"]["karr_source"] = (
+        "data/m1_sources/karr_native/per_process_traces_v2_event_s000"
+    )
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert not any("karr_source" in p for p in problems)
+
+
+def test_audit_index_karr_source_common_parent_multi_seed_ancestor_accepted(tmp_path, monkeypatch):
+    """Multi-seed convention: karr_source is a common ANCESTOR directory
+    several seeds' individually-different input directories all live
+    under (e.g. per-seed `per_process_traces_v2_event_s000`, `..._s001`
+    subdirectories sharing a `karr_native` parent) -- every recorded input
+    path must independently resolve as covered, not just any one of
+    them."""
+    artifacts = _fake_artifacts()
+    artifacts["input_manifest.json"]["inputs"] = [
+        {"path": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat", "seed": 0},
+        {"path": "data/m1_sources/karr_native/per_process_traces_v2_event_s001/RibosomeAssembly_100ticks.mat", "seed": 1},
+    ]
+    artifacts["provenance.json"]["karr_source"] = "data/m1_sources/karr_native"
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert not any("karr_source" in p for p in problems)
+
+
+def test_audit_index_karr_source_root_ancestor_covers_all_inputs_accepted(tmp_path, monkeypatch):
+    """An even shorter common ancestor (the repo-relative "root" of the
+    whole data tree, well above the per-seed subdirectories) must still
+    be accepted -- the ancestor check has no fixed depth requirement."""
+    artifacts = _fake_artifacts()
+    artifacts["input_manifest.json"]["inputs"] = [
+        {"path": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat", "seed": 0},
+        {"path": "data/m1_sources/karr_native/per_process_traces_v2_event_s001/RibosomeAssembly_100ticks.mat", "seed": 1},
+    ]
+    artifacts["provenance.json"]["karr_source"] = "data/m1_sources"
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert not any("karr_source" in p for p in problems)
+
+
+def test_audit_index_karr_source_forged_sibling_directory_rejected(tmp_path, monkeypatch):
+    """A sibling directory that merely shares a string PREFIX with the
+    real karr_source (`karr_native` vs. `karr_native_evil`) must be
+    rejected -- a naive `path.startswith(karr_source)` string check would
+    wrongly accept this, since 'karr_native_evil/...'.startswith(
+    'karr_native') is True even though it is a completely different
+    directory. The segment-wise ancestor check must reject it."""
+    artifacts = _fake_artifacts()
+    artifacts["input_manifest.json"]["inputs"][0]["path"] = (
+        "data/m1_sources/karr_native_evil/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat"
+    )
+    artifacts["provenance.json"]["karr_source"] = "data/m1_sources/karr_native"
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert any("karr_source" in p for p in problems)
+
+
+def test_audit_index_karr_source_path_traversal_rejected(tmp_path, monkeypatch):
+    """A recorded input path that uses `..` to traverse above its own
+    given string entirely (e.g. climbing out of a relative root with no
+    prior segments to pop) must be rejected as malformed, not silently
+    treated as covered."""
+    artifacts = _fake_artifacts()
+    artifacts["input_manifest.json"]["inputs"][0]["path"] = "../../etc/passwd"
+    artifacts["provenance.json"]["karr_source"] = "data/m1_sources/karr_native"
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert any("karr_source" in p for p in problems)
+
+
+def test_is_repo_relative_ancestor_rejects_ambiguous_string_prefix_directly():
+    """Unit-level check of the helper itself (Opus5 review round 4, item
+    #1): a raw string-prefix comparison would wrongly treat
+    'karr_native_evil/x' as being 'under' 'karr_native', but the
+    segment-wise ancestor check must not."""
+    assert evidence._is_repo_relative_ancestor("a/karr_native", "a/karr_native_evil/x.mat") is False
+    assert evidence._is_repo_relative_ancestor("a/karr_native", "a/karr_native/x.mat") is True
+    assert evidence._is_repo_relative_ancestor("a/b/c", "a/b/c") is True
+
+
 def test_bundle_run_normalizes_provenance_karr_source_to_repo_relative(tmp_path, monkeypatch):
     """Opus5 review round 3, item #4/#5: `bundle_run` must normalize
     `provenance.json`'s `karr_source` field the same way it already

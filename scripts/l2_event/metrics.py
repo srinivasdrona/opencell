@@ -747,7 +747,7 @@ def _worst_payload_verdict(verdicts: set[str]) -> str:
 
 def _payload_component_result(
     component: str,
-    karr_vals: np.ndarray,
+    karr_seed_bags: list[np.ndarray],
     oc_vals: np.ndarray,
     *,
     b_resamples: int,
@@ -758,16 +758,30 @@ def _payload_component_result(
     + own PASS/SEED_NOISE/FAIL/DEGENERATE_NULL verdict (Opus5 review round
     3, item #1) -- mirrors `count_gate`/`timing_gate_*`'s decision logic
     exactly, applied per-component instead of once globally over whichever
-    component has the largest raw statistic."""
+    component has the largest raw statistic.
+
+    ``karr_seed_bags`` is a list with one entry PER SEED (mirroring
+    ``timing_gate_repeated_firing``'s own ``karr_seed_bags``): each entry
+    is the array of this component's values across every firing observed
+    in that one seed (zero-length if the seed had no firings). This is
+    the seed-cluster unit `clustered_bootstrap_bag` resamples WHOLE bags
+    from (Opus5 review round 4, item #2) -- resampling flattened
+    individual firings instead (the pre-round-4 bug: a flat per-firing
+    list was silently treated as if each firing were its own independent
+    cluster) pseudo-replicates within a seed and understates the null's
+    true spread, which is exactly how a small-but-real divergence in one
+    component can get masked by an artificially tight null.
+    """
+    karr_vals = np.concatenate(karr_seed_bags) if karr_seed_bags else np.array([])
     max_support = float(max(1.0, karr_vals.max() - karr_vals.min())) if len(karr_vals) > 1 else 1.0
     w1 = _safe_wasserstein(karr_vals, oc_vals, max_support=max_support)
-    # M-metric-correctness: bootstrap THIS component's own null,
-    # seed-cluster preserved (karr_vals is already one entry per
-    # seed/cluster, matching count_gate's clustered_bootstrap_scalar
-    # convention) -- never pool heterogeneous components together, and
-    # never resample individual fires (which would pseudo-replicate within
-    # a seed and understate the null's spread).
-    q95_null = clustered_bootstrap_scalar(karr_vals, b=b_resamples, rng=rng)
+    # M-metric-correctness: bootstrap THIS component's own null, resampling
+    # WHOLE SEED BAGS (never individual fires, and never pooling
+    # heterogeneous components together) -- reuses the same
+    # `clustered_bootstrap_bag` primitive `timing_gate_repeated_firing`
+    # already relies on for its own pooled-fire-tick-bag null, rather than
+    # rebuilding seed-cluster bootstrap infrastructure a second time.
+    q95_null = clustered_bootstrap_bag(karr_seed_bags, max_support=max_support, b=b_resamples, rng=rng)
     if q95_null == 0.0:
         return PayloadComponentResult(
             component=component,
@@ -806,13 +820,14 @@ def _payload_component_result(
 
 
 def payload_gate(
-    karr_payloads: list[dict[str, float]],
-    oc_payloads: list[dict[str, float]],
+    karr_payloads_by_seed: list[list[dict[str, float]]],
+    oc_payloads_by_seed: list[list[dict[str, float]]],
     *,
     rng: np.random.Generator,
     b_resamples: int = DEFAULT_B_RESAMPLES,
     k_eng: float = DEFAULT_K_ENG,
     required_components: frozenset[str] | None = None,
+    expected_n_seeds: int | None = None,
 ) -> GateChannelResult:
     """W1 per payload component at matched firings, with a PER-COMPONENT
     verdict/null (Opus5 review round 3, item #1) aggregated as the WORST
@@ -824,10 +839,26 @@ def payload_gate(
     this and should instead emit a ``NOT_GATEABLE_REDUNDANT``
     :class:`GateChannelResult` directly.
 
-    Positional convention: entry ``i`` of ``karr_payloads``/``oc_payloads``
-    corresponds to seed/cluster ``i`` (matching ``count_gate``'s
-    per-seed-array convention) -- this is what lets the per-component
-    bootstrap below treat each list as already seed-clustered.
+    Seed-cardinality convention (Opus5 review round 4, item #2):
+    ``karr_payloads_by_seed``/``oc_payloads_by_seed`` are EXPLICITLY
+    per-seed cohorts -- entry ``i`` is the (possibly empty, possibly
+    multi-element for a repeated-firing process) list of payload dicts
+    observed for seed ``i``, mirroring ``karr_timelines``/
+    ``oc_timelines``'s own cardinality one level up in ``evaluate_gate``.
+    A flat pooled list of firings (the pre-round-4 API) must NOT be passed
+    here even if it happens to have the right total element count: this
+    function's own seed-cluster bootstrap resamples WHOLE SEED ENTRIES
+    (see `_payload_component_result`), so a flattened/mis-clustered cohort
+    would silently pseudo-replicate individual firings as if each were its
+    own independent seed and understate the null's true spread.
+
+    ``expected_n_seeds``, when supplied by the caller (``evaluate_gate``
+    always supplies ``len(karr_timelines)``), must equal both
+    ``len(karr_payloads_by_seed)`` and ``len(oc_payloads_by_seed)`` or this
+    refuses hard with ``SEED_CARDINALITY_MISMATCH`` before computing
+    anything. The two cohorts must also always match each other's length
+    even when ``expected_n_seeds`` is not supplied (a bare pairing
+    invariant a direct caller cannot bypass either).
 
     ``required_components``, when supplied by an adapter (e.g. RA's exact
     2-WID payload keyspace), is enforced BEFORE any metric is computed:
@@ -836,6 +867,39 @@ def payload_gate(
     than silently zero-filling a missing/extra component into the
     comparison.
     """
+    n_karr_seeds = len(karr_payloads_by_seed)
+    n_oc_seeds = len(oc_payloads_by_seed)
+    if n_karr_seeds != n_oc_seeds or (expected_n_seeds is not None and n_karr_seeds != expected_n_seeds):
+        return _channel_result(
+            channel="payload",
+            verdict="SEED_CARDINALITY_MISMATCH",
+            statistic_name="w1_per_component_at_matched_firings",
+            statistic_value=None,
+            q95_null=None,
+            k_eng=k_eng,
+            threshold=None,
+            n_nonzero_oc=0,
+            n_nonzero_karr=0,
+            reasons=[
+                f"karr_payloads_by_seed has {n_karr_seeds} seed entries, "
+                f"oc_payloads_by_seed has {n_oc_seeds}"
+                + (f", expected_n_seeds={expected_n_seeds}" if expected_n_seeds is not None else "")
+                + "; a per-seed payload cohort must have exactly one entry per "
+                "ensemble seed on both sides (no flattened/mismatched cohort "
+                "is accepted -- item #2)."
+            ],
+            extra=_extra(
+                {
+                    "n_karr_seed_entries": n_karr_seeds,
+                    "n_oc_seed_entries": n_oc_seeds,
+                    "expected_n_seeds": expected_n_seeds,
+                }
+            ),
+        )
+
+    karr_payloads = [payload for seed_payloads in karr_payloads_by_seed for payload in seed_payloads]
+    oc_payloads = [payload for seed_payloads in oc_payloads_by_seed for payload in seed_payloads]
+
     if not karr_payloads:
         n_nonzero_karr = 0
         n_nonzero_oc = int(len(oc_payloads))
@@ -967,10 +1031,20 @@ def payload_gate(
                 )
             )
             continue
-        karr_vals = np.array([p.get(component, 0.0) for p in karr_payloads], dtype=float)
+        # Opus5 review round 4, item #2: build this component's Karr
+        # values as a list of PER-SEED bags (one array per seed, zero-
+        # length if that seed had no firings), not a flat pooled array --
+        # this is what lets `_payload_component_result`'s bootstrap
+        # resample whole seeds as the cluster unit instead of individual
+        # firings. OC's side stays a flat pooled array (only Karr's null
+        # is bootstrapped, per D4's Karr-only convention).
+        karr_seed_bags = [
+            np.array([p.get(component, 0.0) for p in seed_payloads], dtype=float)
+            for seed_payloads in karr_payloads_by_seed
+        ]
         oc_vals = np.array([p.get(component, 0.0) for p in oc_payloads], dtype=float)
         per_component_results.append(
-            _payload_component_result(component, karr_vals, oc_vals, b_resamples=b_resamples, k_eng=k_eng, rng=rng)
+            _payload_component_result(component, karr_seed_bags, oc_vals, b_resamples=b_resamples, k_eng=k_eng, rng=rng)
         )
 
     verdict = _worst_payload_verdict({r.verdict for r in per_component_results})

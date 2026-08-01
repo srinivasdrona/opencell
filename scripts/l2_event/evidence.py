@@ -65,6 +65,70 @@ def relative_to_repo(path: Path) -> str:
         return Path(path).as_posix()
 
 
+def _normalized_posix_parts(path_str: str) -> tuple[str, ...] | None:
+    """Normalize ``path_str`` (a recorded repo-relative-ish path string) to
+    a tuple of path segments, collapsing empty/``.``/``..`` components,
+    for safe ancestor/prefix comparisons (Opus5 review round 4, item #1).
+
+    Deliberately does NOT special-case a leading ``/`` (or a Windows drive
+    letter) as an error: production ``karr_source``/``input_manifest.json``
+    paths are always repo-relative POSIX by the time they reach
+    ``audit_index`` (``bundle_run`` normalizes them), but several existing
+    tests in this module use synthetic absolute-looking placeholder paths
+    (e.g. ``"/abs/some/path.mat"``) purely to exercise the ancestor/prefix
+    comparison itself -- a leading ``/`` just produces (and correctly
+    discards) one empty path segment like any other, so both sides of a
+    comparison still line up structurally. What this DOES still reject
+    (return ``None`` for) is a ``..`` that tries to pop past the start of
+    the string itself (path traversal escaping above its own given root) --
+    callers must treat ``None`` as a hard problem, not "skip, not a
+    problem" (unlike ``_git_commit_exists``'s ``None`` convention: a
+    malformed recorded path is always a real defect worth reporting here).
+    """
+    posix = str(path_str).replace("\\", "/")
+    segments: list[str] = []
+    for segment in posix.split("/"):
+        if segment in ("", "."):
+            continue
+        if segment == "..":
+            if not segments:
+                # Traversal above the start of the given string itself.
+                return None
+            segments.pop()
+        else:
+            segments.append(segment)
+    return tuple(segments)
+
+
+def _is_repo_relative_ancestor(root: str, path: str) -> bool | None:
+    """Whether ``path`` (a recorded ``input_manifest.json`` input path) is
+    ``root`` (a recorded ``provenance.json`` ``karr_source``) itself or a
+    path segment-wise descendant of it (Opus5 review round 4, item #1).
+
+    Supports both the pre-round-4 single-file/single-seed convention
+    (``karr_source`` equals the input's own parent directory exactly) and
+    the multi-seed convention (``karr_source`` is a common ancestor
+    directory several seeds' input directories all live under, e.g.
+    ``data/m1_sources/karr_native`` as the parent of
+    ``.../per_process_traces_v2_event_s000``,
+    ``.../per_process_traces_v2_event_s001``, ...).
+
+    Comparison is done on normalized PATH SEGMENTS, not raw string
+    prefixes, so a sibling directory that merely shares a string prefix
+    (``karr_native`` vs. ``karr_native_evil``) is correctly rejected --
+    a naive ``path.startswith(root)`` string check would wrongly accept
+    that as "under root". Returns ``None`` (not ``bool``) if either input
+    contains a ``..`` that traverses above the start of its own given
+    string (path traversal) -- the caller must treat that as a hard
+    problem, never silently pass it.
+    """
+    root_parts = _normalized_posix_parts(root)
+    path_parts = _normalized_posix_parts(path)
+    if root_parts is None or path_parts is None:
+        return None
+    return path_parts[: len(root_parts)] == root_parts
+
+
 def default_evidence_root() -> Path:
     """Return the tracked portable bundle root.
 
@@ -370,9 +434,15 @@ def audit_index(index_path: Path = TRACKED_INDEX_PATH) -> list[str]:
     * registry_sha256 (item #4): only checked when the key is present at
       all, against the registry file's OWN current hash (not merely
       re-storing what was recorded).
-    * karr_source (item #4): only checked when the key is present, cross-
-      referenced against ``input_manifest.json``'s own recorded input
-      directories for internal consistency.
+    * karr_source (item #4, ancestor/prefix semantics per round 4 item
+      #1): only checked when the key is present. ``karr_source`` may be
+      the exact parent of a single recorded input path OR a common
+      ancestor directory several seeds' input paths all live under;
+      EVERY recorded input path must independently resolve as
+      ``karr_source`` itself or a normalized-path-segment descendant of
+      it (never a raw string prefix, which would wrongly accept a
+      sibling directory like ``karr_native_evil``), and any path that
+      escapes via ``..`` traversal is rejected outright.
     """
     index = read_json(index_path)
     problems: list[str] = []
@@ -445,19 +515,52 @@ def audit_index(index_path: Path = TRACKED_INDEX_PATH) -> list[str]:
                 input_manifest_path = process_dir / "input_manifest.json"
                 if input_manifest_path.exists():
                     manifest = read_json(input_manifest_path)
-                    manifest_dirs = {
-                        Path(entry["path"]).parent.as_posix()
-                        for entry in manifest.get("inputs", [])
-                        if entry.get("path")
-                    }
-                    karr_source_posix = str(karr_source).replace("\\", "/")
-                    if manifest_dirs and karr_source_posix not in manifest_dirs:
-                        problems.append(
-                            f"{row['process']}: provenance.json karr_source="
-                            f"{karr_source_posix!r} does not match input_manifest.json's "
-                            f"recorded input directory/directories {sorted(manifest_dirs)} "
-                            "(item #4)."
-                        )
+                    manifest_paths = sorted(
+                        {entry["path"] for entry in manifest.get("inputs", []) if entry.get("path")}
+                    )
+                    if manifest_paths:
+                        # Opus5 review round 4, item #1: ``karr_source`` may
+                        # be the exact parent directory of a single input
+                        # (pre-round-4 single-file/single-seed convention)
+                        # OR a common ancestor directory several seeds'
+                        # input paths all live under (multi-seed
+                        # convention, e.g. a shared
+                        # ``data/m1_sources/karr_native`` root above
+                        # per-seed ``per_process_traces_v2_event_s000``,
+                        # ``..._s001``, ... subdirectories). Every recorded
+                        # input path must independently resolve as
+                        # ``karr_source`` itself or a path-segment-wise
+                        # descendant of it -- a naive string-prefix check
+                        # would wrongly accept a sibling directory that
+                        # merely shares characters (``karr_native`` vs.
+                        # ``karr_native_evil``), so `_is_repo_relative_ancestor`
+                        # compares normalized path SEGMENTS instead, and
+                        # also rejects absolute paths / ``..`` traversal
+                        # outright (`None`) rather than silently ignoring
+                        # them.
+                        uncovered: list[str] = []
+                        malformed: list[str] = []
+                        for manifest_path in manifest_paths:
+                            covered = _is_repo_relative_ancestor(karr_source, manifest_path)
+                            if covered is None:
+                                malformed.append(manifest_path)
+                            elif not covered:
+                                uncovered.append(manifest_path)
+                        if malformed:
+                            problems.append(
+                                f"{row['process']}: provenance.json karr_source={karr_source!r} "
+                                f"or input_manifest.json path(s) {malformed} contains a '..' "
+                                "that traverses above the start of its own given string "
+                                "(path traversal) -- refusing to treat it as covered (item #1)."
+                            )
+                        if uncovered:
+                            problems.append(
+                                f"{row['process']}: provenance.json karr_source="
+                                f"{karr_source!r} is not an ancestor of (or equal to) "
+                                f"input_manifest.json's recorded input path(s) {uncovered} "
+                                "(item #1 ancestor/prefix check -- rejects sibling/"
+                                "ambiguous-prefix directories)."
+                            )
     recomputed = _content_hash(index)
     if recomputed != index.get("content_hash"):
         problems.append(

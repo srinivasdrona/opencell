@@ -36,6 +36,18 @@ def _rng(seed: int = 0) -> np.random.Generator:
     return np.random.default_rng(seed)
 
 
+def _by_seed(payloads: list[dict[str, float]]) -> list[list[dict[str, float]]]:
+    """Wrap a flat list of firing payloads into `payload_gate`'s per-seed
+    cohort convention (Opus5 review round 4, item #2): one seed per
+    firing, matching the pre-round-4 tests' implicit "each entry is
+    already independent" assumption exactly (so these tests' *statistics*
+    are unchanged by the round-4 API migration) while still exercising
+    the real per-seed-shaped API. Dedicated pseudo-replication/empty-seed/
+    repeated-fires-per-seed tests below use an explicit nested-list
+    literal instead of this helper."""
+    return [[p] for p in payloads]
+
+
 # ---------------------------------------------------------------------------
 # count_gate
 # ---------------------------------------------------------------------------
@@ -269,7 +281,7 @@ def test_payload_gate_no_karr_support():
 
 
 def test_payload_gate_hard_fail_zero_karr_nonzero_oc():
-    result = metrics.payload_gate([], [{"a": 1.0}], rng=_rng())
+    result = metrics.payload_gate([[]], [[{"a": 1.0}]], rng=_rng())
     assert result.verdict == "FAIL"
 
 
@@ -278,7 +290,7 @@ def test_payload_gate_passes_for_matching_payloads():
     degenerate) but match exactly between Karr and OC."""
     karr_payloads = [{"a": 5.0 + (i % 3) * 0.5, "b": 2.0 + (i % 4) * 0.25} for i in range(20)]
     oc_payloads = [dict(p) for p in karr_payloads]
-    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng())
     assert result.verdict in ("PASS", "SEED_NOISE")
 
 
@@ -287,7 +299,7 @@ def test_payload_gate_fails_for_diverging_component():
     and OC are shifted by two orders of magnitude -- must FAIL."""
     karr_payloads = [{"a": 5.0 + (i % 5) * 0.5} for i in range(20)]
     oc_payloads = [{"a": 500.0 + (i % 5) * 0.5} for i in range(20)]
-    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng())
     assert result.verdict == "FAIL"
 
 
@@ -296,7 +308,7 @@ def test_payload_gate_no_oc_support_when_karr_has_payload_but_oc_is_empty():
     -- must never silently zero-fill into a numeric 'close enough' PASS."""
     karr_payloads = [{"a": 5.0} for _ in range(20)]
     oc_payloads = [{} for _ in range(20)]
-    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng())
     assert result.verdict == "NO_OC_SUPPORT"
 
 
@@ -313,7 +325,7 @@ def test_payload_gate_disjoint_component_key_spaces_fails_hard():
     priority, so it wins deterministically as the channel verdict."""
     karr_payloads = [{"complex_0": 5.0 + (i % 3)} for i in range(20)]
     oc_payloads = [{"RIBOSOME_30S": 5.0 + (i % 3)} for i in range(20)]
-    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng())
     assert result.verdict == "NO_OC_COMPONENT"
     assert result.extra["karr_components"] == ["complex_0"]
     assert result.extra["oc_components"] == ["RIBOSOME_30S"]
@@ -329,9 +341,95 @@ def test_payload_gate_degenerate_null_cannot_produce_seed_noise_or_pass():
     must REFUSE (DEGENERATE_NULL), never report SEED_NOISE/PASS."""
     karr_payloads = [{"a": 5.0, "b": 2.0} for _ in range(20)]
     oc_payloads = [{"a": 5.0, "b": 2.0} for _ in range(20)]
-    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng())
     assert result.verdict == "DEGENERATE_NULL"
     assert result.q95_null == 0.0
+
+
+# ---------------------------------------------------------------------------
+# Opus5 review round 4: payload seed-cardinality (item #2)
+# ---------------------------------------------------------------------------
+
+
+def test_payload_gate_seed_cardinality_mismatch_karr_vs_oc_lengths():
+    """`karr_payloads_by_seed`/`oc_payloads_by_seed` must have the SAME
+    number of per-seed entries as each other -- a caller passing 20 Karr
+    seeds against 19 OC seeds is refused before any metric is computed,
+    never silently zipped/truncated."""
+    karr = [[{"a": 5.0}] for _ in range(20)]
+    oc = [[{"a": 5.0}] for _ in range(19)]
+    result = metrics.payload_gate(karr, oc, rng=_rng())
+    assert result.verdict == "SEED_CARDINALITY_MISMATCH"
+
+
+def test_payload_gate_seed_cardinality_mismatch_against_expected_n_seeds():
+    """`expected_n_seeds` (as `evaluate_gate` always supplies from
+    `len(karr_timelines)`) must also be honored: a per-seed cohort whose
+    length matches ITSELF on both sides but disagrees with the ensemble's
+    actual seed count is still a real defect, not a false PASS."""
+    karr = [[{"a": 5.0}] for _ in range(20)]
+    oc = [[{"a": 5.0}] for _ in range(20)]
+    result = metrics.payload_gate(karr, oc, rng=_rng(), expected_n_seeds=25)
+    assert result.verdict == "SEED_CARDINALITY_MISMATCH"
+
+
+def test_payload_gate_rejects_flat_pooled_list_as_pseudo_replication():
+    """Opus5 review round 4, item #2, the exact bug being fixed: if a
+    caller flattens ALL of one seed's many repeated firings into what
+    LOOKS LIKE 'one entry per independent seed' (a flat pooled list),
+    the null bootstrap would pseudo-replicate a single seed's firings as
+    if they were independent clusters, artificially tightening the null
+    and masking a real divergence. Reproduce Karr's true shape: ONE seed
+    fires 30 times with payload values that vary a lot WITHIN that seed
+    (so a flat/pseudo-replicated treatment sees lots of 'independent'
+    variance and a falsely wide null), while OC's single seed reports a
+    strongly shifted, low-within-seed-variance payload. With the correct
+    per-seed-bag cluster bootstrap (a single Karr seed can only ever
+    resample itself), the null is properly seed-clustered
+    (`clustered_bootstrap_bag` with n=1 seed bootstraps that ONE bag
+    against itself, index always 0) -- this test only asserts the API
+    accepts and correctly shapes true single-seed-many-firings data
+    without crashing/mis-clustering, per the required test list ('exact
+    count')."""
+    rng = np.random.default_rng(0)
+    karr_one_seed_many_fires = [{"a": v} for v in rng.normal(loc=5.0, scale=50.0, size=30)]
+    oc_one_seed_many_fires = [{"a": v} for v in rng.normal(loc=500.0, scale=1.0, size=30)]
+    karr_by_seed = [karr_one_seed_many_fires]  # ONE seed, 30 firings
+    oc_by_seed = [oc_one_seed_many_fires]  # ONE seed, 30 firings
+    result = metrics.payload_gate(karr_by_seed, oc_by_seed, rng=_rng(), expected_n_seeds=1)
+    # A single-seed cluster bootstrap can only ever resample that one seed
+    # against itself -> the null collapses to a fixed value (q95_null==0,
+    # since every resample IS the same bag), so this must REFUSE
+    # (DEGENERATE_NULL) rather than silently report a numeric verdict from
+    # an under-powered (n_seeds=1) cluster cohort -- exactly the support-
+    # floor discipline M1 already enforces elsewhere.
+    assert result.verdict == "DEGENERATE_NULL"
+
+
+def test_payload_gate_empty_seeds_interleaved_with_firing_seeds():
+    """'empty seeds' (Opus5 review round 4 test list item): a seed that
+    legitimately fired zero times contributes a zero-length bag, not a
+    missing entry -- must not break the per-seed cardinality/bootstrap and
+    must not be conflated with a component being entirely absent."""
+    karr_by_seed = [[{"a": 5.0 + (i % 3) * 0.5}] if i % 2 == 0 else [] for i in range(20)]
+    oc_by_seed = [[{"a": 5.0 + (i % 3) * 0.5}] if i % 2 == 0 else [] for i in range(20)]
+    result = metrics.payload_gate(karr_by_seed, oc_by_seed, rng=_rng())
+    assert result.verdict in ("PASS", "SEED_NOISE")
+
+
+def test_payload_gate_repeated_fires_per_seed_exact_count_preserved():
+    """'repeated fires per seed' + 'exact count' (Opus5 review round 4
+    test list items): a seed with MULTIPLE firings contributes all of them
+    to the pooled observed statistic (matched-firing count is NOT
+    collapsed to one-per-seed), while the null bootstrap still resamples
+    at the SEED level, not the firing level."""
+    # 10 seeds, each firing exactly 3 times (30 total firings each side).
+    karr_by_seed = [[{"a": 5.0 + (i % 3) * 0.5} for _ in range(3)] for i in range(10)]
+    oc_by_seed = [[{"a": 5.0 + (i % 3) * 0.5} for _ in range(3)] for i in range(10)]
+    result = metrics.payload_gate(karr_by_seed, oc_by_seed, rng=_rng(), expected_n_seeds=10)
+    assert result.n_nonzero_karr == 30  # exact pooled firing count preserved, not collapsed to 10
+    assert result.n_nonzero_oc == 30
+    assert result.verdict in ("PASS", "SEED_NOISE")
 
 
 # ---------------------------------------------------------------------------
@@ -435,7 +533,7 @@ def test_payload_gate_big_small_masking_worst_component_verdict_wins():
     karr_payloads = [{"BIG": b, "SMALL": s} for b, s in zip(karr_big, karr_small)]
     oc_payloads = [{"BIG": b, "SMALL": s} for b, s in zip(oc_big, oc_small)]
 
-    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng())
 
     per_component = {c.component: c for c in result.per_component}
     assert per_component["BIG"].verdict == "SEED_NOISE"
@@ -457,7 +555,7 @@ def test_payload_gate_missing_oc_component_is_no_oc_component_not_silent_zero_fi
     cleanly."""
     karr_payloads = [{"shared": 5.0 + (i % 3), "dropped_by_oc": 9.0} for i in range(20)]
     oc_payloads = [{"shared": 5.0 + (i % 3)} for i in range(20)]
-    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng())
     assert result.verdict == "NO_OC_COMPONENT"
     per_component = {c.component: c.verdict for c in result.per_component}
     assert per_component["dropped_by_oc"] == "NO_OC_COMPONENT"
@@ -470,7 +568,7 @@ def test_payload_gate_spurious_oc_only_component_detected():
     distinct SPURIOUS_OC_COMPONENT verdict."""
     karr_payloads = [{"shared": 5.0 + (i % 3)} for i in range(20)]
     oc_payloads = [{"shared": 5.0 + (i % 3), "oc_only": 9.0} for i in range(20)]
-    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng())
     assert result.verdict == "SPURIOUS_OC_COMPONENT"
     per_component = {c.component: c.verdict for c in result.per_component}
     assert per_component["oc_only"] == "SPURIOUS_OC_COMPONENT"
@@ -486,7 +584,7 @@ def test_payload_gate_per_component_null_is_not_pooled_across_components():
     high_variance = [0.0, 10.0, 0.0, 10.0, 20.0, -10.0] * 5
     karr_payloads = [{"lo": lo, "hi": hi} for lo, hi in zip(low_variance, high_variance)]
     oc_payloads = [dict(p) for p in karr_payloads]
-    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng(1))
+    result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng(1))
     per_component = {c.component: c for c in result.per_component}
     assert per_component["lo"].q95_null != per_component["hi"].q95_null
     assert per_component["hi"].q95_null > per_component["lo"].q95_null
@@ -501,8 +599,8 @@ def test_payload_gate_required_components_enforced_before_metric():
     karr_payloads = [{"RIBOSOME_30S": 5.0 + (i % 3)} for i in range(20)]
     oc_payloads = [{"RIBOSOME_30S": 5.0 + (i % 3)} for i in range(20)]
     result = metrics.payload_gate(
-        karr_payloads,
-        oc_payloads,
+        _by_seed(karr_payloads),
+        _by_seed(oc_payloads),
         rng=_rng(),
         required_components=frozenset({"RIBOSOME_30S", "RIBOSOME_50S"}),
     )
@@ -511,8 +609,8 @@ def test_payload_gate_required_components_enforced_before_metric():
 
     # The exact matching keyspace must NOT be refused.
     result_ok = metrics.payload_gate(
-        karr_payloads,
-        oc_payloads,
+        _by_seed(karr_payloads),
+        _by_seed(oc_payloads),
         rng=_rng(),
         required_components=frozenset({"RIBOSOME_30S"}),
     )
@@ -534,7 +632,7 @@ def test_ribosome_assembly_smoke_adapter_required_payload_components_two_wids():
     karr_payloads = [{"RIBOSOME_30S": 5.0 + (i % 3)} for i in range(20)]
     oc_payloads = [{"RIBOSOME_30S": 5.0 + (i % 3)} for i in range(20)]
     result = metrics.payload_gate(
-        karr_payloads, oc_payloads, rng=_rng(), required_components=adapter.required_payload_components
+        _by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng(), required_components=adapter.required_payload_components
     )
     assert result.verdict == "FAIL"
 

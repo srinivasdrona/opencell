@@ -574,3 +574,96 @@ k_eng_provenance field presence). The RA seed-0 structural smoke remains
 lacks the M4 stride/window contract fields and its single seed never
 meets any support floor, so it cannot and does not produce a computed
 verdict.
+
+## 10. Opus5 review round 4 (ACCEPT with two pre-run corrections)
+
+Opus5 **accepted** the round-3 foundation, gating only two pre-run
+corrections before any process-branch work begins. Both are hardening
+fixes to already-accepted machinery, not new gates.
+
+### Item #1 — `audit_index`'s `karr_source` ancestor/prefix semantics
+
+Round 3's `karr_source` check used exact-set-membership against the
+recorded input paths' parent directories — correct for the single-file/
+single-seed case, but it had no defined behavior for the multi-seed case
+(several seeds' inputs living under per-seed subdirectories of one common
+`karr_source` ancestor), and a naive fallback to `path.startswith(karr_source)`
+would have wrongly accepted a sibling directory that merely shares a
+string prefix (e.g. `karr_native_evil` "starting with" `karr_native`).
+
+Fixed with two new helpers in `evidence.py`:
+- `_normalized_posix_parts(path_str)` — normalizes a path string to a
+  tuple of segments, collapsing `.`/empty components, and returns `None`
+  (malformed) only when a `..` tries to pop past the start of the given
+  string itself (genuine traversal). A leading `/` or drive letter is
+  *not* itself treated as an error (production paths are always
+  repo-relative POSIX by the time they reach `audit_index`; several
+  pre-existing tests use synthetic absolute-looking placeholders purely
+  to exercise the comparison logic in isolation).
+- `_is_repo_relative_ancestor(root, path)` — compares normalized segment
+  tuples (`path_parts[:len(root_parts)] == root_parts`), so it correctly
+  accepts both the single-file exact-parent case and any common-ancestor
+  multi-seed case, while rejecting sibling directories and `..`-traversal
+  paths that a string-prefix check would wrongly accept.
+
+`audit_index()`'s `karr_source` block now runs this ancestor check
+against *every* recorded `input_manifest.json` path independently (not
+just a single parent-dir lookup), collecting and reporting both
+"uncovered" (fails the ancestor check) and "malformed" (traversal
+detected) paths as explicit problems.
+
+New tests (`test_l2_event_evidence.py`): single-file exact-parent accepted,
+common-parent multi-seed ancestor accepted, root-level ancestor accepted,
+forged-sibling-directory rejected, path-traversal rejected, and a direct
+unit test of `_is_repo_relative_ancestor` against the string-prefix trap.
+
+### Item #2 — payload metric API encodes seed cardinality explicitly
+
+Round 3's `payload_gate(karr_payloads: list[dict], oc_payloads: list[dict])`
+accepted a **flat** list of per-firing payload dicts, and its docstring
+incorrectly claimed positional entries corresponded to seeds/clusters
+(mirroring `count_gate`'s convention). In fact the per-component null used
+`clustered_bootstrap_scalar` over that flat array — resampling individual
+firings as if each were an independent seed. Any real caller that flattened
+one seed's multiple repeated firings into this list (exactly what a
+repeated-firing process like RibosomeAssembly naturally produces) would
+get a pseudo-replicated, artificially tight null, masking real divergences.
+
+Fixed by requiring an explicit per-seed cohort shape:
+`payload_gate(karr_payloads_by_seed: list[list[dict]], oc_payloads_by_seed: list[list[dict]], expected_n_seeds: int | None = None, ...)`.
+An up-front cardinality check (`SEED_CARDINALITY_MISMATCH`, a new
+FAIL-class `ChannelVerdict`) rejects mismatched Karr/OC seed-list lengths
+or either not matching `expected_n_seeds`, *before* any flattening or
+metric computation. `_payload_component_result()` now builds
+`karr_seed_bags: list[np.ndarray]` (one array per seed) and computes the
+null via `clustered_bootstrap_bag` — the same existing primitive already
+used by `timing_gate_repeated_firing` — rather than reinventing seed-
+cluster resampling a second time. `runner.py::evaluate_gate()`'s
+corresponding params were renamed to match, and it passes
+`expected_n_seeds=n_seeds_total`.
+
+New tests (`test_l2_event_metrics.py`): seed-cardinality mismatch
+(Karr-vs-OC lengths, and vs. `expected_n_seeds`), a single-seed
+pseudo-replication case asserting `DEGENERATE_NULL` (a 1-seed cluster
+bootstrap can only ever resample itself, so `q95_null == 0.0`
+deterministically), empty seeds interleaved with firing seeds, and
+repeated-fires-per-seed exact pooled-count preservation.
+
+### Impact on tracked evidence
+
+Neither fix touches the RA seed-0 structural-smoke code path (the RA
+adapter's smoke mode never calls `payload_gate`), so `audit_index()`
+against the existing round-3 tracked bundle
+(`docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/`) was
+re-verified post-fix and still reports **zero problems**, and
+`result.json`'s verdict remains `NOT_APPLICABLE`. No bundle regeneration
+was required this round.
+
+### Full test suite
+
+169/169 `l2_event`-scoped tests passing
+(`bin\oc-pytest tests/scripts -k l2_event -q`), up from 158 in round 3 —
+the +11 are the round-4 tests listed above (6 for item #1, 5 for item #2;
+~15 pre-existing `payload_gate` call sites were migrated in place to the
+new per-seed cohort shape without changing their asserted statistical
+behavior).

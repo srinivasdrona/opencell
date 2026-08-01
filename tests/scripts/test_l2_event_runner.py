@@ -322,8 +322,8 @@ def test_evaluate_gate_payload_gate_wired_when_magnitude_gateable():
         adapter=adapter,
         karr_timelines=karr,
         oc_timelines=oc,
-        karr_payloads=karr_payloads,
-        oc_payloads=oc_payloads,
+        karr_payloads_by_seed=[[p] for p in karr_payloads],
+        oc_payloads_by_seed=[[p] for p in oc_payloads],
         rng=_rng(),
     )
     payload_channel = next(c for c in result.channels if c.channel == "payload")

@@ -196,8 +196,8 @@ def evaluate_gate(
     adapter: EventAdapter,
     karr_timelines: list[EventTimeline],
     oc_timelines: list[EventTimeline],
-    karr_payloads: list[dict[str, float]] | None = None,
-    oc_payloads: list[dict[str, float]] | None = None,
+    karr_payloads_by_seed: list[list[dict[str, float]]] | None = None,
+    oc_payloads_by_seed: list[list[dict[str, float]]] | None = None,
     karr_single_fire_offsets: np.ndarray | None = None,
     oc_single_fire_offsets: np.ndarray | None = None,
     rng: np.random.Generator,
@@ -262,8 +262,8 @@ def evaluate_gate(
         raise ValueError(f"Unknown event_timing_model: {event_timing_model!r}")
 
     if magnitude_gateable:
-        if karr_payloads is None or oc_payloads is None:
-            raise ValueError("magnitude_gateable=True requires karr/oc_payloads.")
+        if karr_payloads_by_seed is None or oc_payloads_by_seed is None:
+            raise ValueError("magnitude_gateable=True requires karr/oc_payloads_by_seed.")
         # Opus5 review round 3, item #2: an adapter may declare its exact
         # required payload component keyspace (e.g. RA's 2 real WIDs) so
         # `payload_gate` can refuse BEFORE computing anything if the
@@ -272,8 +272,21 @@ def evaluate_gate(
         # one, in which case only the generic union/NO_OC_COMPONENT/
         # SPURIOUS_OC_COMPONENT checks apply.
         required_components = getattr(adapter, "required_payload_components", None)
+        # Opus5 review round 4, item #2: pass `expected_n_seeds` so
+        # `payload_gate` refuses hard (SEED_CARDINALITY_MISMATCH) rather
+        # than silently accepting a flattened/mis-clustered payload cohort
+        # whose total element count happens to look plausible but whose
+        # per-seed grouping doesn't match this ensemble's actual seed
+        # count (the same `n_seeds_total` already used for the count/
+        # timing gates and `check_ensemble_size` above).
         payload_result = metrics.payload_gate(
-            karr_payloads, oc_payloads, rng=rng, b_resamples=b_resamples, k_eng=k_eng, required_components=required_components
+            karr_payloads_by_seed,
+            oc_payloads_by_seed,
+            rng=rng,
+            b_resamples=b_resamples,
+            k_eng=k_eng,
+            required_components=required_components,
+            expected_n_seeds=n_seeds_total,
         )
     else:
         payload_result = GateChannelResult(
@@ -309,7 +322,11 @@ def evaluate_gate(
     # keyspace verdicts are FAIL-class (an adapter mapping gap/spurious
     # component is a real defect, not a numeric divergence) and must roll
     # into the process verdict the same way FAIL/NO_OC_SUPPORT already do.
-    FAIL_LIKE = {"FAIL", "NO_OC_SUPPORT", "NO_OC_COMPONENT", "SPURIOUS_OC_COMPONENT"}
+    # Opus5 review round 4, item #2: `SEED_CARDINALITY_MISMATCH` (a
+    # caller/adapter passed a payload cohort whose per-seed shape doesn't
+    # match the ensemble) is likewise a real defect, not a refusal-for-
+    # under-power -- it rolls into FAIL_LIKE, not NON_COMPUTABLE.
+    FAIL_LIKE = {"FAIL", "NO_OC_SUPPORT", "NO_OC_COMPONENT", "SPURIOUS_OC_COMPONENT", "SEED_CARDINALITY_MISMATCH"}
 
     reasons: list[str] = []
     if oc_only:

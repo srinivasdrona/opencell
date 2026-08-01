@@ -73,6 +73,20 @@ EVIDENCE_INDEX_SCHEMA_VERSION = 1
 #:   be an adapter/OC-port bug (OC is inventing a component Karr's own
 #:   normalization never produced) and must FAIL, never be silently
 #:   dropped from the comparison.
+#:
+#: Opus5 review round 4 (payload seed-cardinality item #2) added one more,
+#: also FAIL-class:
+#:
+#: * ``SEED_CARDINALITY_MISMATCH`` -- ``payload_gate``'s
+#:   ``karr_payloads_by_seed``/``oc_payloads_by_seed`` arguments are
+#:   per-seed cohorts (one inner list per seed, mirroring
+#:   ``karr_timelines``/``oc_timelines``'s cardinality) rather than a flat
+#:   pooled list of firings. If the two per-seed cohorts don't have the
+#:   same length as each other, or don't match the ensemble's actual seed
+#:   count (when known), that is a caller/adapter bug -- a silently
+#:   mismatched or flattened cohort would let individual firings be
+#:   pseudo-replicated as if they were independent seed clusters in the
+#:   bootstrap. Refused before any metric is computed, never coerced.
 ChannelVerdict = Literal[
     "PASS",
     "FAIL",
@@ -85,6 +99,7 @@ ChannelVerdict = Literal[
     "NOT_COMPUTED",
     "NO_OC_COMPONENT",
     "SPURIOUS_OC_COMPONENT",
+    "SEED_CARDINALITY_MISMATCH",
 ]
 
 #: Process-level aggregate verdict. ``NOT_APPLICABLE`` marks a structural
