@@ -1,0 +1,61 @@
+# PROPOSED registry row fragment for Cytokinesis -- NOT a live registry
+# file and NOT wired into scripts/l2_event/registry.py's loader.
+#
+# Scope note (l2-event-cytokinesis case directive): this task implements
+# the Cytokinesis adapter + its own tests only. It explicitly does NOT
+# edit docs/phase_f/l2_event/event_registry.yaml (which stays frozen at
+# adapter_status: not_implemented / adapter_id: null for Cytokinesis).
+# This file is a proposal a future registry-owning task can diff against
+# and fold in -- flipping the two fields below (adapter_id,
+# adapter_status) is the ONLY registry change this adapter's existence
+# would justify; every other field is unchanged from the authoritative
+# row in event_registry.yaml today.
+#
+# Preconditions for actually landing this flip (NOT satisfied by this
+# task, and not claimed to be):
+#   1. A real MATLAB event-window extractor for Cytokinesis must exist
+#      and produce >=1 seed of per_process_traces_v2_event_s{seed:03d}/
+#      Cytokinesis_100ticks.mat (0/50 seeds exist on disk today -- see
+#      event_registry.yaml's current Cytokinesis notes and
+#      L2_EVENT_FOUNDATION_STATUS.md). Until then `adapter_status` must
+#      stay at most `structural_smoke_only`, matching RibosomeAssembly's
+#      current precedent (1/50 real seeds, still smoke-only).
+#   2. The extractor must ratify (or replace) this adapter's own
+#      `division_relative_offset` anchor convention
+#      (`t_fire - tick_offset`, using `WindowGrid.tick_offset` as
+#      "ticks-from-division/reference anchor") against real Karr trace
+#      metadata -- this task defines the convention but has no real data
+#      to validate it against (spec QO1 remains open).
+#   3. 50 real seeds (or the registry's required_n_seeds count) must be
+#      available to actually run evaluate_gate in "gate" mode, not just
+#      "smoke" mode.
+
+process: Cytokinesis
+in_scope_v4: true
+adapter_id: cytokinesis.division_complete.v1
+adapter_status: structural_smoke_only  # NOT gating_ready -- see preconditions above
+event_timing_model: single_firing
+magnitude_gateable: false
+required_n_seeds: 50
+deferred_reason: null
+notes: >
+  PROPOSAL ONLY (l2-event-cytokinesis case directive; not applied to the
+  live registry). scripts/l2_event/adapters/cytokinesis.py implements
+  CytokinesisEventAdapter (rising-edge single-firing detector over
+  cell.division_complete, both Karr- and OC-side), with
+  tests/scripts/test_l2_event_adapters_cytokinesis.py exercising it
+  end-to-end through evaluate_gate on synthetic 50-seed cohorts (PASS,
+  44/50-refuses, wrong-anchor-FAIL, spurious-OC-fire-FAIL,
+  quiet-trace-refuses scenarios) plus one real-code-path integration
+  test against the actual KarrCytokinesisProcess. No MATLAB extraction
+  was performed and no real event-window trace exists for this process
+  yet, so this row's adapter_status is proposed as structural_smoke_only
+  (matching the RibosomeAssembly precedent for "adapter code exists, but
+  real gating data does not"), NOT gating_ready -- promoting to
+  gating_ready is a decision for whichever task lands the extractor and
+  the 50 real seeds. See
+  docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md for the full
+  rule-by-rule verification, the verified ftsz_ring_complete/GTP
+  discrepancy against opencell/vivarium/karr_cytokinesis.py, and the
+  exact anchor-formula/extraction requirements a future extractor must
+  satisfy.
