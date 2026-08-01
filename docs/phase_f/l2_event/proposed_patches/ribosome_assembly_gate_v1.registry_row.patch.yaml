@@ -1,0 +1,73 @@
+# Proposed `event_registry.yaml` row patch — RibosomeAssembly gate adapter
+#
+# STATUS: PROPOSAL ONLY. NOT APPLIED. Do not merge into
+# docs/phase_f/l2_event/event_registry.yaml as part of this change.
+#
+# This fragment shows the row that would replace the current RibosomeAssembly
+# entry IF AND ONLY IF the missing raw data described in
+# docs/phase_f/l2_event/RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md
+# ("Exact missing raw-data requirements") is supplied:
+#   1. 49 additional event-window seeds
+#      (data/m1_sources/karr_native/per_process_traces_v2_event_s{001..049}/
+#      RibosomeAssembly_100ticks.mat), and
+#   2. a complete M4 stride/tick_start/tick_end (or window_anchor) metadata
+#      contract on all 50 seed files, including a re-extracted seed 000.
+#
+# Until then, adapter_status MUST remain structural_smoke_only in the real
+# registry and ribosome_assembly.gate.v1 remains an unregistered,
+# non-authoritative module
+# (scripts/l2_event/adapters/ribosome_assembly_gate.py) exercised only by its
+# own test suite (tests/scripts/test_l2_event_ribosome_assembly_gate.py)
+# against synthetic 50-seed cohorts and the existing single real seed for
+# structural round-trip validation only.
+#
+# Current (authoritative, unchanged) row for reference:
+#
+#   - process: RibosomeAssembly
+#     in_scope_v4: true
+#     adapter_id: ribosome_assembly.smoke.v1
+#     adapter_status: structural_smoke_only
+#     event_timing_model: repeated_firing
+#     magnitude_gateable: true
+#     required_n_seeds: 50
+#     deferred_reason: null
+#     notes: >
+#       In v4 scope (spec §8, D2). Exactly 1 of 50 required event-window
+#       seeds exists on disk (seed 000 under
+#       data/m1_sources/karr_native/per_process_traces_v2_event_s000/). The
+#       registered adapter is a read-only structural smoke adapter only
+#       (scripts/l2_event/adapters/ribosome_assembly_smoke.py); the runner
+#       refuses to compute a gate verdict from it (single-seed ensemble
+#       refusal, requirement 4) and this task does not implement a
+#       gating-ready adapter.
+#
+# Proposed future row (NOT applied — data prerequisites unmet):
+
+- process: RibosomeAssembly
+  in_scope_v4: true
+  adapter_id: ribosome_assembly.gate.v1
+  adapter_status: gating_ready
+  event_timing_model: repeated_firing
+  magnitude_gateable: true
+  required_n_seeds: 50
+  deferred_reason: null
+  notes: >
+    PROPOSED, NOT YET ELIGIBLE. ribosome_assembly.gate.v1
+    (scripts/l2_event/adapters/ribosome_assembly_gate.py) normalizes Karr
+    complexs-channel tick incidence and OC
+    update.get('complex', {}).get('counts', {}) payload to the fixed WID
+    pair {RIBOSOME_30S, RIBOSOME_50S} (index 0 -> 30S, 1 -> 50S, confirmed
+    seed-independent against the live KarrRibosomeAssemblyProcess). Adapter
+    round-trip on the existing seed-000 trace reproduces fire ticks [9, 17]
+    and the expected payload keys, and 20 synthetic-cohort tests exercise
+    count/timing/payload PASS and FAIL paths end to end via evaluate_gate.
+    This row must NOT be merged as gating_ready until: (1) 49 additional
+    event-window seeds exist under
+    data/m1_sources/karr_native/per_process_traces_v2_event_s{001..049}/
+    RibosomeAssembly_100ticks.mat, and (2) all 50 seed files (including a
+    re-extracted seed 000) carry the complete M4 stride/tick_start/tick_end
+    (or window_anchor) metadata contract -- the current seed-000 file
+    predates that contract and triggers INCOMPLETE_WINDOW today. See
+    docs/phase_f/l2_event/RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md for the
+    verified refusal evidence. No MATLAB/Octave extraction was performed to
+    produce this proposal.
