@@ -68,12 +68,44 @@ def _import_l2_replay_common():
 
 class RibosomeAssemblySmokeAdapter(EventAdapter):
     """Read-only structural smoke adapter for RibosomeAssembly. See module
-    docstring -- this must never be used to compute a gate verdict."""
+    docstring -- this must never be used to compute a gate verdict.
+
+    ``fire_count`` semantics (declared explicitly per Opus5 review M3/
+    metric-correctness): both :meth:`karr_observation` and
+    :meth:`oc_observation` report **tick incidence** -- ``1`` if the
+    ``complexs`` channel shows any net-positive delta at this tick, ``0``
+    otherwise. This is NOT a particle/molecule count (it never sums the
+    magnitude of ``delta``/``complex_counts``); a tick where 1 complex
+    forms and a tick where 50 form both report ``fire_count=1``. Magnitude
+    information belongs to the ``payload`` channel instead, gated
+    separately by ``metrics.payload_gate``. Any future adapter that wants
+    particle-count semantics for the count/timing channels must declare
+    that explicitly in its own docstring and registry notes -- this
+    adapter's tick-incidence choice must not be assumed generic.
+    """
 
     adapter_id = "ribosome_assembly.smoke.v1"
     process_name = "RibosomeAssembly"
     #: Karr's `complexs` payload channel is treated as the event magnitude.
     payload_channel = "complexs"
+
+    def __init__(self, complex_index_by_wid: dict[int, str] | None = None):
+        """``complex_index_by_wid`` maps Karr's positional index within the
+        ``complexs`` channel vector to the OC wid string that
+        ``update["complex"]["counts"]`` uses as its key (M3, Opus5 review).
+
+        Without this mapping, :meth:`karr_observation` falls back to
+        placeholder ``complex_{i}`` payload keys that are **guaranteed**
+        never to match any real OC payload key -- silently zero-filling
+        the OC side of every payload comparison and risking a false PASS
+        if Karr's own magnitudes happen to be small. Real callers (see
+        :func:`run_structural_smoke`) must always supply this mapping,
+        derived from :func:`build_karr_conditioned_state`'s inferred
+        ``wids_by_observable["complexs"]``. Only this adapter's own unit
+        tests exercise the no-mapping fallback deliberately, to assert the
+        disjoint-key-space failure mode ``metrics.payload_gate`` detects.
+        """
+        self.complex_index_by_wid: dict[int, str] = dict(complex_index_by_wid or {})
 
     def karr_observation(self, window: WindowGrid, tick: int) -> EventObservation:
         before = window.before(self.payload_channel, tick)
@@ -81,7 +113,12 @@ class RibosomeAssemblySmokeAdapter(EventAdapter):
         delta = after - before
         formed = delta[delta > 0]
         fired = bool(formed.size > 0)
-        payload = {f"complex_{i}": float(d) for i, d in enumerate(delta) if d > 0} if fired else {}
+        payload = {}
+        if fired:
+            for i, d in enumerate(delta):
+                if d > 0:
+                    key = self.complex_index_by_wid.get(i, f"complex_{i}")
+                    payload[key] = float(d)
         return EventObservation(
             tick=tick,
             fired=fired,

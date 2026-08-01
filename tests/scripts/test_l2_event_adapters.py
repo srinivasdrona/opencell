@@ -135,7 +135,7 @@ def test_ribosome_assembly_smoke_adapter_karr_observation_matches_real_trace_eve
     )
     from scripts.l2_event.window_loader import load_event_window
 
-    window = load_event_window(_RA_TRACE, required_observables=_RA_OBSERVABLES)
+    window = load_event_window(_RA_TRACE, required_observables=_RA_OBSERVABLES, require_stride_contract=False)
     adapter = RibosomeAssemblySmokeAdapter()
     assert adapter.process_name == "RibosomeAssembly"
 
@@ -180,3 +180,85 @@ def test_run_structural_smoke_end_to_end_against_real_seed0_never_returns_a_gate
     assert result["tick_offset"] == 200.0
     assert result["karr_total_fires"] == 2
     assert result["oc_total_fires"] == 2
+    # M4: the real seed-0 MAT predates the stride contract; the smoke must
+    # honestly surface that (never silently claim a complete contract).
+    assert result["stride_contract_ok"] is False
+    assert result["stride_contract_problems"]
+
+
+# ---------------------------------------------------------------------------
+# M3 (Opus5 review): complex_index_by_wid payload mapping + fire_count
+# semantics
+# ---------------------------------------------------------------------------
+
+
+def _complex_window(deltas_per_tick: list[list[float]]) -> WindowGrid:
+    """Synthetic window whose `complexs` channel has `deltas_per_tick[t][i]
+    = after[t][i] - before[t][i]`, i.e. before is always 0 and after is the
+    requested delta directly, for `len(deltas_per_tick[0])` complex
+    indices."""
+    n_ticks = len(deltas_per_tick)
+    k = len(deltas_per_tick[0])
+    after = np.array(deltas_per_tick, dtype=float)
+    before = np.zeros((n_ticks, k), dtype=float)
+    return WindowGrid(
+        process_name="RibosomeAssembly",
+        seed=0,
+        n_ticks=n_ticks,
+        tick_offset=0.0,
+        trace_path=Path("synthetic_complexs.mat"),
+        observables=("complexs",),
+        states_before={"complexs": before},
+        states_after={"complexs": after},
+    )
+
+
+def test_ribosome_assembly_smoke_adapter_payload_uses_complex_index_by_wid_mapping_when_supplied():
+    """M3: when a `complex_index_by_wid` mapping is supplied (as the real
+    `run_structural_smoke` pipeline always does), payload keys must be the
+    real wid strings, not positional `complex_{i}` placeholders -- this is
+    what lets the payload line up with OC's `update["complex"]["counts"]`
+    keys instead of silently zero-filling every comparison."""
+    from scripts.l2_event.adapters.ribosome_assembly_smoke import RibosomeAssemblySmokeAdapter
+
+    window = _complex_window([[0.0, 0.0], [3.0, 0.0], [0.0, 5.0]])
+    adapter = RibosomeAssemblySmokeAdapter(complex_index_by_wid={0: "RIBOSOME_30S", 1: "RIBOSOME_50S"})
+
+    obs1 = adapter.karr_observation(window, 1)
+    assert obs1.fired is True
+    assert obs1.payload == {"RIBOSOME_30S": 3.0}
+
+    obs2 = adapter.karr_observation(window, 2)
+    assert obs2.payload == {"RIBOSOME_50S": 5.0}
+
+
+def test_ribosome_assembly_smoke_adapter_payload_falls_back_to_positional_keys_without_mapping():
+    """Without a mapping (the adapter's own unit-test-only default), the
+    fallback is the meaningless positional `complex_{i}` key -- this is
+    deliberately preserved so `metrics.payload_gate`'s disjoint-key-space
+    assertion (M3 defense-in-depth) has a real caller-misuse scenario to
+    guard against; production callers must always supply the mapping."""
+    from scripts.l2_event.adapters.ribosome_assembly_smoke import RibosomeAssemblySmokeAdapter
+
+    window = _complex_window([[0.0, 0.0], [3.0, 0.0]])
+    adapter = RibosomeAssemblySmokeAdapter()
+    obs1 = adapter.karr_observation(window, 1)
+    assert obs1.payload == {"complex_0": 3.0}
+
+
+def test_ribosome_assembly_fire_count_is_tick_incidence_not_particle_count():
+    """Declared fire_count semantics (M3/metric-correctness): a tick with
+    ONE complex forming and a tick with MANY complexes forming both report
+    fire_count=1 -- fire_count is tick incidence, never a particle/molecule
+    count. Magnitude belongs to the payload channel only."""
+    from scripts.l2_event.adapters.ribosome_assembly_smoke import RibosomeAssemblySmokeAdapter
+
+    window = _complex_window([[1.0, 0.0], [50.0, 30.0]])
+    adapter = RibosomeAssemblySmokeAdapter(complex_index_by_wid={0: "A", 1: "B"})
+    obs_one_forms = adapter.karr_observation(window, 0)
+    obs_many_form = adapter.karr_observation(window, 1)
+    assert obs_one_forms.fire_count == 1
+    assert obs_many_form.fire_count == 1
+    assert obs_one_forms.fire_count == obs_many_form.fire_count
+    # The magnitude difference is visible in payload, not fire_count.
+    assert sum(obs_many_form.payload.values()) > sum(obs_one_forms.payload.values())
