@@ -290,3 +290,156 @@ def test_current_git_sha_falls_back_to_translated_worktree_gitdir(tmp_path, monk
 def test_current_git_sha_returns_none_when_no_git_file_present(tmp_path, monkeypatch):
     monkeypatch.setattr(evidence, "_REPO_ROOT", tmp_path)
     assert evidence.current_git_sha() is None
+
+
+# ---------------------------------------------------------------------------
+# Opus5 review round 3: git_sha/registry_sha256/karr_source verification
+# (item #4), exact mandatory-file coverage (item #5)
+# ---------------------------------------------------------------------------
+
+
+def _build_bundle_and_index(tmp_path, monkeypatch, artifacts: dict) -> Path:
+    monkeypatch.setattr(evidence, "LIVE_EVIDENCE_ROOT", tmp_path / "artifacts")
+    monkeypatch.setattr(evidence, "TRACKED_BUNDLE_ROOT", tmp_path / "bundle")
+    index_path = tmp_path / "evidence_index.json"
+    monkeypatch.setattr(evidence, "TRACKED_INDEX_PATH", index_path)
+    run_dir = evidence.write_run_artifacts("TestProc", "run1", artifacts)
+    evidence.bundle_run(run_dir, "TestProc")
+    evidence.write_index(["TestProc"], evidence_root=tmp_path / "bundle")
+    return index_path
+
+
+def test_audit_index_detects_forged_git_sha_not_a_real_commit(tmp_path, monkeypatch):
+    """Opus5 review round 3, item #4: 'audit verifies git_sha ..., not
+    merely stores'. A well-formed-looking (40-hex) but fabricated git_sha
+    that does not exist anywhere in this repository's history must be
+    flagged -- forging a plausible-looking sha must not be enough to pass
+    the audit."""
+    artifacts = _fake_artifacts()
+    artifacts["provenance.json"]["git_sha"] = "f" * 40  # syntactically valid, does not exist
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert any("does not exist as a real commit" in p for p in problems)
+
+
+def test_audit_index_accepts_a_real_existing_git_sha(tmp_path, monkeypatch):
+    """The mirror-positive case: the CURRENT HEAD sha (guaranteed to exist
+    in this repo's history) must not be flagged."""
+    real_sha = evidence.current_git_sha()
+    if not real_sha:
+        pytest.skip("git is not available/resolvable in this test environment")
+    artifacts = _fake_artifacts()
+    artifacts["provenance.json"]["git_sha"] = real_sha
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert not any("git_sha" in p for p in problems)
+
+
+def test_audit_index_short_placeholder_git_sha_is_skipped_not_flagged(tmp_path, monkeypatch):
+    """Existing test fixtures across this file use an 8-char placeholder
+    git_sha ('deadbeef') that is not a real 40-hex commit sha -- this must
+    remain a no-op for the new verification (format-gated), not a new
+    false failure across every other test in this file."""
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, _fake_artifacts())
+    problems = evidence.audit_index(index_path)
+    assert problems == []
+
+
+def test_audit_index_detects_forged_registry_sha256(tmp_path, monkeypatch):
+    """Opus5 review round 3, item #4: a `registry_sha256` that does not
+    match the registry file's OWN actual current hash must be flagged --
+    the audit recomputes it independently rather than trusting the
+    recorded value."""
+    artifacts = _fake_artifacts()
+    artifacts["provenance.json"]["registry_sha256"] = "0" * 64
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert any("registry_sha256" in p for p in problems)
+
+
+def test_audit_index_accepts_a_correct_registry_sha256(tmp_path, monkeypatch):
+    from scripts.l2_event.registry import registry_sha256
+
+    artifacts = _fake_artifacts()
+    artifacts["provenance.json"]["registry_sha256"] = registry_sha256()
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert not any("registry_sha256" in p for p in problems)
+
+
+def test_audit_index_registry_sha256_not_set_is_skipped_not_flagged(tmp_path, monkeypatch):
+    """Existing fixtures never set `registry_sha256` at all -- this must
+    remain a no-op (presence-gated), matching `_fake_artifacts`'s
+    provenance.json which has no such key."""
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, _fake_artifacts())
+    problems = evidence.audit_index(index_path)
+    assert problems == []
+
+
+def test_audit_index_detects_karr_source_inconsistent_with_input_manifest(tmp_path, monkeypatch):
+    """Opus5 review round 3, item #4: `karr_source` must be internally
+    consistent with `input_manifest.json`'s own recorded input
+    directory/directories -- a provenance doc claiming a karr_source that
+    disagrees with the manifest it ships alongside is a real integrity
+    problem."""
+    artifacts = _fake_artifacts()
+    artifacts["input_manifest.json"]["inputs"][0]["path"] = "/abs/some/path.mat"
+    artifacts["provenance.json"]["karr_source"] = "/abs/totally/different/dir"
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert any("karr_source" in p for p in problems)
+
+
+def test_audit_index_accepts_karr_source_consistent_with_input_manifest(tmp_path, monkeypatch):
+    artifacts = _fake_artifacts()
+    artifacts["input_manifest.json"]["inputs"][0]["path"] = "/abs/some/path.mat"
+    artifacts["provenance.json"]["karr_source"] = "/abs/some"
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, artifacts)
+    problems = evidence.audit_index(index_path)
+    assert not any("karr_source" in p for p in problems)
+
+
+def test_bundle_run_normalizes_provenance_karr_source_to_repo_relative(tmp_path, monkeypatch):
+    """Opus5 review round 3, item #4/#5: `bundle_run` must normalize
+    `provenance.json`'s `karr_source` field the same way it already
+    normalizes `input_manifest.json`'s input paths -- before this fix,
+    only the manifest was made portable, leaving an absolute worktree
+    path baked into every tracked provenance.json."""
+    monkeypatch.setattr(evidence, "LIVE_EVIDENCE_ROOT", tmp_path / "artifacts")
+    monkeypatch.setattr(evidence, "TRACKED_BUNDLE_ROOT", tmp_path / "bundle")
+    artifacts = _fake_artifacts()
+    real_repo_dir = REPO_ROOT / "scripts" / "l2_event"
+    artifacts["provenance.json"]["karr_source"] = str(real_repo_dir)
+    run_dir = evidence.write_run_artifacts("TestProc", "run1", artifacts)
+    bundle_dir = evidence.bundle_run(run_dir, "TestProc")
+    provenance = read_json(bundle_dir / "provenance.json")
+    assert provenance["karr_source"] == "scripts/l2_event"
+    assert not Path(provenance["karr_source"]).is_absolute()
+
+
+def test_audit_index_flags_unexpected_extra_file_beyond_mandatory_set(tmp_path, monkeypatch):
+    """Opus5 review round 3, item #5: 'exact coverage' -- an evidence
+    directory containing an unrecognized extra file alongside the 5
+    mandatory ones must be flagged, not silently ignored."""
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, _fake_artifacts())
+    bundle_dir = tmp_path / "bundle" / "TestProc"
+    (bundle_dir / "unexpected_extra.json").write_text("{}", encoding="utf-8")
+    problems = evidence.audit_index(index_path)
+    assert any("unexpected file" in p for p in problems)
+
+
+def test_audit_index_flags_recorded_artifact_set_not_exactly_matching_mandatory_files(tmp_path, monkeypatch):
+    """Opus5 review round 3, item #5: even if every recorded hash matches
+    on disk, a row whose recorded artifact-hash KEY SET does not exactly
+    equal MANDATORY_FILES (e.g. a hand-edited/stale index missing one
+    entry while still claiming a non-INCOMPLETE mode) must be flagged --
+    'missing 1 of N fails'."""
+    index_path = _build_bundle_and_index(tmp_path, monkeypatch, _fake_artifacts())
+    index = read_json(index_path)
+    del index["rows"][0]["artifact_hashes"]["SUMMARY.json"]
+    # Recompute content_hash so this test isolates the exact-coverage
+    # check from the (already-covered) content_hash tamper-detection path.
+    index["content_hash"] = evidence._content_hash(index)
+    write_json_atomic(index_path, index)
+    problems = evidence.audit_index(index_path)
+    assert any("does not exactly cover MANDATORY_FILES" in p for p in problems)

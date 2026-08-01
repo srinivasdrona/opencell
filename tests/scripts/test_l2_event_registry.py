@@ -209,3 +209,27 @@ def test_registry_sha256_is_stable_and_changes_on_content_edit(tmp_path):
     mutated_path = tmp_path / "mutated.yaml"
     mutated_path.write_bytes(original + b"\n# a harmless trailing comment\n")
     assert registry_sha256(mutated_path) != registry_sha256(REGISTRY_PATH)
+
+
+def test_registry_sha256_is_stable_across_crlf_vs_lf_line_endings(tmp_path):
+    """Opus5 review round 3, item #4: 'registry hash computed LF/git-blob-
+    normalized consistently fresh clone'. A CRLF checkout (the Windows git
+    default absent `core.autocrlf`/`.gitattributes` forcing LF) must hash
+    IDENTICALLY to an LF checkout of the byte-for-byte same content --
+    otherwise a `registry_sha256` recorded on one machine/clone would
+    never reproduce on another, breaking the provenance binding this hash
+    exists for."""
+    original_text = REGISTRY_PATH.read_text(encoding="utf-8")
+    # Normalize to a known baseline first (the real file may already be
+    # either style depending on this machine's git config), then write out
+    # two deliberately different-line-ending copies of the SAME content.
+    lf_text = original_text.replace("\r\n", "\n").replace("\r", "\n")
+    crlf_text = lf_text.replace("\n", "\r\n")
+
+    lf_path = tmp_path / "lf.yaml"
+    crlf_path = tmp_path / "crlf.yaml"
+    lf_path.write_bytes(lf_text.encode("utf-8"))
+    crlf_path.write_bytes(crlf_text.encode("utf-8"))
+
+    assert lf_path.read_bytes() != crlf_path.read_bytes(), "precondition: the two files must differ byte-for-byte"
+    assert registry_sha256(lf_path) == registry_sha256(crlf_path)

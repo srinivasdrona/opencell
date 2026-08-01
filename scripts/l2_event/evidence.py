@@ -27,6 +27,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
+from scripts.l2_event.registry import registry_sha256
 from scripts.l2_event.schema import (
     EVIDENCE_INDEX_SCHEMA_VERSION,
     read_json,
@@ -136,6 +137,58 @@ def current_git_sha() -> str | None:
         return None
 
 
+def _git_commit_exists(sha: str) -> bool | None:
+    """Check whether ``sha`` (already validated by the caller to look like
+    a real 40-hex git commit sha) exists as a real commit in this repo's
+    history (Opus5 review round 3, item #4: "audit verifies git_sha ...,
+    not merely stores").
+
+    Returns ``True``/``False`` when git could actually be invoked against
+    this worktree, and ``None`` when git itself could not be run at all
+    (e.g. a bare temp directory with no ``.git``, as
+    ``test_fresh_clone_audit_works_from_tracked_bundle_only`` uses, or any
+    other environment where git is genuinely unavailable) -- callers must
+    treat ``None`` as "unable to check, not a problem" so a fresh-clone or
+    non-repo test fixture is never penalized for something the audit
+    cannot actually verify there.
+    """
+
+    def _try(git_dir_args: list[str]) -> bool | None:
+        try:
+            out = subprocess.run(
+                ["git", *git_dir_args, "cat-file", "-e", f"{sha}^{{commit}}"],
+                cwd=_REPO_ROOT,
+                capture_output=True,
+                text=True,
+                timeout=10,
+            )
+        except Exception:
+            return None
+        if "not a git repository" in (out.stderr or "").lower():
+            return None
+        return out.returncode == 0
+
+    result = _try([])
+    if result is not None:
+        return result
+    # Windows-worktree gitdir-translation fallback (see
+    # _translate_windows_gitdir's docstring for why this is needed).
+    try:
+        git_file = _REPO_ROOT / ".git"
+        if not git_file.is_file():
+            return None
+        content = git_file.read_text().strip()
+        if not content.startswith("gitdir:"):
+            return None
+        gitdir = content.split(":", 1)[1].strip()
+        translated = _translate_windows_gitdir(gitdir)
+        if translated is None:
+            return None
+    except Exception:
+        return None
+    return _try([f"--git-dir={translated}"])
+
+
 def write_run_artifacts(process: str, run_id: str, artifacts: dict[str, dict[str, Any]]) -> Path:
     """Write one run's artifact set atomically under
     ``artifacts/l2_event/<process>/<run_id>/``.
@@ -155,8 +208,18 @@ def write_run_artifacts(process: str, run_id: str, artifacts: dict[str, dict[str
 
 def bundle_run(run_dir: Path, process: str) -> Path:
     """Copy a live run's mandatory files into the tracked portable bundle,
-    normalizing ``input_manifest.json``'s recorded paths to repo-relative
-    POSIX strings (never an absolute worktree path in the tracked bundle).
+    normalizing ``input_manifest.json``'s recorded paths AND
+    ``provenance.json``'s ``karr_source`` field to repo-relative POSIX
+    strings (never an absolute worktree path in the tracked bundle).
+
+    The ``karr_source`` normalization (Opus5 review round 3, item #4/#5)
+    closes a gap the ``input_manifest.json`` normalization already handled:
+    before this fix, only the manifest's input paths were made portable --
+    ``provenance.json``'s own ``karr_source`` field still recorded whatever
+    absolute worktree path (e.g. ``E:\\opencell-worktrees\\...``) the run
+    happened to be generated from, which would never match on a different
+    machine/clone and made ``audit_index``'s karr_source-vs-manifest
+    consistency check (below) meaningless.
     """
     missing = [f for f in MANDATORY_FILES if not (run_dir / f).exists()]
     if missing:
@@ -169,6 +232,10 @@ def bundle_run(run_dir: Path, process: str) -> Path:
         if filename == "input_manifest.json":
             for entry in payload.get("inputs", []):
                 entry["path"] = relative_to_repo(Path(entry["path"]))
+        if filename == "provenance.json":
+            karr_source = payload.get("karr_source")
+            if karr_source:
+                payload["karr_source"] = relative_to_repo(Path(karr_source))
         write_json_atomic(bundle_dir / filename, payload)
     return bundle_dir
 
@@ -284,6 +351,28 @@ def audit_index(index_path: Path = TRACKED_INDEX_PATH) -> list[str]:
     reported problem instead of a silent pass. Likewise an evidence
     directory that exists but produced zero recorded hashes for a
     non-INCOMPLETE row is itself suspicious and must be flagged.
+
+    Opus5 review round 3 additions (items #4/#5) -- each new check below is
+    deliberately gated so it is a no-op against the existing
+    ``test_l2_event_evidence.py`` fake fixtures (which use placeholder
+    values like ``git_sha="deadbeef"`` and never set ``registry_sha256``/
+    ``karr_source`` at all), and only activates for real/deliberately-forged
+    provenance:
+
+    * "exact coverage" (item #5): the recorded artifact filename set must
+      equal :data:`MANDATORY_FILES` exactly (not just "hash matches for
+      whatever happens to be recorded"), and the evidence directory must
+      not contain unexpected extra files beyond those.
+    * git_sha (item #4): only checked when it looks like a real 40-hex
+      commit sha (``_git_commit_exists`` returns ``None`` -- "can't check,
+      not a problem" -- for short placeholders and for environments where
+      git itself can't run, e.g. the fresh-clone bare-tempdir test).
+    * registry_sha256 (item #4): only checked when the key is present at
+      all, against the registry file's OWN current hash (not merely
+      re-storing what was recorded).
+    * karr_source (item #4): only checked when the key is present, cross-
+      referenced against ``input_manifest.json``'s own recorded input
+      directories for internal consistency.
     """
     index = read_json(index_path)
     problems: list[str] = []
@@ -299,6 +388,26 @@ def audit_index(index_path: Path = TRACKED_INDEX_PATH) -> list[str]:
                 "cannot be a silent audit pass (M6)."
             )
             continue
+
+        recorded_files = set(artifact_hashes)
+        if recorded_files != set(MANDATORY_FILES):
+            missing = sorted(set(MANDATORY_FILES) - recorded_files)
+            extra = sorted(recorded_files - set(MANDATORY_FILES))
+            problems.append(
+                f"{row['process']}: recorded artifact set {sorted(recorded_files)} does "
+                f"not exactly cover MANDATORY_FILES {sorted(MANDATORY_FILES)} "
+                f"(missing={missing}, extra={extra}) (item #5 exact coverage)."
+            )
+        if process_dir.exists():
+            on_disk = {p.name for p in process_dir.iterdir() if p.is_file()}
+            unexpected = sorted(on_disk - set(MANDATORY_FILES))
+            if unexpected:
+                problems.append(
+                    f"{row['process']}: unexpected file(s) {unexpected} present in "
+                    f"{relative_to_repo(process_dir)} beyond MANDATORY_FILES "
+                    "(item #5 exact coverage)."
+                )
+
         for filename, recorded_hash in artifact_hashes.items():
             path = process_dir / filename
             if not path.exists():
@@ -310,6 +419,45 @@ def audit_index(index_path: Path = TRACKED_INDEX_PATH) -> list[str]:
                     f"{row['process']}/{filename}: sha256 mismatch "
                     f"(recorded={recorded_hash[:12]}..., actual={actual_hash[:12]}...)"
                 )
+
+        provenance_path = process_dir / "provenance.json"
+        if provenance_path.exists():
+            provenance = read_json(provenance_path)
+            git_sha = provenance.get("git_sha")
+            if git_sha and re.match(r"^[0-9a-f]{40}$", git_sha):
+                commit_exists = _git_commit_exists(git_sha)
+                if commit_exists is False:
+                    problems.append(
+                        f"{row['process']}: provenance.json git_sha={git_sha!r} does not "
+                        "exist as a real commit in this repository's history (item #4)."
+                    )
+            registry_sha = provenance.get("registry_sha256")
+            if registry_sha:
+                actual_registry_sha = registry_sha256()
+                if registry_sha != actual_registry_sha:
+                    problems.append(
+                        f"{row['process']}: provenance.json registry_sha256="
+                        f"{registry_sha[:12]}... does not match the registry's actual "
+                        f"current hash {actual_registry_sha[:12]}... (item #4)."
+                    )
+            karr_source = provenance.get("karr_source")
+            if karr_source:
+                input_manifest_path = process_dir / "input_manifest.json"
+                if input_manifest_path.exists():
+                    manifest = read_json(input_manifest_path)
+                    manifest_dirs = {
+                        Path(entry["path"]).parent.as_posix()
+                        for entry in manifest.get("inputs", [])
+                        if entry.get("path")
+                    }
+                    karr_source_posix = str(karr_source).replace("\\", "/")
+                    if manifest_dirs and karr_source_posix not in manifest_dirs:
+                        problems.append(
+                            f"{row['process']}: provenance.json karr_source="
+                            f"{karr_source_posix!r} does not match input_manifest.json's "
+                            f"recorded input directory/directories {sorted(manifest_dirs)} "
+                            "(item #4)."
+                        )
     recomputed = _content_hash(index)
     if recomputed != index.get("content_hash"):
         problems.append(

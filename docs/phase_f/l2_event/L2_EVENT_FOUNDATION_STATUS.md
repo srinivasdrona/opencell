@@ -289,9 +289,19 @@ tick-0's inferred wids via `build_karr_conditioned_state`), payload keys
 are the real complex names (e.g. `RIBOSOME_30S`/`RIBOSOME_50S`) instead of
 positional `complex_0`/`complex_1` placeholders — closing the risk of two
 differently-ordered but same-length payloads silently comparing as
-"matching" components. `payload_gate()` separately asserts the Karr/OC
-component key spaces are exactly equal before computing any metric
-(`disjoint component key spaces` → hard `FAIL`, never silently ignored).
+"matching" components.
+
+> **Correction (§9, round 3)**: the sentence that originally followed here
+> — "`payload_gate()` separately asserts the Karr/OC component key spaces
+> are exactly equal before computing any metric (disjoint component key
+> spaces → hard `FAIL`, never silently ignored)" — overstated what round 2
+> actually shipped. Round 2's check only caught a **completely disjoint**
+> keyspace (zero overlap); a *partial* mismatch (one dropped OC component,
+> or one spurious OC-only component, alongside an otherwise-shared
+> component) fell straight through to the per-component metric with no
+> keyspace check at all. §9 below describes the actual per-component
+> `NO_OC_COMPONENT`/`SPURIOUS_OC_COMPONENT` fix.
+
 The adapter's docstring now explicitly declares RA's `fire_count`
 semantics: **tick incidence** (how many ticks show a fire), never a
 particle/molecule count — verified by a dedicated test constructing a
@@ -346,15 +356,26 @@ verified by
 
 ### Metric-correctness items (bundled into this round per Opus5's request)
 
-* **Payload null is per-component, seed-cluster bootstrapped, and matched
-  to the worst-component statistic** — no pooling of heterogeneous
-  components into one null, and no naive per-fire (rather than per-seed)
-  resampling, which would pseudo-replicate within a seed and understate the
-  null's spread. Timing's null remains seed-cluster preserved (unchanged
-  from the original foundation, re-verified under the new floor logic).
-* **`DEFAULT_K_ENG` is now explicitly documented as provisional** —
-  `ProvenanceDoc`/registry carry a `k_eng_provenance` field so a future
-  ratified value is never silently indistinguishable from this placeholder.
+* **Payload null is per-component and seed-cluster bootstrapped.**
+  > **Correction (§9, round 3)**: this bullet originally continued "...and
+  > matched to the worst-component statistic — no pooling of heterogeneous
+  > components into one null". That second half was **false as shipped**:
+  > round 2 computed a per-component null correctly, but then selected the
+  > "worst" component by **raw maximum W1** and reused *that* component's
+  > null for the *entire* channel verdict — which is itself a form of
+  > cross-component pooling-by-selection, not a real per-component
+  > verdict. A component with a small raw W1 that was nonetheless many
+  > times its own (near-zero) null could be masked by a different
+  > component with a larger raw W1 that was actually within its own (large)
+  > null. §9 describes the actual per-component-verdict fix. What *was*
+  > true in round 2 and remains true: no naive per-fire (rather than
+  > per-seed) resampling, and timing's null remains seed-cluster preserved.
+* **`DEFAULT_K_ENG` is documented as provisional.**
+  > **Correction (§9, round 3)**: this bullet originally continued
+  > "`ProvenanceDoc`/registry carry a `k_eng_provenance` field". That was
+  > **false as shipped** — no such field existed anywhere in the schema;
+  > the note lived only inside a `GateChannelResult.extra` dict key.
+  > `k_eng_provenance` is now a real schema field as of round 3 (§9).
 * **Explicit one-sided empty behavior**: an empty event support case
   refuses (`EMPTY_EVENT_SUPPORT`/`NO_KARR_SUPPORT`/`NO_OC_SUPPORT`
   depending on which side is empty) rather than reporting any capped or
@@ -362,13 +383,21 @@ verified by
 * **RA `fire_count` semantics** (tick incidence, not particle count) are
   now declared in both the adapter docstring and a dedicated test (M3,
   above).
-* **`git_sha` is now part of `_content_hash()`'s stable dict** — tampering
+* **`git_sha` is part of `_content_hash()`'s stable dict** — tampering
   with a row's recorded `git_sha` without recomputing `content_hash` is
   caught as a `content_hash mismatch`, the same mechanism that already
   catches a forged `content_hash` field itself
-  (`test_audit_index_detects_tampered_git_sha_via_content_hash`). Full
-  provenance linkage (e.g. binding to a specific upstream commit chain) is
-  left for later work, per Opus5's "where practical" scoping.
+  (`test_audit_index_detects_tampered_git_sha_via_content_hash`).
+  > **Correction (§9, round 3)**: binding `git_sha` into the *tamper*
+  > check is not the same as *verifying* it, and this section's closing
+  > paragraph (below) claimed the regenerated RA bundle's `git_sha` was
+  > "bound to this round's [round 2's] commits" — that claim was **false**:
+  > the tracked bundle's `provenance.json` was never actually regenerated
+  > during round 2, so its `git_sha` still pointed to `90a9b92...`, the
+  > commit immediately before round 2 began. §9 both fixes `audit_index()`
+  > to independently verify `git_sha`/`registry_sha256`/`karr_source`
+  > (not merely store/hash them) and regenerates the bundle at the true
+  > final HEAD of round 3.
 
 ### Reproducing Opus5's false-green scenarios — all now fail/refuse
 
@@ -378,14 +407,170 @@ verified by
 | 3 Karr fire-ticks (RA repeated) | Could reach PASS/FAIL | `INSUFFICIENT_KARR_SUPPORT` (< 50 pooled fire ticks) |
 | `q95_null == 0` (degenerate null) | Could report PASS/SEED_NOISE | `DEGENERATE_NULL`, REFUSED |
 | Direct `evaluate_gate()` call, bypassing CLI checks | Could skip adapter/ensemble/window checks | `evaluate_gate()` runs the identical gauntlet internally; no bypass possible |
-| Disjoint payload component key spaces | Could silently compare mismatched components | Hard `FAIL` on key-space mismatch |
+| Disjoint payload component key spaces | Could silently compare mismatched components | Hard `FAIL`-class verdict on key-space mismatch (see §9 for the exact per-component verdict, corrected from this section's original overclaim) |
 | `stride=2` (or missing stride contract) window | Could load as if fully enumerated | `EventWindowRefused("INCOMPLETE_WINDOW", ...)` (strict default); smoke path surfaces it non-fatally, never as PASS |
 | Incomplete/empty-hash audit row | Zero problems reported | Explicit problem reported |
 | FtsZ reclassification | (untested risk of bricking RA's registry row) | Dedicated test proves RA is unaffected |
 
 All eight scenarios above are covered by dedicated regression tests (see
-the per-file breakdown in §5); the full suite is **133/133 passing**
-(`bin\oc-pytest tests/scripts -k l2_event`), including a re-verified
-zero-problem `audit_index()` run against the regenerated RA seed-0 evidence
-bundle (git_sha now bound to this round's commits, `stride_contract_ok`
-field present and `False`, per M4).
+the per-file breakdown in §5); the full suite was reported as
+"133/133 passing" at the end of round 2.
+> **Correction (§9, round 3)**: the phrase "including a re-verified
+> zero-problem `audit_index()` run against the regenerated RA seed-0
+> evidence bundle (`git_sha` now bound to this round's commits...)" that
+> originally closed this section was **false** — see the git_sha
+> correction above. §9 documents the actual regeneration, performed at
+> round 3's true final HEAD, with `audit_index()` now independently
+> verifying (not merely storing) `git_sha`/`registry_sha256`/
+> `karr_source`.
+
+## 9. Opus5 review round 3 (payload-gate correctness, adapter-specific support floors, provenance/integrity verification)
+
+Opus5's round-2 re-review returned a **conditional REJECT** with 7
+numbered blocking items. This section documents the fixes, implemented as
+new commits on top of the round-2 hardening (never amending them).
+
+### Item #1/#2 — per-component payload verdict aggregation, over the union keyspace
+
+`payload_gate()` previously computed a per-component W1 and per-component
+null correctly, but then picked the "worst" component by **raw maximum
+W1** and reused *that* component's own null for the **whole channel**
+verdict. This let a component with a large-but-proportionally-noisy W1
+(within its own large null — a real `SEED_NOISE`) mask a different
+component whose W1 was small in absolute terms but many times its own
+(near-zero) null (a real `FAIL`). It also only iterated Karr's own
+component keys, so an OC component that was dropped entirely (not merely
+zero-valued) was never even inspected.
+
+Fixed:
+
+* Each payload component now gets its **own** verdict
+  (`PayloadComponentResult`: `PASS`/`SEED_NOISE`/`FAIL`/`DEGENERATE_NULL`/
+  `NO_OC_COMPONENT`/`SPURIOUS_OC_COMPONENT`), computed from its own W1 and
+  its own seed-cluster-bootstrapped null — never another component's.
+* The channel verdict is the **worst** verdict across all components
+  (priority order `FAIL > NO_OC_COMPONENT > SPURIOUS_OC_COMPONENT >
+  DEGENERATE_NULL > SEED_NOISE > PASS`), not derived from whichever
+  component happens to have the largest raw statistic.
+* Components are the **union** of Karr's and OC's normalized keys, not
+  Karr's alone. A component present in Karr but never produced by OC is
+  `NO_OC_COMPONENT`; the mirror image (OC invents a component Karr never
+  produced) is `SPURIOUS_OC_COMPONENT`. Both are `FAIL`-class and rolled
+  into `evaluate_gate()`'s process-level `FAIL_LIKE` set.
+* An adapter may declare an exact `required_payload_components` keyspace
+  (e.g. RA's 2 real WIDs); `payload_gate(..., required_components=...)`
+  refuses with `FAIL` **before** computing anything if the observed union
+  keyspace doesn't match exactly — no zero-fill silent pass either
+  direction. `RibosomeAssemblySmokeAdapter.required_payload_components`
+  derives this from `complex_index_by_wid.values()` (or `None`, meaning
+  "no keyspace constraint enforced", when no mapping is supplied at all —
+  the adapter's own no-mapping unit-test fallback path).
+* `GateChannelResult` gained `per_component: list[PayloadComponentResult]`
+  (every component's own result, always) and `standardized_ratio` (the
+  representative component's `w1/q95_null`).
+* Regression tests: `test_payload_gate_big_small_masking_worst_component_verdict_wins`
+  reproduces the exact scenario Opus5 described (a `BIG` component,
+  `w1=40.0` against its own `q95_null=73.3` → `SEED_NOISE`, alongside a
+  `SMALL` component, `w1=3.0` against its own `q95_null=0.004` →
+  `FAIL`, ~750x its own null) and asserts the channel verdict is `FAIL`,
+  not `SEED_NOISE`. `test_payload_gate_missing_oc_component_...` and
+  `test_payload_gate_spurious_oc_only_component_detected` cover the
+  dropped/spurious-component cases; `test_payload_gate_required_components_enforced_before_metric`
+  and `test_ribosome_assembly_smoke_adapter_required_payload_components_two_wids`
+  cover the RA exact-keyspace enforcement.
+
+### Item #3 — adapter-specific support floor semantics (the "generic pooled50 conflict")
+
+`count_gate()` and `timing_gate_repeated_firing()` both defaulted
+`min_karr_support` to the same pooled-count constant. For a
+`repeated_firing` process (RA) this is the correct floor (`>=50` pooled
+fire ticks). For a `single_firing` process (Cytokinesis), a seed
+contributes at most 1 to a pooled count, so reusing the same bare-50 floor
+silently demanded "every one of 50 seeds fired" instead of spec C2's
+declared `>=45/50` (fraction 0.9) floor — a materially different, stricter
+requirement that `evaluate_gate()` never corrected for.
+
+Fixed: `metrics.count_support_floor(event_timing_model, n_seeds_total)` is
+the single place that converts a process's declared `event_timing_model`
+into the correct pooled-count floor for `count_gate()` —
+`DEFAULT_MIN_KARR_POOLED_FIRE_COUNT_REPEATED_FIRING = 50` for
+`repeated_firing`, `ceil(0.9 * n_seeds_total)` for `single_firing`.
+`evaluate_gate()` now always computes and passes this floor explicitly;
+these floors remain code-level constants (not registry YAML fields) for
+this round, matching round 2's scoping decision. Regression tests:
+`test_count_gate_repeated_firing_boundary_49_refuses_50_proceeds` (RA:
+49 refuses, 50 proceeds) and `test_count_gate_single_firing_boundary_44_refuses_45_proceeds`
+(Cytokinesis: 44/50 refuses, 45/50 proceeds).
+
+### Items #4/#5 — provenance/integrity verification and exact mandatory-file coverage
+
+A real bug was found and fixed during this round: the tracked RA seed-0
+`provenance.json`'s `git_sha` was `90a9b92...`, the commit immediately
+**before** round 2's hardening even began — despite round 2's own STATUS.md
+claiming it was "bound to this round's commits" (corrected in §8 above).
+The bundle was simply never regenerated during round 2.
+
+Fixed:
+
+* `evidence.audit_index()` now independently **verifies** (not merely
+  stores) three provenance fields, each conditionally gated so existing
+  placeholder-fixture tests remain unaffected:
+  * `git_sha` — only checked when it matches `^[0-9a-f]{40}$` (a real
+    40-hex sha; short placeholders like `"deadbeef"` are skipped), via a
+    new `_git_commit_exists()` helper that returns `True`/`False` when git
+    can actually run against this worktree, `None` ("can't check, not a
+    problem") when it can't (e.g. a bare fresh-clone fixture with no
+    `.git`).
+  * `registry_sha256` — only checked when the key is present, against the
+    registry file's own current hash (recomputed independently, not
+    trusted).
+  * `karr_source` — only checked when the key is present, cross-referenced
+    for internal consistency against `input_manifest.json`'s own recorded
+    input directories.
+* `registry.registry_sha256()` now LF-normalizes the YAML content before
+  hashing, so a CRLF checkout (Windows git's default absent
+  `core.autocrlf`/`.gitattributes` forcing LF) hashes identically to an
+  LF checkout of the same content — otherwise a recorded
+  `registry_sha256` could never reproduce across machines/clones.
+* `evidence.bundle_run()` now normalizes `provenance.json`'s `karr_source`
+  field to a repo-relative POSIX path (it previously normalized
+  `input_manifest.json`'s paths but left `karr_source` as an absolute
+  worktree path).
+* `audit_index()` now also enforces **exact** mandatory-file coverage
+  (item #5: "missing 1 of N fails") — a row whose recorded
+  `artifact_hashes` key set does not exactly equal `MANDATORY_FILES` is
+  flagged even if every hash it does record matches on disk, and an
+  evidence directory containing an unrecognized extra file alongside the
+  5 mandatory ones is also flagged.
+* The tracked RA seed-0 evidence bundle (`docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/`)
+  and `evidence_index.json` were regenerated at this round's true final
+  HEAD (see the dedicated regeneration commit's SHA in the session
+  summary) — `git_sha` now correctly reflects that commit, and
+  `audit_index()` reports zero problems against the regenerated bundle.
+
+### Item #6/#7 — `k_eng_provenance` as a real schema field
+
+`k_eng_provenance` is now a real field on both `GateChannelResult` and
+`ProvenanceDoc` (previously it existed only as a note inside a
+`GateChannelResult.extra` dict — the false claim corrected in §8 above).
+Every channel result `metrics.py` produces carries it via a new
+`_channel_result()` constructor helper; the RA structural-smoke
+`ProvenanceDoc` (which never runs a gate channel at all) also carries it
+explicitly.
+
+### Full test suite
+
+158/158 `l2_event`-scoped tests passing
+(`bin\oc-pytest tests/scripts -k l2_event`), up from 133 in round 2 — the
++25 are dedicated round-3 regression tests reproducing every scenario
+Opus5's conditional-REJECT explicitly listed (BIG/SMALL masking,
+dropped/spurious payload component, per-component cluster null, RA
+required-keyspace enforcement, Cytokinesis 44-vs-45 and RA 49-vs-50
+support-floor boundaries, forged git_sha, forged registry_sha256,
+karr_source/input_manifest inconsistency, missing-mandatory-file/
+unexpected-extra-file exact-coverage, LF/CRLF registry-hash stability,
+k_eng_provenance field presence). The RA seed-0 structural smoke remains
+`NOT_APPLICABLE` (never a green gate verdict) — its trace metadata still
+lacks the M4 stride/window contract fields and its single seed never
+meets any support floor, so it cannot and does not produce a computed
+verdict.

@@ -107,6 +107,26 @@ class RibosomeAssemblySmokeAdapter(EventAdapter):
         """
         self.complex_index_by_wid: dict[int, str] = dict(complex_index_by_wid or {})
 
+    @property
+    def required_payload_components(self) -> frozenset[str] | None:
+        """The adapter's exact declared payload keyspace (Opus5 review
+        round 3, item #2/#3): "exact required keyspace for RA adapter (2
+        WIDs) enforced before metric". Derived from
+        ``complex_index_by_wid``'s values (the real OC wid strings, e.g.
+        ``RIBOSOME_30S``/``RIBOSOME_50S``) rather than hardcoding those two
+        names here, so this stays correct if a caller ever supplies a
+        differently-scoped mapping. Returns ``None`` (meaning "no keyspace
+        constraint enforced") when no mapping was supplied at all -- the
+        placeholder-``complex_{i}``-key fallback path used by this
+        adapter's own no-mapping unit tests -- so those tests keep
+        exercising the generic union/NO_OC_COMPONENT/SPURIOUS_OC_COMPONENT
+        checks in ``metrics.payload_gate`` instead of this stricter,
+        adapter-declared check.
+        """
+        if not self.complex_index_by_wid:
+            return None
+        return frozenset(self.complex_index_by_wid.values())
+
     def karr_observation(self, window: WindowGrid, tick: int) -> EventObservation:
         before = window.before(self.payload_channel, tick)
         after = window.after(self.payload_channel, tick)

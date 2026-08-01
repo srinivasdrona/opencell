@@ -53,7 +53,21 @@ class EventRegistryEntry:
 
 
 def registry_sha256(path: Path = REGISTRY_PATH) -> str:
-    return hashlib.sha256(Path(path).read_bytes()).hexdigest()
+    """SHA-256 of the registry YAML's content, normalized to LF line
+    endings before hashing (Opus5 review round 3, item #4: "registry hash
+    computed LF/git-blob-normalized consistently fresh clone").
+
+    Without this normalization, a CRLF checkout (the Windows git default
+    unless ``core.autocrlf``/``.gitattributes`` forces LF) hashes
+    differently from an LF checkout of byte-for-byte the same YAML
+    content, so a provenance record's ``registry_sha256`` could fail to
+    reproduce across machines/clones even when nothing about the registry
+    actually changed -- exactly the kind of spurious mismatch an
+    integrity check must not produce.
+    """
+    text = Path(path).read_text(encoding="utf-8")
+    normalized = text.replace("\r\n", "\n").replace("\r", "\n")
+    return hashlib.sha256(normalized.encode("utf-8")).hexdigest()
 
 
 def _load_raw(path: Path) -> dict[str, Any]:

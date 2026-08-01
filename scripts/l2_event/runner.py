@@ -232,7 +232,16 @@ def evaluate_gate(
     magnitude_gateable = registry_entry.magnitude_gateable
     n_seeds_total = len(karr_timelines)
 
-    count_result = metrics.count_gate(karr_timelines, oc_timelines, rng=rng, b_resamples=b_resamples, k_eng=k_eng)
+    # Opus5 review round 3, item #3: the pooled-fire-tick floor for a
+    # repeated_firing process and the fired-seed-fraction floor for a
+    # single_firing process are DIFFERENT adapter-specific support
+    # semantics ("the generic pooled50 conflict") -- always compute the
+    # correct one from the registry's declared timing model rather than
+    # relying on `count_gate`'s bare repeated_firing-shaped default.
+    min_karr_support = metrics.count_support_floor(event_timing_model, n_seeds_total)
+    count_result = metrics.count_gate(
+        karr_timelines, oc_timelines, rng=rng, b_resamples=b_resamples, k_eng=k_eng, min_karr_support=min_karr_support
+    )
 
     if event_timing_model == "repeated_firing":
         timing_result = metrics.timing_gate_repeated_firing(
@@ -255,7 +264,17 @@ def evaluate_gate(
     if magnitude_gateable:
         if karr_payloads is None or oc_payloads is None:
             raise ValueError("magnitude_gateable=True requires karr/oc_payloads.")
-        payload_result = metrics.payload_gate(karr_payloads, oc_payloads, rng=rng, b_resamples=b_resamples, k_eng=k_eng)
+        # Opus5 review round 3, item #2: an adapter may declare its exact
+        # required payload component keyspace (e.g. RA's 2 real WIDs) so
+        # `payload_gate` can refuse BEFORE computing anything if the
+        # observed keyspace doesn't match -- `getattr(..., None)` keeps
+        # this optional for adapters (e.g. test fakes) that don't declare
+        # one, in which case only the generic union/NO_OC_COMPONENT/
+        # SPURIOUS_OC_COMPONENT checks apply.
+        required_components = getattr(adapter, "required_payload_components", None)
+        payload_result = metrics.payload_gate(
+            karr_payloads, oc_payloads, rng=rng, b_resamples=b_resamples, k_eng=k_eng, required_components=required_components
+        )
     else:
         payload_result = GateChannelResult(
             channel="payload",
@@ -286,7 +305,11 @@ def evaluate_gate(
     # support (or the symmetric Karr-silent-but-OC-fires case) is a real,
     # computed calibration failure, so it rolls into FAIL instead.
     NON_COMPUTABLE = {"NO_KARR_SUPPORT", "INSUFFICIENT_KARR_SUPPORT", "DEGENERATE_NULL"}
-    FAIL_LIKE = {"FAIL", "NO_OC_SUPPORT"}
+    # Opus5 review round 3, item #2: the payload gate's two component-
+    # keyspace verdicts are FAIL-class (an adapter mapping gap/spurious
+    # component is a real defect, not a numeric divergence) and must roll
+    # into the process verdict the same way FAIL/NO_OC_SUPPORT already do.
+    FAIL_LIKE = {"FAIL", "NO_OC_SUPPORT", "NO_OC_COMPONENT", "SPURIOUS_OC_COMPONENT"}
 
     reasons: list[str] = []
     if oc_only:
@@ -600,6 +623,13 @@ def _write_smoke_evidence(
         git_sha=evidence.current_git_sha(),
         registry_sha256=registry_sha256(registry_path) if registry_path else registry_sha256(),
         generated_at=generated_at,
+        # Opus5 review round 3, item #6/#7: k_eng_provenance is now a real
+        # schema field (previously only ever lived inside a
+        # GateChannelResult.extra dict, and this structural smoke doesn't
+        # even run a gate channel) -- record it here too so every
+        # ProvenanceDoc this codebase emits is self-describing about which
+        # k_eng constant, if any, was in force.
+        k_eng_provenance=metrics.K_ENG_PROVENANCE,
     )
 
     summary = {

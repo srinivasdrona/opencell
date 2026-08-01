@@ -56,6 +56,23 @@ EVIDENCE_INDEX_SCHEMA_VERSION = 1
 #: * ``NO_OC_SUPPORT`` -- Karr fired but OC produced zero events/payload
 #:   across the whole cohort: the mirror image of the existing hard-FAIL
 #:   "Karr silent, OC fires" case (no capped-silence green either way).
+#:
+#: Opus5 review round 3 (payload-gate per-component correctness) added two
+#: more verdicts, used only by :func:`scripts.l2_event.metrics.payload_gate`
+#: (both per-component and as the aggregated channel verdict when they are
+#: the worst thing observed across components) -- both are FAIL-class, never
+#: PASS/SEED_NOISE:
+#:
+#: * ``NO_OC_COMPONENT`` -- a payload component Karr reports is completely
+#:   absent from every OC payload in the cohort (not merely zero-valued --
+#:   the key itself never appears). Silently treating this as "OC reported
+#:   0.0" would zero-fill a missing mapping into a numeric divergence
+#:   instead of flagging the real bug (an adapter payload-key mapping gap).
+#: * ``SPURIOUS_OC_COMPONENT`` -- the mirror image: OC reports a payload
+#:   component that never appears anywhere on the Karr side. This can only
+#:   be an adapter/OC-port bug (OC is inventing a component Karr's own
+#:   normalization never produced) and must FAIL, never be silently
+#:   dropped from the comparison.
 ChannelVerdict = Literal[
     "PASS",
     "FAIL",
@@ -66,6 +83,8 @@ ChannelVerdict = Literal[
     "DEGENERATE_NULL",
     "NOT_GATEABLE_REDUNDANT",
     "NOT_COMPUTED",
+    "NO_OC_COMPONENT",
+    "SPURIOUS_OC_COMPONENT",
 ]
 
 #: Process-level aggregate verdict. ``NOT_APPLICABLE`` marks a structural
@@ -186,6 +205,32 @@ class EventTimeline:
 # ---------------------------------------------------------------------------
 
 
+@dataclass(frozen=True)
+class PayloadComponentResult:
+    """One payload component's OWN computed result (Opus5 review round 3,
+    payload-gate item #1): its own W1 statistic, its own seed-cluster
+    bootstrapped null, its own threshold/verdict, and a standardized
+    ratio (``statistic_value / q95_null``) that lets components with very
+    different absolute scales be compared on equal footing. The channel's
+    aggregated verdict is the WORST verdict across all
+    :class:`PayloadComponentResult` entries -- never derived from picking
+    whichever component happens to have the largest raw W1 (that silently
+    let a component with a large-but-proportionally-noisy W1 mask a
+    small-but-60x-its-own-null divergence in a different component).
+    """
+
+    component: str
+    verdict: ChannelVerdict
+    statistic_value: float | None
+    q95_null: float | None
+    threshold: float | None
+    standardized_ratio: float | None
+    reasons: list[str] = field(default_factory=list)
+
+    def to_json(self) -> dict[str, Any]:
+        return asdict(self)
+
+
 @dataclass
 class GateChannelResult:
     """One gate channel's (count | timing | payload) computed result."""
@@ -201,6 +246,20 @@ class GateChannelResult:
     n_nonzero_karr: int
     reasons: list[str] = field(default_factory=list)
     extra: dict[str, Any] = field(default_factory=dict)
+    #: Opus5 review round 3 (item #6): `k_eng_provenance` is now a real,
+    #: typed schema field (not just a loosely-keyed entry inside `extra`)
+    #: so it cannot be silently omitted by a future caller and is bound
+    #: into `result.json`'s own tracked sha256 like every other field here.
+    k_eng_provenance: str | None = None
+    #: Non-empty only for the payload channel (Opus5 review round 3, item
+    #: #1): the full per-component breakdown backing the aggregated
+    #: `verdict` above.
+    per_component: list["PayloadComponentResult"] = field(default_factory=list)
+    #: The representative standardized ratio (`statistic_value / q95_null`)
+    #: for whichever component determined the aggregated `verdict` -- a
+    #: quick top-level summary; `per_component` carries every component's
+    #: own ratio.
+    standardized_ratio: float | None = None
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
@@ -280,6 +339,14 @@ class ProvenanceDoc:
     git_sha: str | None
     registry_sha256: str
     generated_at: str
+    #: Opus5 review round 3 (item #6): this is now a REAL schema field
+    #: (previously only claimed to exist in STATUS.md prose while actually
+    #: living solely inside `GateChannelResult.extra`'s loosely-typed dict).
+    #: Always the current value of `scripts.l2_event.metrics.K_ENG_PROVENANCE`
+    #: at generation time -- explicitly provisional/non-ratifying, never a
+    #: ratified statistical threshold. Bound into `provenance.json`'s own
+    #: tracked sha256 like every other field here.
+    k_eng_provenance: str | None = None
 
     def to_json(self) -> dict[str, Any]:
         return asdict(self)
