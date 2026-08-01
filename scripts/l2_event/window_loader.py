@@ -36,6 +36,19 @@ _REQUIRED_METADATA_KEYS = ("n_ticks", "process_name", "rng_seed")
 # The key present only on event-window traces.
 _EVENT_WINDOW_METADATA_KEY = "tick_offset"
 
+# M4 (Opus5 review): the stride/window-boundary metadata contract a future
+# extractor must satisfy for a trace to be usable by a real (non-smoke)
+# gate computation. `stride` must be present and == 1 (fully enumerated,
+# no skipped ticks); `tick_start` must be present; and at least one of
+# `tick_end`/`window_anchor` must be present ("as applicable" -- a fixed
+# window records tick_end, a division-anchored window may instead record
+# window_anchor). None of the two real event MATs on disk today (RA/RNAM
+# seed 000) carry any of these three -- see
+# docs/phase_f/l2_event/EVENT_WINDOW_EXTRACTOR_CONTRACT.md.
+_STRIDE_CONTRACT_STRIDE_KEY = "stride"
+_STRIDE_CONTRACT_START_KEY = "tick_start"
+_STRIDE_CONTRACT_END_KEYS = ("tick_end", "window_anchor")
+
 _EVENT_WINDOW_DIR_RE = re.compile(r"per_process_traces_v2_event_s(\d+)")
 _STANDARD_DIR_RE = re.compile(r"per_process_traces_v2(?:_s(\d+))?$")
 
@@ -53,6 +66,29 @@ class EventWindowRefused(Exception):
         self.reason: RefusalReason = reason
 
 
+def _check_stride_contract(metadata: h5py.Group) -> list[str]:
+    """Return a list of human-readable problems against the M4 stride/
+    window-boundary metadata contract (empty list = fully compliant).
+    Never raises -- callers decide whether to treat this as fatal
+    (``require_stride_contract=True``, the default) or advisory-only (the
+    structural smoke path, which explicitly opts out)."""
+    problems: list[str] = []
+    if _STRIDE_CONTRACT_STRIDE_KEY not in metadata:
+        problems.append(f"metadata missing required key '{_STRIDE_CONTRACT_STRIDE_KEY}'")
+    else:
+        stride_val = int(np.asarray(metadata[_STRIDE_CONTRACT_STRIDE_KEY][()]).reshape(-1)[0])
+        if stride_val != 1:
+            problems.append(f"metadata '{_STRIDE_CONTRACT_STRIDE_KEY}'={stride_val}, expected 1 (D1 fully enumerated stride-1 window)")
+    if _STRIDE_CONTRACT_START_KEY not in metadata:
+        problems.append(f"metadata missing required key '{_STRIDE_CONTRACT_START_KEY}'")
+    if not any(key in metadata for key in _STRIDE_CONTRACT_END_KEYS):
+        problems.append(
+            f"metadata missing both '{_STRIDE_CONTRACT_END_KEYS[0]}' and "
+            f"'{_STRIDE_CONTRACT_END_KEYS[1]}' (at least one required, 'as applicable')"
+        )
+    return problems
+
+
 @dataclass(frozen=True)
 class WindowGrid:
     """A fully enumerated, stride-1 per-tick event-window grid for one
@@ -66,6 +102,15 @@ class WindowGrid:
     observables: tuple[str, ...]
     states_before: dict[str, np.ndarray]
     states_after: dict[str, np.ndarray]
+    #: M4 stride/window-boundary metadata contract problems. Empty when the
+    #: trace is fully compliant. Only ever non-empty when the caller passed
+    #: ``require_stride_contract=False`` (otherwise a non-empty list would
+    #: have raised ``EventWindowRefused`` instead of returning a grid).
+    stride_contract_problems: tuple[str, ...] = ()
+
+    @property
+    def stride_contract_ok(self) -> bool:
+        return len(self.stride_contract_problems) == 0
 
     def before(self, observable: str, tick: int) -> np.ndarray:
         return self.states_before[observable][tick]
@@ -117,6 +162,7 @@ def load_event_window(
     trace_path: Path,
     *,
     required_observables: tuple[str, ...],
+    require_stride_contract: bool = True,
 ) -> WindowGrid:
     """Load and validate one event-window trace file.
 
@@ -128,7 +174,18 @@ def load_event_window(
       is a standard mid-cycle trace, not an event-window trace).
     * ``INCOMPLETE_WINDOW`` -- declared ``n_ticks`` does not match the
       per-observable dataset length for any requested observable, i.e. the
-      grid is sparse/partial rather than a fully enumerated stride-1 window.
+      grid is sparse/partial rather than a fully enumerated stride-1 window;
+      or (M4) the trace fails the ``stride``/``tick_start``/``tick_end``-or-
+      ``window_anchor`` metadata contract and ``require_stride_contract`` is
+      ``True`` (the default).
+
+    ``require_stride_contract=False`` is for read-only structural-smoke
+    callers ONLY (see ``scripts/l2_event/runner.run_structural_smoke``):
+    instead of raising, any M4 contract problems are attached to the
+    returned grid's ``stride_contract_problems``/``stride_contract_ok`` so
+    the caller can surface them as an explicit INCOMPLETE annotation
+    without ever claiming the smoke satisfies a real gate's window
+    requirements.
     """
     trace_path = Path(trace_path)
     if not trace_path.exists():
@@ -158,6 +215,15 @@ def load_event_window(
                 "traces have substrate-change events for either target process; "
                 "L2.event requires a stride-1 grid extracted over the declared "
                 "firing window instead (spec §4 fact 8).",
+            )
+
+        stride_problems = _check_stride_contract(metadata)
+        if stride_problems and require_stride_contract:
+            raise EventWindowRefused(
+                "INCOMPLETE_WINDOW",
+                f"{trace_path}: fails the stride/window-boundary metadata "
+                f"contract (M4, docs/phase_f/l2_event/"
+                f"EVENT_WINDOW_EXTRACTOR_CONTRACT.md): {'; '.join(stride_problems)}.",
             )
 
         n_ticks = int(np.asarray(metadata["n_ticks"][()]).reshape(-1)[0])
@@ -203,4 +269,5 @@ def load_event_window(
         observables=tuple(required_observables),
         states_before=states_before,
         states_after=states_after,
+        stride_contract_problems=tuple(stride_problems),
     )

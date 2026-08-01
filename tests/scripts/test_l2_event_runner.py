@@ -175,14 +175,47 @@ def _rng(seed: int = 0) -> np.random.Generator:
     return np.random.default_rng(seed)
 
 
+def _adapter_and_entry(**entry_overrides) -> tuple[SyntheticFireCountAdapter, EventRegistryEntry]:
+    """Build a matching (adapter, registry_entry) pair for `evaluate_gate`'s
+    new M2 signature: a `SyntheticFireCountAdapter` whose `process_name`
+    matches the entry's `process`, with `adapter_status='gating_ready'` so
+    `check_adapter`'s internal gauntlet (now run BY `evaluate_gate` itself,
+    not just by a caller that remembers to run it first) passes."""
+    process = entry_overrides.pop("process", "P")
+    adapter = SyntheticFireCountAdapter(process_name=process)
+    entry_overrides.setdefault("required_n_seeds", 1)
+    entry = _entry(
+        process=process,
+        adapter_id=adapter.adapter_id,
+        adapter_status="gating_ready",
+        **entry_overrides,
+    )
+    return adapter, entry
+
+
+def _repeated_firing_cohort(n_seeds: int = 24, n_ticks: int = 20) -> list[list[int]]:
+    """Fire-tick lists with real inter-seed variance in both per-seed
+    counts and tick positions (2/3/4 fires per seed, cycling), so pooled
+    Karr support clears the M1 floor (>=50) and the null bootstrap is
+    never degenerate -- unlike a naive constant-count/constant-tick
+    fixture, which would spuriously hit DEGENERATE_NULL."""
+    fires = []
+    for s in range(n_seeds):
+        k = 2 + (s % 3)
+        base = 3 + (s % 5)
+        fires.append([base + i * 2 for i in range(k)])
+    return fires
+
+
 def test_evaluate_gate_passes_for_matching_repeated_firing_cohorts():
-    karr = [_timeline(s, [3, 9], n_ticks=20) for s in range(20)]
-    oc = [_timeline(s, [3, 9], n_ticks=20) for s in range(20)]
+    fire_ticks = _repeated_firing_cohort()
+    karr = [_timeline(s, fire_ticks[s], n_ticks=20) for s in range(len(fire_ticks))]
+    oc = [_timeline(s, fire_ticks[s], n_ticks=20) for s in range(len(fire_ticks))]
+    adapter, entry = _adapter_and_entry(event_timing_model="repeated_firing", magnitude_gateable=False)
     result = evaluate_gate(
         process="P",
-        adapter_id="test.adapter",
-        event_timing_model="repeated_firing",
-        magnitude_gateable=False,
+        registry_entry=entry,
+        adapter=adapter,
         karr_timelines=karr,
         oc_timelines=oc,
         rng=_rng(),
@@ -194,14 +227,16 @@ def test_evaluate_gate_passes_for_matching_repeated_firing_cohorts():
 
 def test_evaluate_gate_fails_on_spurious_oc_only_firings_between_events():
     """C6: OC firing on ticks Karr never fired must fail the whole gate,
-    even if aggregate counts might otherwise look plausible."""
+    even if aggregate counts might otherwise look plausible. Checked
+    before any support-floor consideration, so a small cohort still
+    exercises this path cleanly."""
     karr = [_timeline(s, [3], n_ticks=20) for s in range(20)]
     oc = [_timeline(s, [3, 4, 5], n_ticks=20) for s in range(20)]
+    adapter, entry = _adapter_and_entry(event_timing_model="repeated_firing", magnitude_gateable=False)
     result = evaluate_gate(
         process="P",
-        adapter_id="test.adapter",
-        event_timing_model="repeated_firing",
-        magnitude_gateable=False,
+        registry_entry=entry,
+        adapter=adapter,
         karr_timelines=karr,
         oc_timelines=oc,
         rng=_rng(),
@@ -214,12 +249,12 @@ def test_evaluate_gate_fails_on_spurious_oc_only_firings_between_events():
 def test_evaluate_gate_refuses_empty_support_vacuous_cohort():
     karr = [_timeline(s, []) for s in range(5)]
     oc = [_timeline(s, []) for s in range(5)]
+    adapter, entry = _adapter_and_entry(event_timing_model="repeated_firing", magnitude_gateable=False)
     with pytest.raises(RunnerRefusal) as exc_info:
         evaluate_gate(
             process="P",
-            adapter_id="test.adapter",
-            event_timing_model="repeated_firing",
-            magnitude_gateable=False,
+            registry_entry=entry,
+            adapter=adapter,
             karr_timelines=karr,
             oc_timelines=oc,
             rng=_rng(),
@@ -231,11 +266,11 @@ def test_evaluate_gate_fails_hard_when_karr_silent_but_oc_fires():
     """No zero==zero PASS, and no silent laundering when only OC fires."""
     karr = [_timeline(s, []) for s in range(5)]
     oc = [_timeline(s, [4]) for s in range(5)]
+    adapter, entry = _adapter_and_entry(event_timing_model="repeated_firing", magnitude_gateable=False)
     result = evaluate_gate(
         process="P",
-        adapter_id="test.adapter",
-        event_timing_model="repeated_firing",
-        magnitude_gateable=False,
+        registry_entry=entry,
+        adapter=adapter,
         karr_timelines=karr,
         oc_timelines=oc,
         rng=_rng(),
@@ -246,12 +281,12 @@ def test_evaluate_gate_fails_hard_when_karr_silent_but_oc_fires():
 def test_evaluate_gate_requires_matched_timeline_lengths():
     karr = [_timeline(0, [1])]
     oc = [_timeline(0, [1]), _timeline(1, [1])]
+    adapter, entry = _adapter_and_entry(event_timing_model="repeated_firing", magnitude_gateable=False)
     with pytest.raises(ValueError):
         evaluate_gate(
             process="P",
-            adapter_id="test.adapter",
-            event_timing_model="repeated_firing",
-            magnitude_gateable=False,
+            registry_entry=entry,
+            adapter=adapter,
             karr_timelines=karr,
             oc_timelines=oc,
             rng=_rng(),
@@ -261,12 +296,12 @@ def test_evaluate_gate_requires_matched_timeline_lengths():
 def test_evaluate_gate_single_firing_requires_offsets():
     karr = [_timeline(s, [3]) for s in range(5)]
     oc = [_timeline(s, [3]) for s in range(5)]
+    adapter, entry = _adapter_and_entry(event_timing_model="single_firing", magnitude_gateable=False)
     with pytest.raises(ValueError):
         evaluate_gate(
             process="P",
-            adapter_id="test.adapter",
-            event_timing_model="single_firing",
-            magnitude_gateable=False,
+            registry_entry=entry,
+            adapter=adapter,
             karr_timelines=karr,
             oc_timelines=oc,
             rng=_rng(),
@@ -276,13 +311,15 @@ def test_evaluate_gate_single_firing_requires_offsets():
 def test_evaluate_gate_payload_gate_wired_when_magnitude_gateable():
     karr = [_timeline(s, [3], n_ticks=20) for s in range(20)]
     oc = [_timeline(s, [3], n_ticks=20) for s in range(20)]
-    karr_payloads = [{"a": 5.0} for _ in range(20)]
-    oc_payloads = [{"a": 500.0} for _ in range(20)]  # wildly diverging payload
+    # Payload values vary across seeds (non-degenerate null) but Karr and
+    # OC are shifted by two orders of magnitude.
+    karr_payloads = [{"a": 5.0 + (i % 5) * 0.5} for i in range(20)]
+    oc_payloads = [{"a": 500.0 + (i % 5) * 0.5} for i in range(20)]
+    adapter, entry = _adapter_and_entry(event_timing_model="repeated_firing", magnitude_gateable=True)
     result = evaluate_gate(
         process="P",
-        adapter_id="test.adapter",
-        event_timing_model="repeated_firing",
-        magnitude_gateable=True,
+        registry_entry=entry,
+        adapter=adapter,
         karr_timelines=karr,
         oc_timelines=oc,
         karr_payloads=karr_payloads,
@@ -292,6 +329,53 @@ def test_evaluate_gate_payload_gate_wired_when_magnitude_gateable():
     payload_channel = next(c for c in result.channels if c.channel == "payload")
     assert payload_channel.verdict == "FAIL"
     assert result.verdict == "FAIL"
+
+
+def test_evaluate_gate_insufficient_karr_support_refuses_whole_process_verdict():
+    """M1/M2 reproduction of an Opus-reported false green: only 3 fires
+    total (well below the pooled-fire-tick floor of 50) must REFUSE the
+    whole process verdict, never silently compute PASS/FAIL from an
+    under-powered cohort. This is also the direct-`evaluate_gate`-API
+    bypass check: even calling this function directly (never through the
+    CLI) cannot skip the M1 support floor, because the floor is enforced
+    inside `metrics.count_gate`/`timing_gate_repeated_firing`, which
+    `evaluate_gate` always calls."""
+    karr = [_timeline(0, [3, 9, 12], n_ticks=20)]
+    oc = [_timeline(0, [3, 9, 12], n_ticks=20)]
+    adapter, entry = _adapter_and_entry(event_timing_model="repeated_firing", magnitude_gateable=False)
+    result = evaluate_gate(
+        process="P",
+        registry_entry=entry,
+        adapter=adapter,
+        karr_timelines=karr,
+        oc_timelines=oc,
+        rng=_rng(),
+    )
+    assert result.verdict == "REFUSED"
+    count_channel = next(c for c in result.channels if c.channel == "count")
+    assert count_channel.verdict == "INSUFFICIENT_KARR_SUPPORT"
+
+
+def test_evaluate_gate_direct_call_cannot_bypass_gauntlet_with_n_seeds_one():
+    """M2: n_seeds=1 fed straight into `evaluate_gate` (bypassing the CLI
+    entirely) must still be refused if the registry declares an ensemble
+    requirement -- `evaluate_gate` runs `check_ensemble_size` itself, so
+    there is no direct-API path around it."""
+    karr = [_timeline(0, [3, 9])]
+    oc = [_timeline(0, [3, 9])]
+    adapter, entry = _adapter_and_entry(
+        event_timing_model="repeated_firing", magnitude_gateable=False, required_n_seeds=50
+    )
+    with pytest.raises(RunnerRefusal) as exc_info:
+        evaluate_gate(
+            process="P",
+            registry_entry=entry,
+            adapter=adapter,
+            karr_timelines=karr,
+            oc_timelines=oc,
+            rng=_rng(),
+        )
+    assert exc_info.value.reason == "SINGLE_SEED_ENSEMBLE_REQUIRED"
 
 
 # ---------------------------------------------------------------------------

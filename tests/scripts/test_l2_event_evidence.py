@@ -143,6 +143,65 @@ def test_audit_index_reports_missing_file(tmp_path, monkeypatch):
     assert any("file missing" in p for p in problems)
 
 
+def test_audit_index_flags_incomplete_row_as_a_problem_not_a_silent_pass(tmp_path, monkeypatch):
+    """M6 (Opus5 review): before this fix, an `INCOMPLETE` row (missing
+    mandatory artifacts, empty `artifact_hashes`) had nothing for the
+    per-file hash loop to iterate over, so `audit_index` silently reported
+    zero problems for it -- indistinguishable from a genuinely clean
+    audit. This reproduces exactly that false-clean scenario and asserts
+    it is now caught."""
+    monkeypatch.setattr(evidence, "LIVE_EVIDENCE_ROOT", tmp_path / "artifacts")
+    monkeypatch.setattr(evidence, "TRACKED_BUNDLE_ROOT", tmp_path / "bundle")
+    index_path = tmp_path / "evidence_index.json"
+    monkeypatch.setattr(evidence, "TRACKED_INDEX_PATH", index_path)
+
+    incomplete = _fake_artifacts()
+    del incomplete["provenance.json"]
+    run_dir = evidence.write_run_artifacts("TestProc", "run1", incomplete)
+    # Deliberately do NOT call bundle_run (which would itself refuse via
+    # FileNotFoundError, per test_bundle_run_requires_all_mandatory_files_present
+    # above) -- instead hand-build an INCOMPLETE index row directly, the way
+    # `_row_for_process` would if the bundle directory existed but a
+    # mandatory file were missing from it.
+    bundle_root = tmp_path / "bundle"
+    process_dir = bundle_root / "TestProc"
+    process_dir.mkdir(parents=True)
+    for fname, payload in incomplete.items():
+        write_json_atomic(process_dir / fname, payload)
+    evidence.write_index(["TestProc"], evidence_root=bundle_root)
+
+    index = read_json(index_path)
+    assert index["rows"][0]["mode"] == "INCOMPLETE"
+    assert index["rows"][0]["artifact_hashes"] == {}
+
+    problems = evidence.audit_index(index_path)
+    assert problems != [], "an INCOMPLETE/empty-hash row must never audit clean (M6)"
+    assert any("INCOMPLETE" in p or "no" in p for p in problems)
+
+
+def test_audit_index_detects_tampered_git_sha_via_content_hash(tmp_path, monkeypatch):
+    """M-metric-correctness ('bind git_sha in stable integrity where
+    practical'): `git_sha` is now part of `_content_hash`'s stable dict,
+    so forging the recorded `git_sha` (without regenerating the index)
+    must be caught as a content_hash mismatch -- the same mechanism that
+    already catches a forged `content_hash` field itself."""
+    monkeypatch.setattr(evidence, "LIVE_EVIDENCE_ROOT", tmp_path / "artifacts")
+    monkeypatch.setattr(evidence, "TRACKED_BUNDLE_ROOT", tmp_path / "bundle")
+    index_path = tmp_path / "evidence_index.json"
+    monkeypatch.setattr(evidence, "TRACKED_INDEX_PATH", index_path)
+
+    run_dir = evidence.write_run_artifacts("TestProc", "run1", _fake_artifacts())
+    evidence.bundle_run(run_dir, "TestProc")
+    evidence.write_index(["TestProc"], evidence_root=tmp_path / "bundle")
+
+    index = read_json(index_path)
+    index["git_sha"] = "forged" * 8  # tamper with recorded provenance only
+    write_json_atomic(index_path, index)
+
+    problems = evidence.audit_index(index_path)
+    assert any("content_hash mismatch" in p for p in problems)
+
+
 def test_default_evidence_root_is_always_the_tracked_bundle(tmp_path, monkeypatch):
     """Indexing/audit must always target the tracked bundle -- never the
     live per-run-id scratch tree, whose one-level-deeper layout

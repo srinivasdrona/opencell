@@ -54,10 +54,25 @@ def _write_synthetic_trace(
     truncated_observable: str | None = None,
     missing_observable_group: str | None = None,
     omit_states_groups: bool = False,
+    stride: int | None = 1,
+    tick_start: int | None = 0,
+    tick_end: int | None = -1,
+    window_anchor: int | None = None,
+    omit_stride_contract: bool = False,
 ) -> Path:
     """Write a minimal synthetic HDF5 trace exercising every window_loader
     refusal branch on demand (via the keyword toggles above), without
-    depending on any real Karr MAT data being present."""
+    depending on any real Karr MAT data being present.
+
+    By default writes a complete M4 stride/tick_start/tick_end contract
+    (``stride=1``, ``tick_start=0``, ``tick_end=n_ticks - 1``) so existing
+    callers that only care about the OTHER refusal branches keep getting a
+    contract-complete "good" fixture under the new strict-by-default
+    ``load_event_window``. Pass ``omit_stride_contract=True`` (or explicit
+    ``None`` values) to exercise the M4 refusal branches themselves.
+    """
+    if tick_end == -1:
+        tick_end = n_ticks - 1
     path.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(path, "w") as handle:
         metadata = handle.create_group("metadata")
@@ -66,6 +81,15 @@ def _write_synthetic_trace(
         metadata.create_dataset("rng_seed", data=np.array([rng_seed]))
         if tick_offset is not None:
             metadata.create_dataset("tick_offset", data=np.array([tick_offset]))
+        if not omit_stride_contract:
+            if stride is not None:
+                metadata.create_dataset("stride", data=np.array([stride]))
+            if tick_start is not None:
+                metadata.create_dataset("tick_start", data=np.array([tick_start]))
+            if tick_end is not None:
+                metadata.create_dataset("tick_end", data=np.array([tick_end]))
+            if window_anchor is not None:
+                metadata.create_dataset("window_anchor", data=np.array([window_anchor]))
 
         if omit_states_groups:
             return path
@@ -134,6 +158,65 @@ def test_load_valid_synthetic_trace_succeeds(tmp_path):
     assert window.tick_offset == 17.0
     assert window.before("obsA", 0).shape == (1,)
     assert window.after("obsB", 3).shape == (1,)
+    assert window.stride_contract_ok is True
+    assert window.stride_contract_problems == ()
+
+
+def test_load_trace_missing_stride_key_refuses_incomplete_window(tmp_path):
+    trace_path = _write_synthetic_trace(tmp_path / "no_stride.mat", stride=None)
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(trace_path, required_observables=("obsA",))
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+    assert "stride" in str(exc_info.value)
+
+
+def test_load_trace_missing_tick_start_key_refuses_incomplete_window(tmp_path):
+    trace_path = _write_synthetic_trace(tmp_path / "no_tick_start.mat", tick_start=None)
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(trace_path, required_observables=("obsA",))
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+    assert "tick_start" in str(exc_info.value)
+
+
+def test_load_trace_missing_both_tick_end_and_window_anchor_refuses_incomplete_window(tmp_path):
+    trace_path = _write_synthetic_trace(tmp_path / "no_end_or_anchor.mat", tick_end=None, window_anchor=None)
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(trace_path, required_observables=("obsA",))
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+    assert "tick_end" in str(exc_info.value) and "window_anchor" in str(exc_info.value)
+
+
+def test_load_trace_window_anchor_alone_satisfies_end_clause(tmp_path):
+    """`window_anchor` is an acceptable substitute for `tick_end` (`(at
+    least one required, 'as applicable')`) -- this must NOT refuse."""
+    trace_path = _write_synthetic_trace(tmp_path / "anchor_only.mat", tick_end=None, window_anchor=250)
+    window = load_event_window(trace_path, required_observables=("obsA",))
+    assert window.stride_contract_ok is True
+
+
+def test_load_trace_stride_not_one_refuses_incomplete_window(tmp_path):
+    """D1 requires a fully-enumerated stride-1 window; stride=2 (or any
+    non-1 value) must be refused, never silently accepted as a sparser
+    grid."""
+    trace_path = _write_synthetic_trace(tmp_path / "stride2.mat", stride=2)
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(trace_path, required_observables=("obsA",))
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+    assert "stride" in str(exc_info.value)
+
+
+def test_load_trace_missing_stride_contract_non_fatal_when_not_required(tmp_path):
+    """`require_stride_contract=False` (the structural-smoke-only escape
+    hatch) must never raise for a missing contract -- it must instead
+    attach the problems to the returned grid, non-fatally, so callers can
+    surface (never hide) the incompleteness."""
+    trace_path = _write_synthetic_trace(tmp_path / "no_contract.mat", omit_stride_contract=True)
+    window = load_event_window(trace_path, required_observables=("obsA",), require_stride_contract=False)
+    assert window.stride_contract_ok is False
+    assert len(window.stride_contract_problems) == 3
+    assert any("stride" in p for p in window.stride_contract_problems)
+    assert any("tick_start" in p for p in window.stride_contract_problems)
+    assert any("tick_end" in p for p in window.stride_contract_problems)
 
 
 def test_classify_trace_dir_recognizes_event_window_and_standard_dirs():
@@ -145,15 +228,35 @@ def test_classify_trace_dir_recognizes_event_window_and_standard_dirs():
 
 @pytest.mark.skipif(not _REAL_RA_TRACE.exists(), reason="Real RibosomeAssembly seed-000 event-window MAT not present locally")
 def test_load_real_ribosome_assembly_seed0_event_trace():
+    """M4: the real seed-0 MAT predates the stride/tick_start/tick_end (or
+    window_anchor) metadata contract, so this structural-smoke-style load
+    must explicitly opt out of the strict default and the returned grid
+    must honestly report the contract as incomplete -- it must never be
+    silently treated as if it satisfied a real gate's window requirements."""
     observables = ("substrates", "enzymes", "boundEnzymes", "monomers", "complexs", "RNAs")
-    window = load_event_window(_REAL_RA_TRACE, required_observables=observables)
+    window = load_event_window(_REAL_RA_TRACE, required_observables=observables, require_stride_contract=False)
     assert window.process_name == "RibosomeAssembly"
     assert window.seed == 0
     assert window.n_ticks == 100
     assert window.tick_offset == 200.0
+    assert window.stride_contract_ok is False
+    assert window.stride_contract_problems
     for observable in observables:
         assert window.states_before[observable].shape[0] == 100
         assert window.states_after[observable].shape[0] == 100
+
+
+def test_load_real_ribosome_assembly_seed0_event_trace_strict_default_refuses_incomplete_window():
+    """The flip side of the above: under the new strict-by-default M4
+    contract, the same real trace must hard-refuse (never silently PASS
+    or silently drop the contract check) unless the caller explicitly
+    opts out via `require_stride_contract=False`."""
+    if not _REAL_RA_TRACE.exists():
+        pytest.skip("Real RibosomeAssembly seed-000 event-window MAT not present locally")
+    observables = ("substrates", "enzymes", "boundEnzymes", "monomers", "complexs", "RNAs")
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(_REAL_RA_TRACE, required_observables=observables)
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
 
 
 @pytest.mark.skipif(not _REAL_STANDARD_TRACE.exists(), reason="Real standard mid-cycle Translation MAT not present locally")

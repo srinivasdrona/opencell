@@ -239,11 +239,21 @@ def _content_hash(index: dict[str, Any]) -> str:
     (``generated_at``, ``content_hash`` itself, and each row's own
     ``evidence_dir`` -- matches ``scripts/l22_evidence/generator.py``'s
     convention so a rerun in a different worktree location doesn't spuriously
-    change the hash)."""
+    change the hash).
+
+    M-metric-correctness ("bind git_sha in stable integrity where
+    practical"): ``git_sha`` IS included here (unlike ``generated_at``,
+    which is genuinely volatile per-run) so tampering with the recorded
+    commit provenance is caught by ``audit_index``'s content_hash
+    comparison, not just a per-file artifact hash mismatch. Full
+    cryptographic binding (e.g. signing) is out of scope for this
+    foundation task -- this only makes git_sha part of the *existing*
+    content-hash tamper check."""
     import json
 
     stable = {
         "schema_version": index["schema_version"],
+        "git_sha": index.get("git_sha"),
         "rows": [
             {
                 "process": r["process"],
@@ -266,13 +276,30 @@ def write_index(processes: list[str], evidence_root: Path | None = None) -> Path
 def audit_index(index_path: Path = TRACKED_INDEX_PATH) -> list[str]:
     """Recompute every hash the index claims and compare. Returns a list
     of problems (empty = integrity OK). Raises FileNotFoundError if the
-    index itself is missing."""
+    index itself is missing.
+
+    M6 (Opus5 review): an ``INCOMPLETE`` row (missing mandatory artifacts,
+    empty ``artifact_hashes``) has nothing to hash-check, so the loop below
+    silently produces zero problems for it -- this must be an explicit,
+    reported problem instead of a silent pass. Likewise an evidence
+    directory that exists but produced zero recorded hashes for a
+    non-INCOMPLETE row is itself suspicious and must be flagged.
+    """
     index = read_json(index_path)
     problems: list[str] = []
     evidence_root = _REPO_ROOT / index["evidence_root"]
     for row in index.get("rows", []):
         process_dir = evidence_root / row["process"]
-        for filename, recorded_hash in row.get("artifact_hashes", {}).items():
+        artifact_hashes = row.get("artifact_hashes", {})
+        if row.get("mode") == "INCOMPLETE" or not artifact_hashes:
+            problems.append(
+                f"{row['process']}: evidence row has mode={row.get('mode')!r} "
+                f"with {'no' if not artifact_hashes else len(artifact_hashes)} "
+                "recorded artifact hash(es) -- an incomplete/empty-hash row "
+                "cannot be a silent audit pass (M6)."
+            )
+            continue
+        for filename, recorded_hash in artifact_hashes.items():
             path = process_dir / filename
             if not path.exists():
                 problems.append(f"{row['process']}/{filename}: file missing at {path}")

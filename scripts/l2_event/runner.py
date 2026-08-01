@@ -118,11 +118,17 @@ def check_adapter(adapter: EventAdapter, process: str, registry_entry: EventRegi
         )
 
 
-def load_and_check_window(trace_path: Path, required_observables: tuple[str, ...]) -> WindowGrid:
+def load_and_check_window(
+    trace_path: Path, required_observables: tuple[str, ...], *, require_stride_contract: bool = True
+) -> WindowGrid:
     """Thin wrapper mapping :class:`EventWindowRefused` to
     :class:`RunnerRefusal` so the CLI has one exception type to catch."""
     try:
-        return load_event_window(trace_path, required_observables=required_observables)
+        return load_event_window(
+            trace_path,
+            required_observables=required_observables,
+            require_stride_contract=require_stride_contract,
+        )
     except EventWindowRefused as exc:
         raise RunnerRefusal(exc.reason, str(exc)) from exc
 
@@ -147,6 +153,37 @@ def check_empty_support(karr_timelines: list[EventTimeline], oc_timelines: list[
         # refusal -- let evaluate_gate's count/timing gates report it.
 
 
+def check_timeline_cohort_consistency(
+    karr_timelines: list[EventTimeline], oc_timelines: list[EventTimeline]
+) -> None:
+    """M2 (Opus5 review) "window metadata/stride" gauntlet item, as applied
+    inside ``evaluate_gate`` itself (which only ever sees already-built
+    :class:`EventTimeline` objects, never the raw ``WindowGrid``/HDF5
+    metadata that ``window_loader.load_event_window`` validates at ingest).
+
+    This is a second, cohort-level layer: every timeline in the cohort
+    (both Karr and OC sides) must share the same ``n_ticks``. A caller that
+    hand-assembled timelines from mismatched-length windows (e.g. one seed
+    loaded with a truncated/differently-strided grid) is refused here even
+    though each individual timeline may look internally well-formed. The
+    per-file stride=1/tick_start/tick_end contract itself is enforced by
+    ``window_loader`` at load time (M4); this check cannot see stride
+    directly, only its consequence (inconsistent tick counts across the
+    cohort actually fed to the evaluator).
+    """
+    all_timelines = list(karr_timelines) + list(oc_timelines)
+    if not all_timelines:
+        return
+    n_ticks_values = {t.n_ticks for t in all_timelines}
+    if len(n_ticks_values) > 1:
+        raise RunnerRefusal(
+            "INCOMPLETE_WINDOW",
+            f"Timeline cohort has inconsistent n_ticks across seeds/sides: "
+            f"{sorted(n_ticks_values)}; refusing rather than comparing "
+            "windows of different lengths (M2 window-consistency check).",
+        )
+
+
 # ---------------------------------------------------------------------------
 # Pure metrics orchestration
 # ---------------------------------------------------------------------------
@@ -155,9 +192,8 @@ def check_empty_support(karr_timelines: list[EventTimeline], oc_timelines: list[
 def evaluate_gate(
     *,
     process: str,
-    adapter_id: str,
-    event_timing_model: str,
-    magnitude_gateable: bool,
+    registry_entry: EventRegistryEntry,
+    adapter: EventAdapter,
     karr_timelines: list[EventTimeline],
     oc_timelines: list[EventTimeline],
     karr_payloads: list[dict[str, float]] | None = None,
@@ -169,11 +205,32 @@ def evaluate_gate(
     b_resamples: int = metrics.DEFAULT_B_RESAMPLES,
 ) -> ResultDoc:
     """Compute the count + timing (+ optional payload) gates and aggregate
-    a process-level verdict, plus the C6 spurious-firing diagnostic."""
+    a process-level verdict, plus the C6 spurious-firing diagnostic.
+
+    M2 (Opus5 review): this function runs the SAME refusal gauntlet the CLI
+    (`main`) runs -- ``check_adapter``, ``check_ensemble_size``,
+    ``check_empty_support``, ``check_timeline_cohort_consistency`` -- before
+    computing anything. Before this fix, those checks lived only in
+    ``main()``'s CLI path; any direct caller of ``evaluate_gate`` (a future
+    automation script, a test, a notebook) could bypass every one of them.
+    ``registry_entry``/``adapter`` (rather than bare ``adapter_id``/
+    ``event_timing_model``/``magnitude_gateable`` strings a caller could
+    pass inconsistently) are now the single source of truth for what this
+    process's gate is allowed to look like -- there is no parameter
+    combination that lets a caller assert an adapter_id/timing model the
+    registry does not itself declare.
+    """
+    check_adapter(adapter, process, registry_entry)
+    check_ensemble_size(len(karr_timelines), registry_entry.required_n_seeds)
     if len(karr_timelines) != len(oc_timelines):
         raise ValueError("karr_timelines and oc_timelines must be paired 1:1 per seed.")
-
     check_empty_support(karr_timelines, oc_timelines)
+    check_timeline_cohort_consistency(karr_timelines, oc_timelines)
+
+    adapter_id = registry_entry.adapter_id
+    event_timing_model = registry_entry.event_timing_model
+    magnitude_gateable = registry_entry.magnitude_gateable
+    n_seeds_total = len(karr_timelines)
 
     count_result = metrics.count_gate(karr_timelines, oc_timelines, rng=rng, b_resamples=b_resamples, k_eng=k_eng)
 
@@ -185,7 +242,12 @@ def evaluate_gate(
         if karr_single_fire_offsets is None or oc_single_fire_offsets is None:
             raise ValueError("single_firing model requires karr/oc_single_fire_offsets.")
         timing_result = metrics.timing_gate_single_firing(
-            karr_single_fire_offsets, oc_single_fire_offsets, rng=rng, b_resamples=b_resamples, k_eng=k_eng
+            karr_single_fire_offsets,
+            oc_single_fire_offsets,
+            rng=rng,
+            b_resamples=b_resamples,
+            k_eng=k_eng,
+            n_seeds_total=n_seeds_total,
         )
     else:
         raise ValueError(f"Unknown event_timing_model: {event_timing_model!r}")
@@ -216,6 +278,16 @@ def evaluate_gate(
 
     channels = [count_result, timing_result, payload_result]
     gating_channels = [c for c in channels if c.verdict not in ("NOT_GATEABLE_REDUNDANT",)]
+
+    # M1 (Opus5 review): a channel that could not compute a real statistic
+    # at all (zero/insufficient Karr support, or a degenerate null) must
+    # REFUSE the whole process verdict, not silently fall through to FAIL
+    # or -- worse -- PASS. A channel where OC produced nothing despite Karr
+    # support (or the symmetric Karr-silent-but-OC-fires case) is a real,
+    # computed calibration failure, so it rolls into FAIL instead.
+    NON_COMPUTABLE = {"NO_KARR_SUPPORT", "INSUFFICIENT_KARR_SUPPORT", "DEGENERATE_NULL"}
+    FAIL_LIKE = {"FAIL", "NO_OC_SUPPORT"}
+
     reasons: list[str] = []
     if oc_only:
         reasons.append(
@@ -223,16 +295,26 @@ def evaluate_gate(
             f"(seeds: {sorted(oc_only)}) -- spurious OC-only firing (C6)."
         )
         verdict = "FAIL"
-    elif any(c.verdict == "FAIL" for c in gating_channels):
+    elif any(c.verdict in FAIL_LIKE for c in gating_channels):
         verdict = "FAIL"
-    elif all(c.verdict == "NO_KARR_SUPPORT" for c in gating_channels):
-        verdict = "FAIL"
-        reasons.append("Every gating channel reports NO_KARR_SUPPORT.")
+        reasons.append(
+            "At least one gating channel is FAIL or NO_OC_SUPPORT (OC "
+            "produced nothing despite Karr support)."
+        )
+    elif any(c.verdict in NON_COMPUTABLE for c in gating_channels):
+        verdict = "REFUSED"
+        non_computable_channels = sorted({c.channel for c in gating_channels if c.verdict in NON_COMPUTABLE})
+        reasons.append(
+            f"Gating channel(s) {non_computable_channels} could not compute a "
+            "calibrated statistic (zero/insufficient Karr support or a "
+            "degenerate null); refusing rather than reporting a verdict "
+            "derived from an uncalibrated channel (M1)."
+        )
     elif all(c.verdict in ("PASS", "SEED_NOISE") for c in gating_channels):
         verdict = "PASS"
     else:
         verdict = "FAIL"
-        reasons.append("At least one gating channel is NO_KARR_SUPPORT while others PASS; not a clean PASS.")
+        reasons.append("At least one gating channel is in an unexpected state; not a clean PASS.")
 
     return ResultDoc(
         schema_version=SCHEMA_VERSION,
@@ -297,6 +379,18 @@ def main(argv: list[str] | None = None) -> int:
     seeds = [int(s) for s in args.seeds.split(",") if s.strip() != ""]
 
     if args.mode == "gate":
+        # M2 (Opus5 review): these are the same checks `evaluate_gate` now
+        # runs internally (`check_ensemble_size`, and `check_adapter`'s
+        # gating_ready clause). They are duplicated here only as a fast,
+        # friendly pre-flight message -- there is no gating-ready adapter
+        # in this repo to construct real karr/oc timelines from, so this
+        # CLI path can never actually reach a call to `evaluate_gate`
+        # today. Once a future process branch adds a gating_ready adapter,
+        # this block's job is solely to build that adapter + timelines and
+        # call `evaluate_gate(process=..., registry_entry=entry,
+        # adapter=..., ...)` -- the SAME function whose internal gauntlet
+        # `test_l2_event_runner.py` verifies cannot be bypassed by a direct
+        # caller. No parallel/duplicate gating logic is meant to grow here.
         try:
             check_ensemble_size(len(seeds), entry.required_n_seeds)
             if entry.adapter_status != "gating_ready":
@@ -379,20 +473,37 @@ def run_structural_smoke(
     del registry, registry_entry  # not needed here; validated by the caller before dispatch.
     from scripts.l2_event.adapters import ribosome_assembly_smoke as ra_smoke
 
-    window = load_and_check_window(trace_path, ra_smoke._RA_OBSERVABLES)
+    # M4: the real seed-0 event MAT predates the stride/tick_start/tick_end
+    # (or window_anchor) metadata contract -- see
+    # docs/phase_f/l2_event/EVENT_WINDOW_EXTRACTOR_CONTRACT.md. The
+    # structural smoke is explicitly a read-only loader/adapter/OC-port
+    # round-trip proof, not a gate verdict, so it tolerates an incomplete
+    # contract instead of hard-refusing; the resulting problems are
+    # surfaced (never hidden) in the smoke's evidence reasons below.
+    window = load_and_check_window(trace_path, ra_smoke._RA_OBSERVABLES, require_stride_contract=False)
 
     l2 = ra_smoke._import_l2_replay_common()
     from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess  # noqa: PLC0415
 
     process_obj = KarrRibosomeAssemblyProcess({"rng_seed": int(seed)})
-    adapter = ra_smoke.RibosomeAssemblySmokeAdapter()
 
     karr_fires = 0
     oc_fires = 0
     per_tick: list[dict] = []
+    adapter: ra_smoke.RibosomeAssemblySmokeAdapter | None = None
     for tick in range(window.n_ticks):
+        state, wids_by_observable = ra_smoke.build_karr_conditioned_state(process_obj, window, tick)
+        if adapter is None:
+            # M3 (Opus5 review): build the adapter's Karr-index -> OC-wid
+            # payload mapping once, from the wids the loader/overlay
+            # already infers for the `complexs` channel -- this is the
+            # SAME wid ordering `build_karr_conditioned_state` uses to
+            # overlay Karr's state into the OC template, so Karr's payload
+            # keys now line up exactly with `update["complex"]["counts"]`'s
+            # real keys instead of meaningless positional placeholders.
+            complex_index_by_wid = dict(enumerate(wids_by_observable["complexs"]))
+            adapter = ra_smoke.RibosomeAssemblySmokeAdapter(complex_index_by_wid=complex_index_by_wid)
         karr_obs = adapter.karr_observation(window, tick)
-        state, _wids = ra_smoke.build_karr_conditioned_state(process_obj, window, tick)
         update = ra_smoke.run_ribosome_assembly_oc_tick(process_obj, state)
         oc_obs = adapter.oc_observation(tick, state, update)
         karr_fires += karr_obs.fire_count
@@ -408,6 +519,8 @@ def run_structural_smoke(
         "oc_total_fires": oc_fires,
         "per_tick_fires": per_tick,
         "trace_kind": classify_trace_dir(trace_path),
+        "stride_contract_ok": window.stride_contract_ok,
+        "stride_contract_problems": list(window.stride_contract_problems),
     }
 
 
@@ -442,6 +555,15 @@ def _write_smoke_evidence(
             "structural_smoke_only: proves the loader/adapter/OC-port round-trip works "
             "on one real seed; this is NOT a calibrated ensemble gate verdict.",
             f"karr_total_fires={result['karr_total_fires']} oc_total_fires={result['oc_total_fires']}",
+            *(
+                ["stride_contract_ok=True: window carries a complete "
+                 "stride/tick_start/tick_end(or window_anchor) contract."]
+                if result["stride_contract_ok"]
+                else [
+                    "stride_contract_ok=False (M4, non-fatal for structural_smoke): "
+                    + "; ".join(result["stride_contract_problems"])
+                ]
+            ),
         ],
     )
 

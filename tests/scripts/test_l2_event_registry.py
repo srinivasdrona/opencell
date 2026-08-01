@@ -70,6 +70,33 @@ def test_validate_against_catalog_flags_harness_type_mismatch(tmp_path):
     registry = load_registry()
     # Corrupt one entry's implied catalog cross-check by asserting against a
     # process name that the real catalog does not carry as event_class.
+    # M5 (Opus5 review): the harness_type=="event_class" check is only
+    # enforced for `in_scope_v4: true` rows (so an out-of-scope catalog
+    # reclassification -- e.g. FtsZ -- can never brick unrelated in-scope
+    # rows). This synthetic row must therefore set `in_scope_v4=True` to
+    # still exercise the check.
+    bad_registry = dict(registry)
+    from scripts.l2_event.registry import EventRegistryEntry
+
+    bad_registry["Translation"] = EventRegistryEntry(
+        process="Translation",
+        in_scope_v4=True,
+        adapter_id=None,
+        adapter_status="not_implemented",
+        event_timing_model=None,
+        magnitude_gateable=False,
+        required_n_seeds=50,
+        deferred_reason=None,
+    )
+    problems = validate_against_catalog(bad_registry)
+    assert any("Translation" in p for p in problems)
+
+
+def test_validate_against_catalog_does_not_enforce_harness_type_for_out_of_scope_rows():
+    """M5: an `in_scope_v4=False` row whose catalog harness_type is NOT
+    'event_class' must never itself be flagged -- the check is scoped to
+    in-scope rows only."""
+    registry = load_registry()
     bad_registry = dict(registry)
     from scripts.l2_event.registry import EventRegistryEntry
 
@@ -81,10 +108,38 @@ def test_validate_against_catalog_flags_harness_type_mismatch(tmp_path):
         event_timing_model=None,
         magnitude_gateable=False,
         required_n_seeds=50,
-        deferred_reason="synthetic test row",
+        deferred_reason="synthetic test row, deliberately out of v4 scope",
     )
     problems = validate_against_catalog(bad_registry)
-    assert any("Translation" in p for p in problems)
+    assert not any("Translation" in p for p in problems)
+
+
+def test_validate_against_catalog_ftsz_reclassification_does_not_brick_ribosome_assembly():
+    """M5 (Opus5 review): reclassifying FtsZPolymerization (e.g. flipping
+    its catalog harness_type away from 'event_class', simulating a future
+    pending decision to remove it from the event profile) must never
+    cause validate_against_catalog() to refuse/flag unrelated in-scope
+    rows such as RibosomeAssembly -- this is the exact 'bricking' failure
+    mode M5 was raised to fix."""
+    registry = load_registry()
+    from scripts.l2_event.registry import EventRegistryEntry
+
+    reclassified = dict(registry)
+    # FtsZ stays out of v4 scope (in_scope_v4=False) regardless of the
+    # catalog-side reclassification -- the harness_type check simply does
+    # not apply to it.
+    reclassified["FtsZPolymerization"] = EventRegistryEntry(
+        process="FtsZPolymerization",
+        in_scope_v4=False,
+        adapter_id=None,
+        adapter_status="not_implemented",
+        event_timing_model=None,
+        magnitude_gateable=False,
+        required_n_seeds=50,
+        deferred_reason="pending reclassification decision (M5): may leave the event profile entirely",
+    )
+    problems = validate_against_catalog(reclassified)
+    assert not any("RibosomeAssembly" in p for p in problems)
 
 
 def test_validate_against_catalog_flags_unknown_process(tmp_path):

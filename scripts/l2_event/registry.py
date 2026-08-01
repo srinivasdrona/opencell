@@ -102,27 +102,56 @@ def validate_against_catalog(
     catalog_path: Path = CATALOG_PATH,
 ) -> list[str]:
     """Read-only cross-check: every registry process must exist in
-    ``PROCESS_CATALOG.yaml`` with ``harness_type: event_class``. Returns a
-    list of human-readable problems (empty list = fully consistent). Never
-    reads or writes anything other than the catalog's in-memory parse."""
+    ``PROCESS_CATALOG.yaml``. Returns a list of human-readable problems
+    (empty list = fully consistent). Never reads or writes anything other
+    than the catalog's in-memory parse.
+
+    M5 (Opus5 review): the ``harness_type == 'event_class'`` check is only
+    *enforced* for rows the registry itself declares ``in_scope_v4: true``.
+    This is deliberate -- an out-of-v4-scope row (DNADamage,
+    FtsZPolymerization) may legitimately be reclassified in the catalog
+    independently of this registry (e.g. FtsZ leaving the event profile
+    entirely) without "bricking" validation for an unrelated in-scope row
+    (RibosomeAssembly). Before this fix, the check ran unconditionally for
+    every row, so a catalog edit to one out-of-scope process could flip
+    ``validate_against_catalog()`` from clean to failing for the *whole*
+    registry at once -- and ``runner.main()`` refuses every process when
+    this check fails, not just the affected one.
+    """
     problems: list[str] = []
     catalog = _ds.load_catalog(Path(catalog_path))
     by_name = {p.name: p for p in _ds._iter_processes(catalog)}
+    event_class_catalog_names = {p.name for p in _ds._iter_processes(catalog) if p.harness_type == "event_class"}
+
     for name, entry in registry.items():
         cp = by_name.get(name)
         if cp is None:
             problems.append(f"Registry process '{name}' not found in {catalog_path.name}.")
             continue
-        if cp.harness_type != "event_class":
+        if entry.in_scope_v4 and cp.harness_type != "event_class":
             problems.append(
-                f"Registry process '{name}' expects catalog harness_type='event_class', "
-                f"found {cp.harness_type!r}."
+                f"Registry process '{name}' is in_scope_v4=true and expects "
+                f"catalog harness_type='event_class', found {cp.harness_type!r}."
             )
         if entry.in_scope_v4 and not cp.in_scope_l2_2:
             problems.append(
                 f"Registry process '{name}' is in_scope_v4=true but catalog "
                 "in_scope_L2_2=false."
             )
+
+    # Bidirectional (M5): every catalog process the catalog itself marks
+    # harness_type='event_class' must have *some* registry row -- catches a
+    # newly event-classified catalog process this registry hasn't picked up
+    # yet. This does not require in_scope_v4=true (DNADamage/FtsZ are
+    # event_class in the catalog today but correctly out of v4 scope), only
+    # that the process is tracked here at all.
+    missing_registry_rows = sorted(event_class_catalog_names - set(registry))
+    for name in missing_registry_rows:
+        problems.append(
+            f"Catalog process '{name}' has harness_type='event_class' but no "
+            f"corresponding row exists in the L2.event registry."
+        )
+
     return problems
 
 
