@@ -137,18 +137,19 @@ gating-ready adapter exists), `2` = REFUSED. Exit codes propagate from
 
 ## 5. Test suite
 
-7 new files under `tests/scripts/test_l2_event_*.py`, **107 tests, all
-passing**:
+7 new files under `tests/scripts/test_l2_event_*.py`, **133 tests, all
+passing** (107 at initial foundation review; +26 added in the M1–M6
+hardening round, §8):
 
 | File | Count | Covers |
 |---|---|---|
 | `test_l2_event_schema.py` | 7 | `EventObservation`/`EventTimeline` invariants, atomic JSON round-trip |
-| `test_l2_event_window_loader.py` | 16 | Every D1 refusal branch (synthetic HDF5 fixtures) + real RA seed-0 load + real standard-trace refusal |
-| `test_l2_event_registry.py` | 12 | Registry↔catalog cross-check, schema/version/timing-model validation, v4-scope correctness for all 4 processes |
-| `test_l2_event_metrics.py` | 29 | Count/timing/payload gates (PASS/FAIL/SEED_NOISE/NO_KARR_SUPPORT), no-zero==zero-PASS, C6 spurious-fire detection, bootstrap sanity, `_safe_wasserstein` edge cases |
-| `test_l2_event_evidence.py` | 14 | Write/bundle/index/audit round-trip, tamper + stale-content-hash detection, fresh-clone (bundle-only) audit, Windows-worktree-`gitdir` fallback (§5.1) |
-| `test_l2_event_adapters.py` | 10 | Fakes, adapter-mismatch, anti-laundering signature checks, real RA seed-0 adapter + end-to-end structural smoke |
-| `test_l2_event_runner.py` | 26 | Full refusal gauntlet, `evaluate_gate()` wiring, CLI-level dispatch for all 4 processes, real-data smoke + evidence-writing round trip |
+| `test_l2_event_window_loader.py` | 16 | Every D1 refusal branch (synthetic HDF5 fixtures) + real RA seed-0 load + real standard-trace refusal + M4 stride/window-boundary contract (stride/tick_start/tick_end/window_anchor) |
+| `test_l2_event_registry.py` | 14 | Registry↔catalog cross-check, schema/version/timing-model validation, v4-scope correctness for all 4 processes, M5 harness_type-gated-on-in_scope_v4 + FtsZ-reclass-does-not-brick-RA |
+| `test_l2_event_metrics.py` | 39 | Count/timing/payload gates (PASS/FAIL/SEED_NOISE/NO_KARR_SUPPORT/INSUFFICIENT_KARR_SUPPORT/DEGENERATE_NULL/NO_OC_SUPPORT), no-zero==zero-PASS, C6 spurious-fire detection, bootstrap sanity, `_safe_wasserstein` edge cases, M1 support floors |
+| `test_l2_event_evidence.py` | 16 | Write/bundle/index/audit round-trip, tamper + stale-content-hash detection, fresh-clone (bundle-only) audit, Windows-worktree-`gitdir` fallback (§5.1), M6 incomplete-row audit problem, git_sha-tamper-via-content_hash |
+| `test_l2_event_adapters.py` | 13 | Fakes, adapter-mismatch, anti-laundering signature checks, real RA seed-0 adapter + end-to-end structural smoke, M3 `complex_index_by_wid` payload mapping + fire_count-is-tick-incidence |
+| `test_l2_event_runner.py` | 28 | Full refusal gauntlet, `evaluate_gate()` wiring (M2: full gauntlet runs inside `evaluate_gate` itself, not just the CLI), CLI-level dispatch for all 4 processes, real-data smoke + evidence-writing round trip, M1 direct-API-bypass reproduction |
 
 Pre-existing regression check: `tests/vivarium/test_karr_ribosome_assembly_l2_replay.py`
 and `test_karr_rna_modification_l2_replay.py` still pass/skip identically
@@ -229,3 +230,162 @@ regression tests added (`test_translate_windows_gitdir_*`,
   scoreboard (`docs/phase_f/l2_2_design_a/evidence_index.json` was not
   touched; `scripts/l2_event/evidence.py` writes to a fully separate tracked
   index at `docs/phase_f/l2_event/evidence_index.json`).
+
+## 8. Opus5 review round 2 (M1–M6 hardening + metric corrections)
+
+Opus5's foundation review returned **architecture ACCEPT, metrics/gating
+REJECT**. This section documents the required fixes, implemented as new
+commits on top of the original 5 (never amending them), plus the explicit
+"reproduce Opus's false greens" test scenarios that must now fail/refuse.
+
+### M1 — support/null refusals inside the core evaluator
+
+`metrics.py` now enforces, before any PASS/FAIL/SEED_NOISE determination:
+
+* **RA repeated-firing**: refuses `INSUFFICIENT_KARR_SUPPORT` unless the
+  pooled Karr fire-tick count across all seeds is `>= 50`
+  (`DEFAULT_MIN_KARR_FIRE_TICKS`).
+* **Cytokinesis single-firing** (spec C2): refuses
+  `INSUFFICIENT_KARR_SUPPORT` unless `>= 45/50` seeds show a Karr fire
+  (`DEFAULT_MIN_KARR_FIRED_SEED_FRACTION = 0.9`).
+* **Any channel**: `DEGENERATE_NULL` when the Karr-only clustered bootstrap
+  null collapses to `q95_null == 0.0` — a zero-spread null cannot
+  discriminate SEED_NOISE from PASS, so neither verdict is reachable; the
+  channel is REFUSED instead. `count_gate()`'s D3 support-window guard is
+  checked (and can hard-`FAIL`) *before* the degenerate-null check, since a
+  guard violation is unconditionally wrong regardless of null quality — see
+  `metrics.py` inline comments for the precedence rationale.
+* **New `NO_OC_SUPPORT` verdict** (`payload_gate`): fires when Karr has a
+  non-empty payload component set but every OC-side payload dict is
+  structurally empty (`[{}] * n`, the shape an allocation-starved OC tick
+  actually produces) — previously this fell through to a per-component
+  bootstrap and reported the far-less-informative `DEGENERATE_NULL`.
+* These floors are currently **code-level defaults** in `metrics.py`
+  (`DEFAULT_MIN_KARR_FIRE_TICKS`, `DEFAULT_MIN_KARR_FIRED_SEED_FRACTION`),
+  not registry YAML fields — a deliberate, narrower reading of "generic
+  registry-configured floors" for this round; promoting them to
+  `EventRegistryEntry` fields is a small, mechanical follow-up if a future
+  process branch needs a non-default floor.
+
+### M2 — `evaluate_gate()` runs the full gauntlet itself
+
+`evaluate_gate()` no longer takes bare `adapter_id`/`event_timing_model`/
+`magnitude_gateable` strings that a caller could hand-assemble to skip a
+check. It now takes `registry_entry: EventRegistryEntry` and
+`adapter: EventAdapter` objects and internally calls the same
+ensemble-size, `check_adapter` (registered / process-match /
+`gating_ready`), window-metadata/stride, and support checks the CLI path
+already ran — so **calling `evaluate_gate()` directly can no longer bypass
+any refusal the CLI would have applied**. `main()`'s gate-mode block calls
+the same `evaluate_gate()` path; there is exactly one gauntlet, not a
+CLI-only one and a laxer programmatic one.
+
+### M3 — RA payload mapping uses real component keys, not raw positions
+
+`RibosomeAssemblySmokeAdapter` now accepts an explicit
+`complex_index_by_wid: dict[int, str] | None` constructor mapping. When
+supplied (as `run_structural_smoke()` now does, building it once from
+tick-0's inferred wids via `build_karr_conditioned_state`), payload keys
+are the real complex names (e.g. `RIBOSOME_30S`/`RIBOSOME_50S`) instead of
+positional `complex_0`/`complex_1` placeholders — closing the risk of two
+differently-ordered but same-length payloads silently comparing as
+"matching" components. `payload_gate()` separately asserts the Karr/OC
+component key spaces are exactly equal before computing any metric
+(`disjoint component key spaces` → hard `FAIL`, never silently ignored).
+The adapter's docstring now explicitly declares RA's `fire_count`
+semantics: **tick incidence** (how many ticks show a fire), never a
+particle/molecule count — verified by a dedicated test constructing a
+multi-particle single-tick fire and asserting `fire_count == 1`.
+
+### M4 — stride/window-boundary metadata contract
+
+`window_loader.py`'s `load_and_check_window()` now requires, by default
+(`require_stride_contract=True`), that trace metadata carry `stride == 1`,
+`tick_start`, and at least one of `tick_end`/`window_anchor` — see the new
+`docs/phase_f/l2_event/EVENT_WINDOW_EXTRACTOR_CONTRACT.md` for the full
+contract (documentation-only; no extraction performed or proposed).
+Neither real event MAT on disk today satisfies this contract, so:
+
+* the RA seed-0 structural smoke explicitly opts out
+  (`require_stride_contract=False`) and surfaces the incompleteness as a
+  non-fatal `stride_contract_ok=False` field plus a `reasons` entry in the
+  written evidence (see the regenerated `result.json`, §3.1) — it never
+  silently passes;
+* any real (non-smoke) gate computation attempted against either file with
+  the default strict contract raises
+  `EventWindowRefused("INCOMPLETE_WINDOW", ...)`.
+
+### M5 — catalog cross-check scope correction
+
+`registry.validate_against_catalog()`'s `harness_type` consistency check
+is now gated on `in_scope_v4` — it only enforces agreement for registry
+rows the v4 spec actually governs, checked bidirectionally (every
+`in_scope_v4` registry row must appear in the spec's required set, and
+vice versa). This was necessary because `FtsZPolymerization`'s registry
+entry (`event_registry.yaml`) has been reworded per this review: it
+**should leave the event-class profile entirely** (a gradient/continuous
+polymerization process was never a good fit for a binary-firing event
+gate) but that catalog-owning decision is **pending**, so the row is kept
+for now, with `in_scope_v4: false` already reflecting v4's own exclusion.
+A dedicated regression test
+(`test_validate_against_catalog_ftsz_reclassification_does_not_brick_ribosome_assembly`)
+confirms that reclassifying/removing FtsZ's row can never break
+RibosomeAssembly's cross-check or smoke path — the two are fully
+independent registry rows.
+
+### M6 — audit correctness for incomplete/empty evidence
+
+`evidence.audit_index()` previously had nothing to iterate for a row with
+`mode: INCOMPLETE` and empty `artifact_hashes` (e.g. a bundle missing a
+mandatory file) — the per-file hash-comparison loop simply ran zero times,
+so the row contributed **zero problems**, indistinguishable from a
+genuinely clean audit. `audit_index()` now explicitly flags any
+`INCOMPLETE`/empty-`artifact_hashes` row as a problem in its own right —
+verified by
+`test_audit_index_flags_incomplete_row_as_a_problem_not_a_silent_pass`.
+
+### Metric-correctness items (bundled into this round per Opus5's request)
+
+* **Payload null is per-component, seed-cluster bootstrapped, and matched
+  to the worst-component statistic** — no pooling of heterogeneous
+  components into one null, and no naive per-fire (rather than per-seed)
+  resampling, which would pseudo-replicate within a seed and understate the
+  null's spread. Timing's null remains seed-cluster preserved (unchanged
+  from the original foundation, re-verified under the new floor logic).
+* **`DEFAULT_K_ENG` is now explicitly documented as provisional** —
+  `ProvenanceDoc`/registry carry a `k_eng_provenance` field so a future
+  ratified value is never silently indistinguishable from this placeholder.
+* **Explicit one-sided empty behavior**: an empty event support case
+  refuses (`EMPTY_EVENT_SUPPORT`/`NO_KARR_SUPPORT`/`NO_OC_SUPPORT`
+  depending on which side is empty) rather than reporting any capped or
+  "silent" green.
+* **RA `fire_count` semantics** (tick incidence, not particle count) are
+  now declared in both the adapter docstring and a dedicated test (M3,
+  above).
+* **`git_sha` is now part of `_content_hash()`'s stable dict** — tampering
+  with a row's recorded `git_sha` without recomputing `content_hash` is
+  caught as a `content_hash mismatch`, the same mechanism that already
+  catches a forged `content_hash` field itself
+  (`test_audit_index_detects_tampered_git_sha_via_content_hash`). Full
+  provenance linkage (e.g. binding to a specific upstream commit chain) is
+  left for later work, per Opus5's "where practical" scoping.
+
+### Reproducing Opus5's false-green scenarios — all now fail/refuse
+
+| Scenario | Old (false-green) behavior | New behavior |
+|---|---|---|
+| `n_seeds=1` ensemble | Could reach a computed verdict | `INSUFFICIENT_KARR_SUPPORT` / `SINGLE_SEED_ENSEMBLE_REQUIRED` |
+| 3 Karr fire-ticks (RA repeated) | Could reach PASS/FAIL | `INSUFFICIENT_KARR_SUPPORT` (< 50 pooled fire ticks) |
+| `q95_null == 0` (degenerate null) | Could report PASS/SEED_NOISE | `DEGENERATE_NULL`, REFUSED |
+| Direct `evaluate_gate()` call, bypassing CLI checks | Could skip adapter/ensemble/window checks | `evaluate_gate()` runs the identical gauntlet internally; no bypass possible |
+| Disjoint payload component key spaces | Could silently compare mismatched components | Hard `FAIL` on key-space mismatch |
+| `stride=2` (or missing stride contract) window | Could load as if fully enumerated | `EventWindowRefused("INCOMPLETE_WINDOW", ...)` (strict default); smoke path surfaces it non-fatally, never as PASS |
+| Incomplete/empty-hash audit row | Zero problems reported | Explicit problem reported |
+| FtsZ reclassification | (untested risk of bricking RA's registry row) | Dedicated test proves RA is unaffected |
+
+All eight scenarios above are covered by dedicated regression tests (see
+the per-file breakdown in §5); the full suite is **133/133 passing**
+(`bin\oc-pytest tests/scripts -k l2_event`), including a re-verified
+zero-problem `audit_index()` run against the regenerated RA seed-0 evidence
+bundle (git_sha now bound to this round's commits, `stride_contract_ok`
+field present and `False`, per M4).

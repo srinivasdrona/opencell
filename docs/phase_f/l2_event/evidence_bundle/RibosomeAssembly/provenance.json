@@ -1,10 +1,10 @@
 {
   "adapter_id": "ribosome_assembly.smoke.v1",
   "adapter_module": "scripts.l2_event.adapters.ribosome_assembly_smoke",
-  "generated_at": "2026-07-31T21:54:17.171635+00:00",
-  "git_sha": "766f42c64c5c8a515eea573343c107407e8a0f2c",
+  "generated_at": "2026-08-01T01:10:15.437337+00:00",
+  "git_sha": "90a9b92b6c59bbfe07d126a851c416b17dd2ba09",
   "karr_source": "/mnt/e/opencell-worktrees/l2-event-foundation/data/m1_sources/karr_native/per_process_traces_v2_event_s000",
   "process": "RibosomeAssembly",
-  "registry_sha256": "e0c95c0c33fd56bfaf89dbcafc43fbc15f9d48a15979854c8a466ffe32b99e7e",
+  "registry_sha256": "17e16cae7814e8ef616df558d316f4ea232cf213ae498d1cc263b0c70bcadd14",
   "schema_version": 1
 }

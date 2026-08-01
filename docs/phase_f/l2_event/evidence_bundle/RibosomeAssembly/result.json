@@ -9,7 +9,8 @@
   "process": "RibosomeAssembly",
   "reasons": [
     "structural_smoke_only: proves the loader/adapter/OC-port round-trip works on one real seed; this is NOT a calibrated ensemble gate verdict.",
-    "karr_total_fires=2 oc_total_fires=2"
+    "karr_total_fires=2 oc_total_fires=2",
+    "stride_contract_ok=False (M4, non-fatal for structural_smoke): metadata missing required key 'stride'; metadata missing required key 'tick_start'; metadata missing both 'tick_end' and 'window_anchor' (at least one required, 'as applicable')"
   ],
   "schema_version": 1,
   "verdict": "NOT_APPLICABLE",

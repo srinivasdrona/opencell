@@ -111,6 +111,20 @@ processes:
       trace exists on disk for FtsZPolymerization under any
       per_process_traces_v2_event_s* directory.
     notes: >
+      M5 (Opus5 review): FtsZPolymerization SHOULD leave the event-class
+      profile entirely -- it is a continuous/gradient process, not a
+      binary firing event, so "in_scope_v4: false" undersells the
+      correction; this is a candidate reclassification pending an
+      explicit catalog-owning decision (out of this task's no-catalog-
+      edits scope). This row is kept here (rather than deleted) purely so
+      registry.validate_against_catalog()'s bidirectional event_class
+      coverage check has a place to record the catalog's current
+      harness_type="event_class" classification for it. Per M5, any
+      future reclassification of THIS row (in either direction) must
+      never cause validate_against_catalog() to refuse unrelated in-scope
+      rows (Cytokinesis, RibosomeAssembly) -- the harness_type check is
+      scoped to `in_scope_v4: true` rows only, precisely to keep FtsZ's
+      pending status from bricking RA's structural smoke.
       Catalog carries a seed_window (tick_range_from_division [-200, 0])
       but no event_adapter_id or event-window extraction has ever run for
       this process.
