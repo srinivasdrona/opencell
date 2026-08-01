@@ -1,4 +1,4 @@
-function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, seed, tick_offset)
+function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, seed, tick_offset, window_contract, anchor_opts)
 % extract_per_process_traces_v2
 % Allocator-correct per-process trace extraction with per-tick tap points.
 %
@@ -13,6 +13,32 @@ function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, se
 %   RibosomeAssembly's first assembly event is ~tick 238, so tick_offset=200 with
 %   n_ticks=100 snapshots ticks 200..299 and captures the firing window. With the
 %   default tick_offset=0 the behaviour is identical to the original extractor.
+%
+% window_contract (optional, default '' -- fully backward compatible, no new
+%   metadata written): '' | 'fixed' | 'anchor'. Selects which of the two
+%   docs/phase_f/l2_event/EVENT_WINDOW_EXTRACTOR_CONTRACT.md (M4) window
+%   kinds this extraction produces, and causes metadata/stride,
+%   metadata/tick_start, and metadata/tick_end (fixed) or
+%   metadata/window_anchor (anchor) to be written alongside the existing
+%   metadata/n_ticks, process_name, rng_seed, tick_offset keys:
+%     'fixed'  -- the window is the caller-supplied tick_offset burn-in
+%                 (unchanged capture loop below); tick_start == tick_offset,
+%                 tick_end == tick_offset + n_ticks - 1, stride == 1.
+%     'anchor' -- the window ends at a REAL, observed division-complete
+%                 state (see capture_anchor_window/default_anchor_opts
+%                 below), never a caller-supplied or fabricated tick. Do
+%                 not pass tick_offset with 'anchor' (must be empty/0); the
+%                 window start is discovered, not requested.
+%
+% anchor_opts (optional, only used when window_contract == 'anchor'): struct
+%   with fields max_search_ticks (default 50000), signal_property (default
+%   'geometry'), signal_field (default 'pinched'). The default targets
+%   Cytokinesis's own real completion signal -- CellGeometry.pinched, which
+%   Cytokinesis.evolveState() itself defines as pinchedDiameter == 0 (see
+%   data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+state/
+%   CellGeometry.m and .../+process/Cytokinesis.m) -- so the discovered
+%   anchor tick is the simulation's own division-complete tick, not an
+%   externally supplied or hardcoded value.
 %
 % Output file:
 %   data/m1_sources/karr_native/<output_subdir>/<Process>_<n_ticks>ticks.mat
@@ -38,6 +64,22 @@ end
 if nargin < 3 || isempty(n_ticks)
     n_ticks = 100;
 end
+if nargin < 6 || isempty(window_contract)
+    window_contract = '';
+end
+if ~any(strcmp(window_contract, {'', 'fixed', 'anchor'}))
+    error('extract_per_process_traces_v2:invalid_window_contract', ...
+        'window_contract must be '''', ''fixed'', or ''anchor'' (got ''%s'')', window_contract);
+end
+if strcmp(window_contract, 'anchor') && tick_offset ~= 0
+    error('extract_per_process_traces_v2:anchor_tick_offset_conflict', ...
+        ['tick_offset must not be supplied with window_contract=''anchor'' -- the window ' ...
+         'start is discovered from the real division signal, not a caller-supplied burn-in.']);
+end
+if nargin < 7 || isempty(anchor_opts)
+    anchor_opts = struct();
+end
+anchor_opts = default_anchor_opts(anchor_opts);
 
 this_file = mfilename('fullpath');
 matlab_dir = fileparts(this_file);
@@ -77,36 +119,47 @@ for i = 1:numel(process_names)
     snapshot_props = pick_snapshot_properties(proc);
     fprintf('[trace_v2] %s snapshot properties: %s\n', canonical_name, join_props(snapshot_props));
 
-    states_before = struct();
-    states_after = struct();
-    for p = 1:numel(snapshot_props)
-        states_before.(snapshot_props{p}) = cell(n_ticks, 1);
-        states_after.(snapshot_props{p}) = cell(n_ticks, 1);
-    end
-
     seed_simulation(sim, seed);
-
-    % Optional event-window burn-in: advance the whole simulation tick_offset
-    % ticks without snapshotting, so the subsequent n_ticks capture a window
-    % where an otherwise-quiescent-at-birth process is active.
-    for bt = 1:tick_offset
-        [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props);
-    end
 
     ok = true;
     error_message = '';
-    for t = 1:n_ticks
-        try
-            [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props);
-            for p = 1:numel(snapshot_props)
-                prop = snapshot_props{p};
-                states_before.(prop){t, 1} = before_tick.(prop);
-                states_after.(prop){t, 1} = after_tick.(prop);
+    effective_tick_start = tick_offset;
+    window_anchor_tick = [];
+
+    if strcmp(window_contract, 'anchor')
+        % Division-anchored window: no caller burn-in -- the window start is
+        % discovered from the real Cytokinesis/CellGeometry completion
+        % signal (see capture_anchor_window), never fabricated or supplied.
+        [states_before, states_after, effective_tick_start, window_anchor_tick, ok, error_message] = ...
+            capture_anchor_window(sim, target_idx, snapshot_props, n_ticks, anchor_opts);
+    else
+        states_before = struct();
+        states_after = struct();
+        for p = 1:numel(snapshot_props)
+            states_before.(snapshot_props{p}) = cell(n_ticks, 1);
+            states_after.(snapshot_props{p}) = cell(n_ticks, 1);
+        end
+
+        % Optional event-window burn-in: advance the whole simulation tick_offset
+        % ticks without snapshotting, so the subsequent n_ticks capture a window
+        % where an otherwise-quiescent-at-birth process is active.
+        for bt = 1:tick_offset
+            [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props);
+        end
+
+        for t = 1:n_ticks
+            try
+                [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props);
+                for p = 1:numel(snapshot_props)
+                    prop = snapshot_props{p};
+                    states_before.(prop){t, 1} = before_tick.(prop);
+                    states_after.(prop){t, 1} = after_tick.(prop);
+                end
+            catch err
+                ok = false;
+                error_message = sprintf('tick %d failed:\n%s', t, getReport(err, 'extended', 'hyperlinks', 'off'));
+                break;
             end
-        catch err
-            ok = false;
-            error_message = sprintf('tick %d failed:\n%s', t, getReport(err, 'extended', 'hyperlinks', 'off'));
-            break;
         end
     end
 
@@ -120,10 +173,24 @@ for i = 1:numel(process_names)
         'process_name', canonical_name, ...
         'n_ticks', n_ticks, ...
         'rng_seed', seed, ...
-        'tick_offset', tick_offset, ...
+        'tick_offset', effective_tick_start, ...
         'timestamp', datestr(now, 'yyyy-mm-dd HH:MM:SS'), ...
         'snapshot_properties', {snapshot_props} ...
     );
+
+    % M4 stride/window-boundary metadata contract (docs/phase_f/l2_event/
+    % EVENT_WINDOW_EXTRACTOR_CONTRACT.md) -- only written when the caller
+    % opted into a window_contract; '' (default) preserves the exact
+    % pre-M4 metadata shape for every existing non-event-window caller.
+    if strcmp(window_contract, 'fixed')
+        metadata.stride = int32(1);
+        metadata.tick_start = int32(effective_tick_start);
+        metadata.tick_end = int32(effective_tick_start + n_ticks - 1);
+    elseif strcmp(window_contract, 'anchor')
+        metadata.stride = int32(1);
+        metadata.tick_start = int32(effective_tick_start);
+        metadata.window_anchor = int32(window_anchor_tick);
+    end
 
     save(out_path, 'states_before', 'states_after', 'metadata', '-v7.3');
     fprintf('[trace_v2] saved: %s\n', out_path);
@@ -239,6 +306,128 @@ end
 
 mets.counts = edu.stanford.covert.cell.sim.constant.Condition.applyConditions( ...
     mets.counts, mets.setCounts, time.values);
+end
+
+function opts = default_anchor_opts(opts)
+% default_anchor_opts  Fill in defaults for window_contract='anchor'.
+%
+% signal_property/signal_field default to Cytokinesis's own real division
+% completion signal: CellGeometry.pinched, which Cytokinesis.evolveState()
+% defines as pinchedDiameter == 0 (see CellGeometry.m get.pinched and
+% Cytokinesis.m's ring-bending/dissociation logic). Callers extracting a
+% different EVENT_CLASS process's division-anchored window may override
+% signal_property/signal_field to that process's own equivalent real
+% completion signal -- never to a value derived from the expected/desired
+% outcome.
+if ~isfield(opts, 'max_search_ticks') || isempty(opts.max_search_ticks)
+    opts.max_search_ticks = 50000;
+end
+if ~isfield(opts, 'signal_property') || isempty(opts.signal_property)
+    opts.signal_property = 'geometry';
+end
+if ~isfield(opts, 'signal_field') || isempty(opts.signal_field)
+    opts.signal_field = 'pinched';
+end
+end
+
+function [states_before, states_after, tick_start, anchor_tick, ok, error_message] = ...
+    capture_anchor_window(sim, target_idx, snapshot_props, n_ticks, anchor_opts)
+% capture_anchor_window  Division-anchored event-window capture.
+%
+% Free-runs the simulation tick-by-tick from t=1 (identical per-tick
+% scheduler/allocation/tap semantics as the fixed-window path, via
+% evolve_state_with_tap), maintaining a size-n_ticks circular buffer of the
+% most recent (before, after) snapshots. After each tick it reads the
+% REAL simulation state at
+% sim.processes{target_idx}.(anchor_opts.signal_property).(anchor_opts.signal_field)
+% -- never a precomputed/expected tick -- and stops the first time that
+% signal is true AND a full n_ticks buffer has been collected. The anchor
+% tick and the n_ticks window ending at it are both derived from that one
+% real observation; there is no fallback that invents an anchor when the
+% signal never fires (see the max_search_ticks exhaustion branch below,
+% which fails loudly instead).
+ok = true;
+error_message = '';
+anchor_tick = [];
+tick_start = [];
+states_before = struct();
+states_after = struct();
+
+target_proc = sim.processes{target_idx};
+if ~isprop(target_proc, anchor_opts.signal_property)
+    ok = false;
+    error_message = sprintf( ...
+        'anchor signal property ''%s'' not found on process (window_contract=''anchor'' requires a real, ' ...
+        'readable completion signal on the target process)', anchor_opts.signal_property);
+    return;
+end
+
+buffer_before = cell(n_ticks, 1);
+buffer_after = cell(n_ticks, 1);
+buffer_len = 0;
+next_slot = 1;
+
+t = 0;
+found = false;
+while t < anchor_opts.max_search_ticks
+    t = t + 1;
+    try
+        [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props);
+    catch err
+        ok = false;
+        error_message = sprintf('anchor search tick %d failed:\n%s', t, getReport(err, 'extended', 'hyperlinks', 'off'));
+        return;
+    end
+
+    slot = mod(next_slot - 1, n_ticks) + 1;
+    buffer_before{slot} = before_tick;
+    buffer_after{slot} = after_tick;
+    next_slot = next_slot + 1;
+    buffer_len = min(buffer_len + 1, n_ticks);
+
+    is_fired = false;
+    try
+        is_fired = logical(target_proc.(anchor_opts.signal_property).(anchor_opts.signal_field));
+    catch
+        is_fired = false;
+    end
+
+    if is_fired && buffer_len == n_ticks
+        found = true;
+        anchor_tick = t;
+        tick_start = t - n_ticks + 1;
+        break;
+    end
+end
+
+if ~found
+    ok = false;
+    error_message = sprintf( ...
+        ['division-anchor signal ''%s.%s'' did not fire within max_search_ticks=%d ticks -- refusing to ' ...
+         'fabricate a window_anchor; either raise anchor_opts.max_search_ticks or this seed genuinely does ' ...
+         'not divide in that many ticks'], anchor_opts.signal_property, anchor_opts.signal_field, ...
+        anchor_opts.max_search_ticks);
+    return;
+end
+
+for p = 1:numel(snapshot_props)
+    states_before.(snapshot_props{p}) = cell(n_ticks, 1);
+    states_after.(snapshot_props{p}) = cell(n_ticks, 1);
+end
+
+% The buffer is circular; `next_slot`'s current position is the slot that
+% will be overwritten NEXT, i.e. the oldest entry still held. Replay the
+% buffer starting there so states_before/after end up in chronological
+% order (row 1 == tick_start .. row n_ticks == anchor_tick).
+oldest_slot = mod(next_slot - 1, n_ticks) + 1;
+for k = 1:n_ticks
+    src_slot = mod(oldest_slot - 1 + (k - 1), n_ticks) + 1;
+    for p = 1:numel(snapshot_props)
+        prop = snapshot_props{p};
+        states_before.(prop){k, 1} = buffer_before{src_slot}.(prop);
+        states_after.(prop){k, 1} = buffer_after{src_slot}.(prop);
+    end
+end
 end
 
 function out = snapshot_from_process(proc, snapshot_props)

@@ -1,10 +1,17 @@
 # L2.event Window Extractor Contract (M4, documentation-only)
 
-Status: **specification for a future extractor, not an implementation.** No
-MATLAB/Octave extraction was run or is proposed by this document. It exists
-so a future extraction task has an unambiguous, already-reviewed target
-instead of re-deriving the contract from scratch (and so `window_loader.py`
-has a stable doc to point to from its refusal messages).
+Status: **contract implemented in code, not yet run.**
+`scripts/matlab/extract_per_process_traces_v2.m` now accepts an optional
+`window_contract` ('fixed' | 'anchor') + `anchor_opts` argument pair that
+writes exactly the metadata keys this document specifies, and
+`scripts/l2_event/launcher.py` provides the MATLAB-free planning/command-
+builder surface (validate-before-skip via the unmodified
+`window_loader.load_event_window`, `require_stride_contract=True`). No
+MATLAB/Octave extraction has been run or is proposed by this document or by
+that code; the two real event MATs on disk today (below) are unchanged.
+This document remains the unambiguous target both pieces of code were
+written against (and the doc `window_loader.py` points to from its refusal
+messages).
 
 ## Why this exists
 
@@ -57,7 +64,7 @@ predates this contract. This is why:
   intentional and must not be worked around by loosening the loader; the
   extractor must be fixed instead.
 
-## What a future extractor must emit
+## What the extractor emits (`window_contract='fixed'`/`'anchor'`)
 
 For each `metadata` group in a trace file intended for `L2.event` gate
 computation (not structural smoke), in addition to the existing required
@@ -75,11 +82,18 @@ metadata/window_anchor -- int/float, present for division-anchored windows
 
 No other change to the extractor's output format, per-tick payload
 encoding, or directory layout (`per_process_traces_v2_event_s{seed:03d}/`)
-is implied by this contract. This document intentionally says nothing
-about *how* to derive `stride`/`tick_start`/`tick_end`/`window_anchor` from
-the underlying MATLAB simulation state -- that is extraction-task scope,
-out of bounds for the L2.event foundation task this document was written
-under.
+is implied by this contract. `stride`/`tick_start`/`tick_end` are derived
+mechanically from the caller-supplied `tick_offset` burn-in for
+`window_contract='fixed'`; `tick_start`/`window_anchor` for
+`window_contract='anchor'` are discovered from a real, observed simulation
+completion signal (`capture_anchor_window()` in
+`extract_per_process_traces_v2.m`; default signal is
+`CellGeometry.pinched`/`pinchedDiameter == 0`, Cytokinesis's own real
+division-complete state) -- never fabricated, never derived from an
+expected/desired outcome. See `scripts/l2_event/launcher.py` for the
+corresponding MATLAB-free planning/command-builder surface (specs, CLI,
+validate-before-skip). Neither piece of code has been run against a real
+simulation as part of writing this contract update.
 
 ## Non-goals
 
