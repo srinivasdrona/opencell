@@ -8,14 +8,17 @@ gating-capable adapter this task adds. It is organized in three parts:
 
 1. Pure adapter unit tests (payload mapping, empty-update handling,
    fire_count tick-incidence semantics, multiple-particles-in-one-tick,
-   unmapped-index refusal) -- no real data required.
+   unmapped-index refusal, exact-channel-width refusal) -- no real data
+   required.
 2. Real seed-0 structural round-trip (skipped if the local-only,
    gitignored event-window MAT is absent): proves this adapter reproduces
    the same ground-truth fires (ticks [9, 17]) and mapped payload keys the
-   existing smoke adapter already established, AND proves the runner
-   still cannot reach a computed gate verdict on this file today (no
-   stride/tick-window contract, only 1 of the required 50 seeds) --
-   the only honest verdict for this file remains the existing
+   existing smoke adapter already established, including the specific
+   per-tick WID identity (RIBOSOME_50S@9, RIBOSOME_30S@17, both Karr and
+   OC) -- and that a swapped mapping breaks that identity -- AND proves
+   the runner still cannot reach a computed gate verdict on this file
+   today (no stride/tick-window contract, only 1 of the required 50
+   seeds) -- the only honest verdict for this file remains the existing
    ``structural_smoke`` / ``NOT_APPLICABLE`` path.
 3. Synthetic 50-seed cohort tests driving ``scripts.l2_event.runner.
    evaluate_gate`` end-to-end through this adapter's own
@@ -23,6 +26,13 @@ gating-capable adapter this task adds. It is organized in three parts:
    ``EventObservation``/``EventTimeline`` by hand) -- count/timing/payload
    PASS and FAIL, multiple particles forming in the same tick pooled into
    a real cohort, and missing/spurious OC payload components.
+4. Registry-refusal tests proving this adapter remains unreachable through
+   the real registry: ``evaluate_gate``/``check_adapter`` refuse this
+   candidate against the LIVE ``event_registry.yaml`` RibosomeAssembly row
+   (still declaring ``ribosome_assembly.smoke.v1``) with
+   ``ADAPTER_NOT_REGISTERED``, and a process-name mismatch is refused with
+   ``ADAPTER_PROCESS_MISMATCH`` -- this candidate adapter is never wired
+   into the real dispatch path by this module.
 """
 
 from __future__ import annotations
@@ -43,9 +53,10 @@ from scripts.l2_event.adapters.ribosome_assembly_gate import (
     RibosomeAssemblyGateAdapter,
     UnmappedComplexIndexError,
 )
-from scripts.l2_event.registry import EventRegistryEntry
+from scripts.l2_event.registry import EventRegistryEntry, resolve_process_entry
 from scripts.l2_event.runner import (
     RunnerRefusal,
+    check_adapter,
     check_ensemble_size,
     evaluate_gate,
     load_and_check_window,
@@ -146,6 +157,30 @@ def test_karr_observation_raises_on_unmapped_complex_index():
         adapter.karr_observation(window, 0)
 
 
+def test_karr_observation_raises_on_channel_width_1_even_when_extra_index_absent():
+    """Width check runs before per-index mapping: with the default 2-WID
+    mapping, a channel that is only 1-wide must refuse even though there
+    is no "extra" index at all to silently zero-fill -- the cardinality
+    mismatch itself (not merely an out-of-range delta value) is the bug
+    this refusal targets."""
+    adapter = RibosomeAssemblyGateAdapter()
+    window = _window([[3.0]])
+    with pytest.raises(UnmappedComplexIndexError):
+        adapter.karr_observation(window, 0)
+
+
+def test_karr_observation_raises_on_channel_width_3_even_when_extra_delta_is_zero():
+    """Same width check, opposite direction: a 3-wide channel must refuse
+    even when the third (unmapped) index's delta is exactly 0.0 on this
+    tick -- a zero value on the extra channel must not paper over the
+    keyspace-cardinality drift, since some OTHER tick could carry a
+    nonzero value there that would otherwise silently vanish."""
+    adapter = RibosomeAssemblyGateAdapter()
+    window = _window([[3.0, 4.0, 0.0]])
+    with pytest.raises(UnmappedComplexIndexError):
+        adapter.karr_observation(window, 0)
+
+
 def test_oc_observation_handles_empty_update_dict_without_keyerror():
     """Spec §4 fact 5 / this task's contract: `.get('complex',
     {}).get('counts', {})`, never direct key access."""
@@ -198,7 +233,6 @@ def test_gate_adapter_real_seed0_round_trip_reproduces_ticks_9_and_17():
     are drawn only from the declared {RIBOSOME_30S, RIBOSOME_50S}
     keyspace -- using the fixed mapping, not per-run wid inference."""
     from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
-
     from scripts.l2_event.adapters import ribosome_assembly_smoke as ra_smoke
 
     window = load_and_check_window(_RA_TRACE, ra_smoke._RA_OBSERVABLES, require_stride_contract=False)
@@ -257,6 +291,66 @@ def test_gate_adapter_cannot_reach_a_computed_verdict_on_real_seed0():
     with pytest.raises(RunnerRefusal) as exc_info2:
         check_ensemble_size(n_seeds_provided=1, required_n_seeds=50)
     assert exc_info2.value.reason == "SINGLE_SEED_ENSEMBLE_REQUIRED"
+
+
+@pytest.mark.skipif(not _RA_TRACE.exists(), reason="Real RibosomeAssembly seed-000 event-window MAT not present locally")
+def test_gate_adapter_real_seed0_tick9_and_tick17_wid_identity():
+    """Structural-only, real-seed0 identity check, stronger than the
+    ticks-only round-trip above: not just THAT ticks 9 and 17 fire, but
+    WHICH named complex forms at each, on BOTH sides. Ground truth
+    (established directly from this adapter against the real trace):
+    tick 9 forms RIBOSOME_50S (only), tick 17 forms RIBOSOME_30S (only) --
+    for both the Karr channel and the OC `update` dict. This is the
+    concrete guard against a payload-key-to-WID mismap (SLOT 1's named
+    inversion: "payload keys map Karr positional complexes to wrong OC
+    WIDs")."""
+    from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
+    from scripts.l2_event.adapters import ribosome_assembly_smoke as ra_smoke
+
+    window = load_and_check_window(_RA_TRACE, ra_smoke._RA_OBSERVABLES, require_stride_contract=False)
+    process_obj = KarrRibosomeAssemblyProcess({"rng_seed": 0})
+    adapter = RibosomeAssemblyGateAdapter()
+
+    karr_obs_9 = adapter.karr_observation(window, 9)
+    karr_obs_17 = adapter.karr_observation(window, 17)
+    assert karr_obs_9.payload == {"RIBOSOME_50S": 1.0}
+    assert karr_obs_17.payload == {"RIBOSOME_30S": 1.0}
+
+    oc_payloads: dict[int, dict[str, float]] = {}
+    for tick in (9, 17):
+        state, _ = ra_smoke.build_karr_conditioned_state(process_obj, window, tick)
+        update = ra_smoke.run_ribosome_assembly_oc_tick(process_obj, state)
+        oc_payloads[tick] = adapter.oc_observation(tick, state, update).payload
+    assert oc_payloads[9] == {"RIBOSOME_50S": 1.0}
+    assert oc_payloads[17] == {"RIBOSOME_30S": 1.0}
+
+
+@pytest.mark.skipif(not _RA_TRACE.exists(), reason="Real RibosomeAssembly seed-000 event-window MAT not present locally")
+def test_gate_adapter_real_seed0_swapped_wid_map_breaks_the_identity():
+    """Negative control for the identity test above: an adapter configured
+    with the two WIDs deliberately SWAPPED must reproduce the WRONG
+    identity on the Karr side at both ticks (tick 9 now reads as
+    RIBOSOME_30S, tick 17 as RIBOSOME_50S) -- proving the identity test
+    above is actually sensitive to the mapping, not a tautology that would
+    pass regardless of which WID a given positional index is assigned to.
+    (The OC side has no equivalent failure mode to swap: `oc_observation`
+    never consults `complex_index_by_wid` at all -- OC's own
+    `update['complex']['counts']` dict is already WID-keyed by the OC
+    process itself, so there is no positional index for a mapping to get
+    wrong on that side; this is exactly why a payload-key mismap can only
+    originate on the Karr positional-array side, which is what this test
+    targets.)"""
+    from scripts.l2_event.adapters import ribosome_assembly_smoke as ra_smoke
+
+    window = load_and_check_window(_RA_TRACE, ra_smoke._RA_OBSERVABLES, require_stride_contract=False)
+    swapped = RibosomeAssemblyGateAdapter(complex_index_by_wid={0: "RIBOSOME_50S", 1: "RIBOSOME_30S"})
+
+    karr_obs_9 = swapped.karr_observation(window, 9)
+    karr_obs_17 = swapped.karr_observation(window, 17)
+    assert karr_obs_9.payload == {"RIBOSOME_30S": 1.0}
+    assert karr_obs_9.payload != {"RIBOSOME_50S": 1.0}
+    assert karr_obs_17.payload == {"RIBOSOME_50S": 1.0}
+    assert karr_obs_17.payload != {"RIBOSOME_30S": 1.0}
 
 
 # ---------------------------------------------------------------------------
@@ -322,7 +416,7 @@ def _build_cohort(
     karr_payloads_by_seed: list[list[dict]] = []
     oc_payloads_by_seed: list[list[dict]] = []
 
-    for seed, (karr_ticks, oc_ticks) in enumerate(zip(karr_fires, oc_fires)):
+    for seed, (karr_ticks, oc_ticks) in enumerate(zip(karr_fires, oc_fires, strict=True)):
         karr_set = set(karr_ticks)
         after = np.zeros((n_ticks, 2), dtype=float)
         for t in karr_set:
@@ -436,7 +530,7 @@ def test_evaluate_gate_fails_on_timing_divergence_oc_shifted_to_a_different_cycl
     # every seed's fire count is preserved exactly, isolating the divergence
     # to timing only (no incidental count-gate divergence).
     oc_fires = [[t + 15 for t in ticks] for ticks in karr_fires]
-    assert all(len(oc) == len(karr) for oc, karr in zip(oc_fires, karr_fires))
+    assert all(len(oc) == len(karr) for oc, karr in zip(oc_fires, karr_fires, strict=True))
     karr, oc, karr_pl, oc_pl = _build_cohort(
         karr_fires,
         oc_fires,
@@ -633,3 +727,60 @@ def test_payload_gate_direct_call_reports_missing_and_spurious_component_verdict
     component_verdicts = {c.component: c.verdict for c in result.per_component}
     assert component_verdicts["RIBOSOME_50S"] == "NO_OC_COMPONENT"
     assert component_verdicts["RIBOSOME_EXTRA_BOGUS"] == "SPURIOUS_OC_COMPONENT"
+
+
+# ---------------------------------------------------------------------------
+# Part 4 -- registry-refusal tests: this candidate adapter stays
+# unreachable/unregistered through the real dispatch path
+# ---------------------------------------------------------------------------
+
+
+def test_check_adapter_refuses_gate_adapter_against_the_live_registered_smoke_adapter():
+    """The LIVE, on-disk `event_registry.yaml` RibosomeAssembly row still
+    declares `ribosome_assembly.smoke.v1` (unchanged by this task -- no
+    registry edits made). `check_adapter` must refuse this candidate
+    `ribosome_assembly.gate.v1` adapter against that live row with
+    `ADAPTER_NOT_REGISTERED`, proving the new adapter is not reachable
+    through the real registry no matter how gate-capable its
+    implementation is."""
+    live_entry = resolve_process_entry("RibosomeAssembly")
+    assert live_entry.adapter_id == "ribosome_assembly.smoke.v1"
+    assert live_entry.adapter_status == "structural_smoke_only"
+
+    with pytest.raises(RunnerRefusal) as exc_info:
+        check_adapter(RibosomeAssemblyGateAdapter(), "RibosomeAssembly", live_entry)
+    assert exc_info.value.reason == "ADAPTER_NOT_REGISTERED"
+
+
+def test_evaluate_gate_refuses_gate_adapter_against_the_live_registered_smoke_adapter():
+    """Same refusal, exercised through the full `evaluate_gate` entry point
+    (M2: it always runs the same refusal gauntlet internally, so no direct
+    caller -- this test included -- can reach a computed verdict by
+    bypassing `check_adapter`)."""
+    live_entry = resolve_process_entry("RibosomeAssembly")
+    with pytest.raises(RunnerRefusal) as exc_info:
+        evaluate_gate(
+            process="RibosomeAssembly",
+            registry_entry=live_entry,
+            adapter=RibosomeAssemblyGateAdapter(),
+            karr_timelines=[],
+            oc_timelines=[],
+            rng=_rng(),
+        )
+    assert exc_info.value.reason == "ADAPTER_NOT_REGISTERED"
+
+
+def test_check_adapter_refuses_on_adapter_process_name_mismatch():
+    """`check_adapter`'s process-identity check is independent of, and
+    runs before, its registered-adapter-id check: an adapter whose own
+    declared `process_name` does not match the process being evaluated
+    must refuse with `ADAPTER_PROCESS_MISMATCH`, even if its `adapter_id`
+    would otherwise match the registry entry passed in."""
+    adapter = RibosomeAssemblyGateAdapter()
+    adapter.process_name = "SomeOtherProcess"  # instance override, class default is "RibosomeAssembly"
+    entry = _entry()  # adapter_id == adapter.adapter_id, so only the process-name check can fire
+    assert entry.adapter_id == adapter.adapter_id
+
+    with pytest.raises(RunnerRefusal) as exc_info:
+        check_adapter(adapter, "RibosomeAssembly", entry)
+    assert exc_info.value.reason == "ADAPTER_PROCESS_MISMATCH"

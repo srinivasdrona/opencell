@@ -53,8 +53,6 @@ trace file).
 
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-
 from scripts.l2_event.schema import EventObservation
 from scripts.l2_event.window_loader import WindowGrid
 
@@ -79,13 +77,17 @@ _PAYLOAD_CHANNEL = "complexs"
 
 
 class UnmappedComplexIndexError(ValueError):
-    """Raised when the Karr `complexs` channel has more positional indices
-    than :data:`_COMPLEX_INDEX_BY_WID` declares a WID for. Refusing loudly
-    here is the Rule-1 "observable coverage must be complete" discipline
-    applied to a payload mapping: silently dropping an unmapped index's
-    delta would zero-fill a real magnitude out of the comparison instead
-    of surfacing a real drift between this adapter's declared keyspace and
-    the trace's actual channel width.
+    """Raised when the Karr `complexs` channel's positional width does not
+    exactly equal the number of WIDs :data:`_COMPLEX_INDEX_BY_WID` (or a
+    caller-supplied override) declares. This is a *hard* width check, run
+    before any per-index mapping: a channel with width 1 or width 3 is
+    refused even if the extra/missing index's delta happens to be exactly
+    zero on this particular tick, because a trace/adapter whose declared
+    keyspace cardinality silently drifts from the real channel width is a
+    coverage-completeness bug (Rule 1) regardless of whether any single
+    tick's data would have papered over it. Silently dropping (or
+    zero-filling) an out-of-range index's delta would let a real, nonzero
+    magnitude on some *other* tick pass through unmapped and unnoticed.
     """
 
 
@@ -129,24 +131,49 @@ class RibosomeAssemblyGateAdapter:
         ``None`` when unmapped), this is always the declared 2-WID
         keyspace: ``metrics.payload_gate`` must always enforce it for this
         adapter, never fall back to the generic union/NO_OC_COMPONENT-only
-        check."""
+        check.
+
+        Note (verdict, not refusal): when the observed Karr+OC payload
+        keyspace union does not exactly equal this declared set -- an
+        extra/bogus OC key, or this set's required component absent from
+        the observed union entirely -- ``metrics.payload_gate`` reports a
+        hard **FAIL** ``ChannelVerdict`` for the payload channel (which
+        rolls up into an overall process ``FAIL``). This is a computed
+        gate verdict, not a :class:`~scripts.l2_event.runner.RunnerRefusal`
+        (the refusal gauntlet only ever concerns whether a verdict can be
+        computed at all -- adapter identity, ensemble size, empty support,
+        cohort consistency -- never the payload keyspace itself). See
+        ``tests/scripts/test_l2_event_ribosome_assembly_gate.py::
+        test_evaluate_gate_fails_when_oc_reports_a_spurious_extra_component``.
+        """
         return frozenset(self.complex_index_by_wid.values())
 
     def karr_observation(self, window: WindowGrid, tick: int) -> EventObservation:
         before = window.before(self.payload_channel, tick)
         after = window.after(self.payload_channel, tick)
         delta = after - before
+        expected_width = len(self.complex_index_by_wid)
+        if delta.shape[0] != expected_width:
+            raise UnmappedComplexIndexError(
+                f"RibosomeAssembly `{self.payload_channel}` channel width "
+                f"{delta.shape[0]} does not exactly match this adapter's declared "
+                f"mapping width {expected_width} "
+                f"(complex_index_by_wid={self.complex_index_by_wid!r}); refusing "
+                "rather than assuming an extra/missing index is always zero."
+            )
         payload: dict[str, float] = {}
         for i, d in enumerate(delta):
             if d <= 0:
                 continue
             key = self.complex_index_by_wid.get(i)
             if key is None:
+                # Defensive: reachable only if complex_index_by_wid has the
+                # right cardinality but non-dense keys (e.g. {0: ..., 5:
+                # ...}) -- the width check above only guards cardinality,
+                # not key coverage over range(expected_width).
                 raise UnmappedComplexIndexError(
                     f"RibosomeAssembly `{self.payload_channel}` channel index {i} has no "
-                    f"declared WID mapping in complex_index_by_wid={self.complex_index_by_wid!r} "
-                    f"(channel width={delta.shape[0]}); refusing rather than silently "
-                    "dropping this index's positive delta from the payload."
+                    f"declared WID mapping in complex_index_by_wid={self.complex_index_by_wid!r}."
                 )
             payload[key] = float(d)
         fired = bool(payload)
