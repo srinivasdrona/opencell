@@ -59,20 +59,53 @@ def test_count_gate_hard_fail_when_karr_zero_and_oc_nonzero_no_zero_equals_zero_
 
 
 def test_count_gate_passes_for_identical_repeated_firing_cohorts():
-    karr = [_timeline("P", s, [2, 5, 9]) for s in range(20)]
-    oc = [_timeline("P", s, [2, 5, 9]) for s in range(20)]
+    """Identical Karr/OC cohorts must not FAIL, but the per-seed counts
+    must carry real inter-seed variance (not a constant pool) so the null
+    bootstrap is not itself degenerate (M1: DEGENERATE_NULL can never be
+    silently bypassed by using a variance-free fixture)."""
+    counts_per_seed = ([2, 3, 4] * 7)[:20]
+    karr = [_timeline("P", s, list(range(2, 2 + counts_per_seed[s])), n_ticks=20) for s in range(20)]
+    oc = [_timeline("P", s, list(range(2, 2 + counts_per_seed[s])), n_ticks=20) for s in range(20)]
     result = metrics.count_gate(karr, oc, rng=_rng())
     assert result.verdict in ("PASS", "SEED_NOISE")
 
 
 def test_count_gate_fails_when_oc_count_wildly_diverges_from_karr():
     """Every Karr seed fires once; every OC seed fires 10x more -- well
-    outside D3's [floor(0.5*T), ceil(2*T)] support guard."""
+    outside D3's [floor(0.5*T), ceil(2*T)] support guard. Uses an explicit
+    low `min_karr_support` override since this test isolates the D3 guard
+    check from the M1 support-floor check (a dedicated test covers the
+    floor itself)."""
     karr = [_timeline("P", s, [2]) for s in range(20)]
     oc = [_timeline("P", s, list(range(10))) for s in range(20)]
-    result = metrics.count_gate(karr, oc, rng=_rng())
+    result = metrics.count_gate(karr, oc, rng=_rng(), min_karr_support=1)
     assert result.verdict == "FAIL"
     assert result.extra["t_oc"] > result.extra["guard_ceiling"]
+
+
+def test_count_gate_insufficient_karr_support_below_floor():
+    """M1: a nonzero-but-under-powered Karr baseline (3 pooled fire ticks,
+    well below the default floor of 50) must REFUSE
+    (INSUFFICIENT_KARR_SUPPORT), never silently proceed to a bootstrap/
+    PASS -- this reproduces the Opus5-reported false-green scenario."""
+    karr = [_timeline("P", s, [2] if s < 3 else []) for s in range(5)]
+    oc = [_timeline("P", s, [2] if s < 3 else []) for s in range(5)]
+    result = metrics.count_gate(karr, oc, rng=_rng())
+    assert result.verdict == "INSUFFICIENT_KARR_SUPPORT"
+    assert result.statistic_value is None
+    assert result.extra["t_karr"] == 3
+
+
+def test_count_gate_degenerate_null_cannot_produce_seed_noise_or_pass():
+    """M1: a constant per-seed count pool (q95_null == 0) must REFUSE
+    (DEGENERATE_NULL), never report SEED_NOISE/PASS -- reproduces the
+    Opus5-reported 'q95=0 falsely greens' scenario, using a guard-
+    compliant T_oc so the D3 guard check does not mask this path."""
+    karr = [_timeline("P", s, [2, 5, 9]) for s in range(20)]  # constant count=3/seed, t_karr=60
+    oc = [_timeline("P", s, [2, 5, 9]) for s in range(20)]  # matches T_karr exactly (guard.ok)
+    result = metrics.count_gate(karr, oc, rng=_rng())
+    assert result.verdict == "DEGENERATE_NULL"
+    assert result.q95_null == 0.0
 
 
 def test_count_support_guard_bounds():
@@ -107,20 +140,25 @@ def test_timing_gate_repeated_firing_hard_fail_zero_karr_nonzero_oc():
 
 
 def test_timing_gate_repeated_firing_single_fire_matches_pass():
-    """Single-fire case: both sides fire exactly once, at the same tick,
-    across every seed."""
-    karr = [_timeline("P", s, [7]) for s in range(20)]
-    oc = [_timeline("P", s, [7]) for s in range(20)]
-    result = metrics.timing_gate_repeated_firing(karr, oc, rng=_rng())
+    """Single-fire case: both sides fire exactly once per seed, at ticks
+    that vary across seeds (so the null bootstrap is not itself
+    degenerate) but match exactly between Karr and OC. Uses an explicit
+    low `min_karr_support` override -- this test isolates the PASS/
+    SEED_NOISE statistic logic from the M1 support-floor check (covered by
+    its own dedicated test)."""
+    karr = [_timeline("P", s, [5 + (s % 7)], n_ticks=20) for s in range(20)]
+    oc = [_timeline("P", s, [5 + (s % 7)], n_ticks=20) for s in range(20)]
+    result = metrics.timing_gate_repeated_firing(karr, oc, rng=_rng(), min_karr_support=1)
     assert result.verdict in ("PASS", "SEED_NOISE")
 
 
 def test_timing_gate_repeated_firing_detects_timing_shift_fail():
-    """Karr fires early every seed, OC fires late every seed, by a shift
-    much larger than intrinsic seed noise -- must FAIL, not PASS."""
-    karr = [_timeline("P", s, [1, 2], n_ticks=20) for s in range(20)]
-    oc = [_timeline("P", s, [17, 18], n_ticks=20) for s in range(20)]
-    result = metrics.timing_gate_repeated_firing(karr, oc, rng=_rng())
+    """Karr fires early every seed (varying slightly across seeds so the
+    null is not degenerate), OC fires late every seed by a shift much
+    larger than intrinsic seed noise -- must FAIL, not PASS."""
+    karr = [_timeline("P", s, [1 + (s % 4), 2 + (s % 4)], n_ticks=30) for s in range(20)]
+    oc = [_timeline("P", s, [17 + (s % 4), 18 + (s % 4)], n_ticks=30) for s in range(20)]
+    result = metrics.timing_gate_repeated_firing(karr, oc, rng=_rng(), min_karr_support=1)
     assert result.verdict == "FAIL"
 
 
@@ -131,8 +169,28 @@ def test_timing_gate_repeated_firing_between_event_oc_extra_fires_visible_in_bag
     dedicated oc_only_fire_ticks() check covering the C6 detector itself."""
     karr = [_timeline("P", s, [5], n_ticks=20) for s in range(20)]
     oc = [_timeline("P", s, [5, 6, 7, 8], n_ticks=20) for s in range(20)]
-    result = metrics.timing_gate_repeated_firing(karr, oc, rng=_rng())
+    result = metrics.timing_gate_repeated_firing(karr, oc, rng=_rng(), min_karr_support=1)
     assert result.extra["n_oc_fire_ticks"] > result.extra["n_karr_fire_ticks"]
+
+
+def test_timing_gate_repeated_firing_insufficient_karr_support_below_floor():
+    """M1: reproduces the Opus5-reported false-green scenario -- only 3
+    pooled Karr fire ticks (well below the default floor of 50) must
+    REFUSE, never silently proceed to a bootstrap/PASS."""
+    karr = [_timeline("P", 0, [2, 5, 9], n_ticks=20)]
+    oc = [_timeline("P", 0, [2, 5, 9], n_ticks=20)]
+    result = metrics.timing_gate_repeated_firing(karr, oc, rng=_rng())
+    assert result.verdict == "INSUFFICIENT_KARR_SUPPORT"
+
+
+def test_timing_gate_repeated_firing_degenerate_null_cannot_produce_seed_noise_or_pass():
+    """M1: a constant per-seed fire-tick bag (q95_null == 0) must REFUSE
+    (DEGENERATE_NULL), never report SEED_NOISE/PASS."""
+    karr = [_timeline("P", s, [7], n_ticks=20) for s in range(60)]
+    oc = [_timeline("P", s, [7], n_ticks=20) for s in range(60)]
+    result = metrics.timing_gate_repeated_firing(karr, oc, rng=_rng())
+    assert result.verdict == "DEGENERATE_NULL"
+    assert result.q95_null == 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -158,10 +216,46 @@ def test_timing_gate_single_firing_passes_for_matching_offsets():
 
 
 def test_timing_gate_single_firing_fails_for_large_offset_divergence():
-    karr_offsets = np.array([10.0] * 30)
-    oc_offsets = np.array([80.0] * 30)
+    """Offsets vary slightly across seeds (so the null bootstrap is not
+    itself degenerate) but the two cohorts are shifted by far more than
+    that intrinsic seed noise -- must FAIL."""
+    karr_offsets = np.array([10.0 + (i % 5) for i in range(30)])
+    oc_offsets = np.array([80.0 + (i % 5) for i in range(30)])
     result = metrics.timing_gate_single_firing(karr_offsets, oc_offsets, rng=_rng())
     assert result.verdict == "FAIL"
+
+
+def test_timing_gate_single_firing_insufficient_karr_fired_seed_fraction():
+    """M1 (spec C2): Cytokinesis-style single_firing requires >=45/50
+    (0.9) of the WHOLE ensemble to have Karr-fired. Only 40/50 fired here
+    (fraction 0.8) -- must REFUSE (INSUFFICIENT_KARR_SUPPORT), never
+    silently gate on the fired subset alone."""
+    karr_offsets = np.array([10.0 + (i % 5) for i in range(40)])
+    oc_offsets = np.array([10.0 + (i % 5) for i in range(40)])
+    result = metrics.timing_gate_single_firing(karr_offsets, oc_offsets, rng=_rng(), n_seeds_total=50)
+    assert result.verdict == "INSUFFICIENT_KARR_SUPPORT"
+    assert result.extra["n_seeds_total"] == 50
+    assert result.extra["n_karr_fired_seeds"] == 40
+
+
+def test_timing_gate_single_firing_sufficient_karr_fired_seed_fraction_proceeds():
+    """The mirror case: 45/50 (exactly the 0.9 floor) must NOT refuse on
+    support grounds -- it proceeds to the normal statistic path."""
+    karr_offsets = np.array([10.0 + (i % 5) for i in range(45)])
+    oc_offsets = np.array([10.0 + (i % 5) for i in range(45)])
+    result = metrics.timing_gate_single_firing(karr_offsets, oc_offsets, rng=_rng(), n_seeds_total=50)
+    assert result.verdict != "INSUFFICIENT_KARR_SUPPORT"
+
+
+def test_timing_gate_single_firing_degenerate_null_cannot_produce_seed_noise_or_pass():
+    """M1: constant offsets (q95_null == 0) must REFUSE (DEGENERATE_NULL),
+    never report SEED_NOISE/PASS -- reproduces the Opus5-reported
+    'q95=0 falsely greens' scenario for the single_firing timing gate."""
+    karr_offsets = np.array([10.0] * 30)
+    oc_offsets = np.array([10.0] * 30)
+    result = metrics.timing_gate_single_firing(karr_offsets, oc_offsets, rng=_rng())
+    assert result.verdict == "DEGENERATE_NULL"
+    assert result.q95_null == 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -180,17 +274,54 @@ def test_payload_gate_hard_fail_zero_karr_nonzero_oc():
 
 
 def test_payload_gate_passes_for_matching_payloads():
-    karr_payloads = [{"a": 5.0, "b": 2.0} for _ in range(20)]
-    oc_payloads = [{"a": 5.0, "b": 2.0} for _ in range(20)]
+    """Payload values vary across seeds (so the per-component null is not
+    degenerate) but match exactly between Karr and OC."""
+    karr_payloads = [{"a": 5.0 + (i % 3) * 0.5, "b": 2.0 + (i % 4) * 0.25} for i in range(20)]
+    oc_payloads = [dict(p) for p in karr_payloads]
     result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
     assert result.verdict in ("PASS", "SEED_NOISE")
 
 
 def test_payload_gate_fails_for_diverging_component():
-    karr_payloads = [{"a": 5.0} for _ in range(20)]
-    oc_payloads = [{"a": 500.0} for _ in range(20)]
+    """Component 'a' varies across seeds (non-degenerate null) but Karr
+    and OC are shifted by two orders of magnitude -- must FAIL."""
+    karr_payloads = [{"a": 5.0 + (i % 5) * 0.5} for i in range(20)]
+    oc_payloads = [{"a": 500.0 + (i % 5) * 0.5} for i in range(20)]
     result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
     assert result.verdict == "FAIL"
+
+
+def test_payload_gate_no_oc_support_when_karr_has_payload_but_oc_is_empty():
+    """M-metric-correctness: Karr has payload but OC produced none at all
+    -- must never silently zero-fill into a numeric 'close enough' PASS."""
+    karr_payloads = [{"a": 5.0} for _ in range(20)]
+    oc_payloads = [{} for _ in range(20)]
+    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    assert result.verdict == "NO_OC_SUPPORT"
+
+
+def test_payload_gate_disjoint_component_key_spaces_fails_hard():
+    """M3 (Opus5 review): Karr and OC payload component key spaces
+    completely disjoint (e.g. positional `complex_0`/`complex_1` never
+    mapped onto OC's real wid-keyed names) is an adapter payload-mapping
+    bug, not a numeric divergence -- must FAIL, never silently zero-fill
+    the missing side into a spuriously small W1."""
+    karr_payloads = [{"complex_0": 5.0 + (i % 3)} for i in range(20)]
+    oc_payloads = [{"RIBOSOME_30S": 5.0 + (i % 3)} for i in range(20)]
+    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    assert result.verdict == "FAIL"
+    assert result.extra["karr_components"] == ["complex_0"]
+    assert result.extra["oc_components"] == ["RIBOSOME_30S"]
+
+
+def test_payload_gate_degenerate_null_cannot_produce_seed_noise_or_pass():
+    """M1: constant payload values (q95_null == 0 for every component)
+    must REFUSE (DEGENERATE_NULL), never report SEED_NOISE/PASS."""
+    karr_payloads = [{"a": 5.0, "b": 2.0} for _ in range(20)]
+    oc_payloads = [{"a": 5.0, "b": 2.0} for _ in range(20)]
+    result = metrics.payload_gate(karr_payloads, oc_payloads, rng=_rng())
+    assert result.verdict == "DEGENERATE_NULL"
+    assert result.q95_null == 0.0
 
 
 # ---------------------------------------------------------------------------

@@ -39,11 +39,31 @@ EVIDENCE_INDEX_SCHEMA_VERSION = 1
 
 #: Per-gate channel verdicts. ``NOT_GATEABLE_REDUNDANT`` is D6's escape hatch
 #: for Cytokinesis magnitude; it must never silently count as PASS.
+#:
+#: Opus5 review (M1 + one-sided-empty metric correction) added four verdicts
+#: that must never be treated as PASS/SEED_NOISE by any aggregation logic:
+#:
+#: * ``INSUFFICIENT_KARR_SUPPORT`` -- Karr fired, but below the
+#:   registry-configured support floor (e.g. RA repeated_firing requires
+#:   >=50 pooled fire ticks; Cytokinesis single_firing requires >=45/50
+#:   seeds fired per spec C2). Distinct from ``NO_KARR_SUPPORT`` (zero
+#:   support): this is *some* support, just not enough to trust a
+#:   calibrated bootstrap.
+#: * ``DEGENERATE_NULL`` -- the Karr-only clustered null bootstrap collapsed
+#:   to ``q95_null == 0`` (zero-width null). A ``SEED_NOISE`` verdict can
+#:   never be derived from a degenerate null: ``w1 <= 0`` would trivially
+#:   "pass" on a coincidence, not a calibrated noise floor.
+#: * ``NO_OC_SUPPORT`` -- Karr fired but OC produced zero events/payload
+#:   across the whole cohort: the mirror image of the existing hard-FAIL
+#:   "Karr silent, OC fires" case (no capped-silence green either way).
 ChannelVerdict = Literal[
     "PASS",
     "FAIL",
     "SEED_NOISE",
     "NO_KARR_SUPPORT",
+    "NO_OC_SUPPORT",
+    "INSUFFICIENT_KARR_SUPPORT",
+    "DEGENERATE_NULL",
     "NOT_GATEABLE_REDUNDANT",
     "NOT_COMPUTED",
 ]
