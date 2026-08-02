@@ -1,8 +1,8 @@
 {
   "adapter_id": "ribosome_assembly.smoke.v1",
   "adapter_module": "scripts.l2_event.adapters.ribosome_assembly_smoke",
-  "generated_at": "2026-08-01T04:59:46.804527+00:00",
-  "git_sha": "50944d98d780807c5814afcb87e36e613f2d493a",
+  "generated_at": "2026-08-02T21:03:20.002765+00:00",
+  "git_sha": "3dde7e85c28695660af847ffc34ce2438ea019ed",
   "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
   "karr_source": "data/m1_sources/karr_native/per_process_traces_v2_event_s000",
   "process": "RibosomeAssembly",
