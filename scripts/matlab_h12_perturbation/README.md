@@ -37,12 +37,12 @@ real generator.
   the vendored source by
   `tests/scripts/test_h12_perturbation_source_binding.py`
   (`MATLAB_BINDINGS`).
-- `run_ppii_scenario_b_matlab.m` -- driver. Aborts (no stub fallback) if
-  not running under genuine MATLAB, if `PPII_WHOLECELL_SRC_ROOT` is unset
-  (no hardcoded/ambient default path is assumed -- see "WholeCell src root
-  resolution" below), if the Statistics Toolbox is unlicensed/uninstalled,
-  or if `edu.stanford.covert.util.RandStream` cannot be found/constructed
-  at that root. Reads each state's frozen
+- `run_ppii_scenario_b_matlab.m` -- driver. Both modes abort (no stub
+  fallback) unless genuine MATLAB and the hash-pinned Karr RandStream are
+  available through the explicit `PPII_WHOLECELL_SRC_ROOT`. Full mode
+  additionally requires the Statistics Toolbox/mnrnd; the
+  `transferase_capacity_scarce` canary does not, because it reaches only
+  `stochasticRound`. Reads each state's frozen
   `ppii_scenario_b_<name>_prediction.json` (written by
   `scripts/l22_evidence/h12_perturbation.py generate-inputs-scenario-b`)
   for its pre-registered seed list -- seed ranges are never hardcoded
@@ -65,8 +65,10 @@ real generator.
   genuine MATLAB is detected, regardless of RandStream resolution
   outcome). Writes its full structured JSON result to
   `getenv('PPII_PROBE_RESULT_JSON')` unconditionally, THEN calls MATLAB's
-  `error(...)` if `overall_pass` is false -- so a failed probe both writes
-  a complete diagnostic JSON and returns a nonzero exit code; nothing on
+  `error(...)` if canary/basic `overall_pass` is false -- so a failed
+  basic-readiness probe both writes a complete diagnostic JSON and returns
+  a nonzero exit code. Toolbox/mnrnd failures leave `overall_pass=true` but
+  set `full_mode_permitted=false`; nothing on
   the Python side trusts the exit code alone; it always loads and
   re-validates the JSON field-by-field. Not invoked by the driver or by
   anything in this commit; this is the "parse/license/toolbox/RandStream/

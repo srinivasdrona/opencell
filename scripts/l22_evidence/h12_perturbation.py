@@ -1578,6 +1578,7 @@ def build_ppii_scarcity_perturbation_artifact(
                 "seeds": manifest.get("seeds"),
                 "matlab_version": manifest.get("matlab_version"),
                 "statistics_toolbox_licensed": manifest.get("statistics_toolbox_licensed"),
+                "statistics_toolbox_installed": manifest.get("statistics_toolbox_installed"),
                 "randstream_class_confirmed": manifest.get("randstream_class_confirmed"),
                 "generated_at_utc": manifest.get("generated_at_utc"),
             },

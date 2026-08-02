@@ -85,12 +85,12 @@ implementation and cannot serve as evidence of genuine `mnrnd`/
 `stochasticRound` behavior. Turn 3 replaces this entirely:
 
 - `scripts/matlab_h12_perturbation/run_ppii_scenario_b_matlab.m` is a genuine
-  local **MATLAB** driver (not Octave). It requires the Statistics Toolbox
-  and constructs a real `edu.stanford.covert.util.RandStream('mcg16807',
+  local **MATLAB** driver (not Octave). It constructs a real
+  `edu.stanford.covert.util.RandStream('mcg16807',
   'Seed', k)` instance per seed -- the identical class WholeCell/Karr itself
-  uses. If MATLAB, the Statistics Toolbox, or `RandStream` construction is
-  unavailable, the driver **aborts with no fallback**; it never silently
-  substitutes a stub.
+  uses. Both modes require genuine MATLAB and Karr RandStream. Full mode
+  additionally requires Statistics Toolbox/mnrnd; the stochasticRound-only
+  canary does not. No mode silently substitutes a stub.
 - `data/karr_vendored_source/RandStream.m` is a byte-identical vendored copy
   of the real Karr `RandStream` class (hash-pinned; see that directory's
   README for provenance/hashes), vendored for audit purposes. The runtime
@@ -295,8 +295,8 @@ is also not yet invoked.
   canary (Opus5 turn-4 correction 5); only an actual invariant violation
   would yield `H12_PERTURBATION_SCARCITY_CANARY_INVARIANT_VIOLATION`.
 - Preflight probe: expect `probe_matlab_environment()` to report
-  `mnrnd_shape_test_status: "pass"` on a correctly licensed MATLAB +
-  Statistics Toolbox install (permitting later full-mode consideration); an
+  `mnrnd_shape_test_status: "pass"` plus Statistics Toolbox installed and
+  licensed (permitting later full-mode consideration); an
   `"error"` result is a real, pre-registered possible outcome recorded as a
   Karr dormant-source defect that hard-blocks full mode only (canary
   plumbing runs remain possible) -- this is not assumed away.
@@ -311,11 +311,9 @@ is also not yet invoked.
   `H12_PERTURBATION_SCARCITY_NO_VARIATION` for that state, not
   `H12_PERTURBATION_SCARCITY_OBSERVED_STOCHASTIC` -- this is a real possible
   outcome the code is built to detect and report honestly, not to hide.
-- If genuine MATLAB, the Statistics Toolbox, or `RandStream` construction is
-  unavailable in the execution environment, the canary aborts outright (no
-  evidence artifact, no fallback engine) -- this is an expected, not a
-  surprising, outcome and would simply mean this evidence tier cannot be
-  produced in that environment.
+- If genuine MATLAB or Karr RandStream construction is unavailable, the
+  canary aborts outright. Missing Statistics Toolbox/mnrnd blocks full mode
+  but not the preregistered stochasticRound-only canary.
 
 ## 8. Recommended terminal status if Scenario B executes cleanly (restated honestly)
 

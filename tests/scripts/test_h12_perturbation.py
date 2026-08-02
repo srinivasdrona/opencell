@@ -730,6 +730,7 @@ def _write_scenario_b_evidence(
             "n_seeds": len(seeds),
             "matlab_version": "9.99.0.test",
             "statistics_toolbox_licensed": True,
+            "statistics_toolbox_installed": True,
             "randstream_class_confirmed": True,
             "wholecell_src_root_used": str(hp.VENDORED_RANDSTREAM_PATH.parent),
             "randstream_runtime_path": str(hp.VENDORED_RANDSTREAM_PATH),
@@ -1948,6 +1949,12 @@ def test_run_ppii_scenario_b_matlab_m_reads_wholecell_root_from_env_var_only():
     source = (hp.MATLAB_DIR / "run_ppii_scenario_b_matlab.m").read_text(encoding="utf-8")
     assert "getenv('PPII_WHOLECELL_SRC_ROOT')" in source
     assert "'WholeCell', 'src'" not in source, "no ambient/hardcoded WholeCell path may remain"
+
+
+def test_run_ppii_scenario_b_matlab_gates_statistics_toolbox_on_full_mode_only():
+    source = (hp.MATLAB_DIR / "run_ppii_scenario_b_matlab.m").read_text(encoding="utf-8")
+    assert "strcmp(mode, 'full') && ~(statistics_toolbox_licensed && statistics_toolbox_installed)" in source
+    assert "noStatisticsToolboxForFullMode" in source
 
 
 def test_probe_matlab_environment_m_includes_mnrnd_shape_probe():
