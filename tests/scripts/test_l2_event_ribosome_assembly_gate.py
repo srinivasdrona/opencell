@@ -181,6 +181,22 @@ def test_karr_observation_raises_on_channel_width_3_even_when_extra_delta_is_zer
         adapter.karr_observation(window, 0)
 
 
+def test_karr_observation_raises_on_non_dense_cardinality_2_mapping_unmapped_index():
+    """Distinct refusal branch from the two width tests above: here the
+    mapping's *cardinality* (len == 2) matches the channel width (2)
+    exactly, so the width check does NOT fire. The mapping's keys are
+    non-dense over range(expected_width) (`{0: 'RIBOSOME_30S', 5:
+    'RIBOSOME_50S'}`, missing index 1), so a positive delta at the
+    uncovered index 1 must reach the `key is None` defensive branch
+    inside the per-index loop, not the width-mismatch branch."""
+    adapter = RibosomeAssemblyGateAdapter(
+        complex_index_by_wid={0: "RIBOSOME_30S", 5: "RIBOSOME_50S"}
+    )
+    window = _window([[3.0, 4.0]])
+    with pytest.raises(UnmappedComplexIndexError, match="channel index 1 has no declared WID mapping"):
+        adapter.karr_observation(window, 0)
+
+
 def test_oc_observation_handles_empty_update_dict_without_keyerror():
     """Spec §4 fact 5 / this task's contract: `.get('complex',
     {}).get('counts', {})`, never direct key access."""

@@ -96,16 +96,21 @@ catalog/event_registry/evidence_index edits" constraint.
     enumerated so spurious OC-only fires are detectable (FIX_TEMPLATE Rule 8:
     no trace-cribbing / adversarial non-triviality), and `fire_count` is tick
     incidence (not particle count) on both sides.
-- `tests/scripts/test_l2_event_ribosome_assembly_gate.py` — **29 tests**
+- `tests/scripts/test_l2_event_ribosome_assembly_gate.py` — **30 tests**
   (20 at first submission; the Opus5 pre-merge review round added 7 more,
-  reaching 27; this closeout round — the two non-blocking notes below —
-  added the final 2), five groups:
+  reaching 27; the first closeout sub-round — report drift and the two
+  `evaluate_gate`-level refusal tests, see below — added 2, reaching 29;
+  this second closeout sub-round adds the final 1), five groups:
   1. Pure adapter unit tests: WID-mapping-matches-live-process, positive-delta
      mapping, multi-particle-same-tick still counts as one tick fire, the
      width-2 channel check (including a dedicated width-1 and a width-3
-     refusal case, each via `UnmappedComplexIndexError`), a non-dense-keys
-     unmapped-index case, empty/no-`'complex'`-key update handling, fixed
-     required-components.
+     refusal case, each via `UnmappedComplexIndexError`), a genuine
+     non-dense-keys unmapped-index case (`{0: RIBOSOME_30S, 5:
+     RIBOSOME_50S}` against a width-2 channel — cardinality matches so the
+     width check does not fire, isolating the `key is None` defensive
+     branch inside the per-index loop, distinct from the width-1/width-3
+     cases above which never reach that branch), empty/no-`'complex'`-key
+     update handling, fixed required-components.
   2. Real seed-0 round-trip (skipped if the trace file is absent): reproduces
      fire ticks **[9, 17]** through the new adapter, and proves the runner
      still cannot reach a computed verdict on it
@@ -148,14 +153,18 @@ catalog/event_registry/evidence_index edits" constraint.
 ## Test results
 
 ```
-tests/scripts/test_l2_event_ribosome_assembly_gate.py ............................. 29 passed in 49.22s
+tests/scripts/test_l2_event_ribosome_assembly_gate.py .............................. 30 passed in 27.51s
 tests/scripts/test_l2_event_adapters.py
 tests/scripts/test_l2_event_runner.py
 tests/scripts/test_l2_event_registry.py
 tests/scripts/test_l2_event_metrics.py                            ...................... 113 passed in 33.26s
 
 # combined (all five files together):
-142 passed in 33.26s
+143 passed in 32.69s
+
+# tests/scripts -k l2_event (broader l2_event-scoped selector, includes the
+# five files above plus other l2_event-named test modules under tests/scripts):
+199 passed, 717 deselected in 36.34s
 ```
 
 No regressions in the pre-existing L2.event suite; the new module is purely
@@ -164,24 +173,52 @@ files (`scripts/l2_event/adapters/ribosome_assembly_gate.py`,
 `tests/scripts/test_l2_event_ribosome_assembly_gate.py`) reports zero
 findings.
 
-## Closeout round: two non-blocking Opus5 review notes
+## Closeout round: three non-blocking Opus5 review notes (two closed, one retained)
 
 Opus5's pre-merge review of `5839798` accepted the adapter logic outright and
-left two non-blocking notes for this narrow follow-up round (no adapter
-production-logic changes were required or made; no defect was found):
+left three non-blocking notes across the two closeout sub-rounds (no adapter
+production-logic changes were required or made in either sub-round; no defect
+was found). Two are now closed; the third is an intentionally retained
+registration-time consideration, not a defect, and is not claimed as fixed:
 
-1. This report itself was stale relative to `5839798` — it still described
-   the pre-review 20-test/index-membership-only state instead of `5839798`'s
-   actual width-2 channel check (with its width-1/width-3 refusal cases) and
-   27-test suite. Fixed above (test-count/grouping and the `karr_observation`
-   description now match HEAD as of this round).
-2. The refusal gauntlet (`SINGLE_SEED_ENSEMBLE_REQUIRED`,
+1. **Closed** — this report itself was stale relative to `5839798`: it still
+   described the pre-review 20-test/index-membership-only state instead of
+   `5839798`'s actual width-2 channel check (with its width-1/width-3
+   refusal cases) and 27-test suite. Fixed in the first closeout sub-round
+   (test-count/grouping and the `karr_observation` description now match
+   HEAD as of that round).
+2. **Closed** — the refusal gauntlet (`SINGLE_SEED_ENSEMBLE_REQUIRED`,
    `EMPTY_EVENT_SUPPORT`) had unit-level coverage (a bare direct call to
    `check_ensemble_size`) but no test exercising it through
    `evaluate_gate`/`_build_cohort` with this adapter's own
    `karr_observation`/`oc_observation` for an under-supported cohort or a
-   fully quiet Karr+OC cohort. Added (group 5 above); both refuse as
-   expected, neither reaches a computed verdict.
+   fully quiet Karr+OC cohort. Added in the first closeout sub-round (group 5
+   above); both refuse as expected, neither reaches a computed verdict. This
+   second sub-round also closed a narrower, adjacent gap the first sub-round
+   left unaddressed: the existing `test_karr_observation_raises_on_
+   unmapped_complex_index` test (cardinality-1 mapping against a width-2
+   channel) only ever reached the width-mismatch branch, never the
+   `key is None` defensive branch for a non-dense mapping whose cardinality
+   *does* match the channel width. Added
+   `test_karr_observation_raises_on_non_dense_cardinality_2_mapping_unmapped_index`
+   (`{0: RIBOSOME_30S, 5: RIBOSOME_50S}` against a width-2 channel) to
+   isolate that branch specifically, asserted via the exact
+   "channel index 1 has no declared WID mapping" message.
+3. **Intentionally retained, not fixed** — a registration-time consideration
+   about `required_payload_components`'s union-equality check (see the
+   property's docstring above): because this adapter always requires the
+   full fixed `{RIBOSOME_30S, RIBOSOME_50S}` keyspace, a real 50-seed cohort
+   in which one of the two particles genuinely never forms across the whole
+   ensemble (a legitimate low-probability biological outcome, not a data or
+   adapter bug) would fail closed with a payload-channel `FAIL` rather than
+   PASS. This is the same union-equality semantics already covered by
+   `test_evaluate_gate_fails_when_oc_reports_a_spurious_extra_component` /
+   `..._fails_when_oc_never_reports_the_50s_component`, so it is not an
+   untested code path — it is a design tradeoff to flag for whoever
+   eventually attempts registration/promotion of this adapter, not something
+   this narrow, adapter/test-only closeout round is scoped to change. No
+   adapter production-logic change is made here; this note is recorded so it
+   is not lost, not resolved.
 
 ## Runner status (unchanged, as expected)
 
