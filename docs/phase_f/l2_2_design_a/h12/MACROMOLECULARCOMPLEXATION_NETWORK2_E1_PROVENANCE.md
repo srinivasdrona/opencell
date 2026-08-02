@@ -142,8 +142,10 @@ extraction authorized).
   evidence artifact this document accompanies
   (`docs/phase_f/l2_2_design_a/h12/condition_gated/
   MacromolecularComplexation_h12_condition_gated.json`,
-  `natural_regime_reachable: false`,
-  `natural_regime_reachable_unresolved_reason` field).
+  `lifecycle_reachability_status: "UNRESOLVED"` (pinned, never a
+  resolved `true`/`false`), `lifecycle_reachability_note` field; "unobserved
+  in the sampled window" alone is explicitly recorded as insufficient for a
+  terminal disposition — see `unobserved_in_window_alone_is_insufficient`).
 - Independent of that open question, network 2's competitive branch is
   **Monte Carlo by construction**
   (`buildProteinComplexs_montecarlokinetic`, `MacromolecularComplexation.m`

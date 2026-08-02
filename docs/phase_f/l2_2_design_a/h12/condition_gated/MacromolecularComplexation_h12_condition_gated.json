@@ -1,12 +1,12 @@
 {
   "artifact_kind": "h12_condition_gated_evidence",
-  "artifact_version": "1.0.0",
+  "artifact_version": "2.0.0",
   "gating": "NON_GATING -- proposes a disposition for reviewer/maintainer sign-off only; never claims H12_CONFIRMED; not consumed by scripts/l22_evidence/verdict.py, generator.py, or h12_evidence_index.json.",
   "process": "MacromolecularComplexation",
   "network": 2,
   "required_branch": "network_ge2_fires",
   "required_branches_registry_ref": "scripts/l22_evidence/h12.py:REQUIRED_BRANCHES['MacromolecularComplexation']",
-  "purpose": "Mechanically bind (a) the accepted H12_OBSERVED_REGIME artifact, (b) an independently re-derived natural-population census proving network 2's ub is 0 on 100% of the accepted 50x100 oracle population with PTS-system E1 (MG_429_MONOMER) as the sole limiting substrate, and (c) the accepted non-gating perturbation artifact proving the branch is structurally reachable (fires for real, invariants hold) once ONLY that one substrate is conditioned -- into a single evidence record supporting a proposed CONDITION_GATED terminal classification. See MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md for the full investigation and CONDITION_GATED_TAXONOMY_PROPOSAL.md for the (not-yet-implemented) taxonomy change this is evidence for.",
+  "purpose": "Mechanically bind (a) the accepted H12_OBSERVED_REGIME artifact's network-1-ONLY exact-match evidence (814/814, rate 1.0 -- see nontrivial_sample_count_scope/exact_match_rate_scope; network 2 contributes ZERO to these counts), (b) an independently re-derived natural-population census proving network 2's ub is [0, 0] on all 5000 accepted (seed, tick) samples with PTS-system E1 (MG_429_MONOMER, fixture index 192) as the UNIQUE limiting substrate, and (c) the accepted non-gating perturbation artifact proving the branch is structurally reachable (fires for real, invariants hold) once ONLY that one substrate is conditioned -- into a single, portable, NON-OPERATIVE evidence record supporting a proposed CONDITION_GATED_CANDIDATE disposition. This artifact does not resolve whether the natural branch could fire at a later lifecycle stage (lifecycle_reachability_status: UNRESOLVED) and does not, by itself, unblock the current row or L2.5. See MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md for the full investigation and CONDITION_GATED_TAXONOMY_PROPOSAL.md for the (not-yet-implemented) taxonomy change this is evidence for.",
   "karr_source_citation": {
     "vendored_path": "data/karr_vendored_source/MacromolecularComplexation.m",
     "vendored_sha256_lf_normalized": "2e840ac13b65f0dbd027ef2a425dc3a7a7d23fbd505589eee0b30faedf02d087",
@@ -228,16 +228,22 @@
       "49": "match"
     }
   },
-  "natural_regime_reachable": false,
-  "natural_regime_reachable_unresolved_reason": "The accepted 50x100 oracle population is extracted at tick_offset=0 (cell birth) -- scripts/matlab/extract_per_process_traces_v2.m's own docstring documents that some processes are 'quiescent at cell birth (t=0) but active later' (citing RibosomeAssembly's first assembly at ~tick 238) and provides tick_offset specifically for this. Whether E1 (MG_429_MONOMER) ever becomes nonzero at a later tick in the real Karr model, or is genuinely never produced in this population, is UNRESOLVED without a new tick_offset>0 extraction, which is explicitly out of scope for this artifact. See MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md section 3.",
+  "lifecycle_reachability_status": "UNRESOLVED",
+  "lifecycle_reachability_note": "Whether E1 (MG_429_MONOMER) ever becomes nonzero at a later tick / different lifecycle stage in the real Karr model is UNRESOLVED -- not determined false, not determined true -- from evidence available in this worktree. scripts/matlab/extract_per_process_traces_v2.m's own docstring documents a tick_offset mechanism precisely for late-activating species (citing RibosomeAssembly's first assembly at ~tick 238); the accepted trace here was extracted at tick_offset=0. A tick_offset>0 re-extraction is the only way to resolve this and is explicitly out of scope for this artifact (no new extraction authorized). This artifact makes NO claim of structural or lifecycle unreachability in either direction; 'unobserved in the sampled window' is recorded as an observed FACT (see natural_census), not as a resolution of this question.",
+  "unobserved_in_window_alone_is_insufficient": true,
+  "unblocks_current_row": false,
+  "unblocks_l2_5": false,
+  "maintainer_decision_made": false,
   "e1_provenance_ref": "docs/phase_f/l2_2_design_a/h12/MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md",
-  "e1_provenance_ref_sha256_lf_normalized": "c71afae9686ec7176e414642e0009c7975ced3e2192630184b549789b24f47d0",
+  "e1_provenance_ref_sha256_lf_normalized": "334cbca976fd52de649fad039606b250a805d6faa0645764cdfc058442246409",
   "accepted_h12_artifact_ref": {
     "path": "docs/phase_f/l2_2_design_a/h12/MacromolecularComplexation_h12.json",
     "sha256_lf_normalized": "02652958f5a7b193ce182db32a10503c6a565c657dd2f91b0b5dd6bcff0a3229",
     "verdict": "H12_OBSERVED_REGIME",
     "nontrivial_sample_count": 814,
+    "nontrivial_sample_count_scope": "network_1_fires ONLY -- network 2 (network_ge2_fires) contributes exactly 0 nontrivial samples to this count by predictor construction (see structural_argument); this figure is NOT exact-match evidence for network 2's own behavior.",
     "exact_match_rate": 1.0,
+    "exact_match_rate_scope": "network_1_fires ONLY -- see nontrivial_sample_count_scope; network 2 has zero exact-match evidence of its own in the natural population.",
     "branches_confirmed": [
       "network_1_fires"
     ],
@@ -314,7 +320,7 @@
     "mass_balance_violations": []
   },
   "structural_argument": {
-    "claim": "network>=2 competition is genuinely Monte Carlo: buildProteinComplexs_montecarlokinetic draws randStream.rand() once per iteration of its while-loop (line 349) to select which complex builds next; there is no closed form for that selection sequence. H12_CONFIRMED is therefore inapplicable to this unit by construction -- independent of how much additional natural-population sampling or conditioning occurs, and independent of whether the natural_regime_reachable question above is ever resolved.",
+    "claim": "network>=2 competition is genuinely Monte Carlo: buildProteinComplexs_montecarlokinetic draws randStream.rand() once per iteration of its while-loop (line 349) to select which complex builds next; there is no closed form for that selection sequence. H12_CONFIRMED is therefore inapplicable to this unit by construction -- independent of how much additional natural-population sampling or conditioning occurs, and independent of whether the lifecycle_reachability_status question below is ever resolved. This is a SEPARATE, independently-sufficient reason for non-H12_CONFIRMED-eligibility from the natural-window observation above -- neither the natural-window absence of ub>0 alone, nor this structural fact alone, is being conflated with the other; both are recorded because the taxonomy proposal this artifact supports requires both.",
     "source_citation": {
       "file": "MacromolecularComplexation.m",
       "line_ranges": [
@@ -334,7 +340,7 @@
     }
   },
   "classification": "CONDITION_GATED_CANDIDATE",
-  "classification_note": "Proposed terminal disposition for MacromolecularComplexation/network_ge2_fires, pending reviewer (Opus 5) sign-off and a SEPARATE, later, serialized change to actually enact a CONDITION_GATED taxonomy value in verdict.py/PROCESS_CATALOG.yaml/h12_evidence_index.json -- see CONDITION_GATED_TAXONOMY_PROPOSAL.md. This artifact and its classification field are NOT consumed by any of those files in this change.",
+  "classification_note": "Proposed CANDIDATE disposition for MacromolecularComplexation/network_ge2_fires, pending reviewer (Opus 5) sign-off and a SEPARATE, later, serialized change to actually enact a CONDITION_GATED taxonomy value in verdict.py/PROCESS_CATALOG.yaml/h12_evidence_index.json -- see CONDITION_GATED_TAXONOMY_PROPOSAL.md. No maintainer decision is being made in this branch. This artifact and its classification field are NOT consumed by any of those files in this change, and do NOT unblock the current row or L2.5 -- see unblocks_current_row/unblocks_l2_5.",
   "not_consumed_by": [
     "scripts/l22_evidence/verdict.py",
     "scripts/l22_evidence/generator.py",
@@ -342,8 +348,8 @@
     "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml"
   ],
   "generator_source_path": "scripts/l22_evidence/h12_condition_gated.py",
-  "generator_source_sha256_lf_normalized": "2e6b232a6abef29a2f27515a24d29360cad5d334d81943a2758b29216e139845",
-  "generated_at": "2026-08-02T11:08:10.037119+00:00",
+  "generator_source_sha256_lf_normalized": "ca3b4b120fe39eee8867aac9be9e8d35ff714ba4a6c81cd9b519914ad21c7219",
+  "generated_at": "2026-08-02T12:41:11.957646+00:00",
   "anti_laundering_attestation": {
     "census_inputs": [
       "states_before",

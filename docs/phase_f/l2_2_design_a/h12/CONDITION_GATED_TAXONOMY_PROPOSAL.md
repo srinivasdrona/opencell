@@ -61,14 +61,23 @@ the existing `H12_CONFIRMED` / `H12_FAIL` / `H12_OBSERVED_REGIME`
 > eligible in the observed natural population, OR has an accepted,
 > hash-bound, non-gating **conditional** artifact
 > (`h12_condition_gated_evidence`, see
-> `scripts/l22_evidence/h12_condition_gated.py`) demonstrating: (a) the
-> branch is structurally unreachable or unobserved in the natural
-> population for a documented, source-cited reason; (b) the branch is
+> `scripts/l22_evidence/h12_condition_gated.py`) demonstrating ALL THREE of:
+> (a) the branch is unobserved in the accepted natural population, with a
+> documented, source-cited reason for the non-firing AND an explicit,
+> honestly-recorded `lifecycle_reachability_status` (whether the branch
+> could ever fire naturally at a different lifecycle stage/tick window is
+> stated as resolved-true, resolved-false, or `UNRESOLVED` — "unobserved in
+> the sampled window" is recorded as an observed fact, never silently
+> treated as a resolution of this question, and is NOT by itself
+> sufficient for (a) without a documented reason); (b) the branch is
 > demonstrably reachable under an explicit, narrowly-scoped, source-
 > faithful state conditioning that changes NO stoichiometry/constants; and
 > (c) the branch's own underlying mechanism is independently shown to be
 > non-closed-form (Monte Carlo), making `H12_CONFIRMED` inapplicable to it
-> by construction, not merely by insufficient sampling.
+> by construction, not merely by insufficient sampling. Conditions (a),
+> (b), and (c) are independently necessary — none of the three alone is
+> sufficient, and in particular an unresolved `lifecycle_reachability_status`
+> under (a) must never be conflated with a resolved unreachability claim.
 
 This is **weaker** than `H12_CONFIRMED` and **stronger** than a bare,
 uninvestigated `H12_OBSERVED_REGIME` gap: it certifies that the missing

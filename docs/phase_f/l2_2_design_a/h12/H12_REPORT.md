@@ -300,6 +300,15 @@ branch either):
   a narrowly-scoped proposal for a future `H12_CONDITION_GATED` verdict
   value, explicitly not enacted by that branch.
 
+The condition-gated artifact's `classification` field is pinned to the
+literal `CONDITION_GATED_CANDIDATE` string (never an enacted
+`CONDITION_GATED` value), its `lifecycle_reachability_status` field is
+pinned to the literal `UNRESOLVED` string (whether E1 could ever become
+nonzero at a later lifecycle stage is recorded as genuinely unknown, not
+resolved false), and its `unblocks_current_row`/`unblocks_l2_5`/
+`maintainer_decision_made` fields are all pinned `false` — this candidate
+does not, by itself, change this report's verdict or unblock the row.
+
 This report's own verdict, tally, and demotion recommendation above are
 UNCHANGED by this addendum; the addendum only records where the
 follow-on evidence lives for a future reviewer decision.
