@@ -1,3 +1,26 @@
+"""PLUMBING-ONLY evidence -- NOT a biology fidelity result.
+
+This test feeds `enzymes_next` into `state["trace_hint"]` every tick via
+`overlay_trace_after_hint` below. `KarrFtsZPolymerizationProcess.next_update`
+reads that hint and takes its `_hint_enzyme_counts` short-circuit, which
+skips the ODE/discretize/substrate-clamp biology path entirely (see
+`karr_ftsz_polymerization.py`'s `hint_next` branch). Its "identity" green
+therefore demonstrates only that the harness's hint-plumbing, delta-integral
+bookkeeping, and allocator wiring are correct -- it is structurally the same
+pattern documented in docs/phase_f/L2_5_HONEST_MODE_HINT_LEAKAGE_FINDING.md
+for RNADecay/ProteinDecay/Transcription, where the hint-fed green hid 3-9x
+biology drift in the no-hints sampler.
+
+For actual honest-mode (no trace_hint) evidence of the ODE biology path --
+structural invariants plus raw per-tick discrepancy telemetry against this
+same seed-0/100-tick trace -- see
+`test_karr_ftsz_polymerization_honest_canary.py`, which can never return a
+PASS verdict either (N=1 seed is INSUFFICIENT_ENSEMBLE for a gated verdict;
+see docs/phase_f/l2_windowed/FTSZ_WINDOWED_PROFILE_SPEC.md). This file is
+kept as a regression guard on the hint-replay plumbing itself, not as
+evidence FtsZPolymerization's biology matches Karr.
+"""
+
 from __future__ import annotations
 
 import sys
@@ -95,6 +118,11 @@ def _assert_identity_or_tolerance(
 
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
 def test_karr_ftsz_polymerization_l2_replay_identity_per_tick(rng_seed: int) -> None:
+    """PLUMBING-ONLY (see module docstring): `overlay_trace_after_hint` below
+    feeds Karr's ground-truth post-tick `enzymes` vector into
+    `state["trace_hint"]["enzymes_next"]` every tick, which makes
+    `next_update` take its hint short-circuit instead of running the ODE
+    biology. A green here is not evidence FtsZ's biology matches Karr."""
     trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
     with h5py.File(trace_path, "r") as trace:
         n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])

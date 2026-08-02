@@ -1,0 +1,733 @@
+{
+  "diagnostic_only_channels": [
+    "boundEnzymes",
+    "cell.ftsz_ring_count",
+    "cell.ftsz_ring_complete"
+  ],
+  "ensemble_status": "INSUFFICIENT_ENSEMBLE",
+  "gate_channels": [
+    "enzymes",
+    "substrates"
+  ],
+  "karr_mutated_tick_counts": {
+    "enzymes": 100,
+    "substrates": 60
+  },
+  "n_seeds_available": 1,
+  "n_seeds_required_by_catalog": 50,
+  "n_ticks": 100,
+  "oc_nonvacuous_ticks": 100,
+  "per_tick": [
+    {
+      "enzymes_l1": 8.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 0
+    },
+    {
+      "enzymes_l1": 7.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 1
+    },
+    {
+      "enzymes_l1": 8.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 2
+    },
+    {
+      "enzymes_l1": 6.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 3
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 3.0,
+      "substrates_linf": 2.0,
+      "tick": 4
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 6.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 5
+    },
+    {
+      "enzymes_l1": 22.0,
+      "enzymes_linf": 5.0,
+      "substrates_l1": 6.0,
+      "substrates_linf": 5.0,
+      "tick": 6
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 7
+    },
+    {
+      "enzymes_l1": 13.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 8
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 3.0,
+      "substrates_linf": 3.0,
+      "tick": 9
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 10
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 11
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 12
+    },
+    {
+      "enzymes_l1": 18.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 3.0,
+      "substrates_linf": 3.0,
+      "tick": 13
+    },
+    {
+      "enzymes_l1": 11.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 3.0,
+      "substrates_linf": 3.0,
+      "tick": 14
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 15
+    },
+    {
+      "enzymes_l1": 5.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 16
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 17
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 18
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 19
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 4.0,
+      "substrates_linf": 4.0,
+      "tick": 20
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 21
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 22
+    },
+    {
+      "enzymes_l1": 11.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 23
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 24
+    },
+    {
+      "enzymes_l1": 11.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 25
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 26
+    },
+    {
+      "enzymes_l1": 3.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 27
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 3.0,
+      "substrates_linf": 3.0,
+      "tick": 28
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 29
+    },
+    {
+      "enzymes_l1": 3.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 30
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 31
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 32
+    },
+    {
+      "enzymes_l1": 21.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 4.0,
+      "substrates_linf": 4.0,
+      "tick": 33
+    },
+    {
+      "enzymes_l1": 8.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 34
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 35
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 36
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 37
+    },
+    {
+      "enzymes_l1": 8.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 38
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 39
+    },
+    {
+      "enzymes_l1": 8.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 40
+    },
+    {
+      "enzymes_l1": 6.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 41
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 42
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 43
+    },
+    {
+      "enzymes_l1": 11.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 44
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 45
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 46
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 47
+    },
+    {
+      "enzymes_l1": 20.0,
+      "enzymes_linf": 5.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 48
+    },
+    {
+      "enzymes_l1": 19.0,
+      "enzymes_linf": 5.0,
+      "substrates_l1": 5.0,
+      "substrates_linf": 5.0,
+      "tick": 49
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 50
+    },
+    {
+      "enzymes_l1": 13.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 51
+    },
+    {
+      "enzymes_l1": 12.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 52
+    },
+    {
+      "enzymes_l1": 7.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 53
+    },
+    {
+      "enzymes_l1": 20.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 3.0,
+      "substrates_linf": 3.0,
+      "tick": 54
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 55
+    },
+    {
+      "enzymes_l1": 12.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 56
+    },
+    {
+      "enzymes_l1": 7.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 57
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 58
+    },
+    {
+      "enzymes_l1": 12.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 59
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 60
+    },
+    {
+      "enzymes_l1": 6.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 61
+    },
+    {
+      "enzymes_l1": 6.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 62
+    },
+    {
+      "enzymes_l1": 11.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 63
+    },
+    {
+      "enzymes_l1": 8.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 64
+    },
+    {
+      "enzymes_l1": 13.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 65
+    },
+    {
+      "enzymes_l1": 3.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 66
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 67
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 3.0,
+      "substrates_linf": 3.0,
+      "tick": 68
+    },
+    {
+      "enzymes_l1": 9.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 69
+    },
+    {
+      "enzymes_l1": 19.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 70
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 71
+    },
+    {
+      "enzymes_l1": 6.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 72
+    },
+    {
+      "enzymes_l1": 17.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 73
+    },
+    {
+      "enzymes_l1": 12.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 74
+    },
+    {
+      "enzymes_l1": 11.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 75
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 76
+    },
+    {
+      "enzymes_l1": 8.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 77
+    },
+    {
+      "enzymes_l1": 11.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 78
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 79
+    },
+    {
+      "enzymes_l1": 7.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 80
+    },
+    {
+      "enzymes_l1": 14.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 81
+    },
+    {
+      "enzymes_l1": 8.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 82
+    },
+    {
+      "enzymes_l1": 7.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 83
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 5.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 84
+    },
+    {
+      "enzymes_l1": 24.0,
+      "enzymes_linf": 6.0,
+      "substrates_l1": 4.0,
+      "substrates_linf": 4.0,
+      "tick": 85
+    },
+    {
+      "enzymes_l1": 10.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 86
+    },
+    {
+      "enzymes_l1": 3.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 87
+    },
+    {
+      "enzymes_l1": 17.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 4.0,
+      "substrates_linf": 4.0,
+      "tick": 88
+    },
+    {
+      "enzymes_l1": 29.0,
+      "enzymes_linf": 7.0,
+      "substrates_l1": 4.0,
+      "substrates_linf": 4.0,
+      "tick": 89
+    },
+    {
+      "enzymes_l1": 8.0,
+      "enzymes_linf": 2.0,
+      "substrates_l1": 2.0,
+      "substrates_linf": 2.0,
+      "tick": 90
+    },
+    {
+      "enzymes_l1": 18.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 91
+    },
+    {
+      "enzymes_l1": 4.0,
+      "enzymes_linf": 1.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 92
+    },
+    {
+      "enzymes_l1": 13.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 3.0,
+      "substrates_linf": 3.0,
+      "tick": 93
+    },
+    {
+      "enzymes_l1": 15.0,
+      "enzymes_linf": 5.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 94
+    },
+    {
+      "enzymes_l1": 12.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 95
+    },
+    {
+      "enzymes_l1": 16.0,
+      "enzymes_linf": 5.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 96
+    },
+    {
+      "enzymes_l1": 13.0,
+      "enzymes_linf": 3.0,
+      "substrates_l1": 0.0,
+      "substrates_linf": 0.0,
+      "tick": 97
+    },
+    {
+      "enzymes_l1": 12.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 1.0,
+      "substrates_linf": 1.0,
+      "tick": 98
+    },
+    {
+      "enzymes_l1": 18.0,
+      "enzymes_linf": 4.0,
+      "substrates_l1": 3.0,
+      "substrates_linf": 3.0,
+      "tick": 99
+    }
+  ],
+  "process": "FtsZPolymerization",
+  "rng_seed": 0,
+  "summary": {
+    "enzymes_l1_max": 29.0,
+    "enzymes_l1_mean": 11.69,
+    "enzymes_l1_zero_ticks": 0,
+    "substrates_l1_max": 6.0,
+    "substrates_l1_mean": 1.18,
+    "substrates_l1_zero_ticks": 37
+  },
+  "trace_path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/FtsZPolymerization_100ticks.mat"
+}

@@ -1,0 +1,114 @@
+# Proposed `PROCESS_CATALOG.yaml` row patch — FtsZPolymerization reclassification
+#
+# STATUS: PROPOSAL ONLY. NOT APPLIED. Do not merge into
+# docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml or
+# docs/phase_f/l2_event/event_registry.yaml as part of this change. Central
+# catalog/registry edits are explicitly out of scope for this task
+# (Turn-2 adjudications #3/#6) and stay serialized for a later, dedicated
+# catalog-owning change.
+#
+# See docs/phase_f/l2_windowed/FTSZ_WINDOWED_PROFILE_SPEC.md for the full
+# rationale (gate channels, structural invariants, telemetry, future N=50
+# gate contract).
+#
+# ---------------------------------------------------------------------------
+# Current (authoritative, unchanged) PROCESS_CATALOG.yaml row for reference:
+#
+#   - name: FtsZPolymerization
+#     oc_module: opencell/vivarium/karr_ftsz_polymerization.py
+#     bucket: EVENT_CLASS
+#     harness_type: event_class
+#     in_scope_L2_2: true
+#     M_ticks: 200
+#     N_seeds: 50
+#     event_density: sparse                 # only active in pre-division window
+#     input_channels: [substrates, enzymes, monomers]
+#     output_channels: [substrates, monomers]
+#     primary_channel: monomers
+#     karr_artifact: per_process_traces_v2
+#     rationale_M: "sparse; need seeds that overlap pre-division window"
+#     notes: "v3 (2026-06-11): reclassified to EVENT_CLASS. v3.9 (2026-06-16):
+#       FIXED at 9375e59 -- full ODE-based port replacing Karr-light v1
+#       stochastic rates. scipy BDF solver for activation/exchange/
+#       nucleation/elongation kinetics, mass-preserving discretization,
+#       substrate-limit clamping. Algorithm now faithful to Karr. Still
+#       EVENT_CLASS -- needs event-window traces for distributional
+#       validation."
+#     seed_window:
+#       tick_range_from_division: [-200, 0]
+#       rationale: "FtsZ polymerization is biologically active only in the
+#         pre-division window"
+#
+# Two defects in the current row, both corrected below:
+#
+#   1. `bucket: EVENT_CLASS` / `harness_type: event_class` misclassifies a
+#      continuous ODE-integrated polymer-state process as a binary/sparse
+#      firing event. `docs/phase_f/l2_event/event_registry.yaml`'s existing
+#      FtsZ row already carries an M5/Opus5 note making this exact point.
+#   2. `primary_channel: monomers` / `output_channels: [substrates, monomers]`
+#      names a channel that does not exist: `fts_z_polymerization.toml`'s
+#      `monomers` state group is empty, and
+#      `KarrFtsZPolymerizationProcess.ports_schema()` declares no `monomers`
+#      port. `next_update` never emits a `monomers` key. This channel is
+#      fictitious against the current implementation and must not be
+#      "primary" (or present at all) in any profile.
+#
+# ---------------------------------------------------------------------------
+# Proposed future row (NOT applied -- requires an explicit catalog-owning
+# decision plus the N=50 seed-cluster/split-half gate contract in
+# FTSZ_WINDOWED_PROFILE_SPEC.md section 7 to actually be implemented before
+# `adapter_status`/gate readiness would mean anything numeric):
+
+- name: FtsZPolymerization
+  oc_module: opencell/vivarium/karr_ftsz_polymerization.py
+  bucket: WINDOWED_CONTINUOUS_CLASS
+  harness_type: windowed_continuous
+  in_scope_L2_2: true
+  M_ticks: 100
+  N_seeds: 50
+  event_density: null   # not applicable -- not an event-timing process
+  gate_channels: [enzymes, substrates]
+  diagnostic_only_channels: [boundEnzymes, ftsz_ring_count, complete]
+  input_channels: [substrates, enzymes]
+  output_channels: [substrates, enzymes]
+  primary_channel: enzymes
+  karr_artifact: per_process_traces_v2
+  rationale_M: "100-tick window matches the only extracted trace
+    (FtsZPolymerization_100ticks.mat); no event-window stride/anchor
+    metadata is applicable to a continuous profile."
+  notes: >
+    PROPOSED, NOT YET ELIGIBLE. Reclassifies FtsZPolymerization from
+    EVENT_CLASS to a continuous/windowed per-tick fidelity profile per
+    agent/l2-ftsz-windowed-profile (see
+    docs/phase_f/l2_windowed/FTSZ_WINDOWED_PROFILE_SPEC.md). Corrects the
+    fictitious `monomers` primary/output channel: `enzymes` is the actual
+    ODE-integrated primary observable (100/100 ticks mutated in the
+    seed-0 trace); `substrates` is a secondary/conservation-only gate
+    channel (60/100 ticks mutated). `boundEnzymes`, and the OC-only
+    `ftsz_ring_count`/`complete` derived signals, are diagnostics only and
+    excluded from the gate. Honest-mode (no trace_hint) per-tick canary
+    (tests/vivarium/test_karr_ftsz_polymerization_honest_canary.py)
+    currently runs against N=1 seed only and reports an explicit
+    INSUFFICIENT_ENSEMBLE / skip verdict -- it never reports PASS/FAIL.
+    This row must NOT be merged as gate-ready until: (1) 49 additional
+    seeds of FtsZPolymerization_100ticks.mat exist on disk (mirroring the
+    RibosomeAssembly precedent's missing-data shape -- see
+    docs/phase_f/l2_event/RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md), and
+    (2) the N=50 Karr-only seed-cluster/split-half null gate described in
+    FTSZ_WINDOWED_PROFILE_SPEC.md section 7 is implemented and
+    preregistered -- not a threshold invented from the ODE solver's
+    rtol/atol or any other ad hoc number. No MATLAB/Octave extraction was
+    performed to produce this proposal.
+  seed_window: null   # not applicable -- continuous profile uses the full
+                       # available 100-tick trace, not an event-anchored window
+
+# Companion note for docs/phase_f/l2_event/event_registry.yaml (also NOT
+# applied): the existing FtsZ row's `in_scope_v4: false` /
+# `harness_type=event_class` bidirectional-coverage bookkeeping entry should
+# be removed entirely once the PROCESS_CATALOG.yaml row above is applied,
+# since FtsZ would no longer be `harness_type="event_class"` in the catalog
+# and `registry.validate_against_catalog()`'s bidirectional check would have
+# nothing left to reconcile for this process. Per the existing row's own
+# note, any such reclassification "must never cause
+# validate_against_catalog() to refuse unrelated in-scope rows (Cytokinesis,
+# RibosomeAssembly)" -- this patch does not touch either of those rows.
