@@ -1,11 +1,23 @@
 """H12 perturbation evidence: pre-registered state perturbations against the
-real vendored Karr MacromolecularComplexation/ProteinProcessingII source,
-executed via GNU Octave (see scripts/octave_h12_perturbation/README.md),
-to exercise the two H12 required branches that never occur in the accepted
-natural 50-seed catalog-domain oracle trace:
+real vendored Karr MacromolecularComplexation/ProteinProcessingII source.
 
-    - MacromolecularComplexation: network_ge2_fires
-    - ProteinProcessingII:        transferase_fires
+Scenario A (ProteinProcessingII full-saturating) and the macromol
+network2-competition scenario are executed via GNU Octave (see
+scripts/octave_h12_perturbation/README.md) -- both are RNG-invariant-by-
+construction or distributional-only, so the Octave harness's
+stochasticRoundStub.m/mnrndStub.m scaffolds (a documented non-Karr
+approximation) are an acceptable substitute for Karr's real RandStream.
+
+Scenario B (ProteinProcessingII scarcity/mnrnd matrix) is executed via
+genuine local MATLAB plus the Statistics Toolbox and Karr's real
+`edu.stanford.covert.util.RandStream` class (see
+scripts/matlab_h12_perturbation/README.md) -- NOT Octave. This is because
+Scenario B's entire purpose is to exercise the dormant transferase/
+scarcity mnrnd/stochasticRound branch with genuinely Karr-faithful
+stochastic behavior; Octave has no RandStream class of that shape and no
+Statistics-Toolbox mnrnd/binornd, so the Octave stub scaffolds cannot
+serve as evidence for that branch's real behavior (this corrects an
+earlier, Opus5-rejected, Octave-stub-based Scenario B design).
 
 This module is SEPARATE from and does not modify scripts/l22_evidence/h12.py
 or its CATALOG_N_M-gated artifacts (docs/phase_f/l2_2_design_a/h12/
@@ -14,7 +26,12 @@ clearly non-gating "perturbation evidence" artifacts under
 docs/phase_f/l2_2_design_a/h12/perturbation/, and is NOT consumed by
 verdict.py / the H12_CONFIRMED evidence gate. Any promotion of a process's
 primary verdict on the strength of this evidence is a reviewer decision,
-not something this module or its artifacts perform automatically.
+not something this module or its artifacts perform automatically. Even at
+full execution, Scenario B evidence supports at most a future
+CONDITION_GATED classification proposal -- it cannot close or remove the
+natural regime's `missing_required_branches=['transferase_fires']` finding,
+change ProteinProcessingII H12's H12_OBSERVED_REGIME verdict, or unblock
+L2.5.
 
 ======================================================================
 ANTI-LAUNDERING CONTRACT (same two-phase discipline as h12.py)
@@ -24,10 +41,16 @@ ANTI-LAUNDERING CONTRACT (same two-phase discipline as h12.py)
         pre-registered perturbed `states_before` + static fixture params.
         `compute_macromol_network2_bound` below computes the network-2 `ub`
         bound from the pre-registered pool + stoichiometry ONLY -- neither
-        function is given the Octave-executed `after` arrays.
+        function is given the Octave-executed `after` arrays. Scenario B's
+        `predict_ppii_scarcity_bounds` is likewise before-only, and its
+        output is PERSISTED TO DISK (freeze_ppii_scenario_b_predictions)
+        BEFORE any MATLAB process is invoked -- the frozen file, not a
+        fresh recomputation, is what `ingest_ppii_scenario_b` loads and
+        compares against MATLAB's `states_after` output.
     COMPARE / INVARIANT-CHECK phase: only after the above are frozen does
-    this module read the Octave-produced raw CSV `after` outputs
-    (`ingest_ppii_scenario_a`, `check_macromol_invariants`).
+    this module read the Octave- or MATLAB-produced raw CSV `after`
+    outputs (`ingest_ppii_scenario_a`, `check_macromol_invariants`,
+    `ingest_ppii_scenario_b`).
 This module is scanned by tests/scripts/test_h12_perturbation.py for the
 same forbidden-import/no-early-after-access pattern as h12.py's
 predict_* functions.
@@ -55,6 +78,7 @@ SPEC_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "h12" / "perturba
 OUT_DIR = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "h12" / "perturbation"
 RAW_DIR = REPO_ROOT / "data" / "m1_sources" / "karr_native" / "h12_perturbation_traces"
 OCTAVE_DIR = REPO_ROOT / "scripts" / "octave_h12_perturbation"
+MATLAB_DIR = REPO_ROOT / "scripts" / "matlab_h12_perturbation"
 
 HARNESS_FILES = [
     "evolveState_ppii.m",
@@ -65,7 +89,15 @@ HARNESS_FILES = [
     "buildProteinComplexs_montecarlokinetic.m",
     "run_ppii_scenario_a.m",
     "run_macromol_network2.m",
-    "run_ppii_scenario_b.m",
+]
+
+# Genuine-MATLAB Scenario B harness files -- hashed separately from
+# HARNESS_FILES/OCTAVE_DIR above (different directory, different engine,
+# different execution-evidence tier). See scripts/matlab_h12_perturbation/README.md.
+MATLAB_HARNESS_FILES = [
+    "evolveState_ppii_matlab.m",
+    "run_ppii_scenario_b_matlab.m",
+    "probe_matlab_environment.m",
 ]
 
 N_SEEDS = 50
@@ -101,8 +133,14 @@ MACROMOL_NETWORK2 = {
 # -- reusing the SAME fixture-real lipoprotein/secreted index arrays as
 # Scenario A, populating only the first 3 (lipoprotein) / 4 (secreted)
 # slots per state; passthrough is never perturbed here (already covered by
-# the natural trace and Scenario A). Order matters: this is also the
-# canary-then-full execution order (water_scarce is the designated canary).
+# the natural trace and Scenario A). Dict iteration order below is NOT
+# execution order -- the canary/full seed schedule (PPII_SCENARIO_B_SEED_
+# BLOCKS, PPII_SCENARIO_B_CANARY_STATE below) is the single source of truth
+# for which state is the canary; it is transferase_capacity_scarce, NOT
+# water_scarce (corrected per Opus5 turn-3 review: water_scarce never
+# reaches block1/the transferase branch at all, since its
+# transferase_demand is 0, so it cannot serve as canary evidence that the
+# transferase branch fires).
 PPII_SCENARIO_B_STATE_NAMES = (
     "water_scarce",
     "pg160_scarce",
@@ -159,8 +197,29 @@ PPII_SCENARIO_B_STATES = {
     },
 }
 
-PPII_SCENARIO_B_CANARY = {"states": ["water_scarce"], "n_seeds": 5}
-PPII_SCENARIO_B_FULL = {"states": list(PPII_SCENARIO_B_STATE_NAMES), "n_seeds": 50}
+PPII_SCENARIO_B_CANARY_STATE = "transferase_capacity_scarce"
+PPII_SCENARIO_B_CANARY_SEED_COUNT = 5
+PPII_SCENARIO_B_FULL_SEED_COUNT = 50
+
+# Disjoint, pre-registered per-state MATLAB RandStream seed blocks. NEVER
+# overlapping across states, and NEVER overlapping Scenario A / macromol-
+# network2's own seed ids (0..49, see N_SEEDS/`seeds` above) -- this is a
+# hard requirement (Opus5 turn-3 correction 5), mechanically asserted by
+# tests/scripts/test_h12_perturbation.py::
+# test_scenario_b_seed_blocks_are_pairwise_disjoint_and_avoid_scenario_a_macromol_ids.
+# The canary seed list for a state is an explicit PREFIX/SUBSET of that
+# same state's own full block (never a separate range) -- see
+# PPII_SCENARIO_B_CANARY_SEEDS below.
+PPII_SCENARIO_B_SEED_BLOCKS = {
+    "transferase_capacity_scarce": tuple(range(1000, 1050)),
+    "pg160_scarce": tuple(range(1050, 1100)),
+    "peptidase_capacity_scarce": tuple(range(1100, 1150)),
+    "water_scarce": tuple(range(1150, 1200)),
+    "simultaneous_peptidase_capacity_and_water_scarce": tuple(range(1200, 1250)),
+}
+PPII_SCENARIO_B_CANARY_SEEDS = PPII_SCENARIO_B_SEED_BLOCKS[PPII_SCENARIO_B_CANARY_STATE][
+    :PPII_SCENARIO_B_CANARY_SEED_COUNT
+]
 
 
 def _sha256_file(path: Path) -> str:
@@ -192,6 +251,32 @@ def _harness_hashes() -> dict:
             raise FileNotFoundError(f"expected Octave harness file missing: {path}")
         out[name] = _sha256_lf_normalized(path)
     return out
+
+
+def _matlab_harness_hashes() -> dict:
+    """Same as _harness_hashes() but for the genuine-MATLAB Scenario B
+    harness files (scripts/matlab_h12_perturbation/), hashed separately
+    since they are a distinct engine/evidence tier.
+    """
+    out = {}
+    for name in MATLAB_HARNESS_FILES:
+        path = MATLAB_DIR / name
+        if not path.is_file():
+            raise FileNotFoundError(f"expected MATLAB harness file missing: {path}")
+        out[name] = _sha256_lf_normalized(path)
+    return out
+
+
+def _write_json(path: Path, obj: dict) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with open(path, "w", encoding="utf-8") as fh:
+        json.dump(obj, fh, indent=2, sort_keys=False)
+        fh.write("\n")
+
+
+def _load_json(path: Path) -> dict:
+    with open(path, "r", encoding="utf-8") as fh:
+        return json.load(fh)
 
 
 # ---------------------------------------------------------------------------
@@ -338,13 +423,57 @@ def build_ppii_scenario_b_states(fixture: dict) -> dict:
     return states
 
 
-def _write_ppii_scenario_b_octave_states(states: dict, fixture: dict) -> dict:
+def _write_ppii_scenario_b_state_files(states: dict, fixture: dict) -> dict:
+    """Writes each Scenario B state's `this0` struct to a plain MATLAB-
+    syntax .m file (assignment statements only -- valid input to both the
+    Octave harness convention this repo otherwise uses and the genuine-
+    MATLAB Scenario B driver, scripts/matlab_h12_perturbation/
+    run_ppii_scenario_b_matlab.m, which is what actually consumes these
+    files; the file format itself is not Octave-specific).
+    """
     RAW_DIR.mkdir(parents=True, exist_ok=True)
     out_paths = {}
     for name, state in states.items():
         lines = _ppii_octave_state_lines(state, fixture)
         out_path = RAW_DIR / f"ppii_scenario_b_{name}_state.m"
         out_path.write_text("\n".join(lines) + "\n", encoding="ascii")
+        out_paths[name] = out_path
+    return out_paths
+
+
+def freeze_ppii_scenario_b_predictions(states: dict, state_paths: dict, fixture: dict) -> dict:
+    """Persist ONE JSON file per Scenario B state
+    (ppii_scenario_b_<name>_prediction.json) containing the FROZEN
+    predict_ppii_scarcity_bounds output, that state's pre-registered
+    mode-specific seed schedule, and an LF-normalized hash of the state
+    file it was derived from -- called from generate_inputs_scenario_b(),
+    strictly BEFORE any MATLAB process is invoked.
+
+    This is the hash-bind / anti-recompute mechanism required by Opus5
+    turn-3 correction 6: `ingest_ppii_scenario_b` LOADS this frozen file
+    and never recomputes predict_ppii_scarcity_bounds after MATLAB raw
+    output exists. The MATLAB driver (run_ppii_scenario_b_matlab.m) also
+    reads this same file, but ONLY for its `mode_seeds`/`state_file_
+    sha256` fields (never the `prediction` field, which it does not need
+    and must not consult to produce its own output).
+    """
+    out_paths = {}
+    for name, state in states.items():
+        prediction = predict_ppii_scarcity_bounds(state, fixture)  # PREDICT phase: before-only
+        state_path = state_paths[name]
+        mode_seeds = {"full": list(PPII_SCENARIO_B_SEED_BLOCKS[name])}
+        if name == PPII_SCENARIO_B_CANARY_STATE:
+            mode_seeds["canary"] = list(PPII_SCENARIO_B_CANARY_SEEDS)
+        frozen = {
+            "state_name": name,
+            "mode_seeds": mode_seeds,
+            "state_file": state_path.name,
+            "state_file_sha256": _sha256_lf_normalized(state_path),
+            "prediction": prediction,
+            "frozen_at_utc": datetime.now(timezone.utc).isoformat(),
+        }
+        out_path = RAW_DIR / f"ppii_scenario_b_{name}_prediction.json"
+        _write_json(out_path, frozen)
         out_paths[name] = out_path
     return out_paths
 
@@ -446,10 +575,15 @@ def generate_inputs_scenario_b() -> dict:
             raise ValueError(f"PERTURBATION_SPEC.json scenario B state {name!r} secreted_first4 drifted from module constant")
 
     states = build_ppii_scenario_b_states(ppii_fixture)
-    paths = _write_ppii_scenario_b_octave_states(states, ppii_fixture)
+    paths = _write_ppii_scenario_b_state_files(states, ppii_fixture)
+    prediction_paths = freeze_ppii_scenario_b_predictions(states, paths, ppii_fixture)
     return {
         "ppii_scenario_b_state_paths": {name: str(p) for name, p in paths.items()},
         "ppii_scenario_b_state_sha256": {name: _sha256_file(p) for name, p in paths.items()},
+        "ppii_scenario_b_prediction_paths": {name: str(p) for name, p in prediction_paths.items()},
+        "ppii_scenario_b_prediction_sha256": {
+            name: _sha256_lf_normalized(p) for name, p in prediction_paths.items()
+        },
     }
 
 
@@ -472,30 +606,60 @@ def run_octave_scenario(script_name: str) -> None:
         raise RuntimeError(f"octave {script_name} failed with exit code {result.returncode}")
 
 
-def run_octave_scenario_b(canary: bool) -> None:
-    """Invoke run_ppii_scenario_b.m in either canary mode (1 state x 5
-    seeds) or full mode (5 states x 50 seeds), selected via the
-    PPII_SCENARIO_B_MODE environment variable the .m driver reads.
+def run_matlab_scenario_b(canary: bool) -> None:
+    """Invoke run_ppii_scenario_b_matlab.m (genuine local MATLAB, NOT
+    Octave) in either canary mode (1 state x 5 seeds) or full mode (5
+    states x 50 seeds), selected via the PPII_SCENARIO_B_MODE environment
+    variable the .m driver reads. Uses MATLAB's `-batch` mode (no display,
+    no desktop, non-interactive, nonzero exit code on any uncaught error)
+    -- there is NO stub/fallback engine selection here; if `matlab` is not
+    on PATH or the driver itself aborts (missing Statistics Toolbox/
+    RandStream, see run_ppii_scenario_b_matlab.m), this raises.
 
     NOT CALLED by anything in this commit -- implemented so canary/full
     execution is a single, reviewable, pre-registered code path ready for
     invocation only after explicit GPT-5.6 Sol authorization following
-    Opus5 review (see PERTURBATION_SPEC.json scenario_b_execution_status).
+    Opus5 review (see PERTURBATION_SPEC.json scenario_b_execution_status),
+    and only after probe_matlab_environment() has been run separately to
+    confirm the target environment is usable.
     """
     env = dict(os.environ)
     env["PPII_SCENARIO_B_MODE"] = "canary" if canary else "full"
     result = subprocess.run(
-        ["octave", "--no-gui", "--quiet", "run_ppii_scenario_b.m"],
-        cwd=str(OCTAVE_DIR),
+        ["matlab", "-batch", "run_ppii_scenario_b_matlab"],
+        cwd=str(MATLAB_DIR),
         capture_output=True,
         text=True,
-        timeout=120 if canary else 900,
+        timeout=300 if canary else 1800,
         env=env,
     )
     sys.stderr.write(result.stdout)
     sys.stderr.write(result.stderr)
     if result.returncode != 0:
-        raise RuntimeError(f"octave run_ppii_scenario_b.m ({env['PPII_SCENARIO_B_MODE']}) failed with exit code {result.returncode}")
+        raise RuntimeError(
+            f"matlab run_ppii_scenario_b_matlab ({env['PPII_SCENARIO_B_MODE']}) failed with exit code "
+            f"{result.returncode}"
+        )
+
+
+def probe_matlab_environment() -> None:
+    """Invoke scripts/matlab_h12_perturbation/probe_matlab_environment.m
+    (genuine MATLAB, read-only preflight diagnostic -- writes no output
+    files, runs no evolveState code). NOT CALLED by anything in this
+    commit; this is the "parse/license/toolbox probe" step authorized
+    separately from (and strictly before) the canary run.
+    """
+    result = subprocess.run(
+        ["matlab", "-batch", "probe_matlab_environment"],
+        cwd=str(MATLAB_DIR),
+        capture_output=True,
+        text=True,
+        timeout=120,
+    )
+    sys.stdout.write(result.stdout)
+    sys.stderr.write(result.stderr)
+    if result.returncode != 0:
+        raise RuntimeError(f"matlab probe_matlab_environment failed with exit code {result.returncode}")
 
 
 # ---------------------------------------------------------------------------
@@ -759,36 +923,152 @@ def evaluate_ppii_scarcity_invariants(before: dict, raw: np.ndarray, fixture: di
     }
 
 
-def ingest_ppii_scenario_b(fixture: dict) -> dict:
-    """COMPARE phase for all 5 Scenario B states: freezes each state's
-    predict_ppii_scarcity_bounds prediction BEFORE reading that state's
-    Octave-produced `after` CSV (ppii_scenario_b_<name>_after.csv). Raises
-    FileNotFoundError per-state if that state's Octave run has not been
-    executed yet (expected/required in this turn -- no Octave run has
-    occurred).
+def ingest_ppii_scenario_b(fixture: dict, mode: str) -> dict:
+    """COMPARE phase for Scenario B, mode-aware ("canary" or "full" --
+    required, no default). Reads the FROZEN prediction (written by
+    freeze_ppii_scenario_b_predictions during generate_inputs_scenario_b(),
+    never recomputed here) plus the genuine-MATLAB driver's per-state run-
+    manifest and `after` CSV. Never touches the OC SUT, any runner output,
+    or any oracle-after value.
+
+    In 'canary' mode, ONLY PPII_SCENARIO_B_CANARY_STATE is expected/
+    processed (the other 4 states legitimately have no evidence yet -- this
+    is not an error). In 'full' mode, all 5 states are required.
+
+    Validation performed per state (raises ValueError/FileNotFoundError on
+    any failure -- no silent leniency):
+      - frozen prediction JSON exists (else: run generate-inputs-scenario-b
+        first).
+      - run-manifest JSON exists (else: MATLAB has not been run for this
+        state/mode yet).
+      - manifest['mode'] == mode (rejects a stale/mixed canary-vs-full
+        manifest).
+      - manifest['seeds'] == frozen prediction's mode_seeds[mode], exactly,
+        in order (rejects reused/substituted/reordered seeds).
+      - manifest['state_file_sha256_lf_normalized'] == the frozen
+        prediction's own state_file_sha256 == the CURRENT on-disk state
+        file's hash (three-way staleness check: catches a state file that
+        changed after the prediction was frozen, or a manifest produced
+        against a different state-file version).
+      - manifest['randstream_class_confirmed'] is truthy (rejects any
+        result the driver did not itself confirm came from a real
+        RandStream instance).
+      - manifest['harness_sha256_lf_normalized'] matches the CURRENT
+        evolveState_ppii_matlab.m hash (rejects stale harness drift).
+      - the `after` CSV has EXACTLY 1 + 3*n_mono + n_sub columns and
+        EXACTLY len(seeds) rows (5 for canary, 50 for full -- never
+        more/fewer, never a mix of canary-count and full-count rows).
+      - the CSV's leading seed-id column, as a set, exactly equals the
+        manifest's (and frozen prediction's) pre-registered seed set for
+        this state/mode (rejects a CSV whose actual seed coverage doesn't
+        match what was claimed).
     """
+    if mode not in ("canary", "full"):
+        raise ValueError(f"mode must be 'canary' or 'full', got {mode!r}")
+
     states = build_ppii_scenario_b_states(fixture)  # PREDICT phase: before-only
+    expected_state_names = [PPII_SCENARIO_B_CANARY_STATE] if mode == "canary" else list(PPII_SCENARIO_B_STATE_NAMES)
+
+    current_harness_sha256 = _sha256_lf_normalized(MATLAB_DIR / "evolveState_ppii_matlab.m")
+
     results = {}
-    for name, state in states.items():
+    for name in expected_state_names:
+        state = states[name]
         n_mono = state["unprocessedMonomers"].shape[0]
         n_sub = state["substrates"].shape[0]
-        prediction = predict_ppii_scarcity_bounds(state, fixture)
-        # ---- prediction now FROZEN; only now do we read Octave's after ----
+
+        prediction_path = RAW_DIR / f"ppii_scenario_b_{name}_prediction.json"
+        if not prediction_path.is_file():
+            raise FileNotFoundError(
+                f"frozen prediction missing: {prediction_path} (run generate-inputs-scenario-b first)"
+            )
+        frozen = _load_json(prediction_path)
+        prediction = frozen["prediction"]
+        # ---- prediction is the FROZEN one loaded above; it is NEVER recomputed here ----
+
+        if mode not in frozen["mode_seeds"]:
+            raise ValueError(
+                f"state {name!r} has no pre-registered {mode!r}-mode seed list in {prediction_path} "
+                f"(only {sorted(frozen['mode_seeds'])!r} available)"
+            )
+        expected_seeds = list(frozen["mode_seeds"][mode])
+
+        state_path = RAW_DIR / f"ppii_scenario_b_{name}_state.m"
+        current_state_sha256 = _sha256_lf_normalized(state_path)
+        if current_state_sha256 != frozen["state_file_sha256"]:
+            raise ValueError(
+                f"state {name!r}: current state file {state_path} (sha256 {current_state_sha256}) has "
+                f"changed since its prediction was frozen (sha256 {frozen['state_file_sha256']}) -- "
+                "re-run generate-inputs-scenario-b"
+            )
+
+        manifest_path = RAW_DIR / f"ppii_scenario_b_{name}_run_manifest.json"
+        if not manifest_path.is_file():
+            raise FileNotFoundError(
+                f"MATLAB run-manifest missing: {manifest_path} (run run_ppii_scenario_b_matlab.m in "
+                f"{mode!r} mode first -- NOT YET AUTHORIZED this turn, see PERTURBATION_SPEC.json "
+                "scenario_b_execution_status)"
+            )
+        manifest = _load_json(manifest_path)
+
+        if manifest.get("mode") != mode:
+            raise ValueError(
+                f"state {name!r}: run-manifest mode {manifest.get('mode')!r} does not match requested "
+                f"ingest mode {mode!r} -- refusing to ingest mismatched canary/full evidence"
+            )
+        if list(manifest.get("seeds", [])) != expected_seeds:
+            raise ValueError(
+                f"state {name!r}: run-manifest seeds {manifest.get('seeds')!r} do not exactly match the "
+                f"pre-registered {mode!r}-mode seed list {expected_seeds!r}"
+            )
+        if manifest.get("state_file_sha256_lf_normalized") != frozen["state_file_sha256"]:
+            raise ValueError(
+                f"state {name!r}: run-manifest state-file hash "
+                f"{manifest.get('state_file_sha256_lf_normalized')!r} does not match the frozen "
+                f"prediction's {frozen['state_file_sha256']!r} -- stale MATLAB run"
+            )
+        if not manifest.get("randstream_class_confirmed"):
+            raise ValueError(
+                f"state {name!r}: run-manifest does not confirm randstream_class_confirmed=true -- "
+                "refusing to trust this as real-RandStream evidence"
+            )
+        if manifest.get("harness_sha256_lf_normalized") != current_harness_sha256:
+            raise ValueError(
+                f"state {name!r}: run-manifest harness hash "
+                f"{manifest.get('harness_sha256_lf_normalized')!r} does not match the current "
+                f"evolveState_ppii_matlab.m hash {current_harness_sha256!r} -- stale harness"
+            )
 
         csv_path = RAW_DIR / f"ppii_scenario_b_{name}_after.csv"
         if not csv_path.is_file():
             raise FileNotFoundError(
-                f"Octave output missing: {csv_path} (run run_ppii_scenario_b.m first -- "
-                "NOT YET AUTHORIZED this turn, see PERTURBATION_SPEC.json scenario_b_execution_status)"
+                f"MATLAB output missing: {csv_path} (run run_ppii_scenario_b_matlab.m in {mode!r} mode "
+                "first -- NOT YET AUTHORIZED this turn, see PERTURBATION_SPEC.json "
+                "scenario_b_execution_status)"
             )
-        raw = np.loadtxt(csv_path, delimiter=",")
-        if raw.ndim == 1:
-            raw = raw.reshape(1, -1)
-        if raw.shape[1] != 3 * n_mono + n_sub:
+        raw_with_seed = np.loadtxt(csv_path, delimiter=",")
+        if raw_with_seed.ndim == 1:
+            raw_with_seed = raw_with_seed.reshape(1, -1)
+        expected_cols = 1 + 3 * n_mono + n_sub
+        if raw_with_seed.shape[1] != expected_cols:
             raise ValueError(
-                f"unexpected Octave output shape {raw.shape} for state {name!r}, "
-                f"expected (*, {3 * n_mono + n_sub})"
+                f"unexpected MATLAB output column count {raw_with_seed.shape[1]} for state {name!r}, "
+                f"expected exactly {expected_cols} (1 leading seed-id column + 3*{n_mono} monomer arrays "
+                f"+ {n_sub} substrates)"
             )
+        if raw_with_seed.shape[0] != len(expected_seeds):
+            raise ValueError(
+                f"unexpected MATLAB output row count {raw_with_seed.shape[0]} for state {name!r} in "
+                f"{mode!r} mode, expected exactly {len(expected_seeds)} (rejects mixed canary/full or "
+                "partial evidence)"
+            )
+        actual_seed_ids = sorted(int(round(x)) for x in raw_with_seed[:, 0])
+        if actual_seed_ids != sorted(expected_seeds):
+            raise ValueError(
+                f"state {name!r}: CSV seed-id column {actual_seed_ids!r} does not exactly match the "
+                f"pre-registered {mode!r}-mode seed set {sorted(expected_seeds)!r}"
+            )
+        raw = raw_with_seed[:, 1:]
 
         before = {
             "unprocessedMonomers": state["unprocessedMonomers"],
@@ -796,8 +1076,13 @@ def ingest_ppii_scenario_b(fixture: dict) -> dict:
         }
         invariant_result = evaluate_ppii_scarcity_invariants(before, raw, fixture)
         invariant_result["raw_csv_sha256"] = _sha256_file(csv_path)
-        results[name] = {"prediction": prediction, "invariants": invariant_result}
+        results[name] = {
+            "prediction": prediction,
+            "invariants": invariant_result,
+            "manifest": manifest,
+        }
     return results
+
 
 
 def compute_macromol_network2_ub(pool: np.ndarray, block: np.ndarray) -> np.ndarray:
@@ -949,9 +1234,14 @@ def build_ppii_perturbation_artifact(compare_result: dict, ppii_fixture: dict, g
     }
 
 
-def build_ppii_scarcity_perturbation_artifact(results: dict, ppii_fixture: dict, generated: dict) -> dict:
+def build_ppii_scarcity_perturbation_artifact(
+    results: dict, ppii_fixture: dict, generated: dict, mode: str
+) -> dict:
     """Build the Scenario B (scarcity matrix) artifact from
-    ingest_ppii_scenario_b's per-state {prediction, invariants} results.
+    ingest_ppii_scenario_b's per-state {prediction, invariants, manifest}
+    results. `mode` ('canary' or 'full') determines which states are
+    expected (see ingest_ppii_scenario_b) and is recorded in the artifact
+    so a canary-only artifact is never confusable with a full-matrix one.
 
     Verdict vocabulary is DISJOINT from both h12.py's H12_CONFIRMED and
     Scenario A's H12_PERTURBATION_CONFIRMED, since Scenario B never claims
@@ -970,13 +1260,23 @@ def build_ppii_scarcity_perturbation_artifact(results: dict, ppii_fixture: dict,
         H12_PERTURBATION_SCARCITY_INVARIANT_VIOLATION: any exact bound
             (mass/non-negativity/per-species-cap/pool-cap) was violated in
             any seed of any state -- hard fail regardless of variation.
+
+    Even H12_PERTURBATION_SCARCITY_OBSERVED_STOCHASTIC at full-matrix
+    completion is NOT H12_CONFIRMED and does NOT close ProteinProcessingII
+    H12's natural-regime `missing_required_branches=['transferase_fires']`
+    finding -- see gating/evidence_scope_caveats below and
+    PROTEINPROCESSINGII_SCENARIO_B_PROPOSAL.md.
     """
+    if mode not in ("canary", "full"):
+        raise ValueError(f"mode must be 'canary' or 'full', got {mode!r}")
+
     any_violation = False
     any_degenerate = False
     per_state_summary = {}
     for name, r in results.items():
         pred = r["prediction"]
         inv = r["invariants"]
+        manifest = r["manifest"]
         violated = len(inv["violations"]) > 0
         # A state's stochastic mechanism is expected to fire (per its
         # hand-traced mechanics, see PERTURBATION_SPEC.json) whenever its
@@ -1002,7 +1302,15 @@ def build_ppii_scarcity_perturbation_artifact(results: dict, ppii_fixture: dict,
             "distinct_outcome_count": inv["distinct_outcome_count"],
             "expected_to_vary": expected_to_vary,
             "no_variation_flag": degenerate,
-            "raw_octave_output_sha256": inv["raw_csv_sha256"],
+            "raw_output_sha256": inv["raw_csv_sha256"],
+            "run_manifest": {
+                "mode": manifest.get("mode"),
+                "seeds": manifest.get("seeds"),
+                "matlab_version": manifest.get("matlab_version"),
+                "statistics_toolbox_licensed": manifest.get("statistics_toolbox_licensed"),
+                "randstream_class_confirmed": manifest.get("randstream_class_confirmed"),
+                "generated_at_utc": manifest.get("generated_at_utc"),
+            },
         }
 
     label_mismatch = any(
@@ -1019,17 +1327,23 @@ def build_ppii_scarcity_perturbation_artifact(results: dict, ppii_fixture: dict,
         "artifact_kind": "h12_perturbation_evidence",
         "gating": "NON_GATING -- distributional/bound evidence only; NEVER claims H12_CONFIRMED or "
         "H12_PERTURBATION_CONFIRMED (Scenario A's exact-match vocabulary). Not consumed by verdict.py / "
-        "the H12_CONFIRMED evidence gate. Recommends (does not enact) a condition-gated terminal profile "
-        "-- see PROTEINPROCESSINGII_SCENARIO_B_PROPOSAL.md.",
+        "the H12_CONFIRMED evidence gate. Cannot close or remove ProteinProcessingII H12's natural-regime "
+        "`missing_required_branches=['transferase_fires']` finding, cannot change H12_OBSERVED_REGIME, and "
+        "cannot unblock L2.5. Recommends (does not enact) a condition-gated terminal profile -- see "
+        "PROTEINPROCESSINGII_SCENARIO_B_PROPOSAL.md.",
         "process": "ProteinProcessingII",
         "scenario": "protein_processing_ii_scenario_b_scarcity_matrix",
+        "mode": mode,
         "perturbation_spec_path": SPEC_PATH.relative_to(REPO_ROOT).as_posix(),
         "perturbation_spec_sha256_lf_normalized": _sha256_lf_normalized(SPEC_PATH),
-        "execution_engine": "GNU Octave 6.4.0 (see scripts/octave_h12_perturbation/README.md RNG-fidelity "
-        "caveat -- this scenario deliberately EXERCISES stochasticRound/mnrnd, so no bit-exact-RNG claim is "
-        "made; evidence is bound-exact (algebraic invariants) plus distributional (genuine cross-seed "
-        "variation), never point-exact-match.)",
-        "harness_source_hashes": _harness_hashes(),
+        "execution_engine": "Genuine local MATLAB (NOT Octave) plus the Statistics Toolbox, using Karr's "
+        "real edu.stanford.covert.util.RandStream class for every stochasticRound/mnrnd draw (see "
+        "scripts/matlab_h12_perturbation/README.md and PERTURBATION_SPEC.json "
+        "scenario_b_execution_engine). No stub/scaffold RNG of any kind is used; the driver aborts with no "
+        "fallback if genuine MATLAB, the Statistics Toolbox, or RandStream construction is unavailable. "
+        "This is a source-faithful stochastic-branch evidence tier, distinct from Scenario A/macromol's "
+        "Octave-stub-based harnesses.",
+        "matlab_harness_source_hashes": _matlab_harness_hashes(),
         "evidence_scope_caveats": [
             "5 distinct pre-registered before-states (not 1 state x 50 seeds like Scenario A) -- each "
             "isolates one guard-failure cause (or, for the simultaneous state, two at once); this is "
@@ -1041,6 +1355,9 @@ def build_ppii_scarcity_perturbation_artifact(results: dict, ppii_fixture: dict,
             "this artifact is OBSERVED_STOCHASTIC/NO_VARIATION/INVARIANT_VIOLATION evidence only; it "
             "NEVER claims H12_CONFIRMED or H12_PERTURBATION_CONFIRMED and remains NON_GATING regardless "
             "of its verdict.",
+            "mode='canary' artifacts cover only "
+            f"{PPII_SCENARIO_B_CANARY_STATE!r} ({PPII_SCENARIO_B_CANARY_SEED_COUNT} seeds) -- the other 4 "
+            "states have no evidence yet in a canary artifact; this is expected, not a violation.",
         ],
         "predictor_source_path": "scripts/l22_evidence/h12_perturbation.py",
         "predictor_source_sha256_lf_normalized": _sha256_lf_normalized(
@@ -1054,18 +1371,22 @@ def build_ppii_scarcity_perturbation_artifact(results: dict, ppii_fixture: dict,
         "target_branch": "transferase_fires_scarcity_regime (and peptidase-side mnrnd/stochasticRound)",
         "verdict": verdict,
         "verdict_reason": (
-            f"{len(per_state_summary)} pre-registered scarcity states checked; "
+            f"mode={mode}; {len(per_state_summary)} pre-registered scarcity state(s) checked; "
             f"any_bound_violation={any_violation}; any_no_variation={any_degenerate}; "
             f"any_guard_label_mismatch={label_mismatch}."
         ),
         "generated_at": datetime.now(timezone.utc).isoformat(),
         "anti_laundering_attestation": {
             "predictor_inputs": ["states_before", "static_fixture_params", "perturbation_spec_constants"],
+            "prediction_frozen_before_matlab_execution": True,
             "states_after_access": "compare_phase_only",
             "no_sut_import": True,
             "no_result_json_access": True,
-            "no_global_rng": "each seed is an independent rand('seed', k) reseed in the Octave driver, "
-            "never an ambient/shared stream",
+            "no_global_rng": "each seed is an independently-constructed real "
+            "edu.stanford.covert.util.RandStream('mcg16807', 'Seed', k) instance in the MATLAB driver, "
+            "never an ambient/shared/global stream",
+            "no_stub_fallback": True,
+            "disjoint_seed_blocks": True,
         },
     }
 
@@ -1186,25 +1507,36 @@ def ingest_and_compare() -> dict:
     }
 
 
-def ingest_and_compare_scenario_b() -> dict:
+def ingest_and_compare_scenario_b(mode: str) -> dict:
     """Scenario B (scarcity matrix) equivalent of ingest_and_compare() --
-    entirely separate artifact/output path (ProteinProcessingII_h12_
-    scenario_b_perturbation.json), never touches Scenario A's or
-    macromol's artifacts. Will raise FileNotFoundError per-state until the
-    corresponding Octave run (canary or full, per PERTURBATION_SPEC.json
-    scenario_b_execution_status) has actually been executed and
-    authorized -- NOT invoked by this commit.
+    entirely separate artifact/output path, never touches Scenario A's or
+    macromol's artifacts. `mode` ('canary' or 'full') is required (no
+    default) and determines both which states are expected
+    (ingest_ppii_scenario_b) and the output artifact filename:
+    mode='canary' -> ProteinProcessingII_h12_scenario_b_perturbation_canary.json
+    mode='full'   -> ProteinProcessingII_h12_scenario_b_perturbation.json
+    (kept unsuffixed for 'full' for continuity with prior artifact naming).
+    Will raise FileNotFoundError per-state until the corresponding genuine-
+    MATLAB run (per PERTURBATION_SPEC.json scenario_b_execution_status) has
+    actually been executed and authorized -- NOT invoked by this commit.
     """
+    if mode not in ("canary", "full"):
+        raise ValueError(f"mode must be 'canary' or 'full', got {mode!r}")
     ppii_fixture = h12.load_fixture("ProteinProcessingII")
-    results = ingest_ppii_scenario_b(ppii_fixture)
+    results = ingest_ppii_scenario_b(ppii_fixture, mode=mode)
     generated = {
         "ppii_scenario_b_state_sha256": {
             name: _sha256_file(RAW_DIR / f"ppii_scenario_b_{name}_state.m") for name in PPII_SCENARIO_B_STATE_NAMES
         },
     }
-    artifact = build_ppii_scarcity_perturbation_artifact(results, ppii_fixture, generated)
-    path = write_artifact("ProteinProcessingII_h12_scenario_b_perturbation.json", artifact)
-    return {"ProteinProcessingII_scenario_b": {"path": str(path), "verdict": artifact["verdict"]}}
+    artifact = build_ppii_scarcity_perturbation_artifact(results, ppii_fixture, generated, mode=mode)
+    filename = (
+        "ProteinProcessingII_h12_scenario_b_perturbation_canary.json"
+        if mode == "canary"
+        else "ProteinProcessingII_h12_scenario_b_perturbation.json"
+    )
+    path = write_artifact(filename, artifact)
+    return {"ProteinProcessingII_scenario_b": {"path": str(path), "verdict": artifact["verdict"], "mode": mode}}
 
 
 def main() -> int:
@@ -1216,9 +1548,11 @@ def main() -> int:
             "run-octave",
             "ingest-and-compare",
             "generate-inputs-scenario-b",
-            "run-octave-scenario-b-canary",
-            "run-octave-scenario-b-full",
-            "ingest-and-compare-scenario-b",
+            "probe-matlab-environment",
+            "run-matlab-scenario-b-canary",
+            "run-matlab-scenario-b-full",
+            "ingest-and-compare-scenario-b-canary",
+            "ingest-and-compare-scenario-b-full",
         ],
     )
     args = parser.parse_args()
@@ -1236,18 +1570,27 @@ def main() -> int:
     elif args.command == "generate-inputs-scenario-b":
         result = generate_inputs_scenario_b()
         print(json.dumps(result, indent=2))
-    elif args.command == "run-octave-scenario-b-canary":
+    elif args.command == "probe-matlab-environment":
+        # NOT invoked by anything else in this commit -- the parse/
+        # license/toolbox preflight step, authorized separately from (and
+        # before) the canary run.
+        probe_matlab_environment()
+    elif args.command == "run-matlab-scenario-b-canary":
         # NOT authorized/invoked this turn -- see PERTURBATION_SPEC.json
         # scenario_b_execution_status; requires explicit GPT-5.6 Sol
-        # authorization following Opus5 review of the code/spec commit.
-        run_octave_scenario_b(canary=True)
-        print("octave scenario B canary executed (1 state x 5 seeds)")
-    elif args.command == "run-octave-scenario-b-full":
+        # authorization following Opus5 review of the code/spec commit,
+        # and a prior probe-matlab-environment confirmation.
+        run_matlab_scenario_b(canary=True)
+        print("matlab scenario B canary executed (1 state x 5 seeds)")
+    elif args.command == "run-matlab-scenario-b-full":
         # NOT authorized/invoked this turn -- same gate as canary above.
-        run_octave_scenario_b(canary=False)
-        print("octave scenario B full matrix executed (5 states x 50 seeds)")
-    elif args.command == "ingest-and-compare-scenario-b":
-        result = ingest_and_compare_scenario_b()
+        run_matlab_scenario_b(canary=False)
+        print("matlab scenario B full matrix executed (5 states x 50 seeds)")
+    elif args.command == "ingest-and-compare-scenario-b-canary":
+        result = ingest_and_compare_scenario_b(mode="canary")
+        print(json.dumps(result, indent=2))
+    elif args.command == "ingest-and-compare-scenario-b-full":
+        result = ingest_and_compare_scenario_b(mode="full")
         print(json.dumps(result, indent=2))
     return 0
 

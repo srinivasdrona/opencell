@@ -25,6 +25,11 @@ import pytest
 REPO_ROOT = Path(__file__).resolve().parents[2]
 VENDORED_ROOT = REPO_ROOT / "data" / "karr_vendored_source"
 HARNESS_ROOT = REPO_ROOT / "scripts" / "octave_h12_perturbation"
+# Genuine-MATLAB (not Octave) Scenario B harness files live in a separate
+# directory specifically so the two execution engines (Octave stub-based
+# Scenario A/macromol vs. real-MATLAB Scenario B) are never confused by
+# file location alone -- see scripts/matlab_h12_perturbation/README.md.
+MATLAB_HARNESS_ROOT = REPO_ROOT / "scripts" / "matlab_h12_perturbation"
 
 # The ONLY substitutions allowed between the vendored Karr .m source and the
 # isolated Octave harness transcription. Applied to the VENDORED side before
@@ -56,6 +61,18 @@ BINDINGS = [
     ("buildProteinComplexs_bounds.m", "MacromolecularComplexation.m", 391, 391),
 ]
 
+# Genuine-MATLAB Scenario B harness bindings. Unlike BINDINGS above, these
+# are TRUE VERBATIM transcriptions: ZERO allowed substitutions, because the
+# real-MATLAB driver supplies a real edu.stanford.covert.util.RandStream
+# instance as `this.randStream` (see run_ppii_scenario_b_matlab.m), so
+# `this.randStream.stochasticRound(...)`/`.mnrnd(...)` calls do not need to
+# be (and must not be) rewritten to stub free functions. Same
+# (harness_filename, vendored_filename, start_line, end_line) shape, but
+# resolved against MATLAB_HARNESS_ROOT instead of HARNESS_ROOT.
+MATLAB_BINDINGS = [
+    ("evolveState_ppii_matlab.m", "ProteinProcessingII.m", 349, 445),
+]
+
 
 def _read_lines(path: Path) -> list[str]:
     # Vendored WholeCell source is copy-pasted from an original MATLAB
@@ -72,8 +89,8 @@ def _extract_vendored_body(filename: str, start_line: int, end_line: int) -> lis
     return lines[start_line - 1 : end_line]
 
 
-def _extract_harness_body(filename: str) -> list[str]:
-    lines = _read_lines(HARNESS_ROOT / filename)
+def _extract_harness_body(filename: str, root: Path = HARNESS_ROOT) -> list[str]:
+    lines = _read_lines(root / filename)
     assert lines and lines[0].strip().startswith("function "), (
         f"{filename}: expected first line to be a function signature, got {lines[:1]!r}"
     )
@@ -170,4 +187,42 @@ def test_harness_files_contain_no_unsubstituted_randstream_reference():
         assert not forbidden.search(body), (
             f"{harness_file} still references this.randStream.* directly -- should have been substituted "
             "with a harness stub (stochasticRoundStub/mnrndStub)"
+        )
+
+
+@pytest.mark.parametrize("harness_file,vendored_file,start,end", MATLAB_BINDINGS, ids=[b[0] for b in MATLAB_BINDINGS])
+def test_matlab_harness_matches_vendored_source_exactly(harness_file, vendored_file, start, end):
+    # True verbatim: no ALLOWED_SUBSTITUTIONS applied to either side. If this
+    # ever fails because a substitution *would* make it pass, that is a
+    # signal the file has silently become a stub-based transcription again
+    # and must be re-reviewed, not patched via the Octave allow-list.
+    vendored_norm = _normalize(_extract_vendored_body(vendored_file, start, end))
+    harness_norm = _normalize(_extract_harness_body(harness_file, root=MATLAB_HARNESS_ROOT))
+    assert harness_norm == vendored_norm, (
+        f"{harness_file} (true-verbatim MATLAB harness) has drifted from {vendored_file} lines {start}-{end}. "
+        "This binding permits ZERO substitutions -- any difference is drift, not an allowed transcription "
+        "choice.\n"
+        f"vendored(normalized)={vendored_norm!r}\nharness (normalized)={harness_norm!r}"
+    )
+
+
+def test_matlab_harness_files_contain_real_randstream_reference():
+    # Inverse of test_harness_files_contain_no_unsubstituted_randstream_reference:
+    # the whole point of the MATLAB_BINDINGS harnesses is that they call the
+    # REAL this.randStream.stochasticRound/.mnrnd (a genuine RandStream
+    # instance method), not a stub free function. If a MATLAB harness file
+    # ever loses these references (e.g. someone "fixes" it by copying the
+    # Octave stub version), this test fails loudly rather than silently
+    # degrading Scenario B back into stub-based evidence.
+    required = re.compile(r"\bthis\.randStream\.(stochasticRound|mnrnd)\(")
+    for harness_file, _, _, _ in MATLAB_BINDINGS:
+        body = "\n".join(_normalize(_extract_harness_body(harness_file, root=MATLAB_HARNESS_ROOT)))
+        assert required.search(body), (
+            f"{harness_file} does not call this.randStream.stochasticRound/.mnrnd -- this is supposed to be "
+            "a true-verbatim real-MATLAB RandStream harness, not a stub-based one"
+        )
+        forbidden_stub = re.compile(r"\b(stochasticRoundStub|mnrndStub)\(")
+        assert not forbidden_stub.search(body), (
+            f"{harness_file} references a stub function ({forbidden_stub.pattern}) -- MATLAB Scenario B "
+            "harnesses must not use the Octave stub scaffolds"
         )

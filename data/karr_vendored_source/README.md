@@ -40,6 +40,44 @@ Copied verbatim (byte-for-byte, no modifications) from:
 | `ProteinProcessingII.m` | `src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m` |
 | `tRNAAminoacylation.m` | `src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m` |
 
+## Utility/helper source (non-process)
+
+Vendored the same way (verbatim, byte-for-byte, tracked table below), for
+the same reason as the process files above: this file's exact provenance
+must be independently re-verifiable from a fresh clone without depending on
+the gitignored `data/m1_sources/WholeCell/` clone target. Unlike the process
+files, this is not a per-process H12 predictor citation -- it is cited by
+the H12 **perturbation** harness
+(`scripts/l22_evidence/h12_perturbation.py` / `scripts/matlab_h12_perturbation/`)
+as the real MATLAB stochastic-primitive wrapper (`stochasticRound`, `mnrnd`)
+that a genuine (non-Octave-stub) Scenario B evidence run depends on.
+
+| Vendored file | Upstream original path |
+|---|---|
+| `RandStream.m` | `src/+edu/+stanford/+covert/+util/RandStream.m` |
+
+Same upstream repo/commit as the process-file table above
+(`6cdee6b355aa0f5ff2953b1ab356eea049108e07`); verified identical byte-for-byte
+against `E:\opencell-mirrors\WholeCell\src\+edu\+stanford\+covert\+util\RandStream.m`
+(raw SHA256 `2ba41e2ff7ee023b1164f2ff9f3b2053063398dff0c06d0d564c498a5b42da89`,
+LF-normalized SHA256 `fee7d4ab17cc3b4dde5391137fb3a0679077b071790ba6f82c0ff4b610041dba`)
+at the time of vendoring.
+
+This file is a wrapper `classdef` over MATLAB's builtin `RandStream` class
+and Statistics Toolbox functions (`mnrnd`, `binornd`, `poissrnd`, `random`)
+-- it **requires genuine MATLAB with the Statistics Toolbox licensed** to
+load/execute; it is NOT Octave-compatible (Octave has no `RandStream`
+class of this shape and no `mnrnd`). This vendored copy is for hash/audit
+purposes only -- an actual Scenario B MATLAB run loads the real class from
+its canonical WholeCell package path (`edu.stanford.covert.util.RandStream`,
+via the `data/m1_sources/WholeCell/src` clone-target symlink, added to the
+MATLAB path at runtime), not from this flat vendored copy (a `classdef`
+inside a `+package` folder structure cannot be `run()`/loaded as a
+standalone flat file the way the process `.m` function bodies above are
+hand-transcribed into harness files). See
+`scripts/matlab_h12_perturbation/README.md` for the execution-time
+package-path requirement and no-stub-fallback/abort contract.
+
 ## License
 
 MIT (Karr, Sanghvi, Macklin, Jacobs, Covert, 2012) — see

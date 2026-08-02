@@ -80,6 +80,7 @@ PREDICT_PHASE_FUNCTIONS = (
     "generate_inputs_scenario_b",
     "guard_diagnostics_ppii",
     "predict_ppii_scarcity_bounds",
+    "freeze_ppii_scenario_b_predictions",
 )
 
 # Functions that legitimately read Octave "after" output (COMPARE /
@@ -438,6 +439,113 @@ def test_guard_failure_label_mapping():
 
 
 # ---------------------------------------------------------------------------
+# guard_diagnostics_ppii boundary-grid cross-check against the accepted
+# h12.predict_protein_processing_ii predictor (Opus5 correction 8): proves
+# guard_diagnostics_ppii's four-guard breakdown is not a divergent
+# reimplementation, at the exact boundary of each guard independently and
+# at a simultaneous-failure combination.
+# ---------------------------------------------------------------------------
+
+
+def _boundary_grid_state(fixture, peptidase_delta, transferase_delta, water_delta, pg160_delta):
+    """Construct a before-state whose peptidase/transferase demand sits
+    EXACTLY `*_delta` counts away from that guard's own capacity limit
+    (computed from real fixture rate/stepSize values), and whose water/
+    pg160 pools sit EXACTLY `*_delta` away from the corresponding demand.
+    delta<=0 means the guard must PASS (limit/pool >= demand); delta>0
+    means it must FAIL. Uses large, well-separated representative enzyme
+    counts so the two capacity limits never collide regardless of the
+    small deltas exercised here.
+    """
+    lipo_idx = fixture["lipoproteinMonomerIndexs_0b"]
+    secr_idx = fixture["secretedMonomerIndexs_0b"]
+    passthrough_idx = fixture["unprocessedMonomerIndexs_0b"]
+    n_mono = int(max(int(lipo_idx.max()), int(secr_idx.max()), int(passthrough_idx.max()))) + 1
+    n_enz = (
+        int(max(fixture["enzymeIndexs_signalPeptidase_0b"], fixture["enzymeIndexs_diacylglycerylTransferase_0b"]))
+        + 1
+    )
+    enzymes = np.zeros(n_enz)
+    enzymes[fixture["enzymeIndexs_signalPeptidase_0b"]] = 1_000_000.0
+    enzymes[fixture["enzymeIndexs_diacylglycerylTransferase_0b"]] = 1.0
+    peptidase_limit = (
+        enzymes[fixture["enzymeIndexs_signalPeptidase_0b"]]
+        * fixture["lipoproteinSignalPeptidaseSpecificRate"]
+        * fixture["stepSizeSec"]
+    )
+    transferase_limit = (
+        enzymes[fixture["enzymeIndexs_diacylglycerylTransferase_0b"]]
+        * fixture["lipoproteinDiacylglycerylTransferaseSpecificRate"]
+        * fixture["stepSizeSec"]
+    )
+    transferase_demand = transferase_limit + transferase_delta
+    peptidase_demand = peptidase_limit + peptidase_delta
+    assert transferase_demand >= 0 and peptidase_demand >= transferase_demand, (
+        "boundary-grid fixture construction assumption violated -- widen the enzyme separation"
+    )
+    unprocessed = np.zeros(n_mono)
+    unprocessed[int(lipo_idx[0])] = transferase_demand
+    unprocessed[int(secr_idx[0])] = peptidase_demand - transferase_demand
+    water = peptidase_demand + water_delta
+    pg160 = transferase_demand + pg160_delta
+    return unprocessed, enzymes, water, pg160, peptidase_demand, transferase_demand
+
+
+@pytest.mark.parametrize(
+    "peptidase_delta,transferase_delta,water_delta,pg160_delta,expect_valid",
+    [
+        (0, 0, 0, 0, True),  # exactly at all four limits -- guard is >=, so this must PASS
+        (1, 0, 0, 0, False),  # peptidase_demand = limit+1 -- fails peptidase_limit only
+        (0, 1, 0, 0, False),  # transferase_demand = limit+1 -- fails transferase_limit only
+        (0, 0, -1, 0, False),  # water = peptidase_demand-1 -- fails water only
+        (0, 0, 0, -1, False),  # pg160 = transferase_demand-1 -- fails pg160 only
+        (1, 0, -1, 0, False),  # simultaneous peptidase_limit + water failure
+    ],
+)
+def test_guard_diagnostics_ppii_boundary_grid_matches_accepted_h12_predictor(
+    peptidase_delta, transferase_delta, water_delta, pg160_delta, expect_valid
+):
+    import sys
+    from pathlib import Path as _Path
+
+    root = _Path(__file__).resolve().parents[2]
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    from scripts.l22_evidence import h12 as _h12
+
+    fixture = _real_ppii_fixture()
+    unprocessed, enzymes, water, pg160, _, _ = _boundary_grid_state(
+        fixture, peptidase_delta, transferase_delta, water_delta, pg160_delta
+    )
+
+    diag = hp.guard_diagnostics_ppii(unprocessed, enzymes, water=water, pg160=pg160, fixture=fixture)
+    assert bool(diag["regime_valid"]) == expect_valid
+
+    n_sub = (
+        max(
+            fixture["substrateIndexs_water_0b"],
+            fixture["substrateIndexs_PG160_0b"],
+            fixture["substrateIndexs_SNGLYP_0b"],
+            fixture["substrateIndexs_hydrogen_0b"],
+        )
+        + 1
+    )
+    substrates = np.zeros(n_sub)
+    substrates[fixture["substrateIndexs_water_0b"]] = water
+    substrates[fixture["substrateIndexs_PG160_0b"]] = pg160
+    before = {
+        "unprocessedMonomers": unprocessed[None, :],
+        "enzymes": enzymes[None, :],
+        "substrates": substrates[None, :],
+    }
+    real_predictions = _h12.predict_protein_processing_ii(seed=0, before=before, fixture=fixture)
+    assert bool(real_predictions[0].regime_valid) == expect_valid, (
+        "guard_diagnostics_ppii's regime_valid diverges from the accepted h12.predict_protein_processing_ii "
+        "at this boundary-grid point -- these two must always agree"
+    )
+
+
+# ---------------------------------------------------------------------------
 # Scenario B: evaluate_ppii_scarcity_invariants pure math (no I/O)
 # ---------------------------------------------------------------------------
 
@@ -534,44 +642,121 @@ def test_evaluate_ppii_scarcity_invariants_detects_per_species_cap_violation():
 
 
 # ---------------------------------------------------------------------------
-# ingest_ppii_scenario_b with a synthetic CSV (no live Octave invocation)
+# ingest_ppii_scenario_b with synthetic frozen-prediction/manifest/CSV
+# fixtures (no live MATLAB invocation). These exercise the mode-aware,
+# hash-bound, anti-recompute contract added in Turn 3 (Opus5 corrections
+# 5, 6, 7).
 # ---------------------------------------------------------------------------
 
 
-def test_ingest_ppii_scenario_b_matching_csvs_yield_no_violations(tmp_path, monkeypatch):
-    fixture = _ppii_full_construction_fixture()
-    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+def _write_scenario_b_evidence(
+    tmp_path,
+    fixture,
+    state_name,
+    mode,
+    seeds,
+    *,
+    manifest_overrides=None,
+    csv_seed_ids=None,
+    csv_row_count=None,
+    skip_prediction=False,
+    skip_manifest=False,
+    skip_csv=False,
+    corrupt_state_file_after_freeze=False,
+):
+    """Write a self-consistent {frozen prediction, run-manifest, after-CSV}
+    trio for one Scenario B state/mode, using the REAL
+    build_ppii_scenario_b_states/predict_ppii_scarcity_bounds/
+    _write_ppii_scenario_b_state_files so shapes and hashes match what
+    ingest_ppii_scenario_b actually expects. Individual fields can be
+    corrupted via the keyword arguments to build negative-path fixtures.
+    """
+    states = hp.build_ppii_scenario_b_states(fixture)
+    state = states[state_name]
+    state_paths = hp._write_ppii_scenario_b_state_files({state_name: state}, fixture)
+    state_path = state_paths[state_name]
+    frozen_state_sha256 = hp._sha256_lf_normalized(state_path)
 
-    def fake_states(f):
-        n_mono = 6
-        out = {}
-        for name in hp.PPII_SCENARIO_B_STATE_NAMES:
-            out[name] = {
-                "name": name,
-                "unprocessedMonomers": np.array([0.0, 3.0, 4.0, 0.0, 0.0, 0.0]),
-                "processedMonomers": np.zeros(n_mono),
-                "signalSequenceMonomers": np.zeros(n_mono),
-                "enzymes": np.array([10.0, 10.0]),
-                "substrates": np.array([100.0, 100.0, 100.0, 100.0]),
-            }
-        return out
+    if not skip_prediction:
+        prediction = hp.predict_ppii_scarcity_bounds(state, fixture)
+        mode_seeds = {"full": list(hp.PPII_SCENARIO_B_SEED_BLOCKS[state_name])}
+        if state_name == hp.PPII_SCENARIO_B_CANARY_STATE:
+            mode_seeds["canary"] = list(hp.PPII_SCENARIO_B_CANARY_SEEDS)
+        frozen = {
+            "state_name": state_name,
+            "mode_seeds": mode_seeds,
+            "state_file": state_path.name,
+            "state_file_sha256": frozen_state_sha256,
+            "prediction": prediction,
+            "frozen_at_utc": "2024-01-01T00:00:00+00:00",
+        }
+        hp._write_json(tmp_path / f"ppii_scenario_b_{state_name}_prediction.json", frozen)
 
-    monkeypatch.setattr(hp, "build_ppii_scenario_b_states", fake_states)
+    if corrupt_state_file_after_freeze:
+        # Simulate the state file changing on disk AFTER its prediction was
+        # frozen (e.g. someone hand-edited it, or a stale re-run happened).
+        state_path.write_text(state_path.read_text(encoding="ascii") + "\n% drifted\n", encoding="ascii")
 
-    for name in hp.PPII_SCENARIO_B_STATE_NAMES:
-        # trivially "clean": nothing processed, nothing consumed -- mass
-        # is conserved because unprocessed_after == unprocessed_before
-        # exactly (a legitimate, if unexciting, evolveState outcome: e.g.
-        # a regime where every guard genuinely passed with 0 demand).
-        row = [0.0, 3.0, 4.0, 0.0, 0.0, 0.0] + [0.0] * 6 + [0.0] * 6 + [100.0] * 4
-        csv_path = tmp_path / f"ppii_scenario_b_{name}_after.csv"
+    if not skip_manifest:
+        manifest = {
+            "state_name": state_name,
+            "mode": mode,
+            "seeds": list(seeds),
+            "n_seeds": len(seeds),
+            "matlab_version": "9.99.0.test",
+            "statistics_toolbox_licensed": True,
+            "randstream_class_confirmed": True,
+            "harness_file": "evolveState_ppii_matlab.m",
+            "harness_sha256_lf_normalized": hp._sha256_lf_normalized(hp.MATLAB_DIR / "evolveState_ppii_matlab.m"),
+            "state_file_sha256_lf_normalized": frozen_state_sha256,
+            "generated_at_utc": "2024-01-01T00:00:01+00:00",
+        }
+        if manifest_overrides:
+            manifest.update(manifest_overrides)
+        hp._write_json(tmp_path / f"ppii_scenario_b_{state_name}_run_manifest.json", manifest)
+
+    if not skip_csv:
+        n_mono = state["unprocessedMonomers"].shape[0]
+        unprocessed = state["unprocessedMonomers"].tolist()
+        substrates = state["substrates"].tolist()
+        # Trivially "clean": nothing processed, nothing consumed -- mass is
+        # conserved exactly because unprocessed_after == unprocessed_before
+        # (a legitimate, if unexciting, evolveState outcome).
+        body = unprocessed + [0.0] * n_mono + [0.0] * n_mono + substrates
+        actual_seed_ids = list(seeds) if csv_seed_ids is None else list(csv_seed_ids)
+        n_rows = len(seeds) if csv_row_count is None else csv_row_count
+        csv_path = tmp_path / f"ppii_scenario_b_{state_name}_after.csv"
         with open(csv_path, "w", encoding="ascii") as fh:
-            fh.write(",".join(str(x) for x in row) + "\n")
+            for i in range(n_rows):
+                seed_id = actual_seed_ids[i] if i < len(actual_seed_ids) else actual_seed_ids[-1]
+                fh.write(",".join(str(x) for x in [float(seed_id)] + body) + "\n")
 
-    results = hp.ingest_ppii_scenario_b(fixture)
+    return {"state": state, "n_mono": state["unprocessedMonomers"].shape[0], "n_sub": state["substrates"].shape[0]}
+
+
+def test_ingest_ppii_scenario_b_full_matching_evidence_yields_no_violations(tmp_path, monkeypatch):
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    for name in hp.PPII_SCENARIO_B_STATE_NAMES:
+        seeds = hp.PPII_SCENARIO_B_SEED_BLOCKS[name]
+        _write_scenario_b_evidence(tmp_path, fixture, name, "full", seeds)
+
+    results = hp.ingest_ppii_scenario_b(fixture, mode="full")
     assert set(results.keys()) == set(hp.PPII_SCENARIO_B_STATE_NAMES)
     for r in results.values():
         assert r["invariants"]["violations"] == []
+        assert r["invariants"]["n_seeds"] == 50
+
+
+def test_ingest_ppii_scenario_b_canary_mode_processes_only_canary_state(tmp_path, monkeypatch):
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(tmp_path, fixture, name, "canary", hp.PPII_SCENARIO_B_CANARY_SEEDS)
+
+    results = hp.ingest_ppii_scenario_b(fixture, mode="canary")
+    assert set(results.keys()) == {name}
+    assert results[name]["invariants"]["n_seeds"] == hp.PPII_SCENARIO_B_CANARY_SEED_COUNT
 
 
 def test_ingest_ppii_scenario_b_missing_csv_raises(tmp_path, monkeypatch):
@@ -580,7 +765,272 @@ def test_ingest_ppii_scenario_b_missing_csv_raises(tmp_path, monkeypatch):
     fixture["secretedMonomerIndexs_0b"] = np.array([2, 8, 9, 10])
     monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
     with pytest.raises(FileNotFoundError):
-        hp.ingest_ppii_scenario_b(fixture)
+        hp.ingest_ppii_scenario_b(fixture, mode="full")
+
+
+def test_ingest_ppii_scenario_b_missing_prediction_raises(tmp_path, monkeypatch):
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path, fixture, name, "canary", hp.PPII_SCENARIO_B_CANARY_SEEDS, skip_prediction=True
+    )
+    with pytest.raises(FileNotFoundError):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_missing_manifest_raises(tmp_path, monkeypatch):
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path, fixture, name, "canary", hp.PPII_SCENARIO_B_CANARY_SEEDS, skip_manifest=True
+    )
+    with pytest.raises(FileNotFoundError):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_manifest_mode_mismatch(tmp_path, monkeypatch):
+    # Inversion test: a "full"-labeled manifest fed to a canary-mode ingest
+    # (or vice versa) must be rejected outright, never silently accepted.
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        manifest_overrides={"mode": "full"},
+    )
+    with pytest.raises(ValueError, match="mode"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_reused_or_substituted_seed_list(tmp_path, monkeypatch):
+    # Inversion test: reused/substituted seeds (e.g. accidentally reusing
+    # Scenario A's 0-49 range, or any seeds not in the pre-registered
+    # block) in the manifest must be rejected even if the CSV cardinality
+    # is otherwise correct.
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    bad_seeds = list(range(0, 5))  # Scenario A's seed range, not this state's block
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        manifest_overrides={"seeds": bad_seeds},
+        csv_seed_ids=bad_seeds,
+    )
+    with pytest.raises(ValueError, match="seeds"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_mixed_canary_full_row_count(tmp_path, monkeypatch):
+    # Inversion test: a CSV whose row count doesn't match the requested
+    # mode's cardinality (e.g. 50 rows presented against a canary-mode
+    # ingest, or a partial/mixed set) must be rejected, never truncated
+    # or padded silently.
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        csv_row_count=hp.PPII_SCENARIO_B_FULL_SEED_COUNT,
+        csv_seed_ids=list(hp.PPII_SCENARIO_B_SEED_BLOCKS[name]),
+    )
+    with pytest.raises(ValueError, match="row count"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_seed_id_column_mismatch(tmp_path, monkeypatch):
+    # Inversion test: even with the right row count, a CSV whose leading
+    # seed-id column doesn't match the pre-registered seed set must be
+    # rejected (catches a CSV silently generated against the wrong seeds).
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    wrong_ids = [s + 1 for s in hp.PPII_SCENARIO_B_CANARY_SEEDS]
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        csv_seed_ids=wrong_ids,
+    )
+    with pytest.raises(ValueError, match="seed-id column"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_stale_state_file_hash(tmp_path, monkeypatch):
+    # Inversion test: the state file drifting after its prediction was
+    # frozen (three-way staleness check) must be caught.
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        corrupt_state_file_after_freeze=True,
+    )
+    with pytest.raises(ValueError, match="changed since its prediction was frozen"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_missing_randstream_confirmation(tmp_path, monkeypatch):
+    # Inversion test: a manifest that does not affirmatively confirm the
+    # real RandStream class was used must never be trusted (guards against
+    # a driver silently falling back to a stub or built-in MATLAB rand()).
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        manifest_overrides={"randstream_class_confirmed": False},
+    )
+    with pytest.raises(ValueError, match="randstream_class_confirmed"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_stale_harness_hash(tmp_path, monkeypatch):
+    # Inversion test: a manifest recorded against an outdated harness hash
+    # (e.g. evolveState_ppii_matlab.m edited after the run) must be
+    # rejected, not silently accepted as still-valid evidence.
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        manifest_overrides={"harness_sha256_lf_normalized": "0" * 64},
+    )
+    with pytest.raises(ValueError, match="stale harness"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_never_recomputes_prediction_stored_verdict_is_trusted(tmp_path, monkeypatch):
+    # Inversion test (Opus5 correction 6 / "stored verdict trusted"): once
+    # a frozen prediction exists, ingest must load it verbatim and must
+    # NEVER call predict_ppii_scarcity_bounds again -- if it did, the
+    # comparison would silently drift with any later code change instead
+    # of comparing against the value that was actually pre-registered
+    # before MATLAB ran. We monkeypatch predict_ppii_scarcity_bounds to
+    # explode; ingest must still succeed using only the frozen JSON.
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(tmp_path, fixture, name, "canary", hp.PPII_SCENARIO_B_CANARY_SEEDS)
+
+    def _boom(*args: object, **kwargs: object) -> None:
+        raise AssertionError("predict_ppii_scarcity_bounds must not be recomputed during ingest")
+
+    monkeypatch.setattr(hp, "predict_ppii_scarcity_bounds", _boom)
+    results = hp.ingest_ppii_scenario_b(fixture, mode="canary")
+    assert name in results
+    assert "guard_diagnostics" in results[name]["prediction"]
+
+
+def test_ingest_ppii_scenario_b_rejects_invalid_mode():
+    fixture = _real_ppii_fixture()
+    with pytest.raises(ValueError, match="mode"):
+        hp.ingest_ppii_scenario_b(fixture, mode="bogus")
+
+
+# ---------------------------------------------------------------------------
+# freeze_ppii_scenario_b_predictions: persist + hash-bind
+# ---------------------------------------------------------------------------
+
+
+def test_freeze_ppii_scenario_b_predictions_persists_hash_bound_json(tmp_path, monkeypatch):
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    states = hp.build_ppii_scenario_b_states(fixture)
+    state_paths = hp._write_ppii_scenario_b_state_files(states, fixture)
+
+    out_paths = hp.freeze_ppii_scenario_b_predictions(states, state_paths, fixture)
+    assert set(out_paths.keys()) == set(hp.PPII_SCENARIO_B_STATE_NAMES)
+    for name, path in out_paths.items():
+        frozen = hp._load_json(path)
+        assert frozen["state_name"] == name
+        assert frozen["state_file_sha256"] == hp._sha256_lf_normalized(state_paths[name])
+        assert frozen["mode_seeds"]["full"] == list(hp.PPII_SCENARIO_B_SEED_BLOCKS[name])
+        if name == hp.PPII_SCENARIO_B_CANARY_STATE:
+            assert frozen["mode_seeds"]["canary"] == list(hp.PPII_SCENARIO_B_CANARY_SEEDS)
+        else:
+            assert "canary" not in frozen["mode_seeds"]
+        # The frozen prediction must equal a fresh recomputation at freeze
+        # time (this is the ONLY place recomputation is allowed -- before
+        # any MATLAB output exists).
+        assert frozen["prediction"] == hp.predict_ppii_scarcity_bounds(states[name], fixture)
+
+
+# ---------------------------------------------------------------------------
+# Seed-block disjointness / canary-prefix semantics (Opus5 correction 5)
+# ---------------------------------------------------------------------------
+
+
+def test_scenario_b_seed_blocks_are_pairwise_disjoint_and_avoid_scenario_a_macromol_ids():
+    all_scenario_a_ids = set(range(hp.N_SEEDS))  # Scenario A / macromol-network2 seeds 0..49
+    seen = set()
+    for name, block in hp.PPII_SCENARIO_B_SEED_BLOCKS.items():
+        block_set = set(block)
+        assert not (block_set & all_scenario_a_ids), (
+            f"state {name!r}'s seed block overlaps Scenario A/macromol seed ids 0..{hp.N_SEEDS - 1}"
+        )
+        assert not (block_set & seen), f"state {name!r}'s seed block overlaps another Scenario B state's block"
+        seen |= block_set
+    assert len(seen) == sum(len(b) for b in hp.PPII_SCENARIO_B_SEED_BLOCKS.values())
+
+
+def test_scenario_b_canary_seeds_are_prefix_of_full_block():
+    canary_state_block = hp.PPII_SCENARIO_B_SEED_BLOCKS[hp.PPII_SCENARIO_B_CANARY_STATE]
+    assert tuple(hp.PPII_SCENARIO_B_CANARY_SEEDS) == canary_state_block[: hp.PPII_SCENARIO_B_CANARY_SEED_COUNT]
+    assert len(hp.PPII_SCENARIO_B_CANARY_SEEDS) == hp.PPII_SCENARIO_B_CANARY_SEED_COUNT
+
+
+def test_scenario_b_canary_state_has_nonzero_transferase_demand():
+    # Direct positive check for Opus5 correction 3: the canary state must
+    # actually have transferase_demand > 0 and must genuinely fail the
+    # transferase_limit guard (not merely be labeled as such) -- otherwise
+    # it cannot serve as evidence the transferase branch fires at all.
+    fixture = _real_ppii_fixture()
+    states = hp.build_ppii_scenario_b_states(fixture)
+    state = states[hp.PPII_SCENARIO_B_CANARY_STATE]
+    lipo_idx = fixture["lipoproteinMonomerIndexs_0b"]
+    transferase_demand = float(state["unprocessedMonomers"][lipo_idx].sum())
+    assert transferase_demand > 0
+    prediction = hp.predict_ppii_scarcity_bounds(state, fixture)
+    assert "transferase_limit" in prediction["guard_diagnostics"]["failed_guards"]
+
+
+def test_scenario_b_water_scarce_state_never_reaches_transferase_branch():
+    # Negative control confirming WHY water_scarce cannot serve as canary:
+    # its transferase demand must be exactly 0.
+    fixture = _real_ppii_fixture()
+    states = hp.build_ppii_scenario_b_states(fixture)
+    state = states["water_scarce"]
+    lipo_idx = fixture["lipoproteinMonomerIndexs_0b"]
+    transferase_demand = float(state["unprocessedMonomers"][lipo_idx].sum())
+    assert transferase_demand == 0.0
 
 
 # ---------------------------------------------------------------------------
@@ -649,25 +1099,34 @@ def test_build_ppii_perturbation_artifact_fails_on_any_trivial_mismatch(tmp_path
 # ---------------------------------------------------------------------------
 
 
-def _scarcity_result_for(name, failed_guards, seeds_vary, violations=None):
+def _scarcity_result_for(name, failed_guards, seeds_vary, violations=None, mode="full"):
     prediction = {
         "state_name": name,
         "guard_diagnostics": {"failed_guards": failed_guards, "regime_valid": len(failed_guards) == 0},
         "guard_failure_label": hp._guard_failure_label(failed_guards),
     }
+    n_seeds = hp.PPII_SCENARIO_B_CANARY_SEED_COUNT if mode == "canary" else hp.PPII_SCENARIO_B_FULL_SEED_COUNT
     invariants = {
-        "n_seeds": 50,
+        "n_seeds": n_seeds,
         "violations": violations or [],
         "seeds_vary": seeds_vary,
         "distinct_outcome_count": 5 if seeds_vary else 1,
         "raw_csv_sha256": "0" * 64,
     }
-    return {"prediction": prediction, "invariants": invariants}
+    manifest = {
+        "mode": mode,
+        "seeds": list(range(n_seeds)),
+        "matlab_version": "9.99.0.test",
+        "statistics_toolbox_licensed": True,
+        "randstream_class_confirmed": True,
+        "generated_at_utc": "2024-01-01T00:00:01+00:00",
+    }
+    return {"prediction": prediction, "invariants": invariants, "manifest": manifest}
 
 
-def _all_five_states_result(seeds_vary=True, violations=None):
+def _all_five_states_result(seeds_vary=True, violations=None, mode="full"):
     return {
-        name: _scarcity_result_for(name, [PPII_SCENARIO_B_GUARD_MAP[name]], seeds_vary, violations)
+        name: _scarcity_result_for(name, [PPII_SCENARIO_B_GUARD_MAP[name]], seeds_vary, violations, mode=mode)
         for name in hp.PPII_SCENARIO_B_STATE_NAMES
     }
 
@@ -699,11 +1158,12 @@ def test_build_ppii_scarcity_perturbation_artifact_observed_stochastic_when_clea
         {name: {"guard_failure": hp._guard_failure_label([guard])} for name, guard in PPII_SCENARIO_B_GUARD_MAP.items()},
     )
     fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
-    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {})
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {}, mode="full")
     assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_OBSERVED_STOCHASTIC"
     assert artifact["gating"].startswith("NON_GATING")
     assert "H12_CONFIRMED" not in artifact["verdict"]
     assert "H12_PERTURBATION_CONFIRMED" != artifact["verdict"]
+    assert artifact["mode"] == "full"
 
 
 def test_build_ppii_scarcity_perturbation_artifact_no_variation_when_a_state_never_varies(tmp_path, monkeypatch):
@@ -718,7 +1178,7 @@ def test_build_ppii_scarcity_perturbation_artifact_no_variation_when_a_state_nev
         {name: {"guard_failure": hp._guard_failure_label([guard])} for name, guard in PPII_SCENARIO_B_GUARD_MAP.items()},
     )
     fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
-    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {})
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {}, mode="full")
     assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_NO_VARIATION"
 
 
@@ -736,7 +1196,7 @@ def test_build_ppii_scarcity_perturbation_artifact_invariant_violation_hard_fail
         {name: {"guard_failure": hp._guard_failure_label([guard])} for name, guard in PPII_SCENARIO_B_GUARD_MAP.items()},
     )
     fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
-    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {})
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {}, mode="full")
     assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_INVARIANT_VIOLATION"
 
 
@@ -753,8 +1213,35 @@ def test_build_ppii_scarcity_perturbation_artifact_label_mismatch_hard_fails(tmp
         {name: {"guard_failure": "totally_wrong_label"} for name in hp.PPII_SCENARIO_B_STATE_NAMES},
     )
     fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
-    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {})
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {}, mode="full")
     assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_INVARIANT_VIOLATION"
+
+
+def test_build_ppii_scarcity_perturbation_artifact_rejects_invalid_mode():
+    fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
+    results = _all_five_states_result(seeds_vary=True)
+    with pytest.raises(ValueError, match="mode"):
+        hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {}, mode="bogus")
+
+
+def test_build_ppii_scarcity_perturbation_artifact_canary_mode_records_single_state_caveat(tmp_path, monkeypatch):
+    monkeypatch.setattr(hp, "OUT_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    results = {
+        name: _scarcity_result_for(
+            name, [PPII_SCENARIO_B_GUARD_MAP[name]], seeds_vary=True, mode="canary"
+        )
+    }
+    monkeypatch.setattr(
+        hp,
+        "PPII_SCENARIO_B_STATES",
+        {n: {"guard_failure": hp._guard_failure_label([g])} for n, g in PPII_SCENARIO_B_GUARD_MAP.items()},
+    )
+    fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {}, mode="canary")
+    assert artifact["mode"] == "canary"
+    assert set(artifact["states"].keys()) == {name}
+    assert any(str(hp.PPII_SCENARIO_B_CANARY_SEED_COUNT) in c or "canary" in c for c in artifact["evidence_scope_caveats"])
 
 
 def test_build_macromol_perturbation_artifact_observed_stochastic_when_clean():
