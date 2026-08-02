@@ -76,6 +76,10 @@ PREDICT_PHASE_FUNCTIONS = (
     "build_ppii_scenario_a_state",
     "build_macromol_network2_state",
     "generate_inputs",
+    "build_ppii_scenario_b_states",
+    "generate_inputs_scenario_b",
+    "guard_diagnostics_ppii",
+    "predict_ppii_scarcity_bounds",
 )
 
 # Functions that legitimately read Octave "after" output (COMPARE /
@@ -84,6 +88,7 @@ PREDICT_PHASE_FUNCTIONS = (
 COMPARE_PHASE_FUNCTIONS = (
     "ingest_ppii_scenario_a",
     "check_macromol_invariants",
+    "ingest_ppii_scenario_b",
 )
 
 FORBIDDEN_TOKENS_IN_PREDICT_PHASE = {"after", "loadtxt", "np.loadtxt", "_after", "raw"}
@@ -354,6 +359,231 @@ def test_ingest_ppii_scenario_a_missing_csv_raises(tmp_path, monkeypatch):
 
 
 # ---------------------------------------------------------------------------
+# Scenario B: guard_diagnostics_ppii / predict_ppii_scarcity_bounds pure math
+# ---------------------------------------------------------------------------
+
+
+def _real_ppii_fixture():
+    import sys
+    from pathlib import Path as _Path
+
+    root = _Path(__file__).resolve().parents[2]
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    from scripts.l22_evidence import h12 as _h12
+
+    return _h12.load_fixture("ProteinProcessingII")
+
+
+@pytest.mark.parametrize("state_name", hp.PPII_SCENARIO_B_STATE_NAMES)
+def test_scenario_b_states_have_expected_regime_invalid_reason(state_name):
+    """Spec-consistency check (no Octave needed): each pre-registered
+    Scenario B state's declared `guard_failure` label (module constant,
+    cross-checked against PERTURBATION_SPEC.json by
+    generate_inputs_scenario_b) must match BOTH guard_diagnostics_ppii's
+    own per-guard breakdown AND the accepted, unmodified
+    h12.predict_protein_processing_ii's aggregate regime_valid=False.
+    """
+    import sys
+    from pathlib import Path as _Path
+
+    root = _Path(__file__).resolve().parents[2]
+    if str(root) not in sys.path:
+        sys.path.insert(0, str(root))
+    from scripts.l22_evidence import h12 as _h12
+
+    fixture = _real_ppii_fixture()
+    states = hp.build_ppii_scenario_b_states(fixture)
+    state = states[state_name]
+    expected_label = hp.PPII_SCENARIO_B_STATES[state_name]["guard_failure"]
+
+    prediction = hp.predict_ppii_scarcity_bounds(state, fixture)
+    assert prediction["guard_diagnostics"]["regime_valid"] is False
+    assert prediction["guard_failure_label"] == expected_label
+
+    before = {
+        "unprocessedMonomers": state["unprocessedMonomers"][None, :],
+        "enzymes": state["enzymes"][None, :],
+        "substrates": state["substrates"][None, :],
+    }
+    real_predictions = _h12.predict_protein_processing_ii(seed=0, before=before, fixture=fixture)
+    assert real_predictions[0].regime_valid is False
+
+
+def test_guard_diagnostics_ppii_all_guards_pass_is_regime_valid_true():
+    fixture = _ppii_synthetic_fixture()
+    unprocessed = np.array([0.0, 0.0, 2.0, 0.0])  # lipoprotein(idx1)=0, secreted(idx2)=2
+    enzymes = np.array([10.0, 10.0])
+    diag = hp.guard_diagnostics_ppii(unprocessed, enzymes, water=100.0, pg160=100.0, fixture=fixture)
+    assert diag["regime_valid"] is True
+    assert diag["failed_guards"] == []
+
+
+def test_guard_diagnostics_ppii_water_only_failure():
+    fixture = _ppii_synthetic_fixture()
+    unprocessed = np.array([0.0, 0.0, 5.0, 0.0])  # secreted demand = 5
+    enzymes = np.array([10.0, 10.0])  # peptidase_limit = 10*2 = 20 >= 5
+    diag = hp.guard_diagnostics_ppii(unprocessed, enzymes, water=1.0, pg160=100.0, fixture=fixture)
+    assert diag["failed_guards"] == ["water"]
+    assert hp._guard_failure_label(diag["failed_guards"]) == "water_only"
+
+
+def test_guard_failure_label_mapping():
+    assert hp._guard_failure_label(["water"]) == "water_only"
+    assert hp._guard_failure_label(["pg160"]) == "pg160_only"
+    assert hp._guard_failure_label(["peptidase_limit"]) == "peptidase_limit_only"
+    assert hp._guard_failure_label(["transferase_limit"]) == "transferase_limit_only"
+    assert hp._guard_failure_label(["peptidase_limit", "water"]) == "peptidase_limit_and_water"
+    assert hp._guard_failure_label([]) == "none"
+
+
+# ---------------------------------------------------------------------------
+# Scenario B: evaluate_ppii_scarcity_invariants pure math (no I/O)
+# ---------------------------------------------------------------------------
+
+
+def _scarcity_before_and_maker(fixture):
+    # water_scarce-style before-state: secreted demand [20,15,10,5]=50, water=30.
+    n_mono = 5
+    unprocessed = np.zeros(n_mono)
+    secr_idx = fixture["secretedMonomerIndexs_0b"]
+    demand = [20.0, 15.0, 10.0, 5.0]
+    for i, idx in enumerate(secr_idx):
+        unprocessed[idx] = demand[i]
+    substrates = np.array([30.0, 100.0, 100.0, 100.0])
+    before = {"unprocessedMonomers": unprocessed, "substrates": substrates}
+
+    def make_row(alloc):
+        unproc_after = np.zeros(n_mono)
+        processed_after = np.zeros(n_mono)
+        signal_after = np.zeros(n_mono)
+        for i, idx in enumerate(secr_idx):
+            processed_after[idx] = alloc[i]
+            unproc_after[idx] = unprocessed[idx] - alloc[i]
+            signal_after[idx] = alloc[i]
+        substrates_after = substrates.copy()
+        substrates_after[0] -= sum(alloc)
+        return np.concatenate([unproc_after, processed_after, signal_after, substrates_after])
+
+    return before, make_row
+
+
+def test_evaluate_ppii_scarcity_invariants_clean_and_varying():
+    fixture = _ppii_synthetic_fixture()
+    fixture["secretedMonomerIndexs_0b"] = np.array([0, 1, 2, 3])
+    fixture["lipoproteinMonomerIndexs_0b"] = np.array([], dtype=np.int64)
+    before, make_row = _scarcity_before_and_maker(fixture)
+    raw = np.array([make_row([12, 9, 6, 3]), make_row([13, 10, 6, 1]), make_row([12, 9, 6, 3])])
+    result = hp.evaluate_ppii_scarcity_invariants(before, raw, fixture)
+    assert result["violations"] == []
+    assert result["seeds_vary"] is True
+    assert result["distinct_outcome_count"] == 2
+
+
+def test_evaluate_ppii_scarcity_invariants_no_variation_flagged():
+    fixture = _ppii_synthetic_fixture()
+    fixture["secretedMonomerIndexs_0b"] = np.array([0, 1, 2, 3])
+    fixture["lipoproteinMonomerIndexs_0b"] = np.array([], dtype=np.int64)
+    before, make_row = _scarcity_before_and_maker(fixture)
+    raw = np.array([make_row([12, 9, 6, 3]), make_row([12, 9, 6, 3])])
+    result = hp.evaluate_ppii_scarcity_invariants(before, raw, fixture)
+    assert result["violations"] == []
+    assert result["seeds_vary"] is False
+    assert result["distinct_outcome_count"] == 1
+
+
+def test_evaluate_ppii_scarcity_invariants_detects_pool_cap_violation():
+    fixture = _ppii_synthetic_fixture()
+    fixture["secretedMonomerIndexs_0b"] = np.array([0, 1, 2, 3])
+    fixture["lipoproteinMonomerIndexs_0b"] = np.array([], dtype=np.int64)
+    before, make_row = _scarcity_before_and_maker(fixture)
+    # allocate the full raw demand (50), which exceeds water(30) -- a
+    # correct mnrnd realization could never do this (sums to <=30).
+    raw = np.array([make_row([20, 15, 10, 5])])
+    result = hp.evaluate_ppii_scarcity_invariants(before, raw, fixture)
+    reasons = {v["reason"] for v in result["violations"]}
+    assert "pool_cap_peptidase" in reasons
+
+
+def test_evaluate_ppii_scarcity_invariants_detects_mass_conservation_violation():
+    fixture = _ppii_synthetic_fixture()
+    fixture["secretedMonomerIndexs_0b"] = np.array([0, 1, 2, 3])
+    fixture["lipoproteinMonomerIndexs_0b"] = np.array([], dtype=np.int64)
+    before, make_row = _scarcity_before_and_maker(fixture)
+    row = make_row([12, 9, 6, 3])
+    row[0:5] += 1.0  # corrupt unprocessed_after only, breaking mass conservation
+    result = hp.evaluate_ppii_scarcity_invariants(before, np.array([row]), fixture)
+    reasons = {v["reason"] for v in result["violations"]}
+    assert "mass_conservation" in reasons
+
+
+def test_evaluate_ppii_scarcity_invariants_detects_per_species_cap_violation():
+    fixture = _ppii_synthetic_fixture()
+    fixture["secretedMonomerIndexs_0b"] = np.array([0, 1, 2, 3])
+    fixture["lipoproteinMonomerIndexs_0b"] = np.array([], dtype=np.int64)
+    before, make_row = _scarcity_before_and_maker(fixture)
+    row = make_row([12, 9, 6, 3])
+    # processed_after (columns n_mono:2*n_mono = [5:10]) for species 0 set
+    # above its original unprocessed count (20) -- invents mass at that
+    # species, must be caught independent of the aggregate mass check.
+    row[5] = 21.0
+    row[0] = -1.0  # keep aggregate mass balanced so only per_species_cap fires
+    result = hp.evaluate_ppii_scarcity_invariants(before, np.array([row]), fixture)
+    reasons = {v["reason"] for v in result["violations"]}
+    assert "per_species_cap" in reasons
+
+
+# ---------------------------------------------------------------------------
+# ingest_ppii_scenario_b with a synthetic CSV (no live Octave invocation)
+# ---------------------------------------------------------------------------
+
+
+def test_ingest_ppii_scenario_b_matching_csvs_yield_no_violations(tmp_path, monkeypatch):
+    fixture = _ppii_full_construction_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+
+    def fake_states(f):
+        n_mono = 6
+        out = {}
+        for name in hp.PPII_SCENARIO_B_STATE_NAMES:
+            out[name] = {
+                "name": name,
+                "unprocessedMonomers": np.array([0.0, 3.0, 4.0, 0.0, 0.0, 0.0]),
+                "processedMonomers": np.zeros(n_mono),
+                "signalSequenceMonomers": np.zeros(n_mono),
+                "enzymes": np.array([10.0, 10.0]),
+                "substrates": np.array([100.0, 100.0, 100.0, 100.0]),
+            }
+        return out
+
+    monkeypatch.setattr(hp, "build_ppii_scenario_b_states", fake_states)
+
+    for name in hp.PPII_SCENARIO_B_STATE_NAMES:
+        # trivially "clean": nothing processed, nothing consumed -- mass
+        # is conserved because unprocessed_after == unprocessed_before
+        # exactly (a legitimate, if unexciting, evolveState outcome: e.g.
+        # a regime where every guard genuinely passed with 0 demand).
+        row = [0.0, 3.0, 4.0, 0.0, 0.0, 0.0] + [0.0] * 6 + [0.0] * 6 + [100.0] * 4
+        csv_path = tmp_path / f"ppii_scenario_b_{name}_after.csv"
+        with open(csv_path, "w", encoding="ascii") as fh:
+            fh.write(",".join(str(x) for x in row) + "\n")
+
+    results = hp.ingest_ppii_scenario_b(fixture)
+    assert set(results.keys()) == set(hp.PPII_SCENARIO_B_STATE_NAMES)
+    for r in results.values():
+        assert r["invariants"]["violations"] == []
+
+
+def test_ingest_ppii_scenario_b_missing_csv_raises(tmp_path, monkeypatch):
+    fixture = _ppii_full_construction_fixture()
+    fixture["lipoproteinMonomerIndexs_0b"] = np.array([1, 6, 7])
+    fixture["secretedMonomerIndexs_0b"] = np.array([2, 8, 9, 10])
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    with pytest.raises(FileNotFoundError):
+        hp.ingest_ppii_scenario_b(fixture)
+
+
+# ---------------------------------------------------------------------------
 # Artifact-verdict-decision logic
 # ---------------------------------------------------------------------------
 
@@ -412,6 +642,119 @@ def test_build_ppii_perturbation_artifact_fails_on_any_trivial_mismatch(tmp_path
     generated = {"ppii_state_sha256": "z" * 64}
     artifact = hp.build_ppii_perturbation_artifact(compare_result, fixture, generated)
     assert artifact["verdict"] == "H12_PERTURBATION_FAIL"
+
+
+# ---------------------------------------------------------------------------
+# build_ppii_scarcity_perturbation_artifact verdict-decision logic
+# ---------------------------------------------------------------------------
+
+
+def _scarcity_result_for(name, failed_guards, seeds_vary, violations=None):
+    prediction = {
+        "state_name": name,
+        "guard_diagnostics": {"failed_guards": failed_guards, "regime_valid": len(failed_guards) == 0},
+        "guard_failure_label": hp._guard_failure_label(failed_guards),
+    }
+    invariants = {
+        "n_seeds": 50,
+        "violations": violations or [],
+        "seeds_vary": seeds_vary,
+        "distinct_outcome_count": 5 if seeds_vary else 1,
+        "raw_csv_sha256": "0" * 64,
+    }
+    return {"prediction": prediction, "invariants": invariants}
+
+
+def _all_five_states_result(seeds_vary=True, violations=None):
+    return {
+        name: _scarcity_result_for(name, [PPII_SCENARIO_B_GUARD_MAP[name]], seeds_vary, violations)
+        for name in hp.PPII_SCENARIO_B_STATE_NAMES
+    }
+
+
+# maps each state name to one of its (single) failed guard components, used
+# only to build synthetic-but-label-consistent test fixtures above (the
+# "simultaneous" state's real spec has 2 guards; a single-guard synthetic
+# stand-in is fine here since these tests exercise the ARTIFACT's verdict
+# arithmetic, not the state derivations themselves -- those are covered by
+# test_scenario_b_states_have_expected_regime_invalid_reason).
+PPII_SCENARIO_B_GUARD_MAP = {
+    "water_scarce": "water",
+    "pg160_scarce": "pg160",
+    "peptidase_capacity_scarce": "peptidase_limit",
+    "transferase_capacity_scarce": "transferase_limit",
+    "simultaneous_peptidase_capacity_and_water_scarce": "peptidase_limit",
+}
+
+
+def test_build_ppii_scarcity_perturbation_artifact_observed_stochastic_when_clean_and_varying(tmp_path, monkeypatch):
+    monkeypatch.setattr(hp, "OUT_DIR", tmp_path)
+    results = _all_five_states_result(seeds_vary=True)
+    # Patch the "expected" guard_failure lookup used by the artifact builder
+    # to match our synthetic single-guard labels (avoids depending on the
+    # real 5-state spec's dual-cause label for the simultaneous state here).
+    monkeypatch.setattr(
+        hp,
+        "PPII_SCENARIO_B_STATES",
+        {name: {"guard_failure": hp._guard_failure_label([guard])} for name, guard in PPII_SCENARIO_B_GUARD_MAP.items()},
+    )
+    fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {})
+    assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_OBSERVED_STOCHASTIC"
+    assert artifact["gating"].startswith("NON_GATING")
+    assert "H12_CONFIRMED" not in artifact["verdict"]
+    assert "H12_PERTURBATION_CONFIRMED" != artifact["verdict"]
+
+
+def test_build_ppii_scarcity_perturbation_artifact_no_variation_when_a_state_never_varies(tmp_path, monkeypatch):
+    monkeypatch.setattr(hp, "OUT_DIR", tmp_path)
+    results = _all_five_states_result(seeds_vary=True)
+    # Mutate one state to show NO cross-seed variation despite its guard
+    # having failed -- the anti-laundering catch for a no-op RNG.
+    results["water_scarce"] = _scarcity_result_for("water_scarce", ["water"], seeds_vary=False)
+    monkeypatch.setattr(
+        hp,
+        "PPII_SCENARIO_B_STATES",
+        {name: {"guard_failure": hp._guard_failure_label([guard])} for name, guard in PPII_SCENARIO_B_GUARD_MAP.items()},
+    )
+    fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {})
+    assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_NO_VARIATION"
+
+
+def test_build_ppii_scarcity_perturbation_artifact_invariant_violation_hard_fails_regardless_of_variation(
+    tmp_path, monkeypatch
+):
+    monkeypatch.setattr(hp, "OUT_DIR", tmp_path)
+    results = _all_five_states_result(seeds_vary=True)
+    results["pg160_scarce"] = _scarcity_result_for(
+        "pg160_scarce", ["pg160"], seeds_vary=True, violations=[{"seed": 3, "reason": "pool_cap_transferase"}]
+    )
+    monkeypatch.setattr(
+        hp,
+        "PPII_SCENARIO_B_STATES",
+        {name: {"guard_failure": hp._guard_failure_label([guard])} for name, guard in PPII_SCENARIO_B_GUARD_MAP.items()},
+    )
+    fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {})
+    assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_INVARIANT_VIOLATION"
+
+
+def test_build_ppii_scarcity_perturbation_artifact_label_mismatch_hard_fails(tmp_path, monkeypatch):
+    monkeypatch.setattr(hp, "OUT_DIR", tmp_path)
+    results = _all_five_states_result(seeds_vary=True)
+    # Declare an "expected" label that does NOT match the prediction's own
+    # computed label -- this is the inversion test for a mislabeled/drifted
+    # pre-registered state (guard_failure claims something the actual guard
+    # arithmetic does not confirm).
+    monkeypatch.setattr(
+        hp,
+        "PPII_SCENARIO_B_STATES",
+        {name: {"guard_failure": "totally_wrong_label"} for name in hp.PPII_SCENARIO_B_STATE_NAMES},
+    )
+    fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {})
+    assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_INVARIANT_VIOLATION"
 
 
 def test_build_macromol_perturbation_artifact_observed_stochastic_when_clean():
