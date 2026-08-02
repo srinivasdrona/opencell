@@ -99,8 +99,7 @@ else
 
         if report.randstream_class_found
             try
-                import edu.stanford.covert.util.RandStream;
-                probeStream = RandStream('mcg16807', 'Seed', 0); %#ok<NASGU>
+                probeStream = edu.stanford.covert.util.RandStream('mcg16807', 'Seed', 0); %#ok<NASGU>
                 report.randstream_constructs = true;
                 fprintf('[ OK ] edu.stanford.covert.util.RandStream(''mcg16807'', ''Seed'', 0) constructed successfully\n');
             catch probeErr
@@ -116,9 +115,22 @@ else
     % NOT fixed post hoc in evolveState_ppii_matlab.m.
     try
         mnrnd_probe_result = mnrnd(3, [0.5; 0.5]);
-        report.mnrnd_shape_test_status = 'pass';
         report.mnrnd_shape_test_result = mnrnd_probe_result;
-        fprintf('[ OK ] mnrnd(3, [0.5;0.5]) succeeded: [%s]\n', num2str(mnrnd_probe_result));
+        shape_ok = isrow(mnrnd_probe_result) && numel(mnrnd_probe_result) == 2;
+        value_ok = all(isfinite(mnrnd_probe_result)) && all(mnrnd_probe_result >= 0) && ...
+            all(mnrnd_probe_result == floor(mnrnd_probe_result)) && sum(mnrnd_probe_result) == 3;
+        if shape_ok && value_ok
+            report.mnrnd_shape_test_status = 'pass';
+            fprintf('[ OK ] mnrnd(3, [0.5;0.5]) returned a valid 1x2 count row: [%s]\n', ...
+                num2str(mnrnd_probe_result));
+        else
+            report.mnrnd_shape_test_status = 'error';
+            report.mnrnd_shape_test_error_message = sprintf( ...
+                'Expected a finite, nonnegative integer 1x2 row summing to 3; got size %s, values [%s].', ...
+                mat2str(size(mnrnd_probe_result)), num2str(mnrnd_probe_result));
+            fprintf('[FAIL] mnrnd column-vector shape/result is incompatible: %s\n', ...
+                report.mnrnd_shape_test_error_message);
+        end
     catch mnrndErr
         report.mnrnd_shape_test_status = 'error';
         report.mnrnd_shape_test_error_message = mnrndErr.message;
@@ -127,19 +139,15 @@ else
     end
 end
 
-% overall_pass reflects BASIC ENVIRONMENT READINESS ONLY (genuine MATLAB,
-% WholeCell root resolved, Statistics Toolbox licensed+installed,
-% RandStream class found and constructible). It deliberately does NOT
-% factor in mnrnd_shape_test_status: canary-mode plumbing runs must remain
-% possible even if the mnrnd column-vector shape probe errors (Opus5
-% turn-4 correction 1) -- only FULL mode is additionally hard-blocked by
-% an mnrnd 'error' result, via h12_perturbation.py's
-% _validate_matlab_probe_result computing a separate `full_mode_permitted`
-% flag (= overall_pass AND mnrnd_shape_test_status == 'pass'). If
-% overall_pass itself required mnrnd to pass, a real mnrnd failure would
-% make even canary mode impossible to run, defeating that separation.
-report.overall_pass = ~report.is_octave && ~isempty(wholecell_src) && report.statistics_toolbox_licensed && ...
-    report.statistics_toolbox_installed && report.randstream_class_found && report.randstream_constructs;
+% overall_pass reflects CANARY-MODE BASIC READINESS ONLY: genuine MATLAB,
+% WholeCell root resolved, and the real Karr RandStream class found and
+% constructible. The preregistered canary state exercises stochasticRound
+% but never reaches mnrnd, so a missing Statistics Toolbox/mnrnd must hard-
+% block FULL mode without unnecessarily blocking the canary plumbing run.
+% Python computes the separate full_mode_permitted flag from overall_pass,
+% Statistics Toolbox availability, and the mnrnd shape probe.
+report.overall_pass = ~report.is_octave && ~isempty(wholecell_src) && ...
+    report.randstream_class_found && report.randstream_constructs;
 
 print_report(report);
 write_probe_result_json(report);
@@ -188,12 +196,14 @@ end
 function print_report(report)
 fprintf('\n=== probe_matlab_environment summary ===\n');
 if report.overall_pass
-    if strcmp(report.mnrnd_shape_test_status, 'pass')
+    if report.statistics_toolbox_licensed && report.statistics_toolbox_installed && ...
+            strcmp(report.mnrnd_shape_test_status, 'pass')
         fprintf('OVERALL: PASS -- environment is ready for run_ppii_scenario_b_matlab.m canary AND full mode\n');
     else
         fprintf(['OVERALL: PASS (canary-mode plumbing only) -- basic environment readiness confirmed, but ' ...
-            'mnrnd_shape_test_status=%s hard-blocks FULL mode until independently resolved ' ...
-            '(Opus5 turn-4 correction 1)\n'], report.mnrnd_shape_test_status);
+            'Statistics Toolbox installed=%d and mnrnd_shape_test_status=%s hard-block FULL mode ' ...
+            '(the canary does not reach mnrnd)\n'], report.statistics_toolbox_installed, ...
+            report.mnrnd_shape_test_status);
     end
 else
     fprintf(['OVERALL: FAIL -- run_ppii_scenario_b_matlab.m would abort in this environment ' ...

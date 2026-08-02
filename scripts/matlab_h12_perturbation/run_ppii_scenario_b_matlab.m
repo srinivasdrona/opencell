@@ -55,6 +55,7 @@ this_dir = fileparts(mfilename('fullpath'));
 repo_root = fullfile(this_dir, '..', '..');
 state_dir = fullfile(repo_root, 'data', 'm1_sources', 'karr_native', 'h12_perturbation_traces');
 wholecell_src = getenv('PPII_WHOLECELL_SRC_ROOT');
+mode = getenv('PPII_SCENARIO_B_MODE');
 
 % ---- Abort criteria: no stub fallback for any of these ----
 if exist('OCTAVE_VERSION', 'builtin') ~= 0
@@ -66,13 +67,17 @@ if isempty(wholecell_src)
         ['PPII_WHOLECELL_SRC_ROOT environment variable is not set. Aborting: no ambient/default ', ...
          'WholeCell src root is assumed (Opus5 turn-4 correction 2).']);
 end
-if license('test', 'Statistics_Toolbox') ~= 1
-    error('run_ppii_scenario_b_matlab:noStatisticsToolbox', ...
-        'Statistics Toolbox license unavailable. Aborting: no stub fallback is permitted.');
+if isempty(mode) || ~(strcmp(mode, 'canary') || strcmp(mode, 'full'))
+    error('run_ppii_scenario_b_matlab:badMode', ...
+        'PPII_SCENARIO_B_MODE must be set to ''canary'' or ''full'' (got ''%s'').', mode);
 end
-if ~isempty(ver('stats')) == false
-    error('run_ppii_scenario_b_matlab:noStatisticsToolboxInstalled', ...
-        'Statistics Toolbox not installed (ver(''stats'') empty). Aborting: no stub fallback is permitted.');
+statistics_toolbox_licensed = license('test', 'Statistics_Toolbox') == 1;
+statistics_toolbox_installed = ~isempty(ver('stats'));
+if strcmp(mode, 'full') && ~(statistics_toolbox_licensed && statistics_toolbox_installed)
+    error('run_ppii_scenario_b_matlab:noStatisticsToolboxForFullMode', ...
+        ['Full mode requires the Statistics Toolbox/mnrnd, but licensed=%d installed=%d. ', ...
+         'Canary mode remains permitted because its preregistered state never reaches mnrnd.'], ...
+        statistics_toolbox_licensed, statistics_toolbox_installed);
 end
 addpath(wholecell_src);
 if exist('edu.stanford.covert.util.RandStream', 'class') ~= 8
@@ -80,12 +85,11 @@ if exist('edu.stanford.covert.util.RandStream', 'class') ~= 8
         'edu.stanford.covert.util.RandStream class not found on path %s. Aborting: no stub fallback is permitted.', ...
         wholecell_src);
 end
-import edu.stanford.covert.util.RandStream;
 % Constructor smoke-test: fail fast (before any state is touched) if the
 % class exists but cannot actually be constructed (e.g. wrong Statistics
 % Toolbox version for the underlying builtin RandStream generator type).
 try
-    probeStream = RandStream('mcg16807', 'Seed', 0); %#ok<NASGU>
+    probeStream = edu.stanford.covert.util.RandStream('mcg16807', 'Seed', 0); %#ok<NASGU>
 catch probeErr
     error('run_ppii_scenario_b_matlab:randStreamConstructionFailed', ...
         'edu.stanford.covert.util.RandStream(''mcg16807'', ''Seed'', 0) failed to construct: %s. Aborting.', ...
@@ -99,12 +103,6 @@ randstream_class_confirmed = true;
 % correction 2).
 randstream_runtime_path = which('edu.stanford.covert.util.RandStream');
 randstream_runtime_sha256_lf_normalized = sha256_file_lf_normalized(randstream_runtime_path);
-
-mode = getenv('PPII_SCENARIO_B_MODE');
-if isempty(mode) || ~(strcmp(mode, 'canary') || strcmp(mode, 'full'))
-    error('run_ppii_scenario_b_matlab:badMode', ...
-        'PPII_SCENARIO_B_MODE must be set to ''canary'' or ''full'' (got ''%s'').', mode);
-end
 
 all_state_names = {'transferase_capacity_scarce', 'pg160_scarce', 'peptidase_capacity_scarce', ...
     'water_scarce', 'simultaneous_peptidase_capacity_and_water_scarce'};
@@ -153,7 +151,7 @@ for i = 1:numel(state_names)
         % the ambient global stream, never reused across states or
         % between canary/full for the same seed id.
         this = this0;
-        this.randStream = RandStream('mcg16807', 'Seed', seed);
+        this.randStream = edu.stanford.covert.util.RandStream('mcg16807', 'Seed', seed);
         this = evolveState_ppii_matlab(this);
         row = [this.unprocessedMonomers', this.processedMonomers', this.signalSequenceMonomers', this.substrates'];
         out(k, :) = [seed, row];
@@ -172,7 +170,8 @@ for i = 1:numel(state_names)
     manifest.seeds = seeds;
     manifest.n_seeds = n_seeds;
     manifest.matlab_version = version();
-    manifest.statistics_toolbox_licensed = true;
+    manifest.statistics_toolbox_licensed = statistics_toolbox_licensed;
+    manifest.statistics_toolbox_installed = statistics_toolbox_installed;
     manifest.randstream_class_confirmed = randstream_class_confirmed;
     manifest.wholecell_src_root_used = wholecell_src;
     manifest.randstream_runtime_path = randstream_runtime_path;

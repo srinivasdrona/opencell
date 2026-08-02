@@ -335,6 +335,7 @@ _REQUIRED_PROBE_RESULT_FIELDS = (
     "randstream_runtime_path",
     "randstream_runtime_sha256_lf_normalized",
     "mnrnd_shape_test_status",
+    "mnrnd_shape_test_result",
     "wholecell_src_root_used",
 )
 
@@ -362,17 +363,33 @@ def _validate_matlab_probe_result(probe_result: dict) -> dict:
         raise ValueError(f"MATLAB probe result reports overall_pass=false: {probe_result!r}")
     if probe_result["mnrnd_shape_test_status"] not in ("pass", "error", "not_run"):
         raise ValueError(f"unexpected mnrnd_shape_test_status {probe_result['mnrnd_shape_test_status']!r}")
+    if probe_result["mnrnd_shape_test_status"] == "pass":
+        mnrnd_result = probe_result["mnrnd_shape_test_result"]
+        if (
+            not isinstance(mnrnd_result, list)
+            or len(mnrnd_result) != 2
+            or any(isinstance(value, bool) or not isinstance(value, (int, float)) for value in mnrnd_result)
+            or any(not np.isfinite(value) or value < 0 or float(value).is_integer() is False for value in mnrnd_result)
+            or sum(mnrnd_result) != 3
+        ):
+            raise ValueError(
+                "mnrnd_shape_test_status='pass' requires a finite, nonnegative integer 1x2 result summing to 3; "
+                f"got {mnrnd_result!r}"
+            )
     _validate_randstream_provenance(probe_result, context="probe_matlab_environment result")
     probe_result["full_mode_permitted"] = (
-        bool(probe_result["overall_pass"]) and probe_result["mnrnd_shape_test_status"] == "pass"
+        bool(probe_result["overall_pass"])
+        and bool(probe_result["statistics_toolbox_licensed"])
+        and bool(probe_result["statistics_toolbox_installed"])
+        and probe_result["mnrnd_shape_test_status"] == "pass"
     )
-    if probe_result["mnrnd_shape_test_status"] == "error":
+    if not probe_result["full_mode_permitted"]:
         probe_result["full_mode_hard_blocked_reason"] = (
-            "mnrnd(3,[0.5;0.5]) column-vector shape test raised an error under genuine MATLAB -- recorded "
-            "as a Karr dormant-source defect (verbatim evolveState_ppii_matlab.m calls "
-            "this.randStream.mnrnd(n, columnVector) unmodified, never transposed/fixed post hoc). Full mode "
-            "is hard-blocked until this is independently resolved; canary-mode plumbing runs remain "
-            "permitted."
+            "Full mode requires Statistics Toolbox/mnrnd plus a valid 1x2 mnrnd column-vector probe result; "
+            f"licensed={probe_result['statistics_toolbox_licensed']!r}, "
+            f"installed={probe_result['statistics_toolbox_installed']!r}, "
+            f"mnrnd_shape_test_status={probe_result['mnrnd_shape_test_status']!r}. "
+            "The preregistered canary state never reaches mnrnd, so canary-mode plumbing remains permitted."
         )
     return probe_result
 

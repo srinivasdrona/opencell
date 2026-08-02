@@ -1694,6 +1694,7 @@ def _valid_probe_result_template():
         "randstream_runtime_path": str(hp.VENDORED_RANDSTREAM_PATH),
         "randstream_runtime_sha256_lf_normalized": hp._sha256_lf_normalized(hp.VENDORED_RANDSTREAM_PATH),
         "mnrnd_shape_test_status": "pass",
+        "mnrnd_shape_test_result": [1, 2],
         "wholecell_src_root_used": "some/root",
     }
 
@@ -1739,6 +1740,24 @@ def test_validate_matlab_probe_result_mnrnd_pass_permits_full_mode():
     assert "full_mode_hard_blocked_reason" not in result
 
 
+@pytest.mark.parametrize(
+    "invalid_result",
+    (
+        [3],
+        [[1, 2]],
+        [1, 1],
+        [1.5, 1.5],
+        [-1, 4],
+        [float("nan"), 3],
+    ),
+)
+def test_validate_matlab_probe_result_rejects_invalid_mnrnd_pass_result(invalid_result):
+    result = _valid_probe_result_template()
+    result["mnrnd_shape_test_result"] = invalid_result
+    with pytest.raises(ValueError, match="requires a finite, nonnegative integer 1x2 result summing to 3"):
+        hp._validate_matlab_probe_result(result)
+
+
 def test_validate_matlab_probe_result_mnrnd_error_hard_blocks_full_mode_only():
     # Pre-registered per Opus5 turn-4 correction 1: an 'error' mnrnd shape
     # result is a genuine Karr dormant-source defect, recorded (not fixed
@@ -1748,7 +1767,7 @@ def test_validate_matlab_probe_result_mnrnd_error_hard_blocks_full_mode_only():
     result["mnrnd_shape_test_status"] = "error"
     validated = hp._validate_matlab_probe_result(result)
     assert validated["full_mode_permitted"] is False
-    assert "Karr dormant-source defect" in validated["full_mode_hard_blocked_reason"]
+    assert "canary-mode plumbing remains permitted" in validated["full_mode_hard_blocked_reason"]
 
 
 def test_validate_matlab_probe_result_mnrnd_not_run_does_not_permit_full_mode():
@@ -1756,6 +1775,17 @@ def test_validate_matlab_probe_result_mnrnd_not_run_does_not_permit_full_mode():
     result["mnrnd_shape_test_status"] = "not_run"
     validated = hp._validate_matlab_probe_result(result)
     assert validated["full_mode_permitted"] is False
+
+
+def test_validate_matlab_probe_result_missing_statistics_toolbox_allows_canary_but_blocks_full():
+    result = _valid_probe_result_template()
+    result["statistics_toolbox_installed"] = False
+    result["mnrnd_shape_test_status"] = "error"
+    result["mnrnd_shape_test_result"] = []
+    validated = hp._validate_matlab_probe_result(result)
+    assert validated["overall_pass"] is True
+    assert validated["full_mode_permitted"] is False
+    assert "canary-mode plumbing remains permitted" in validated["full_mode_hard_blocked_reason"]
 
 
 # ---------------------------------------------------------------------------
@@ -1924,6 +1954,18 @@ def test_probe_matlab_environment_m_includes_mnrnd_shape_probe():
     source = (hp.MATLAB_DIR / "probe_matlab_environment.m").read_text(encoding="utf-8")
     assert "mnrnd(3, [0.5; 0.5])" in source
     assert "mnrnd_shape_test_status" in source
+    assert "isrow(mnrnd_probe_result)" in source
+    assert "sum(mnrnd_probe_result) == 3" in source
+
+
+@pytest.mark.parametrize(
+    "filename",
+    ("probe_matlab_environment.m", "run_ppii_scenario_b_matlab.m"),
+)
+def test_matlab_scenario_b_uses_fully_qualified_karr_randstream_constructor(filename):
+    source = (hp.MATLAB_DIR / filename).read_text(encoding="utf-8")
+    assert "import edu.stanford.covert.util.RandStream" not in source
+    assert "edu.stanford.covert.util.RandStream('mcg16807', 'Seed'," in source
 
 
 def test_run_ppii_scenario_b_matlab_m_never_transposes_evolvestate_transcription():
@@ -1934,4 +1976,3 @@ def test_run_ppii_scenario_b_matlab_m_never_transposes_evolvestate_transcription
     # documented shape.
     source = (hp.MATLAB_DIR / "evolveState_ppii_matlab.m").read_text(encoding="utf-8")
     assert "mnrnd(" in source
-
