@@ -1617,13 +1617,16 @@ def build_ppii_scarcity_perturbation_artifact(
         "mode": mode,
         "perturbation_spec_path": SPEC_PATH.relative_to(REPO_ROOT).as_posix(),
         "perturbation_spec_sha256_lf_normalized": _sha256_lf_normalized(SPEC_PATH),
-        "execution_engine": "Genuine local MATLAB (NOT Octave) plus the Statistics Toolbox, using Karr's "
-        "real edu.stanford.covert.util.RandStream class for every stochasticRound/mnrnd draw (see "
-        "scripts/matlab_h12_perturbation/README.md and PERTURBATION_SPEC.json "
-        "scenario_b_execution_engine). No stub/scaffold RNG of any kind is used; the driver aborts with no "
-        "fallback if genuine MATLAB, the Statistics Toolbox, or RandStream construction is unavailable. "
-        "This is a source-faithful stochastic-branch evidence tier, distinct from Scenario A/macromol's "
-        "Octave-stub-based harnesses.",
+        "execution_engine": (
+            "Genuine local MATLAB (NOT Octave) using Karr's real hash-pinned "
+            "edu.stanford.covert.util.RandStream. No stub/scaffold RNG is used. "
+            + (
+                "Canary mode exercises stochasticRound only and does not require the Statistics Toolbox/mnrnd; "
+                "the live probe recorded toolbox installed=false and full_mode_permitted=false."
+                if mode == "canary"
+                else "Full mode additionally requires the Statistics Toolbox/mnrnd and a passing mnrnd shape probe."
+            )
+        ),
         "matlab_harness_source_hashes": _matlab_harness_hashes(),
         "evidence_scope_caveats": [
             "5 distinct pre-registered before-states (not 1 state x 50 seeds like Scenario A) -- each "
@@ -1654,7 +1657,11 @@ def build_ppii_scarcity_perturbation_artifact(
         "fixture_sha256": ppii_fixture["__fixture_sha256__"],
         "generated_input_sha256": generated.get("ppii_scenario_b_state_sha256", {}),
         "states": per_state_summary,
-        "target_branch": "transferase_fires_scarcity_regime (and peptidase-side mnrnd/stochasticRound)",
+        "target_branch": (
+            "transferase_capacity_scarce stochasticRound canary plumbing"
+            if mode == "canary"
+            else "transferase_fires_scarcity_regime (and peptidase-side mnrnd/stochasticRound)"
+        ),
         "verdict": verdict,
         "verdict_reason": (
             f"mode={mode}; {len(per_state_summary)} pre-registered scarcity state(s) checked; "

@@ -1,0 +1,113 @@
+{
+  "artifact_kind": "h12_perturbation_evidence",
+  "gating": "NON_GATING -- distributional/bound evidence only; NEVER claims H12_CONFIRMED or H12_PERTURBATION_CONFIRMED (Scenario A's exact-match vocabulary). Not consumed by verdict.py / the H12_CONFIRMED evidence gate. Cannot close or remove ProteinProcessingII H12's natural-regime `missing_required_branches=['transferase_fires']` finding, cannot change H12_OBSERVED_REGIME, and cannot unblock L2.5. Recommends (does not enact) a condition-gated terminal profile -- see PROTEINPROCESSINGII_SCENARIO_B_PROPOSAL.md.",
+  "process": "ProteinProcessingII",
+  "scenario": "protein_processing_ii_scenario_b_scarcity_matrix",
+  "mode": "canary",
+  "perturbation_spec_path": "docs/phase_f/l2_2_design_a/h12/perturbation/PERTURBATION_SPEC.json",
+  "perturbation_spec_sha256_lf_normalized": "29847db6a0b79c24144bc4b994a649277c3abbdb58159f022654b0b9af5a1930",
+  "execution_engine": "Genuine local MATLAB (NOT Octave) using Karr's real hash-pinned edu.stanford.covert.util.RandStream. No stub/scaffold RNG is used. Canary mode exercises stochasticRound only and does not require the Statistics Toolbox/mnrnd; the live probe recorded toolbox installed=false and full_mode_permitted=false.",
+  "matlab_harness_source_hashes": {
+    "evolveState_ppii_matlab.m": "d3080131832d99a84c835271ea45d238f45d991ed65f810de5c15f226669e6d0",
+    "run_ppii_scenario_b_matlab.m": "3a8a76ea6c4e892ba16ff8119ccce802c6ba64cf1d106c606048517252d9b535",
+    "probe_matlab_environment.m": "ee8d033188cde8aa559d8ebaa8ce810bae41512bce2d7870c6f4a2efdc4228e6"
+  },
+  "evidence_scope_caveats": [
+    "5 distinct pre-registered before-states (not 1 state x 50 seeds like Scenario A) -- each isolates one guard-failure cause (or, for the simultaneous state, two at once); this is still a finite, hand-selected matrix, not exhaustive coverage of the scarcity regime's input space.",
+    "species-level allocation under stochasticRound/mnrnd is NOT claimed as an exact point prediction anywhere in this artifact -- only the four algebraic bound invariants (exact, zero tolerance) and non-degenerate cross-seed variation (distributional) are claimed.",
+    "this artifact is OBSERVED_STOCHASTIC/NO_VARIATION/INVARIANT_VIOLATION evidence only; it NEVER claims H12_CONFIRMED or H12_PERTURBATION_CONFIRMED and remains NON_GATING regardless of its verdict.",
+    "mode='canary' artifacts cover only 'transferase_capacity_scarce' (20 seeds) -- the other 4 states have no evidence yet in a canary artifact; this is expected, not a violation.",
+    "mode='canary' verdicts (H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK/_CANARY_INVARIANT_VIOLATION) make NO distributional claim -- a canary run with seeds_vary=False is recorded (no_variation_flag) but does not, by itself, fail the canary verdict (Opus5 turn-4 correction 5); the distributional NO_VARIATION/OBSERVED_STOCHASTIC vocabulary is reserved for mode='full' only."
+  ],
+  "predictor_source_path": "scripts/l22_evidence/h12_perturbation.py",
+  "predictor_source_sha256_lf_normalized": "4cf991ec902b6590875c7eb9bb68cfff053e7afb9833093e6e16b5a2c908d272",
+  "karr_source_citation": {
+    "vendored_path": "data/karr_vendored_source/ProteinProcessingII.m",
+    "vendored_sha256_lf_normalized": "2082bd39cf1e0dfba52de7ddf33a5690cf6368ff8f4eca7eaa457eee4d46e0ca",
+    "upstream_repo": "https://github.com/CovertLab/WholeCell",
+    "upstream_commit": "6cdee6b355aa0f5ff2953b1ab356eea049108e07",
+    "upstream_original_path": "ProteinProcessingII.m",
+    "line_ranges": [
+      [
+        348,
+        446
+      ]
+    ],
+    "symbols": [
+      "evolveState"
+    ]
+  },
+  "fixture_path": "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+  "fixture_sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af",
+  "generated_input_sha256": {
+    "water_scarce": "4677392116325f649258ca506b1f97dfd15c247ca3b175acc5bcc1ef7d63eebf",
+    "pg160_scarce": "8f971e825dc36f7f847bc88ba0412b0f2dbcdf87b8a48defffb6cfbbdc4d6fe7",
+    "peptidase_capacity_scarce": "a0087345f06e4821d5b427bc92672e8c2299a1d065101d4fc2e489036b3601b2",
+    "transferase_capacity_scarce": "f0984b7ec4bae3b9b5852edd3a9d0f4242be54b2813f5a0cc9417df94c5fc725",
+    "simultaneous_peptidase_capacity_and_water_scarce": "5affc102705217eaca9748e6d386589e785cf87c438a2f3f095983e788980ffb"
+  },
+  "states": {
+    "transferase_capacity_scarce": {
+      "guard_failure_label": "transferase_limit_only",
+      "expected_guard_failure_label": "transferase_limit_only",
+      "guard_failure_label_matches_prereg": true,
+      "regime_valid": false,
+      "n_seeds": 20,
+      "violations": [],
+      "seeds_vary": true,
+      "distinct_outcome_count": 2,
+      "expected_to_vary": true,
+      "no_variation_flag": false,
+      "no_variation_flag_gates_verdict": false,
+      "raw_output_sha256": "d4d7312c7f082ba6ed461b2a77dc847fa324676edaf1b7b25d6895047bf6d751",
+      "run_manifest": {
+        "mode": "canary",
+        "seeds": [
+          1000,
+          1001,
+          1002,
+          1003,
+          1004,
+          1005,
+          1006,
+          1007,
+          1008,
+          1009,
+          1010,
+          1011,
+          1012,
+          1013,
+          1014,
+          1015,
+          1016,
+          1017,
+          1018,
+          1019
+        ],
+        "matlab_version": "26.1.0.3251617 (R2026a) Update 2",
+        "statistics_toolbox_licensed": true,
+        "statistics_toolbox_installed": false,
+        "randstream_class_confirmed": true,
+        "generated_at_utc": "2026-08-02T23:48:38Z"
+      }
+    }
+  },
+  "target_branch": "transferase_capacity_scarce stochasticRound canary plumbing",
+  "verdict": "H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK",
+  "verdict_reason": "mode=canary; 1 pre-registered scarcity state(s) checked; any_bound_violation=False; any_no_variation=False; any_guard_label_mismatch=False.",
+  "generated_at": "2026-08-02T23:51:54.520895+00:00",
+  "anti_laundering_attestation": {
+    "predictor_inputs": [
+      "states_before",
+      "static_fixture_params",
+      "perturbation_spec_constants"
+    ],
+    "prediction_frozen_before_matlab_execution": true,
+    "states_after_access": "compare_phase_only",
+    "no_sut_import": true,
+    "no_result_json_access": true,
+    "no_global_rng": "each seed is an independently-constructed real edu.stanford.covert.util.RandStream('mcg16807', 'Seed', k) instance in the MATLAB driver, never an ambient/shared/global stream",
+    "no_stub_fallback": true,
+    "disjoint_seed_blocks": true
+  }
+}
