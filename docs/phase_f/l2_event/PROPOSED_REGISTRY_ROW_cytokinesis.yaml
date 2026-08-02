@@ -6,9 +6,13 @@
 # `cytokinesis.division_complete.v1` to `cytokinesis.pinched_diameter_completion.v1`
 # to match the round-2 source-faithful pinchedDiameter onset/completion
 # model (see CYTOKINESIS_ADAPTER_REPORT.md §0 for why round 1 was
-# rejected). Scope note: this task implements the Cytokinesis adapter +
-# its own tests only. It explicitly does NOT edit
-# docs/phase_f/l2_event/event_registry.yaml (which stays frozen at
+# rejected). Round 3 (Opus5 structural-integration review): corrects this
+# file's own precondition #2 below, which round 2 stated incorrectly --
+# `window_anchor` is a completion/capture-boundary marker, not an onset
+# marker (see CYTOKINESIS_ADAPTER_REPORT.md §0b/§4). No `adapter_id`/
+# `adapter_status` change in round 3. Scope note: this task implements
+# the Cytokinesis adapter + its own tests only. It explicitly does NOT
+# edit docs/phase_f/l2_event/event_registry.yaml (which stays frozen at
 # adapter_status: not_implemented / adapter_id: null for Cytokinesis).
 # This file is a proposal a future registry-owning task can diff against
 # and fold in -- flipping the two fields below (adapter_id,
@@ -26,18 +30,34 @@
 #      then `adapter_status` must stay at most `structural_smoke_only`,
 #      matching RibosomeAssembly's current precedent (1/50 real seeds,
 #      still smoke-only).
-#   2. The extractor must expose a `window_anchor` value on real
-#      Cytokinesis traces, AND that value must be validated (by whichever
-#      component owns real gate promotion -- not this adapter) to equal
-#      this adapter's own data-derived contraction-onset tick (the first
-#      strict `pinchedDiameter` decrease, per `find_onset_tick`), in the
-#      SAME tick-index coordinate system. This adapter deliberately does
-#      NOT read `window_anchor` or `WindowGrid.tick_offset` anywhere in
-#      its own timing arithmetic (verified via an AST-based regression
-#      test) -- timing is derived purely from the pinchedDiameter
-#      sequence itself, per the ratified 2026-08-02 operator timing
-#      decision. Gate-mode wiring against real data remains BLOCKED on
-#      this cross-check existing, not on anything this branch controls.
+#   2. TWO independent, distinct future cross-checks (round-3 correction
+#      -- round 2 conflated these into a single, wrongly-onset-framed
+#      precondition):
+#      a. `window_anchor` <-> derived COMPLETION. Per
+#         `window_loader.py`'s own M4 stride-contract comment
+#         (`_STRIDE_CONTRACT_END_KEYS = ("tick_end", "window_anchor")`),
+#         a division-anchored window records `window_anchor` as an
+#         ALTERNATIVE to `tick_end` -- i.e. it marks where the window's
+#         recording stops/captures completion, NOT where contraction
+#         began. The correct cross-check is: absolute `window_anchor`
+#         must equal this adapter's derived completion tick (the
+#         `before>0, after==0` tick, per `find_completion_tick`),
+#         converted to the SAME absolute coordinate system via
+#         `window.tick_start`.
+#      b. A separate, NOT-YET-EXISTING `onset_tick` metadata field
+#         (which the extractor branch -- concurrently in INTENT review,
+#         not this branch -- is adding independently) <-> derived ONSET
+#         (the first strict `pinchedDiameter` decrease, per
+#         `find_onset_tick`), also converted via `tick_start`. This
+#         adapter branch adds no loader/metadata fields itself.
+#      Neither cross-check is implemented by (or owned by) this adapter.
+#      This adapter deliberately does NOT read `window_anchor` or
+#      `WindowGrid.tick_offset` anywhere in its own timing arithmetic
+#      (verified via an AST-based regression test) -- timing is derived
+#      purely from the pinchedDiameter sequence itself, per the ratified
+#      2026-08-02 operator timing decision. Gate-mode wiring against real
+#      data remains BLOCKED on both cross-checks existing, not on
+#      anything this branch controls.
 #   3. 50 real seeds (or the registry's required_n_seeds count) must be
 #      available to actually run evaluate_gate in "gate" mode, not just
 #      "smoke" mode.
@@ -64,25 +84,40 @@ notes: >
   pinchedDiameter sequence -- never from `WindowGrid.tick_offset` or any
   `window_anchor` metadata scalar (verified via an AST-based regression
   test asserting no such attribute access exists in the adapter module).
-  tests/scripts/test_l2_event_adapters_cytokinesis.py (58 collected test
-  cases) exercises this end-to-end through evaluate_gate on synthetic
-  50-seed cohorts (PASS, 44/50-refuses, wrong-onset-FAIL,
-  spurious-OC-fire-FAIL, quiet-trace-refuses scenarios), the
-  re-audited required-input manifest (dynamic `enzymes`/`boundEnzymes`/
-  WATER validation against a real KarrCytokinesisProcess, explicitly
-  excluding the vestigial `cell.ftsz_ring_complete` and unread GTP paths),
-  and a metadata-independence proof that `tick_offset` changes cannot
-  alter the derived offset, plus one real-code-path integration test
-  against the actual KarrCytokinesisProcess. No MATLAB extraction was
-  performed and no real event-window trace exists for this process yet,
-  so this row's adapter_status is proposed as structural_smoke_only
+  Round 3 (Opus5 structural-integration review) additionally: makes the
+  fixture-derived dynamic (enzyme-WID/WATER-WID) validation a real,
+  automatic per-tick `oc_observation` enforcement (bound once via the new
+  `CytokinesisEventAdapter.for_process` factory, never a hidden/default
+  process instantiated per-observation); accepts chromosome readiness via
+  EITHER `chromosome.segregated` OR `chromosome.segregation_progress`
+  (mirroring `karr_cytokinesis.py`'s own `_segregated()` precedence);
+  makes a missing/invalid-shape `update.geometry.pinchedDiameter` a loud
+  raise instead of a quiet no-fire; and corrects this file's own
+  precondition #2 above, which round 2 stated incorrectly (see
+  CYTOKINESIS_ADAPTER_REPORT.md §0b/§4 for the full correction).
+  tests/scripts/test_l2_event_adapters_cytokinesis.py (68 collected test
+  cases / 56 test functions) exercises this end-to-end through
+  evaluate_gate on synthetic 50-seed cohorts (PASS, 44/50-refuses,
+  wrong-onset-FAIL, spurious-OC-fire-FAIL, quiet-trace-refuses
+  scenarios), the re-audited required-input manifest (dynamic
+  `enzymes`/`boundEnzymes`/WATER validation against a real
+  KarrCytokinesisProcess -- both standalone and through `oc_observation`
+  itself -- explicitly excluding the vestigial `cell.ftsz_ring_complete`
+  and unread GTP paths), the chromosome either/or alternative-path
+  coverage, a metadata-independence proof that `tick_offset` changes
+  cannot alter the derived offset, plus one real-code-path integration
+  test against the actual KarrCytokinesisProcess. No MATLAB extraction
+  was performed and no real event-window trace exists for this process
+  yet, so this row's adapter_status is proposed as structural_smoke_only
   (matching the RibosomeAssembly precedent for "adapter code exists, but
   real gating data does not"), NOT gating_ready -- promoting to
-  gating_ready additionally requires the extractor to expose and validate
-  `window_anchor` against this adapter's own derived onset (see
-  precondition 2 above), a decision for whichever task lands the
-  extractor and the 50 real seeds. See
+  gating_ready additionally requires the extractor to expose and
+  validate BOTH `window_anchor` (against this adapter's derived
+  completion) and a future `onset_tick` field (against this adapter's
+  derived onset) -- see precondition 2 above -- a decision for whichever
+  task lands the extractor and the 50 real seeds. See
   docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md for the full
-  rule-by-rule verification, the round-1-vs-round-2 discrepancy
+  rule-by-rule verification, the round-1/2-vs-round-3 discrepancy
   accounting, and the exact anchor-formula/extraction requirements a
   future extractor must satisfy.
+

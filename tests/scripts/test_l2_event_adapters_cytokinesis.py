@@ -1,4 +1,4 @@
-"""Tests for `scripts/l2_event/adapters/cytokinesis.py` (round 2).
+"""Tests for `scripts/l2_event/adapters/cytokinesis.py` (round 3).
 
 Round-1 correction (operator, 2026-08-02 ratified timing decision): this
 file replaces round 1's `division_complete`/`tick_offset`-based tests
@@ -43,6 +43,25 @@ derivation, within-tick "instantaneous" ring-ready consumption, no-decrease
 completion refusal, duplicate-completion refusal, non-finite/shape-invalid
 diameter refusal, WATER-vs-GTP, and missing dynamic enzyme/bound-enzyme
 state.
+
+Round-3 additions (Opus5 structural-integration review):
+
+* A missing/invalid-shape/non-finite `update.geometry.pinchedDiameter` is
+  now a loud raise from `oc_observation`, never a quiet no-fire --
+  `test_oc_observation_raises_when_update_omits_geometry_pinched_diameter`
+  replaces the round-2 test that asserted the opposite.
+* The fixture/runtime-derived (enzyme-WID/WATER-WID) vocabulary
+  enforcement is now exercised THROUGH `CytokinesisEventAdapter.oc_observation`
+  itself (via a `BOUND_ADAPTER` constructed by `CytokinesisEventAdapter.for_process`),
+  not only via the standalone `require_cytokinesis_dynamic_state_inputs`
+  function -- `test_oc_observation_raises_when_adapter_is_unbound` and the
+  `test_oc_observation_bound_adapter_*` group prove the per-tick
+  enforcement is real, not a docstring promise.
+* Chromosome readiness now accepts EITHER `chromosome.segregated` OR
+  `chromosome.segregation_progress` (mirrors `karr_cytokinesis.py`'s
+  `_segregated()` precedence) -- the
+  `test_require_cytokinesis_state_inputs_*_segregat*` group proves both
+  alternatives individually suffice and that omitting both fails loudly.
 """
 
 from __future__ import annotations
@@ -63,15 +82,16 @@ if str(REPO_ROOT) not in sys.path:
 import scripts.l2_event.adapters.cytokinesis as cytokinesis_adapter_module
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
 from scripts.l2_event.adapters.cytokinesis import (
+    REQUIRED_OC_STATE_ALTERNATIVE_PATHS,
     REQUIRED_OC_STATE_GROUPS,
     REQUIRED_OC_STATE_PATHS,
-    CompletionWithoutPrecedingOnset,
+    CompletionWithoutPrecedingOnsetError,
     CytokinesisEventAdapter,
-    DuplicateCompletionTickDetected,
-    InvalidPinchedDiameterSequence,
-    MissingCytokinesisStateInput,
-    NoCompletionTickDetected,
-    OnsetAfterCompletionTick,
+    DuplicateCompletionTickDetectedError,
+    InvalidPinchedDiameterSequenceError,
+    MissingCytokinesisStateInputError,
+    NoCompletionTickDetectedError,
+    OnsetAfterCompletionTickError,
     find_completion_tick,
     find_onset_tick,
     karr_single_fire_offset,
@@ -87,7 +107,17 @@ from scripts.l2_event.window_loader import EventWindowRefused, WindowGrid, load_
 
 ADAPTER_SOURCE_PATH = REPO_ROOT / "scripts" / "l2_event" / "adapters" / "cytokinesis.py"
 
+#: Deliberately UNBOUND (no `water_wid`/`fixture_enzyme_wids`) -- used
+#: only for `karr_observation` tests (which never touch the dynamic
+#: vocabulary) and for `test_oc_observation_raises_when_adapter_is_unbound`.
 ADAPTER = CytokinesisEventAdapter()
+
+#: Bound to the SAME placeholder WID literals `_full_oc_state` uses
+#: (`"ANY_ENZYME_WID"`/`"WATER"`) -- used for every OTHER `oc_observation`
+#: test in this file. Round-3 addition: `oc_observation` now enforces its
+#: dynamic vocabulary automatically every call, so a bound instance is
+#: required wherever a full/happy-path `_full_oc_state()` is exercised.
+BOUND_ADAPTER = CytokinesisEventAdapter(water_wid="WATER", fixture_enzyme_wids=("ANY_ENZYME_WID",))
 
 ALL_REQUIRED_STATIC_PATHS = REQUIRED_OC_STATE_PATHS + REQUIRED_OC_STATE_GROUPS
 
@@ -114,14 +144,20 @@ def _window(*, tick_offset: float, before_series: list[float], after_series: lis
 
 def _full_oc_state(*, pinched_diameter: float = 5.0, pinched: bool = False) -> dict[str, Any]:
     """A minimal, but COMPLETE (every `REQUIRED_OC_STATE_PATHS`/
-    `REQUIRED_OC_STATE_GROUPS` path present) conditioned `state_before`
-    dict, shaped like the real `karr_cytokinesis.py` port's own state --
-    see `_real_process_state` for the full-fidelity, process-fixture-
-    derived version this is a trimmed stand-in for. Uses an arbitrary
-    placeholder enzyme WID/WATER key since these tests exercise only the
-    STATIC required-path check (`require_cytokinesis_state_inputs`); the
-    dynamic fixture-WID check (`require_cytokinesis_dynamic_state_inputs`)
-    is exercised separately below against the REAL `KarrCytokinesisProcess`."""
+    `REQUIRED_OC_STATE_GROUPS`/`REQUIRED_OC_STATE_ALTERNATIVE_PATHS` path
+    present) conditioned `state_before` dict, shaped like the real
+    `karr_cytokinesis.py` port's own state -- see `_real_process_state`
+    for the full-fidelity, process-fixture-derived version this is a
+    trimmed stand-in for. Uses the SAME placeholder enzyme WID/WATER key
+    (`"ANY_ENZYME_WID"`/`"WATER"`) that the module-level `BOUND_ADAPTER`
+    is constructed with (round-3: `oc_observation` now enforces its
+    dynamic vocabulary automatically, so every `oc_observation` call
+    against a full/happy-path state built here must use `BOUND_ADAPTER`,
+    never the unbound `ADAPTER`); dedicated `test_oc_observation_bound_adapter_*`
+    tests below exercise the dynamic fixture-WID/WATER coverage directly
+    through `oc_observation`, and the `test_require_cytokinesis_dynamic_*`
+    tests separately exercise `require_cytokinesis_dynamic_state_inputs`
+    against the REAL `KarrCytokinesisProcess`."""
     return {
         "cell": {"division_progress": 0.5},
         "chromosome": {"segregation_progress": 1.0},
@@ -285,7 +321,7 @@ def test_karr_observation_not_applicable_when_no_transition_in_window():
 
 def test_karr_observation_raises_on_non_finite_reading():
     window = _window(tick_offset=0.0, before_series=[10.0, float("nan")], after_series=[10.0, 5.0])
-    with pytest.raises(InvalidPinchedDiameterSequence):
+    with pytest.raises(InvalidPinchedDiameterSequenceError):
         ADAPTER.karr_observation(window, 1)
 
 
@@ -297,7 +333,7 @@ def test_karr_observation_raises_on_non_finite_reading():
 def test_oc_observation_fires_once_on_rising_edge():
     state_before = _full_oc_state(pinched_diameter=10.0, pinched=False)
     update = {"geometry": {"pinchedDiameter": 0.0, "pinched": True}}
-    obs = ADAPTER.oc_observation(5, state_before, update)
+    obs = BOUND_ADAPTER.oc_observation(5, state_before, update)
     assert obs.fired is True
     assert obs.fire_count == 1
     assert obs.timing_tick == 5
@@ -306,28 +342,32 @@ def test_oc_observation_fires_once_on_rising_edge():
 def test_oc_observation_does_not_refire_once_already_complete():
     state_before = _full_oc_state(pinched_diameter=0.0, pinched=True)
     update = {"geometry": {"pinchedDiameter": 0.0, "pinched": True}}
-    obs = ADAPTER.oc_observation(6, state_before, update)
+    obs = BOUND_ADAPTER.oc_observation(6, state_before, update)
     assert obs.fired is False
     assert obs.fire_count == 0
     assert obs.timing_tick is None
 
 
-def test_oc_observation_no_fire_when_update_omits_geometry():
+def test_oc_observation_raises_when_update_omits_geometry_pinched_diameter():
+    """Round-3 fix 1: a missing `update.geometry.pinchedDiameter` must be
+    a loud raise, never a quiet no-fire `EventObservation` -- inverts the
+    round-2 test of the same shape (`test_oc_observation_no_fire_when_update_omits_geometry`)
+    which incorrectly treated this as an acceptable no-fire outcome."""
     state_before = _full_oc_state(pinched_diameter=10.0, pinched=False)
-    obs = ADAPTER.oc_observation(0, state_before, update={})
-    assert obs.fired is False
+    with pytest.raises(MissingCytokinesisStateInputError, match="geometry.pinchedDiameter"):
+        BOUND_ADAPTER.oc_observation(0, state_before, update={})
 
 
 def test_oc_observation_raises_on_non_finite_before_diameter():
     state_before = _full_oc_state(pinched_diameter=float("nan"))
-    with pytest.raises(InvalidPinchedDiameterSequence):
-        ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": 0.0}})
+    with pytest.raises(InvalidPinchedDiameterSequenceError):
+        BOUND_ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": 0.0}})
 
 
 def test_oc_observation_raises_on_non_finite_after_diameter():
     state_before = _full_oc_state(pinched_diameter=10.0)
-    with pytest.raises(InvalidPinchedDiameterSequence):
-        ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": float("inf")}})
+    with pytest.raises(InvalidPinchedDiameterSequenceError):
+        BOUND_ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": float("inf")}})
 
 
 @pytest.mark.parametrize("missing_path", ALL_REQUIRED_STATIC_PATHS, ids=".".join)
@@ -338,13 +378,107 @@ def test_oc_observation_fails_loud_when_required_input_missing(missing_path: tup
     declared/read port and still compute a (wrong) fire/no-fire verdict."""
     state = _full_oc_state(pinched_diameter=10.0, pinched=False)
     _delete_dotted_path(state, missing_path)
-    with pytest.raises(MissingCytokinesisStateInput) as exc_info:
-        ADAPTER.oc_observation(0, state, update={"geometry": {"pinchedDiameter": 0.0}})
+    with pytest.raises(MissingCytokinesisStateInputError) as exc_info:
+        BOUND_ADAPTER.oc_observation(0, state, update={"geometry": {"pinchedDiameter": 0.0}})
     assert ".".join(missing_path) in str(exc_info.value)
 
 
 def test_require_cytokinesis_state_inputs_passes_on_complete_state():
     require_cytokinesis_state_inputs(_full_oc_state())  # must not raise
+
+
+def test_require_cytokinesis_state_inputs_passes_with_only_segregated():
+    """Round-3 fix 2: chromosome readiness accepts `segregated` alone,
+    mirroring `karr_cytokinesis.py`'s `_segregated()` precedence."""
+    state = _full_oc_state()
+    del state["chromosome"]["segregation_progress"]
+    state["chromosome"]["segregated"] = True
+    require_cytokinesis_state_inputs(state)  # must not raise
+
+
+def test_require_cytokinesis_state_inputs_passes_with_only_segregation_progress():
+    state = _full_oc_state()
+    assert "segregated" not in state["chromosome"]
+    require_cytokinesis_state_inputs(state)  # must not raise
+
+
+def test_require_cytokinesis_state_inputs_fails_when_chromosome_readiness_absent():
+    state = _full_oc_state()
+    del state["chromosome"]["segregation_progress"]
+    with pytest.raises(MissingCytokinesisStateInputError) as exc_info:
+        require_cytokinesis_state_inputs(state)
+    assert "segregated" in str(exc_info.value)
+    assert "segregation_progress" in str(exc_info.value)
+
+
+def test_oc_observation_raises_when_adapter_is_unbound():
+    """Round-3 fix 2: a DEFAULT-constructed (unbound) adapter instance
+    must refuse to run `oc_observation` at all -- it must never silently
+    skip per-tick dynamic enzyme/WATER validation, nor construct a hidden
+    default process to guess the vocabulary."""
+    state_before = _full_oc_state(pinched_diameter=10.0, pinched=False)
+    with pytest.raises(MissingCytokinesisStateInputError, match="not bound"):
+        ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": 0.0}})
+
+
+def test_oc_observation_bound_adapter_fails_loud_on_missing_water():
+    state_before = _full_oc_state(pinched_diameter=10.0, pinched=False)
+    del state_before["substrates_allocated"]["karr_cytokinesis"]["WATER"]
+    with pytest.raises(MissingCytokinesisStateInputError) as exc_info:
+        BOUND_ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": 0.0}})
+    assert "WATER" in str(exc_info.value)
+
+
+def test_oc_observation_bound_adapter_gtp_alone_is_not_sufficient():
+    """WATER-vs-GTP inversion, exercised through `oc_observation` itself
+    (not just the standalone validator)."""
+    state_before = _full_oc_state(pinched_diameter=10.0, pinched=False)
+    state_before["substrates_allocated"]["karr_cytokinesis"] = {"GTP": 1_000_000.0}
+    with pytest.raises(MissingCytokinesisStateInputError) as exc_info:
+        BOUND_ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": 0.0}})
+    assert "WATER" in str(exc_info.value)
+
+
+def test_oc_observation_bound_adapter_fails_loud_on_missing_enzyme_wid():
+    state_before = _full_oc_state(pinched_diameter=10.0, pinched=False)
+    del state_before["enzymes"]["ANY_ENZYME_WID"]
+    with pytest.raises(MissingCytokinesisStateInputError) as exc_info:
+        BOUND_ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": 0.0}})
+    assert "enzymes." in str(exc_info.value)
+
+
+def test_oc_observation_bound_adapter_fails_loud_on_missing_bound_enzyme_wid():
+    state_before = _full_oc_state(pinched_diameter=10.0, pinched=False)
+    del state_before["boundEnzymes"]["ANY_ENZYME_WID"]
+    with pytest.raises(MissingCytokinesisStateInputError) as exc_info:
+        BOUND_ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": 0.0}})
+    assert "boundEnzymes." in str(exc_info.value)
+
+
+def test_oc_observation_bound_adapter_fails_loud_on_empty_enzyme_groups():
+    state_before = _full_oc_state(pinched_diameter=10.0, pinched=False)
+    state_before["enzymes"] = {}
+    state_before["boundEnzymes"] = {}
+    with pytest.raises(MissingCytokinesisStateInputError):
+        BOUND_ADAPTER.oc_observation(0, state_before, update={"geometry": {"pinchedDiameter": 0.0}})
+
+
+def test_for_process_binds_adapter_to_real_process_vocabulary():
+    process = KarrCytokinesisProcess()
+    bound = CytokinesisEventAdapter.for_process(process)
+    assert bound.water_wid == process.water_wid
+    assert bound.fixture_enzyme_wids == tuple(process.fixture_enzyme_wids)
+    assert bound.substrates_allocated_port == process.name
+
+
+def test_required_oc_state_alternative_paths_shape_is_chromosome_readiness_only():
+    """Round-3 fix 2 structural check: exactly one alternative-path
+    group exists (chromosome readiness), offering exactly the two paths
+    `_segregated()` itself checks -- `segregated` preferred,
+    `segregation_progress` the sanctioned fallback."""
+    assert REQUIRED_OC_STATE_ALTERNATIVE_PATHS == ((("chromosome", "segregated"), ("chromosome", "segregation_progress")),)
+    assert ("chromosome", "segregation_progress") not in REQUIRED_OC_STATE_PATHS
+    assert ("chromosome", "segregated") not in REQUIRED_OC_STATE_PATHS
 
 
 def test_required_oc_state_paths_excludes_vestigial_and_gtp_inputs():
@@ -422,7 +556,7 @@ def test_require_cytokinesis_dynamic_state_inputs_gtp_alone_is_not_sufficient():
     process = KarrCytokinesisProcess()
     state = _real_process_state(process)
     state["substrates_allocated"][process.name] = {process.gtp_wid: 1_000_000.0}  # WATER removed
-    with pytest.raises(MissingCytokinesisStateInput) as exc_info:
+    with pytest.raises(MissingCytokinesisStateInputError) as exc_info:
         require_cytokinesis_dynamic_state_inputs(state, process)
     assert process.water_wid in str(exc_info.value)
 
@@ -432,7 +566,7 @@ def test_require_cytokinesis_dynamic_state_inputs_missing_enzyme_wid_raises():
     state = _real_process_state(process)
     missing_wid = process.fixture_enzyme_wids[0]
     del state["enzymes"][missing_wid]
-    with pytest.raises(MissingCytokinesisStateInput) as exc_info:
+    with pytest.raises(MissingCytokinesisStateInputError) as exc_info:
         require_cytokinesis_dynamic_state_inputs(state, process)
     assert missing_wid in str(exc_info.value)
     assert "enzymes." in str(exc_info.value)
@@ -443,7 +577,7 @@ def test_require_cytokinesis_dynamic_state_inputs_missing_bound_enzyme_wid_raise
     state = _real_process_state(process)
     missing_wid = process.fixture_enzyme_wids[0]
     del state["boundEnzymes"][missing_wid]
-    with pytest.raises(MissingCytokinesisStateInput) as exc_info:
+    with pytest.raises(MissingCytokinesisStateInputError) as exc_info:
         require_cytokinesis_dynamic_state_inputs(state, process)
     assert missing_wid in str(exc_info.value)
     assert "boundEnzymes." in str(exc_info.value)
@@ -475,32 +609,32 @@ def test_find_completion_tick_returns_none_when_never_reaches_zero():
 def test_find_completion_tick_raises_on_duplicate_completion():
     before = [5.0, 0.0, 5.0, 0.0]
     after = [0.0, 0.0, 0.0, 0.0]
-    with pytest.raises(DuplicateCompletionTickDetected):
+    with pytest.raises(DuplicateCompletionTickDetectedError):
         find_completion_tick(before, after)
 
 
 def test_find_onset_tick_raises_on_non_finite_value():
-    with pytest.raises(InvalidPinchedDiameterSequence):
+    with pytest.raises(InvalidPinchedDiameterSequenceError):
         find_onset_tick([10.0, float("nan")], [10.0, 5.0])
 
 
 def test_find_onset_tick_raises_on_negative_value():
-    with pytest.raises(InvalidPinchedDiameterSequence):
+    with pytest.raises(InvalidPinchedDiameterSequenceError):
         find_onset_tick([10.0, -1.0], [10.0, 5.0])
 
 
 def test_find_onset_tick_raises_on_mismatched_lengths():
-    with pytest.raises(InvalidPinchedDiameterSequence):
+    with pytest.raises(InvalidPinchedDiameterSequenceError):
         find_onset_tick([10.0, 5.0], [10.0])
 
 
 def test_find_onset_tick_raises_on_non_scalar_reading():
-    with pytest.raises(InvalidPinchedDiameterSequence):
+    with pytest.raises(InvalidPinchedDiameterSequenceError):
         find_onset_tick([10.0, np.array([1.0, 2.0])], [10.0, 5.0])
 
 
 def test_find_onset_tick_raises_on_empty_sequence():
-    with pytest.raises(InvalidPinchedDiameterSequence):
+    with pytest.raises(InvalidPinchedDiameterSequenceError):
         find_onset_tick([], [])
 
 
@@ -530,14 +664,14 @@ def test_single_fire_offset_refuses_when_no_decrease_ever_occurs():
     cannot be computed."""
     before = [10.0] * 10
     after = [10.0] * 10
-    with pytest.raises(NoCompletionTickDetected):
+    with pytest.raises(NoCompletionTickDetectedError):
         single_fire_offset_from_sequences(before, after)
 
 
 def test_single_fire_offset_refuses_on_duplicate_completion():
     before = [5.0, 0.0, 5.0, 0.0]
     after = [0.0, 0.0, 0.0, 0.0]
-    with pytest.raises(DuplicateCompletionTickDetected):
+    with pytest.raises(DuplicateCompletionTickDetectedError):
         single_fire_offset_from_sequences(before, after)
 
 
@@ -551,7 +685,7 @@ def test_single_fire_offset_defensive_guard_completion_without_onset(monkeypatch
     and proves `single_fire_offset_from_sequences` fails loudly rather
     than silently accepting the inconsistency."""
     monkeypatch.setattr(cytokinesis_adapter_module, "find_onset_tick", lambda before, after: None)
-    with pytest.raises(CompletionWithoutPrecedingOnset):
+    with pytest.raises(CompletionWithoutPrecedingOnsetError):
         single_fire_offset_from_sequences([5.0], [0.0])
 
 
@@ -562,7 +696,7 @@ def test_single_fire_offset_defensive_guard_onset_after_completion(monkeypatch):
     `single_fire_offset_from_sequences` refuses rather than reporting a
     negative offset."""
     monkeypatch.setattr(cytokinesis_adapter_module, "find_onset_tick", lambda before, after: 99)
-    with pytest.raises(OnsetAfterCompletionTick):
+    with pytest.raises(OnsetAfterCompletionTickError):
         single_fire_offset_from_sequences([5.0], [0.0])
 
 
@@ -610,7 +744,7 @@ def test_oc_single_fire_offset_instantaneous_ring_ready_consumed_within_one_tick
 
 def test_oc_single_fire_offset_raises_when_row_missing_geometry():
     rows = [({"geometry": {"pinchedDiameter": 10.0}}, {"geometry": {"pinchedDiameter": 10.0}}), ({}, {"geometry": {"pinchedDiameter": 0.0}})]
-    with pytest.raises(MissingCytokinesisStateInput):
+    with pytest.raises(MissingCytokinesisStateInputError):
         oc_single_fire_offset(rows)
 
 
@@ -685,6 +819,11 @@ def test_real_karr_cytokinesis_process_single_fire_detected_on_genuine_completio
         process.initial_pinched_diameter, process.default_filament_length_nm
     )
     state = _real_process_state(process)
+    # Round-3: `oc_observation` now enforces its dynamic vocabulary
+    # automatically every call, so this real-process integration test
+    # must bind a fresh adapter to THIS process's own vocabulary via
+    # `for_process` -- never the global (unbound) `ADAPTER`.
+    bound_adapter = CytokinesisEventAdapter.for_process(process)
 
     fired_ticks: list[int] = []
     rows: list[tuple[dict[str, Any], dict[str, Any]]] = []
@@ -696,7 +835,7 @@ def test_real_karr_cytokinesis_process_single_fire_detected_on_genuine_completio
         require_cytokinesis_dynamic_state_inputs(state, process)
         state_before_snapshot = _snapshot_state(state)
         update = process.next_update(1.0, state)
-        obs = ADAPTER.oc_observation(tick, state_before_snapshot, update)
+        obs = bound_adapter.oc_observation(tick, state_before_snapshot, update)
         if obs.fired:
             fired_ticks.append(tick)
         rows.append((state_before_snapshot, update))
