@@ -54,6 +54,7 @@ def _write_event_window_fixture(
     tick_start: int | None = 0,
     tick_end: int | None = -1,
     window_anchor: int | None = None,
+    onset_tick: int | None = None,
     observables: tuple[str, ...] = (),
 ) -> Path:
     """Write a minimal synthetic event-window trace: a `metadata` group
@@ -81,6 +82,8 @@ def _write_event_window_fixture(
             metadata.create_dataset("tick_end", data=np.array([tick_end]))
         if window_anchor is not None:
             metadata.create_dataset("window_anchor", data=np.array([window_anchor]))
+        if onset_tick is not None:
+            metadata.create_dataset("onset_tick", data=np.array([onset_tick]))
 
         states_before = handle.create_group("states_before")
         states_after = handle.create_group("states_after")
@@ -97,22 +100,71 @@ def _write_event_window_fixture(
 
 def test_fixed_window_spec_rejects_negative_tick_offset():
     with pytest.raises(launcher.WindowContractConfigError):
-        launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=-1)
+        launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=-1, required_observables=("substrates",))
 
 
 def test_fixed_window_spec_rejects_zero_n_ticks():
     with pytest.raises(launcher.WindowContractConfigError):
-        launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=0)
+        launcher.FixedWindowSpec(
+            process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=0, required_observables=("substrates",)
+        )
+
+
+def test_fixed_window_spec_rejects_empty_required_observables():
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, required_observables=())
 
 
 def test_anchor_window_spec_rejects_max_search_ticks_shorter_than_n_ticks():
     with pytest.raises(launcher.WindowContractConfigError):
-        launcher.AnchorWindowSpec(process="Cytokinesis", seed=1, n_ticks=100, max_search_ticks=10)
+        launcher.AnchorWindowSpec(
+            process="Cytokinesis", seed=1, n_ticks=100, max_search_ticks=10, required_observables=("pinchedDiameter",)
+        )
 
 
 def test_anchor_window_spec_rejects_empty_signal_property():
     with pytest.raises(launcher.WindowContractConfigError):
-        launcher.AnchorWindowSpec(process="Cytokinesis", seed=1, signal_property="")
+        launcher.AnchorWindowSpec(
+            process="Cytokinesis", seed=1, signal_property="", required_observables=("pinchedDiameter",)
+        )
+
+
+def test_anchor_window_spec_rejects_empty_required_observables():
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher.AnchorWindowSpec(process="Cytokinesis", seed=1, required_observables=())
+
+
+def test_anchor_window_spec_rejects_invalid_signal_kind():
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher.AnchorWindowSpec(
+            process="Cytokinesis", seed=1, required_observables=("pinchedDiameter",), signal_kind="bogus_kind"
+        )
+
+
+def test_anchor_window_spec_rejects_scalar_finite_observables_not_subset_of_required():
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher.AnchorWindowSpec(
+            process="Cytokinesis",
+            seed=1,
+            required_observables=("pinchedDiameter",),
+            scalar_finite_observables=("ftsZRing_numResidualBent",),
+        )
+
+
+def test_anchor_window_spec_default_signal_kind_and_field_are_diameter_decrease():
+    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=1, required_observables=("pinchedDiameter",))
+    assert spec.signal_kind == "diameter_decrease"
+    assert spec.signal_field == "pinchedDiameter"
+
+
+def test_anchor_window_spec_boolean_transition_default_field_is_pinched():
+    spec = launcher.AnchorWindowSpec(
+        process="FtsZPolymerization",
+        seed=1,
+        required_observables=("someBool",),
+        signal_kind="boolean_transition",
+    )
+    assert spec.signal_field == "pinched"
 
 
 def test_spec_from_dict_rejects_unknown_window_contract():
@@ -120,16 +172,38 @@ def test_spec_from_dict_rejects_unknown_window_contract():
         launcher._spec_from_dict({"process": "X", "seed": 1, "window_contract": "sparse"})
 
 
+def test_spec_from_dict_rejects_missing_required_observables():
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher._spec_from_dict(
+            {"process": "RibosomeAssembly", "seed": 3, "window_contract": "fixed", "tick_offset": 200}
+        )
+
+
 def test_spec_from_dict_round_trips_fixed_and_anchor():
     fixed = launcher._spec_from_dict(
-        {"process": "RibosomeAssembly", "seed": 3, "window_contract": "fixed", "tick_offset": 200}
+        {
+            "process": "RibosomeAssembly",
+            "seed": 3,
+            "window_contract": "fixed",
+            "tick_offset": 200,
+            "required_observables": ["substrates"],
+        }
     )
     assert isinstance(fixed, launcher.FixedWindowSpec)
     assert fixed.tick_offset == 200
+    assert fixed.required_observables == ("substrates",)
 
-    anchor = launcher._spec_from_dict({"process": "Cytokinesis", "seed": 3, "window_contract": "anchor"})
+    anchor = launcher._spec_from_dict(
+        {
+            "process": "Cytokinesis",
+            "seed": 3,
+            "window_contract": "anchor",
+            "required_observables": list(launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES),
+        }
+    )
     assert isinstance(anchor, launcher.AnchorWindowSpec)
     assert anchor.signal_property == launcher.DEFAULT_ANCHOR_SIGNAL_PROPERTY
+    assert anchor.signal_kind == launcher.DEFAULT_ANCHOR_SIGNAL_KIND
 
 
 # ---------------------------------------------------------------------------
@@ -154,7 +228,9 @@ def test_event_window_mat_path_matches_contract_layout(tmp_path):
 
 
 def test_build_matlab_command_fixed_window_writes_stride1_contract_call():
-    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=3, tick_offset=200, n_ticks=100)
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=3, tick_offset=200, n_ticks=100, required_observables=("substrates",)
+    )
     command = launcher.build_matlab_command(spec)
     assert "per_process_traces_v2_event_s003" in command
     assert "'RibosomeAssembly'" in command
@@ -164,32 +240,84 @@ def test_build_matlab_command_fixed_window_writes_stride1_contract_call():
 
 
 def test_build_matlab_command_anchor_window_never_supplies_tick_offset():
-    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=7, n_ticks=50)
+    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=7, n_ticks=50, required_observables=("pinchedDiameter",))
     command = launcher.build_matlab_command(spec)
     assert "per_process_traces_v2_event_s007" in command
     assert "'Cytokinesis'" in command
     assert "uint32(7), [], 'anchor'" in command
     assert "max_search_ticks', 50000" in command
+    assert "signal_kind', 'diameter_decrease'" in command
     assert "signal_property', 'geometry'" in command
-    assert "signal_field', 'pinched'" in command
+    assert "signal_field', 'pinchedDiameter'" in command
     assert "'fixed'" not in command
 
 
 def test_build_matlab_command_is_diary_wrapped_when_log_given():
-    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200)
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=1, tick_offset=200, required_observables=("substrates",)
+    )
     command = launcher.build_matlab_command(spec, log_relpath="artifacts/seed001.log")
     assert "diary('artifacts/seed001.log')" in command
     assert "diary off" in command
     assert "try;" in command and "catch err;" in command
+    assert "exit(1)" in command
+    assert command.rstrip().endswith("exit(0);")
+
+
+def test_build_matlab_command_no_log_still_propagates_exit_codes():
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=1, tick_offset=200, required_observables=("substrates",)
+    )
+    command = launcher.build_matlab_command(spec)
+    assert "exit(1)" in command
+    assert command.rstrip().endswith("exit(0);")
+
+
+def test_build_matlab_command_quotes_embedded_single_quote_in_process_name():
+    """Opus 5 rejection finding: MATLAB quoting was incomplete. A process
+    name (or any other interpolated string) containing an embedded `'`
+    must never terminate the MATLAB literal early -- it must be escaped by
+    doubling, MATLAB's own convention."""
+    spec = launcher.FixedWindowSpec(
+        process="Weird'Process", seed=1, tick_offset=200, required_observables=("substrates",)
+    )
+    command = launcher.build_matlab_command(spec)
+    assert "Weird''Process" in command
+    # A naive/unescaped quote would produce an unbalanced-quote command;
+    # the escaped form keeps the single-quoted literal well-formed.
+    assert "{'Weird''Process'}" in command
+
+
+def test_matlab_quote_rejects_embedded_newline():
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher._matlab_quote("bad\nvalue")
 
 
 def test_build_matlab_command_custom_anchor_signal_is_reflected():
     spec = launcher.AnchorWindowSpec(
-        process="FtsZPolymerization", seed=2, n_ticks=20, signal_property="ftsZRing", signal_field="numResidualBent"
+        process="FtsZPolymerization",
+        seed=2,
+        n_ticks=20,
+        signal_property="ftsZRing",
+        signal_field="numResidualBent",
+        signal_kind="boolean_transition",
+        required_observables=("numResidualBent",),
     )
     command = launcher.build_matlab_command(spec)
+    assert "signal_kind', 'boolean_transition'" in command
     assert "signal_property', 'ftsZRing'" in command
     assert "signal_field', 'numResidualBent'" in command
+
+
+def test_build_matlab_command_output_subdir_override_targets_temp_regen_dir(tmp_path):
+    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=9, n_ticks=4, required_observables=("pinchedDiameter",))
+    temp_subdir = launcher.temp_output_subdir_for(spec, karr_native_root=tmp_path)
+    command = launcher.build_matlab_command(spec, output_subdir=temp_subdir)
+    assert launcher._matlab_quote(temp_subdir) in command
+    default_subdir = launcher.output_dir_for(spec, karr_native_root=tmp_path).name
+    command_without_override = launcher.build_matlab_command(spec)
+    assert launcher._matlab_quote(default_subdir) in command_without_override
+    assert launcher._matlab_quote(default_subdir) not in command
 
 
 # ---------------------------------------------------------------------------
@@ -198,7 +326,7 @@ def test_build_matlab_command_custom_anchor_signal_is_reflected():
 
 
 def test_plan_missing_file_is_generate_missing(tmp_path):
-    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4)
+    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4, required_observables=("substrates",))
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "generate_missing"
     assert len(plan.jobs) == 1
@@ -206,7 +334,7 @@ def test_plan_missing_file_is_generate_missing(tmp_path):
 
 
 def test_plan_skip_valid_for_contract_complete_fixed_fixture(tmp_path):
-    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4)
+    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4, required_observables=("substrates",))
     path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
         path,
@@ -217,6 +345,7 @@ def test_plan_skip_valid_for_contract_complete_fixed_fixture(tmp_path):
         stride=1,
         tick_start=200,
         tick_end=203,
+        observables=("substrates",),
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "skip_valid"
@@ -225,7 +354,7 @@ def test_plan_skip_valid_for_contract_complete_fixed_fixture(tmp_path):
 
 
 def test_plan_skip_valid_for_contract_complete_anchor_fixture(tmp_path):
-    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=9, n_ticks=4)
+    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=9, n_ticks=4, required_observables=("pinchedDiameter",))
     path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
         path,
@@ -237,6 +366,8 @@ def test_plan_skip_valid_for_contract_complete_anchor_fixture(tmp_path):
         tick_start=996,
         tick_end=None,
         window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "skip_valid"
@@ -247,7 +378,7 @@ def test_plan_regenerate_invalid_for_pre_m4_trace_missing_stride_contract(tmp_pa
     """The two real pre-M4 traces on disk today (RibosomeAssembly/RNAModification
     seed 000) carry tick_offset but no stride/tick_start/tick_end -- this must
     be `regenerate_invalid`, never `skip_valid`."""
-    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=0, tick_offset=200, n_ticks=4)
+    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=0, tick_offset=200, n_ticks=4, required_observables=("substrates",))
     path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
         path,
@@ -268,7 +399,7 @@ def test_plan_regenerate_invalid_for_pre_m4_trace_missing_stride_contract(tmp_pa
 def test_plan_regenerate_invalid_for_stride_not_one(tmp_path):
     """Inversion guard: a sparse (stride=2) grid must never be silently
     accepted as satisfying a stride-1 fixed-window request."""
-    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=2, tick_offset=200, n_ticks=4)
+    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=2, tick_offset=200, n_ticks=4, required_observables=("substrates",))
     path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
         path,
@@ -290,7 +421,7 @@ def test_plan_regenerate_invalid_for_window_contract_kind_mismatch(tmp_path):
     produced as an 'anchor' window (carries window_anchor, no tick_end) must
     not be silently reused when the caller now requests a 'fixed' window at
     the same (process, seed) path, and vice versa."""
-    spec = launcher.FixedWindowSpec(process="Cytokinesis", seed=5, tick_offset=950, n_ticks=4)
+    spec = launcher.FixedWindowSpec(process="Cytokinesis", seed=5, tick_offset=950, n_ticks=4, required_observables=("substrates",))
     path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
         path,
@@ -302,6 +433,7 @@ def test_plan_regenerate_invalid_for_window_contract_kind_mismatch(tmp_path):
         tick_start=950,
         tick_end=None,
         window_anchor=953,
+        observables=("substrates",),
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "regenerate_invalid"
@@ -313,7 +445,7 @@ def test_plan_regenerate_invalid_for_standard_mid_cycle_trace_present_at_event_p
     all -- window_loader's NOT_EVENT_WINDOW_TRACE case) sitting at the
     event-window path must never be treated as satisfying an event-window
     request."""
-    spec = launcher.FixedWindowSpec(process="Translation", seed=1, tick_offset=0, n_ticks=4)
+    spec = launcher.FixedWindowSpec(process="Translation", seed=1, tick_offset=0, n_ticks=4, required_observables=("substrates",))
     path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
         path,
@@ -331,7 +463,7 @@ def test_plan_regenerate_invalid_for_standard_mid_cycle_trace_present_at_event_p
 
 
 def test_plan_no_validate_mode_skips_without_checking_content(tmp_path):
-    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4)
+    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4, required_observables=("substrates",))
     path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
         path, process_name="WRONG", seed=99, n_ticks=4, stride=None, tick_start=None, tick_end=None
@@ -341,37 +473,173 @@ def test_plan_no_validate_mode_skips_without_checking_content(tmp_path):
     assert len(plan.jobs) == 0
 
 
-def test_apply_invalidations_deletes_only_regenerate_invalid_files(tmp_path):
-    bad_spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=2, tick_offset=200, n_ticks=4)
+# ---------------------------------------------------------------------------
+# Non-destructive atomic regeneration plumbing (replaces apply_invalidations'
+# removed pre-emptive delete semantics -- Opus 5 rejection finding: "existing
+# corrupt, empty, wrong-window, ... files could be [deleted to force
+# regeneration]"). Never invoked against a real MATLAB-produced file in this
+# task -- these tests exercise the plumbing directly with synthetic fixtures.
+# ---------------------------------------------------------------------------
+
+
+def test_plan_never_deletes_regenerate_invalid_file_and_records_prior_sha256(tmp_path):
+    """The replacement for the old `apply_invalidations`: planning a
+    `regenerate_invalid` spec must NEVER delete the prior on-disk file, must
+    record its SHA-256 in the decision, and must target the matlab_command
+    at a `.tmp-regen` sibling directory rather than the real path."""
+    bad_spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=2, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
     bad_path = launcher.mat_path_for(bad_spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
-        bad_path, process_name="RibosomeAssembly", seed=2, n_ticks=4, tick_offset=200.0, stride=2, tick_start=200, tick_end=203
+        bad_path,
+        process_name="RibosomeAssembly",
+        seed=2,
+        n_ticks=4,
+        tick_offset=200.0,
+        stride=2,
+        tick_start=200,
+        tick_end=203,
+        observables=("substrates",),
     )
+    expected_sha256 = launcher.sha256_of(bad_path)
 
-    good_spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4)
+    good_spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
     good_path = launcher.mat_path_for(good_spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
-        good_path, process_name="RibosomeAssembly", seed=1, n_ticks=4, tick_offset=200.0, stride=1, tick_start=200, tick_end=203
+        good_path,
+        process_name="RibosomeAssembly",
+        seed=1,
+        n_ticks=4,
+        tick_offset=200.0,
+        stride=1,
+        tick_start=200,
+        tick_end=203,
+        observables=("substrates",),
     )
 
     plan = launcher.plan_event_window_extraction([bad_spec, good_spec], karr_native_root=tmp_path)
-    deleted = launcher.apply_invalidations(plan)
 
-    assert deleted == [str(bad_path)]
-    assert not bad_path.exists()
+    # Never deleted:
+    assert bad_path.exists()
     assert good_path.exists()
+
+    bad_decision = next(d for d in plan.decisions if d.seed == 2)
+    assert bad_decision.action == "regenerate_invalid"
+    assert bad_decision.prior_file_sha256 == expected_sha256
+    good_decision = next(d for d in plan.decisions if d.seed == 1)
+    assert good_decision.action == "skip_valid"
+    assert good_decision.prior_file_sha256 is None
+
+    bad_job = next(j for j in plan.jobs if j.seed == 2)
+    assert bad_job.final_output_path == str(bad_path)
+    assert bad_job.temp_output_path is not None
+    assert launcher.TEMP_REGEN_SUFFIX in bad_job.output_dir
+    assert bad_job.temp_output_path != str(bad_path)
+
+
+def test_generate_missing_job_has_no_temp_output_path(tmp_path):
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=3, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.jobs[0].temp_output_path is None
+    assert plan.jobs[0].final_output_path == str(launcher.mat_path_for(spec, karr_native_root=tmp_path))
+
+
+def test_finalize_atomic_regeneration_replaces_only_after_validation(tmp_path):
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=4, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    final_path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        final_path, process_name="RibosomeAssembly", seed=4, n_ticks=4, tick_offset=200.0, stride=2, tick_start=200, tick_end=203
+    )
+    prior_sha256 = launcher.sha256_of(final_path)
+
+    temp_path = launcher.temp_output_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        temp_path,
+        process_name="RibosomeAssembly",
+        seed=4,
+        n_ticks=4,
+        tick_offset=200.0,
+        stride=1,
+        tick_start=200,
+        tick_end=203,
+        observables=("substrates",),
+    )
+
+    ok, reason = launcher.finalize_atomic_regeneration(temp_path, final_path, spec)
+    assert ok, reason
+    assert not temp_path.exists()
+    assert final_path.exists()
+    assert launcher.sha256_of(final_path) != prior_sha256
+
+
+def test_finalize_atomic_regeneration_leaves_prior_file_untouched_when_temp_invalid(tmp_path):
+    """The core non-destructive guarantee: a temp regeneration output that
+    itself fails validation must NEVER replace the prior file -- the prior
+    file (valid or not) is left exactly as it was."""
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=5, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    final_path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        final_path, process_name="RibosomeAssembly", seed=5, n_ticks=4, tick_offset=200.0, stride=2, tick_start=200, tick_end=203
+    )
+    prior_sha256 = launcher.sha256_of(final_path)
+
+    temp_path = launcher.temp_output_path_for(spec, karr_native_root=tmp_path)
+    # Still stride=2 (invalid) -- simulates a regeneration attempt that
+    # produced another contract-incomplete file.
+    _write_event_window_fixture(
+        temp_path, process_name="RibosomeAssembly", seed=5, n_ticks=4, tick_offset=200.0, stride=2, tick_start=200, tick_end=203
+    )
+
+    ok, reason = launcher.finalize_atomic_regeneration(temp_path, final_path, spec)
+    assert not ok
+    assert reason
+    assert temp_path.exists()  # left for inspection
+    assert final_path.exists()
+    assert launcher.sha256_of(final_path) == prior_sha256  # untouched
+
+
+def test_finalize_atomic_regeneration_fails_when_temp_missing(tmp_path):
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=6, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    final_path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        final_path, process_name="RibosomeAssembly", seed=6, n_ticks=4, tick_offset=200.0, stride=1, tick_start=200, tick_end=203
+    )
+    temp_path = launcher.temp_output_path_for(spec, karr_native_root=tmp_path)
+    ok, reason = launcher.finalize_atomic_regeneration(temp_path, final_path, spec)
+    assert not ok
+    assert "does not exist" in reason
+
+
+def test_sha256_of_missing_file_is_none(tmp_path):
+    assert launcher.sha256_of(tmp_path / "nope.mat") is None
 
 
 def test_plan_to_dict_is_json_serializable(tmp_path):
     specs = [
-        launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4),
-        launcher.AnchorWindowSpec(process="Cytokinesis", seed=1, n_ticks=4),
+        launcher.FixedWindowSpec(
+            process="RibosomeAssembly", seed=1, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+        ),
+        launcher.AnchorWindowSpec(process="Cytokinesis", seed=1, n_ticks=4, required_observables=("pinchedDiameter",)),
     ]
     plan = launcher.plan_event_window_extraction(specs, karr_native_root=tmp_path)
     payload = json.dumps(plan.to_dict())
     reloaded = json.loads(payload)
     assert len(reloaded["jobs"]) == 2
     assert len(reloaded["decisions"]) == 2
+    assert plan.contract_version == "M4"
+    assert len(reloaded["input_specs"]) == 2
+    assert reloaded["input_specs"][0]["process"] == "RibosomeAssembly"
 
 
 # ---------------------------------------------------------------------------
@@ -407,11 +675,13 @@ def test_fixed_window_extractor_metadata_shape_is_accepted_by_loader_strict_defa
 
 def test_anchor_window_extractor_metadata_shape_is_accepted_by_loader_strict_default(tmp_path):
     """Same proof for window_contract='anchor': stride=1,
-    tick_start=discovered anchor - n_ticks + 1, window_anchor=discovered
-    anchor tick (no tick_end)."""
+    tick_start=discovered onset-side window start, window_anchor=discovered
+    completion tick (no tick_end), onset_tick=discovered TIMING anchor
+    (distinct from window_anchor, the CAPTURE boundary)."""
     path = tmp_path / "per_process_traces_v2_event_s009" / "Cytokinesis_50ticks.mat"
     n_ticks = 50
     anchor_tick = 27_483
+    onset_tick = anchor_tick - 12
     tick_start = anchor_tick - n_ticks + 1
     _write_event_window_fixture(
         path,
@@ -423,12 +693,17 @@ def test_anchor_window_extractor_metadata_shape_is_accepted_by_loader_strict_def
         tick_start=tick_start,
         tick_end=None,
         window_anchor=anchor_tick,
+        onset_tick=onset_tick,
         observables=("chromosome",),
     )
     window = load_event_window(path, required_observables=("chromosome",))
     assert window.stride_contract_ok is True
     assert window.n_ticks == n_ticks
     assert window.tick_offset == tick_start
+    assert window.window_anchor == anchor_tick
+    assert window.completion_tick == anchor_tick
+    assert window.onset_tick == onset_tick
+    assert window.absolute_tick(0) == tick_start
 
 
 # ---------------------------------------------------------------------------
@@ -442,8 +717,22 @@ def test_cli_plan_subcommand_writes_json(tmp_path, monkeypatch):
     specs_path.write_text(
         json.dumps(
             [
-                {"process": "RibosomeAssembly", "seed": 1, "window_contract": "fixed", "tick_offset": 200, "n_ticks": 4},
-                {"process": "Cytokinesis", "seed": 1, "window_contract": "anchor", "n_ticks": 4},
+                {
+                    "process": "RibosomeAssembly",
+                    "seed": 1,
+                    "window_contract": "fixed",
+                    "tick_offset": 200,
+                    "n_ticks": 4,
+                    "required_observables": ["substrates"],
+                },
+                {
+                    "process": "Cytokinesis",
+                    "seed": 1,
+                    "window_contract": "anchor",
+                    "n_ticks": 4,
+                    "required_observables": list(launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES),
+                    "scalar_finite_observables": list(launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES),
+                },
             ]
         ),
         encoding="utf-8",
@@ -453,4 +742,28 @@ def test_cli_plan_subcommand_writes_json(tmp_path, monkeypatch):
     assert rc == 0
     payload = json.loads(out_path.read_text(encoding="utf-8"))
     assert len(payload["jobs"]) == 2
-    assert payload["deleted_invalid_files"] == []
+    assert payload["contract_version"] == "M4"
+    assert len(payload["input_specs"]) == 2
+    assert "deleted_invalid_files" not in payload
+
+
+def test_cli_plan_subcommand_rejects_row_missing_required_observables(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    specs_path = tmp_path / "specs.json"
+    specs_path.write_text(
+        json.dumps([{"process": "RibosomeAssembly", "seed": 1, "window_contract": "fixed", "tick_offset": 200}]),
+        encoding="utf-8",
+    )
+    out_path = tmp_path / "plan.json"
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher.main(["plan", "--specs", str(specs_path), "--out", str(out_path)])
+
+
+def test_cli_plan_subcommand_rejects_empty_specs_list(tmp_path, monkeypatch):
+    monkeypatch.chdir(tmp_path)
+    specs_path = tmp_path / "specs.json"
+    specs_path.write_text(json.dumps([]), encoding="utf-8")
+    out_path = tmp_path / "plan.json"
+    rc = launcher.main(["plan", "--specs", str(specs_path), "--out", str(out_path)])
+    assert rc == 1
+    assert not out_path.exists()

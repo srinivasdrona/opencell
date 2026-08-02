@@ -31,14 +31,27 @@ function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, se
 %                 window start is discovered, not requested.
 %
 % anchor_opts (optional, only used when window_contract == 'anchor'): struct
-%   with fields max_search_ticks (default 50000), signal_property (default
-%   'geometry'), signal_field (default 'pinched'). The default targets
-%   Cytokinesis's own real completion signal -- CellGeometry.pinched, which
-%   Cytokinesis.evolveState() itself defines as pinchedDiameter == 0 (see
-%   data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+state/
-%   CellGeometry.m and .../+process/Cytokinesis.m) -- so the discovered
-%   anchor tick is the simulation's own division-complete tick, not an
-%   externally supplied or hardcoded value.
+%   with fields max_search_ticks (default 50000), signal_kind (default
+%   'diameter_decrease'), signal_property (default 'geometry'), signal_field
+%   (used only for signal_kind='boolean_transition', default 'pinched').
+%   Two signal_kind detectors, both evaluated from the SAME per-tick
+%   before/after tap values evolve_state_with_tap already captures (never a
+%   post-hoc re-read of a mutable handle object after the tick has passed):
+%     'diameter_decrease' (default; Cytokinesis) -- onset is the first tick
+%       where before.pinchedDiameter > after.pinchedDiameter >= 0 (a real
+%       strict contraction observed during that tick's own evolveState
+%       call); completion is the first tick where before.pinchedDiameter > 0
+%       and after.pinchedDiameter == 0. Both read CellGeometry.pinchedDiameter
+%       (see data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/
+%       +sim/+state/CellGeometry.m and .../+process/Cytokinesis.m), never the
+%       vestigial boolean `pinched`/`ftsz_ring_complete` flags.
+%     'boolean_transition' (generic EVENT_CLASS processes) -- completion is
+%       the first tick where before.(signal_field) is false and
+%       after.(signal_field) is true: a genuine false->true transition with
+%       a captured prior value, never assumed true at tick 1. No onset_tick
+%       is produced for this kind (single-event anchors have no interval).
+%   The discovered anchor tick(s) are always the simulation's own observed
+%   values, never externally supplied or fabricated.
 %
 % Output file:
 %   data/m1_sources/karr_native/<output_subdir>/<Process>_<n_ticks>ticks.mat
@@ -125,12 +138,13 @@ for i = 1:numel(process_names)
     error_message = '';
     effective_tick_start = tick_offset;
     window_anchor_tick = [];
+    onset_tick = [];
 
     if strcmp(window_contract, 'anchor')
         % Division-anchored window: no caller burn-in -- the window start is
         % discovered from the real Cytokinesis/CellGeometry completion
         % signal (see capture_anchor_window), never fabricated or supplied.
-        [states_before, states_after, effective_tick_start, window_anchor_tick, ok, error_message] = ...
+        [states_before, states_after, effective_tick_start, window_anchor_tick, onset_tick, ok, error_message] = ...
             capture_anchor_window(sim, target_idx, snapshot_props, n_ticks, anchor_opts);
     else
         states_before = struct();
@@ -190,6 +204,19 @@ for i = 1:numel(process_names)
         metadata.stride = int32(1);
         metadata.tick_start = int32(effective_tick_start);
         metadata.window_anchor = int32(window_anchor_tick);
+        % onset_tick (M4/ratified-decision addition): the real, observed
+        % first strict pinchedDiameter decrease -- the process-local
+        % contraction-onset-to-completion TIMING anchor. Only produced for
+        % signal_kind='diameter_decrease' (Cytokinesis); a
+        % 'boolean_transition' single-event anchor has no distinct onset,
+        % so onset_tick is intentionally omitted (never fabricated) for
+        % that kind. window_anchor remains the CAPTURE-boundary
+        % (completion) tick; onset_tick is never a substitute for it and
+        % tick_offset (== effective_tick_start above) is never read as a
+        % timing anchor by any downstream adapter.
+        if ~isempty(onset_tick)
+            metadata.onset_tick = int32(onset_tick);
+        end
     end
 
     save(out_path, 'states_before', 'states_after', 'metadata', '-v7.3');
@@ -217,7 +244,20 @@ props = intersect(properties(proc), { ...
 });
 end
 
-function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props)
+function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts)
+% evolve_state_with_tap  One tick of the allocator-correct scheduler loop,
+% tapping the target process's properties immediately before/after its own
+% evolveState() call.
+%
+% anchor_opts (optional, default [] -- no change to fixed-window/backward-
+% compatible behaviour): when non-empty, merge_event_observables() is
+% called at BOTH tap points (never post-hoc, after the tick has already
+% passed) so before_tick/after_tick carry the real per-tick numeric event-
+% observable projection (see merge_event_observables) that
+% capture_anchor_window uses to detect onset/completion.
+if nargin < 4
+    anchor_opts = [];
+end
 before_tick = empty_snapshot_struct(snapshot_props);
 after_tick = empty_snapshot_struct(snapshot_props);
 
@@ -288,12 +328,18 @@ for i = 1:nProcesses
 
     if proc_idx == target_idx
         before_tick = snapshot_from_process(mod, snapshot_props);
+        if ~isempty(anchor_opts)
+            before_tick = merge_event_observables(before_tick, mod, anchor_opts);
+        end
     end
 
     mod.evolveState();
 
     if proc_idx == target_idx
         after_tick = snapshot_from_process(mod, snapshot_props);
+        if ~isempty(anchor_opts)
+            after_tick = merge_event_observables(after_tick, mod, anchor_opts);
+        end
     end
 
     mod.copyToState();
@@ -311,68 +357,155 @@ end
 function opts = default_anchor_opts(opts)
 % default_anchor_opts  Fill in defaults for window_contract='anchor'.
 %
-% signal_property/signal_field default to Cytokinesis's own real division
-% completion signal: CellGeometry.pinched, which Cytokinesis.evolveState()
-% defines as pinchedDiameter == 0 (see CellGeometry.m get.pinched and
-% Cytokinesis.m's ring-bending/dissociation logic). Callers extracting a
-% different EVENT_CLASS process's division-anchored window may override
-% signal_property/signal_field to that process's own equivalent real
-% completion signal -- never to a value derived from the expected/desired
-% outcome.
+% signal_kind defaults to 'diameter_decrease' (Cytokinesis's own real
+% CellGeometry.pinchedDiameter contraction/completion signal -- see
+% CellGeometry.m/Cytokinesis.m). signal_property is the process property
+% that holds the signal's container ('geometry' for Cytokinesis).
+% signal_field is used only for signal_kind='boolean_transition' (generic
+% EVENT_CLASS processes) -- ignored for 'diameter_decrease', which always
+% reads pinchedDiameter plus the FtsZRing ring-state witnesses (see
+% merge_event_observables). Callers extracting a different process's
+% division/event-anchored window may override signal_kind/signal_property/
+% signal_field to that process's own equivalent real signal -- never to a
+% value derived from the expected/desired outcome.
 if ~isfield(opts, 'max_search_ticks') || isempty(opts.max_search_ticks)
     opts.max_search_ticks = 50000;
+end
+if ~isfield(opts, 'signal_kind') || isempty(opts.signal_kind)
+    opts.signal_kind = 'diameter_decrease';
+end
+if ~any(strcmp(opts.signal_kind, {'diameter_decrease', 'boolean_transition'}))
+    error('extract_per_process_traces_v2:invalid_signal_kind', ...
+        'anchor_opts.signal_kind must be ''diameter_decrease'' or ''boolean_transition'' (got ''%s'')', opts.signal_kind);
 end
 if ~isfield(opts, 'signal_property') || isempty(opts.signal_property)
     opts.signal_property = 'geometry';
 end
 if ~isfield(opts, 'signal_field') || isempty(opts.signal_field)
-    opts.signal_field = 'pinched';
+    if strcmp(opts.signal_kind, 'diameter_decrease')
+        opts.signal_field = 'pinchedDiameter';
+    else
+        opts.signal_field = 'pinched';
+    end
 end
 end
 
-function [states_before, states_after, tick_start, anchor_tick, ok, error_message] = ...
+function snapshot = merge_event_observables(snapshot, mod, anchor_opts)
+% merge_event_observables  Add the smallest source-faithful FLATTENED
+% NUMERIC event-observable projection to an existing tap-point snapshot
+% struct. Never exposes a raw state/handle object to the caller --
+% window_loader._cell_series() (Python) can only materialize numeric or
+% logical per-tick scalars, never MATLAB objects/structs -- so every value
+% merged in here is a `double`/`logical` scalar, read via two validated,
+% non-chained temporary-variable dereferences (never a single chained
+% `obj.(a).(b)` dynamic-field expression).
+container_name = anchor_opts.signal_property;
+if ~isprop(mod, container_name)
+    error('extract_per_process_traces_v2:missing_signal_container', ...
+        'process has no property ''%s'' (window_contract=''anchor'' requires a real, readable signal container)', ...
+        container_name);
+end
+container = mod.(container_name);  % validated temporary -- first dereference
+
+switch anchor_opts.signal_kind
+    case 'diameter_decrease'
+        % Cytokinesis's own real completion signal: CellGeometry.pinchedDiameter
+        % (see CellGeometry.m) plus the four FtsZRing ring-state witnesses
+        % Cytokinesis.evolveState() itself gates the diameter update on (see
+        % Cytokinesis.m) -- included so onset/completion can be cross-checked
+        % against the real ring state that produced them, never trusting the
+        % scalar diameter alone.
+        if ~isprop(container, 'pinchedDiameter')
+            error('extract_per_process_traces_v2:missing_diameter_field', ...
+                '''%s'' has no ''pinchedDiameter'' property', container_name);
+        end
+        snapshot.pinchedDiameter = double(container.pinchedDiameter);  % second dereference
+
+        if ~isprop(mod, 'ftsZRing')
+            error('extract_per_process_traces_v2:missing_ftszring', ...
+                'process has no ''ftsZRing'' property required for signal_kind=''diameter_decrease'' witnesses');
+        end
+        ring = mod.ftsZRing;  % validated temporary -- no chained dynamic access
+        ring_fields = {'numEdgesOneStraight', 'numEdgesTwoStraight', 'numEdgesTwoBent', 'numResidualBent'};
+        for k = 1:numel(ring_fields)
+            fn = ring_fields{k};
+            if ~isprop(ring, fn)
+                error('extract_per_process_traces_v2:missing_ring_field', 'FtsZRing has no ''%s'' property', fn);
+            end
+            snapshot.(['ftsZRing_' fn]) = double(ring.(fn));
+        end
+
+    case 'boolean_transition'
+        field_name = anchor_opts.signal_field;
+        has_field = (isobject(container) && isprop(container, field_name)) || ...
+                    (isstruct(container) && isfield(container, field_name));
+        if ~has_field
+            error('extract_per_process_traces_v2:missing_signal_field', ...
+                '''%s'' has no field/property ''%s''', container_name, field_name);
+        end
+        value = container.(field_name);  % second dereference, on a validated temporary
+        snapshot.(field_name) = logical(value);
+
+    otherwise
+        error('extract_per_process_traces_v2:invalid_signal_kind', ...
+            'anchor_opts.signal_kind must be ''diameter_decrease'' or ''boolean_transition'' (got ''%s'')', ...
+            anchor_opts.signal_kind);
+end
+end
+
+function [states_before, states_after, tick_start, window_anchor_tick, onset_tick, ok, error_message] = ...
     capture_anchor_window(sim, target_idx, snapshot_props, n_ticks, anchor_opts)
-% capture_anchor_window  Division-anchored event-window capture.
+% capture_anchor_window  Division/event-anchored window capture (M4,
+% ratified Cytokinesis timing decision 2026-08-02).
 %
-% Free-runs the simulation tick-by-tick from t=1 (identical per-tick
-% scheduler/allocation/tap semantics as the fixed-window path, via
-% evolve_state_with_tap), maintaining a size-n_ticks circular buffer of the
-% most recent (before, after) snapshots. After each tick it reads the
-% REAL simulation state at
-% sim.processes{target_idx}.(anchor_opts.signal_property).(anchor_opts.signal_field)
-% -- never a precomputed/expected tick -- and stops the first time that
-% signal is true AND a full n_ticks buffer has been collected. The anchor
-% tick and the n_ticks window ending at it are both derived from that one
-% real observation; there is no fallback that invents an anchor when the
-% signal never fires (see the max_search_ticks exhaustion branch below,
-% which fails loudly instead).
+% Free-runs the simulation tick-by-tick from t=1 using the SAME per-tick
+% scheduler/allocation/tap semantics as the fixed-window path
+% (evolve_state_with_tap), maintaining a size-n_ticks circular buffer of
+% (before, after) snapshots. Each snapshot carries the real, per-tick
+% event-observable projection merged in by merge_event_observables --
+% never a post-hoc re-read of a mutable handle object after the tick has
+% already passed.
+%
+% Two REAL, per-tick observed transitions are detected directly from each
+% tick's own before/after values (never a persistent end-of-tick flag,
+% never assumed true at tick 1 without a genuine prior sample):
+%   onset (signal_kind='diameter_decrease' only) -- the FIRST tick where
+%     before.pinchedDiameter > after.pinchedDiameter >= 0: a real strict
+%     contraction observed during that tick's own evolveState call.
+%   completion -- 'diameter_decrease': the first tick where
+%     before.pinchedDiameter > 0 && after.pinchedDiameter == 0.
+%     'boolean_transition': the first tick where before.(signal_field) is
+%     false and after.(signal_field) is true (a genuine false->true
+%     transition with a captured prior value).
+%
+% The search stops at the FIRST completion tick found -- it never scans
+% past it, so a completion can never be silently duplicated by continuing
+% to search for a second one. The n_ticks window is the fixed-length span
+% ending exactly at that completion tick (cohort lengths stay equal). This
+% function fails loudly (ok=false) rather than emit a timing-incomplete
+% file when: no completion is ever observed; completion occurs before a
+% full n_ticks window could be collected; no onset was observed (diameter_
+% decrease only); or the observed onset does not strictly precede
+% tick_start..completion. There is no fallback that invents an onset or
+% completion.
 ok = true;
 error_message = '';
-anchor_tick = [];
+onset_tick = [];
+completion_tick = [];
 tick_start = [];
+window_anchor_tick = [];
 states_before = struct();
 states_after = struct();
 
-target_proc = sim.processes{target_idx};
-if ~isprop(target_proc, anchor_opts.signal_property)
-    ok = false;
-    error_message = sprintf( ...
-        'anchor signal property ''%s'' not found on process (window_contract=''anchor'' requires a real, ' ...
-        'readable completion signal on the target process)', anchor_opts.signal_property);
-    return;
-end
-
 buffer_before = cell(n_ticks, 1);
 buffer_after = cell(n_ticks, 1);
-buffer_len = 0;
 next_slot = 1;
 
 t = 0;
-found = false;
 while t < anchor_opts.max_search_ticks
     t = t + 1;
     try
-        [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props);
+        [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts);
     catch err
         ok = false;
         error_message = sprintf('anchor search tick %d failed:\n%s', t, getReport(err, 'extended', 'hyperlinks', 'off'));
@@ -383,49 +516,92 @@ while t < anchor_opts.max_search_ticks
     buffer_before{slot} = before_tick;
     buffer_after{slot} = after_tick;
     next_slot = next_slot + 1;
-    buffer_len = min(buffer_len + 1, n_ticks);
 
-    is_fired = false;
-    try
-        is_fired = logical(target_proc.(anchor_opts.signal_property).(anchor_opts.signal_field));
-    catch
-        is_fired = false;
+    is_onset_tick = false;
+    switch anchor_opts.signal_kind
+        case 'diameter_decrease'
+            before_val = before_tick.pinchedDiameter;
+            after_val = after_tick.pinchedDiameter;
+            is_onset_tick = (before_val > after_val) && (after_val >= 0);
+            is_completion_tick = (before_val > 0) && (after_val == 0);
+        case 'boolean_transition'
+            before_val = logical(before_tick.(anchor_opts.signal_field));
+            after_val = logical(after_tick.(anchor_opts.signal_field));
+            is_completion_tick = (~before_val) && after_val;
+        otherwise
+            ok = false;
+            error_message = sprintf('anchor_opts.signal_kind must be ''diameter_decrease'' or ''boolean_transition'' (got ''%s'')', anchor_opts.signal_kind);
+            return;
     end
 
-    if is_fired && buffer_len == n_ticks
-        found = true;
-        anchor_tick = t;
-        tick_start = t - n_ticks + 1;
+    if isempty(onset_tick) && is_onset_tick
+        onset_tick = t;
+    end
+
+    if is_completion_tick
+        completion_tick = t;
         break;
     end
 end
 
-if ~found
+if isempty(completion_tick)
     ok = false;
     error_message = sprintf( ...
-        ['division-anchor signal ''%s.%s'' did not fire within max_search_ticks=%d ticks -- refusing to ' ...
+        ['division/event-completion signal did not fire within max_search_ticks=%d ticks -- refusing to ' ...
          'fabricate a window_anchor; either raise anchor_opts.max_search_ticks or this seed genuinely does ' ...
-         'not divide in that many ticks'], anchor_opts.signal_property, anchor_opts.signal_field, ...
-        anchor_opts.max_search_ticks);
+         'not complete in that many ticks'], anchor_opts.max_search_ticks);
     return;
 end
 
-for p = 1:numel(snapshot_props)
-    states_before.(snapshot_props{p}) = cell(n_ticks, 1);
-    states_after.(snapshot_props{p}) = cell(n_ticks, 1);
+if completion_tick < n_ticks
+    ok = false;
+    error_message = sprintf( ...
+        ['completion observed at tick %d, before a full n_ticks=%d window could be collected -- refusing to ' ...
+         'emit a timing-incomplete file'], completion_tick, n_ticks);
+    return;
+end
+
+tick_start = completion_tick - n_ticks + 1;
+window_anchor_tick = completion_tick;
+
+if strcmp(anchor_opts.signal_kind, 'diameter_decrease')
+    if isempty(onset_tick)
+        ok = false;
+        error_message = 'no real strict pinchedDiameter decrease (onset) was observed before completion -- refusing to fabricate onset_tick';
+        return;
+    end
+    if onset_tick < tick_start
+        ok = false;
+        error_message = sprintf( ...
+            'onset_tick=%d precedes the captured window start tick_start=%d (n_ticks window too short to contain the real onset)', ...
+            onset_tick, tick_start);
+        return;
+    end
+    if onset_tick >= window_anchor_tick
+        ok = false;
+        error_message = sprintf('onset_tick=%d does not strictly precede completion/window_anchor=%d', onset_tick, window_anchor_tick);
+        return;
+    end
 end
 
 % The buffer is circular; `next_slot`'s current position is the slot that
 % will be overwritten NEXT, i.e. the oldest entry still held. Replay the
 % buffer starting there so states_before/after end up in chronological
-% order (row 1 == tick_start .. row n_ticks == anchor_tick).
+% order (row 1 == tick_start .. row n_ticks == window_anchor_tick).
+% Fields are discovered per-tick (not hardcoded) so both the standard
+% snapshot_props and whatever merge_event_observables added are captured.
 oldest_slot = mod(next_slot - 1, n_ticks) + 1;
 for k = 1:n_ticks
     src_slot = mod(oldest_slot - 1 + (k - 1), n_ticks) + 1;
-    for p = 1:numel(snapshot_props)
-        prop = snapshot_props{p};
-        states_before.(prop){k, 1} = buffer_before{src_slot}.(prop);
-        states_after.(prop){k, 1} = buffer_after{src_slot}.(prop);
+    src_fields = fieldnames(buffer_before{src_slot});
+    for p = 1:numel(src_fields)
+        fn = src_fields{p};
+        if ~isfield(states_before, fn)
+            states_before.(fn) = cell(n_ticks, 1);
+            states_after.(fn) = cell(n_ticks, 1);
+        end
+        states_before.(fn){k, 1} = buffer_before{src_slot}.(fn);
+        states_after.(fn){k, 1} = buffer_after{src_slot}.(fn);
     end
 end
 end

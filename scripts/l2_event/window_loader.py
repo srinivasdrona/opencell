@@ -49,6 +49,14 @@ _STRIDE_CONTRACT_STRIDE_KEY = "stride"
 _STRIDE_CONTRACT_START_KEY = "tick_start"
 _STRIDE_CONTRACT_END_KEYS = ("tick_end", "window_anchor")
 
+# The real, observed TIMING anchor for a 'diameter_decrease'-style anchor
+# window (ratified Cytokinesis decision, 2026-08-02): the first strict
+# pinchedDiameter decrease. Distinct from `window_anchor`, which remains the
+# CAPTURE-boundary (completion) tick the fixed n_ticks window ends at.
+# Optional: absent for 'boolean_transition' (single-event, no interval)
+# anchor windows and for all fixed windows.
+_ONSET_TICK_KEY = "onset_tick"
+
 _EVENT_WINDOW_DIR_RE = re.compile(r"per_process_traces_v2_event_s(\d+)")
 _STANDARD_DIR_RE = re.compile(r"per_process_traces_v2(?:_s(\d+))?$")
 
@@ -66,6 +74,51 @@ class EventWindowRefused(Exception):
         self.reason: RefusalReason = reason
 
 
+def _read_optional_scalar(metadata: h5py.Group, key: str) -> tuple[float | None, str | None]:
+    """Read an optional scalar numeric metadata field.
+
+    Returns ``(value, problem)``:
+
+    * key absent -> ``(None, None)`` -- absence alone is not a problem here;
+      callers (``_check_stride_contract``) decide whether a given key is
+      required.
+    * key present but not scalar, not numeric-castable, or non-finite (NaN/
+      inf) -> ``(None, "<problem message>")``.
+    * key present and a finite scalar -> ``(float(value), None)``.
+
+    Never raises -- this is the single choke point that turns a malformed
+    metadata field into a human-readable refusal reason instead of an
+    uncaught exception.
+    """
+    if key not in metadata:
+        return None, None
+    try:
+        raw = np.asarray(metadata[key][()])
+        flat = raw.reshape(-1)
+        if flat.size != 1:
+            return None, f"metadata '{key}' is not scalar (shape {raw.shape})"
+        value = float(flat[0])
+    except (TypeError, ValueError) as exc:
+        return None, f"metadata '{key}' is not numeric-castable ({exc})"
+    if not np.isfinite(value):
+        return None, f"metadata '{key}'={value} is not finite"
+    return value, None
+
+
+def _parse_window_bounds(metadata: h5py.Group) -> dict[str, int | None]:
+    """Best-effort parse of the M4 tick_start/tick_end/window_anchor/
+    onset_tick metadata keys, for populating :class:`WindowGrid` regardless
+    of stride-contract compliance. A key that is absent or fails to parse as
+    a finite scalar maps to ``None`` here (never raises); ``load_event_window``
+    separately decides whether that absence/malformation is fatal via
+    ``_check_stride_contract``."""
+    result: dict[str, int | None] = {}
+    for key in (_STRIDE_CONTRACT_START_KEY, "tick_end", "window_anchor", _ONSET_TICK_KEY):
+        value, problem = _read_optional_scalar(metadata, key)
+        result[key] = int(value) if (value is not None and problem is None) else None
+    return result
+
+
 def _check_stride_contract(metadata: h5py.Group) -> list[str]:
     """Return a list of human-readable problems against the M4 stride/
     window-boundary metadata contract (empty list = fully compliant).
@@ -76,16 +129,63 @@ def _check_stride_contract(metadata: h5py.Group) -> list[str]:
     if _STRIDE_CONTRACT_STRIDE_KEY not in metadata:
         problems.append(f"metadata missing required key '{_STRIDE_CONTRACT_STRIDE_KEY}'")
     else:
-        stride_val = int(np.asarray(metadata[_STRIDE_CONTRACT_STRIDE_KEY][()]).reshape(-1)[0])
-        if stride_val != 1:
-            problems.append(f"metadata '{_STRIDE_CONTRACT_STRIDE_KEY}'={stride_val}, expected 1 (D1 fully enumerated stride-1 window)")
+        stride_val, problem = _read_optional_scalar(metadata, _STRIDE_CONTRACT_STRIDE_KEY)
+        if problem:
+            problems.append(problem)
+        elif int(stride_val) != 1:
+            problems.append(f"metadata '{_STRIDE_CONTRACT_STRIDE_KEY}'={int(stride_val)}, expected 1 (D1 fully enumerated stride-1 window)")
+
+    tick_start_val: float | None = None
     if _STRIDE_CONTRACT_START_KEY not in metadata:
         problems.append(f"metadata missing required key '{_STRIDE_CONTRACT_START_KEY}'")
+    else:
+        tick_start_val, problem = _read_optional_scalar(metadata, _STRIDE_CONTRACT_START_KEY)
+        if problem:
+            problems.append(problem)
+
     if not any(key in metadata for key in _STRIDE_CONTRACT_END_KEYS):
         problems.append(
             f"metadata missing both '{_STRIDE_CONTRACT_END_KEYS[0]}' and "
             f"'{_STRIDE_CONTRACT_END_KEYS[1]}' (at least one required, 'as applicable')"
         )
+
+    tick_end_val: float | None = None
+    if "tick_end" in metadata:
+        tick_end_val, problem = _read_optional_scalar(metadata, "tick_end")
+        if problem:
+            problems.append(problem)
+    window_anchor_val: float | None = None
+    if "window_anchor" in metadata:
+        window_anchor_val, problem = _read_optional_scalar(metadata, "window_anchor")
+        if problem:
+            problems.append(problem)
+
+    if tick_start_val is not None and tick_end_val is not None and tick_end_val < tick_start_val:
+        problems.append(f"metadata 'tick_end' ({tick_end_val}) < 'tick_start' ({tick_start_val})")
+    if tick_start_val is not None and window_anchor_val is not None and window_anchor_val < tick_start_val:
+        problems.append(f"metadata 'window_anchor' ({window_anchor_val}) < 'tick_start' ({tick_start_val})")
+
+    if _ONSET_TICK_KEY in metadata:
+        onset_val, problem = _read_optional_scalar(metadata, _ONSET_TICK_KEY)
+        if problem:
+            problems.append(problem)
+        elif onset_val is not None:
+            if window_anchor_val is None:
+                problems.append(
+                    f"metadata has '{_ONSET_TICK_KEY}' but no 'window_anchor' (completion) -- an onset "
+                    "TIMING anchor without a completion CAPTURE-boundary is not a valid anchor window"
+                )
+            else:
+                if tick_start_val is not None and onset_val < tick_start_val:
+                    problems.append(
+                        f"metadata '{_ONSET_TICK_KEY}' ({onset_val}) precedes 'tick_start' ({tick_start_val})"
+                    )
+                if onset_val >= window_anchor_val:
+                    problems.append(
+                        f"metadata '{_ONSET_TICK_KEY}' ({onset_val}) does not strictly precede "
+                        f"'window_anchor' ({window_anchor_val}) -- onset_tick is the observed TIMING "
+                        "anchor and must strictly precede the CAPTURE-boundary completion tick"
+                    )
     return problems
 
 
@@ -107,10 +207,48 @@ class WindowGrid:
     #: ``require_stride_contract=False`` (otherwise a non-empty list would
     #: have raised ``EventWindowRefused`` instead of returning a grid).
     stride_contract_problems: tuple[str, ...] = ()
+    #: Absolute 1-based simulation tick the grid's row 0 corresponds to
+    #: (row i -> tick_start + i, see ``absolute_tick``). ``None`` if the
+    #: trace never declared ``metadata/tick_start`` (pre-M4 traces).
+    tick_start: int | None = None
+    #: Fixed-window boundary (mutually informative with ``window_anchor``,
+    #: never both meaningfully required at once). ``None`` for anchor
+    #: windows and pre-M4 traces.
+    tick_end: int | None = None
+    #: Anchor-window CAPTURE boundary: the observed completion tick the
+    #: fixed n_ticks window ends at. ``None`` for fixed windows and pre-M4
+    #: traces. Aliased as ``completion_tick`` below -- this is the single
+    #: persisted field; there is no redundant second completion key.
+    window_anchor: int | None = None
+    #: Anchor-window TIMING anchor: the observed first strict
+    #: ``pinchedDiameter`` decrease (ratified Cytokinesis decision,
+    #: 2026-08-02). ``None`` for fixed windows, 'boolean_transition'-kind
+    #: anchor windows (single event, no interval), and pre-M4 traces.
+    #: ``tick_offset`` is never a substitute for this field.
+    onset_tick: int | None = None
 
     @property
     def stride_contract_ok(self) -> bool:
         return len(self.stride_contract_problems) == 0
+
+    @property
+    def completion_tick(self) -> int | None:
+        """Alias for ``window_anchor`` -- the observed completion/capture-
+        boundary tick. Derived, not persisted, so the metadata contract
+        never carries a redundant second completion field."""
+        return self.window_anchor
+
+    def absolute_tick(self, row: int) -> int:
+        """Map a 0-based local grid row to its absolute 1-based simulation
+        tick: ``tick_start + row`` (the single coordinate system every M4
+        tick field -- tick_start/tick_end/window_anchor/onset_tick -- shares).
+        Raises ``ValueError`` if this trace never declared ``tick_start``."""
+        if self.tick_start is None:
+            raise ValueError(
+                f"{self.trace_path}: cannot map row {row} to an absolute tick -- "
+                "metadata has no 'tick_start' (pre-M4 trace)."
+            )
+        return self.tick_start + row
 
     def before(self, observable: str, tick: int) -> np.ndarray:
         return self.states_before[observable][tick]
@@ -163,6 +301,7 @@ def load_event_window(
     *,
     required_observables: tuple[str, ...],
     require_stride_contract: bool = True,
+    require_scalar_finite_observables: tuple[str, ...] = (),
 ) -> WindowGrid:
     """Load and validate one event-window trace file.
 
@@ -175,9 +314,20 @@ def load_event_window(
     * ``INCOMPLETE_WINDOW`` -- declared ``n_ticks`` does not match the
       per-observable dataset length for any requested observable, i.e. the
       grid is sparse/partial rather than a fully enumerated stride-1 window;
-      or (M4) the trace fails the ``stride``/``tick_start``/``tick_end``-or-
-      ``window_anchor`` metadata contract and ``require_stride_contract`` is
-      ``True`` (the default).
+      (M4) the trace fails the ``stride``/``tick_start``/``tick_end``-or-
+      ``window_anchor``/``onset_tick`` metadata contract and
+      ``require_stride_contract`` is ``True`` (the default); or an
+      observable named in ``require_scalar_finite_observables`` is missing,
+      non-scalar, non-numeric/logical, or non-finite (NaN/inf) for any tick.
+
+    ``require_scalar_finite_observables`` (must be a subset of
+    ``required_observables``) is for the flattened numeric event-observable
+    projection an anchor-window extraction adds (e.g. Cytokinesis's
+    ``pinchedDiameter``/``ftsZRing_*`` witnesses) -- these must be present,
+    scalar, and finite for every tick for onset/completion timing claims to
+    be meaningful; a generic caller with no such observables passes ``()``
+    (the default) and gets no additional checks beyond the existing per-
+    observable tick-count check below.
 
     ``require_stride_contract=False`` is for read-only structural-smoke
     callers ONLY (see ``scripts/l2_event/runner.run_structural_smoke``):
@@ -187,6 +337,12 @@ def load_event_window(
     without ever claiming the smoke satisfies a real gate's window
     requirements.
     """
+    if not set(require_scalar_finite_observables) <= set(required_observables):
+        raise ValueError(
+            "require_scalar_finite_observables must be a subset of required_observables; "
+            f"got {require_scalar_finite_observables!r} not <= {required_observables!r}"
+        )
+
     trace_path = Path(trace_path)
     if not trace_path.exists():
         raise EventWindowRefused(
@@ -226,6 +382,8 @@ def load_event_window(
                 f"EVENT_WINDOW_EXTRACTOR_CONTRACT.md): {'; '.join(stride_problems)}.",
             )
 
+        window_bounds = _parse_window_bounds(metadata)
+
         n_ticks = int(np.asarray(metadata["n_ticks"][()]).reshape(-1)[0])
         tick_offset = float(np.asarray(metadata[_EVENT_WINDOW_METADATA_KEY][()]).reshape(-1)[0])
         rng_seed = int(np.asarray(metadata["rng_seed"][()]).reshape(-1)[0])
@@ -258,6 +416,24 @@ def load_event_window(
                         "(stride-1, no gaps). A sparse/partial grid cannot "
                         "support event-window timing or count claims (D1).",
                     )
+                if observable in require_scalar_finite_observables:
+                    if series.shape[1] != 1:
+                        raise EventWindowRefused(
+                            "INCOMPLETE_WINDOW",
+                            f"{trace_path}: observable '{observable}' in "
+                            f"'{group_name}' is not scalar-per-tick (shape "
+                            f"{series.shape}) -- required for a numeric "
+                            "event-observable projection.",
+                        )
+                    numeric_series = series.astype(float, copy=False)
+                    if not np.all(np.isfinite(numeric_series)):
+                        raise EventWindowRefused(
+                            "INCOMPLETE_WINDOW",
+                            f"{trace_path}: observable '{observable}' in "
+                            f"'{group_name}' has a non-finite (NaN/inf) value "
+                            "-- an event-observable projection must be finite "
+                            "for every tick.",
+                        )
                 sink[observable] = series
 
     return WindowGrid(
@@ -270,4 +446,8 @@ def load_event_window(
         states_before=states_before,
         states_after=states_after,
         stride_contract_problems=tuple(stride_problems),
+        tick_start=window_bounds[_STRIDE_CONTRACT_START_KEY],
+        tick_end=window_bounds["tick_end"],
+        window_anchor=window_bounds["window_anchor"],
+        onset_tick=window_bounds[_ONSET_TICK_KEY],
     )

@@ -58,7 +58,10 @@ def _write_synthetic_trace(
     tick_start: int | None = 0,
     tick_end: int | None = -1,
     window_anchor: int | None = None,
+    onset_tick: int | None = None,
     omit_stride_contract: bool = False,
+    observable_values: dict[str, tuple[np.ndarray, np.ndarray]] | None = None,
+    non_scalar_observable: str | None = None,
 ) -> Path:
     """Write a minimal synthetic HDF5 trace exercising every window_loader
     refusal branch on demand (via the keyword toggles above), without
@@ -70,6 +73,14 @@ def _write_synthetic_trace(
     contract-complete "good" fixture under the new strict-by-default
     ``load_event_window``. Pass ``omit_stride_contract=True`` (or explicit
     ``None`` values) to exercise the M4 refusal branches themselves.
+
+    ``observable_values`` lets a caller override the default all-zeros
+    scalar-per-tick payload for one or more observables with explicit
+    ``(before_values, after_values)`` 1-D arrays of length ``n_ticks`` --
+    used to craft a NaN/non-finite numeric event-observable projection
+    deliberately. ``non_scalar_observable`` writes that one observable as a
+    2-wide (non-scalar) row per tick instead of a scalar, for the
+    require_scalar_finite_observables non-scalar-shape refusal branch.
     """
     if tick_end == -1:
         tick_end = n_ticks - 1
@@ -90,6 +101,8 @@ def _write_synthetic_trace(
                 metadata.create_dataset("tick_end", data=np.array([tick_end]))
             if window_anchor is not None:
                 metadata.create_dataset("window_anchor", data=np.array([window_anchor]))
+            if onset_tick is not None:
+                metadata.create_dataset("onset_tick", data=np.array([onset_tick]))
 
         if omit_states_groups:
             return path
@@ -100,6 +113,27 @@ def _write_synthetic_trace(
             if observable == missing_observable_group:
                 continue
             rows = n_ticks - 1 if observable == truncated_observable else n_ticks
+            if observable_values is not None and observable in observable_values:
+                before_vals, after_vals = observable_values[observable]
+                states_before.create_dataset(observable, data=np.asarray(before_vals, dtype=float).reshape(1, rows))
+                states_after.create_dataset(observable, data=np.asarray(after_vals, dtype=float).reshape(1, rows))
+                continue
+            if observable == non_scalar_observable:
+                # Genuine non-scalar-per-tick data can only be represented in
+                # this codebase's HDF5 layout as a MATLAB cell array of
+                # object references (one per tick, each pointing at a
+                # 2-element vector) -- `_cell_series`'s plain-numeric-array
+                # branch always collapses a (1, rows) array to one scalar
+                # per tick, so it cannot itself carry non-scalar payloads.
+                for section, sink in (("states_before", states_before), ("states_after", states_after)):
+                    refs = np.empty((1, rows), dtype=h5py.special_dtype(ref=h5py.Reference))
+                    for tick in range(rows):
+                        dset = handle.create_dataset(
+                            f"__data/{section}/{observable}/{tick}", data=np.array([0.0, 1.0])
+                        )
+                        refs[0, tick] = dset.ref
+                    sink.create_dataset(observable, data=refs, dtype=h5py.special_dtype(ref=h5py.Reference))
+                continue
             # Row-vector-per-tick shape (1, rows) so `_cell_series` treats it
             # as a plain numeric array (dtype != object).
             states_before.create_dataset(observable, data=np.zeros((1, rows)))
@@ -267,3 +301,142 @@ def test_load_real_standard_mid_cycle_trace_refuses_not_event_window_trace():
     with pytest.raises(EventWindowRefused) as exc_info:
         load_event_window(_REAL_STANDARD_TRACE, required_observables=("substrates",))
     assert exc_info.value.reason == "NOT_EVENT_WINDOW_TRACE"
+
+
+# ---------------------------------------------------------------------------
+# M4 correction: onset_tick (timing anchor) vs window_anchor (capture
+# boundary), single absolute tick coordinate system, and the numeric
+# event-observable projection's scalar/finite guarantee.
+# ---------------------------------------------------------------------------
+
+
+def test_window_grid_exposes_tick_bounds_and_onset_tick(tmp_path):
+    trace_path = _write_synthetic_trace(
+        tmp_path / "anchor_full.mat",
+        n_ticks=4,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+    )
+    window = load_event_window(trace_path, required_observables=("obsA",))
+    assert window.tick_start == 996
+    assert window.window_anchor == 999
+    assert window.onset_tick == 997
+    assert window.completion_tick == 999  # derived alias, not a second persisted key
+    assert window.absolute_tick(0) == 996
+    assert window.absolute_tick(3) == 999
+
+
+def test_window_grid_absolute_tick_raises_without_tick_start(tmp_path):
+    trace_path = _write_synthetic_trace(tmp_path / "pre_m4.mat", omit_stride_contract=True)
+    window = load_event_window(trace_path, required_observables=("obsA",), require_stride_contract=False)
+    assert window.tick_start is None
+    with pytest.raises(ValueError):
+        window.absolute_tick(0)
+
+
+def test_load_trace_onset_tick_without_window_anchor_refuses_incomplete_window(tmp_path):
+    """onset_tick (TIMING anchor) with no window_anchor/completion (CAPTURE
+    boundary) at all is not a valid anchor window -- the pairing is
+    mandatory."""
+    trace_path = _write_synthetic_trace(
+        tmp_path / "onset_no_anchor.mat", tick_end=None, window_anchor=None, onset_tick=5
+    )
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(trace_path, required_observables=("obsA",))
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+
+
+def test_load_trace_onset_tick_before_tick_start_refuses_incomplete_window(tmp_path):
+    """onset_tick must fall inside the captured window: onset < tick_start
+    (an onset the extraction never actually captured) must be refused."""
+    trace_path = _write_synthetic_trace(
+        tmp_path / "onset_before_start.mat",
+        n_ticks=4,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=990,
+    )
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(trace_path, required_observables=("obsA",))
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+    assert "onset_tick" in str(exc_info.value)
+
+
+def test_load_trace_onset_tick_at_or_after_completion_refuses_incomplete_window(tmp_path):
+    """A fabricated/immediate anchor -- onset at or after the completion
+    tick -- is never a real observed transition-then-completion interval
+    and must be refused."""
+    trace_path = _write_synthetic_trace(
+        tmp_path / "onset_after_completion.mat",
+        n_ticks=4,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=999,
+    )
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(trace_path, required_observables=("obsA",))
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+    assert "onset_tick" in str(exc_info.value)
+
+
+def test_load_trace_scalar_finite_observable_ok(tmp_path):
+    trace_path = _write_synthetic_trace(
+        tmp_path / "scalar_ok.mat",
+        n_ticks=3,
+        observables=("pinchedDiameter",),
+        observable_values={"pinchedDiameter": ([2.0, 1.0, 0.0], [1.0, 0.0, 0.0])},
+    )
+    window = load_event_window(
+        trace_path,
+        required_observables=("pinchedDiameter",),
+        require_scalar_finite_observables=("pinchedDiameter",),
+    )
+    assert window.before("pinchedDiameter", 0).shape == (1,)
+
+
+def test_load_trace_non_scalar_required_finite_observable_refuses_incomplete_window(tmp_path):
+    trace_path = _write_synthetic_trace(
+        tmp_path / "non_scalar.mat",
+        n_ticks=3,
+        observables=("pinchedDiameter",),
+        non_scalar_observable="pinchedDiameter",
+    )
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(
+            trace_path,
+            required_observables=("pinchedDiameter",),
+            require_scalar_finite_observables=("pinchedDiameter",),
+        )
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+
+
+def test_load_trace_nan_required_finite_observable_refuses_incomplete_window(tmp_path):
+    """A NaN in a numeric event-observable projection field must be
+    refused -- a non-finite value can never support an onset/completion
+    timing claim."""
+    trace_path = _write_synthetic_trace(
+        tmp_path / "nan_obs.mat",
+        n_ticks=3,
+        observables=("pinchedDiameter",),
+        observable_values={"pinchedDiameter": ([2.0, float("nan"), 0.0], [1.0, 0.0, 0.0])},
+    )
+    with pytest.raises(EventWindowRefused) as exc_info:
+        load_event_window(
+            trace_path,
+            required_observables=("pinchedDiameter",),
+            require_scalar_finite_observables=("pinchedDiameter",),
+        )
+    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+
+
+def test_load_event_window_rejects_scalar_finite_observables_not_subset_of_required():
+    with pytest.raises(ValueError):
+        load_event_window(
+            Path("does_not_matter.mat"),
+            required_observables=("obsA",),
+            require_scalar_finite_observables=("obsB",),
+        )
