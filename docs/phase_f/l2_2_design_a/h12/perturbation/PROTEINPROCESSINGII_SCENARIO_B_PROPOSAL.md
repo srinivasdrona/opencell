@@ -93,9 +93,40 @@ implementation and cannot serve as evidence of genuine `mnrnd`/
   substitutes a stub.
 - `data/karr_vendored_source/RandStream.m` is a byte-identical vendored copy
   of the real Karr `RandStream` class (hash-pinned; see that directory's
-  README for provenance/hashes), vendored for audit even though the future
-  driver loads the canonical WholeCell package path (`edu.stanford.covert.
-  util.RandStream`) at runtime.
+  README for provenance/hashes), vendored for audit purposes. The runtime
+  WholeCell `src/` root (the tree containing the actual class the driver
+  executes) is resolved ONLY via an explicit `--wholecell-src-root` CLI
+  argument or the `OPENCELL_WHOLECELL_SRC_ROOT` environment variable
+  (`_resolve_wholecell_src_root`) -- there is deliberately no ambient/
+  hardcoded default path (Opus5 turn-4 correction 2). Both
+  `probe_matlab_environment.m` and `run_ppii_scenario_b_matlab.m` record
+  `which('edu.stanford.covert.util.RandStream')` (the actual resolved
+  runtime path) and an LF-normalized SHA-256 hash of that runtime file;
+  `scripts/l22_evidence/h12_perturbation.py` independently re-verifies that
+  hash against the vendored copy above and refuses to proceed on a mismatch
+  or missing class -- this is a Python-side cross-check, never a bare
+  self-report trusted from MATLAB.
+- `run_ppii_scenario_b_matlab.m` writes each state's after-state CSV with
+  `dlmwrite(out_csv, out, 'precision', '%.17g')`, not `csvwrite` (Opus5
+  turn-4 correction 4) -- `csvwrite`'s lossy default (~5 significant digits)
+  would silently truncate large exact values (e.g. the `141888`
+  `substrates_water` constant in `peptidase_capacity_scarce`); `%.17g`
+  round-trips every IEEE-754 double exactly.
+- `probe_matlab_environment.m` additionally runs a synthetic
+  `mnrnd(3, [0.5;0.5])` column-vector shape probe under genuine MATLAB,
+  independent of WholeCell/RandStream resolution (it tests Statistics
+  Toolbox behavior, not Karr's class). A `pass` permits later full-mode
+  consideration; an `error` is recorded as a genuine Karr dormant-source
+  defect that hard-blocks full-mode execution only -- it is deliberately
+  **not** fixed post hoc in `evolveState_ppii_matlab.m` (whose exact,
+  unmodified shape is the entire point of the probe), and it does **not**
+  block canary-mode plumbing runs (Opus5 turn-4 correction 1). The probe
+  writes its full structured JSON result unconditionally, then calls
+  MATLAB's `error(...)` if `overall_pass` is false, so the process exit
+  code and the JSON result always agree; `probe_matlab_environment()`/
+  `run_matlab_scenario_b()` on the Python side never trust a bare exit code
+  alone -- they always load and independently re-validate this JSON
+  (Opus5 turn-4 correction 3).
 - `scripts/matlab_h12_perturbation/evolveState_ppii_matlab.m` is a true
   verbatim (zero-substitution) transcription of `ProteinProcessingII.m`
   evolveState lines 349-445 -- disclosed here as **transcribed**, not
@@ -162,10 +193,19 @@ boundary plus one simultaneous-failure combination. They:
   disk, hash-bound to the exact state file it was derived from, strictly
   BEFORE any MATLAB process is invoked;
 - `ingest_ppii_scenario_b()` is the only function that reads MATLAB CSV
-  output; it **loads** the frozen prediction JSON and never recomputes it,
-  and it independently validates the MATLAB run-manifest (mode, exact seed
-  list, three-way state-file hash, harness hash, and an explicit
-  `randstream_class_confirmed` flag) before trusting any CSV row.
+  output; it **loads** the frozen prediction JSON (and the frozen conditioned
+  before-state arrays within it -- Opus5 turn-4 correction 6; it never
+  rebuilds the before-state from the mutable `PPII_SCENARIO_B_STATES` module
+  dict after raw output exists) and never recomputes the prediction. It
+  independently validates the MATLAB run-manifest (mode, exact seed list,
+  three-way state-file hash, harness hash, an explicit
+  `randstream_class_confirmed` flag, AND the independently re-verified
+  `randstream_runtime_path`/`randstream_runtime_sha256_lf_normalized`
+  against the vendored `RandStream.m` hash -- Opus5 turn-4 correction 2)
+  before trusting any CSV row. `probe_matlab_environment()`/
+  `run_matlab_scenario_b()` similarly parse and validate the probe's
+  structured JSON result field-by-field rather than trusting the MATLAB
+  process's exit code alone (Opus5 turn-4 correction 3).
 
 ## 5. Exact files this commit touches (code/spec/tests/docs only)
 
@@ -197,18 +237,34 @@ Explicitly NOT touched (deferred to a future, separately authorized commit):
 - `docs/phase_f/l2_2_design_a/h12/perturbation/ProteinProcessingII_h12_perturbation.json`
 - `docs/phase_f/l2_2_design_a/h12/h12_evidence_index.json`
 
+**Turn 4 note:** Opus5 accepted Turn 3 (`ede9708`) as non-operative but
+identified 8 mandatory pre-execution defects (mnrnd shape probe, ambient
+RandStream path removal, probe hard-fail-on-`overall_pass=false`, lossless
+`dlmwrite` CSV output, canary no-variation-is-not-a-failure semantics, frozen
+before-state arrays, additional tests, and preserving the no-execution
+boundary). Turn 4 modifies the same file set again (`h12_perturbation.py`,
+both `.m` driver/probe scripts, `test_h12_perturbation.py`, this proposal,
+and `PERTURBATION_SPEC.json`) to fix them -- no new files are created or
+deleted, and the "explicitly NOT touched" list above is unchanged.
+
 ## 6. Canary / full run plan (NOT executed this commit)
 
 1. **Canary**: 1 state (`transferase_capacity_scarce`) x its own block's
-   first 5 seeds (1000-1004, an explicit prefix/subset of that state's own
-   50-seed block, never a separate seed range). Expected runtime: tens of
+   first 20 seeds (1000-1019, an explicit prefix/subset of that state's own
+   50-seed block, never a separate seed range -- widened from the original
+   5-seed proposal per Opus5 turn-4 correction 5). Expected runtime: tens of
    seconds to low minutes (genuine MATLAB startup/license-checkout overhead
-   is real, unlike Octave's near-instant startup; 5 short evolveState
+   is real, unlike Octave's near-instant startup; 20 short evolveState
    calls). Purpose: confirm the genuine-MATLAB harness invokes the real
    dormant branch at all (nonzero `transferase_fires` count, real
-   `RandStream`-backed variation across seeds) and that raw CSV schema
-   matches `ingest_ppii_scenario_b`'s expectations, before spending time on
-   the full matrix.
+   `RandStream`-backed variation across seeds where observable) and that raw
+   CSV schema matches `ingest_ppii_scenario_b`'s expectations, before
+   spending time on the full matrix. A canary run with `seeds_vary=False`
+   over all 20 seeds is explicitly **not** treated as a canary failure
+   (Opus5 turn-4 correction 5) -- canary mode makes no distributional claim,
+   only a plumbing/branch-activation one; the verdict in that case is
+   `H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK` with a recorded
+   `no_variation_flag`, not an error.
 2. **Full**: all 5 states x their own 50-seed blocks each (250 total draws,
    seeds 1000-1249, disjoint per state and disjoint from Scenario A/
    macromol's 0-49 range). Expected runtime: low minutes (MATLAB process
@@ -225,14 +281,25 @@ is also not yet invoked.
 
 ## 7. Predicted verification outcomes
 
-- Canary: expect `transferase_fires`-branch activation in all 5 seeds (the
+- Canary: expect `transferase_fires`-branch activation in all 20 seeds (the
   canary state's guard is constructed to bind unconditionally on
   `transferase_demand > 0`, independent of RNG), with cross-seed variation
   in *which* lipoprotein units are anchored this tick (the stochastic
-  allocation), while aggregate bounds (mass conservation, per-species cap,
-  pool cap) hold exactly in all 5. The run-manifest must record
-  `randstream_class_confirmed: true` and `mode: "canary"` with exactly the 5
-  pre-registered seed ids.
+  allocation) where observable, while aggregate bounds (mass conservation,
+  per-species cap, pool cap) hold exactly in all 20. The run-manifest must
+  record `randstream_class_confirmed: true` (plus a matching
+  `randstream_runtime_sha256_lf_normalized` against the vendored copy) and
+  `mode: "canary"` with exactly the 20 pre-registered seed ids. A canary
+  verdict of `H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK` is expected even
+  if `seeds_vary=False` is also recorded -- that sub-flag does not fail the
+  canary (Opus5 turn-4 correction 5); only an actual invariant violation
+  would yield `H12_PERTURBATION_SCARCITY_CANARY_INVARIANT_VIOLATION`.
+- Preflight probe: expect `probe_matlab_environment()` to report
+  `mnrnd_shape_test_status: "pass"` on a correctly licensed MATLAB +
+  Statistics Toolbox install (permitting later full-mode consideration); an
+  `"error"` result is a real, pre-registered possible outcome recorded as a
+  Karr dormant-source defect that hard-blocks full mode only (canary
+  plumbing runs remain possible) -- this is not assumed away.
 - Full matrix: expect all 4 single-cause states to show >=2 distinct
   allocation realizations across their 50 seeds each with 0 bound
   violations; the simultaneous-binding state additionally exercises the
@@ -347,6 +414,61 @@ unchanged, and this proposal would be withdrawn rather than forced through.
   (`test_ingest_ppii_scenario_b_rejects_manifest_mode_mismatch`,
   `test_ingest_ppii_scenario_b_rejects_mixed_canary_full_row_count`,
   `test_ingest_ppii_scenario_b_rejects_seed_id_column_mismatch`).
+
+### 9a. Additional Turn 4 inversion tests (Opus5 turn-4 8-point correction list)
+
+- Wrong/mismatched runtime RandStream path or hash in the manifest ->
+  `test_ingest_ppii_scenario_b_rejects_wrong_randstream_hash_in_manifest`,
+  `test_ingest_ppii_scenario_b_rejects_missing_randstream_runtime_path_in_manifest`,
+  `test_validate_randstream_provenance_rejects_hash_mismatch`,
+  `test_validate_randstream_provenance_rejects_missing_path`,
+  `test_validate_randstream_provenance_rejects_missing_hash`.
+- Missing/unresolvable WholeCell src root (no ambient default assumed) ->
+  `test_resolve_wholecell_src_root_raises_when_neither_arg_nor_env_var_set`,
+  `test_resolve_wholecell_src_root_raises_when_randstream_missing_at_root`,
+  `test_probe_matlab_environment_requires_wholecell_root`; explicit-arg vs.
+  env-var precedence is covered by
+  `test_resolve_wholecell_src_root_uses_explicit_arg`,
+  `test_resolve_wholecell_src_root_uses_env_var_when_no_explicit_arg`,
+  `test_resolve_wholecell_src_root_explicit_arg_takes_precedence_over_env_var`.
+- Probe `overall_pass=false` trusted via exit code alone rather than
+  independently parsed/validated ->
+  `test_probe_matlab_environment_never_trusts_bare_exit_code`,
+  `test_probe_matlab_environment_raises_when_no_result_json_produced`,
+  `test_validate_matlab_probe_result_rejects_overall_pass_false`,
+  plus the `.m`-source test
+  `test_probe_matlab_environment_m_writes_json_before_erroring_on_overall_pass_false`
+  (proves the JSON is written BEFORE MATLAB's own `error(...)` call, so a
+  false result is never silently lost).
+- `mnrnd` shape-probe result mishandled (error wrongly permits full mode, or
+  wrongly blocks canary mode) ->
+  `test_validate_matlab_probe_result_mnrnd_pass_permits_full_mode`,
+  `test_validate_matlab_probe_result_mnrnd_error_hard_blocks_full_mode_only`,
+  `test_validate_matlab_probe_result_mnrnd_not_run_does_not_permit_full_mode`,
+  `test_run_matlab_scenario_b_full_mode_hard_blocked_by_mnrnd_error_probe`,
+  `test_run_matlab_scenario_b_canary_mode_not_blocked_by_mnrnd_error_probe`;
+  the probe script itself is confirmed to include the shape test by
+  `test_probe_matlab_environment_m_includes_mnrnd_shape_probe`.
+- Lossy CSV output silently accepted (`csvwrite`-style truncation) ->
+  `test_percent_17g_format_round_trips_141888_and_other_scenario_b_constants`
+  proves the `%.17g` format string round-trips the `141888` constant and
+  other scenario-B fields exactly; the `.m`-source test
+  `test_run_ppii_scenario_b_matlab_uses_lossless_dlmwrite_not_csvwrite`
+  greps for the literal call `csvwrite(` (not the bare substring
+  `csvwrite`, which also appears in an explanatory comment) to confirm the
+  call itself was replaced with `dlmwrite`, not merely mentioned.
+- Frozen before-state tampered or rebuilt from the mutable module dict after
+  raw output exists ->
+  `test_ingest_ppii_scenario_b_rejects_tampered_before_state` proves ingest
+  hash-verifies the frozen `before_state` and refuses a tampered copy; the
+  same prediction-freeze tests assert `before_state`/`before_state_sha256`
+  are present in the frozen JSON and are the only source ingest reads
+  invariants against.
+- No stub fallback, wrong engine (Octave) accepted ->
+  `test_validate_matlab_probe_result_rejects_octave`,
+  `test_probe_matlab_environment_m_reads_wholecell_root_from_env_var_only`,
+  `test_run_ppii_scenario_b_matlab_m_reads_wholecell_root_from_env_var_only`
+  (no hardcoded/ambient path in either `.m` script).
 
 ## 10. Non-goals (restated)
 

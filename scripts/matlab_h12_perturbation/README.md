@@ -38,21 +38,54 @@ real generator.
   `tests/scripts/test_h12_perturbation_source_binding.py`
   (`MATLAB_BINDINGS`).
 - `run_ppii_scenario_b_matlab.m` -- driver. Aborts (no stub fallback) if
-  not running under genuine MATLAB, if the Statistics Toolbox is
-  unlicensed/uninstalled, or if `edu.stanford.covert.util.RandStream`
-  cannot be found/constructed. Reads each state's frozen
+  not running under genuine MATLAB, if `PPII_WHOLECELL_SRC_ROOT` is unset
+  (no hardcoded/ambient default path is assumed -- see "WholeCell src root
+  resolution" below), if the Statistics Toolbox is unlicensed/uninstalled,
+  or if `edu.stanford.covert.util.RandStream` cannot be found/constructed
+  at that root. Reads each state's frozen
   `ppii_scenario_b_<name>_prediction.json` (written by
   `scripts/l22_evidence/h12_perturbation.py generate-inputs-scenario-b`)
   for its pre-registered seed list -- seed ranges are never hardcoded
-  twice in both Python and MATLAB. Writes a per-state CSV (leading column
-  = actual seed id) plus a per-state JSON run-manifest recording mode,
-  actual seeds used, MATLAB version, toolbox license status, RandStream
-  confirmation, and harness/state file hashes.
+  twice in both Python and MATLAB. Writes a per-state CSV via
+  `dlmwrite(out_csv, out, 'precision', '%.17g')` (leading column = actual
+  seed id) -- **not** `csvwrite`, whose lossy default (~5 significant
+  digits) would truncate large exact values such as the `141888`
+  `substrates_water` constant -- plus a per-state JSON run-manifest
+  recording mode, actual seeds used, MATLAB version, toolbox license
+  status, RandStream confirmation, the resolved
+  `wholecell_src_root_used`, the runtime
+  `which('edu.stanford.covert.util.RandStream')` path
+  (`randstream_runtime_path`), its LF-normalized SHA-256 hash
+  (`randstream_runtime_sha256_lf_normalized`), and harness/state file
+  hashes.
 - `probe_matlab_environment.m` -- standalone, read-only preflight
-  diagnostic (MATLAB/Octave, license, toolbox, RandStream construction).
-  Not invoked by the driver or by anything in this commit; this is the
-  "parse/license/toolbox probe" step authorized separately from (and
-  before) the canary run.
+  diagnostic (MATLAB/Octave, license, toolbox, WholeCell-root resolution,
+  RandStream construction and runtime path/hash, PLUS an independent
+  `mnrnd(3, [0.5;0.5])` column-vector shape probe that runs whenever
+  genuine MATLAB is detected, regardless of RandStream resolution
+  outcome). Writes its full structured JSON result to
+  `getenv('PPII_PROBE_RESULT_JSON')` unconditionally, THEN calls MATLAB's
+  `error(...)` if `overall_pass` is false -- so a failed probe both writes
+  a complete diagnostic JSON and returns a nonzero exit code; nothing on
+  the Python side trusts the exit code alone; it always loads and
+  re-validates the JSON field-by-field. Not invoked by the driver or by
+  anything in this commit; this is the "parse/license/toolbox/RandStream/
+  mnrnd-shape probe" step authorized separately from (and before) the
+  canary run.
+
+## WholeCell src root resolution
+
+Neither `.m` script assumes a default/ambient WholeCell source location.
+Both read the `PPII_WHOLECELL_SRC_ROOT` environment variable (set by
+`scripts/l22_evidence/h12_perturbation.py` from its own
+`--wholecell-src-root` CLI argument or the `OPENCELL_WHOLECELL_SRC_ROOT`
+environment variable -- see `_resolve_wholecell_src_root`) and error out if
+it is empty. The Python side independently re-verifies the *runtime*
+`RandStream` class the MATLAB process actually resolved (via
+`randstream_runtime_path`/`randstream_runtime_sha256_lf_normalized`)
+against the vendored, hash-pinned copy at
+`data/karr_vendored_source/RandStream.m`, and refuses to proceed on any
+mismatch or missing class.
 
 ## Execution status
 
@@ -64,7 +97,9 @@ multi-turn authorization protocol for this evidence-closure task:
    MATLAB environment is usable (GPT-5.6 Sol authorization).
 3. `run_ppii_scenario_b_matlab.m` is run in `canary` mode
    (`PPII_SCENARIO_B_MODE=canary`) -- `transferase_capacity_scarce` only,
-   its pre-registered 5-seed canary prefix.
+   its pre-registered 20-seed canary prefix (widened from 5 per Opus5
+   turn-4 correction 5, so that `seeds_vary=False` over the set is not
+   misread as a plumbing failure).
 4. After canary review, `run_ppii_scenario_b_matlab.m` is run in `full`
    mode (`PPII_SCENARIO_B_MODE=full`) -- all 5 states, 50 seeds each.
 

@@ -40,6 +40,7 @@ from __future__ import annotations
 
 import ast
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -657,12 +658,14 @@ def _write_scenario_b_evidence(
     seeds,
     *,
     manifest_overrides=None,
+    prediction_overrides=None,
     csv_seed_ids=None,
     csv_row_count=None,
     skip_prediction=False,
     skip_manifest=False,
     skip_csv=False,
     corrupt_state_file_after_freeze=False,
+    corrupt_before_state_after_freeze=False,
 ):
     """Write a self-consistent {frozen prediction, run-manifest, after-CSV}
     trio for one Scenario B state/mode, using the REAL
@@ -682,14 +685,25 @@ def _write_scenario_b_evidence(
         mode_seeds = {"full": list(hp.PPII_SCENARIO_B_SEED_BLOCKS[state_name])}
         if state_name == hp.PPII_SCENARIO_B_CANARY_STATE:
             mode_seeds["canary"] = list(hp.PPII_SCENARIO_B_CANARY_SEEDS)
+        before_state = {
+            "unprocessedMonomers": state["unprocessedMonomers"].tolist(),
+            "processedMonomers": state["processedMonomers"].tolist(),
+            "signalSequenceMonomers": state["signalSequenceMonomers"].tolist(),
+            "enzymes": state["enzymes"].tolist(),
+            "substrates": state["substrates"].tolist(),
+        }
         frozen = {
             "state_name": state_name,
             "mode_seeds": mode_seeds,
             "state_file": state_path.name,
             "state_file_sha256": frozen_state_sha256,
+            "before_state": before_state,
+            "before_state_sha256": hp._hash_canonical(before_state),
             "prediction": prediction,
             "frozen_at_utc": "2024-01-01T00:00:00+00:00",
         }
+        if prediction_overrides:
+            frozen.update(prediction_overrides)
         hp._write_json(tmp_path / f"ppii_scenario_b_{state_name}_prediction.json", frozen)
 
     if corrupt_state_file_after_freeze:
@@ -697,6 +711,17 @@ def _write_scenario_b_evidence(
         # frozen (e.g. someone hand-edited it, or a stale re-run happened).
         state_path.write_text(state_path.read_text(encoding="ascii") + "\n% drifted\n", encoding="ascii")
 
+    if corrupt_before_state_after_freeze:
+        # Simulate a hand-edited/corrupted frozen prediction JSON: mutate
+        # before_state WITHOUT updating before_state_sha256, so the
+        # self-binding hash check in ingest_ppii_scenario_b must catch it
+        # (Opus5 turn-4 correction 6 tamper test).
+        prediction_path = tmp_path / f"ppii_scenario_b_{state_name}_prediction.json"
+        frozen_on_disk = hp._load_json(prediction_path)
+        frozen_on_disk["before_state"]["substrates"][0] += 1.0
+        hp._write_json(prediction_path, frozen_on_disk)
+
+    vendored_randstream_hash = hp._sha256_lf_normalized(hp.VENDORED_RANDSTREAM_PATH)
     if not skip_manifest:
         manifest = {
             "state_name": state_name,
@@ -706,6 +731,9 @@ def _write_scenario_b_evidence(
             "matlab_version": "9.99.0.test",
             "statistics_toolbox_licensed": True,
             "randstream_class_confirmed": True,
+            "wholecell_src_root_used": str(hp.VENDORED_RANDSTREAM_PATH.parent),
+            "randstream_runtime_path": str(hp.VENDORED_RANDSTREAM_PATH),
+            "randstream_runtime_sha256_lf_normalized": vendored_randstream_hash,
             "harness_file": "evolveState_ppii_matlab.m",
             "harness_sha256_lf_normalized": hp._sha256_lf_normalized(hp.MATLAB_DIR / "evolveState_ppii_matlab.m"),
             "state_file_sha256_lf_normalized": frozen_state_sha256,
@@ -927,6 +955,101 @@ def test_ingest_ppii_scenario_b_rejects_stale_harness_hash(tmp_path, monkeypatch
         hp.ingest_ppii_scenario_b(fixture, mode="canary")
 
 
+def test_ingest_ppii_scenario_b_rejects_wrong_randstream_hash_in_manifest(tmp_path, monkeypatch):
+    # Inversion test (Opus5 turn-4 correction 2): a manifest whose
+    # RandStream runtime hash does NOT match the vendored
+    # data/karr_vendored_source/RandStream.m must be rejected even though
+    # randstream_class_confirmed=True -- the boolean self-report alone is
+    # never sufficient.
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        manifest_overrides={"randstream_runtime_sha256_lf_normalized": "1" * 64},
+    )
+    with pytest.raises(ValueError, match="does not match the vendored"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_missing_randstream_runtime_path_in_manifest(tmp_path, monkeypatch):
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        manifest_overrides={"randstream_runtime_path": ""},
+    )
+    with pytest.raises(ValueError, match="randstream_runtime_path missing"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_missing_before_state(tmp_path, monkeypatch):
+    # Inversion test: a stale pre-turn-4 frozen prediction file with no
+    # before_state block at all must be rejected, not silently treated as
+    # "nothing to check".
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(tmp_path, fixture, name, "canary", hp.PPII_SCENARIO_B_CANARY_SEEDS)
+    prediction_path = tmp_path / f"ppii_scenario_b_{name}_prediction.json"
+    frozen = hp._load_json(prediction_path)
+    del frozen["before_state"]
+    del frozen["before_state_sha256"]
+    hp._write_json(prediction_path, frozen)
+    with pytest.raises(ValueError, match="no before_state block"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_rejects_tampered_before_state(tmp_path, monkeypatch):
+    # Inversion test (Opus5 turn-4 correction 6): before_state mutated
+    # without updating before_state_sha256 (e.g. hand-edited or corrupted
+    # prediction JSON) must be caught by the self-binding hash check, even
+    # though it lives inside the same JSON file as its own hash.
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(
+        tmp_path,
+        fixture,
+        name,
+        "canary",
+        hp.PPII_SCENARIO_B_CANARY_SEEDS,
+        corrupt_before_state_after_freeze=True,
+    )
+    with pytest.raises(ValueError, match="does not hash-match"):
+        hp.ingest_ppii_scenario_b(fixture, mode="canary")
+
+
+def test_ingest_ppii_scenario_b_never_rebuilds_before_state_from_mutable_module_dict(tmp_path, monkeypatch):
+    # Inversion test (Opus5 turn-4 correction 6 / "stale standard traces
+    # mislabeled as new condition"): ingest must evaluate invariants
+    # against the FROZEN before_state, never a fresh call to
+    # build_ppii_scenario_b_states with the (mutable) module-level
+    # PPII_SCENARIO_B_STATES dict. We monkeypatch build_ppii_scenario_b_states
+    # to explode; ingest must still succeed using only the frozen JSON.
+    fixture = _real_ppii_fixture()
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    _write_scenario_b_evidence(tmp_path, fixture, name, "canary", hp.PPII_SCENARIO_B_CANARY_SEEDS)
+
+    def _boom(*args: object, **kwargs: object) -> None:
+        raise AssertionError("build_ppii_scenario_b_states must not be called during ingest")
+
+    monkeypatch.setattr(hp, "build_ppii_scenario_b_states", _boom)
+    results = hp.ingest_ppii_scenario_b(fixture, mode="canary")
+    assert name in results
+    assert results[name]["invariants"]["violations"] == []
+
+
 def test_ingest_ppii_scenario_b_never_recomputes_prediction_stored_verdict_is_trusted(tmp_path, monkeypatch):
     # Inversion test (Opus5 correction 6 / "stored verdict trusted"): once
     # a frozen prediction exists, ingest must load it verbatim and must
@@ -981,6 +1104,11 @@ def test_freeze_ppii_scenario_b_predictions_persists_hash_bound_json(tmp_path, m
         # time (this is the ONLY place recomputation is allowed -- before
         # any MATLAB output exists).
         assert frozen["prediction"] == hp.predict_ppii_scarcity_bounds(states[name], fixture)
+        # Opus5 turn-4 correction 6: the complete conditioned before-state
+        # arrays are frozen alongside a self-binding hash.
+        assert frozen["before_state"]["unprocessedMonomers"] == states[name]["unprocessedMonomers"].tolist()
+        assert frozen["before_state"]["substrates"] == states[name]["substrates"].tolist()
+        assert frozen["before_state_sha256"] == hp._hash_canonical(frozen["before_state"])
 
 
 # ---------------------------------------------------------------------------
@@ -1241,7 +1369,58 @@ def test_build_ppii_scarcity_perturbation_artifact_canary_mode_records_single_st
     artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {}, mode="canary")
     assert artifact["mode"] == "canary"
     assert set(artifact["states"].keys()) == {name}
+    assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK"
     assert any(str(hp.PPII_SCENARIO_B_CANARY_SEED_COUNT) in c or "canary" in c for c in artifact["evidence_scope_caveats"])
+
+
+def test_build_ppii_scarcity_perturbation_artifact_canary_no_variation_does_not_fail_verdict(tmp_path, monkeypatch):
+    # Positive inversion test (Opus5 turn-4 correction 5): a canary run
+    # with seeds_vary=False over its seeds is NOT, by itself, a canary
+    # failure -- the canary makes no distributional claim. This must
+    # remain H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK, never
+    # accidentally reuse full-mode's NO_VARIATION/INVARIANT_VIOLATION
+    # vocabulary.
+    monkeypatch.setattr(hp, "OUT_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    results = {
+        name: _scarcity_result_for(
+            name, [PPII_SCENARIO_B_GUARD_MAP[name]], seeds_vary=False, mode="canary"
+        )
+    }
+    monkeypatch.setattr(
+        hp,
+        "PPII_SCENARIO_B_STATES",
+        {n: {"guard_failure": hp._guard_failure_label([g])} for n, g in PPII_SCENARIO_B_GUARD_MAP.items()},
+    )
+    fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {}, mode="canary")
+    assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK"
+    assert artifact["states"][name]["no_variation_flag"] is True
+    assert artifact["states"][name]["no_variation_flag_gates_verdict"] is False
+
+
+def test_build_ppii_scarcity_perturbation_artifact_canary_invariant_violation_still_hard_fails(tmp_path, monkeypatch):
+    # An exact bound violation is never acceptable regardless of mode --
+    # canary's relaxed no-variation tolerance must not also relax this.
+    monkeypatch.setattr(hp, "OUT_DIR", tmp_path)
+    name = hp.PPII_SCENARIO_B_CANARY_STATE
+    results = {
+        name: _scarcity_result_for(
+            name,
+            [PPII_SCENARIO_B_GUARD_MAP[name]],
+            seeds_vary=True,
+            violations=[{"seed": 1000, "reason": "mass_conservation"}],
+            mode="canary",
+        )
+    }
+    monkeypatch.setattr(
+        hp,
+        "PPII_SCENARIO_B_STATES",
+        {n: {"guard_failure": hp._guard_failure_label([g])} for n, g in PPII_SCENARIO_B_GUARD_MAP.items()},
+    )
+    fixture = {"__fixture_path__": "x", "__fixture_sha256__": "y"}
+    artifact = hp.build_ppii_scarcity_perturbation_artifact(results, fixture, {}, mode="canary")
+    assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_CANARY_INVARIANT_VIOLATION"
 
 
 def test_build_macromol_perturbation_artifact_observed_stochastic_when_clean():
@@ -1409,3 +1588,350 @@ def test_harness_files_are_tracked_and_hashable():
     assert len(hashes) == len(hp.HARNESS_FILES)
     for v in hashes.values():
         assert len(v) == 64
+
+
+# ---------------------------------------------------------------------------
+# _resolve_wholecell_src_root: explicit WholeCell root resolution, no
+# ambient/hardcoded fallback (Opus5 turn-4 correction 2).
+# ---------------------------------------------------------------------------
+
+
+def _make_fake_wholecell_root(base_dir, content="% fake RandStream.m for tests\n"):
+    root = base_dir / "fake_wholecell_src"
+    pkg_dir = root / "+edu" / "+stanford" / "+covert" / "+util"
+    pkg_dir.mkdir(parents=True, exist_ok=True)
+    (pkg_dir / "RandStream.m").write_text(content, encoding="utf-8")
+    return root
+
+
+def test_resolve_wholecell_src_root_raises_when_neither_arg_nor_env_var_set(monkeypatch):
+    monkeypatch.delenv(hp.WHOLECELL_SRC_ROOT_ENV_VAR, raising=False)
+    with pytest.raises(FileNotFoundError, match="not resolved"):
+        hp._resolve_wholecell_src_root(None)
+
+
+def test_resolve_wholecell_src_root_uses_explicit_arg(tmp_path):
+    root = _make_fake_wholecell_root(tmp_path)
+    resolved = hp._resolve_wholecell_src_root(str(root))
+    assert resolved == root
+
+
+def test_resolve_wholecell_src_root_uses_env_var_when_no_explicit_arg(tmp_path, monkeypatch):
+    root = _make_fake_wholecell_root(tmp_path)
+    monkeypatch.setenv(hp.WHOLECELL_SRC_ROOT_ENV_VAR, str(root))
+    resolved = hp._resolve_wholecell_src_root(None)
+    assert resolved == root
+
+
+def test_resolve_wholecell_src_root_explicit_arg_takes_precedence_over_env_var(tmp_path, monkeypatch):
+    root = _make_fake_wholecell_root(tmp_path / "explicit_root")
+    wrong_root = tmp_path / "env_root_wrong"
+    wrong_root.mkdir()
+    monkeypatch.setenv(hp.WHOLECELL_SRC_ROOT_ENV_VAR, str(wrong_root))
+    resolved = hp._resolve_wholecell_src_root(str(root))
+    assert resolved == root
+
+
+def test_resolve_wholecell_src_root_raises_when_randstream_missing_at_root(tmp_path, monkeypatch):
+    monkeypatch.delenv(hp.WHOLECELL_SRC_ROOT_ENV_VAR, raising=False)
+    wrong_root = tmp_path / "no_randstream_here"
+    wrong_root.mkdir()
+    with pytest.raises(FileNotFoundError, match="RandStream"):
+        hp._resolve_wholecell_src_root(str(wrong_root))
+
+
+# ---------------------------------------------------------------------------
+# _validate_randstream_provenance: independent re-verification against the
+# vendored data/karr_vendored_source/RandStream.m hash (Opus5 turn-4
+# corrections 2/3).
+# ---------------------------------------------------------------------------
+
+
+def test_validate_randstream_provenance_accepts_matching_vendored_hash():
+    vendored_hash = hp._sha256_lf_normalized(hp.VENDORED_RANDSTREAM_PATH)
+    record = {
+        "randstream_runtime_path": str(hp.VENDORED_RANDSTREAM_PATH),
+        "randstream_runtime_sha256_lf_normalized": vendored_hash,
+    }
+    hp._validate_randstream_provenance(record, context="test")  # must not raise
+
+
+def test_validate_randstream_provenance_rejects_hash_mismatch():
+    record = {
+        "randstream_runtime_path": str(hp.VENDORED_RANDSTREAM_PATH),
+        "randstream_runtime_sha256_lf_normalized": "f" * 64,
+    }
+    with pytest.raises(ValueError, match="does not match the vendored"):
+        hp._validate_randstream_provenance(record, context="test")
+
+
+def test_validate_randstream_provenance_rejects_missing_path():
+    record = {"randstream_runtime_sha256_lf_normalized": hp._sha256_lf_normalized(hp.VENDORED_RANDSTREAM_PATH)}
+    with pytest.raises(ValueError, match="randstream_runtime_path missing"):
+        hp._validate_randstream_provenance(record, context="test")
+
+
+def test_validate_randstream_provenance_rejects_missing_hash():
+    record = {"randstream_runtime_path": str(hp.VENDORED_RANDSTREAM_PATH)}
+    with pytest.raises(ValueError, match="randstream_runtime_sha256_lf_normalized missing"):
+        hp._validate_randstream_provenance(record, context="test")
+
+
+# ---------------------------------------------------------------------------
+# _validate_matlab_probe_result: independent structured-result validation,
+# never trusting a bare MATLAB exit code (Opus5 turn-4 corrections 1/3).
+# ---------------------------------------------------------------------------
+
+
+def _valid_probe_result_template():
+    return {
+        "is_octave": False,
+        "overall_pass": True,
+        "statistics_toolbox_licensed": True,
+        "statistics_toolbox_installed": True,
+        "randstream_class_found": True,
+        "randstream_constructs": True,
+        "randstream_runtime_path": str(hp.VENDORED_RANDSTREAM_PATH),
+        "randstream_runtime_sha256_lf_normalized": hp._sha256_lf_normalized(hp.VENDORED_RANDSTREAM_PATH),
+        "mnrnd_shape_test_status": "pass",
+        "wholecell_src_root_used": "some/root",
+    }
+
+
+def test_validate_matlab_probe_result_missing_field_raises():
+    result = _valid_probe_result_template()
+    del result["randstream_class_found"]
+    with pytest.raises(ValueError, match="missing required field"):
+        hp._validate_matlab_probe_result(result)
+
+
+def test_validate_matlab_probe_result_rejects_octave():
+    result = _valid_probe_result_template()
+    result["is_octave"] = True
+    with pytest.raises(ValueError, match="is_octave=true"):
+        hp._validate_matlab_probe_result(result)
+
+
+def test_validate_matlab_probe_result_rejects_overall_pass_false():
+    result = _valid_probe_result_template()
+    result["overall_pass"] = False
+    with pytest.raises(ValueError, match="overall_pass=false"):
+        hp._validate_matlab_probe_result(result)
+
+
+def test_validate_matlab_probe_result_rejects_invalid_mnrnd_status():
+    result = _valid_probe_result_template()
+    result["mnrnd_shape_test_status"] = "bogus"
+    with pytest.raises(ValueError, match="unexpected mnrnd_shape_test_status"):
+        hp._validate_matlab_probe_result(result)
+
+
+def test_validate_matlab_probe_result_rejects_randstream_hash_mismatch():
+    result = _valid_probe_result_template()
+    result["randstream_runtime_sha256_lf_normalized"] = "0" * 64
+    with pytest.raises(ValueError, match="does not match the vendored"):
+        hp._validate_matlab_probe_result(result)
+
+
+def test_validate_matlab_probe_result_mnrnd_pass_permits_full_mode():
+    result = hp._validate_matlab_probe_result(_valid_probe_result_template())
+    assert result["full_mode_permitted"] is True
+    assert "full_mode_hard_blocked_reason" not in result
+
+
+def test_validate_matlab_probe_result_mnrnd_error_hard_blocks_full_mode_only():
+    # Pre-registered per Opus5 turn-4 correction 1: an 'error' mnrnd shape
+    # result is a genuine Karr dormant-source defect, recorded (not fixed
+    # post hoc), and hard-blocks FULL mode only -- overall_pass may still
+    # be True (basic environment readiness is otherwise fine).
+    result = _valid_probe_result_template()
+    result["mnrnd_shape_test_status"] = "error"
+    validated = hp._validate_matlab_probe_result(result)
+    assert validated["full_mode_permitted"] is False
+    assert "Karr dormant-source defect" in validated["full_mode_hard_blocked_reason"]
+
+
+def test_validate_matlab_probe_result_mnrnd_not_run_does_not_permit_full_mode():
+    result = _valid_probe_result_template()
+    result["mnrnd_shape_test_status"] = "not_run"
+    validated = hp._validate_matlab_probe_result(result)
+    assert validated["full_mode_permitted"] is False
+
+
+# ---------------------------------------------------------------------------
+# probe_matlab_environment: subprocess is mocked (no live MATLAB) -- these
+# tests exercise the "never trust a bare exit code" contract (Opus5 turn-4
+# correction 3) and the WholeCell-root-required gate (correction 2).
+# ---------------------------------------------------------------------------
+
+
+def _fake_subprocess_run_writing(json_obj_or_none, returncode=0):
+    def _fake_run(cmd, cwd=None, capture_output=None, text=None, timeout=None, env=None):
+        if json_obj_or_none is not None:
+            out_path = Path(env["PPII_PROBE_RESULT_JSON"])
+            out_path.parent.mkdir(parents=True, exist_ok=True)
+            out_path.write_text(json.dumps(json_obj_or_none), encoding="utf-8")
+        return subprocess.CompletedProcess(cmd, returncode, stdout="", stderr="")
+
+    return _fake_run
+
+
+def test_probe_matlab_environment_requires_wholecell_root(monkeypatch):
+    monkeypatch.delenv(hp.WHOLECELL_SRC_ROOT_ENV_VAR, raising=False)
+    with pytest.raises(FileNotFoundError, match="not resolved"):
+        hp.probe_matlab_environment(wholecell_src_root=None)
+
+
+def test_probe_matlab_environment_raises_when_no_result_json_produced(tmp_path, monkeypatch):
+    root = _make_fake_wholecell_root(tmp_path)
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    monkeypatch.setattr(hp, "PROBE_RESULT_PATH", tmp_path / "matlab_probe_result.json")
+    monkeypatch.setattr(hp.subprocess, "run", _fake_subprocess_run_writing(None, returncode=0))
+    with pytest.raises(RuntimeError, match="produced no result JSON"):
+        hp.probe_matlab_environment(wholecell_src_root=str(root))
+
+
+def test_probe_matlab_environment_never_trusts_bare_exit_code(tmp_path, monkeypatch):
+    # Inversion test (Opus5 turn-4 correction 3): exit code 0 but the
+    # structured result itself reports overall_pass=false must still raise.
+    root = _make_fake_wholecell_root(tmp_path)
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    monkeypatch.setattr(hp, "PROBE_RESULT_PATH", tmp_path / "matlab_probe_result.json")
+    failing_result = _valid_probe_result_template()
+    failing_result["overall_pass"] = False
+    monkeypatch.setattr(hp.subprocess, "run", _fake_subprocess_run_writing(failing_result, returncode=0))
+    with pytest.raises(ValueError, match="overall_pass=false"):
+        hp.probe_matlab_environment(wholecell_src_root=str(root))
+
+
+def test_probe_matlab_environment_returns_validated_result_when_consistent(tmp_path, monkeypatch):
+    root = _make_fake_wholecell_root(tmp_path)
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    monkeypatch.setattr(hp, "PROBE_RESULT_PATH", tmp_path / "matlab_probe_result.json")
+    monkeypatch.setattr(
+        hp.subprocess, "run", _fake_subprocess_run_writing(_valid_probe_result_template(), returncode=0)
+    )
+    result = hp.probe_matlab_environment(wholecell_src_root=str(root))
+    assert result["overall_pass"] is True
+    assert result["full_mode_permitted"] is True
+
+
+# ---------------------------------------------------------------------------
+# run_matlab_scenario_b gating on a prior validated probe result (Opus5
+# turn-4 correction 1).
+# ---------------------------------------------------------------------------
+
+
+def test_run_matlab_scenario_b_requires_prior_probe_result(tmp_path, monkeypatch):
+    root = _make_fake_wholecell_root(tmp_path)
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    monkeypatch.setattr(hp, "PROBE_RESULT_PATH", tmp_path / "matlab_probe_result.json")
+
+    def _boom(*args: object, **kwargs: object) -> None:
+        raise AssertionError("matlab must never be invoked without a prior validated probe result")
+
+    monkeypatch.setattr(hp.subprocess, "run", _boom)
+    with pytest.raises(RuntimeError, match="run probe_matlab_environment"):
+        hp.run_matlab_scenario_b(canary=True, wholecell_src_root=str(root))
+
+
+def test_run_matlab_scenario_b_full_mode_hard_blocked_by_mnrnd_error_probe(tmp_path, monkeypatch):
+    root = _make_fake_wholecell_root(tmp_path)
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    probe_path = tmp_path / "matlab_probe_result.json"
+    monkeypatch.setattr(hp, "PROBE_RESULT_PATH", probe_path)
+    blocked_result = _valid_probe_result_template()
+    blocked_result["mnrnd_shape_test_status"] = "error"
+    hp._write_json(probe_path, blocked_result)
+
+    def _boom(*args: object, **kwargs: object) -> None:
+        raise AssertionError("matlab must never be invoked in full mode when full_mode_permitted is False")
+
+    monkeypatch.setattr(hp.subprocess, "run", _boom)
+    with pytest.raises(RuntimeError, match="HARD-BLOCKED"):
+        hp.run_matlab_scenario_b(canary=False, wholecell_src_root=str(root))
+
+
+def test_run_matlab_scenario_b_canary_mode_not_blocked_by_mnrnd_error_probe(tmp_path, monkeypatch):
+    # Canary-mode plumbing runs remain permitted even when the mnrnd shape
+    # probe recorded 'error' -- only full mode is hard-blocked by it (Opus5
+    # turn-4 correction 1).
+    root = _make_fake_wholecell_root(tmp_path)
+    monkeypatch.setattr(hp, "RAW_DIR", tmp_path)
+    probe_path = tmp_path / "matlab_probe_result.json"
+    monkeypatch.setattr(hp, "PROBE_RESULT_PATH", probe_path)
+    blocked_result = _valid_probe_result_template()
+    blocked_result["mnrnd_shape_test_status"] = "error"
+    hp._write_json(probe_path, blocked_result)
+
+    monkeypatch.setattr(hp.subprocess, "run", _fake_subprocess_run_writing(None, returncode=0))
+    hp.run_matlab_scenario_b(canary=True, wholecell_src_root=str(root))  # must not raise
+
+
+# ---------------------------------------------------------------------------
+# Lossless CSV output: dlmwrite('precision','%.17g'), never csvwrite
+# (Opus5 turn-4 correction 4).
+# ---------------------------------------------------------------------------
+
+
+def test_run_ppii_scenario_b_matlab_uses_lossless_dlmwrite_not_csvwrite():
+    source = (hp.MATLAB_DIR / "run_ppii_scenario_b_matlab.m").read_text(encoding="utf-8")
+    assert "csvwrite(" not in source
+    assert "dlmwrite(" in source
+    assert "%.17g" in source
+
+
+def test_percent_17g_format_round_trips_141888_and_other_scenario_b_constants():
+    # 141888 is the substrates_water value in the peptidase_capacity_scarce
+    # state -- large enough that a lossy default format (e.g. %10.5g, which
+    # csvwrite uses) would NOT round-trip it exactly (it would come back as
+    # 1.4189e+05 -> 141890, not 141888). '%.17g' (17 significant digits) is
+    # sufficient to round-trip any IEEE-754 double exactly; this test
+    # verifies that property in Python (dlmwrite's actual MATLAB-side
+    # behavior is exercised only once real execution is authorized).
+    values = [141888.0, 372.0, 58.0, 1000.0, 100.0, 2.0, 0.0, 1.0 / 3.0, 1e17, -141888.0]
+    for v in values:
+        formatted = f"{v:.17g}"
+        assert float(formatted) == v, f"{v!r} did not round-trip through %.17g formatting"
+
+
+def test_probe_matlab_environment_m_writes_json_before_erroring_on_overall_pass_false():
+    # Source-inspection test (Opus5 turn-4 correction 3): the .m script
+    # must call write_probe_result_json(report) BEFORE calling error(...)
+    # on overall_pass=false, so the JSON file always exists even on
+    # failure for Python to independently re-validate.
+    source = (hp.MATLAB_DIR / "probe_matlab_environment.m").read_text(encoding="utf-8")
+    write_idx = source.index("write_probe_result_json(report)")
+    error_idx = source.index("error('probe_matlab_environment:overallFail'")
+    assert write_idx < error_idx
+
+
+def test_probe_matlab_environment_m_reads_wholecell_root_from_env_var_only():
+    # Source-inspection test (Opus5 turn-4 correction 2): no hardcoded
+    # WholeCell src path may remain in the .m probe script.
+    source = (hp.MATLAB_DIR / "probe_matlab_environment.m").read_text(encoding="utf-8")
+    assert "PPII_WHOLECELL_SRC_ROOT" in source
+    assert "m1_sources" not in source, "no ambient/hardcoded WholeCell path may remain"
+
+
+def test_run_ppii_scenario_b_matlab_m_reads_wholecell_root_from_env_var_only():
+    source = (hp.MATLAB_DIR / "run_ppii_scenario_b_matlab.m").read_text(encoding="utf-8")
+    assert "getenv('PPII_WHOLECELL_SRC_ROOT')" in source
+    assert "'WholeCell', 'src'" not in source, "no ambient/hardcoded WholeCell path may remain"
+
+
+def test_probe_matlab_environment_m_includes_mnrnd_shape_probe():
+    source = (hp.MATLAB_DIR / "probe_matlab_environment.m").read_text(encoding="utf-8")
+    assert "mnrnd(3, [0.5; 0.5])" in source
+    assert "mnrnd_shape_test_status" in source
+
+
+def test_run_ppii_scenario_b_matlab_m_never_transposes_evolvestate_transcription():
+    # Opus5 turn-4 correction 1: do not transpose/fix the verbatim
+    # evolveState transcription post hoc in response to the mnrnd probe --
+    # confirm evolveState_ppii_matlab.m (the file this correction forbids
+    # editing) was not touched by inspecting it still calls the exact
+    # documented shape.
+    source = (hp.MATLAB_DIR / "evolveState_ppii_matlab.m").read_text(encoding="utf-8")
+    assert "mnrnd(" in source
+

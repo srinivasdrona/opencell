@@ -10,9 +10,19 @@
 % edu.stanford.covert.util.RandStream cannot be constructed. There is no
 % code path in this file that silently substitutes a stub/scaffold RNG.
 %
+% The WholeCell src root (containing +edu/+stanford/+covert/+util/
+% RandStream.m) is read ONLY from the PPII_WHOLECELL_SRC_ROOT environment
+% variable -- there is NO ambient/hardcoded fallback path (Opus5 turn-4
+% correction 2). The resolved RandStream runtime path and an LF-normalized
+% SHA-256 hash of that file are recorded in every state's run-manifest so
+% Python can independently cross-check them against the vendored copy at
+% data/karr_vendored_source/RandStream.m.
+%
 % Mode is selected via the PPII_SCENARIO_B_MODE environment variable:
 %   'canary' -> transferase_capacity_scarce state only, its pre-registered
-%               canary seed prefix (5 seeds)
+%               canary seed prefix (20 seeds -- widened per Opus5 turn-4
+%               correction 5; still an explicit prefix/subset of that
+%               state's own 50-seed full block, never a separate range)
 %   'full'   -> all 5 states, each state's full pre-registered seed block
 %               (50 seeds each)
 %   (unset)  -> ERROR (mode must always be explicit; there is no silent
@@ -29,23 +39,32 @@
 % sync). This driver reads the frozen seed list, but never recomputes or
 % overrides it.
 %
+% Output CSVs use dlmwrite(...,'precision','%.17g') (Opus5 turn-4
+% correction 4), NOT csvwrite, so every double (including large exact
+% values like the 141888 substrates_water constant) round-trips losslessly.
+%
 % NOT INVOKED by anything in this commit. Execution requires explicit
 % follow-up authorization: first probe_matlab_environment.m (parse/
-% license/toolbox preflight, authorized separately), then this driver in
-% 'canary' mode (Opus5 review of this code/spec commit), then 'full' mode
-% (GPT-5.6 Sol authorization after canary review). See
-% PERTURBATION_SPEC.json scenario_b_execution_status.
+% license/toolbox/RandStream/mnrnd-shape preflight, authorized separately),
+% then this driver in 'canary' mode (Opus5 review of this code/spec
+% commit), then 'full' mode (GPT-5.6 Sol authorization after canary
+% review). See PERTURBATION_SPEC.json scenario_b_execution_status.
 function run_ppii_scenario_b_matlab()
 
 this_dir = fileparts(mfilename('fullpath'));
 repo_root = fullfile(this_dir, '..', '..');
 state_dir = fullfile(repo_root, 'data', 'm1_sources', 'karr_native', 'h12_perturbation_traces');
-wholecell_src = fullfile(repo_root, 'data', 'm1_sources', 'WholeCell', 'src');
+wholecell_src = getenv('PPII_WHOLECELL_SRC_ROOT');
 
 % ---- Abort criteria: no stub fallback for any of these ----
 if exist('OCTAVE_VERSION', 'builtin') ~= 0
     error('run_ppii_scenario_b_matlab:notMatlab', ...
         'This driver requires genuine MATLAB (Octave detected). Aborting: no stub fallback is permitted.');
+end
+if isempty(wholecell_src)
+    error('run_ppii_scenario_b_matlab:noWholeCellSrcRoot', ...
+        ['PPII_WHOLECELL_SRC_ROOT environment variable is not set. Aborting: no ambient/default ', ...
+         'WholeCell src root is assumed (Opus5 turn-4 correction 2).']);
 end
 if license('test', 'Statistics_Toolbox') ~= 1
     error('run_ppii_scenario_b_matlab:noStatisticsToolbox', ...
@@ -73,6 +92,13 @@ catch probeErr
         probeErr.message);
 end
 randstream_class_confirmed = true;
+% Recorded once (same for the whole driver run) so Python can
+% independently cross-check the runtime RandStream against the vendored
+% copy at data/karr_vendored_source/RandStream.m -- never trusting
+% randstream_class_confirmed's boolean self-report alone (Opus5 turn-4
+% correction 2).
+randstream_runtime_path = which('edu.stanford.covert.util.RandStream');
+randstream_runtime_sha256_lf_normalized = sha256_file_lf_normalized(randstream_runtime_path);
 
 mode = getenv('PPII_SCENARIO_B_MODE');
 if isempty(mode) || ~(strcmp(mode, 'canary') || strcmp(mode, 'full'))
@@ -134,7 +160,11 @@ for i = 1:numel(state_names)
     end
 
     out_csv = fullfile(state_dir, ['ppii_scenario_b_', name, '_after.csv']);
-    csvwrite(out_csv, out);
+    % Lossless integer/float output (Opus5 turn-4 correction 4): csvwrite
+    % uses a lossy default format (e.g. would round a value like 141888
+    % through %10.5g and fail to round-trip exactly); dlmwrite with
+    % 'precision','%.17g' round-trips every double exactly.
+    dlmwrite(out_csv, out, 'precision', '%.17g');
 
     manifest = struct();
     manifest.state_name = name;
@@ -144,6 +174,9 @@ for i = 1:numel(state_names)
     manifest.matlab_version = version();
     manifest.statistics_toolbox_licensed = true;
     manifest.randstream_class_confirmed = randstream_class_confirmed;
+    manifest.wholecell_src_root_used = wholecell_src;
+    manifest.randstream_runtime_path = randstream_runtime_path;
+    manifest.randstream_runtime_sha256_lf_normalized = randstream_runtime_sha256_lf_normalized;
     manifest.harness_file = 'evolveState_ppii_matlab.m';
     manifest.harness_sha256_lf_normalized = harness_sha256;
     manifest.state_file_sha256_lf_normalized = actual_state_hash;

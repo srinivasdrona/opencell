@@ -79,6 +79,24 @@ OUT_DIR = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "h12" / "perturbati
 RAW_DIR = REPO_ROOT / "data" / "m1_sources" / "karr_native" / "h12_perturbation_traces"
 OCTAVE_DIR = REPO_ROOT / "scripts" / "octave_h12_perturbation"
 MATLAB_DIR = REPO_ROOT / "scripts" / "matlab_h12_perturbation"
+VENDORED_RANDSTREAM_PATH = REPO_ROOT / "data" / "karr_vendored_source" / "RandStream.m"
+
+# Named environment variable Python/MATLAB use to explicitly resolve the
+# WholeCell `src/` root containing `+edu/+stanford/+covert/+util/
+# RandStream.m` -- there is NO ambient/hardcoded fallback path (Opus5
+# turn-4 correction 2: the prior probe/driver silently assumed
+# data/m1_sources/WholeCell/src, a path that does not exist in this repo,
+# which would have made "class not found" indistinguishable from "wrong/
+# missing root"). Callers must pass --wholecell-src-root explicitly or set
+# this environment variable; there is no other resolution path.
+WHOLECELL_SRC_ROOT_ENV_VAR = "OPENCELL_WHOLECELL_SRC_ROOT"
+
+# Path Python writes the MATLAB preflight probe's structured JSON result to
+# (and the same path is passed to MATLAB via PPII_PROBE_RESULT_JSON so both
+# sides agree on the location without a second hardcoded constant in the
+# .m file). Also the file run_matlab_scenario_b() reads back to decide
+# whether full-mode execution is permitted (Opus5 turn-4 correction 1).
+PROBE_RESULT_PATH = RAW_DIR / "matlab_probe_result.json"
 
 HARNESS_FILES = [
     "evolveState_ppii.m",
@@ -198,7 +216,15 @@ PPII_SCENARIO_B_STATES = {
 }
 
 PPII_SCENARIO_B_CANARY_STATE = "transferase_capacity_scarce"
-PPII_SCENARIO_B_CANARY_SEED_COUNT = 5
+# Widened 5 -> 20 (Opus5 turn-4 correction 5, adopted): still an explicit
+# PREFIX/SUBSET of the canary state's own 50-seed block (1000-1019 of
+# 1000-1049), never a separate range. A canary run that shows
+# seeds_vary=False over these 20 seeds is NOT treated as a canary failure
+# (see build_ppii_scarcity_perturbation_artifact's canary-mode verdict
+# branch) -- canary mode makes no distributional claim; widening merely
+# gives the plumbing run a somewhat better chance of also incidentally
+# showing variation, which is informative but not required.
+PPII_SCENARIO_B_CANARY_SEED_COUNT = 20
 PPII_SCENARIO_B_FULL_SEED_COUNT = 50
 
 # Disjoint, pre-registered per-state MATLAB RandStream seed blocks. NEVER
@@ -234,6 +260,121 @@ def _sha256_lf_normalized(path: Path) -> str:
     data = path.read_bytes()
     normalized = data.replace(b"\r\n", b"\n").replace(b"\r", b"\n")
     return hashlib.sha256(normalized).hexdigest()
+
+
+def _hash_canonical(obj: dict) -> str:
+    """SHA-256 over a canonical (sorted-key) JSON serialization of `obj` --
+    used to self-bind a frozen prediction record's `before_state` block
+    (see freeze_ppii_scenario_b_predictions/ingest_ppii_scenario_b) so a
+    hand-edited/corrupted before-state array is detectable even though it
+    lives inside the same JSON file as its own hash.
+    """
+    return hashlib.sha256(json.dumps(obj, sort_keys=True).encode("utf-8")).hexdigest()
+
+
+def _resolve_wholecell_src_root(explicit: str | None = None) -> Path:
+    """Explicitly resolve the WholeCell MATLAB `src/` root that must
+    contain `+edu/+stanford/+covert/+util/RandStream.m` (Karr's real
+    RandStream class). Resolution order:
+      1. `explicit` (e.g. from --wholecell-src-root)
+      2. the OPENCELL_WHOLECELL_SRC_ROOT environment variable
+    There is NO ambient/default candidate path guessed here -- this
+    corrects the prior probe/driver behavior of silently assuming
+    data/m1_sources/WholeCell/src (a path that does not exist in this
+    repo), per Opus5 turn-4 correction 2. Raises FileNotFoundError if
+    neither is given, or if the resolved root does not contain
+    RandStream.m at the expected package-qualified relative path.
+    """
+    candidate = explicit or os.environ.get(WHOLECELL_SRC_ROOT_ENV_VAR)
+    if not candidate:
+        raise FileNotFoundError(
+            "WholeCell src root not resolved: pass --wholecell-src-root explicitly or set the "
+            f"{WHOLECELL_SRC_ROOT_ENV_VAR} environment variable. No ambient/default path is assumed "
+            "(Opus5 turn-4 correction 2)."
+        )
+    root = Path(candidate)
+    randstream_rel = Path("+edu") / "+stanford" / "+covert" / "+util" / "RandStream.m"
+    if not (root / randstream_rel).is_file():
+        raise FileNotFoundError(
+            f"WholeCell src root {root} does not contain the expected "
+            f"{randstream_rel.as_posix()} (edu.stanford.covert.util.RandStream) -- resolution failed."
+        )
+    return root
+
+
+def _validate_randstream_provenance(record: dict, context: str) -> None:
+    """Cross-checks a MATLAB-reported RandStream runtime path/hash (from
+    either a probe-result JSON or a per-state run-manifest) against the
+    vendored data/karr_vendored_source/RandStream.m hash. This is an
+    INDEPENDENT Python-side re-verification -- it never trusts MATLAB's own
+    self-reported pass/fail alone (Opus5 turn-4 corrections 2 and 3).
+    Raises ValueError on any missing field or hash mismatch.
+    """
+    vendored_hash = _sha256_lf_normalized(VENDORED_RANDSTREAM_PATH)
+    runtime_path = record.get("randstream_runtime_path")
+    runtime_hash = record.get("randstream_runtime_sha256_lf_normalized")
+    if not runtime_path:
+        raise ValueError(f"{context}: randstream_runtime_path missing/empty -- RandStream class not resolved")
+    if not runtime_hash:
+        raise ValueError(f"{context}: randstream_runtime_sha256_lf_normalized missing/empty")
+    if runtime_hash != vendored_hash:
+        raise ValueError(
+            f"{context}: runtime RandStream source hash {runtime_hash!r} at {runtime_path!r} does not "
+            f"match the vendored data/karr_vendored_source/RandStream.m hash {vendored_hash!r} -- refusing "
+            "to trust this as genuine-Karr-RandStream evidence"
+        )
+
+
+_REQUIRED_PROBE_RESULT_FIELDS = (
+    "is_octave",
+    "overall_pass",
+    "statistics_toolbox_licensed",
+    "statistics_toolbox_installed",
+    "randstream_class_found",
+    "randstream_constructs",
+    "randstream_runtime_path",
+    "randstream_runtime_sha256_lf_normalized",
+    "mnrnd_shape_test_status",
+    "wholecell_src_root_used",
+)
+
+
+def _validate_matlab_probe_result(probe_result: dict) -> dict:
+    """Independently re-validates an already-parsed MATLAB probe-result
+    JSON dict -- never trusts MATLAB's own overall_pass alone (Opus5
+    turn-4 correction 3). Raises ValueError on any missing required field,
+    is_octave=true, overall_pass=false, or a RandStream runtime hash/path
+    mismatch against the vendored RandStream.m. Mutates and returns
+    `probe_result` with an added `full_mode_permitted` flag: True only if
+    overall_pass AND the mnrnd column-vector shape test status is 'pass'.
+    A 'error' mnrnd_shape_test_status is a genuine Karr dormant-source
+    defect (verbatim evolveState_ppii_matlab.m calls
+    this.randStream.mnrnd(n, columnVector) unmodified) that hard-blocks
+    full mode ONLY -- it does not, by itself, fail canary-mode readiness
+    (Opus5 turn-4 correction 1).
+    """
+    missing = [f for f in _REQUIRED_PROBE_RESULT_FIELDS if f not in probe_result]
+    if missing:
+        raise ValueError(f"MATLAB probe result missing required field(s): {missing!r}")
+    if probe_result["is_octave"]:
+        raise ValueError("MATLAB probe result reports is_octave=true -- Octave is never acceptable for Scenario B")
+    if not probe_result["overall_pass"]:
+        raise ValueError(f"MATLAB probe result reports overall_pass=false: {probe_result!r}")
+    if probe_result["mnrnd_shape_test_status"] not in ("pass", "error", "not_run"):
+        raise ValueError(f"unexpected mnrnd_shape_test_status {probe_result['mnrnd_shape_test_status']!r}")
+    _validate_randstream_provenance(probe_result, context="probe_matlab_environment result")
+    probe_result["full_mode_permitted"] = (
+        bool(probe_result["overall_pass"]) and probe_result["mnrnd_shape_test_status"] == "pass"
+    )
+    if probe_result["mnrnd_shape_test_status"] == "error":
+        probe_result["full_mode_hard_blocked_reason"] = (
+            "mnrnd(3,[0.5;0.5]) column-vector shape test raised an error under genuine MATLAB -- recorded "
+            "as a Karr dormant-source defect (verbatim evolveState_ppii_matlab.m calls "
+            "this.randStream.mnrnd(n, columnVector) unmodified, never transposed/fixed post hoc). Full mode "
+            "is hard-blocked until this is independently resolved; canary-mode plumbing runs remain "
+            "permitted."
+        )
+    return probe_result
 
 
 def _load_spec() -> dict:
@@ -456,6 +597,15 @@ def freeze_ppii_scenario_b_predictions(states: dict, state_paths: dict, fixture:
     reads this same file, but ONLY for its `mode_seeds`/`state_file_
     sha256` fields (never the `prediction` field, which it does not need
     and must not consult to produce its own output).
+
+    Also freezes the COMPLETE conditioned before-state arrays
+    (`before_state`) plus a self-binding hash (`before_state_sha256`) of
+    that block, per Opus5 turn-4 correction 6: `ingest_ppii_scenario_b`
+    must evaluate invariants against THIS frozen before-state, verified
+    against its own recorded hash, and must never rebuild it from the
+    mutable module-level PPII_SCENARIO_B_STATES dict after MATLAB raw
+    output exists (that dict could, in principle, be edited between
+    freeze time and ingest time).
     """
     out_paths = {}
     for name, state in states.items():
@@ -464,11 +614,20 @@ def freeze_ppii_scenario_b_predictions(states: dict, state_paths: dict, fixture:
         mode_seeds = {"full": list(PPII_SCENARIO_B_SEED_BLOCKS[name])}
         if name == PPII_SCENARIO_B_CANARY_STATE:
             mode_seeds["canary"] = list(PPII_SCENARIO_B_CANARY_SEEDS)
+        before_state = {
+            "unprocessedMonomers": state["unprocessedMonomers"].tolist(),
+            "processedMonomers": state["processedMonomers"].tolist(),
+            "signalSequenceMonomers": state["signalSequenceMonomers"].tolist(),
+            "enzymes": state["enzymes"].tolist(),
+            "substrates": state["substrates"].tolist(),
+        }
         frozen = {
             "state_name": name,
             "mode_seeds": mode_seeds,
             "state_file": state_path.name,
             "state_file_sha256": _sha256_lf_normalized(state_path),
+            "before_state": before_state,
+            "before_state_sha256": _hash_canonical(before_state),
             "prediction": prediction,
             "frozen_at_utc": datetime.now(timezone.utc).isoformat(),
         }
@@ -606,25 +765,52 @@ def run_octave_scenario(script_name: str) -> None:
         raise RuntimeError(f"octave {script_name} failed with exit code {result.returncode}")
 
 
-def run_matlab_scenario_b(canary: bool) -> None:
+def run_matlab_scenario_b(canary: bool, wholecell_src_root: str | None = None) -> None:
     """Invoke run_ppii_scenario_b_matlab.m (genuine local MATLAB, NOT
-    Octave) in either canary mode (1 state x 5 seeds) or full mode (5
-    states x 50 seeds), selected via the PPII_SCENARIO_B_MODE environment
-    variable the .m driver reads. Uses MATLAB's `-batch` mode (no display,
-    no desktop, non-interactive, nonzero exit code on any uncaught error)
-    -- there is NO stub/fallback engine selection here; if `matlab` is not
-    on PATH or the driver itself aborts (missing Statistics Toolbox/
-    RandStream, see run_ppii_scenario_b_matlab.m), this raises.
+    Octave) in either canary mode (1 state x its 20-seed canary prefix) or
+    full mode (5 states x 50 seeds), selected via the PPII_SCENARIO_B_MODE
+    environment variable the .m driver reads. Uses MATLAB's `-batch` mode
+    (no display, no desktop, non-interactive, nonzero exit code on any
+    uncaught error) -- there is NO stub/fallback engine selection here; if
+    `matlab` is not on PATH or the driver itself aborts (missing
+    Statistics Toolbox/RandStream, see run_ppii_scenario_b_matlab.m), this
+    raises.
+
+    Requires (Opus5 turn-4 corrections 1 and 2):
+      - an explicitly resolved WholeCell src root (see
+        _resolve_wholecell_src_root) -- no ambient default path;
+      - a PREVIOUSLY-RUN, independently-validated probe result at
+        PROBE_RESULT_PATH (see probe_matlab_environment()/
+        _validate_matlab_probe_result) -- this function refuses to run
+        MATLAB at all if no probe result exists yet;
+      - for full mode ONLY: the probe result's `full_mode_permitted` must
+        be True (i.e. the mnrnd column-vector shape test must have
+        reported 'pass', not 'error') -- an 'error' result is a genuine
+        Karr dormant-source defect that HARD-BLOCKS full mode. Canary
+        mode is not gated on this sub-result, only on overall_pass.
 
     NOT CALLED by anything in this commit -- implemented so canary/full
     execution is a single, reviewable, pre-registered code path ready for
     invocation only after explicit GPT-5.6 Sol authorization following
-    Opus5 review (see PERTURBATION_SPEC.json scenario_b_execution_status),
-    and only after probe_matlab_environment() has been run separately to
-    confirm the target environment is usable.
+    Opus5 review (see PERTURBATION_SPEC.json scenario_b_execution_status).
     """
+    root = _resolve_wholecell_src_root(wholecell_src_root)
+    if not PROBE_RESULT_PATH.is_file():
+        raise RuntimeError(
+            f"no MATLAB probe result found at {PROBE_RESULT_PATH} -- run probe_matlab_environment() first; "
+            "canary/full execution is gated on it (Opus5 turn-4 correction 1)"
+        )
+    probe_result = _validate_matlab_probe_result(_load_json(PROBE_RESULT_PATH))
+    if not canary and not probe_result["full_mode_permitted"]:
+        raise RuntimeError(
+            "full-mode Scenario B execution is HARD-BLOCKED: the most recent probe result recorded "
+            f"mnrnd_shape_test_status={probe_result.get('mnrnd_shape_test_status')!r} "
+            f"(reason: {probe_result.get('full_mode_hard_blocked_reason', 'n/a')}). Canary-mode plumbing "
+            "runs remain permitted; only full mode is blocked (Opus5 turn-4 correction 1)."
+        )
     env = dict(os.environ)
     env["PPII_SCENARIO_B_MODE"] = "canary" if canary else "full"
+    env["PPII_WHOLECELL_SRC_ROOT"] = str(root)
     result = subprocess.run(
         ["matlab", "-batch", "run_ppii_scenario_b_matlab"],
         cwd=str(MATLAB_DIR),
@@ -642,24 +828,50 @@ def run_matlab_scenario_b(canary: bool) -> None:
         )
 
 
-def probe_matlab_environment() -> None:
+def probe_matlab_environment(wholecell_src_root: str | None = None) -> dict:
     """Invoke scripts/matlab_h12_perturbation/probe_matlab_environment.m
-    (genuine MATLAB, read-only preflight diagnostic -- writes no output
-    files, runs no evolveState code). NOT CALLED by anything in this
-    commit; this is the "parse/license/toolbox probe" step authorized
-    separately from (and strictly before) the canary run.
+    (genuine MATLAB, read-only preflight diagnostic -- writes no
+    evolveState/evidence output, only its own structured result JSON at
+    PROBE_RESULT_PATH). NOT CALLED by anything in this commit; this is the
+    "parse/license/toolbox probe" step authorized separately from (and
+    strictly before) the canary run.
+
+    Requires an explicitly resolved WholeCell src root (Opus5 turn-4
+    correction 2 -- no ambient default). Per Opus5 turn-4 correction 3,
+    this function NEVER trusts the subprocess exit code alone: it always
+    loads and independently re-validates the structured JSON result (see
+    _validate_matlab_probe_result), including cross-checking the
+    MATLAB-reported RandStream runtime hash against the vendored
+    RandStream.m, and raises if that JSON is missing/malformed/failing
+    even if MATLAB happened to exit 0.
     """
+    root = _resolve_wholecell_src_root(wholecell_src_root)
+    RAW_DIR.mkdir(parents=True, exist_ok=True)
+    env = dict(os.environ)
+    env["PPII_WHOLECELL_SRC_ROOT"] = str(root)
+    env["PPII_PROBE_RESULT_JSON"] = str(PROBE_RESULT_PATH)
     result = subprocess.run(
         ["matlab", "-batch", "probe_matlab_environment"],
         cwd=str(MATLAB_DIR),
         capture_output=True,
         text=True,
         timeout=120,
+        env=env,
     )
     sys.stdout.write(result.stdout)
     sys.stderr.write(result.stderr)
-    if result.returncode != 0:
-        raise RuntimeError(f"matlab probe_matlab_environment failed with exit code {result.returncode}")
+    if not PROBE_RESULT_PATH.is_file():
+        raise RuntimeError(
+            f"matlab probe_matlab_environment produced no result JSON at {PROBE_RESULT_PATH} (exit code "
+            f"{result.returncode}) -- refusing to trust a bare exit code (Opus5 turn-4 correction 3)"
+        )
+    probe_result = _validate_matlab_probe_result(_load_json(PROBE_RESULT_PATH))
+    if result.returncode == 0 and not probe_result["overall_pass"]:
+        raise RuntimeError(
+            "matlab probe_matlab_environment exited 0 but its own JSON result reports overall_pass=false -- "
+            "inconsistent; refusing to trust the exit code alone"
+        )
+    return probe_result
 
 
 # ---------------------------------------------------------------------------
@@ -953,10 +1165,19 @@ def ingest_ppii_scenario_b(fixture: dict, mode: str) -> dict:
       - manifest['randstream_class_confirmed'] is truthy (rejects any
         result the driver did not itself confirm came from a real
         RandStream instance).
+      - manifest's RandStream runtime path/hash matches the vendored
+        data/karr_vendored_source/RandStream.m (independent re-check, not
+        merely trusting randstream_class_confirmed's boolean self-report
+        -- Opus5 turn-4 correction 2).
       - manifest['harness_sha256_lf_normalized'] matches the CURRENT
         evolveState_ppii_matlab.m hash (rejects stale harness drift).
+      - the frozen prediction's `before_state` block hashes to its own
+        recorded `before_state_sha256` (tamper check -- Opus5 turn-4
+        correction 6); invariants are evaluated against THIS frozen
+        before-state, never a fresh call to build_ppii_scenario_b_states
+        with the (mutable) module-level PPII_SCENARIO_B_STATES.
       - the `after` CSV has EXACTLY 1 + 3*n_mono + n_sub columns and
-        EXACTLY len(seeds) rows (5 for canary, 50 for full -- never
+        EXACTLY len(seeds) rows (20 for canary, 50 for full -- never
         more/fewer, never a mix of canary-count and full-count rows).
       - the CSV's leading seed-id column, as a set, exactly equals the
         manifest's (and frozen prediction's) pre-registered seed set for
@@ -966,17 +1187,12 @@ def ingest_ppii_scenario_b(fixture: dict, mode: str) -> dict:
     if mode not in ("canary", "full"):
         raise ValueError(f"mode must be 'canary' or 'full', got {mode!r}")
 
-    states = build_ppii_scenario_b_states(fixture)  # PREDICT phase: before-only
     expected_state_names = [PPII_SCENARIO_B_CANARY_STATE] if mode == "canary" else list(PPII_SCENARIO_B_STATE_NAMES)
 
     current_harness_sha256 = _sha256_lf_normalized(MATLAB_DIR / "evolveState_ppii_matlab.m")
 
     results = {}
     for name in expected_state_names:
-        state = states[name]
-        n_mono = state["unprocessedMonomers"].shape[0]
-        n_sub = state["substrates"].shape[0]
-
         prediction_path = RAW_DIR / f"ppii_scenario_b_{name}_prediction.json"
         if not prediction_path.is_file():
             raise FileNotFoundError(
@@ -985,6 +1201,24 @@ def ingest_ppii_scenario_b(fixture: dict, mode: str) -> dict:
         frozen = _load_json(prediction_path)
         prediction = frozen["prediction"]
         # ---- prediction is the FROZEN one loaded above; it is NEVER recomputed here ----
+
+        before_state_raw = frozen.get("before_state")
+        if before_state_raw is None:
+            raise ValueError(
+                f"state {name!r}: frozen prediction {prediction_path} has no before_state block (stale "
+                "pre-turn-4 prediction file -- re-run generate-inputs-scenario-b)"
+            )
+        if _hash_canonical(before_state_raw) != frozen.get("before_state_sha256"):
+            raise ValueError(
+                f"state {name!r}: frozen before_state in {prediction_path} does not hash-match its own "
+                "recorded before_state_sha256 -- tampered/corrupted prediction file, refusing to trust it"
+            )
+        before = {
+            "unprocessedMonomers": np.array(before_state_raw["unprocessedMonomers"], dtype=np.float64),
+            "substrates": np.array(before_state_raw["substrates"], dtype=np.float64),
+        }
+        n_mono = before["unprocessedMonomers"].shape[0]
+        n_sub = before["substrates"].shape[0]
 
         if mode not in frozen["mode_seeds"]:
             raise ValueError(
@@ -1032,6 +1266,7 @@ def ingest_ppii_scenario_b(fixture: dict, mode: str) -> dict:
                 f"state {name!r}: run-manifest does not confirm randstream_class_confirmed=true -- "
                 "refusing to trust this as real-RandStream evidence"
             )
+        _validate_randstream_provenance(manifest, context=f"state {name!r} run-manifest")
         if manifest.get("harness_sha256_lf_normalized") != current_harness_sha256:
             raise ValueError(
                 f"state {name!r}: run-manifest harness hash "
@@ -1070,10 +1305,10 @@ def ingest_ppii_scenario_b(fixture: dict, mode: str) -> dict:
             )
         raw = raw_with_seed[:, 1:]
 
-        before = {
-            "unprocessedMonomers": state["unprocessedMonomers"],
-            "substrates": state["substrates"],
-        }
+        # `before` was already built above from the frozen, hash-verified
+        # before_state block -- never rebuilt from the mutable module-level
+        # PPII_SCENARIO_B_STATES/build_ppii_scenario_b_states here (Opus5
+        # turn-4 correction 6).
         invariant_result = evaluate_ppii_scarcity_invariants(before, raw, fixture)
         invariant_result["raw_csv_sha256"] = _sha256_file(csv_path)
         results[name] = {
@@ -1252,14 +1487,28 @@ def build_ppii_scarcity_perturbation_artifact(
             mechanism (per its guard_diagnostics) showed genuine cross-
             seed variation (mnrnd/stochasticRound did not degenerate into
             a no-op).
-        H12_PERTURBATION_SCARCITY_NO_VARIATION: all invariants held, but at
-            least one state's stochastic mechanism produced IDENTICAL
-            output across all seeds -- this is the anti-laundering catch
-            for a mutated/reused/global RNG stream or a state that
-            silently failed to reach the intended branch.
+        H12_PERTURBATION_SCARCITY_NO_VARIATION: FULL MODE ONLY -- all
+            invariants held, but at least one state's stochastic mechanism
+            produced IDENTICAL output across all seeds -- this is the
+            anti-laundering catch for a mutated/reused/global RNG stream
+            or a state that silently failed to reach the intended branch.
         H12_PERTURBATION_SCARCITY_INVARIANT_VIOLATION: any exact bound
             (mass/non-negativity/per-species-cap/pool-cap) was violated in
             any seed of any state -- hard fail regardless of variation.
+        H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK: CANARY MODE ONLY --
+            all invariants held for the single canary state. Canary mode
+            makes NO distributional claim (Opus5 turn-4 correction 5): a
+            canary run with seeds_vary=False over its 20 seeds is recorded
+            (`no_variation_flag`) but does NOT fail the canary verdict --
+            the canary's sole purpose is to prove the genuine-MATLAB
+            execution plumbing (RandStream/mnrnd/stochasticRound/CSV/
+            manifest) works end-to-end for one real branch-activating
+            state, not to make a distributional claim (that is full mode's
+            job).
+        H12_PERTURBATION_SCARCITY_CANARY_INVARIANT_VIOLATION: CANARY MODE
+            ONLY -- same hard-fail semantics as the full-mode invariant
+            violation above, still applies in canary mode (an exact bound
+            violation is never acceptable regardless of mode).
 
     Even H12_PERTURBATION_SCARCITY_OBSERVED_STOCHASTIC at full-matrix
     completion is NOT H12_CONFIRMED and does NOT close ProteinProcessingII
@@ -1283,8 +1532,11 @@ def build_ppii_scarcity_perturbation_artifact(
         # guard failed at all (every Scenario B state fails at least one
         # guard by construction, so every state is expected to show
         # variation -- a flat/no-variation result on ANY of them is a
-        # laundering red flag, not an acceptable "this state happens not
-        # to be stochastic" case).
+        # laundering red flag in FULL mode, not an acceptable "this state
+        # happens not to be stochastic" case). This is recorded regardless
+        # of mode, but only gates the verdict in FULL mode (see below;
+        # Opus5 turn-4 correction 5 -- canary mode makes no distributional
+        # claim).
         expected_to_vary = len(pred["guard_diagnostics"]["failed_guards"]) > 0
         degenerate = expected_to_vary and not inv["seeds_vary"]
         any_violation = any_violation or violated
@@ -1302,6 +1554,7 @@ def build_ppii_scarcity_perturbation_artifact(
             "distinct_outcome_count": inv["distinct_outcome_count"],
             "expected_to_vary": expected_to_vary,
             "no_variation_flag": degenerate,
+            "no_variation_flag_gates_verdict": mode == "full",
             "raw_output_sha256": inv["raw_csv_sha256"],
             "run_manifest": {
                 "mode": manifest.get("mode"),
@@ -1316,7 +1569,17 @@ def build_ppii_scarcity_perturbation_artifact(
     label_mismatch = any(
         not s["guard_failure_label_matches_prereg"] for s in per_state_summary.values()
     )
-    if any_violation or label_mismatch:
+    if mode == "canary":
+        # Canary mode never fails on no_variation -- it makes no
+        # distributional claim (Opus5 turn-4 correction 5). Its own,
+        # disjoint verdict vocabulary makes this explicit rather than
+        # silently reusing the full-mode OBSERVED_STOCHASTIC/NO_VARIATION
+        # labels, which WOULD imply a distributional claim.
+        if any_violation or label_mismatch:
+            verdict = "H12_PERTURBATION_SCARCITY_CANARY_INVARIANT_VIOLATION"
+        else:
+            verdict = "H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK"
+    elif any_violation or label_mismatch:
         verdict = "H12_PERTURBATION_SCARCITY_INVARIANT_VIOLATION"
     elif any_degenerate:
         verdict = "H12_PERTURBATION_SCARCITY_NO_VARIATION"
@@ -1358,6 +1621,11 @@ def build_ppii_scarcity_perturbation_artifact(
             "mode='canary' artifacts cover only "
             f"{PPII_SCENARIO_B_CANARY_STATE!r} ({PPII_SCENARIO_B_CANARY_SEED_COUNT} seeds) -- the other 4 "
             "states have no evidence yet in a canary artifact; this is expected, not a violation.",
+            "mode='canary' verdicts (H12_PERTURBATION_SCARCITY_CANARY_PLUMBING_OK/"
+            "_CANARY_INVARIANT_VIOLATION) make NO distributional claim -- a canary run with "
+            "seeds_vary=False is recorded (no_variation_flag) but does not, by itself, fail the canary "
+            "verdict (Opus5 turn-4 correction 5); the distributional NO_VARIATION/OBSERVED_STOCHASTIC "
+            "vocabulary is reserved for mode='full' only.",
         ],
         "predictor_source_path": "scripts/l22_evidence/h12_perturbation.py",
         "predictor_source_sha256_lf_normalized": _sha256_lf_normalized(
@@ -1555,6 +1823,16 @@ def main() -> int:
             "ingest-and-compare-scenario-b-full",
         ],
     )
+    parser.add_argument(
+        "--wholecell-src-root",
+        default=None,
+        help=(
+            "Explicit WholeCell src/ root containing +edu/+stanford/+covert/+util/RandStream.m, used by "
+            "probe-matlab-environment/run-matlab-scenario-b-*. Falls back to the "
+            f"{WHOLECELL_SRC_ROOT_ENV_VAR} environment variable if omitted; there is no other default "
+            "(Opus5 turn-4 correction 2)."
+        ),
+    )
     args = parser.parse_args()
 
     if args.command == "generate-inputs":
@@ -1572,19 +1850,22 @@ def main() -> int:
         print(json.dumps(result, indent=2))
     elif args.command == "probe-matlab-environment":
         # NOT invoked by anything else in this commit -- the parse/
-        # license/toolbox preflight step, authorized separately from (and
-        # before) the canary run.
-        probe_matlab_environment()
+        # license/toolbox/RandStream/mnrnd-shape preflight step, authorized
+        # separately from (and before) the canary run.
+        probe_result = probe_matlab_environment(wholecell_src_root=args.wholecell_src_root)
+        print(json.dumps(probe_result, indent=2))
     elif args.command == "run-matlab-scenario-b-canary":
         # NOT authorized/invoked this turn -- see PERTURBATION_SPEC.json
         # scenario_b_execution_status; requires explicit GPT-5.6 Sol
         # authorization following Opus5 review of the code/spec commit,
         # and a prior probe-matlab-environment confirmation.
-        run_matlab_scenario_b(canary=True)
-        print("matlab scenario B canary executed (1 state x 5 seeds)")
+        run_matlab_scenario_b(canary=True, wholecell_src_root=args.wholecell_src_root)
+        print(f"matlab scenario B canary executed (1 state x {PPII_SCENARIO_B_CANARY_SEED_COUNT} seeds)")
     elif args.command == "run-matlab-scenario-b-full":
-        # NOT authorized/invoked this turn -- same gate as canary above.
-        run_matlab_scenario_b(canary=False)
+        # NOT authorized/invoked this turn -- same gate as canary above,
+        # plus the additional full-mode mnrnd-shape hard-block (see
+        # run_matlab_scenario_b docstring).
+        run_matlab_scenario_b(canary=False, wholecell_src_root=args.wholecell_src_root)
         print("matlab scenario B full matrix executed (5 states x 50 seeds)")
     elif args.command == "ingest-and-compare-scenario-b-canary":
         result = ingest_and_compare_scenario_b(mode="canary")
