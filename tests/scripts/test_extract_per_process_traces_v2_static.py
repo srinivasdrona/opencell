@@ -154,6 +154,60 @@ def test_merge_event_observables_uses_two_step_dereference():
     assert "container.(field_name)" in source
 
 
+def test_chromosome_object_excluded_only_for_diameter_decrease_anchor():
+    """Performance/sufficiency patch static proof: the full sparse
+    `chromosome` snapshot property must be excluded ONLY for
+    `window_contract='anchor'` + `signal_kind='diameter_decrease'`
+    (Cytokinesis) -- never for a fixed window, and never for a generic
+    `signal_kind='boolean_transition'` anchor (requirement: "do not remove
+    chromosome snapshots for other processes/profiles")."""
+    source = _read_source()
+
+    # The exclusion helper exists and is invoked exactly once, immediately
+    # after the generic pick_snapshot_properties() call -- never inlined
+    # elsewhere, so there is exactly one place that can ever drop
+    # 'chromosome' from the captured set.
+    assert source.count("function props = exclude_chromosome_object_for_diameter_anchor(") == 1
+    assert (
+        "snapshot_props = exclude_chromosome_object_for_diameter_anchor(snapshot_props, window_contract, anchor_opts);"
+        in source
+    )
+
+    # Extract the helper's body and prove its guard checks BOTH
+    # window_contract=='anchor' AND signal_kind=='diameter_decrease' (a
+    # conjunction, not just one of the two) before ever calling setdiff to
+    # remove 'chromosome'.
+    body_match = re.search(
+        r"function props = exclude_chromosome_object_for_diameter_anchor\(.*?\n(.*?)\nend\n",
+        source,
+        re.DOTALL,
+    )
+    assert body_match is not None, "could not locate exclude_chromosome_object_for_diameter_anchor's body"
+    body = body_match.group(1)
+    assert "strcmp(window_contract, 'anchor')" in body
+    assert "strcmp(anchor_opts.signal_kind, 'diameter_decrease')" in body
+    assert "&&" in body
+    assert "setdiff(props, {'chromosome'})" in body
+
+    # merge_event_observables' 'diameter_decrease' case must flatten the
+    # replacement chromosome_segregated scalar via the same validated-
+    # temporary two-step dereference pattern as pinchedDiameter/FtsZRing.
+    assert "chrom = mod.chromosome;" in source
+    assert "snapshot.chromosome_segregated = logical(chrom.segregated);" in source
+
+    # The 'boolean_transition' case (generic EVENT_CLASS processes) must
+    # never reference the chromosome-exclusion/chromosome_segregated
+    # machinery at all -- it is Cytokinesis-diameter-decrease-specific.
+    boolean_case_match = re.search(
+        r"case 'boolean_transition'\n(.*?)\n\s*otherwise\n",
+        source,
+        re.DOTALL,
+    )
+    assert boolean_case_match is not None, "could not locate the 'boolean_transition' case body"
+    boolean_case_body = boolean_case_match.group(1)
+    assert "chromosome" not in boolean_case_body
+
+
 def _octave_executable() -> str | None:
     """Locate an Octave CLI binary on PATH, or return None if unavailable.
 

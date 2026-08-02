@@ -628,6 +628,82 @@ def test_plan_regenerate_invalid_for_anchor_missing_identity_metadata(tmp_path):
     assert plan.decisions[0].action == "regenerate_invalid"
 
 
+def test_plan_regenerate_invalid_for_anchor_stale_projection_version(tmp_path):
+    """Performance/sufficiency patch: a trace written under the OLD
+    EVENT_OBSERVABLE_PROJECTION_VERSION (1 -- full chromosome object, no
+    chromosome_segregated) must never skip_valid against a spec expecting
+    the current version (2 -- chromosome_segregated present, full
+    chromosome object excluded). A stale v1 trace is contract-complete and
+    identity-matching in every other respect; only the projection-version
+    literal differs."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis", seed=17, n_ticks=4, required_observables=launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=17,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES,
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=spec.max_search_ticks,
+        event_observable_projection_version=1,  # stale: pre-patch schema
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "event_observable_projection_version" in plan.decisions[0].reason
+    assert len(plan.jobs) == 1
+
+
+def test_plan_regenerate_invalid_for_anchor_missing_chromosome_segregated_observable(tmp_path):
+    """Required-observable enforcement: a Cytokinesis diameter-anchor spec
+    that requires launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES (which now
+    includes 'chromosome_segregated') must regenerate_invalid against a
+    trace that is otherwise contract- and identity-complete (current
+    projection version, matching signal config) but is simply missing the
+    'chromosome_segregated' observable dataset -- proving the new
+    observable is actually enforced, not merely documented."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis", seed=18, n_ticks=4, required_observables=launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES
+    )
+    assert launcher.CYTOKINESIS_CHROMOSOME_OBSERVABLE in spec.required_observables
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    observables_missing_chromosome = tuple(
+        obs for obs in launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES if obs != launcher.CYTOKINESIS_CHROMOSOME_OBSERVABLE
+    )
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=18,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=observables_missing_chromosome,  # chromosome_segregated deliberately absent
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=spec.max_search_ticks,
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "chromosome_segregated" in plan.decisions[0].reason
+    assert len(plan.jobs) == 1
+
+
 def test_plan_regenerate_invalid_for_window_contract_kind_mismatch(tmp_path):
     """Inversion guard ('duplicate existing extraction'): an on-disk trace
     produced as an 'anchor' window (carries window_anchor, no tick_end) must

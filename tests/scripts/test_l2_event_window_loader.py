@@ -458,3 +458,70 @@ def test_load_event_window_rejects_scalar_finite_observables_not_subset_of_requi
             required_observables=("obsA",),
             require_scalar_finite_observables=("obsB",),
         )
+
+
+def test_load_trace_chromosome_segregated_boolean_observable_round_trip(tmp_path):
+    """MATLAB-free synthetic HDF5 round-trip (performance/sufficiency patch):
+    ``chromosome_segregated`` is a flattened `logical` scalar (`Chromosome.
+    segregated`, the exact -- and only -- chromosome-state field
+    Cytokinesis.evolveState() itself reads), not a numeric diameter/ring
+    witness, but window_loader's require_scalar_finite_observables gauntlet
+    must accept it exactly like any other scalar-per-tick observable: a
+    false->true transition encoded as 0.0/1.0 (MATLAB `logical` values
+    materialize as a 0/1-valued numeric HDF5 dataset, same as any other
+    scalar-per-tick projection field) is present, scalar-shaped, and finite
+    for every tick."""
+    trace_path = _write_synthetic_trace(
+        tmp_path / "chromosome_segregated_ok.mat",
+        n_ticks=3,
+        observables=("chromosome_segregated",),
+        observable_values={"chromosome_segregated": ([0.0, 0.0, 1.0], [0.0, 1.0, 1.0])},
+    )
+    window = load_event_window(
+        trace_path,
+        required_observables=("chromosome_segregated",),
+        require_scalar_finite_observables=("chromosome_segregated",),
+    )
+    assert window.before("chromosome_segregated", 0).shape == (1,)
+    before_series = np.array([window.before("chromosome_segregated", t)[0] for t in range(3)])
+    after_series = np.array([window.after("chromosome_segregated", t)[0] for t in range(3)])
+    np.testing.assert_array_equal(before_series, [0.0, 0.0, 1.0])
+    np.testing.assert_array_equal(after_series, [0.0, 1.0, 1.0])
+
+
+def test_load_trace_cytokinesis_diameter_anchor_shaped_round_trip(tmp_path):
+    """MATLAB-free synthetic HDF5 round-trip exercising the FULL
+    signal_kind='diameter_decrease' flattened observable set together
+    (pinchedDiameter + the four FtsZRing witnesses + chromosome_segregated),
+    proving the loader accepts the exact shape
+    ``merge_event_observables()``/CYTOKINESIS_SCALAR_FINITE_OBSERVABLES now
+    produce/require -- never the full sparse `chromosome` object (which
+    this fixture never writes at all)."""
+    observables = (
+        "pinchedDiameter",
+        "ftsZRing_numEdgesOneStraight",
+        "ftsZRing_numEdgesTwoStraight",
+        "ftsZRing_numEdgesTwoBent",
+        "ftsZRing_numResidualBent",
+        "chromosome_segregated",
+    )
+    trace_path = _write_synthetic_trace(
+        tmp_path / "cytokinesis_anchor_ok.mat",
+        n_ticks=3,
+        observables=observables,
+        observable_values={obs: ([0.0, 0.0, 0.0], [0.0, 0.0, 0.0]) for obs in observables},
+    )
+    window = load_event_window(
+        trace_path,
+        required_observables=observables,
+        require_scalar_finite_observables=observables,
+    )
+    for obs in observables:
+        assert window.before(obs, 0).shape == (1,)
+    # The full sparse chromosome object was never written to this
+    # MATLAB-free fixture at all -- confirms a loader that only ever reads
+    # required_observables never needs it, chromosome_segregated is enough.
+    with h5py.File(trace_path, "r") as handle:
+        assert "chromosome" not in handle["states_before"]
+        assert "chromosome" not in handle["states_after"]
+

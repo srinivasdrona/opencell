@@ -183,6 +183,23 @@ top-level fields:
   the four FtsZRing ring-state witnesses `Cytokinesis.evolveState()` itself
   gates the diameter update on, included so onset/completion can be
   cross-checked against the real ring state that produced them.
+* `chromosome_segregated` (before/after, logical) -- for
+  `signal_kind='diameter_decrease'` only. `Chromosome.segregated`
+  (`data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+state/
+  Chromosome.m`) is the exact, and only, chromosome-state scalar
+  `Cytokinesis.evolveState()` itself reads (`if ~this.chromosome.segregated;
+  return; end`). Flattening this one scalar makes the full sparse
+  `chromosome` object unnecessary for this signal_kind: `pick_snapshot_
+  properties()`'s generic `chromosome` snapshot (used by other processes'
+  fixed/generic-anchor windows, and by `signal_kind='boolean_transition'`)
+  is deliberately EXCLUDED for `window_contract='anchor'` +
+  `signal_kind='diameter_decrease'` traces only, since the anchor search
+  loop taps before/after state for up to `max_search_ticks` (default
+  50000) ticks and serializing the full sparse Chromosome object twice per
+  searched tick is unbounded, unnecessary snapshot cost once this scalar
+  is available. Fixed windows and generic `boolean_transition` anchors are
+  unaffected -- their `chromosome` snapshots (if `chromosome` is in that
+  process's `pick_snapshot_properties()` set) are unchanged.
 * `(signal_field)` (before/after, logical) -- for `signal_kind='boolean_transition'`.
 
 Every projected field is validated present, scalar, numeric/logical as
@@ -230,7 +247,18 @@ metadata/signal_kind                       -- char, e.g. 'diameter_decrease'
 metadata/signal_property                   -- char, e.g. 'geometry'
 metadata/signal_field                      -- char, e.g. 'pinchedDiameter'
 metadata/max_search_ticks                  -- int32
-metadata/event_observable_projection_version -- int32 (currently 1)
+metadata/event_observable_projection_version -- int32 (currently 2; bumped
+                                                 from 1 by the performance/
+                                                 sufficiency patch that added
+                                                 chromosome_segregated and
+                                                 removed the full chromosome
+                                                 object from
+                                                 signal_kind='diameter_decrease'
+                                                 anchor traces -- a stale v1
+                                                 on-disk trace, either
+                                                 signal_kind, must refuse/
+                                                 regenerate, never silently
+                                                 skip-valid against a v2 spec)
 ```
 
 `scripts/l2_event/launcher.validate_existing_event_window` cross-checks

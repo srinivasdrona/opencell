@@ -79,7 +79,21 @@ CYTOKINESIS_FTSZRING_OBSERVABLES = (
     "ftsZRing_numEdgesTwoBent",
     "ftsZRing_numResidualBent",
 )
-CYTOKINESIS_SCALAR_FINITE_OBSERVABLES = (CYTOKINESIS_DIAMETER_OBSERVABLE, *CYTOKINESIS_FTSZRING_OBSERVABLES)
+# Chromosome.segregated (data/m1_sources/WholeCell/src/+edu/+stanford/
+# +covert/+cell/+sim/+state/Chromosome.m) -- the exact scalar boolean
+# Cytokinesis.evolveState() itself reads to gate contraction (Cytokinesis.m:
+# `if ~this.chromosome.segregated; return; end`). This is the ONLY
+# chromosome-state field Cytokinesis ever reads; the .m extractor now
+# flattens just this scalar (see merge_event_observables) instead of
+# snapshotting the full sparse Chromosome state object on every searched
+# anchor tick (performance/sufficiency patch, post-Turn-3 -- see
+# exclude_chromosome_object_for_diameter_anchor in the .m file).
+CYTOKINESIS_CHROMOSOME_OBSERVABLE = "chromosome_segregated"
+CYTOKINESIS_SCALAR_FINITE_OBSERVABLES = (
+    CYTOKINESIS_DIAMETER_OBSERVABLE,
+    *CYTOKINESIS_FTSZRING_OBSERVABLES,
+    CYTOKINESIS_CHROMOSOME_OBSERVABLE,
+)
 
 # Schema/version tag for merge_event_observables()'s flattened numeric
 # event-observable projection (extract_per_process_traces_v2.m writes this
@@ -88,7 +102,12 @@ CYTOKINESIS_SCALAR_FINITE_OBSERVABLES = (CYTOKINESIS_DIAMETER_OBSERVABLE, *CYTOK
 # only if the projection's field set/semantics ever changes incompatibly --
 # validate_existing_event_window cross-checks it so an on-disk trace from a
 # stale projection schema can never silently skip-valid.
-EVENT_OBSERVABLE_PROJECTION_VERSION = 1
+#
+# 2 (this patch): signal_kind='diameter_decrease' traces gained
+# 'chromosome_segregated' and no longer carry the full 'chromosome' object;
+# a v1 on-disk trace (either signal_kind) must refuse/regenerate, never
+# silently skip-valid against a v2 spec.
+EVENT_OBSERVABLE_PROJECTION_VERSION = 2
 
 # Suffix for a not-yet-validated regeneration's output directory (see
 # `temp_output_subdir_for`/`finalize_atomic_regeneration`). Never the real

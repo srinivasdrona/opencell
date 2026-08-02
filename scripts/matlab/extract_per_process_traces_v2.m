@@ -144,6 +144,7 @@ for i = 1:numel(process_names)
 
     proc = sim.processes{target_idx};
     snapshot_props = pick_snapshot_properties(proc);
+    snapshot_props = exclude_chromosome_object_for_diameter_anchor(snapshot_props, window_contract, anchor_opts);
     fprintf('[trace_v2] %s snapshot properties: %s\n', canonical_name, join_props(snapshot_props));
 
     seed_simulation(sim, seed);
@@ -242,7 +243,19 @@ for i = 1:numel(process_names)
         metadata.signal_property = anchor_opts.signal_property;
         metadata.signal_field = anchor_opts.signal_field;
         metadata.max_search_ticks = int32(anchor_opts.max_search_ticks);
-        metadata.event_observable_projection_version = int32(1);
+        % Schema/version tag for merge_event_observables()'s flattened
+        % numeric event-observable projection (performance/sufficiency
+        % patch, post-Turn-3): bumped 1 -> 2 because signal_kind=
+        % 'diameter_decrease' traces now additionally carry
+        % 'chromosome_segregated' and no longer carry the full
+        % 'chromosome' object (see exclude_chromosome_object_for_diameter_
+        % anchor/merge_event_observables above). Must always match the
+        % Python-side scripts.l2_event.launcher.EVENT_OBSERVABLE_
+        % PROJECTION_VERSION literal exactly -- validate_existing_event_
+        % window cross-checks it so a stale v1 on-disk anchor trace
+        % (either signal_kind) can never silently skip-valid against a v2
+        % spec.
+        metadata.event_observable_projection_version = int32(2);
         % onset_tick (M4/ratified-decision addition): the real, observed
         % first strict pinchedDiameter decrease -- the process-local
         % contraction-onset-to-completion TIMING anchor. Only produced for
@@ -292,6 +305,30 @@ props = intersect(properties(proc), { ...
     'inactiveComplexs', 'matureComplexs', ...
     'complexs', 'monomers', 'rnas', 'RNAs', ...
 });
+end
+
+function props = exclude_chromosome_object_for_diameter_anchor(props, window_contract, anchor_opts)
+% exclude_chromosome_object_for_diameter_anchor  Performance/sufficiency
+% patch (post-Turn-3): for window_contract='anchor' with
+% signal_kind='diameter_decrease' (Cytokinesis) ONLY, drop the full
+% 'chromosome' property from the per-tick snapshot set. The anchor search
+% loop runs before/after tap points for up to anchor_opts.max_search_ticks
+% ticks (default 50000); sanitize_snapshot_value/serialize_chromosome_state
+% serializes the ENTIRE sparse Chromosome state object (positions x
+% strands matrices) twice per searched tick for a process that, per its
+% own evolveState() (see Cytokinesis.m: `if ~this.chromosome.segregated;
+% return; end`), only ever reads a single scalar boolean off of it. That
+% scalar is captured separately and flattened by merge_event_observables
+% (see 'chromosome_segregated' below) -- the full object is therefore
+% redundant, unbounded-cost snapshot weight, not lost signal.
+%
+% Fixed windows and generic 'boolean_transition' anchors are NEVER
+% affected: 'chromosome' snapshots for every other process/profile are
+% preserved exactly as before (requirement: "do not remove chromosome
+% snapshots for other processes/profiles").
+if strcmp(window_contract, 'anchor') && strcmp(anchor_opts.signal_kind, 'diameter_decrease')
+    props = setdiff(props, {'chromosome'});
+end
 end
 
 function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts)
@@ -413,8 +450,11 @@ function opts = default_anchor_opts(opts)
 % that holds the signal's container ('geometry' for Cytokinesis).
 % signal_field is used only for signal_kind='boolean_transition' (generic
 % EVENT_CLASS processes) -- ignored for 'diameter_decrease', which always
-% reads pinchedDiameter plus the FtsZRing ring-state witnesses (see
-% merge_event_observables). Callers extracting a different process's
+% reads pinchedDiameter plus the FtsZRing ring-state witnesses plus the
+% chromosome_segregated scalar (see merge_event_observables); the full
+% sparse 'chromosome' object is excluded from the snapshot for this
+% signal_kind (see exclude_chromosome_object_for_diameter_anchor).
+% Callers extracting a different process's
 % division/event-anchored window may override signal_kind/signal_property/
 % signal_field to that process's own equivalent real signal -- never to a
 % value derived from the expected/desired outcome.
@@ -488,6 +528,28 @@ switch anchor_opts.signal_kind
             end
             snapshot.(['ftsZRing_' fn]) = double(ring.(fn));
         end
+
+        % chromosome_segregated (performance/sufficiency patch): the exact
+        % scalar boolean Cytokinesis.evolveState() itself reads to gate
+        % contraction (Cytokinesis.m: `if ~this.chromosome.segregated;
+        % return; end`) -- the ONLY chromosome-state field this process
+        % ever reads. Flattened here (validated temporary + second
+        % dereference, same two-step form as pinchedDiameter/FtsZRing
+        % above) so a real, sufficient conditioning signal is available to
+        % window_loader without ever snapshotting the full sparse
+        % Chromosome object (see
+        % exclude_chromosome_object_for_diameter_anchor/
+        % pick_snapshot_properties above).
+        if ~isprop(mod, 'chromosome')
+            error('extract_per_process_traces_v2:missing_chromosome', ...
+                'process has no ''chromosome'' property required for signal_kind=''diameter_decrease'' witnesses');
+        end
+        chrom = mod.chromosome;  % validated temporary
+        if ~isprop(chrom, 'segregated')
+            error('extract_per_process_traces_v2:missing_chromosome_field', ...
+                'chromosome has no ''segregated'' property');
+        end
+        snapshot.chromosome_segregated = logical(chrom.segregated);  % second dereference
 
     case 'boolean_transition'
         field_name = anchor_opts.signal_field;
