@@ -667,3 +667,37 @@ the +11 are the round-4 tests listed above (6 for item #1, 5 for item #2;
 ~15 pre-existing `payload_gate` call sites were migrated in place to the
 new per-seed cohort shape without changing their asserted statistical
 behavior).
+
+## 11. Canary-A closeout correction (worktree `l2-event-canary-a-closeout`)
+
+**Scope note:** this section is appended from a different worktree/branch
+(`agent/l2-event-canary-a-closeout`) than the rest of this report and
+corrects one narrow, now-stale claim in §"M4 — stride/window-boundary
+metadata contract" above; it does not revise anything else in this
+document. Per this doc's own append-only convention (see rounds 1-4 and
+the closeout round above), the original M4 narrative is left unmodified as
+a historical record of the state at the time it was written.
+
+**What changed:** a MATLAB Canary-A run regenerated
+`data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat`
+(gitignored raw file, atomically replaced at the same tracked path) with a
+complete `stride`/`tick_start`/`tick_end` contract (`stride=1`,
+`tick_start=201`, `tick_end=300`, `tick_offset=200` burn-in ticks,
+`n_ticks=100`). The claim "*Neither real event MAT on disk today satisfies
+this contract*" (§M4 above) is therefore **no longer true for
+RibosomeAssembly** as of this closeout — it remains true for the untouched,
+out-of-v4-scope `RNAModification` seed-000 file only.
+
+**What did not change:** `event_registry.yaml`'s RibosomeAssembly row
+(`adapter_id: ribosome_assembly.smoke.v1`, `adapter_status:
+structural_smoke_only`, `required_n_seeds: 50`); the §1 ground-truth table
+above (still 1/50 seeds, still `structural_smoke_only` — the M4 contract
+becoming complete does not change seed count); no MATLAB extraction of
+seeds 1–49; no registry/catalog promotion. `run_structural_smoke()`'s
+smoke verdict remains `NOT_APPLICABLE`, and a real gate computation
+against this file is still refused — now solely by
+`SINGLE_SEED_ENSEMBLE_REQUIRED` (1 of 50 seeds), no longer additionally by
+`INCOMPLETE_WINDOW`. Full details, exact hashes, and the regenerated
+tracked evidence are in
+`docs/phase_f/l2_event/RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md`'s
+"Canary-A closeout" section.

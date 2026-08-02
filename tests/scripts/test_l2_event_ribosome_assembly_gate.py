@@ -17,8 +17,11 @@ gating-capable adapter this task adds. It is organized in three parts:
    per-tick WID identity (RIBOSOME_50S@9, RIBOSOME_30S@17, both Karr and
    OC) -- and that a swapped mapping breaks that identity -- AND proves
    the runner still cannot reach a computed gate verdict on this file
-   today (no stride/tick-window contract, only 1 of the required 50
-   seeds) -- the only honest verdict for this file remains the existing
+   today. Canary-A closeout: the real seed-0 MAT now carries a complete
+   M4 stride/tick-window contract (so the strict-mode window load itself
+   succeeds), but only 1 of the required 50 seeds exists on disk, so the
+   ensemble-size refusal alone still blocks a computed verdict -- the
+   only honest verdict for this file remains the existing
    ``structural_smoke`` / ``NOT_APPLICABLE`` path.
 3. Synthetic 50-seed cohort tests driving ``scripts.l2_event.runner.
    evaluate_gate`` end-to-end through this adapter's own
@@ -277,21 +280,23 @@ def test_gate_adapter_real_seed0_round_trip_reproduces_ticks_9_and_17():
 
 @pytest.mark.skipif(not _RA_TRACE.exists(), reason="Real RibosomeAssembly seed-000 event-window MAT not present locally")
 def test_gate_adapter_cannot_reach_a_computed_verdict_on_real_seed0():
-    """Even with a fully gating-capable adapter in hand, real seed-0 data
-    cannot produce a computed gate verdict today, for two independent
-    reasons this test proves directly (never asserted, always exercised):
+    """Canary-A closeout: even with a fully gating-capable adapter in hand
+    AND a now-complete M4 window contract, real seed-0 data still cannot
+    produce a computed gate verdict today -- but for only ONE reason now,
+    proven directly (never merely asserted):
 
     (a) the strict gate-mode window contract
         (`require_stride_contract=True`, the default `load_event_window`
-        callers must use for a real gate run) refuses with
-        `INCOMPLETE_WINDOW`, because this real MAT predates the
-        stride/tick_start/tick_end (or window_anchor) metadata contract
-        (M4, EVENT_WINDOW_EXTRACTOR_CONTRACT.md).
-    (b) even granting a relaxed load, only 1 of the registry's required 50
-        seeds exists on disk for this process, so `evaluate_gate`'s own
-        ensemble-size gauntlet (`check_ensemble_size`, which it always
-        runs internally -- M2) refuses independently with
-        `SINGLE_SEED_ENSEMBLE_REQUIRED`.
+        callers must use for a real gate run) now SUCCEEDS on this file --
+        the regenerated MAT carries a complete stride/tick_start/tick_end
+        contract (stride=1, tick_start=201, tick_end=300, absolute ticks;
+        tick_offset=200 burn-in ticks precede capture) -- so this is no
+        longer a blocker (M4, EVENT_WINDOW_EXTRACTOR_CONTRACT.md).
+    (b) only 1 of the registry's required 50 seeds exists on disk for this
+        process, so `evaluate_gate`'s own ensemble-size gauntlet
+        (`check_ensemble_size`, which it always runs internally -- M2)
+        refuses independently with `SINGLE_SEED_ENSEMBLE_REQUIRED` -- this
+        is now the ONLY reason this file cannot reach a computed verdict.
 
     The only honest verdict this codebase can emit for this file remains
     `NOT_APPLICABLE` via the existing `run_structural_smoke` path (see
@@ -300,9 +305,12 @@ def test_gate_adapter_cannot_reach_a_computed_verdict_on_real_seed0():
     """
     from scripts.l2_event.adapters import ribosome_assembly_smoke as ra_smoke
 
-    with pytest.raises(RunnerRefusal) as exc_info:
-        load_and_check_window(_RA_TRACE, ra_smoke._RA_OBSERVABLES, require_stride_contract=True)
-    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+    window = load_and_check_window(_RA_TRACE, ra_smoke._RA_OBSERVABLES, require_stride_contract=True)
+    assert window.stride_contract_ok is True
+    assert window.tick_offset == 200.0
+    assert window.tick_start == 201
+    assert window.tick_end == 300
+    assert window.n_ticks == 100
 
     with pytest.raises(RunnerRefusal) as exc_info2:
         check_ensemble_size(n_seeds_provided=1, required_n_seeds=50)

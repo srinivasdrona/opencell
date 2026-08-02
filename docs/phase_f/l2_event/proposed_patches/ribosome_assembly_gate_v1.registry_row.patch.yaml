@@ -9,9 +9,16 @@
 # ("Exact missing raw-data requirements") is supplied:
 #   1. 49 additional event-window seeds
 #      (data/m1_sources/karr_native/per_process_traces_v2_event_s{001..049}/
-#      RibosomeAssembly_100ticks.mat), and
-#   2. a complete M4 stride/tick_start/tick_end (or window_anchor) metadata
-#      contract on all 50 seed files, including a re-extracted seed 000.
+#      RibosomeAssembly_100ticks.mat).
+#
+# Canary-A closeout update: prerequisite (2) below -- a complete M4
+# stride/tick_start/tick_end contract on seed 000 -- is now MET (the
+# seed-000 file was regenerated with stride=1, tick_start=201,
+# tick_end=300; see RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md's "Canary-A
+# closeout" section). The ONLY remaining prerequisite is (1): 49
+# additional seeds do not yet exist on disk, so `check_ensemble_size`
+# still refuses with SINGLE_SEED_ENSEMBLE_REQUIRED (1 of 50) and this row
+# is still NOT eligible for promotion.
 #
 # Until then, adapter_status MUST remain structural_smoke_only in the real
 # registry and ribosome_assembly.gate.v1 remains an unregistered,
@@ -61,13 +68,15 @@
     round-trip on the existing seed-000 trace reproduces fire ticks [9, 17]
     and the expected payload keys, and 20 synthetic-cohort tests exercise
     count/timing/payload PASS and FAIL paths end to end via evaluate_gate.
-    This row must NOT be merged as gating_ready until: (1) 49 additional
+    This row must NOT be merged as gating_ready until 49 additional
     event-window seeds exist under
     data/m1_sources/karr_native/per_process_traces_v2_event_s{001..049}/
-    RibosomeAssembly_100ticks.mat, and (2) all 50 seed files (including a
-    re-extracted seed 000) carry the complete M4 stride/tick_start/tick_end
-    (or window_anchor) metadata contract -- the current seed-000 file
-    predates that contract and triggers INCOMPLETE_WINDOW today. See
+    RibosomeAssembly_100ticks.mat. The seed-000 file's M4
+    stride/tick_start/tick_end contract is already complete (Canary-A
+    closeout: stride=1, tick_start=201, tick_end=300) and no longer blocks
+    promotion; the sole remaining blocker is ensemble size
+    (SINGLE_SEED_ENSEMBLE_REQUIRED, 1 of the required 50 seeds). See
     docs/phase_f/l2_event/RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md for the
     verified refusal evidence. No MATLAB/Octave extraction was performed to
     produce this proposal.
+

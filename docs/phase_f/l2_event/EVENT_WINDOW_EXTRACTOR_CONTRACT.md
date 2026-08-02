@@ -58,32 +58,51 @@ computation) or advisory-only (`require_stride_contract=False`, used only
 by `run_structural_smoke()`'s read-only loader smoke, which explicitly
 cannot produce a gate verdict either way).
 
-## Current state of the two real event MATs on disk
+## Current state of the real event MATs on disk
 
-Neither of the two real event-window traces that exist today --
+**Canary-A closeout update:** the RibosomeAssembly seed-000 file below was
+regenerated with a complete `stride`/`tick_start`/`tick_end` contract
+(`stride=1`, `tick_start=201`, `tick_end=300`, `tick_offset=200`
+burn-in ticks, `n_ticks=100`) -- see
+`RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md`'s "Canary-A closeout" section
+for the verified regeneration. It no longer predates this contract. The
+sibling `RNAModification` seed-000 file (an incidental finding, not one of
+the four EVENT_CLASS target processes) is untouched by this closeout and
+still predates the contract:
 
 * `data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat`
+  -- **now carries** the full `stride`/`tick_start`/`tick_end` contract.
 * `data/m1_sources/karr_native/per_process_traces_v2_event_s000/RNAModification_100ticks.mat`
+  -- still does **not** carry `stride`, `tick_start`, `tick_end`, or
+  `window_anchor` (untouched, out of this closeout's scope).
 
--- carries `stride`, `tick_start`, `tick_end`, or `window_anchor` in their
-`metadata` group. Both were produced by an extractor generation that
-predates this contract. This is why:
+Consequences of the RibosomeAssembly file's contract now being complete:
 
-* `run_structural_smoke()` must call `load_and_check_window(...,
-  require_stride_contract=False)` and treat the resulting
-  `stride_contract_ok=False` as a non-fatal, explicitly-surfaced
-  incompleteness (see the `stride_contract_ok`/`stride_contract_problems`
-  fields on `run_structural_smoke()`'s result and the corresponding
-  `reasons` entry in the written evidence) -- **never** a silent pass.
-* The RibosomeAssembly seed-0 smoke's verdict is `NOT_APPLICABLE`, not
-  `PASS`, for this reason among others (it is a structural loader/adapter
-  round-trip smoke, not a calibrated gate verdict, regardless of the
-  stride contract).
-* Any future attempt to run a *real* (non-smoke) gate computation against
-  either of these two files with the default `require_stride_contract=True`
-  will raise `EventWindowRefused("INCOMPLETE_WINDOW", ...)` -- this is
-  intentional and must not be worked around by loosening the loader; the
-  extractor must be fixed instead.
+* `load_and_check_window(..., require_stride_contract=True)` (the strict
+  default used by any real gate computation) now **succeeds** on this
+  file -- it no longer raises `EventWindowRefused("INCOMPLETE_WINDOW",
+  ...)`. This does **not** make the file gate-eligible: only 1 of the
+  registry's required 50 ensemble seeds exists on disk, so
+  `evaluate_gate`'s ensemble-size gauntlet independently refuses with
+  `SINGLE_SEED_ENSEMBLE_REQUIRED` regardless of window-contract
+  completeness.
+* `run_structural_smoke()`'s relaxed load
+  (`require_stride_contract=False`) now reports `stride_contract_ok=True`
+  with zero problems for this file (see the `stride_contract_ok`/
+  `stride_contract_problems` fields on `run_structural_smoke()`'s result
+  and the corresponding `reasons` entry in the written evidence) -- this
+  was previously `False` under the pre-Canary-A file and is correctly
+  updated now that the underlying data genuinely satisfies the contract.
+* The RibosomeAssembly seed-0 smoke's verdict remains `NOT_APPLICABLE`,
+  not `PASS` -- it is a structural loader/adapter round-trip smoke, not a
+  calibrated gate verdict, regardless of the stride contract's
+  completeness.
+* A real (non-smoke) gate computation against the untouched
+  `RNAModification` file with the default `require_stride_contract=True`
+  still raises `EventWindowRefused("INCOMPLETE_WINDOW", ...)` -- this
+  remains intentional and must not be worked around by loosening the
+  loader; that file's extractor output must be fixed instead, if and when
+  `RNAModification` is ever brought into v4 scope.
 
 ## What the extractor emits (`window_contract='fixed'`/`'anchor'`)
 

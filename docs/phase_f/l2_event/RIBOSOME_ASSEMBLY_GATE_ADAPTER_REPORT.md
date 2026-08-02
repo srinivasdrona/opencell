@@ -52,6 +52,16 @@ extraction — it is replicating already-derived local fixture data that the
 worktree mechanism failed to inherit. No tracked file changed as a result
 (the copy is itself gitignored).
 
+> **Historical note, superseded by the Canary-A closeout below:** the hash
+> recorded in this paragraph (`6f1ad7f8...`) is the PRE-M4 raw file that was
+> current at the time this section was written. It has since been replaced
+> by a Canary-A MATLAB regeneration carrying a complete M4 stride/tick
+> contract, tracked under the new hash `c65902a8...`. This paragraph is left
+> unmodified as an append-only provenance record of the worktree-inheritance
+> landmine it documents; it does **not** describe the currently active raw
+> file or the currently active `input_manifest.json` claim — see "Canary-A
+> closeout" below for the current, active state.
+
 An exploratory CLI run (`python -m scripts.l2_event.runner --process
 RibosomeAssembly --mode smoke --seeds 0`) mutated tracked evidence files
 (`evidence_bundle/RibosomeAssembly/{SUMMARY,provenance}.json`,
@@ -260,3 +270,64 @@ computed gate verdict for RibosomeAssembly, and `ribosome_assembly.gate.v1`
 must remain unregistered / `adapter_status: not gating_ready` in the real
 registry (see the proposed patch fragment for the row this would become once
 the data exists).
+
+## Canary-A closeout (Turn 2, this round)
+
+A MATLAB Canary-A run for RibosomeAssembly seed 000 (burn-in=200,
+capture=100) exited 0 and produced a new, atomically-replaced raw file at
+the same tracked path
+(`data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat`,
+gitignored). This closes item 2 of "Exact missing raw-data requirements"
+above; item 1 (49 additional seeds) remains unmet and is explicitly
+out of scope for this round (no MATLAB/Octave batch extraction was run
+beyond the single already-completed Canary-A job; no seeds 1–49 were
+generated).
+
+**Verified facts (read-only inspection + regenerated tracked evidence):**
+
+* New raw sha256: `c65902a8232cb6afe2c8dd9476597a64418a0c740676c763af1223ef6338a79b`
+  (supersedes the pre-M4 `6f1ad7f8...` hash described in "Environment
+  landmine" above — see that section's superseded-note).
+* Metadata now present and complete: `stride=1`, `tick_offset=200`
+  (burn-in tick count), `tick_start=201`, `tick_end=300` (absolute
+  ticks), `n_ticks=100`. This satisfies `window_loader._check_stride_contract()`
+  in full — `load_and_check_window(..., require_stride_contract=True)`
+  (the strict default) now succeeds on this file where it previously
+  raised `EventWindowRefused("INCOMPLETE_WINDOW", ...)`.
+* Fire ticks unchanged: the same two genuine RibosomeAssembly events fire
+  at window-local indices **9** and **17** (absolute ticks 210 and 218 --
+  `tick_start(201) + local_index`), matching the ground truth this report
+  already established against the pre-M4 file.
+* `run_structural_smoke()`'s relaxed load now reports `stride_contract_ok=True`
+  with zero `stride_contract_problems` (previously `False` with two
+  problems). The smoke's verdict remains `NOT_APPLICABLE` — window-contract
+  completeness does not, and must not, imply a gate verdict.
+* The gating-capable `ribosome_assembly.gate.v1` adapter's strict-mode load
+  now succeeds on this file too, but `evaluate_gate`'s ensemble-size
+  gauntlet still independently refuses with `SINGLE_SEED_ENSEMBLE_REQUIRED`
+  (1 of the required 50 seeds) — this is now the **sole** remaining reason
+  this file cannot reach a computed gate verdict (previously there were two
+  independent reasons; the M4 reason is now closed).
+* `event_registry.yaml`'s RibosomeAssembly row is unchanged:
+  `adapter_id: ribosome_assembly.smoke.v1`, `adapter_status:
+  structural_smoke_only`, `required_n_seeds: 50`. No registry/catalog
+  promotion was made or is implied by this closeout.
+* Regenerated via the existing `scripts.l2_event.runner` CLI smoke mode and
+  `scripts.l2_event.evidence` bundle/index tooling only — no hand-edited
+  evidence JSON. Both the live audit (immediately after regeneration) and a
+  fresh-clone-style audit against the tracked bundle alone report zero
+  problems. Exact commands, commit SHAs, and test run output are recorded in
+  the session summary for this closeout.
+
+Updated docs as part of this round: `EVENT_WINDOW_EXTRACTOR_CONTRACT.md`
+("Current state of the real event MATs on disk" — RibosomeAssembly is now
+contract-complete; the unrelated `RNAModification` file is not, and remains
+untouched), `proposed_patches/ribosome_assembly_gate_v1.registry_row.patch.yaml`
+(the M4 prerequisite is now met; only the 49-seed ensemble prerequisite
+remains), and four test assertions across
+`test_l2_event_adapters.py`/`test_l2_event_window_loader.py`/
+`test_l2_event_ribosome_assembly_gate.py` that previously encoded the
+pre-M4 state. A new regression test
+(`test_l2_event_evidence.py::test_tracked_ra_input_manifest_binds_canary_a_hash_not_the_stale_pre_m4_hash`)
+guards against the tracked manifest's active claim ever regressing to the
+superseded hash.

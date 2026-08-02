@@ -180,10 +180,20 @@ def test_run_structural_smoke_end_to_end_against_real_seed0_never_returns_a_gate
     assert result["tick_offset"] == 200.0
     assert result["karr_total_fires"] == 2
     assert result["oc_total_fires"] == 2
-    # M4: the real seed-0 MAT predates the stride contract; the smoke must
-    # honestly surface that (never silently claim a complete contract).
-    assert result["stride_contract_ok"] is False
-    assert result["stride_contract_problems"]
+    # Canary-A closeout: the real seed-0 MAT was regenerated with a
+    # complete M4 stride/tick_start/tick_end contract (stride=1,
+    # tick_start=201, tick_end=300 -- absolute ticks, tick_offset=200
+    # burn-in ticks preceding capture). The smoke must honestly surface
+    # that too -- never silently claim a complete contract when one isn't
+    # actually present -- but it is genuinely complete now, so
+    # `stride_contract_ok` is True and there are zero problems. This is
+    # still never a gate verdict (see `"verdict" not in result` above):
+    # completeness of the window contract is independent of, and does not
+    # imply, a computed gate PASS (the file remains 1 of the required 50
+    # ensemble seeds -- see test_l2_event_ribosome_assembly_gate.py::
+    # test_gate_adapter_cannot_reach_a_computed_verdict_on_real_seed0).
+    assert result["stride_contract_ok"] is True
+    assert result["stride_contract_problems"] == []
 
 
 # ---------------------------------------------------------------------------
