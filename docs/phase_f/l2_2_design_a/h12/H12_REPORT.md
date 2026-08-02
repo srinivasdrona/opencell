@@ -269,3 +269,37 @@ scripts/l22_evidence/generator.py audit` confirms `integrity: OK`.
   `PASS: 14 / FAIL: 4 / MISSING_EVIDENCE: 4`.
 - AST sanity (`ast.parse`) on both `h12.py` and `verdict.py` after all
   edits.
+
+## Addendum: MacromolecularComplexation network_ge2_fires closure evidence
+
+A follow-on task (worktree
+`E:\opencell-worktrees\l22-macromol-network2-evidence-v2`, branch
+`agent/l22-macromol-network2-evidence-v2`) closed out the
+"demotion recommended for reviewer/maintainer consideration" note above
+for `MacromolecularComplexation` with a committed, machine-checkable,
+**non-gating** evidence package (no catalog/verdict/gate change on that
+branch either):
+
+- `docs/phase_f/l2_2_design_a/h12/
+  MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md` — investigates
+  why `MG_429_MONOMER` (PTS system E1), network 2's limiting substrate, is
+  fixture-constant zero across all 5000 accepted natural (seed, tick)
+  samples, and whether `ub>0` is structurally reachable without changing
+  stoichiometry/constants.
+- `docs/phase_f/l2_2_design_a/h12/condition_gated/
+  MacromolecularComplexation_h12_condition_gated.json` (generator:
+  `scripts/l22_evidence/h12_condition_gated.py`, tests:
+  `tests/scripts/test_h12_condition_gated.py`) — mechanically binds this
+  report's accepted `H12_OBSERVED_REGIME` artifact, an independently
+  re-derived natural-population census (same hash-identical 50-seed
+  population; `ub==[0,0]` on all 5000 samples), and the existing accepted
+  `H12_PERTURBATION_OBSERVED_STOCHASTIC` artifact (network 2 fires for
+  real once only E1 is conditioned), proposing classification
+  `CONDITION_GATED_CANDIDATE`.
+- `docs/phase_f/l2_2_design_a/h12/CONDITION_GATED_TAXONOMY_PROPOSAL.md` —
+  a narrowly-scoped proposal for a future `H12_CONDITION_GATED` verdict
+  value, explicitly not enacted by that branch.
+
+This report's own verdict, tally, and demotion recommendation above are
+UNCHANGED by this addendum; the addendum only records where the
+follow-on evidence lives for a future reviewer decision.

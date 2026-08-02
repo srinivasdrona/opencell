@@ -1,0 +1,358 @@
+{
+  "artifact_kind": "h12_condition_gated_evidence",
+  "artifact_version": "1.0.0",
+  "gating": "NON_GATING -- proposes a disposition for reviewer/maintainer sign-off only; never claims H12_CONFIRMED; not consumed by scripts/l22_evidence/verdict.py, generator.py, or h12_evidence_index.json.",
+  "process": "MacromolecularComplexation",
+  "network": 2,
+  "required_branch": "network_ge2_fires",
+  "required_branches_registry_ref": "scripts/l22_evidence/h12.py:REQUIRED_BRANCHES['MacromolecularComplexation']",
+  "purpose": "Mechanically bind (a) the accepted H12_OBSERVED_REGIME artifact, (b) an independently re-derived natural-population census proving network 2's ub is 0 on 100% of the accepted 50x100 oracle population with PTS-system E1 (MG_429_MONOMER) as the sole limiting substrate, and (c) the accepted non-gating perturbation artifact proving the branch is structurally reachable (fires for real, invariants hold) once ONLY that one substrate is conditioned -- into a single evidence record supporting a proposed CONDITION_GATED terminal classification. See MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md for the full investigation and CONDITION_GATED_TAXONOMY_PROPOSAL.md for the (not-yet-implemented) taxonomy change this is evidence for.",
+  "karr_source_citation": {
+    "vendored_path": "data/karr_vendored_source/MacromolecularComplexation.m",
+    "vendored_sha256_lf_normalized": "2e840ac13b65f0dbd027ef2a425dc3a7a7d23fbd505589eee0b30faedf02d087",
+    "upstream_repo": "https://github.com/CovertLab/WholeCell",
+    "upstream_commit": "6cdee6b355aa0f5ff2953b1ab356eea049108e07",
+    "upstream_original_path": "MacromolecularComplexation.m",
+    "line_ranges": [
+      [
+        290,
+        314
+      ],
+      [
+        334,
+        392
+      ]
+    ],
+    "symbols": [
+      "evolveState",
+      "buildProteinComplexs_montecarlokinetic",
+      "buildProteinComplexs_rates_collisionTheory",
+      "buildProteinComplexs_bounds"
+    ]
+  },
+  "predictor_source_path": "scripts/l22_evidence/h12.py",
+  "predictor_source_sha256_lf_normalized": "aee4b9b89219284c9cd570d4208f39e95a89d657f3604c683a9908fdf883fd10",
+  "fixture_path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+  "fixture_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+  "network2_layout": {
+    "substrate_indices_0b": [
+      23,
+      37,
+      42,
+      192
+    ],
+    "complex_indices_0b": [
+      22,
+      23
+    ],
+    "stoichiometry_block": [
+      [
+        1,
+        1
+      ],
+      [
+        2,
+        0
+      ],
+      [
+        0,
+        2
+      ],
+      [
+        2,
+        2
+      ]
+    ],
+    "substrate_whole_cell_model_ids": [
+      "MG_041_MONOMER",
+      "MG_062_MONOMER",
+      "MG_069_MONOMER",
+      "MG_429_MONOMER"
+    ],
+    "complex_whole_cell_model_ids": [
+      "MG_041_062_429_PENTAMER",
+      "MG_041_069_429_PENTAMER"
+    ]
+  },
+  "natural_census": {
+    "n_seeds": 50,
+    "m_ticks": 100,
+    "total_samples": 5000,
+    "candidate_ticks_ub_gt_0": 0,
+    "ub_min": [
+      0,
+      0
+    ],
+    "ub_max": [
+      0,
+      0
+    ],
+    "ub_mean": [
+      0.0,
+      0.0
+    ],
+    "pool_min": [
+      50.0,
+      34.0,
+      31.0,
+      0.0
+    ],
+    "pool_max": [
+      53.0,
+      34.0,
+      31.0,
+      0.0
+    ],
+    "pool_mean": [
+      51.006,
+      34.0,
+      31.0,
+      0.0
+    ],
+    "pool_fraction_zero": [
+      0.0,
+      0.0,
+      0.0,
+      1.0
+    ],
+    "limiting_substrate_argmin_counts": {
+      "0": 0,
+      "1": 0,
+      "2": 0,
+      "3": 10000
+    },
+    "limiting_substrate_0b": 192,
+    "limiting_substrate_whole_cell_model_id": "MG_429_MONOMER",
+    "oracle_seed_file_sha256": {
+      "0": "ee6a9ae55e3514dcff98a9efc5ce186bd41cfe46d601119ed64ab5a76618ed68",
+      "1": "9160bed936215aeea134d4220807d37e2c26122dc2b006518c5a4f02146bbd76",
+      "2": "ccf817f0ee0afcb1116143f9c4526aa4c0e08160d45b308a58eeefd3d04104a9",
+      "3": "f18521424175e94ca5bdf094c4ae8059a0e6fb7f34411b5f932f762c781e5ea7",
+      "4": "3748a7713ea5eae25965cef8633523779eefe8c58ebb6595b8328483f9ebc0a4",
+      "5": "b8d74ef13fca6d293baa4cbec1d58d31bc054d38f1653ac16adeb2ea154dda58",
+      "6": "365d3d63b8e38ae03dae78001c39c5f40d1e6c35186d5ee1e668e6f503b43b3e",
+      "7": "763bd2dc7df7b3f8905179fa30681cf4d0ebc5434ca12e99dac5868a578784a3",
+      "8": "06496cf7db5b2d3c1c29d440717df06acfb8362fb9ddec30fe6db8da62228fcf",
+      "9": "367e1099e66f65b1749f9d6d4a1af0cb57c3f2ad88bdc05d20cea31776cf73c3",
+      "10": "ebaf03f1313f4e42363983494efa79c80a8c6d07bf6f296decc08df776dde60e",
+      "11": "fa900edd5b0df22215c933b61b9f07472cafb9bd57826e4b238ecea58a1d2c33",
+      "12": "329b532eaa162e61f4641e2806c1521fa9a6a8323e2184dcc48cdb0dc6833b1a",
+      "13": "f4ca2d06ab1bbc7a0b8a183243a2a17b677d3b39152ec31d9af9bac806a93851",
+      "14": "0421a0625cf1e84f38a0bc054c804dc8a914db1a8480bcfa3820f95ec054d88e",
+      "15": "81a8ec0fa3b1e4424bc746bac3bc8936c2bbd0045a570255206a00a804907618",
+      "16": "096a593aae8d9687421a86611f9ad70ad433da345ada09835a709e597805449e",
+      "17": "7d501c1e52f9c22447f2bc9e25bfb1ead1fa4ed16f9879776dae06e6c375b0d6",
+      "18": "3ed683efa130904c50da1dfea319626c2a217f1d5455e6b8fc04e33171e6a620",
+      "19": "ca451c0f5f5520b5cd6df7788e46f07545ca06110eeeb907097c7c0cb4971c2e",
+      "20": "1069c7473ca2bc0c1a174bda1c29f6062301da06e35b12f0e2934bfea24816ff",
+      "21": "392fde92bee91eee90cf04072bab6c64cf207a06bdadf67a41d8dbb69eef01b2",
+      "22": "b73d112d4ee0ec889122ad05f3d7b1d6cecdacde865b913a6a8e832d8196cea7",
+      "23": "35c1aaaf056ce87b480918b73afa62c11526e0af43667e267bc9876ea43aa6ae",
+      "24": "189c6aba23411991c8e1d45fd0a499f91ff93324902713c6fb9bcc05acbe4d2e",
+      "25": "17f39d81d28aa7e9a5c21daebb3565131c819f5047f6fdeba4393139a6f2589f",
+      "26": "ef82cbd0981198a368c4bba4442ffc2cd4d8935d74e441dd217bf1a36a11a61a",
+      "27": "ebd38f69a73f21274b0bf681527c872ea959ea4465cb14cce49ecd8224965d83",
+      "28": "8fea9a54df8bbaf3ded98e07255b6f00d6376c0f01d73ef7ad28b559da3f1ddd",
+      "29": "f646b9386f2619d0175c8debec34b7f34c66a9409a80e812735b9ccbe9048f84",
+      "30": "cf711c2c66efd5012b317ea368373bbc114f4eb7bc6655f853a5a2334d71e547",
+      "31": "db6779e7ab7db918898e83674f1382abb5d9c101fb028be779ded5eb709ef586",
+      "32": "da522c740645d57c45f975a4309ea1b17f29f159af58275933c37288126737f9",
+      "33": "80a2baa3353438091385d1b2661827b4949074527d406c943e379c736ebcb930",
+      "34": "ec7bfe8fa6c51ebe74cf812ac75472157994057cdf842aacb74bc4f44a354af0",
+      "35": "2ac79e4e817863cf42ecaf94e6ff14468ac86d1aba9db490269344ec18dc62ab",
+      "36": "290571c16a149a2f09d74d24075564b8f48fec544bcd5e5ad5eae97a1876e4bb",
+      "37": "53849bb24589b86f8b3ec727042eda7137a3e2f8f735d9bd2d9ec6ec272f61dd",
+      "38": "5aab860f91a63b693906c68a5a1e9e25396f8a32d85946d91341ed7dab857f3e",
+      "39": "97e7b0104ecf569976ef1f153263fa592a5c7c5122cb27024985924b652d6f7b",
+      "40": "abb031d85321f277655b3e29c2a412b00aeaeda061db8fda83016e8cbc8c46c7",
+      "41": "f8c3781ba5e203a5d1f077f98e2d17a2b06b219ceca171b8658be91fbafca4c8",
+      "42": "26dce7099eac466b05ed1f02d8b0bfbd7136262f25e7ddb2f68065a1c3f0d40e",
+      "43": "eda24b364b52fc5f77709f8e1513b7ab0505742d93e6cdef98c6f7c466b90c95",
+      "44": "7feb6ee35ef402cb554da2433d77f97d2d3a6d3ff1496729954b2bbbd0d6777e",
+      "45": "ec8179a706156862e2636a58ede2f31842cf813827bd332aa68daec7b9d89051",
+      "46": "296a85433a15c12d3b01587c38b4b9e459a005fd67089bc6bb4e875c207b4705",
+      "47": "baf1fd8ba394de38096c47d2ee8cfc4ae795cd1255a40b2394e888987b644a13",
+      "48": "47fdaffcabb1b281d6b152ed93bd5f350e18264af3b4c356831535dbfa5e98bf",
+      "49": "89274629fad555773484eb7aab28e5dc1bb6e5c79b4b187594430bb680fe5d3f"
+    },
+    "oracle_manifest_cross_check": {
+      "0": "match",
+      "1": "match",
+      "2": "match",
+      "3": "match",
+      "4": "match",
+      "5": "match",
+      "6": "match",
+      "7": "match",
+      "8": "match",
+      "9": "match",
+      "10": "match",
+      "11": "match",
+      "12": "match",
+      "13": "match",
+      "14": "match",
+      "15": "match",
+      "16": "match",
+      "17": "match",
+      "18": "match",
+      "19": "match",
+      "20": "match",
+      "21": "match",
+      "22": "match",
+      "23": "match",
+      "24": "match",
+      "25": "match",
+      "26": "match",
+      "27": "match",
+      "28": "match",
+      "29": "match",
+      "30": "match",
+      "31": "match",
+      "32": "match",
+      "33": "match",
+      "34": "match",
+      "35": "match",
+      "36": "match",
+      "37": "match",
+      "38": "match",
+      "39": "match",
+      "40": "match",
+      "41": "match",
+      "42": "match",
+      "43": "match",
+      "44": "match",
+      "45": "match",
+      "46": "match",
+      "47": "match",
+      "48": "match",
+      "49": "match"
+    }
+  },
+  "natural_regime_reachable": false,
+  "natural_regime_reachable_unresolved_reason": "The accepted 50x100 oracle population is extracted at tick_offset=0 (cell birth) -- scripts/matlab/extract_per_process_traces_v2.m's own docstring documents that some processes are 'quiescent at cell birth (t=0) but active later' (citing RibosomeAssembly's first assembly at ~tick 238) and provides tick_offset specifically for this. Whether E1 (MG_429_MONOMER) ever becomes nonzero at a later tick in the real Karr model, or is genuinely never produced in this population, is UNRESOLVED without a new tick_offset>0 extraction, which is explicitly out of scope for this artifact. See MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md section 3.",
+  "e1_provenance_ref": "docs/phase_f/l2_2_design_a/h12/MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md",
+  "e1_provenance_ref_sha256_lf_normalized": "c71afae9686ec7176e414642e0009c7975ced3e2192630184b549789b24f47d0",
+  "accepted_h12_artifact_ref": {
+    "path": "docs/phase_f/l2_2_design_a/h12/MacromolecularComplexation_h12.json",
+    "sha256_lf_normalized": "02652958f5a7b193ce182db32a10503c6a565c657dd2f91b0b5dd6bcff0a3229",
+    "verdict": "H12_OBSERVED_REGIME",
+    "nontrivial_sample_count": 814,
+    "exact_match_rate": 1.0,
+    "branches_confirmed": [
+      "network_1_fires"
+    ],
+    "missing_required_branches": [
+      "network_ge2_fires"
+    ],
+    "oracle_seed_file_sha256": {
+      "0": "ee6a9ae55e3514dcff98a9efc5ce186bd41cfe46d601119ed64ab5a76618ed68",
+      "1": "9160bed936215aeea134d4220807d37e2c26122dc2b006518c5a4f02146bbd76",
+      "2": "ccf817f0ee0afcb1116143f9c4526aa4c0e08160d45b308a58eeefd3d04104a9",
+      "3": "f18521424175e94ca5bdf094c4ae8059a0e6fb7f34411b5f932f762c781e5ea7",
+      "4": "3748a7713ea5eae25965cef8633523779eefe8c58ebb6595b8328483f9ebc0a4",
+      "5": "b8d74ef13fca6d293baa4cbec1d58d31bc054d38f1653ac16adeb2ea154dda58",
+      "6": "365d3d63b8e38ae03dae78001c39c5f40d1e6c35186d5ee1e668e6f503b43b3e",
+      "7": "763bd2dc7df7b3f8905179fa30681cf4d0ebc5434ca12e99dac5868a578784a3",
+      "8": "06496cf7db5b2d3c1c29d440717df06acfb8362fb9ddec30fe6db8da62228fcf",
+      "9": "367e1099e66f65b1749f9d6d4a1af0cb57c3f2ad88bdc05d20cea31776cf73c3",
+      "10": "ebaf03f1313f4e42363983494efa79c80a8c6d07bf6f296decc08df776dde60e",
+      "11": "fa900edd5b0df22215c933b61b9f07472cafb9bd57826e4b238ecea58a1d2c33",
+      "12": "329b532eaa162e61f4641e2806c1521fa9a6a8323e2184dcc48cdb0dc6833b1a",
+      "13": "f4ca2d06ab1bbc7a0b8a183243a2a17b677d3b39152ec31d9af9bac806a93851",
+      "14": "0421a0625cf1e84f38a0bc054c804dc8a914db1a8480bcfa3820f95ec054d88e",
+      "15": "81a8ec0fa3b1e4424bc746bac3bc8936c2bbd0045a570255206a00a804907618",
+      "16": "096a593aae8d9687421a86611f9ad70ad433da345ada09835a709e597805449e",
+      "17": "7d501c1e52f9c22447f2bc9e25bfb1ead1fa4ed16f9879776dae06e6c375b0d6",
+      "18": "3ed683efa130904c50da1dfea319626c2a217f1d5455e6b8fc04e33171e6a620",
+      "19": "ca451c0f5f5520b5cd6df7788e46f07545ca06110eeeb907097c7c0cb4971c2e",
+      "20": "1069c7473ca2bc0c1a174bda1c29f6062301da06e35b12f0e2934bfea24816ff",
+      "21": "392fde92bee91eee90cf04072bab6c64cf207a06bdadf67a41d8dbb69eef01b2",
+      "22": "b73d112d4ee0ec889122ad05f3d7b1d6cecdacde865b913a6a8e832d8196cea7",
+      "23": "35c1aaaf056ce87b480918b73afa62c11526e0af43667e267bc9876ea43aa6ae",
+      "24": "189c6aba23411991c8e1d45fd0a499f91ff93324902713c6fb9bcc05acbe4d2e",
+      "25": "17f39d81d28aa7e9a5c21daebb3565131c819f5047f6fdeba4393139a6f2589f",
+      "26": "ef82cbd0981198a368c4bba4442ffc2cd4d8935d74e441dd217bf1a36a11a61a",
+      "27": "ebd38f69a73f21274b0bf681527c872ea959ea4465cb14cce49ecd8224965d83",
+      "28": "8fea9a54df8bbaf3ded98e07255b6f00d6376c0f01d73ef7ad28b559da3f1ddd",
+      "29": "f646b9386f2619d0175c8debec34b7f34c66a9409a80e812735b9ccbe9048f84",
+      "30": "cf711c2c66efd5012b317ea368373bbc114f4eb7bc6655f853a5a2334d71e547",
+      "31": "db6779e7ab7db918898e83674f1382abb5d9c101fb028be779ded5eb709ef586",
+      "32": "da522c740645d57c45f975a4309ea1b17f29f159af58275933c37288126737f9",
+      "33": "80a2baa3353438091385d1b2661827b4949074527d406c943e379c736ebcb930",
+      "34": "ec7bfe8fa6c51ebe74cf812ac75472157994057cdf842aacb74bc4f44a354af0",
+      "35": "2ac79e4e817863cf42ecaf94e6ff14468ac86d1aba9db490269344ec18dc62ab",
+      "36": "290571c16a149a2f09d74d24075564b8f48fec544bcd5e5ad5eae97a1876e4bb",
+      "37": "53849bb24589b86f8b3ec727042eda7137a3e2f8f735d9bd2d9ec6ec272f61dd",
+      "38": "5aab860f91a63b693906c68a5a1e9e25396f8a32d85946d91341ed7dab857f3e",
+      "39": "97e7b0104ecf569976ef1f153263fa592a5c7c5122cb27024985924b652d6f7b",
+      "40": "abb031d85321f277655b3e29c2a412b00aeaeda061db8fda83016e8cbc8c46c7",
+      "41": "f8c3781ba5e203a5d1f077f98e2d17a2b06b219ceca171b8658be91fbafca4c8",
+      "42": "26dce7099eac466b05ed1f02d8b0bfbd7136262f25e7ddb2f68065a1c3f0d40e",
+      "43": "eda24b364b52fc5f77709f8e1513b7ab0505742d93e6cdef98c6f7c466b90c95",
+      "44": "7feb6ee35ef402cb554da2433d77f97d2d3a6d3ff1496729954b2bbbd0d6777e",
+      "45": "ec8179a706156862e2636a58ede2f31842cf813827bd332aa68daec7b9d89051",
+      "46": "296a85433a15c12d3b01587c38b4b9e459a005fd67089bc6bb4e875c207b4705",
+      "47": "baf1fd8ba394de38096c47d2ee8cfc4ae795cd1255a40b2394e888987b644a13",
+      "48": "47fdaffcabb1b281d6b152ed93bd5f350e18264af3b4c356831535dbfa5e98bf",
+      "49": "89274629fad555773484eb7aab28e5dc1bb6e5c79b4b187594430bb680fe5d3f"
+    }
+  },
+  "accepted_perturbation_artifact_ref": {
+    "path": "docs/phase_f/l2_2_design_a/h12/perturbation/MacromolecularComplexation_h12_perturbation.json",
+    "sha256_lf_normalized": "7220fb952b90b040b170c44367106477b46b86cdda20c0d651f70e86fd2c8696",
+    "verdict": "H12_PERTURBATION_OBSERVED_STOCHASTIC",
+    "gating": "NON_GATING -- distributional/structural evidence only; NEVER claims H12_CONFIRMED or exact-match. Not consumed by verdict.py / the H12_CONFIRMED evidence gate.",
+    "target_branch": "network_ge2_fires",
+    "target_branch_exercised": true,
+    "ub": [
+      17,
+      15
+    ],
+    "seeds_vary": true,
+    "distinct_outcome_count": 6,
+    "bound_violations": [],
+    "mass_balance_violations": []
+  },
+  "structural_argument": {
+    "claim": "network>=2 competition is genuinely Monte Carlo: buildProteinComplexs_montecarlokinetic draws randStream.rand() once per iteration of its while-loop (line 349) to select which complex builds next; there is no closed form for that selection sequence. H12_CONFIRMED is therefore inapplicable to this unit by construction -- independent of how much additional natural-population sampling or conditioning occurs, and independent of whether the natural_regime_reachable question above is ever resolved.",
+    "source_citation": {
+      "file": "MacromolecularComplexation.m",
+      "line_ranges": [
+        [
+          334,
+          357
+        ],
+        [
+          360,
+          386
+        ]
+      ],
+      "symbols": [
+        "buildProteinComplexs_montecarlokinetic",
+        "buildProteinComplexs_rates_collisionTheory"
+      ]
+    }
+  },
+  "classification": "CONDITION_GATED_CANDIDATE",
+  "classification_note": "Proposed terminal disposition for MacromolecularComplexation/network_ge2_fires, pending reviewer (Opus 5) sign-off and a SEPARATE, later, serialized change to actually enact a CONDITION_GATED taxonomy value in verdict.py/PROCESS_CATALOG.yaml/h12_evidence_index.json -- see CONDITION_GATED_TAXONOMY_PROPOSAL.md. This artifact and its classification field are NOT consumed by any of those files in this change.",
+  "not_consumed_by": [
+    "scripts/l22_evidence/verdict.py",
+    "scripts/l22_evidence/generator.py",
+    "docs/phase_f/l2_2_design_a/h12/h12_evidence_index.json",
+    "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml"
+  ],
+  "generator_source_path": "scripts/l22_evidence/h12_condition_gated.py",
+  "generator_source_sha256_lf_normalized": "2e6b232a6abef29a2f27515a24d29360cad5d334d81943a2758b29216e139845",
+  "generated_at": "2026-08-02T11:08:10.037119+00:00",
+  "anti_laundering_attestation": {
+    "census_inputs": [
+      "states_before",
+      "static_fixture_params"
+    ],
+    "perturbation_reference_is_precomputed_and_read_only": true,
+    "no_sut_import": true,
+    "no_result_json_access": true,
+    "no_new_extraction": true,
+    "no_matlab_or_octave_run_this_change": true
+  }
+}
