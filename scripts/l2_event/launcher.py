@@ -31,7 +31,9 @@ import argparse
 import hashlib
 import json
 import os
+import re
 import sys
+import uuid
 from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
@@ -44,7 +46,12 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.l2_event.window_loader import EventWindowRefused, load_event_window  # noqa: E402
+from scripts.l2_event.window_loader import (  # noqa: E402
+    EventWindowRefused,
+    _decode_char_metadata,
+    _read_optional_scalar,
+    load_event_window,
+)
 
 KARR_NATIVE_ROOT = REPO_ROOT / "data" / "m1_sources" / "karr_native"
 EXTRACTOR_SCRIPT = REPO_ROOT / "scripts" / "matlab" / "extract_per_process_traces_v2.m"
@@ -74,14 +81,56 @@ CYTOKINESIS_FTSZRING_OBSERVABLES = (
 )
 CYTOKINESIS_SCALAR_FINITE_OBSERVABLES = (CYTOKINESIS_DIAMETER_OBSERVABLE, *CYTOKINESIS_FTSZRING_OBSERVABLES)
 
+# Schema/version tag for merge_event_observables()'s flattened numeric
+# event-observable projection (extract_per_process_traces_v2.m writes this
+# literal value into metadata/event_observable_projection_version for every
+# 'anchor' trace). Bump this, and the corresponding literal in the .m file,
+# only if the projection's field set/semantics ever changes incompatibly --
+# validate_existing_event_window cross-checks it so an on-disk trace from a
+# stale projection schema can never silently skip-valid.
+EVENT_OBSERVABLE_PROJECTION_VERSION = 1
+
 # Suffix for a not-yet-validated regeneration's output directory (see
 # `temp_output_subdir_for`/`finalize_atomic_regeneration`). Never the real
 # per-process-trace directory a `skip_valid` lookup or the standard mid-cycle
-# extractor would resolve to.
+# extractor would resolve to. Always paired with a unique per-job token (see
+# `allocate_unique_temp_output_path`) -- never reused bare, so two
+# regeneration attempts (even for the same spec) can never collide.
 TEMP_REGEN_SUFFIX = ".tmp-regen"
 
 WindowContract = Literal["fixed", "anchor"]
 _VALID_WINDOW_CONTRACTS = ("fixed", "anchor")
+
+# Safe canonical-token restriction for every spec identifier string that
+# build_matlab_command interpolates into a MATLAB command (process name,
+# signal_property, signal_field). This is enforced at spec-construction
+# time (__post_init__), independent of/in addition to `_matlab_quote`:
+# `_matlab_quote` only secures the MATLAB single-quoted string-literal
+# context itself (doubling an embedded `'`, per MATLAB's own escaping
+# convention -- see test_build_matlab_command_quotes_embedded_single_quote_
+# in_process_name), never a not-yet-existing future shell boundary (e.g. a
+# job runner invoking `wsl bash -c "matlab -batch '...'"`). A single quote
+# is therefore NOT rejected here -- it is a legitimate character that
+# `_matlab_quote` already escapes correctly. What IS refused here, before
+# any command string is ever built, is the specific set of characters that
+# would let a value break out of *that* future shell boundary regardless
+# of MATLAB-level quoting: an unescaped double quote, backtick, `$`
+# (shell/command substitution), `;` (command separator), and any newline/
+# carriage-return (command injection via embedded newline).
+_UNSAFE_IDENTIFIER_CHARS_RE = re.compile(r'["`$;\n\r]')
+
+
+def _require_safe_identifier(field_name: str, value: str) -> None:
+    if not isinstance(value, str) or not value or _UNSAFE_IDENTIFIER_CHARS_RE.search(value):
+        raise WindowContractConfigError(
+            f"{field_name}={value!r} contains a character that is unsafe at the eventual "
+            "matlab-batch shell boundary a future job runner will pass this value through "
+            "(double quote, backtick, $, ;, or a newline/carriage-return) -- _matlab_quote "
+            "alone secures the MATLAB string-literal context, not that shell boundary, so "
+            "this is refused here at config time instead. A plain embedded single quote is "
+            "not rejected: _matlab_quote already escapes it correctly (doubling, MATLAB's "
+            "own convention)."
+        )
 
 
 def _matlab_quote(value: str) -> str:
@@ -93,6 +142,16 @@ def _matlab_quote(value: str) -> str:
     process name, signal property/field, or output-subdir component can
     contain one, so silently accepting it would only be a MATLAB-source-
     injection vector via a crafted spec field.
+
+    This function secures only the MATLAB single-quoted string-literal
+    context it targets -- it does NOT, by itself, secure a future shell
+    boundary this command string might be passed through (e.g. a job
+    runner invoking ``wsl bash -c "matlab -batch '...'"``); no such shell
+    invocation exists in this module. The actual defense for that future
+    boundary is restricting every interpolated identifier field (process
+    name, signal_property, signal_field) to a safe canonical token at
+    spec-construction time -- see ``_require_safe_identifier`` and its
+    call sites in ``FixedWindowSpec``/``AnchorWindowSpec.__post_init__``.
     """
     if "\n" in value or "\r" in value:
         raise WindowContractConfigError(
@@ -154,6 +213,7 @@ class FixedWindowSpec:
                 "names -- it must never default to an empty tuple that production planning "
                 "can silently omit (Opus 5 rejection finding)."
             )
+        _require_safe_identifier("process", self.process)
 
 
 @dataclass(frozen=True)
@@ -236,6 +296,9 @@ class AnchorWindowSpec:
                 CYTOKINESIS_DIAMETER_OBSERVABLE if self.signal_kind == "diameter_decrease" else DEFAULT_ANCHOR_SIGNAL_FIELD
             )
         object.__setattr__(self, "signal_field", resolved_signal_field)
+        _require_safe_identifier("process", self.process)
+        _require_safe_identifier("signal_property", self.signal_property)
+        _require_safe_identifier("signal_field", resolved_signal_field)
 
 
 WindowSpec = FixedWindowSpec | AnchorWindowSpec
@@ -249,24 +312,74 @@ def mat_path_for(spec: WindowSpec, *, karr_native_root: Path = KARR_NATIVE_ROOT)
     return event_window_mat_path(spec.process, spec.seed, n_ticks=spec.n_ticks, karr_native_root=karr_native_root)
 
 
-def temp_output_subdir_for(spec: WindowSpec, *, karr_native_root: Path = KARR_NATIVE_ROOT) -> str:
+def temp_output_subdir_for(spec: WindowSpec, token: str, *, karr_native_root: Path = KARR_NATIVE_ROOT) -> str:
     """The event-window output subdirectory name a *regeneration* job must
     target instead of the real one. ``extract_per_process_traces_v2.m``
     already ``mkdir``s its output root if missing and skips existence-only
     (never overwrites) -- so a not-yet-validated regeneration can be
-    produced into this sibling ``.tmp-regen`` directory with zero changes
-    to the .m contract, and the prior on-disk trace (valid or not) is never
-    touched until ``finalize_atomic_regeneration`` explicitly validates and
-    replaces it (Opus 5 rejection finding: "existing corrupt/stale ...
-    files could be [deleted to force regeneration]" -- replaced here with a
-    non-destructive atomic-replace-after-validation flow).
+    produced into this sibling ``.tmp-regen-<token>`` directory with zero
+    changes to the .m contract, and the prior on-disk trace (valid or not)
+    is never touched until ``finalize_atomic_regeneration`` explicitly
+    validates and replaces it (Opus 5 rejection finding: "existing
+    corrupt/stale ... files could be [deleted to force regeneration]" --
+    replaced here with a non-destructive atomic-replace-after-validation
+    flow). ``token`` (see ``allocate_unique_temp_output_path``) makes each
+    regeneration attempt's temp directory unique -- never a bare, reusable
+    ``.tmp-regen`` name two jobs (or a stale leftover from a prior run)
+    could collide on.
     """
-    return output_dir_for(spec, karr_native_root=karr_native_root).name + TEMP_REGEN_SUFFIX
+    return f"{output_dir_for(spec, karr_native_root=karr_native_root).name}{TEMP_REGEN_SUFFIX}-{token}"
 
 
-def temp_output_path_for(spec: WindowSpec, *, karr_native_root: Path = KARR_NATIVE_ROOT) -> Path:
+def temp_output_path_for(spec: WindowSpec, token: str, *, karr_native_root: Path = KARR_NATIVE_ROOT) -> Path:
     filename = mat_path_for(spec, karr_native_root=karr_native_root).name
-    return karr_native_root / temp_output_subdir_for(spec, karr_native_root=karr_native_root) / filename
+    return karr_native_root / temp_output_subdir_for(spec, token, karr_native_root=karr_native_root) / filename
+
+
+def temp_regen_token() -> str:
+    """A fresh per-job token for a ``.tmp-regen-<token>`` directory name. A
+    random UUID4 hex fragment, not a counter/timestamp, so two
+    independently planned jobs (even for the identical spec, e.g. a
+    retried plan) can never collide on the same temp directory name."""
+    return uuid.uuid4().hex[:16]
+
+
+def allocate_unique_temp_output_path(
+    spec: WindowSpec, *, karr_native_root: Path = KARR_NATIVE_ROOT, max_attempts: int = 8
+) -> tuple[str, Path]:
+    """Generate a fresh per-job token and confirm its ``.tmp-regen-<token>``
+    output directory does not already exist on disk before returning it --
+    so two plans, or a stale leftover directory from a prior/abandoned run,
+    can never collide on the same temp directory (Opus 5 rejection
+    finding: the prior bare ``.tmp-regen`` name was reusable and nothing
+    checked the temp path was absent before a job started). Returns
+    ``(token, temp_path)``. Never invoked against a real MATLAB run in this
+    task -- no extraction/regeneration is executed here.
+    """
+    for _ in range(max_attempts):
+        token = temp_regen_token()
+        temp_path = temp_output_path_for(spec, token, karr_native_root=karr_native_root)
+        if not temp_path.parent.exists():
+            return token, temp_path
+    raise RuntimeError(
+        f"could not allocate a unique .tmp-regen directory for {spec.process}/seed {spec.seed} "
+        f"after {max_attempts} attempts -- inspect {karr_native_root} for stale temp directories "
+        "(see list_stale_regeneration_temp_dirs)"
+    )
+
+
+def list_stale_regeneration_temp_dirs(*, karr_native_root: Path = KARR_NATIVE_ROOT) -> list[Path]:
+    """Read-only report of leftover ``.tmp-regen-<token>`` directories under
+    ``karr_native_root`` (e.g. from an interrupted or abandoned
+    regeneration run). Never deletes anything: this is purely a listing
+    for an operator/future targeted-cleanup tool to inspect and decide on.
+    The real per-process trace files never live inside a ``.tmp-regen-*``
+    directory, so even an incautious future cleanup acting only on the
+    paths returned here could never touch final evidence.
+    """
+    if not karr_native_root.exists():
+        return []
+    return sorted(p for p in karr_native_root.glob(f"*{TEMP_REGEN_SUFFIX}-*") if p.is_dir())
 
 
 def sha256_of(path: Path) -> str | None:
@@ -286,25 +399,66 @@ def sha256_of(path: Path) -> str | None:
     return hasher.hexdigest()
 
 
-def finalize_atomic_regeneration(temp_path: Path, final_path: Path, spec: WindowSpec) -> tuple[bool, str]:
+def finalize_atomic_regeneration(
+    temp_path: Path,
+    final_path: Path,
+    spec: WindowSpec,
+    *,
+    expected_token: str,
+    prior_final_sha256: str | None,
+) -> tuple[bool, str]:
     """Validate a not-yet-trusted regeneration output at ``temp_path``
     against ``spec``'s full contract (the same gauntlet
     ``validate_existing_event_window`` applies to any on-disk trace) and
     ONLY on success atomically replace ``final_path`` with it via
     ``os.replace`` (atomic rename within one filesystem/volume).
 
+    Binds finalize to the exact job it belongs to (Opus 5 rejection
+    finding: "bind finalize to the exact spec + token + pre-run
+    manifest"):
+
+    * ``expected_token`` -- the unique token
+      ``allocate_unique_temp_output_path`` minted for THIS job; ``temp_path``'s
+      parent directory name must embed it, or finalize refuses (guards
+      against operating on a stale/foreign ``.tmp-regen-*`` directory left
+      over from a different job).
+    * ``prior_final_sha256`` -- the SHA-256 of ``final_path`` captured at
+      plan time (``WindowDecision.prior_file_sha256``), i.e. the pre-run
+      manifest. If ``final_path``'s CURRENT hash no longer matches, some
+      other writer changed it since the plan was made and finalize refuses
+      rather than clobber an identity it never validated.
+    * ``spec`` -- the full ``validate_existing_event_window`` gauntlet
+      (process/seed/n_ticks/window kind/stride/bounds/anchor-identity),
+      applied to ``temp_path`` before it may ever replace ``final_path``.
+
     Never invoked by this task -- no MATLAB run occurred, so no temp output
     exists to finalize. Implemented so a *future* regeneration run has a
     safe, non-destructive finalize step to call instead of the removed
-    ``apply_invalidations`` pre-emptive delete. On failure, ``temp_path``
-    is left on disk for inspection and ``final_path`` (the prior file,
-    valid or not) is left completely untouched: corrupt/stale evidence
-    must never be destroyed to force regeneration (Opus 5 rejection
-    finding), and that guarantee must hold for a *failed* regeneration
-    attempt too, not just for the pre-regeneration planning step.
+    ``apply_invalidations`` pre-emptive delete. On ANY failure (token
+    mismatch, missing temp, stale/changed final, or a failed validation),
+    ``temp_path`` is left on disk for inspection and ``final_path`` (the
+    prior file, valid or not) is left byte-identical: corrupt/stale
+    evidence must never be destroyed to force regeneration (Opus 5
+    rejection finding), and that guarantee must hold for a *failed*
+    regeneration attempt too, not just for the pre-regeneration planning
+    step. A stale/foreign temp directory must never be promoted.
     """
+    if expected_token not in temp_path.parent.name:
+        return False, (
+            f"{temp_path}: temp directory name does not embed the expected job token "
+            f"{expected_token!r} -- refusing to finalize a mismatched/stale temp output "
+            f"({final_path} left untouched)"
+        )
     if not temp_path.exists():
         return False, f"{temp_path}: temp regeneration output does not exist"
+    current_final_sha256 = sha256_of(final_path)
+    if current_final_sha256 != prior_final_sha256:
+        return False, (
+            f"{final_path}: current sha256 ({current_final_sha256!r}) does not match the "
+            f"pre-run manifest sha256 ({prior_final_sha256!r}) captured at plan time -- refusing "
+            f"to finalize against a file that changed since the plan was made ({final_path} left "
+            "untouched)"
+        )
     ok, reason = validate_existing_event_window(temp_path, spec)
     if not ok:
         return False, f"temp regeneration output at {temp_path} failed validation, {final_path} left untouched: {reason}"
@@ -393,21 +547,31 @@ def event_window_log_relpath(
 
 def _window_boundary_kind(path: Path) -> str:
     """Classify which of ``tick_end``/``window_anchor`` an on-disk trace's
-    metadata carries: ``'fixed'``, ``'anchor'``, ``'both'``, or
-    ``'neither'``. Used only to detect a window-kind MISMATCH between what
-    is on disk and what was requested (rule-6/rule-8 guard against
+    metadata carries: ``'fixed'``, ``'anchor'``, ``'both'``, ``'neither'``,
+    or ``'corrupt'``. Used only to detect a window-kind MISMATCH between
+    what is on disk and what was requested (rule-6/rule-8 guard against
     "duplicate extraction" silently being accepted as satisfying a
     different request) -- never to decide stride/completeness, which stays
     the sole authority of ``window_loader``.
+
+    ``'corrupt'`` is a distinct classification from ``'neither'``: a
+    zero-byte, garbage, or truncated file cannot even be opened/parsed as
+    HDF5 at all (``OSError``/``ValueError``/``KeyError``), which is a
+    different failure than a genuinely openable file that simply lacks a
+    ``tick_end``/``window_anchor`` key. Never raises -- a corrupt file must
+    be classified, never crash the caller (Opus 5 rejection finding).
     """
     import h5py
 
-    with h5py.File(path, "r") as handle:
-        metadata = handle.get("metadata")
-        if metadata is None:
-            return "neither"
-        has_end = "tick_end" in metadata
-        has_anchor = "window_anchor" in metadata
+    try:
+        with h5py.File(path, "r") as handle:
+            metadata = handle.get("metadata")
+            if metadata is None:
+                return "neither"
+            has_end = "tick_end" in metadata
+            has_anchor = "window_anchor" in metadata
+    except (OSError, ValueError, KeyError):
+        return "corrupt"
     if has_end and has_anchor:
         return "both"
     if has_end:
@@ -415,6 +579,46 @@ def _window_boundary_kind(path: Path) -> str:
     if has_anchor:
         return "anchor"
     return "neither"
+
+
+def _read_anchor_signal_metadata(path: Path) -> dict[str, Any]:
+    """Read the anchor-config identity-binding metadata
+    (``signal_kind``/``signal_property``/``signal_field``/
+    ``max_search_ticks``/``event_observable_projection_version``)
+    ``extract_per_process_traces_v2.m`` persists for ``window_contract=
+    'anchor'`` traces, so ``validate_existing_event_window`` can
+    cross-check that an on-disk trace was actually produced for the
+    requested signal configuration -- never trusting window-kind/tick
+    agreement alone (a trace generated for a DIFFERENT signal_property,
+    e.g., must never validate/skip-valid against a spec requesting a
+    different one). Any key absent from ``metadata`` maps to ``None``
+    (never raises for a missing key); an unreadable/corrupt file DOES
+    raise ``OSError``/``ValueError``/``KeyError`` -- callers must catch
+    those explicitly (see ``validate_existing_event_window``), consistent
+    with ``_window_boundary_kind``'s corrupt-file handling.
+    """
+    import h5py
+
+    result: dict[str, Any] = {
+        "signal_kind": None,
+        "signal_property": None,
+        "signal_field": None,
+        "max_search_ticks": None,
+        "event_observable_projection_version": None,
+    }
+    with h5py.File(path, "r") as handle:
+        metadata = handle.get("metadata")
+        if metadata is None:
+            return result
+        for str_key in ("signal_kind", "signal_property", "signal_field"):
+            if str_key in metadata:
+                result[str_key] = _decode_char_metadata(metadata[str_key][()])
+        for int_key in ("max_search_ticks", "event_observable_projection_version"):
+            if int_key in metadata:
+                value, problem = _read_optional_scalar(metadata, int_key)
+                if problem is None and value is not None:
+                    result[int_key] = int(value)
+    return result
 
 
 @dataclass
@@ -441,13 +645,20 @@ class WindowJob:
     matlab_command: str
     log_path: str
     # Populated only for a "regenerate_invalid" job: the not-yet-validated
-    # regeneration output path (a sibling `.tmp-regen` dir, see
+    # regeneration output path (a sibling `.tmp-regen-<token>` dir, see
     # `temp_output_subdir_for`) and the real path it would replace only
     # after `finalize_atomic_regeneration` validates it. Both None for a
     # "generate_missing" job -- there is no prior file to protect, so
     # `matlab_command` writes directly to the real path.
     temp_output_path: str | None = None
     final_output_path: str | None = None
+    # Populated only for a "regenerate_invalid" job: the unique per-job
+    # token `allocate_unique_temp_output_path` minted for `temp_output_path`
+    # (see also `WindowDecision.prior_file_sha256`, this job's pre-run
+    # manifest hash) -- a future runner must pass BOTH back into
+    # `finalize_atomic_regeneration` (`expected_token`, `prior_final_sha256`)
+    # so finalize can never be tricked into promoting a stale/foreign temp.
+    regen_token: str | None = None
 
 
 @dataclass
@@ -483,13 +694,32 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
     computation applies -- so a trace this function calls valid is, by
     construction, one the loader will also accept; and a trace the loader
     would refuse (missing stride contract, stride != 1, sparse/partial
-    grid, incomplete/duplicate onset-completion, or not even an
-    event-window trace at all) is never marked ``skip_valid`` here.
-    ``required_observables`` and (for an anchor spec) the scalar/finite
-    numeric-observable set are always sourced from ``spec`` -- never an
-    optional kwarg a caller could omit (Opus 5 rejection finding: "Make
-    required observables process/spec-owned"). Returns ``(ok, reason)``;
-    ``reason`` is empty iff ``ok`` is True.
+    grid, incomplete onset/completion, or not even an event-window trace
+    at all) is never marked ``skip_valid`` here. ``required_observables``
+    and (for an anchor spec) the scalar/finite numeric-observable set are
+    always sourced from ``spec`` -- never an optional kwarg a caller could
+    omit (Opus 5 rejection finding: "Make required observables
+    process/spec-owned").
+
+    Also binds identity beyond mere structural compliance (Opus 5
+    rejection finding): a ``FixedWindowSpec``'s ``tick_offset``/
+    ``tick_start``/``tick_end`` must match the corrected absolute-tick
+    formula (``tick_start == tick_offset + 1``, ``tick_end == tick_offset +
+    n_ticks``) exactly, and an ``AnchorWindowSpec``'s
+    ``signal_kind``/``signal_property``/``signal_field``/
+    ``max_search_ticks``/observable-projection-schema-version must match
+    the on-disk trace's own persisted anchor-config metadata -- so a trace
+    produced for a DIFFERENT fixed-offset or anchor-signal request can
+    never ``skip_valid`` against this one.
+
+    Never crashes on a corrupt/malformed file (Opus 5 rejection finding):
+    every path that opens/parses the file (the loader call and the two
+    on-disk-metadata helpers below) is guarded against ``OSError``/
+    ``ValueError``/``KeyError``, which are converted into an ordinary
+    ``(False, reason)`` result -- ``plan_event_window_extraction`` then
+    resolves this to ``regenerate_invalid``, never a crash or a silent
+    ``skip_valid``. Returns ``(ok, reason)``; ``reason`` is empty iff
+    ``ok`` is True.
     """
     if not path.exists():
         return False, "file does not exist"
@@ -504,6 +734,12 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
         )
     except EventWindowRefused as exc:
         return False, f"{exc.reason}: {exc}"
+    except (OSError, ValueError, KeyError) as exc:
+        return False, (
+            f"{path}: failed to open/parse as an event-window trace "
+            f"({type(exc).__name__}: {exc}) -- treated as a corrupt/invalid file "
+            "(regenerate_invalid), never a crash or silent skip"
+        )
 
     if window.process_name != spec.process:
         return False, f"metadata.process_name={window.process_name!r} != expected {spec.process!r}"
@@ -512,23 +748,75 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
     if window.n_ticks != int(spec.n_ticks):
         return False, f"metadata.n_ticks={window.n_ticks!r} != expected {spec.n_ticks!r}"
 
-    on_disk_kind = _window_boundary_kind(path)
+    try:
+        on_disk_kind = _window_boundary_kind(path)
+    except (OSError, ValueError, KeyError) as exc:
+        return False, f"{path}: failed to inspect on-disk window-kind metadata ({type(exc).__name__}: {exc})"
+    if on_disk_kind == "corrupt":
+        return False, f"{path}: could not inspect on-disk window-kind metadata (corrupt/unreadable file)"
     if on_disk_kind != spec.window_contract:
         return False, (
             f"on-disk window kind={on_disk_kind!r} != requested window_contract={spec.window_contract!r} "
             "(a trace produced under a different window_contract must never be silently reused)"
         )
 
-    if (
-        isinstance(spec, AnchorWindowSpec)
-        and spec.signal_kind == "diameter_decrease"
-        and window.onset_tick is None
-    ):
-        return False, (
-            "diameter_decrease anchor window has no metadata.onset_tick (window_anchor/"
-            "completion alone is insufficient -- the ratified Cytokinesis timing decision "
-            "requires the observed onset tick too)"
-        )
+    if isinstance(spec, FixedWindowSpec):
+        expected_tick_start = int(spec.tick_offset) + 1
+        expected_tick_end = int(spec.tick_offset) + int(spec.n_ticks)
+        if int(window.tick_offset) != int(spec.tick_offset):
+            return False, (
+                f"metadata.tick_offset={window.tick_offset!r} != expected burn-in tick count "
+                f"{spec.tick_offset!r}"
+            )
+        if window.tick_start != expected_tick_start:
+            return False, (
+                f"metadata.tick_start={window.tick_start!r} != expected {expected_tick_start!r} "
+                "(tick_offset + 1, absolute 1-based coordinate)"
+            )
+        if window.tick_end != expected_tick_end:
+            return False, (
+                f"metadata.tick_end={window.tick_end!r} != expected {expected_tick_end!r} "
+                "(tick_offset + n_ticks)"
+            )
+
+    if isinstance(spec, AnchorWindowSpec):
+        try:
+            anchor_meta = _read_anchor_signal_metadata(path)
+        except (OSError, ValueError, KeyError) as exc:
+            return False, f"{path}: failed to inspect anchor signal metadata ({type(exc).__name__}: {exc})"
+
+        if anchor_meta["signal_kind"] != spec.signal_kind:
+            return False, (
+                f"metadata.signal_kind={anchor_meta['signal_kind']!r} != expected {spec.signal_kind!r} "
+                "(trace was produced for a different anchor signal request)"
+            )
+        if anchor_meta["signal_property"] != spec.signal_property:
+            return False, (
+                f"metadata.signal_property={anchor_meta['signal_property']!r} != expected "
+                f"{spec.signal_property!r}"
+            )
+        if anchor_meta["signal_field"] != spec.signal_field:
+            return False, (
+                f"metadata.signal_field={anchor_meta['signal_field']!r} != expected {spec.signal_field!r}"
+            )
+        if anchor_meta["max_search_ticks"] != int(spec.max_search_ticks):
+            return False, (
+                f"metadata.max_search_ticks={anchor_meta['max_search_ticks']!r} != expected "
+                f"{spec.max_search_ticks!r}"
+            )
+        if anchor_meta["event_observable_projection_version"] != EVENT_OBSERVABLE_PROJECTION_VERSION:
+            return False, (
+                f"metadata.event_observable_projection_version="
+                f"{anchor_meta['event_observable_projection_version']!r} != expected "
+                f"{EVENT_OBSERVABLE_PROJECTION_VERSION!r} (observable projection schema mismatch)"
+            )
+
+        if spec.signal_kind == "diameter_decrease" and window.onset_tick is None:
+            return False, (
+                "diameter_decrease anchor window has no metadata.onset_tick (window_anchor/"
+                "completion alone is insufficient -- the ratified Cytokinesis timing decision "
+                "requires the observed onset tick too)"
+            )
 
     return True, ""
 
@@ -548,10 +836,13 @@ def plan_event_window_extraction(
     when ``validate_existing`` is True. Every job's ``output_dir`` is keyed
     by seed (``per_process_traces_v2_event_s{seed:03d}/``), matching the M4
     contract layout -- EXCEPT a ``regenerate_invalid`` job, whose command
-    targets a sibling ``.tmp-regen`` directory (see
-    ``temp_output_subdir_for``) instead: a prior on-disk trace is never
-    deleted or overwritten in place; only ``finalize_atomic_regeneration``
-    may replace it, and only after revalidating the fresh output.
+    targets a fresh, existence-checked ``.tmp-regen-<token>`` sibling
+    directory (see ``allocate_unique_temp_output_path``) instead: a prior
+    on-disk trace is never deleted or overwritten in place; only
+    ``finalize_atomic_regeneration`` may replace it, and only after
+    rebinding to this exact spec + token + pre-run manifest hash
+    (``WindowJob.regen_token``/``WindowDecision.prior_file_sha256``) and
+    revalidating the fresh output.
     """
     decisions: list[WindowDecision] = []
     jobs: list[WindowJob] = []
@@ -608,11 +899,14 @@ def plan_event_window_extraction(
         log_relpath = event_window_log_relpath(spec.process, spec.seed)
         if action == "regenerate_invalid":
             # A prior file already exists at `path` -- never write there
-            # directly. The job targets a `.tmp-regen` sibling directory;
-            # only `finalize_atomic_regeneration` may promote it to `path`,
-            # and only after it independently revalidates.
-            temp_subdir = temp_output_subdir_for(spec, karr_native_root=karr_native_root)
-            temp_path = temp_output_path_for(spec, karr_native_root=karr_native_root)
+            # directly. The job targets a unique-token `.tmp-regen-<token>`
+            # sibling directory (never absent-unchecked, never reused
+            # bare); only `finalize_atomic_regeneration` may promote it to
+            # `path`, and only after it independently revalidates against
+            # this exact spec + token + the pre-run manifest hash captured
+            # above (`prior_sha256`).
+            token, temp_path = allocate_unique_temp_output_path(spec, karr_native_root=karr_native_root)
+            temp_subdir = temp_output_subdir_for(spec, token, karr_native_root=karr_native_root)
             command = build_matlab_command(spec, log_relpath=log_relpath, output_subdir=temp_subdir)
             job = WindowJob(
                 process=spec.process,
@@ -623,6 +917,7 @@ def plan_event_window_extraction(
                 log_path=log_relpath,
                 temp_output_path=str(temp_path),
                 final_output_path=str(path),
+                regen_token=token,
             )
         else:
             output_dir = output_dir_for(spec, karr_native_root=karr_native_root)
@@ -700,8 +995,9 @@ def _build_arg_parser() -> argparse.ArgumentParser:
             "Build a resumable event-window extraction plan JSON from a JSON "
             "list of {process, seed, window_contract, required_observables, ...} spec rows. "
             "Never deletes an on-disk trace: a 'regenerate_invalid' job's command targets a "
-            "'.tmp-regen' sibling directory (see temp_output_subdir_for), and only "
-            "finalize_atomic_regeneration may later replace the real file, after revalidating."
+            "unique '.tmp-regen-<token>' sibling directory (see allocate_unique_temp_output_path), "
+            "and only finalize_atomic_regeneration may later replace the real file, after "
+            "rebinding to the exact spec+token+pre-run manifest and revalidating."
         ),
     )
     plan_parser.add_argument(

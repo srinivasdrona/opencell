@@ -22,8 +22,13 @@ function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, se
 %   metadata/window_anchor (anchor) to be written alongside the existing
 %   metadata/n_ticks, process_name, rng_seed, tick_offset keys:
 %     'fixed'  -- the window is the caller-supplied tick_offset burn-in
-%                 (unchanged capture loop below); tick_start == tick_offset,
-%                 tick_end == tick_offset + n_ticks - 1, stride == 1.
+%                 (unchanged capture loop below); ticks 1..tick_offset are
+%                 consumed as burn-in BEFORE capture begins, so the first
+%                 captured (absolute, 1-based) tick is tick_offset + 1:
+%                 tick_start == tick_offset + 1, tick_end == tick_offset +
+%                 n_ticks, stride == 1. metadata.tick_offset always records
+%                 the burn-in tick COUNT (never a discovered/derived tick),
+%                 and is never timing arithmetic on its own.
 %     'anchor' -- the window ends at a REAL, observed division-complete
 %                 state (see capture_anchor_window/default_anchor_opts
 %                 below), never a caller-supplied or fabricated tick. Do
@@ -111,6 +116,14 @@ if nargin < 1 || isempty(process_names)
     clear sim_probe;
 end
 
+% Per-process failures are accumulated (not thrown immediately) so multi-
+% process diagnostics are preserved (every requested process still gets a
+% fprintf'd WARN/ERROR line), but ANY requested-process failure must make
+% the WHOLE batch fail: see the error(...) call after this loop below,
+% which build_matlab_command's outer try/catch turns into a nonzero exit.
+% A caller must never see exit 0 alongside a skipped/failed process.
+failed_processes = {};
+
 for i = 1:numel(process_names)
     requested_name = process_names{i};
     fprintf('\n[trace_v2] === %s ===\n', requested_name);
@@ -119,6 +132,7 @@ for i = 1:numel(process_names)
     [target_idx, canonical_name] = find_process_index(sim, requested_name);
     if isempty(target_idx)
         fprintf('[trace_v2] WARN process not found: %s\n', requested_name);
+        failed_processes{end + 1} = sprintf('%s: process not found', requested_name); %#ok<AGROW>
         continue;
     end
 
@@ -136,6 +150,13 @@ for i = 1:numel(process_names)
 
     ok = true;
     error_message = '';
+    % burn_in_tick_offset is the caller-supplied burn-in tick COUNT (0 for
+    % window_contract='anchor', enforced above) and is what metadata.tick_offset
+    % must always record -- never the discovered/derived window start.
+    % effective_tick_start starts equal to it for 'fixed'/'' (no burn-in
+    % discovery happens there) and is overwritten below, for 'anchor' only,
+    % with the observed absolute tick_start capture_anchor_window returns.
+    burn_in_tick_offset = tick_offset;
     effective_tick_start = tick_offset;
     window_anchor_tick = [];
     onset_tick = [];
@@ -180,6 +201,7 @@ for i = 1:numel(process_names)
     if ~ok
         fprintf('[trace_v2] ERROR %s\n', error_message);
         fprintf('[trace_v2] skipped write: %s\n', out_path);
+        failed_processes{end + 1} = sprintf('%s: %s', canonical_name, error_message); %#ok<AGROW>
         continue;
     end
 
@@ -187,7 +209,7 @@ for i = 1:numel(process_names)
         'process_name', canonical_name, ...
         'n_ticks', n_ticks, ...
         'rng_seed', seed, ...
-        'tick_offset', effective_tick_start, ...
+        'tick_offset', burn_in_tick_offset, ...
         'timestamp', datestr(now, 'yyyy-mm-dd HH:MM:SS'), ...
         'snapshot_properties', {snapshot_props} ...
     );
@@ -197,13 +219,30 @@ for i = 1:numel(process_names)
     % opted into a window_contract; '' (default) preserves the exact
     % pre-M4 metadata shape for every existing non-event-window caller.
     if strcmp(window_contract, 'fixed')
+        % Burn-in consumes absolute ticks 1..tick_offset BEFORE capture
+        % begins, so the first captured tick is tick_offset + 1, not
+        % tick_offset (single absolute 1-based coordinate system shared
+        % with 'anchor' below and with window_loader.WindowGrid.absolute_tick).
         metadata.stride = int32(1);
-        metadata.tick_start = int32(effective_tick_start);
-        metadata.tick_end = int32(effective_tick_start + n_ticks - 1);
+        metadata.tick_start = int32(effective_tick_start + 1);
+        metadata.tick_end = int32(effective_tick_start + n_ticks);
     elseif strcmp(window_contract, 'anchor')
+        % capture_anchor_window's own tick numbering already starts at
+        % absolute tick 1 (no burn-in exists for 'anchor'; enforced above),
+        % so tick_start/window_anchor need no further +1 adjustment here.
         metadata.stride = int32(1);
         metadata.tick_start = int32(effective_tick_start);
         metadata.window_anchor = int32(window_anchor_tick);
+        % Anchor-config identity-binding metadata (M4 correction): persisted
+        % so a trace produced for a DIFFERENT signal_kind/signal_property/
+        % signal_field/max_search_ticks request can never validate/skip-valid
+        % against a spec it wasn't actually generated for (see
+        % launcher.validate_existing_event_window's anchor cross-check).
+        metadata.signal_kind = anchor_opts.signal_kind;
+        metadata.signal_property = anchor_opts.signal_property;
+        metadata.signal_field = anchor_opts.signal_field;
+        metadata.max_search_ticks = int32(anchor_opts.max_search_ticks);
+        metadata.event_observable_projection_version = int32(1);
         % onset_tick (M4/ratified-decision addition): the real, observed
         % first strict pinchedDiameter decrease -- the process-local
         % contraction-onset-to-completion TIMING anchor. Only produced for
@@ -212,8 +251,8 @@ for i = 1:numel(process_names)
         % so onset_tick is intentionally omitted (never fabricated) for
         % that kind. window_anchor remains the CAPTURE-boundary
         % (completion) tick; onset_tick is never a substitute for it and
-        % tick_offset (== effective_tick_start above) is never read as a
-        % timing anchor by any downstream adapter.
+        % tick_offset (== burn_in_tick_offset, always 0 for 'anchor' mode)
+        % is never read as a timing anchor by any downstream adapter.
         if ~isempty(onset_tick)
             metadata.onset_tick = int32(onset_tick);
         end
@@ -221,6 +260,17 @@ for i = 1:numel(process_names)
 
     save(out_path, 'states_before', 'states_after', 'metadata', '-v7.3');
     fprintf('[trace_v2] saved: %s\n', out_path);
+end
+
+if ~isempty(failed_processes)
+    % Any requested-process failure must fail the WHOLE batch: throw here so
+    % build_matlab_command's outer try/catch (see build_matlab_command below)
+    % converts this into a nonzero MATLAB exit code. Per-process diagnostics
+    % were already fprintf'd above; this aggregates them into the thrown
+    % message so a single failed process can never look like a clean exit 0.
+    error('extract_per_process_traces_v2:extraction_failed', ...
+        'extraction failed for %d of %d requested process(es):\n%s', ...
+        numel(failed_processes), numel(process_names), strjoin(failed_processes, '\n'));
 end
 
 end
@@ -396,9 +446,13 @@ function snapshot = merge_event_observables(snapshot, mod, anchor_opts)
 % struct. Never exposes a raw state/handle object to the caller --
 % window_loader._cell_series() (Python) can only materialize numeric or
 % logical per-tick scalars, never MATLAB objects/structs -- so every value
-% merged in here is a `double`/`logical` scalar, read via two validated,
-% non-chained temporary-variable dereferences (never a single chained
-% `obj.(a).(b)` dynamic-field expression).
+% merged in here is a `double`/`logical` scalar, read via a validated
+% temporary variable (`container = mod.(container_name);`) and then a
+% second, separate dereference off of that temporary. This two-step form
+% is a readability/validation choice (each dereference gets its own
+% isprop/isfield check before use), not a workaround for a MATLAB parse
+% restriction -- chained dynamic-field access (`a.(b).(c)`) is itself
+% valid MATLAB/Octave syntax.
 container_name = anchor_opts.signal_property;
 if ~isprop(mod, container_name)
     error('extract_per_process_traces_v2:missing_signal_container', ...
@@ -425,7 +479,7 @@ switch anchor_opts.signal_kind
             error('extract_per_process_traces_v2:missing_ftszring', ...
                 'process has no ''ftsZRing'' property required for signal_kind=''diameter_decrease'' witnesses');
         end
-        ring = mod.ftsZRing;  % validated temporary -- no chained dynamic access
+        ring = mod.ftsZRing;  % validated temporary
         ring_fields = {'numEdgesOneStraight', 'numEdgesTwoStraight', 'numEdgesTwoBent', 'numResidualBent'};
         for k = 1:numel(ring_fields)
             fn = ring_fields{k};

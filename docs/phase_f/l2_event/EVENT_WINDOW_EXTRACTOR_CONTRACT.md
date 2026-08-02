@@ -28,7 +28,7 @@ generation:
 | Key | Type | Meaning |
 |---|---|---|
 | `stride` | int | Tick spacing between consecutive samples in the grid. **Must equal 1** for a fully enumerated window; any other value means the grid is sparse/subsampled and is refused (`EventWindowRefused("INCOMPLETE_WINDOW", ...)`). |
-| `tick_start` | int | The absolute (1-based simulation-tick) coordinate at which the window begins. All tick-valued metadata (`tick_start`, `tick_end`, `window_anchor`, `onset_tick`) share this **single absolute coordinate system**; local grid row `i` (0-based) maps to `tick_start + i` (see `WindowGrid.absolute_tick`). |
+| `tick_start` | int | The absolute (1-based simulation-tick) coordinate at which the window begins. All tick-valued metadata (`tick_start`, `tick_end`, `window_anchor`, `onset_tick`) share this **single absolute coordinate system**; local grid row `i` (0-based) maps to `tick_start + i` (see `WindowGrid.absolute_tick`). For `window_contract='fixed'`, burn-in consumes absolute ticks `1..tick_offset` *before* capture begins, so `tick_start == tick_offset + 1` (never `tick_offset` itself); `metadata/tick_offset` always records the burn-in tick **count**, never a discovered/derived tick. |
 | `tick_end` **or** `window_anchor` | int / float | The window's other boundary. A **fixed-length** window (e.g. "100 ticks starting at tick_start") records `tick_end`. A **division/event-anchored** window (e.g. "N ticks ending at the observed completion event, wherever that falls per-seed") instead records `window_anchor` -- the **capture-boundary** tick, i.e. the completion tick the fixed-size window ends at -- since `tick_end` is seed-dependent in that case. At least one of the two is required ("as applicable" per the governing requirement); a trace with neither is refused. |
 | `onset_tick` | int, optional | **Timing anchor**, distinct from `window_anchor`. Present only for `signal_kind='diameter_decrease'` anchor windows (ratified Cytokinesis timing decision, 2026-08-02): the observed *first strict decrease* of `CellGeometry.pinchedDiameter` (contraction onset), never a caller-supplied or fabricated value. Must satisfy `tick_start <= onset_tick < window_anchor`. `completion_tick` is **not** a separate persisted key -- it is a derived alias for `window_anchor` (`WindowGrid.completion_tick`); persisting a second redundant completion field was deliberately rejected to avoid two sources of truth for the same tick. |
 
@@ -141,8 +141,9 @@ distinguish "already true at window entry" from "just became true"):
 
 A **fixed** window (`window_contract='fixed'`) has no onset/completion
 predicate at all -- it is simply the dense stride-1 grid
-`[tick_offset, tick_offset + n_ticks - 1]`; that grid's completeness is the
-only thing validated for it.
+`[tick_offset + 1, tick_offset + n_ticks]` (burn-in consumes absolute
+ticks `1..tick_offset` before capture begins); that grid's completeness is
+the only thing validated for it.
 
 ### Numeric event-observable projection
 
@@ -186,15 +187,124 @@ error; never writes a partial/incomplete file) if any of:
 * the full `n_ticks`-length window was not collected before completion
   fired (i.e. completion fired before the circular buffer had filled);
 * completion is never observed within `max_search_ticks`;
-* completion is observed more than once in a way that is ambiguous
-  (duplicate/re-fire without a clean single capture);
 * (`diameter_decrease` only) onset is never observed, or
   `onset_tick < tick_start`, or `onset_tick >= window_anchor` (onset must
   fall strictly inside the captured window and strictly before completion).
 
+The search stops at the **first** observed completion tick (break); there
+is no duplicate-completion detection, and none is claimed -- a first
+observed completion plus an immediate stop is the accepted, sufficient
+behavior.
+
 There is deliberately no code path that produces a file with some but not
 all of these invariants satisfied; a timing-incomplete file must never be
 silently written or silently accepted as valid downstream.
+
+### Anchor-config identity-binding metadata
+
+In addition to `tick_start`/`window_anchor`/`onset_tick`, every
+`window_contract='anchor'` trace also persists the exact anchor
+configuration it was produced for:
+
+```text
+metadata/signal_kind                       -- char, e.g. 'diameter_decrease'
+metadata/signal_property                   -- char, e.g. 'geometry'
+metadata/signal_field                      -- char, e.g. 'pinchedDiameter'
+metadata/max_search_ticks                  -- int32
+metadata/event_observable_projection_version -- int32 (currently 1)
+```
+
+`scripts/l2_event/launcher.validate_existing_event_window` cross-checks
+all five of these against the requested `AnchorWindowSpec` before ever
+returning `skip_valid` -- a trace produced for a *different*
+`signal_kind`/`signal_property`/`signal_field`/`max_search_ticks`, or
+under a stale observable-projection schema version, can never silently
+satisfy a different anchor request. For `window_contract='fixed'`,
+`validate_existing_event_window` likewise cross-checks
+`metadata/tick_offset == spec.tick_offset`,
+`metadata/tick_start == spec.tick_offset + 1`, and
+`metadata/tick_end == spec.tick_offset + spec.n_ticks` exactly.
+
+A future Cytokinesis adapter must additionally cross-check the metadata
+`onset_tick` against the trace's own flattened `pinchedDiameter`
+before/after values (see above) -- metadata identity agreement alone is
+necessary but not sufficient; the adapter must also confirm the numeric
+transition the metadata claims is actually present in the data.
+
+### Atomic regeneration: unique per-job token
+
+A `regenerate_invalid` job never writes to a bare, reusable `.tmp-regen`
+directory. `scripts/l2_event/launcher.allocate_unique_temp_output_path`
+mints a fresh random token per job and confirms its
+`.tmp-regen-<token>` directory does not already exist before the job is
+emitted, so two plans (or a stale leftover directory from an
+interrupted/abandoned prior run) can never collide. `finalize_atomic_regeneration`
+requires that same `expected_token` (the temp directory name must embed
+it) plus the pre-run manifest hash (`WindowDecision.prior_file_sha256`,
+the real file's SHA-256 captured at plan time) before it will even
+attempt `os.replace`; if the real file's current hash no longer matches
+that manifest, or the temp directory's token doesn't match, finalize
+refuses and leaves the real file byte-identical. `scripts/l2_event/
+launcher.list_stale_regeneration_temp_dirs` is a read-only lister for
+leftover `.tmp-regen-*` directories -- it never deletes anything; the
+real trace files never live inside a `.tmp-regen-*` directory, so no
+future cleanup tool built on its output could ever touch final evidence.
+
+### Safe spec identifiers (shell-boundary hardening)
+
+`_matlab_quote` (`scripts/l2_event/launcher.py`) secures only the MATLAB
+single-quoted string-literal context (doubling an embedded `'`, MATLAB's
+own escaping convention) -- it does not, by itself, secure a future shell
+boundary a job runner might invoke this command string through (e.g.
+`wsl bash -c "matlab -batch '...'"`; no such invocation exists in this
+module). The actual defense is applied at `FixedWindowSpec`/
+`AnchorWindowSpec` construction time: `process`, `signal_property`, and
+`signal_field` are rejected outright (`_require_safe_identifier`,
+independent of and before `_matlab_quote` is ever applied) if they
+contain a double quote, backtick, `$`, `;`, or a newline/carriage-return
+-- the characters that could break out of that future shell boundary
+regardless of MATLAB-level quoting. A plain embedded single quote is
+deliberately NOT rejected here: it is a legitimate character that
+`_matlab_quote` already escapes correctly (see
+`test_build_matlab_command_quotes_embedded_single_quote_in_process_name`).
+
+### MATLAB failure propagation
+
+`extract_per_process_traces_v2.m`'s per-process loop accumulates failures
+(process-not-found, or any tick/anchor-search error) across all requested
+processes, still `fprintf`ing a diagnostic line for each so multi-process
+runs keep their per-process visibility. After the loop, if any process
+failed, the function throws (`error(...)`), which `build_matlab_command`'s
+`try/catch` converts into a nonzero process exit code. A batch can never
+exit 0 while a requested process silently failed to extract.
+
+### Static parse checking (no MATLAB/Octave simulation run)
+
+Chained dynamic-field access (e.g. `a.(b).(c)`) is **valid MATLAB/Octave
+syntax** -- it is not, and was never, a parse defect; any earlier claim to
+the contrary in this document or in test code was incorrect and has been
+removed. `merge_event_observables()`'s two-step
+temporary-variable dereference (`container = mod.(container_name);` then
+`container.pinchedDiameter`) is kept as a readability/validation choice
+(each dereference gets its own `isprop`/`isfield` check), not as a
+required workaround.
+
+A genuinely parse-only (never-executing) static check IS possible and was
+verified empirically in a disposable scratch directory (never against
+this repository's real extractor file, and with no simulation/bootstrap
+ever invoked): prefixing a `.m` file with a leading `1;` statement turns
+every subsequent `function ... end` definition into a **local function**
+inside a script, and Octave's `source()` parses the whole file (raising a
+syntax error for a malformed function body, including a malformed nested
+helper function) without ever calling any of those local functions. This
+was confirmed both for a single-function file and for a multi-function
+file where one local function calls another. `tests/scripts/
+test_extract_per_process_traces_v2_static.py` uses this technique for an
+optional, environment-gated (skips cleanly when MATLAB/Octave is
+unavailable) real parse-only probe against the actual extractor file, in
+addition to (not instead of) the lightweight block-keyword-balance
+heuristic. No extraction/simulation/bootstrap is authorized or performed
+by that test.
 
 ## Non-goals
 
@@ -206,10 +316,12 @@ silently written or silently accepted as valid downstream.
 * This document does not authorize deleting an existing on-disk trace to
   force regeneration. `scripts/l2_event/launcher.py` never deletes a
   `regenerate_invalid` file pre-emptively: a future regeneration job
-  writes to a sibling `.tmp-regen` output directory, and only
-  `finalize_atomic_regeneration` may replace the real file -- and only
-  after independently revalidating the fresh output via the same
-  `validate_existing_event_window` gauntlet. The prior file's SHA-256 is
-  recorded in the plan/manifest before any such replacement so its
-  identity is never lost even though it is never deleted up front.
+  writes to a unique, existence-checked `.tmp-regen-<token>` output
+  directory, and only `finalize_atomic_regeneration` may replace the real
+  file -- and only after rebinding to the exact spec + token + pre-run
+  manifest hash and independently revalidating the fresh output via the
+  same `validate_existing_event_window` gauntlet. The prior file's
+  SHA-256 is recorded in the plan/manifest before any such replacement so
+  its identity is never lost even though it is never deleted up front.
+
 

@@ -56,6 +56,16 @@ def _write_event_window_fixture(
     window_anchor: int | None = None,
     onset_tick: int | None = None,
     observables: tuple[str, ...] = (),
+    # Anchor-config identity-binding metadata (Opus 5 rejection finding:
+    # persist signal kind/property/field/max_search_ticks/projection
+    # schema so a trace from a different anchor request can never
+    # skip-valid). None (the default) omits the key entirely, matching a
+    # pre-identity-binding trace shape for inversion tests.
+    signal_kind: str | None = None,
+    signal_property: str | None = None,
+    signal_field: str | None = None,
+    max_search_ticks: int | None = None,
+    event_observable_projection_version: int | None = None,
 ) -> Path:
     """Write a minimal synthetic event-window trace: a `metadata` group
     plus empty `states_before`/`states_after` groups (optionally with a
@@ -84,6 +94,18 @@ def _write_event_window_fixture(
             metadata.create_dataset("window_anchor", data=np.array([window_anchor]))
         if onset_tick is not None:
             metadata.create_dataset("onset_tick", data=np.array([onset_tick]))
+        if signal_kind is not None:
+            metadata.create_dataset("signal_kind", data=_encode_char_metadata(signal_kind))
+        if signal_property is not None:
+            metadata.create_dataset("signal_property", data=_encode_char_metadata(signal_property))
+        if signal_field is not None:
+            metadata.create_dataset("signal_field", data=_encode_char_metadata(signal_field))
+        if max_search_ticks is not None:
+            metadata.create_dataset("max_search_ticks", data=np.array([max_search_ticks]))
+        if event_observable_projection_version is not None:
+            metadata.create_dataset(
+                "event_observable_projection_version", data=np.array([event_observable_projection_version])
+            )
 
         states_before = handle.create_group("states_before")
         states_after = handle.create_group("states_after")
@@ -115,6 +137,40 @@ def test_fixed_window_spec_rejects_empty_required_observables():
         launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, required_observables=())
 
 
+@pytest.mark.parametrize(
+    "unsafe_process",
+    [
+        'Bad"Process',
+        "Bad`Process`",
+        "Bad$Process",
+        "Bad;Process",
+        "Bad\nProcess",
+        "Bad\rProcess",
+    ],
+)
+def test_fixed_window_spec_rejects_shell_metacharacters_in_process(unsafe_process):
+    """Opus 5 rejection finding: spec identifiers must be restricted to
+    safe tokens (or otherwise made safe at the eventual matlab-batch shell
+    boundary) -- a double quote, backtick, `$`, `;`, or newline/carriage-
+    return in `process` must be refused at construction time, before any
+    command string is ever built."""
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher.FixedWindowSpec(
+            process=unsafe_process, seed=1, tick_offset=200, required_observables=("substrates",)
+        )
+
+
+def test_fixed_window_spec_accepts_embedded_single_quote_in_process():
+    """A plain embedded single quote is NOT a rejected shell metacharacter
+    here -- it is a legitimate character `_matlab_quote` already escapes
+    correctly (doubling, MATLAB's own convention); see
+    `test_build_matlab_command_quotes_embedded_single_quote_in_process_name`."""
+    spec = launcher.FixedWindowSpec(
+        process="Weird'Process", seed=1, tick_offset=200, required_observables=("substrates",)
+    )
+    assert spec.process == "Weird'Process"
+
+
 def test_anchor_window_spec_rejects_max_search_ticks_shorter_than_n_ticks():
     with pytest.raises(launcher.WindowContractConfigError):
         launcher.AnchorWindowSpec(
@@ -126,6 +182,24 @@ def test_anchor_window_spec_rejects_empty_signal_property():
     with pytest.raises(launcher.WindowContractConfigError):
         launcher.AnchorWindowSpec(
             process="Cytokinesis", seed=1, signal_property="", required_observables=("pinchedDiameter",)
+        )
+
+
+@pytest.mark.parametrize("unsafe_value", ['Bad"Prop', "Bad`Prop", "Bad$Prop", "Bad;Prop", "Bad\nProp"])
+def test_anchor_window_spec_rejects_shell_metacharacters_in_signal_property(unsafe_value):
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher.AnchorWindowSpec(
+            process="Cytokinesis", seed=1, signal_property=unsafe_value, required_observables=("pinchedDiameter",)
+        )
+
+
+def test_anchor_window_spec_rejects_shell_metacharacters_in_signal_field():
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher.AnchorWindowSpec(
+            process="Cytokinesis",
+            seed=1,
+            signal_field="bad;field",
+            required_observables=("pinchedDiameter",),
         )
 
 
@@ -311,7 +385,9 @@ def test_build_matlab_command_custom_anchor_signal_is_reflected():
 
 def test_build_matlab_command_output_subdir_override_targets_temp_regen_dir(tmp_path):
     spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=9, n_ticks=4, required_observables=("pinchedDiameter",))
-    temp_subdir = launcher.temp_output_subdir_for(spec, karr_native_root=tmp_path)
+    token = launcher.temp_regen_token()
+    temp_subdir = launcher.temp_output_subdir_for(spec, token, karr_native_root=tmp_path)
+    assert token in temp_subdir
     command = launcher.build_matlab_command(spec, output_subdir=temp_subdir)
     assert launcher._matlab_quote(temp_subdir) in command
     default_subdir = launcher.output_dir_for(spec, karr_native_root=tmp_path).name
@@ -343,8 +419,8 @@ def test_plan_skip_valid_for_contract_complete_fixed_fixture(tmp_path):
         n_ticks=4,
         tick_offset=200.0,
         stride=1,
-        tick_start=200,
-        tick_end=203,
+        tick_start=201,  # tick_offset + 1 (absolute 1-based coordinate, burn-in fix)
+        tick_end=204,  # tick_offset + n_ticks
         observables=("substrates",),
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
@@ -368,6 +444,13 @@ def test_plan_skip_valid_for_contract_complete_anchor_fixture(tmp_path):
         window_anchor=999,
         onset_tick=997,
         observables=("pinchedDiameter",),
+        # Identity-binding anchor metadata must match the default spec's
+        # resolved signal config exactly for skip_valid to apply.
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=spec.max_search_ticks,
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "skip_valid"
@@ -408,12 +491,141 @@ def test_plan_regenerate_invalid_for_stride_not_one(tmp_path):
         n_ticks=4,
         tick_offset=200.0,
         stride=2,
-        tick_start=200,
-        tick_end=203,
+        tick_start=201,
+        tick_end=204,
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "regenerate_invalid"
     assert "stride" in plan.decisions[0].reason
+
+
+def test_plan_regenerate_invalid_for_fixed_tick_offset_mismatch(tmp_path):
+    """Fixed-window identity binding: an on-disk trace whose
+    metadata.tick_offset (burn-in count) does not match the requested
+    spec's tick_offset must never skip_valid, even though it is otherwise
+    a complete stride-1 grid -- it was produced for a DIFFERENT burn-in
+    request."""
+    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=11, tick_offset=200, n_ticks=4, required_observables=("substrates",))
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="RibosomeAssembly",
+        seed=11,
+        n_ticks=4,
+        tick_offset=150.0,  # a different burn-in count than the spec requests
+        stride=1,
+        tick_start=151,
+        tick_end=154,
+        observables=("substrates",),
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "tick_offset" in plan.decisions[0].reason
+
+
+def test_plan_regenerate_invalid_for_fixed_tick_start_off_by_one(tmp_path):
+    """Fixed-window identity binding, the exact Opus 5 off-by-one: even
+    when metadata.tick_offset matches, a tick_start that is still
+    `tick_offset` (the pre-Turn-3 formula) instead of `tick_offset + 1`
+    must never skip_valid."""
+    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=12, tick_offset=200, n_ticks=4, required_observables=("substrates",))
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="RibosomeAssembly",
+        seed=12,
+        n_ticks=4,
+        tick_offset=200.0,
+        stride=1,
+        tick_start=200,  # off by one: should be tick_offset + 1 = 201
+        tick_end=203,  # off by one: should be tick_offset + n_ticks = 204
+        observables=("substrates",),
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "tick_start" in plan.decisions[0].reason
+
+
+def test_plan_regenerate_invalid_for_corrupt_zero_byte_file(tmp_path):
+    """Opus 5 rejection finding: a corrupt (here: zero-byte) existing file
+    must be classified regenerate_invalid, never crash the planner and
+    never skip_valid."""
+    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=13, tick_offset=200, n_ticks=4, required_observables=("substrates",))
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"")
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert len(plan.jobs) == 1
+
+
+def test_plan_regenerate_invalid_for_garbage_non_hdf5_file(tmp_path):
+    """Same guarantee for a non-empty but non-HDF5 (garbage/truncated)
+    file: h5py raises OSError opening it -- validate_existing_event_window
+    must catch this, never crash, and never skip_valid."""
+    spec = launcher.FixedWindowSpec(process="RibosomeAssembly", seed=14, tick_offset=200, n_ticks=4, required_observables=("substrates",))
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_bytes(b"not an hdf5 file, just garbage bytes" * 10)
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert len(plan.jobs) == 1
+
+
+def test_plan_regenerate_invalid_for_anchor_signal_property_mismatch(tmp_path):
+    """Anchor identity binding: an on-disk trace produced for a DIFFERENT
+    signal_property (even if otherwise contract-complete) must never
+    skip_valid against a spec requesting the default ('geometry')."""
+    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=15, n_ticks=4, required_observables=("pinchedDiameter",))
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=15,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property="wrongSignalProperty",  # mismatch
+        signal_field=spec.signal_field,
+        max_search_ticks=spec.max_search_ticks,
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "signal_property" in plan.decisions[0].reason
+
+
+def test_plan_regenerate_invalid_for_anchor_missing_identity_metadata(tmp_path):
+    """A pre-identity-binding anchor trace (structurally complete, but
+    missing the new signal_kind/property/field/max_search_ticks/
+    projection-version metadata this Turn 3 fix requires) must never
+    skip_valid -- it cannot be cross-checked against the requested signal
+    configuration at all."""
+    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=16, n_ticks=4, required_observables=("pinchedDiameter",))
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=16,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        # signal_kind/property/field/max_search_ticks/projection_version
+        # all omitted -- simulating an older trace.
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
 
 
 def test_plan_regenerate_invalid_for_window_contract_kind_mismatch(tmp_path):
@@ -486,7 +698,7 @@ def test_plan_never_deletes_regenerate_invalid_file_and_records_prior_sha256(tmp
     """The replacement for the old `apply_invalidations`: planning a
     `regenerate_invalid` spec must NEVER delete the prior on-disk file, must
     record its SHA-256 in the decision, and must target the matlab_command
-    at a `.tmp-regen` sibling directory rather than the real path."""
+    at a `.tmp-regen-<token>` sibling directory rather than the real path."""
     bad_spec = launcher.FixedWindowSpec(
         process="RibosomeAssembly", seed=2, tick_offset=200, n_ticks=4, required_observables=("substrates",)
     )
@@ -498,8 +710,8 @@ def test_plan_never_deletes_regenerate_invalid_file_and_records_prior_sha256(tmp
         n_ticks=4,
         tick_offset=200.0,
         stride=2,
-        tick_start=200,
-        tick_end=203,
+        tick_start=201,
+        tick_end=204,
         observables=("substrates",),
     )
     expected_sha256 = launcher.sha256_of(bad_path)
@@ -515,8 +727,8 @@ def test_plan_never_deletes_regenerate_invalid_file_and_records_prior_sha256(tmp
         n_ticks=4,
         tick_offset=200.0,
         stride=1,
-        tick_start=200,
-        tick_end=203,
+        tick_start=201,
+        tick_end=204,
         observables=("substrates",),
     )
 
@@ -538,6 +750,11 @@ def test_plan_never_deletes_regenerate_invalid_file_and_records_prior_sha256(tmp
     assert bad_job.temp_output_path is not None
     assert launcher.TEMP_REGEN_SUFFIX in bad_job.output_dir
     assert bad_job.temp_output_path != str(bad_path)
+    # The unique per-job token minted for this regeneration must be
+    # embedded in the job's own temp output dir name (see
+    # `finalize_atomic_regeneration`'s `expected_token` binding).
+    assert bad_job.regen_token is not None
+    assert bad_job.regen_token in bad_job.output_dir
 
 
 def test_generate_missing_job_has_no_temp_output_path(tmp_path):
@@ -547,6 +764,7 @@ def test_generate_missing_job_has_no_temp_output_path(tmp_path):
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.jobs[0].temp_output_path is None
     assert plan.jobs[0].final_output_path == str(launcher.mat_path_for(spec, karr_native_root=tmp_path))
+    assert plan.jobs[0].regen_token is None
 
 
 def test_finalize_atomic_regeneration_replaces_only_after_validation(tmp_path):
@@ -555,11 +773,11 @@ def test_finalize_atomic_regeneration_replaces_only_after_validation(tmp_path):
     )
     final_path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
-        final_path, process_name="RibosomeAssembly", seed=4, n_ticks=4, tick_offset=200.0, stride=2, tick_start=200, tick_end=203
+        final_path, process_name="RibosomeAssembly", seed=4, n_ticks=4, tick_offset=200.0, stride=2, tick_start=201, tick_end=204
     )
     prior_sha256 = launcher.sha256_of(final_path)
 
-    temp_path = launcher.temp_output_path_for(spec, karr_native_root=tmp_path)
+    token, temp_path = launcher.allocate_unique_temp_output_path(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
         temp_path,
         process_name="RibosomeAssembly",
@@ -567,12 +785,14 @@ def test_finalize_atomic_regeneration_replaces_only_after_validation(tmp_path):
         n_ticks=4,
         tick_offset=200.0,
         stride=1,
-        tick_start=200,
-        tick_end=203,
+        tick_start=201,
+        tick_end=204,
         observables=("substrates",),
     )
 
-    ok, reason = launcher.finalize_atomic_regeneration(temp_path, final_path, spec)
+    ok, reason = launcher.finalize_atomic_regeneration(
+        temp_path, final_path, spec, expected_token=token, prior_final_sha256=prior_sha256
+    )
     assert ok, reason
     assert not temp_path.exists()
     assert final_path.exists()
@@ -588,18 +808,20 @@ def test_finalize_atomic_regeneration_leaves_prior_file_untouched_when_temp_inva
     )
     final_path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
-        final_path, process_name="RibosomeAssembly", seed=5, n_ticks=4, tick_offset=200.0, stride=2, tick_start=200, tick_end=203
+        final_path, process_name="RibosomeAssembly", seed=5, n_ticks=4, tick_offset=200.0, stride=2, tick_start=201, tick_end=204
     )
     prior_sha256 = launcher.sha256_of(final_path)
 
-    temp_path = launcher.temp_output_path_for(spec, karr_native_root=tmp_path)
+    token, temp_path = launcher.allocate_unique_temp_output_path(spec, karr_native_root=tmp_path)
     # Still stride=2 (invalid) -- simulates a regeneration attempt that
     # produced another contract-incomplete file.
     _write_event_window_fixture(
-        temp_path, process_name="RibosomeAssembly", seed=5, n_ticks=4, tick_offset=200.0, stride=2, tick_start=200, tick_end=203
+        temp_path, process_name="RibosomeAssembly", seed=5, n_ticks=4, tick_offset=200.0, stride=2, tick_start=201, tick_end=204
     )
 
-    ok, reason = launcher.finalize_atomic_regeneration(temp_path, final_path, spec)
+    ok, reason = launcher.finalize_atomic_regeneration(
+        temp_path, final_path, spec, expected_token=token, prior_final_sha256=prior_sha256
+    )
     assert not ok
     assert reason
     assert temp_path.exists()  # left for inspection
@@ -613,12 +835,129 @@ def test_finalize_atomic_regeneration_fails_when_temp_missing(tmp_path):
     )
     final_path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
-        final_path, process_name="RibosomeAssembly", seed=6, n_ticks=4, tick_offset=200.0, stride=1, tick_start=200, tick_end=203
+        final_path, process_name="RibosomeAssembly", seed=6, n_ticks=4, tick_offset=200.0, stride=1, tick_start=201, tick_end=204
     )
-    temp_path = launcher.temp_output_path_for(spec, karr_native_root=tmp_path)
-    ok, reason = launcher.finalize_atomic_regeneration(temp_path, final_path, spec)
+    prior_sha256 = launcher.sha256_of(final_path)
+    token, temp_path = launcher.allocate_unique_temp_output_path(spec, karr_native_root=tmp_path)
+    ok, reason = launcher.finalize_atomic_regeneration(
+        temp_path, final_path, spec, expected_token=token, prior_final_sha256=prior_sha256
+    )
     assert not ok
     assert "does not exist" in reason
+    # A failed/nonzero job must leave the prior final file byte-identical.
+    assert launcher.sha256_of(final_path) == prior_sha256
+
+
+def test_finalize_atomic_regeneration_refuses_stale_or_foreign_temp_token(tmp_path):
+    """Opus 5 rejection finding: finalize must bind to the exact job token
+    -- a temp directory embedding a DIFFERENT (stale/foreign) token must
+    never be promoted, even if its content would otherwise validate."""
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=7, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    final_path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        final_path, process_name="RibosomeAssembly", seed=7, n_ticks=4, tick_offset=200.0, stride=2, tick_start=201, tick_end=204
+    )
+    prior_sha256 = launcher.sha256_of(final_path)
+
+    foreign_token, temp_path = launcher.allocate_unique_temp_output_path(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        temp_path,
+        process_name="RibosomeAssembly",
+        seed=7,
+        n_ticks=4,
+        tick_offset=200.0,
+        stride=1,
+        tick_start=201,
+        tick_end=204,
+        observables=("substrates",),
+    )
+
+    # A DIFFERENT expected_token than the one actually embedded in
+    # temp_path's parent directory name -- simulates a stale/foreign temp
+    # directory left over from a different job.
+    wrong_token = "not" + foreign_token
+    ok, reason = launcher.finalize_atomic_regeneration(
+        temp_path, final_path, spec, expected_token=wrong_token, prior_final_sha256=prior_sha256
+    )
+    assert not ok
+    assert "token" in reason
+    assert temp_path.exists()
+    assert launcher.sha256_of(final_path) == prior_sha256
+
+
+def test_finalize_atomic_regeneration_refuses_when_final_hash_changed_since_plan(tmp_path):
+    """Opus 5 rejection finding: finalize must bind to the pre-run manifest
+    hash -- if `final_path` changed since the plan captured
+    `prior_file_sha256` (some other writer touched it), finalize must
+    refuse rather than clobber an identity it never validated."""
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=8, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    final_path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        final_path, process_name="RibosomeAssembly", seed=8, n_ticks=4, tick_offset=200.0, stride=2, tick_start=201, tick_end=204
+    )
+    stale_prior_sha256 = "0" * 64  # deliberately wrong -- simulates a plan made before final_path changed
+
+    token, temp_path = launcher.allocate_unique_temp_output_path(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        temp_path,
+        process_name="RibosomeAssembly",
+        seed=8,
+        n_ticks=4,
+        tick_offset=200.0,
+        stride=1,
+        tick_start=201,
+        tick_end=204,
+        observables=("substrates",),
+    )
+    current_final_sha256 = launcher.sha256_of(final_path)
+
+    ok, reason = launcher.finalize_atomic_regeneration(
+        temp_path, final_path, spec, expected_token=token, prior_final_sha256=stale_prior_sha256
+    )
+    assert not ok
+    assert "sha256" in reason
+    assert temp_path.exists()
+    assert launcher.sha256_of(final_path) == current_final_sha256  # untouched
+
+
+def test_allocate_unique_temp_output_path_avoids_collision_with_existing_temp_dir(tmp_path, monkeypatch):
+    """Opus 5 rejection finding: two regeneration attempts (or a stale
+    leftover temp dir) must never collide on the same `.tmp-regen-<token>`
+    directory -- `allocate_unique_temp_output_path` must retry with a
+    fresh token when its first candidate is already occupied."""
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=10, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    tokens = iter(["collide0000000a", "collide0000000a", "fresh000000000b"])
+    monkeypatch.setattr(launcher, "temp_regen_token", lambda: next(tokens))
+
+    # Pre-occupy the first candidate's temp directory (simulating a stale
+    # leftover from a prior/abandoned run).
+    occupied_dir = launcher.temp_output_path_for(spec, "collide0000000a", karr_native_root=tmp_path).parent
+    occupied_dir.mkdir(parents=True)
+
+    token, temp_path = launcher.allocate_unique_temp_output_path(spec, karr_native_root=tmp_path)
+    assert token == "fresh000000000b"
+    assert not temp_path.parent.exists()
+
+
+def test_list_stale_regeneration_temp_dirs_reports_without_deleting(tmp_path):
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=20, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    token, temp_path = launcher.allocate_unique_temp_output_path(spec, karr_native_root=tmp_path)
+    temp_path.parent.mkdir(parents=True)
+    temp_path.write_bytes(b"leftover")
+
+    stale = launcher.list_stale_regeneration_temp_dirs(karr_native_root=tmp_path)
+    assert temp_path.parent in stale
+    # Read-only: nothing is deleted.
+    assert temp_path.parent.exists()
+    assert temp_path.exists()
 
 
 def test_sha256_of_missing_file_is_none(tmp_path):
@@ -650,12 +989,17 @@ def test_plan_to_dict_is_json_serializable(tmp_path):
 def test_fixed_window_extractor_metadata_shape_is_accepted_by_loader_strict_default(tmp_path):
     """Proves (without running MATLAB) that the metadata
     `extract_per_process_traces_v2.m`'s window_contract='fixed' branch is
-    designed to write -- stride=1, tick_start=tick_offset,
-    tick_end=tick_offset+n_ticks-1 -- satisfies window_loader's default
-    require_stride_contract=True gauntlet."""
+    designed to write -- stride=1, tick_start=tick_offset+1 (absolute
+    1-based coordinate: burn-in consumes ticks 1..tick_offset, so the
+    first CAPTURED tick is tick_offset+1), tick_end=tick_offset+n_ticks --
+    satisfies window_loader's default require_stride_contract=True
+    gauntlet, and that `validate_existing_event_window`'s identity-binding
+    formula agrees with it exactly."""
     path = tmp_path / "per_process_traces_v2_event_s003" / "RibosomeAssembly_100ticks.mat"
     tick_offset = 200
     n_ticks = 100
+    expected_tick_start = tick_offset + 1
+    expected_tick_end = tick_offset + n_ticks
     _write_event_window_fixture(
         path,
         process_name="RibosomeAssembly",
@@ -663,14 +1007,25 @@ def test_fixed_window_extractor_metadata_shape_is_accepted_by_loader_strict_defa
         n_ticks=n_ticks,
         tick_offset=float(tick_offset),
         stride=1,
-        tick_start=tick_offset,
-        tick_end=tick_offset + n_ticks - 1,
+        tick_start=expected_tick_start,
+        tick_end=expected_tick_end,
         observables=("substrates",),
     )
     window = load_event_window(path, required_observables=("substrates",))
     assert window.stride_contract_ok is True
     assert window.n_ticks == n_ticks
     assert window.tick_offset == tick_offset
+    assert window.tick_start == expected_tick_start
+    assert window.tick_end == expected_tick_end
+    assert window.absolute_tick(0) == expected_tick_start
+
+    # Same formula, independently exercised through the launcher's own
+    # identity-binding validation (not just the raw loader).
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=3, tick_offset=tick_offset, n_ticks=n_ticks, required_observables=("substrates",)
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert ok, reason
 
 
 def test_anchor_window_extractor_metadata_shape_is_accepted_by_loader_strict_default(tmp_path):

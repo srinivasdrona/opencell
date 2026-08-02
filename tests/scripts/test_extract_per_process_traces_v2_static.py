@@ -2,40 +2,49 @@
 `scripts/matlab/extract_per_process_traces_v2.m` (M4 fixed/anchor
 event-window extractor).
 
-This file NEVER invokes MATLAB, Octave, or any simulation/bootstrap code.
-That is a deliberate choice, not an oversight: a throwaway probe during
-this task's development showed that Octave's `source()` (and simply
-running the `.m` file) auto-*calls* a file that consists of nothing but a
-single top-level function definition -- there is no safe "parse only, do
-not execute" invocation path available in this environment. Since
-`extract_per_process_traces_v2()` called with zero arguments immediately
-falls into `karr_bootstrap()` (a real WholeCell simulation bootstrap),
-using Octave here would violate the "no simulation/bootstrap/extraction"
-constraint. The regression this guards against -- the Opus 5-identified
-MATLAB syntax error from a chained dynamic-field-access expression,
-`target_proc.(anchor_opts.signal_property).(anchor_opts.signal_field)`,
-which MATLAB/Octave cannot parse as a single expression -- is instead
-guarded with a plain-text static check: a regex that would catch any
-reintroduction of that exact chained-access pattern, plus a lightweight
-block-keyword balance check as a broader static parse sanity net.
+This file never invokes MATLAB, Octave, or any simulation/bootstrap code
+against the real extractor's normal entry point (calling
+`extract_per_process_traces_v2()` with zero/default arguments falls
+straight into `karr_bootstrap()`, a real WholeCell simulation bootstrap --
+forbidden by the "no simulation/bootstrap/extraction" constraint this
+branch operates under).
+
+Two independent static checks are used:
+
+* A lightweight, dependency-free block-keyword-balance heuristic (always
+  runs, no MATLAB/Octave required).
+* An OPTIONAL, environment-gated real parse-only probe using Octave
+  (skipped cleanly if Octave/MATLAB is unavailable, e.g. in cloud CI).
+  The technique -- prepending a `1;` statement before the real source so
+  every `function ... end` in it becomes a *local function* inside a
+  script -- was verified empirically in a disposable scratch directory
+  (never against this repository's real file) before being relied on
+  here: Octave's `source()` parses the whole file, including every nested
+  local function body (raising a genuine syntax error for a malformed
+  one), WITHOUT ever calling any of those functions. This was confirmed
+  both for a single-function file and for a multi-function file where one
+  local function calls another -- the same shape as this extractor
+  (`extract_per_process_traces_v2` calling several helper functions).
+
+Earlier revisions of this file additionally asserted that MATLAB/Octave
+cannot parse chained dynamic-field access (e.g. `a.(b).(c)`) as a single
+expression. That premise was incorrect -- chained dynamic-field access IS
+valid MATLAB/Octave syntax -- and the regression test built on it has been
+removed; see docs/phase_f/l2_event/EVENT_WINDOW_EXTRACTOR_CONTRACT.md's
+"Static parse checking" section for the corrected account.
 """
 
 from __future__ import annotations
 
 import re
+import shutil
+import subprocess
 from pathlib import Path
+
+import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 EXTRACTOR_PATH = REPO_ROOT / "scripts" / "matlab" / "extract_per_process_traces_v2.m"
-
-# The exact defect class Opus 5 flagged: two consecutive dynamic-field
-# accesses chained directly onto one expression, e.g. `a.(b).(c)` or
-# `obj.(x.y).(x.z)`. MATLAB/Octave's parser rejects this as a single
-# expression -- it must be split into validated temporary variables
-# (see `merge_event_observables`'s `container = mod.(container_name);`
-# followed by a *separate* `container.pinchedDiameter` / `container.(field_name)`
-# dereference).
-_CHAINED_DYNAMIC_ACCESS_RE = re.compile(r"\.\([^()]*\)\.\(")
 
 _BLOCK_OPENERS = re.compile(r"\b(function|if|for|while|switch|try)\b")
 _STANDALONE_END_LINE_RE = re.compile(r"^\s*end\s*;?\s*$")
@@ -49,43 +58,62 @@ def _read_source() -> str:
 def _strip_comments_and_strings(source: str) -> str:
     """Best-effort removal of `%`-comments and single-quoted string
     literals so keyword/pattern counts below aren't confused by the word
-    "end" or a literal ".()." appearing inside a comment or a string
-    (e.g. this file's own docstring-style header comments)."""
+    "end" (or a keyword like "for"/"if") appearing inside a comment or a
+    string literal.
+
+    Scans each line character-by-character tracking whether a `'` has
+    opened a string literal (honoring MATLAB's `''` escaped-quote
+    convention): a `%` encountered *inside* an open string is just a
+    character, never a comment start. A naive `line.split('%', 1)[0]`
+    (this function's earlier, incorrect implementation) truncated any
+    line containing a single-quoted string with a `%d`/`%s`-style format
+    specifier at the first such `%`, silently discarding the rest of the
+    line -- including any real keyword/`end` token after it. That defect
+    was undetectable with this file's OLD content (no format-specifier
+    string on the same physical line as a bare keyword like "for") but
+    surfaced as a false block-imbalance failure once Turn 3's
+    `error('...', 'extraction failed for %d of %d ...', ...)` message put
+    the word "for" before a `%d` on one line -- proving the truncation bug
+    (not the real extractor source) was the actual defect.
+    """
     out_lines = []
     for line in source.splitlines():
-        # Drop a trailing %-comment (MATLAB has no block comments in this
-        # file; %{ %} pairs are not used here). This is intentionally
-        # simple -- it does not need to handle a % inside a string
-        # literal correctly for this file, which contains none.
-        code_part = line.split("%", 1)[0]
-        # Collapse single-quoted string literals (including MATLAB's
-        # '' escaped-quote convention) to a placeholder so their content
-        # can never match the chained-access or block-keyword regexes.
-        code_part = re.sub(r"'([^']|'')*'", "''", code_part)
-        out_lines.append(code_part)
+        result = []
+        i = 0
+        n = len(line)
+        while i < n:
+            ch = line[i]
+            if ch == "'":
+                # Consume the whole single-quoted string literal (honoring
+                # the '' escaped-quote convention) and replace it with a
+                # placeholder -- its content (any %, for/if/end, etc.)
+                # can never leak into the keyword/pattern counts below.
+                j = i + 1
+                while j < n:
+                    if line[j] == "'":
+                        if j + 1 < n and line[j + 1] == "'":
+                            j += 2
+                            continue
+                        j += 1
+                        break
+                    j += 1
+                result.append("''")
+                i = j
+                continue
+            if ch == "%":
+                # A real comment start (only reached when NOT inside an
+                # open string, per the branch above) -- the rest of the
+                # physical line is dropped.
+                break
+            result.append(ch)
+            i += 1
+        out_lines.append("".join(result))
     return "\n".join(out_lines)
 
 
 def test_extractor_file_exists_and_is_nonempty():
     source = _read_source()
     assert len(source) > 0
-
-
-def test_no_chained_dynamic_field_access_regression():
-    """Regression guard for the Opus 5-identified MATLAB parse defect:
-    `target_proc.(anchor_opts.signal_property).(anchor_opts.signal_field)`
-    (two chained dynamic-field accesses in one expression) must never
-    reappear. The fix (`merge_event_observables`) always dereferences a
-    validated temporary variable first (`container = mod.(container_name);`)
-    and only then does a second, separate dereference."""
-    code = _strip_comments_and_strings(_read_source())
-    matches = _CHAINED_DYNAMIC_ACCESS_RE.findall(code)
-    assert not matches, (
-        f"found {len(matches)} chained dynamic-field-access expression(s) "
-        "(pattern `).(...).(` ) -- MATLAB/Octave cannot parse this as a "
-        "single expression; replace with a validated temporary variable "
-        "and a separate dereference (see merge_event_observables)."
-    )
 
 
 def test_block_keyword_balance():
@@ -111,13 +139,95 @@ def test_block_keyword_balance():
 
 
 def test_merge_event_observables_uses_two_step_dereference():
-    """Positive-form check complementing the chained-access regex above:
-    the fixed `merge_event_observables` must dereference the signal
-    container into a named temporary (`container = mod.(container_name);`)
-    before reading any field off of it."""
+    """Positive-form static check: `merge_event_observables` dereferences
+    the signal container into a named temporary
+    (`container = mod.(container_name);`) before reading any field off of
+    it. This is a readability/validation choice (it lets the container be
+    checked/validated once by name before any field access), not a parse
+    requirement -- chained dynamic-field access such as
+    `mod.(container_name).(field_name)` is valid MATLAB/Octave syntax."""
     source = _read_source()
     assert "container = mod.(container_name);" in source
     # And the two real per-observable dereferences must be against that
     # temporary, never re-chained through `mod.(...)` a second time.
     assert "container.pinchedDiameter" in source
     assert "container.(field_name)" in source
+
+
+def _octave_executable() -> str | None:
+    """Locate an Octave CLI binary on PATH, or return None if unavailable.
+
+    This project's canonical execution environment is WSL (see the
+    project's copilot-instructions "Execution Environment" rule), so this
+    looks for the binary names Octave installs there. No MATLAB/Octave
+    installation is required for this test suite to pass -- absence is a
+    clean skip, never a failure, so cloud CI without Octave/MATLAB is
+    unaffected."""
+    for name in ("octave-cli", "octave"):
+        path = shutil.which(name)
+        if path:
+            return path
+    return None
+
+
+@pytest.mark.skipif(
+    _octave_executable() is None,
+    reason="octave-cli not available on PATH; parse-only probe skipped",
+)
+def test_real_parse_only_probe_via_octave(tmp_path: Path):
+    """Real (not heuristic) parse-only regression check, run only when
+    Octave is available.
+
+    Technique (verified empirically in a disposable scratch directory
+    before being relied on here, and never run against this repository's
+    real file until this exact probe): prepend a bare `1;` statement
+    before the extractor source. That statement makes the file a
+    *script*, so every subsequent `function ... end` in it becomes a
+    *local function* defined within the script rather than the file's
+    single top-level function. Octave's `source()` then parses the
+    *entire* file -- including every nested local function body, so a
+    genuine syntax error anywhere in the file is raised -- but it never
+    *calls* `extract_per_process_traces_v2` or any of its helpers, so no
+    simulation/bootstrap code ever runs. A sentinel string is printed
+    only after `source()` returns successfully, and the real function
+    bodies never execute, so the sentinel's presence/absence combined
+    with the process exit code distinguishes "parses cleanly" from "parse
+    error" without ever exercising `karr_bootstrap()` or any other
+    simulation/extraction side effect.
+    """
+    octave = _octave_executable()
+    assert octave is not None  # narrowed by skipif above
+
+    source = _read_source()
+    probe_path = tmp_path / "extract_per_process_traces_v2_parse_probe.m"
+    probe_path.write_text("1;\n" + source, encoding="utf-8")
+
+    sentinel = "PARSE_OK_NO_EXEC"
+    result = subprocess.run(
+        [
+            octave,
+            "--no-gui",
+            "--eval",
+            f"source('{probe_path.as_posix()}'); disp('{sentinel}');",
+        ],
+        capture_output=True,
+        text=True,
+        timeout=60,
+        check=False,
+    )
+
+    assert result.returncode == 0, (
+        "octave failed to parse extract_per_process_traces_v2.m "
+        f"(exit {result.returncode}); stderr:\n{result.stderr}"
+    )
+    assert sentinel in result.stdout, (
+        "expected parse-success sentinel missing from octave stdout "
+        f"(stdout: {result.stdout!r})"
+    )
+    # The real function bodies must never execute. `karr_bootstrap` (the
+    # simulation entry point reachable from this file's default-argument
+    # path) is never invoked by `source()`, so its distinctive log banner
+    # must never appear here -- this is a load-bearing assertion that the
+    # probe truly never runs simulation/extraction code.
+    assert "karr_bootstrap" not in result.stdout
+    assert "karr_bootstrap" not in result.stderr

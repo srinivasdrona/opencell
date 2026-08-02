@@ -10,7 +10,13 @@ per-tick trace (requirement 4, "refuse ... mid-cycle standard traces"):
 verified empirically against both trace families on disk --
 
 * event-window traces (``per_process_traces_v2_event_s{seed:03d}/``) carry
-  ``metadata/tick_offset`` (float, ticks-from-division/reference anchor).
+  ``metadata/tick_offset`` (float): for ``window_contract='fixed'`` this is
+  the caller-supplied burn-in tick COUNT (``tick_start == tick_offset + 1``,
+  a single absolute 1-based simulation-tick coordinate system -- see
+  ``WindowGrid.absolute_tick``); for ``window_contract='anchor'`` it is
+  always 0 (no burn-in exists for an anchor window; the window's own
+  ``tick_start``/``window_anchor``/``onset_tick`` are separately discovered,
+  see below). ``tick_offset`` is never timing arithmetic on its own.
 * standard mid-cycle traces (``per_process_traces_v2_s{seed:03d}/`` and the
   canonical ``per_process_traces_v2/`` seed-0 copies) do **not** have a
   ``tick_offset`` key in ``metadata`` at all.
