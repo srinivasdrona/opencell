@@ -75,9 +75,19 @@ catalog/event_registry/evidence_index edits" constraint.
     was confirmed live against
     `KarrRibosomeAssemblyProcess({"rng_seed": 0}).complex_wids ==
     ["RIBOSOME_30S", "RIBOSOME_50S"]`, seed-independent, so a hardcoded map is
-    justified — unlike the smoke adapter's runtime-inferred mapping). Raises
-    `UnmappedComplexIndexError` on any index outside `{0, 1}` (coverage-gap
-    detection per FIX_TEMPLATE Rule 1).
+    justified — unlike the smoke adapter's runtime-inferred mapping). The
+    check is an exact **width-2 check**, not a per-index membership check:
+    before any per-index mapping runs, the delta vector's positional width
+    must equal exactly `len(complex_index_by_wid)` (`2` for the default
+    mapping), and `UnmappedComplexIndexError` is raised on any width
+    mismatch — including a **width-1** channel (one index short of the
+    declared mapping) — even when the missing/extra index's delta would
+    have been exactly zero on that tick. A channel with the right width but
+    non-dense keys still raises `UnmappedComplexIndexError` defensively on
+    the first index with no entry in `complex_index_by_wid` (coverage-gap
+    detection per FIX_TEMPLATE Rule 1; a cardinality drift is a
+    coverage-completeness bug regardless of whether a given tick's data
+    happened to paper over it).
   - `oc_observation`: `update.get('complex', {}).get('counts', {})` per the
     contract; handles a missing `'complex'` key and an entirely empty
     `update` dict without raising.
@@ -86,11 +96,15 @@ catalog/event_registry/evidence_index edits" constraint.
     enumerated so spurious OC-only fires are detectable (FIX_TEMPLATE Rule 8:
     no trace-cribbing / adversarial non-triviality), and `fire_count` is tick
     incidence (not particle count) on both sides.
-- `tests/scripts/test_l2_event_ribosome_assembly_gate.py` — 20 tests, three
-  groups:
+- `tests/scripts/test_l2_event_ribosome_assembly_gate.py` — **29 tests**
+  (20 at first submission; the Opus5 pre-merge review round added 7 more,
+  reaching 27; this closeout round — the two non-blocking notes below —
+  added the final 2), five groups:
   1. Pure adapter unit tests: WID-mapping-matches-live-process, positive-delta
-     mapping, multi-particle-same-tick still counts as one tick fire,
-     unmapped-index error, empty/no-`'complex'`-key update handling, fixed
+     mapping, multi-particle-same-tick still counts as one tick fire, the
+     width-2 channel check (including a dedicated width-1 and a width-3
+     refusal case, each via `UnmappedComplexIndexError`), a non-dense-keys
+     unmapped-index case, empty/no-`'complex'`-key update handling, fixed
      required-components.
   2. Real seed-0 round-trip (skipped if the trace file is absent): reproduces
      fire ticks **[9, 17]** through the new adapter, and proves the runner
@@ -98,7 +112,11 @@ catalog/event_registry/evidence_index edits" constraint.
      (`evaluate_gate`/`load_and_check_window` refuses with
      `INCOMPLETE_WINDOW` because the file lacks the M4 stride/tick_start/
      tick_end/window_anchor metadata contract, and separately
-     `check_ensemble_size` refuses with `SINGLE_SEED_ENSEMBLE_REQUIRED`).
+     `check_ensemble_size` refuses with `SINGLE_SEED_ENSEMBLE_REQUIRED`); plus
+     a real-seed0 tick9/tick17 WID-identity round-trip through both
+     `karr_observation` and `oc_observation`, and a negative control proving
+     a deliberately swapped WID map breaks that identity on the Karr side
+     only.
   3. Synthetic 50-seed cohorts driven through the adapter's own
      `karr_observation`/`oc_observation` via `evaluate_gate`: PASS with
      dual-particle firings; count-divergence FAIL (deterministic, via the D3
@@ -113,19 +131,57 @@ catalog/event_registry/evidence_index edits" constraint.
      the finer-grained `NO_OC_COMPONENT`/`SPURIOUS_OC_COMPONENT` per-component
      verdicts explicitly (the fixed-adapter path never reaches those because
      its keyspace check fires first).
+  4. Registry-refusal tests: `check_adapter`/`evaluate_gate` both refuse this
+     candidate adapter against the LIVE, on-disk `event_registry.yaml`
+     RibosomeAssembly row (still `ribosome_assembly.smoke.v1`) with
+     `ADAPTER_NOT_REGISTERED`, and `check_adapter` refuses an adapter/process
+     name mismatch with `ADAPTER_PROCESS_MISMATCH`.
+  5. **New in this round** — two `evaluate_gate`-level refusal tests, built
+     through the same `_build_cohort` real-adapter helper as group 3 (not a
+     bare direct call to `check_ensemble_size`/`check_empty_support`): an
+     under-supported 5-seed cohort refuses with
+     `SINGLE_SEED_ENSEMBLE_REQUIRED` (never PASS, never any other computed
+     verdict), and a fully quiet 50-seed cohort — zero fires on both the
+     Karr and OC side — refuses with `EMPTY_EVENT_SUPPORT` (never a vacuous
+     zero==zero PASS).
 
 ## Test results
 
 ```
-tests/scripts/test_l2_event_ribosome_assembly_gate.py ...................... 20 passed in 59.03s
+tests/scripts/test_l2_event_ribosome_assembly_gate.py ............................. 29 passed in 49.22s
 tests/scripts/test_l2_event_adapters.py
 tests/scripts/test_l2_event_runner.py
 tests/scripts/test_l2_event_registry.py
-tests/scripts/test_l2_event_metrics.py                ...................... 113 passed in 38.10s
+tests/scripts/test_l2_event_metrics.py                            ...................... 113 passed in 33.26s
+
+# combined (all five files together):
+142 passed in 33.26s
 ```
 
 No regressions in the pre-existing L2.event suite; the new module is purely
-additive (not imported by any existing module).
+additive (not imported by any existing module). `ruff check` on both touched
+files (`scripts/l2_event/adapters/ribosome_assembly_gate.py`,
+`tests/scripts/test_l2_event_ribosome_assembly_gate.py`) reports zero
+findings.
+
+## Closeout round: two non-blocking Opus5 review notes
+
+Opus5's pre-merge review of `5839798` accepted the adapter logic outright and
+left two non-blocking notes for this narrow follow-up round (no adapter
+production-logic changes were required or made; no defect was found):
+
+1. This report itself was stale relative to `5839798` — it still described
+   the pre-review 20-test/index-membership-only state instead of `5839798`'s
+   actual width-2 channel check (with its width-1/width-3 refusal cases) and
+   27-test suite. Fixed above (test-count/grouping and the `karr_observation`
+   description now match HEAD as of this round).
+2. The refusal gauntlet (`SINGLE_SEED_ENSEMBLE_REQUIRED`,
+   `EMPTY_EVENT_SUPPORT`) had unit-level coverage (a bare direct call to
+   `check_ensemble_size`) but no test exercising it through
+   `evaluate_gate`/`_build_cohort` with this adapter's own
+   `karr_observation`/`oc_observation` for an under-supported cohort or a
+   fully quiet Karr+OC cohort. Added (group 5 above); both refuse as
+   expected, neither reaches a computed verdict.
 
 ## Runner status (unchanged, as expected)
 

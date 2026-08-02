@@ -784,3 +784,82 @@ def test_check_adapter_refuses_on_adapter_process_name_mismatch():
     with pytest.raises(RunnerRefusal) as exc_info:
         check_adapter(adapter, "RibosomeAssembly", entry)
     assert exc_info.value.reason == "ADAPTER_PROCESS_MISMATCH"
+
+
+# ---------------------------------------------------------------------------
+# Part 5 -- evaluate_gate-level refusal tests (Opus5 non-blocking review
+# note #2): the refusal gauntlet (`check_ensemble_size`,
+# `check_empty_support`) is exercised end-to-end through this adapter's own
+# `karr_observation`/`oc_observation` and `_build_cohort`, not just via a
+# bare direct call to the standalone `check_ensemble_size` function (Part 3
+# above already covers that unit-level case for reference).
+# ---------------------------------------------------------------------------
+
+
+def test_evaluate_gate_refuses_an_under_supported_low_fired_seed_cohort():
+    """A cohort with far fewer seeds than the registry's declared
+    `required_n_seeds=50` (here: 5 fired seeds, well below the 50-seed
+    ensemble floor) must refuse with `SINGLE_SEED_ENSEMBLE_REQUIRED` --
+    never PASS, never any other computed verdict -- because
+    `evaluate_gate` runs `check_ensemble_size` before any gate math, per
+    its own docstring (M2 review): a real adapter that only manages to
+    fire on a handful of seeds is exactly the under-powered-cohort case
+    this refusal exists to catch."""
+    fire_ticks = _repeated_firing_cohort(n_seeds=5)
+    karr, oc, karr_pl, oc_pl = _build_cohort(
+        fire_ticks,
+        fire_ticks,
+        n_ticks=_N_TICKS,
+        karr_payload_fn=_matched_payload,
+        oc_payload_fn=_matched_payload,
+        adapter=RibosomeAssemblyGateAdapter(),
+    )
+    assert len(karr) == 5
+
+    with pytest.raises(RunnerRefusal) as exc_info:
+        evaluate_gate(
+            process="RibosomeAssembly",
+            registry_entry=_entry(),
+            adapter=RibosomeAssemblyGateAdapter(),
+            karr_timelines=karr,
+            oc_timelines=oc,
+            karr_payloads_by_seed=karr_pl,
+            oc_payloads_by_seed=oc_pl,
+            rng=_rng(),
+        )
+    assert exc_info.value.reason == "SINGLE_SEED_ENSEMBLE_REQUIRED"
+
+
+def test_evaluate_gate_refuses_a_fully_quiet_karr_and_oc_cohort():
+    """A full 50-seed cohort where BOTH Karr and OC never fire a single
+    tick (built through this adapter's own `oc_observation`/
+    `karr_observation` over all-empty fire-tick lists, not hand-built
+    `EventObservation`s) must refuse with `EMPTY_EVENT_SUPPORT` -- the
+    vacuous zero==zero case `check_empty_support` exists to catch --
+    rather than reporting a computed PASS verdict for a cohort that never
+    observed a single event on either side."""
+    quiet_fires = [[] for _ in range(_N_SEEDS)]
+    karr, oc, karr_pl, oc_pl = _build_cohort(
+        quiet_fires,
+        quiet_fires,
+        n_ticks=_N_TICKS,
+        karr_payload_fn=_matched_payload,
+        oc_payload_fn=_matched_payload,
+        adapter=RibosomeAssemblyGateAdapter(),
+    )
+    assert len(karr) == _N_SEEDS
+    assert sum(t.total_fire_count for t in karr) == 0
+    assert sum(t.total_fire_count for t in oc) == 0
+
+    with pytest.raises(RunnerRefusal) as exc_info:
+        evaluate_gate(
+            process="RibosomeAssembly",
+            registry_entry=_entry(),
+            adapter=RibosomeAssemblyGateAdapter(),
+            karr_timelines=karr,
+            oc_timelines=oc,
+            karr_payloads_by_seed=karr_pl,
+            oc_payloads_by_seed=oc_pl,
+            rng=_rng(),
+        )
+    assert exc_info.value.reason == "EMPTY_EVENT_SUPPORT"
