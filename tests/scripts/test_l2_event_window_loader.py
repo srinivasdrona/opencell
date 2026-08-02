@@ -262,35 +262,53 @@ def test_classify_trace_dir_recognizes_event_window_and_standard_dirs():
 
 @pytest.mark.skipif(not _REAL_RA_TRACE.exists(), reason="Real RibosomeAssembly seed-000 event-window MAT not present locally")
 def test_load_real_ribosome_assembly_seed0_event_trace():
-    """M4: the real seed-0 MAT predates the stride/tick_start/tick_end (or
-    window_anchor) metadata contract, so this structural-smoke-style load
-    must explicitly opt out of the strict default and the returned grid
-    must honestly report the contract as incomplete -- it must never be
-    silently treated as if it satisfied a real gate's window requirements."""
+    """Canary-A closeout: the real seed-0 MAT was regenerated with a
+    complete M4 stride/tick_start/tick_end metadata contract (stride=1,
+    tick_start=201, tick_end=300 -- absolute ticks; tick_offset=200 is the
+    burn-in tick COUNT preceding capture, so the first captured tick is
+    tick_offset + 1 = 201, per the M4 onset/completion split). The
+    relaxed (`require_stride_contract=False`) structural-smoke-style load
+    must honestly report the contract as complete now -- it must never
+    silently claim completeness that isn't real, but it must also never
+    keep reporting a stale incompleteness once the contract genuinely is
+    satisfied."""
     observables = ("substrates", "enzymes", "boundEnzymes", "monomers", "complexs", "RNAs")
     window = load_event_window(_REAL_RA_TRACE, required_observables=observables, require_stride_contract=False)
     assert window.process_name == "RibosomeAssembly"
     assert window.seed == 0
     assert window.n_ticks == 100
     assert window.tick_offset == 200.0
-    assert window.stride_contract_ok is False
-    assert window.stride_contract_problems
+    assert window.tick_start == 201
+    assert window.tick_end == 300
+    assert window.stride_contract_ok is True
+    assert window.stride_contract_problems == ()
     for observable in observables:
         assert window.states_before[observable].shape[0] == 100
         assert window.states_after[observable].shape[0] == 100
 
 
-def test_load_real_ribosome_assembly_seed0_event_trace_strict_default_refuses_incomplete_window():
-    """The flip side of the above: under the new strict-by-default M4
-    contract, the same real trace must hard-refuse (never silently PASS
-    or silently drop the contract check) unless the caller explicitly
-    opts out via `require_stride_contract=False`."""
+def test_load_real_ribosome_assembly_seed0_event_trace_strict_default_now_succeeds():
+    """Canary-A closeout, flip side of the above: under the strict-by-
+    default M4 contract, the regenerated real trace must now load
+    successfully (never hard-refuse) -- proving the M4 gap that used to
+    force every real-data caller through `require_stride_contract=False`
+    is closed for this file. This does NOT make the file gate-eligible:
+    it is still only 1 of the registry's required 50 ensemble seeds (see
+    `tests/scripts/test_l2_event_ribosome_assembly_gate.py::
+    test_gate_adapter_cannot_reach_a_computed_verdict_on_real_seed0`,
+    which proves the strict load succeeding on this file and the
+    ensemble-size refusal are two independent facts). Synthetic
+    fixtures elsewhere in this file (`omit_stride_contract=True` and the
+    other M4-refusal branches above) retain full, real-data-independent
+    coverage of the strict-refusal path itself -- that refusal behavior
+    is unchanged and is not what this test is about."""
     if not _REAL_RA_TRACE.exists():
         pytest.skip("Real RibosomeAssembly seed-000 event-window MAT not present locally")
     observables = ("substrates", "enzymes", "boundEnzymes", "monomers", "complexs", "RNAs")
-    with pytest.raises(EventWindowRefused) as exc_info:
-        load_event_window(_REAL_RA_TRACE, required_observables=observables)
-    assert exc_info.value.reason == "INCOMPLETE_WINDOW"
+    window = load_event_window(_REAL_RA_TRACE, required_observables=observables)
+    assert window.stride_contract_ok is True
+    assert window.tick_start == 201
+    assert window.tick_end == 300
 
 
 @pytest.mark.skipif(not _REAL_STANDARD_TRACE.exists(), reason="Real standard mid-cycle Translation MAT not present locally")

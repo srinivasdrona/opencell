@@ -537,3 +537,39 @@ def test_audit_index_flags_recorded_artifact_set_not_exactly_matching_mandatory_
     write_json_atomic(index_path, index)
     problems = evidence.audit_index(index_path)
     assert any("does not exactly cover MANDATORY_FILES" in p for p in problems)
+
+
+# ---------------------------------------------------------------------------
+# Canary-A closeout: the tracked RibosomeAssembly bundle's ACTIVE
+# input_manifest.json claim must bind the new, M4-complete raw hash --
+# never regress to the stale pre-M4 hash a prior worktree round tracked.
+# ---------------------------------------------------------------------------
+
+_TRACKED_RA_INPUT_MANIFEST = REPO_ROOT / "docs" / "phase_f" / "l2_event" / "evidence_bundle" / "RibosomeAssembly" / "input_manifest.json"
+
+# Canary-A (this closeout): full M4 stride/tick_start/tick_end contract.
+_CANARY_A_SHA256 = "c65902a8232cb6afe2c8dd9476597a64418a0c740676c763af1223ef6338a79b"
+# Pre-Canary-A (superseded): predates the M4 contract entirely. Retained
+# here ONLY as the negative half of the regression check below -- this is
+# not a claim this codebase makes anywhere active, and it must stay that
+# way. Historical/superseded mentions of this same hash in dated narrative
+# docs (e.g. RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md's "Environment
+# landmine" note, an append-only record of a since-fixed worktree quirk)
+# are explicitly out of scope for this check -- this test is only about
+# the ACTIVE tracked manifest claim, not the narrative history.
+_PRE_CANARY_A_SHA256 = "6f1ad7f8d1c96e3807e8e454bb5914820d509b72f9eb6f62ea1b934d0ef41ca8"
+
+
+def test_tracked_ra_input_manifest_binds_canary_a_hash_not_the_stale_pre_m4_hash():
+    """Regression guard: the tracked (portable, fresh-clone-auditable)
+    ``evidence_bundle/RibosomeAssembly/input_manifest.json`` must record
+    the Canary-A raw file's sha256 as its ACTIVE claim, and must never
+    regress to the stale pre-M4 hash. This is checked directly against
+    the real tracked file (not a runner recomputation) because the whole
+    point of the tracked bundle is that a fresh clone without the
+    gitignored raw MAT still audits the CLAIM, not a live recomputation
+    against data that may not even be present."""
+    manifest = read_json(_TRACKED_RA_INPUT_MANIFEST)
+    recorded = manifest["inputs"][0]["sha256"]
+    assert recorded == _CANARY_A_SHA256
+    assert recorded != _PRE_CANARY_A_SHA256
