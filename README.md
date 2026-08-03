@@ -17,9 +17,11 @@ from MATLAB to Python, built on the Vivarium-core simulation framework.
 
 **Design goals:**
 
-1. **Validated against Karr's MATLAB** — every Python process is checked
-   for bit-identity at L2.1 and distributional fidelity at L2.2 against
-   the original MATLAB oracle traces.
+1. **Validated against Karr's MATLAB** — the goal is per-process evidence
+   against the original MATLAB oracle traces: same-seed replay at L2.1 for
+   all 28 processes, and distributional fidelity at L2.2 for the 22
+   processes with a stochastic surface worth a distributional gate. This
+   is the target, not the current state — see [Status](#status--checkpoint-2026-08-03).
 2. **Composable** — 28 biological processes + allocator, each a separate
    `Process` class with declared ports. Drop in a DNN surrogate, an ODE
    model, or a different algorithm without touching neighbors.
@@ -30,24 +32,89 @@ from MATLAB to Python, built on the Vivarium-core simulation framework.
    detector catches benchmarks that secretly read from the ground-truth
    trace instead of computing independently.
 
-## Status (Day 32, 2026-06-18)
+## Status — checkpoint 2026-08-03
 
-**L-ladder validation progress:**
+Rung *definitions* live in
+[`docs/phase_f/L_LADDER_CANONICAL.md`](docs/phase_f/L_LADDER_CANONICAL.md)
+(the only normative source; deliberately status-free). Current *state* lives
+in [`docs/phase_f/CHECKPOINT_2026-08-03.md`](docs/phase_f/CHECKPOINT_2026-08-03.md).
+This section summarises that checkpoint and defers to it on every detail.
 
-| Gate | Definition | Status |
+### Read the denominator first
+
+OpenCell ports **28 Karr processes. 28 is the denominator** for every claim
+about coverage, completeness or progress. Two smaller numbers appear
+constantly in the evidence tree and are **validation-profile scopes, never
+process totals**:
+
+- **22** — processes flagged `in_scope_L2_2`, i.e. those with a stochastic
+  surface worth a *distributional* gate at all. The rest are
+  deterministic-bucket and out of L2.2 scope by design, not by omission.
+- **18** — of those 22, the rows routed to the Design-A per-tick harness.
+  The other 4 route to the event-class harness.
+
+"18/28 green" is a category error: it grades a per-tick-harness row count
+against the whole roster. The correct forms are "n of 18 Design-A per-tick
+rows", "n of 22 L2.2 in-scope processes", or "n of 28 processes at rung X".
+
+### Ladder snapshot
+
+| Rung | What it proves | Checkpoint status |
 |---|---|---|
-| L1 | "Did it fire?" | ✅ 28/28 processes firing |
-| L2.0 | Schema audit | ✅ Complete |
-| L2.1 | Bit-identity per process (σ=0) | ✅ 28/28 green |
-| L2.2 | Distributional fidelity per process (ensemble) | ✅ 22/22 in-scope green |
-| L2.5 | Shared-pool composition (k=2..4 processes) | 🚧 IN PROGRESS — first pair green |
-| L3 | Direct coupling (producer→consumer) | ⏳ Not started |
-| L4 | Submodule (cluster vs oracle) | ⏳ Not started |
-| L5 | Chassis (whole-cell phenotype) | ⏳ Not started |
+| L1a | the process fires and mutates state | 28/28 aliveness baseline |
+| L1b | the wiring record matches the code | 28/28 method/wiring conformance |
+| L2.0 | declared channels are the oracle's channels | 28/28 static schema |
+| L2.0a | the allocator hands each process the right inputs | 403/403 cases |
+| L2.1 | same-seed replay reproduces one Karr trace | 19 GENUINE / 2 COINCIDENTAL / 6 UNINFORMATIVE / 1 FAIL |
+| L2.2 | the *distribution* is right across seeds | **14 PASS / 4 FAIL / 4 MISSING_EVIDENCE of 22 in scope — aggregate `NON_GREEN`** |
+| L2.4 | the free-running chassis conserves mass | PASS, 100 ticks × 4 seeds |
+| L2.5 | processes compose through the shared pool | **no currently certified pair set** — not started under the honest rebuild |
+| L3 | processes compose through direct hand-off | not started |
+| L4 / L5 | cluster vs Karr submodel / whole-cell phenotype | not started |
 
-**L2.5 scope:** 256 honest-required pairs (211 stochastic-stochastic, 43
-deterministic-stochastic, 2 deterministic-deterministic) — see
-`docs/phase_f/L2_5_PAIR_MATRIX.md`.
+L2.2 authority is the mechanically re-derived
+[`docs/phase_f/l2_2_design_a/evidence_index.json`](docs/phase_f/l2_2_design_a/evidence_index.json)
+— re-derive it before quoting these counts after any source or evaluator
+change. Stored verdict strings, tracker tables and status docs are never
+authority.
+
+Only **L2.1 and above** put a Karr oracle at process outputs. L1a, L1b, L2.0,
+L2.0a and L2.4 are *structural* gates: they can prove the port is internally
+incoherent, never that it is biologically right. L2.1's non-GENUINE rows are
+not all implementation failures — stochastic, event, windowed and
+condition-gated processes require their applicable fidelity profile;
+`ChromosomeCondensation` is the one literal L2.1 FAIL.
+
+### What is explicitly *not* green
+
+No event, windowed, stress or condition-gated diagnostic currently certifies
+anything. Per the checkpoint:
+
+- **RibosomeAssembly** and **Cytokinesis** — event adapters are *structural
+  and unregistered*. RibosomeAssembly's structural smoke is `NOT_APPLICABLE`
+  and the real gate refuses at 1/50 seeds; Cytokinesis Canary D reached tick
+  25,361 before exposing the `mnrnd` shim defect and its retry is paused.
+- **FtsZPolymerization** — reframed as an honest windowed diagnostic. The one
+  available seed is non-vacuous and invariant-clean but terminates
+  `INSUFFICIENT_ENSEMBLE`; it cannot PASS at N=1.
+- **ProteinProcessingII** — natural row remains `H12_OBSERVED_REGIME`
+  (non-green). The `transferase_capacity_scarce` canary is explicitly
+  non-gating and unblocks nothing.
+- **MacromolecularComplexation** — the `CONDITION_GATED_CANDIDATE` is
+  hardened but non-operative; lifecycle reachability is `UNRESOLVED` and the
+  candidate changes no verdict.
+- **DNADamage** — a synthetic, explicitly non-biological mechanism-stress
+  profile is preregistered but *unexecuted*; no live registry or catalog
+  change exists.
+- **Replication** — the literal topology restart branch is not integrated and
+  N=50 is denied; bypass diagnostics are causality probes, not acceptance.
+- **DNASupercoiling** — the canonical row is `FAIL /
+  PRIMARY_INSUFFICIENT_SAMPLES`; the powered N=100 diagnostic is supplemental
+  and non-gating.
+
+Candidate, preregistered and supplemental artifacts are non-gating by
+construction. Nothing above L2.2 resumes until these have terminal, reviewed
+dispositions and the lower-gate evidence is regenerated on the final tree.
 
 ## Architecture
 
@@ -59,8 +126,9 @@ deterministic-stochastic, 2 deterministic-deterministic) — see
 - **Processes**: 28 biological + 1 allocator, each a separate
   `vivarium.core.Process` subclass with declared `ports_schema` and
   `next_update(timestep, states) → delta_dict`
-- **Validation**: L1-L5 ladder with per-tick fidelity assertion against
-  MATLAB oracle traces; runtime anti-laundering detector
+- **Validation**: the L-ladder (L1a → L5), with per-process evidence against
+  MATLAB oracle traces from L2.1 upward and a runtime anti-laundering
+  detector; definitions in `docs/phase_f/L_LADDER_CANONICAL.md`
 
 ## Quick Start
 
@@ -131,13 +199,28 @@ the roadmap doc for why and what to point users to instead.
 
 ## Documentation
 
-- **Plan**: `plan.md` — operational handoff, current status
-- **L-ladder**: `plan.md` § L-ladder block
-- **Process status**: `docs/phase_e/PROCESS_STATUS_ALL_29.md` — per-process L1-L5 tracker
-- **L2.5 scope**: `docs/phase_f/L2_5_PAIR_MATRIX.md` — 256 pair test matrix
-- **Post-L5 roadmap**: `docs/specs/POST_L5_ROADMAP.md`
-- **Architectural specs**: `docs/specs/INTERVENTION_API.md`, `DATA_EMIT_SCHEMA.yaml`, `REFERENCE_DATA_MANIFEST.yaml`, `POST_L5_REFACTOR_PLAN.md`
-- **Dev log blog**: `docs/blog/`
+Start here:
+
+- **Ladder definitions (normative)**: [`docs/phase_f/L_LADDER_CANONICAL.md`](docs/phase_f/L_LADDER_CANONICAL.md)
+  — what each rung means, applicability, terminal states, ordering rules
+- **Current dated state**: [`docs/phase_f/CHECKPOINT_2026-08-03.md`](docs/phase_f/CHECKPOINT_2026-08-03.md)
+- **L2.2 mechanical verdicts**: [`docs/phase_f/l2_2_design_a/evidence_index.json`](docs/phase_f/l2_2_design_a/evidence_index.json)
+- **L2.event routing/adapter status**: [`docs/phase_f/l2_event/event_registry.yaml`](docs/phase_f/l2_event/event_registry.yaml),
+  [`docs/phase_f/l2_event/evidence_index.json`](docs/phase_f/l2_event/evidence_index.json)
+- **Latest dev-log post**: [Days 64-74 — the dictionary we deleted, the canary that died at tick 25,361](docs/blog/2026-08-03-days-64-74-the-dictionary-we-deleted-the-canary-that-died-at-tick-25361-and-the-bottleneck-that-turned-out-to-be-me.md)
+  (full series in [`docs/blog/`](docs/blog/))
+
+Also:
+
+- **Operational state and open work**: [`plan.md`](plan.md)
+- **Post-L5 roadmap**: [`docs/specs/POST_L5_ROADMAP.md`](docs/specs/POST_L5_ROADMAP.md)
+- **Architectural specs**: [`docs/specs/INTERVENTION_API.md`](docs/specs/INTERVENTION_API.md),
+  `DATA_EMIT_SCHEMA.yaml`, `REFERENCE_DATA_MANIFEST.yaml`, `POST_L5_REFACTOR_PLAN.md`
+
+Older per-process trackers under `docs/phase_e/` and `docs/phase_f/` (including
+the 29-row status table, the L2.2 gate tracker and the L2.5 pair tracker /
+matrix) are **historical inputs, not current authority**, until a dated
+checkpoint explicitly reconciles them. Do not quote counts from them.
 
 ## License
 
