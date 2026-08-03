@@ -23,6 +23,9 @@ from DNARepair. Per-kind incidence is gateable only for preregistered kinds
 whose own expected support clears the floor; unsupported rare kinds remain
 descriptive rather than becoming zero-equals-zero passes. Gamma may write
 `damagedBases` or `strandBreaks`; UVB writes `intrastrandCrossLinks`.
+A fired tick is defined as a **net nnz increase** in those allowed fields;
+an in-place subtype conversion at an existing site is deliberately not a
+fire.
 
 This work can support a later `CONDITION_GATED_CANDIDATE` decision. It cannot
 change the current DNADamage verdict, unblock L2.5, or support L5 phenotype

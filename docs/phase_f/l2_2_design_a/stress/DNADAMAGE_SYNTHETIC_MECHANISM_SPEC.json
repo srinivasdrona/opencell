@@ -23,10 +23,12 @@
     "m_ticks": 20,
     "existing_pooled_support_floor": 50,
     "support_multiplier": 2,
+    "support_multiplier_units": "pooled damaged-site events / fire-tick support floor; descriptive only",
     "target_expected_pooled_site_events": 100,
     "dose_formula": "target_expected_pooled_site_events / (n_seeds * m_ticks * sum_per_unit_radiation_rate)",
     "event_timing_model": "repeated_firing",
     "fire_count_semantics": "tick incidence: one fired seed-tick regardless of the number of damaged sites created in that tick",
+    "fire_predicate": "net increase in nnz of the condition's allowed chromosome field(s) during that DNADamage tick; in-place subtype conversion at an already-occupied site is not a fire",
     "dose_units": "synthetic radiation-substrate units; statistical mechanism-test scale, not a biological dose"
   },
   "conditions": {

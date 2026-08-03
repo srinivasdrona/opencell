@@ -168,11 +168,21 @@ def test_per_kind_support_and_gamma_field_mapping_rederive_from_fixture():
             == condition["per_kind_support"]["unsupported_reaction_count"]
         )
 
+        nonzero_expected = expected[expected > 0.0]
+        assert np.isclose(
+            float(nonzero_expected.min()),
+            condition["per_kind_support"]["rarest_nonzero_expected_pooled_site_events"],
+            rtol=1.0e-15,
+            atol=0.0,
+        )
+
     gamma = spec["conditions"]["gamma_mechanism"]
     gamma_types = details["gamma_radiation"]["damage_types"]
     assert gamma_types.count("damagedBases") == gamma["reaction_count_by_field"]["damagedBases"]
     assert gamma_types.count("strandBreaks") == gamma["reaction_count_by_field"]["strandBreaks"]
     assert set(gamma_types) == set(gamma["allowed_chromosome_fields"])
+    uvb = spec["conditions"]["uvb_mechanism"]
+    assert set(details["UVB_radiation"]["damage_types"]) == set(uvb["allowed_chromosome_fields"])
 
 
 def test_seed_streams_are_disjoint_and_complete():
@@ -199,6 +209,10 @@ def test_conditions_change_only_one_radiation_substrate():
 
 
 def test_evidence_contract_refuses_vacuity_and_separates_dna_repair():
+    support = _load_spec()["support_design"]
+    assert support["event_timing_model"] == "repeated_firing"
+    assert support["fire_predicate"].startswith("net increase in nnz")
+    assert "in-place subtype conversion" in support["fire_predicate"]
     contract = _load_spec()["evidence_contract"]
     assert contract["control_verdict"] == "NOT_APPLICABLE"
     assert contract["stimulus_support_failure"] == "INSUFFICIENT_KARR_SUPPORT"
