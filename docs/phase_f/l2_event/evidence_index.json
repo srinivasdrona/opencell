@@ -1,16 +1,16 @@
 {
-  "content_hash": "5a475562d455cd2e3076d5b4b3e43d507f40c4cd6fde248d2a9b0d3308712a54",
+  "content_hash": "591af101d511faf7e7571b1a9af8425c026e5c24d42172fd077fb8451408e908",
   "evidence_root": "docs/phase_f/l2_event/evidence_bundle",
-  "generated_at": "2026-08-02T21:03:20.369206+00:00",
-  "git_sha": "3dde7e85c28695660af847ffc34ce2438ea019ed",
+  "generated_at": "2026-08-03T11:30:59.057509+00:00",
+  "git_sha": "a2eac5590bc2ba684ec1d1319ccf8d13f3598581",
   "n_rows": 1,
   "rows": [
     {
       "artifact_hashes": {
-        "SUMMARY.json": "a6116820d033fa9dea5b6314cf1b5b4caa0f52fc2724b9e8a3ecca21f24f058e",
-        "input_manifest.json": "5a3c39532bfc4a2d8d58e2f321104ef3831185407b36eb31c64aced63fc7329f",
+        "SUMMARY.json": "32cf4499c729bce859bbd10d6ea5bb20b479b6c66e08b0707a9ab8379d77a7f9",
+        "input_manifest.json": "07266abc5bf26441b0d7ad9e8f6143be8cee7e19700a933a1734ad81531ef346",
         "null_calibration.json": "5ad7371957835afe89a5dc4b3bb207f58479f8d86d92697827628919472d1e47",
-        "provenance.json": "d436e678ae93cc6ceb7e53bedef2aa32062239c9453eb3d3822bee7f0d3baee6",
+        "provenance.json": "866cb834dfdae4992d0486e7c6c61ade133960766af6119802440a0d32f838cf",
         "result.json": "df29d6815741ab3841dd89c985a8ee3992253101bb173d04fe76322abd76beef"
       },
       "evidence_dir": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly",

@@ -331,3 +331,24 @@ pre-M4 state. A new regression test
 (`test_l2_event_evidence.py::test_tracked_ra_input_manifest_binds_canary_a_hash_not_the_stale_pre_m4_hash`)
 guards against the tracked manifest's active claim ever regressing to the
 superseded hash.
+
+### Shim-bound regeneration (2026-08-03 checkpoint)
+
+The accepted legacy-`mnrnd` compatibility fix added mandatory
+`mnrnd_shim_version` and `mnrnd_shim_sha256` trace metadata. That correctly
+made the first M4-complete Canary-A file stale even though RibosomeAssembly
+does not itself exercise `mnrnd`. Canary A was therefore regenerated once
+more under the frozen shim:
+
+- active raw SHA-256:
+  `834b0a79797c2c1a3a4c64318c8e5e99197545461c489c70add4bc29bc3d4ca1`;
+- prior M4-but-unversioned SHA-256:
+  `c65902a8232cb6afe2c8dd9476597a64418a0c740676c763af1223ef6338a79b`
+  (superseded);
+- stride/tick metadata and fire ticks remain unchanged;
+- same-spec planning returns `skip_valid` only when the live shim hash
+  matches the trace metadata.
+
+The tracked structural-smoke bundle/index was mechanically regenerated.
+Its verdict remains `NOT_APPLICABLE`; the sole gate blocker remains
+`SINGLE_SEED_ENSEMBLE_REQUIRED` (1/50).

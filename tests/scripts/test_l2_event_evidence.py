@@ -547,8 +547,10 @@ def test_audit_index_flags_recorded_artifact_set_not_exactly_matching_mandatory_
 
 _TRACKED_RA_INPUT_MANIFEST = REPO_ROOT / "docs" / "phase_f" / "l2_event" / "evidence_bundle" / "RibosomeAssembly" / "input_manifest.json"
 
-# Canary-A (this closeout): full M4 stride/tick_start/tick_end contract.
-_CANARY_A_SHA256 = "c65902a8232cb6afe2c8dd9476597a64418a0c740676c763af1223ef6338a79b"
+# Shim-bound Canary-A: full M4 contract plus the accepted runtime-shim
+# version/hash metadata.
+_CANARY_A_SHA256 = "834b0a79797c2c1a3a4c64318c8e5e99197545461c489c70add4bc29bc3d4ca1"
+_PRE_SHIM_CANARY_A_SHA256 = "c65902a8232cb6afe2c8dd9476597a64418a0c740676c763af1223ef6338a79b"
 # Pre-Canary-A (superseded): predates the M4 contract entirely. Retained
 # here ONLY as the negative half of the regression check below -- this is
 # not a claim this codebase makes anywhere active, and it must stay that
@@ -572,4 +574,5 @@ def test_tracked_ra_input_manifest_binds_canary_a_hash_not_the_stale_pre_m4_hash
     manifest = read_json(_TRACKED_RA_INPUT_MANIFEST)
     recorded = manifest["inputs"][0]["sha256"]
     assert recorded == _CANARY_A_SHA256
+    assert recorded != _PRE_SHIM_CANARY_A_SHA256
     assert recorded != _PRE_CANARY_A_SHA256
