@@ -228,7 +228,7 @@ def test_throttle_on_with_starved_atp_freezes_m2_synthesis() -> None:
     eng.state.set_value({"m1_pools": pools})
 
     rna_before = dict(eng.state.get_value()["rna"]["counts"])
-    sub_before = dict(eng.state.get_value()["substrates"])
+    dict(eng.state.get_value()["substrates"])
 
     eng.update(1.0)
 

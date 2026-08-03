@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
 import random
 import sys
+from pathlib import Path
 
 import numpy as np
 import pytest
@@ -66,7 +66,7 @@ def test_bug6a_stage1_chassis_v6_canary_120_ticks(monkeypatch: pytest.MonkeyPatc
     enabled = _run_chassis_v6_120_ticks()
 
     totals_on = enabled["totals"]
-    cumulative_on = enabled["cumulative"]
+    enabled["cumulative"]
     demand_delta_on = enabled["demand_delta"]
     final_sub_on = enabled["final_substrates"]
     keys_seen_on = enabled["keys_seen"]

@@ -3,7 +3,11 @@ from __future__ import annotations
 import numpy as np
 import pytest
 
-from opencell.vivarium.karr_metabolism import _KARR_DEMAND_KEYS, KarrMetabolismProcess, build_karr_m1_engine
+from opencell.vivarium.karr_metabolism import (
+    _KARR_DEMAND_KEYS,
+    KarrMetabolismProcess,
+    build_karr_m1_engine,
+)
 
 
 def _default_shared_substrates(proc: KarrMetabolismProcess) -> dict[str, float]:

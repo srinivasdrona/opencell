@@ -7,19 +7,19 @@ from scipy.stats import chisquare, poisson
 
 
 def strictly_increasing(arr: np.ndarray) -> bool:
-    return all(a < b for a, b in zip(arr, arr[1:]))
+    return all(a < b for a, b in zip(arr, arr[1:], strict=False))
 
 
 def strictly_decreasing(arr: np.ndarray) -> bool:
-    return all(a > b for a, b in zip(arr, arr[1:]))
+    return all(a > b for a, b in zip(arr, arr[1:], strict=False))
 
 
 def monotonically_increasing(arr: np.ndarray) -> bool:
-    return all(a <= b for a, b in zip(arr, arr[1:]))
+    return all(a <= b for a, b in zip(arr, arr[1:], strict=False))
 
 
 def monotonically_decreasing(arr: np.ndarray) -> bool:
-    return all(a >= b for a, b in zip(arr, arr[1:]))
+    return all(a >= b for a, b in zip(arr, arr[1:], strict=False))
 
 
 def all_positive(arr: np.ndarray) -> bool:
@@ -55,7 +55,7 @@ def approx_poisson(
         rate = np.mean(arr)
 
     counts = Counter(list(arr))
-    counts = [counts[i] if i in counts.keys() else 0 for i in range(max(arr) + 1)]
+    counts = [counts.get(i, 0) for i in range(max(arr) + 1)]
 
     res = chisquare(
         np.array(counts) / sum(counts),

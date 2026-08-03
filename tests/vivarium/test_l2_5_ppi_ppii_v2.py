@@ -49,6 +49,7 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
+import h5py
 from l2_2_replay_common_v2 import _COMPOSITION_ORDER_V2, run_integrated_replay_v2
 from l2_replay_common import (
     apply_count_update,
@@ -61,11 +62,8 @@ from l2_replay_common import (
     resolve_trace_path,
 )
 
-import h5py
-
 from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
 from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
-
 
 _PAIR = ["ProteinProcessingI", "ProteinProcessingII"]
 

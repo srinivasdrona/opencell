@@ -11,23 +11,22 @@ the algorithm, it should reproduce Karr's recorded substrate delta (modulo
 stochastic rounding).
 """
 from __future__ import annotations
+
 from pathlib import Path
 
 import h5py
 import numpy as np
 import pytest
-from scipy.io import loadmat
 
 from opencell.m1.karr_metabolism_writeback import (
-    apply_karr_substrate_writeback,
-    project_to_flat_per_wid,
-    KarrWritebackFixture,
     ATP_HYDROLYSIS_SIGNS,
     CYTOSOL,
     EXTRACELLULAR,
+    KarrWritebackFixture,
+    apply_karr_substrate_writeback,
+    project_to_flat_per_wid,
 )
 from opencell.vivarium.karr_protein_decay_light import _Mcg16807
-
 
 _REPO = Path(__file__).resolve().parents[2]
 _METAB_FLAT = _REPO / "data" / "karr_fixtures" / "per_process" / "Metabolism_flat.mat"

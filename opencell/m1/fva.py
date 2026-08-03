@@ -11,7 +11,6 @@ from opencell.m1.karr_metabolism_writeback import (
     KarrWritebackFixture,
 )
 
-
 _N_SUBSTRATES = 585
 _N_COMPARTMENTS = 3
 

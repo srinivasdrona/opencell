@@ -5,7 +5,6 @@ from pathlib import Path
 
 import h5py
 import numpy as np
-import pytest
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]

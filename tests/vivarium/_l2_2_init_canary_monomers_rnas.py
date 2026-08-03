@@ -41,9 +41,7 @@ def _mat_cell_vector(handle: h5py.File, group: str, name: str, tick: int) -> np.
     rows, cols = int(ds.shape[0]), int(ds.shape[1])
     if rows == 1 and cols >= (tick + 1):
         ref = ds[0, tick]
-    elif cols == 1 and rows >= (tick + 1):
-        ref = ds[tick, 0]
-    elif rows >= (tick + 1):
+    elif cols == 1 and rows >= (tick + 1) or rows >= (tick + 1):
         ref = ds[tick, 0]
     elif cols >= (tick + 1):
         ref = ds[0, tick]
@@ -140,7 +138,7 @@ def _transcription_canary() -> None:
 
     schema = process.ports_schema()
     rna_schema = ((schema.get("rna") or {}).get("counts") or {})
-    rna_store_wids = [str(x) for x in rna_schema.keys()] if isinstance(rna_schema, dict) else []
+    rna_store_wids = [str(x) for x in rna_schema] if isinstance(rna_schema, dict) else []
     print("  OC_rna_store_surface:")
     print(f"    rna.counts_wid_count={len(rna_store_wids)}")
     print(f"    rna.counts_first10={rna_store_wids[:10]}")

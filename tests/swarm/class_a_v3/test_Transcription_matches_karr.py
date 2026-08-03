@@ -12,7 +12,6 @@ from opencell.validation.replay import (
 )
 from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
 
-
 _FIXTURE_PROBE = load_per_process_fixture("Transcription")
 _HAS_TICK_IO = bool(_FIXTURE_PROBE.inputs) and bool(_FIXTURE_PROBE.outputs)
 _XFAIL_REASON = (

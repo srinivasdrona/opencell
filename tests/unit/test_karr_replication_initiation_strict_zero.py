@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from typing import Any, Iterable
+from collections.abc import Iterable
+from typing import Any
 
 from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess
 

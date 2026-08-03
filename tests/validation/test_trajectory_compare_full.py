@@ -27,7 +27,7 @@ def _make_snapshot_trajectory(
             "atp_pool": float(scale * (100.0 + i)),
             "gtp_pool": float(scale * (80.0 + i)),
             "dntp_pool_total": float(scale * (40.0 + i)),
-            "division_event_timestamp_s": float(32400.0),
+            "division_event_timestamp_s": 32400.0,
         }
         if drop_observable is not None:
             state.pop(drop_observable, None)

@@ -1239,9 +1239,20 @@ class KarrReplicationProcess(Process):
         bound_now = bound_now_raw if isinstance(bound_now_raw, dict) else {}
         substrates_now_raw = states.get("substrates", {})
         substrates_now = substrates_now_raw if isinstance(substrates_now_raw, dict) else {}
+        allocated_state_raw = states.get("substrates_allocated", {}).get(self.name, {})
+        allocated_state = allocated_state_raw if isinstance(allocated_state_raw, dict) else {}
+        zero_requests = self._zero_requests()
         enzymes_next = {wid: float(enzymes_now.get(wid, 0.0)) for wid in self.enzyme_wids}
         bound_next = {wid: float(bound_now.get(wid, 0.0)) for wid in self.enzyme_wids}
-        substrates_next = {wid: float(substrates_now.get(wid, 0.0)) for wid in self.substrate_wids}
+        substrates_before = {
+            wid: (
+                float(self._allocated_or_state(allocated_state, wid))
+                if wid in zero_requests
+                else float(substrates_now.get(wid, 0.0))
+            )
+            for wid in self.substrate_wids
+        }
+        substrates_next = dict(substrates_before)
 
         def _finalize_no_hint_update(update_payload: dict[str, Any]) -> dict[str, Any]:
             enzyme_delta: dict[str, float] = {}
@@ -1255,7 +1266,7 @@ class KarrReplicationProcess(Process):
                 if d_bound != 0:
                     bound_delta[wid] = float(d_bound)
             for wid in self.substrate_wids:
-                d_sub = _snap_integral(float(substrates_next[wid]) - float(substrates_now.get(wid, 0.0)))
+                d_sub = _snap_integral(float(substrates_next[wid]) - float(substrates_before[wid]))
                 if d_sub != 0:
                     substrate_delta[wid] = float(d_sub)
             update_payload["enzymes"] = enzyme_delta
@@ -1273,7 +1284,6 @@ class KarrReplicationProcess(Process):
         if replication_state in {"idle", "initiating", "elongating"}:
             self._completion_emitted = False
 
-        zero_requests = self._zero_requests()
         update: dict[str, Any] = {"requests": {self.name: zero_requests}}
 
         if replication_state == "idle":
@@ -1324,7 +1334,6 @@ class KarrReplicationProcess(Process):
                 update["chromosome"].update(self._completion_update()["chromosome"])
             return _finalize_no_hint_update(update)
 
-        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         available = {
             wid: self._allocated_or_state(allocated_state, wid)
             for wid in zero_requests

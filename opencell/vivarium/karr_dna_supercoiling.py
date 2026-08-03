@@ -294,7 +294,7 @@ class KarrDNASupercoilingProcess(Process):
             if getattr(state, "x_class_", "") != "edu.stanford.covert.cell.sim.state.Chromosome":
                 continue
             if hasattr(state, "equilibriumSuperhelicalDensity"):
-                return float(getattr(state, "equilibriumSuperhelicalDensity"))
+                return float(state.equilibriumSuperhelicalDensity)
         return float(fallback)
 
     def build_default_chromosome_state(

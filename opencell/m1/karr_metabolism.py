@@ -100,7 +100,7 @@ def load_default(path: str | Path | None = None) -> KarrMetabolismModel:
 
 
 def _solve_fba_glpk(
-    model: "KarrMetabolismModel",
+    model: KarrMetabolismModel,
     *,
     c: np.ndarray,
     lb: np.ndarray,
@@ -213,7 +213,7 @@ def _solve_fba_glpk(
 
 
 def _solve_fba_glpk_pfba(
-    model: "KarrMetabolismModel",
+    model: KarrMetabolismModel,
     *,
     c: np.ndarray,
     lb: np.ndarray,

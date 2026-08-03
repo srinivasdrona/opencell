@@ -54,7 +54,7 @@ def test_karr_protein_modification_accepts_unmodified_monomers_replay_key() -> N
 
     seen: dict[str, np.ndarray] = {}
 
-    def _fake_sample_reaction_fluxes(
+    def _fake_sample_protein_fluxes(
         *,
         unmodified: np.ndarray,
         substrates: np.ndarray,
@@ -63,9 +63,9 @@ def test_karr_protein_modification_accepts_unmodified_monomers_replay_key() -> N
     ) -> np.ndarray:
         _ = substrates, enzymes, dt
         seen["unmodified"] = np.asarray(unmodified, dtype=np.float64)
-        return np.zeros(process.reaction_stoich.shape[1], dtype=np.int64)
+        return np.zeros(len(process.unmodified_monomer_wids), dtype=np.int64)
 
-    process._sample_reaction_fluxes = _fake_sample_reaction_fluxes  # type: ignore[method-assign]
+    process._sample_protein_fluxes = _fake_sample_protein_fluxes  # type: ignore[method-assign]
 
     state = {
         "substrates": {wid: 0.0 for wid in process.substrate_wids},

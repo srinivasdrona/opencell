@@ -114,7 +114,7 @@ def substrate_trajectory() -> SubstrateTrajectory:
     initial = substrate_store.get_value()
     assert isinstance(initial, dict)
 
-    wids = tuple(sorted(str(wid) for wid in initial.keys()))
+    wids = tuple(sorted(str(wid) for wid in initial))
     counts = np.zeros((N_TICKS + 1, len(wids)), dtype=np.float64)
     counts[0, :] = _snapshot(initial, wids)
 

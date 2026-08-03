@@ -308,12 +308,13 @@ class KarrTRNAAminoacylationProcess(Process):
         complex_count_store: dict[str, Any],
     ) -> np.ndarray:
         enzyme_store = states.get("enzymes", {})
-        if isinstance(enzyme_store, dict):
-            if all(wid in enzyme_store for wid in self.catalytic_enzyme_wids):
-                return np.asarray(
-                    [float(enzyme_store.get(wid, 0.0)) for wid in self.enzyme_wids],
-                    dtype=np.float64,
-                )
+        if isinstance(enzyme_store, dict) and all(
+            wid in enzyme_store for wid in self.catalytic_enzyme_wids
+        ):
+            return np.asarray(
+                [float(enzyme_store.get(wid, 0.0)) for wid in self.enzyme_wids],
+                dtype=np.float64,
+            )
 
         return self._enzyme_vector_from_split_stores(
             protein_count_store=protein_count_store,

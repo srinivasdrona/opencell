@@ -2,9 +2,10 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Mapping
+from typing import Any
 
 import h5py
 import numpy as np
@@ -182,7 +183,7 @@ class SparseTriplet:
         object.__setattr__(self, "shape", shape)
 
     @classmethod
-    def empty(cls, rows: int, cols: int) -> "SparseTriplet":
+    def empty(cls, rows: int, cols: int) -> SparseTriplet:
         return cls(
             positions=np.array([], dtype=np.int64),
             strands=np.array([], dtype=np.int8),
@@ -193,10 +194,10 @@ class SparseTriplet:
     @classmethod
     def from_state(
         cls,
-        payload: Mapping[str, Any] | "SparseTriplet" | None,
+        payload: Mapping[str, Any] | SparseTriplet | None,
         *,
         shape: tuple[int, int] | None = None,
-    ) -> "SparseTriplet":
+    ) -> SparseTriplet:
         if isinstance(payload, SparseTriplet):
             return payload.copy()
         if payload is None:
@@ -217,7 +218,7 @@ class SparseTriplet:
         )
 
     @classmethod
-    def from_hdf5_group(cls, group: h5py.Group) -> "SparseTriplet":
+    def from_hdf5_group(cls, group: h5py.Group) -> SparseTriplet:
         error = _read_matlab_dataset(group["error"])
         if isinstance(error, str) and error:
             raise ValueError(f"MATLAB serializer reported sparse-field error: {error}")
@@ -237,7 +238,7 @@ class SparseTriplet:
         regions: list[tuple[int, int, int]] | tuple[tuple[int, int, int], ...],
         *,
         shape: tuple[int, int],
-    ) -> "SparseTriplet":
+    ) -> SparseTriplet:
         positions: list[int] = []
         strands: list[int] = []
         values: list[int] = []
@@ -254,7 +255,7 @@ class SparseTriplet:
             shape=shape,
         )
 
-    def copy(self) -> "SparseTriplet":
+    def copy(self) -> SparseTriplet:
         return SparseTriplet(
             positions=self.positions.copy(),
             strands=self.strands.copy(),
@@ -265,7 +266,7 @@ class SparseTriplet:
     def calc_num_edges(self) -> int:
         return int(self.values.size)
 
-    def circular_normalize(self) -> "SparseTriplet":
+    def circular_normalize(self) -> SparseTriplet:
         return SparseTriplet(
             positions=self.positions,
             strands=self.strands,
@@ -304,6 +305,8 @@ class ChromosomeStore:
     # values centralized. Generic primitives accept these as parameters.
     from opencell.m_gen_constants import (
         GENOME_LENGTH_BP as _GENOME_LENGTH_BP,
+    )
+    from opencell.m_gen_constants import (
         N_CHROMOSOME_COMPARTMENTS as _N_CHROMOSOME_COMPARTMENTS,
     )
     DEFAULT_SEQUENCE_LEN = _GENOME_LENGTH_BP
@@ -323,7 +326,7 @@ class ChromosomeStore:
             for name, triplet in fields.items():
                 self.set_field(name, triplet)
 
-    def copy(self) -> "ChromosomeStore":
+    def copy(self) -> ChromosomeStore:
         return ChromosomeStore(shape=self.shape, fields=self._fields)
 
     def calc_num_edges(self, field_name: str) -> int:
@@ -353,7 +356,7 @@ class ChromosomeStore:
         payload: Mapping[str, Any] | None,
         *,
         shape: tuple[int, int] = (DEFAULT_SEQUENCE_LEN, DEFAULT_N_COMPARTMENTS),
-    ) -> "ChromosomeStore":
+    ) -> ChromosomeStore:
         store = cls(shape=shape)
         if not isinstance(payload, Mapping):
             return store
@@ -364,7 +367,7 @@ class ChromosomeStore:
         return store
 
     @classmethod
-    def from_hdf5_group(cls, group: h5py.Group) -> "ChromosomeStore":
+    def from_hdf5_group(cls, group: h5py.Group) -> ChromosomeStore:
         sequence_len = int(np.asarray(group["sequenceLen"][()]).reshape(-1)[0])
         n_compartments = int(np.asarray(group["nCompartments"][()]).reshape(-1)[0])
         store = cls(shape=(sequence_len, n_compartments))
@@ -380,7 +383,7 @@ class ChromosomeStore:
         *,
         tick: int = 0,
         group_name: str = "states_before",
-    ) -> "ChromosomeStore":
+    ) -> ChromosomeStore:
         with h5py.File(Path(path), "r") as handle:
             dataset = handle[f"{group_name}/chromosome"]
             ref = dataset[0, tick] if dataset.shape[0] == 1 else dataset[tick, 0]

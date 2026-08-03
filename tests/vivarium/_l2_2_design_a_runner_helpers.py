@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import sys
-from functools import lru_cache
+from functools import cache, lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -10,7 +10,6 @@ import h5py
 import numpy as np
 from scipy.io import loadmat
 from scipy.stats import wasserstein_distance
-
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -32,38 +31,43 @@ from l2_replay_common import (  # noqa: E402
     forbid_sut_oracle_file_io,
     load_fixture_channel_wids,
     overlay_observable_into_state,
-    overlay_trace_after_hint,
-    project_vector_onto_wids,
     project_observable_from_state,
     project_trace_matrix_to_482,
+    project_vector_onto_wids,
     refresh_allocator_views,
 )
-from opencell.m3 import translation as m3_karr_translation  # noqa: E402
+
 from opencell.m1 import karr_metabolism as m1_karr_metabolism  # noqa: E402
-from opencell.vivarium.karr_metabolism import KarrMetabolismProcess  # noqa: E402
-from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
-from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
-from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
-from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess  # noqa: E402
-from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess  # noqa: E402
-from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess  # noqa: E402
-from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess  # noqa: E402
-from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess  # noqa: E402
-from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess  # noqa: E402
-from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess  # noqa: E402
-from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess  # noqa: E402
-from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
-from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess  # noqa: E402
+from opencell.m3 import translation as m3_karr_translation  # noqa: E402
+from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E402
+from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess  # noqa: E402
+from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess  # noqa: E402
 from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
     MacromolecularComplexationProcess,
 )
-from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess  # noqa: E402
+from opencell.vivarium.karr_metabolism import KarrMetabolismProcess  # noqa: E402
+from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
+from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess  # noqa: E402
+from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess  # noqa: E402
+from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess  # noqa: E402
+from opencell.vivarium.karr_protein_processing_ii import (
+    KarrProteinProcessingIIProcess,  # noqa: E402
+)
+from opencell.vivarium.karr_protein_translocation import (
+    KarrProteinTranslocationProcess,  # noqa: E402
+)
 from opencell.vivarium.karr_replication import KarrReplicationProcess  # noqa: E402
-from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess  # noqa: E402
-from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess  # noqa: E402
-from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
-
+from opencell.vivarium.karr_replication_initiation import (
+    KarrReplicationInitiationProcess,  # noqa: E402
+)
+from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess  # noqa: E402
+from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
+from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess  # noqa: E402
+from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess  # noqa: E402
+from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
+from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
+from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess  # noqa: E402
 
 _ACTUAL_REPO_ROOT = Path(__file__).resolve().parents[2]
 L2_2_VALIDATION_SEED = 0xCA11B
@@ -211,8 +215,8 @@ def _load_seeded_mat_channels(seed_paths: list[Path]) -> tuple[dict[str, np.ndar
 
             before_group = handle["states_before"]
             after_group = handle["states_after"]
-            before_keys = tuple(sorted(str(key) for key in before_group.keys()))
-            after_keys = tuple(sorted(str(key) for key in after_group.keys()))
+            before_keys = tuple(sorted(str(key) for key in before_group))
+            after_keys = tuple(sorted(str(key) for key in after_group))
             if before_keys_expected is None:
                 before_keys_expected = before_keys
                 after_keys_expected = after_keys
@@ -1257,12 +1261,12 @@ def _trna_aminoacylation_channel_metadata() -> dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=None)
+@cache
 def _metabolism_model() -> Any:
     return m1_karr_metabolism.load_default()
 
 
-@lru_cache(maxsize=None)
+@cache
 def _metabolism_dynamics() -> Any:
     # Day-38: pre-load dynamics inputs outside SUT-oracle guard since
     # dynamic_bounds=True needs the karr_native_m1_dynamics fixture.
@@ -1270,7 +1274,7 @@ def _metabolism_dynamics() -> Any:
     return cfb.load_default_dynamics()
 
 
-@lru_cache(maxsize=None)
+@cache
 def _metabolism_process(seed: int) -> KarrMetabolismProcess:
     # Day-38: dynamic_bounds=True + Karr's 4-step substrate writeback enabled.
     # See docs/phase_f/METABOLISM_FIX_DESIGN.md for rationale.
@@ -1301,30 +1305,30 @@ def _metabolism_process(seed: int) -> KarrMetabolismProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@cache
 def _translation_model() -> Any:
     return m3_karr_translation.load_default()
 
 
-@lru_cache(maxsize=None)
+@cache
 def _transcription_process(seed: int) -> KarrTranscriptionProcess:
     return KarrTranscriptionProcess({"rng_seed": int(seed)})
 
 
-@lru_cache(maxsize=None)
+@cache
 def _translation_process(seed: int) -> KarrTranslationProcess:
     model = _translation_model()
     with forbid_sut_oracle_file_io():
         return KarrTranslationProcess({"rng_seed": int(seed), "model": model})
 
 
-@lru_cache(maxsize=None)
+@cache
 def _rna_decay_process(seed: int) -> RnaDecayLightProcess:
     with forbid_sut_oracle_file_io():
         return RnaDecayLightProcess({"rng_seed": int(seed)})
 
 
-@lru_cache(maxsize=None)
+@cache
 def _rna_processing_process(seed: int) -> KarrRNAProcessingProcess:
     metadata = _rna_processing_channel_metadata()
     with forbid_sut_oracle_file_io():
@@ -1333,7 +1337,7 @@ def _rna_processing_process(seed: int) -> KarrRNAProcessingProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@cache
 def _rna_modification_process(seed: int) -> KarrRNAModificationProcess:
     metadata = _rna_modification_channel_metadata()
     with forbid_sut_oracle_file_io():
@@ -1342,7 +1346,7 @@ def _rna_modification_process(seed: int) -> KarrRNAModificationProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@cache
 def _trna_aminoacylation_process(seed: int) -> KarrTRNAAminoacylationProcess:
     metadata = _trna_aminoacylation_channel_metadata()
     with forbid_sut_oracle_file_io():
@@ -1351,13 +1355,13 @@ def _trna_aminoacylation_process(seed: int) -> KarrTRNAAminoacylationProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@cache
 def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
     with forbid_sut_oracle_file_io():
         return ProteinDecayLightProcess({"rng_seed": int(seed)})
 
 
-@lru_cache(maxsize=None)
+@cache
 def _protein_modification_process(seed: int) -> KarrProteinModificationProcess:
     with forbid_sut_oracle_file_io():
         process = KarrProteinModificationProcess({"rng_seed": int(seed)})
@@ -1365,7 +1369,7 @@ def _protein_modification_process(seed: int) -> KarrProteinModificationProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@cache
 def _protein_folding_process(seed: int) -> KarrProteinFoldingProcess:
     with forbid_sut_oracle_file_io():
         process = KarrProteinFoldingProcess({"rng_seed": int(seed)})
@@ -1373,13 +1377,13 @@ def _protein_folding_process(seed: int) -> KarrProteinFoldingProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@cache
 def _protein_translocation_process(seed: int) -> KarrProteinTranslocationProcess:
     with forbid_sut_oracle_file_io():
         return KarrProteinTranslocationProcess({"rng_seed": int(seed)})
 
 
-@lru_cache(maxsize=None)
+@cache
 def _ribosome_assembly_process(seed: int) -> KarrRibosomeAssemblyProcess:
     with forbid_sut_oracle_file_io():
         process = KarrRibosomeAssemblyProcess({"rng_seed": int(seed)})
@@ -1416,7 +1420,7 @@ def _macromol_channel_metadata() -> dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=None)
+@cache
 def _macromol_process(seed: int) -> MacromolecularComplexationProcess:
     metadata = _macromol_channel_metadata()
     with forbid_sut_oracle_file_io():
@@ -1426,7 +1430,7 @@ def _macromol_process(seed: int) -> MacromolecularComplexationProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@cache
 def _cytokinesis_process(seed: int) -> KarrCytokinesisProcess:
     with forbid_sut_oracle_file_io():
         return KarrCytokinesisProcess(
@@ -2682,7 +2686,7 @@ def _transcription_projection_inputs() -> dict[str, Any]:
     rna_gene_projection: np.ndarray | None = None
     for state in states:
         if hasattr(state, "nascentRNAGeneComposition"):
-            rna_gene_projection = np.asarray(getattr(state, "nascentRNAGeneComposition"), dtype=np.float64)
+            rna_gene_projection = np.asarray(state.nascentRNAGeneComposition, dtype=np.float64)
             break
     if rna_gene_projection is None:
         raise ValueError(
@@ -3203,7 +3207,7 @@ def _apply_chromosome_update(
 
 # ---- DNASupercoiling --------------------------------------------------
 
-@lru_cache(maxsize=None)
+@cache
 def _dna_supercoiling_process(seed: int) -> KarrDNASupercoilingProcess:
     with forbid_sut_oracle_file_io():
         return KarrDNASupercoilingProcess({"rng_seed": int(seed)})
@@ -3270,7 +3274,7 @@ def _run_dna_supercoiling_tick(seed: int, tick: int, state: dict[str, Any]) -> d
 
 # ---- Replication ------------------------------------------------------
 
-@lru_cache(maxsize=None)
+@cache
 def _replication_process(seed: int) -> KarrReplicationProcess:
     with forbid_sut_oracle_file_io():
         return KarrReplicationProcess({"rng_seed": int(seed)})
@@ -3346,7 +3350,7 @@ def _run_replication_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[s
 
 # ---- DNARepair --------------------------------------------------------
 
-@lru_cache(maxsize=None)
+@cache
 def _dna_repair_process(seed: int) -> KarrDNARepairProcess:
     with forbid_sut_oracle_file_io():
         return KarrDNARepairProcess({"rng_seed": int(seed)})
@@ -3412,7 +3416,7 @@ def _run_dna_repair_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[st
 
 # ---- ReplicationInitiation --------------------------------------------
 
-@lru_cache(maxsize=None)
+@cache
 def _replication_initiation_process(seed: int) -> KarrReplicationInitiationProcess:
     with forbid_sut_oracle_file_io():
         return KarrReplicationInitiationProcess({"rng_seed": int(seed)})

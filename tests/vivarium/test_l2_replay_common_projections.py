@@ -3,7 +3,6 @@ from __future__ import annotations
 
 import numpy as np
 import pytest
-
 from l2_replay_common import (
     KARR_MONOMER_FORM_ORDER,
     project_monomer_4820_to_482,

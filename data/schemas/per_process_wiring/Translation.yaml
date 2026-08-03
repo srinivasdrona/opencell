@@ -29,7 +29,7 @@ integration_touchpoints:
         symbol: "RequestCalculatorTranslation.next_update"
       supporting:
         - path: "opencell/vivarium/karr_translation_v3.py"
-          lines: "601-617"
+          lines: "695-791"
           note: "Consumes the AA allocator grants or falls back to direct substrate reads."
           symbol: KarrTranslationV3Process.next_update
       note: "OC current requests AA pools from the mechanism-based surrogate; it does not mirror MATLAB's GTP/H2O request vector."
@@ -48,12 +48,12 @@ integration_touchpoints:
       symbol: "KarrTranslationV3Process.next_update"
       source:
         path: "opencell/vivarium/karr_translation_v3.py"
-        lines: "520-520"
+        lines: "695-695"
         note: "Current per-tick translation update."
         symbol: "KarrTranslationV3Process.next_update"
       supporting:
         - path: "opencell/vivarium/karr_translation_v3.py"
-          lines: "299-436"
+          lines: "468-609"
           note: "Biology-transition helper used by next_update for enzymes/bound enzymes."
           symbol: KarrTranslationV3Process._compute_enzyme_transitions_from_biology
         - path: "opencell/vivarium/karr_translation.py"
@@ -132,7 +132,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_translation_v3.py"
-      lines: "341-352"
+      lines: "468-609"
       note: "Read-side gating only on shared GTP/H2O pools; this path does not emit GTP consume deltas."
       symbol: KarrTranslationV3Process._compute_enzyme_transitions_from_biology
     note: "MATLAB decrements GTP via substrate writeback; OC only reads GTP as a side gate and does not emit a Translation consume delta. See known_deviations."
@@ -147,7 +147,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_translation_v3.py"
-      lines: "341-352"
+      lines: "468-609"
       note: "Read-side gating only on shared GTP/H2O pools; this path does not emit H2O consume deltas."
       symbol: KarrTranslationV3Process._compute_enzyme_transitions_from_biology
     note: "MATLAB decrements H2O via substrate writeback; OC only reads H2O as a side gate and does not emit a Translation consume delta. See known_deviations."
@@ -208,7 +208,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_translation_v3.py"
-      lines: "590-618"
+      lines: "695-791"
       note: "OC does not emit GDP; protein output is the paired product surface."
       symbol: KarrTranslationV3Process.next_update
     note: "Karr metabolite byproduct; no direct OC substrate-byproduct analogue."
@@ -223,7 +223,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_translation_v3.py"
-      lines: "590-618"
+      lines: "695-791"
       note: "OC does not emit phosphate; protein output is the paired product surface."
       symbol: KarrTranslationV3Process.next_update
     note: "Karr metabolite byproduct; no direct OC substrate-byproduct analogue."
@@ -238,7 +238,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_translation_v3.py"
-      lines: "590-618"
+      lines: "695-791"
       note: "OC does not emit this hydrogen byproduct; protein output is the paired product surface."
       symbol: KarrTranslationV3Process.next_update
     note: "Karr metabolite byproduct; current OC uses a protein-output surrogate instead."
@@ -299,7 +299,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_translation_v3.py"
-        lines: "520-618"
+        lines: "695-791"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrTranslationV3Process.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -390,12 +390,12 @@ source_anchors:
       symbol: KarrTranslationV3Process
     translation_update:
       path: "opencell/vivarium/karr_translation_v3.py"
-      lines: "520-618"
+      lines: "695-791"
       note: "Current per-tick update path."
       symbol: KarrTranslationV3Process.next_update
     translation_biology_helper:
       path: "opencell/vivarium/karr_translation_v3.py"
-      lines: "299-436"
+      lines: "468-609"
       note: "Enzyme / bound-enzyme transition helper."
       symbol: KarrTranslationV3Process._compute_enzyme_transitions_from_biology
     request_calculator:
@@ -455,7 +455,7 @@ deviations:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_translation_v3.py"
-      lines: "601-617"
+      lines: "695-791"
       note: "Current OC still applies an allocator-mediated substrate cap for AA demand."
       symbol: KarrTranslationV3Process.next_update
   shared_pool_projection_merges_compartments: true

@@ -107,7 +107,7 @@ def _extract_trace_rates(trace_path: str | Path) -> tuple[float, float] | None:
     except Exception:
         return None
 
-    lower_keys = {str(k).lower(): k for k in mat.keys()}
+    lower_keys = {str(k).lower(): k for k in mat}
     bind_key = next(
         (k for k in lower_keys if "bind_rate" in k or "attach_rate" in k),
         None,

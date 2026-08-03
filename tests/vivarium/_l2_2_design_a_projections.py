@@ -5,7 +5,6 @@ from typing import Any
 import numpy as np
 from scipy.stats import wasserstein_distance
 
-
 _REPLICATION_STATE_CODES = {
     "idle": 0.0,
     "initiating": 1.0,

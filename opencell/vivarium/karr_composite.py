@@ -49,19 +49,17 @@ from opencell.vivarium.karr_chromosome_condensation import (
 )
 from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
-from opencell.vivarium.karr_macromolecular_complexation import MacromolecularComplexationProcess
-from opencell.vivarium.karr_macromolecular_complexation_stub import MacromolecularComplexationStubProcess
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess
 from opencell.vivarium.karr_ftsz_polymerization import KarrFtsZPolymerizationProcess
+from opencell.vivarium.karr_host_interaction import KarrHostInteractionProcess
+from opencell.vivarium.karr_macromolecular_complexation import MacromolecularComplexationProcess
+from opencell.vivarium.karr_macromolecular_complexation_stub import (
+    MacromolecularComplexationStubProcess,
+)
 from opencell.vivarium.karr_metabolism import KarrMetabolismProcess
-from opencell.vivarium.karr_transcription import KarrTranscriptionProcess
-from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
-from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
-from opencell.vivarium.karr_translation import KarrTranslationProcess
-from opencell.vivarium.karr_translation_v2 import KarrTranslationV2Process
-from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
+from opencell.vivarium.karr_observability_step import KarrObservabilityStep
 from opencell.vivarium.karr_protein_activation import KarrProteinActivationProcess
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess
 from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
@@ -69,32 +67,36 @@ from opencell.vivarium.karr_protein_modification import KarrProteinModificationP
 from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
 from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
 from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
+from opencell.vivarium.karr_replication import KarrReplicationProcess
+from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess
 from opencell.vivarium.karr_request_calculators import (
     RequestCalculatorD2,
     RequestCalculatorMetabolism,
     RequestCalculatorPD,
-    RequestCalculatorPTransloc,
     RequestCalculatorProteinPathway,
+    RequestCalculatorPTransloc,
     RequestCalculatorRibAsm,
     RequestCalculatorRNAPathway,
     RequestCalculatorTranscription,
-    RequestCalculatorTRNA,
     RequestCalculatorTranslation,
+    RequestCalculatorTRNA,
 )
 from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
-from opencell.vivarium.karr_replication import KarrReplicationProcess
-from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess
 from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess
 from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
 from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
-from opencell.vivarium.karr_host_interaction import KarrHostInteractionProcess
-from opencell.vivarium.karr_observability_step import KarrObservabilityStep
 from opencell.vivarium.karr_terminal_organelle_assembly import (
     KarrTerminalOrganelleAssemblyProcess,
 )
+from opencell.vivarium.karr_transcription import KarrTranscriptionProcess
+from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
+from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
 from opencell.vivarium.karr_transcriptional_regulation import (
     KarrTranscriptionalRegulationProcess,
 )
+from opencell.vivarium.karr_translation import KarrTranslationProcess
+from opencell.vivarium.karr_translation_v2 import KarrTranslationV2Process
+from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess
 
 if TYPE_CHECKING:

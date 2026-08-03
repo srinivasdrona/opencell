@@ -6,7 +6,6 @@ from types import SimpleNamespace
 
 import numpy as np
 
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -21,8 +20,8 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
-import l2_2_design_a_runner as runner
 import _l2_2_design_a_runner_helpers as runner_helpers
+import l2_2_design_a_runner as runner
 
 
 def _fake_protein_processing_oracle(

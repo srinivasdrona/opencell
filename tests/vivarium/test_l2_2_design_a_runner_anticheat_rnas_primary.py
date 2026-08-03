@@ -7,7 +7,6 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -24,7 +23,6 @@ if str(_HELPER_DIR) not in sys.path:
 
 import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 import l2_2_design_a_runner as runner  # noqa: E402
-
 
 _RNA_PRIMARY_PROCESSES = (
     "RNAProcessing",

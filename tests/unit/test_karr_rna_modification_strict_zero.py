@@ -77,7 +77,7 @@ def test_karr_rna_modification_accepts_legacy_rna_replay_keys() -> None:
 
     seen: dict[str, np.ndarray] = {}
 
-    def _fake_compute_reaction_fluxes(
+    def _fake_compute_rna_fluxes(
         *,
         unmodified_rna: np.ndarray,
         substrates: np.ndarray,
@@ -86,9 +86,9 @@ def test_karr_rna_modification_accepts_legacy_rna_replay_keys() -> None:
     ) -> np.ndarray:
         _ = substrates, enzymes, dt
         seen["unmodified_rna"] = np.asarray(unmodified_rna, dtype=np.float64)
-        return np.zeros(process.reaction_stoich.shape[1], dtype=np.int64)
+        return np.zeros(len(process.unmodified_rna_wids), dtype=np.int64)
 
-    process._compute_reaction_fluxes = _fake_compute_reaction_fluxes  # type: ignore[method-assign]
+    process._compute_rna_fluxes = _fake_compute_rna_fluxes  # type: ignore[method-assign]
 
     enzyme_counts = {wid: 1000.0 for wid in process.enzyme_wids}
     protein_counts, complex_counts = _split_enzyme_counts(process, enzyme_counts)

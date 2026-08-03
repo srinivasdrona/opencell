@@ -30,7 +30,6 @@ from opencell.m1.compartmented import AVOGADRO, SECONDS_PER_HOUR
 from opencell.vivarium.karr_metabolism import KarrMetabolismProcess
 from opencell.vivarium.karr_request_calculators import RequestCalculatorMetabolism
 
-
 PARAMS_FIXTURE = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "parameters.json"
 
 
