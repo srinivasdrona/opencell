@@ -1,5 +1,5 @@
 {
-  "schema_version": "1.0.0",
+  "schema_version": "1.0.1",
   "process": "DNADamage",
   "classification": "CONDITION_GATED_CANDIDATE",
   "gating": "NON_GATING",
@@ -23,15 +23,18 @@
     "m_ticks": 20,
     "existing_pooled_support_floor": 50,
     "support_multiplier": 2,
-    "target_expected_pooled_events": 100,
-    "dose_formula": "target_expected_pooled_events / (n_seeds * m_ticks * sum_per_unit_radiation_rate)",
+    "target_expected_pooled_site_events": 100,
+    "dose_formula": "target_expected_pooled_site_events / (n_seeds * m_ticks * sum_per_unit_radiation_rate)",
+    "event_timing_model": "repeated_firing",
+    "fire_count_semantics": "tick incidence: one fired seed-tick regardless of the number of damaged sites created in that tick",
     "dose_units": "synthetic radiation-substrate units; statistical mechanism-test scale, not a biological dose"
   },
   "conditions": {
     "no_stimulus": {
       "UVB_radiation": 0.0,
       "gamma_radiation": 0.0,
-      "expected_role": "quiescent negative control; never a zero-equals-zero PASS"
+      "expected_role": "quiescent negative control; never a zero-equals-zero PASS",
+      "note": "The fixture carries a negligible gamma value near 2.8e-11; this synthetic control intentionally sets both radiation gates to exact zero."
     },
     "uvb_mechanism": {
       "radiation_wid": "UVB_radiation",
@@ -39,7 +42,15 @@
       "sum_per_unit_radiation_rate_per_tick": 0.013379543476309085,
       "injected_radiation_value": 7.474096569667582,
       "expected_events_per_seed_window": 2.0,
-      "target_chromosome_field": "intrastrandCrossLinks"
+      "expected_pooled_fire_ticks": 97.21982569102039,
+      "fire_tick_support_multiplier": 1.9443965138204078,
+      "allowed_chromosome_fields": ["intrastrandCrossLinks"],
+      "per_kind_support": {
+        "claim_policy": "Only reaction kinds with preregistered expected pooled site events >= 50 may receive a per-kind incidence verdict; all others are descriptive/NO_KARR_SUPPORT by construction.",
+        "supported_reaction_ids": ["DNADamage_THYTHY_cyclobutane_THYTHY_UVB_radiation"],
+        "unsupported_reaction_count": 10,
+        "rarest_nonzero_expected_pooled_site_events": 0.5970131019531126
+      }
     },
     "gamma_mechanism": {
       "radiation_wid": "gamma_radiation",
@@ -47,10 +58,23 @@
       "sum_per_unit_radiation_rate_per_tick": 0.10654022010427577,
       "injected_radiation_value": 0.9386126657343624,
       "expected_events_per_seed_window": 2.0,
-      "target_chromosome_field": "damagedBases"
+      "expected_pooled_fire_ticks": 96.02496763044144,
+      "fire_tick_support_multiplier": 1.9204993526088288,
+      "allowed_chromosome_fields": ["damagedBases", "strandBreaks"],
+      "reaction_count_by_field": {
+        "damagedBases": 11,
+        "strandBreaks": 1
+      },
+      "per_kind_support": {
+        "claim_policy": "No gamma reaction kind clears the per-kind support floor; all per-kind incidence is descriptive/NO_KARR_SUPPORT by construction.",
+        "supported_reaction_ids": [],
+        "unsupported_reaction_count": 12,
+        "rarest_nonzero_expected_pooled_site_events": 0.9204410910816525
+      }
     }
   },
   "rng_schedule": {
+    "generator": "edu.stanford.covert.util.RandStream('mcg16807', 'Seed', seed)",
     "process_rng_seed_ids": "2000..2049",
     "chromosome_rng_seed_ids": "3000..3049",
     "pairing": "process seed 2000+i pairs with chromosome seed 3000+i for i=0..49",
@@ -62,6 +86,7 @@
     "stimulus_support_failure": "INSUFFICIENT_KARR_SUPPORT",
     "stimulus_metrics": [
       "per-kind incidence",
+      "condition-level pooled tick incidence",
       "pooled first-fire timing",
       "field-specific sparse nnz magnitude/topology",
       "small-molecule substrate writeback"
@@ -69,7 +94,7 @@
     "numeric_threshold_source": "Karr-only seed-cluster null; no fixed tolerance",
     "exact_invariants": [
       "DNADamage never removes existing damage",
-      "only the source-mapped damage field is written for each radiation condition",
+      "UVB writes only intrastrandCrossLinks; gamma writes only damagedBases or strandBreaks",
       "all sparse positions/strands are in bounds",
       "no DNARepair output is consumed"
     ]
@@ -80,5 +105,10 @@
     "sut_access": false,
     "trace_hint_access": false,
     "stored_verdict_authority": false
+  },
+  "baseline_state_assumptions": {
+    "polymerized_nt_formula": "2 * sequenceLen because the fixture chromosome ploidy is exactly 1",
+    "fixture_ploidy": 1.0,
+    "accessibility_note": "Dose sizing uses calcExpectedReactionRates and does not subtract bound-protein footprints or existing damaged sites; realized support may be lower and must refuse if the Karr floor is not met."
   }
 }
