@@ -33,11 +33,19 @@ tags: [opencell, L2.2, L2.event, evidence, honest-mode, condition-gated, orchest
 
 **Tehol:** Then you had to go and make the evidence real.
 
-**Bugg:** Fifty seeds per process, genuinely extracted from Karr's MATLAB. Phase 3 ran eleven of the sixteen production processes out to the full fifty — five hundred and twenty-eight seed jobs on two bounded workers, about seventy-nine minutes wall clock, both workers clean. Five processes stayed blocked from the earlier preflight and I did not touch them, because a blocked process that quietly acquires evidence is exactly the shape of the thing we just deleted.
+**Bugg:** Fifty seeds per process, genuinely extracted from Karr's MATLAB. The first wave ran eleven of the sixteen generic production processes out to the full fifty — five hundred and twenty-eight seed jobs on two bounded workers, about seventy-nine minutes wall clock, both workers clean. Five were held back at preflight and I did not let them ride along, because a blocked process that quietly acquires evidence is exactly the shape of the thing we just deleted.
+
+**Tehol:** Held back for what.
+
+**Bugg:** Their canonical seed-zero traces were stale against our own extractor. It snapshots a property only if that property is both declared on the MATLAB class *and* named in a hardcoded allowlist, and the allowlist has grown over the months. Five processes declare real channels — `RNAs` on protein decay and RNA decay, the folded and unfolded complex channels on protein folding, the signal-sequence monomers, the intergenic RNAs — that their seed-zero files simply did not contain, because those files predate the commits that added the names. Not a defect in the extractor. A defect in the age of the data.
+
+**Tehol:** And now.
+
+**Bugg:** Regenerated, all five, canonical seed zero together with seeds one through forty-nine, and validated five of five. So the generic set is sixteen of sixteen. Transcription and Translation never needed the generic path — they already had valid fifty-seed specialized ensembles, and that was confirmed by counting seed directories on disk rather than believing a manifest. Eighteen Design-A per-tick processes; eighteen with fifty genuine Karr seeds.
 
 **Tehol:** And the three that wanted more depth.
 
-**Bugg:** DNARepair, ProteinDecay and ReplicationInitiation. Their catalog rows have always said two hundred ticks. Every oracle file we had was one hundred. And the harness caught it — not from a filename, from `arr.shape[1]`. *"Requested 200 ticks, but oracle only provides 100."* A content check, not a label check. I regenerated all three at genuine depth and archived the hundred and fifty superseded files rather than overwriting them.
+**Bugg:** DNARepair, ProteinDecay and ReplicationInitiation. Their catalog rows have always said two hundred ticks. Every oracle file we had was one hundred. And the harness caught it — not from a filename, from `arr.shape[1]`. *"Requested 200 ticks, but oracle only provides 100."* A content check, not a label check. I regenerated all three at genuine depth and archived the hundred and fifty superseded files rather than overwriting them. Their filenames still say a hundred ticks, which I dislike and kept on purpose: the loader resolves by name, and the check that matters reads the array.
 
 **Tehol:** ProteinDecay. Last time we spoke it had failed at two-point-zero-nine against a threshold of one, on both branches, identically, to six decimals.
 
@@ -200,7 +208,7 @@ L2.5 has not started and is not certified. L3 has not started.
 | Gate | What it measures | prev (Days 54–63) | now (Days 64–74) |
 |---|---|---|---|
 | **L2.2** distributional | 22 in-scope processes, ensemble vs Karr | "REVEALED HOLLOW" — pin checked a hand-typed dictionary; true count UNKNOWN | **14 PASS / 4 FAIL / 4 MISSING_EVIDENCE, aggregate NON_GREEN.** Verdicts mechanically re-derived from raw metrics; the hand-typed dictionaries are deleted |
-| **L2.2 oracle data** | genuine multi-seed Karr traces | ensemble directory empty | **11/16 production processes at full 50 seeds** (528 seed jobs, ~79 min); 3 M=200 processes regenerated at genuine depth; 5 remain blocked |
+| **L2.2 oracle data** | genuine multi-seed Karr traces | ensemble directory empty | **18/18 Design-A per-tick processes at 50 genuine Karr seeds** — 11/16 generic in the first wave (528 seed jobs, ~79 min), the remaining 5 closed by the stale-schema regeneration (5/5 PASS), plus Transcription and Translation's specialized ensembles; 3 processes regenerated to genuine 200-tick depth under legacy filenames |
 | ProteinDecay | last post's live failure (W1 2.09 vs threshold 1) | FAIL, identically on both branches | **PASS on real 50×200 evidence** — primary-channel W1 mean 0.00078 vs null q95 0.213, `SEED_NOISE` |
 | DNASupercoiling | primary-component support | — | **FAIL / PRIMARY_INSUFFICIENT_SAMPLES** (n_oc 17, n_karr 24, floor 30). Pre-registered N=100 diagnostic returned `POWERED_AT_N100` — **accepted as supplemental, non-gating; canonical row still FAIL** |
 | **L2.event** foundation | shared event-class gate machinery | did not exist | **built and fail-closed** — 4 reviewer rounds, 107→169 tests; found a prefix-vs-ancestor path hole and a pseudo-replicated payload null that would have hidden real divergence |
