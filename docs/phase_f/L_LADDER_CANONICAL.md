@@ -264,10 +264,10 @@ Three distinctions matter more than the token names:
 **Green vs terminal-but-non-green.** `FAIL` says the port is wrong.
 `INSUFFICIENT_EVIDENCE` says we do not know. `NOT_APPLICABLE` says the
 question is malformed for this process. `CONDITION_GATED`/`OBSERVED_REGIME`
-says the branch cannot be observed in the natural population *by
-construction*, and we hold structural evidence about it instead. All four are
-honest reports, and the last three are legitimate resting states. None of them
-is green, and none may be counted toward a green tally, aggregated into a
+says the branch was not observed in the accepted natural population and any
+conditioned evidence remains non-gating; reachability may be structurally
+excluded or explicitly `UNRESOLVED`. All four are honest reports, and the last
+three are legitimate resting states. None of them is green, and none may be counted toward a green tally, aggregated into a
 percentage alongside green rows, or reported as "effectively green".
 
 **A permanently non-green state is not a bug.** Some branches can never reach
@@ -415,18 +415,19 @@ No statement about which gates are built, running, paused or blocked.
 Those are properties of a moment, and this file must survive moments. For
 current state, read the artifact that owns it:
 
+- Dated reconciled checkpoint — `docs/phase_f/CHECKPOINT_2026-08-03.md`
 - Mechanically re-derived L2.2 evidence status —
   `docs/phase_f/l2_2_design_a/evidence_index.json` (re-derive before trusting;
   see §5 rule 1)
 - H12 side-index — `docs/phase_f/l2_2_design_a/h12/h12_evidence_index.json`
-- L2.2 per-process tracker — `docs/phase_f/l2_2_design_a/L2_2_GATE_TRACKER.md`
 - L2.event adapter status — `docs/phase_f/l2_event/event_registry.yaml`
-- L2.5 per-pair status — `docs/phase_f/L2_5_PAIR_TRACKER.md`
-- Cross-process status roll-up — `docs/phase_e/PROCESS_STATUS_ALL_29.md`
-  (29 = 28 processes + the allocator)
 - Operational state and open work — `plan.md`
 - Ratified project decisions — the PM-OS decisions log (`.pm-os/DECISIONS.md`,
   outside this repository)
+
+The older L2.2, L2.5 and 29-row trackers are historical inputs until a dated
+checkpoint explicitly reconciles them; they are not current authority merely
+because their filenames say "tracker" or "status".
 
 If a status claim cannot be traced to one of those, it is not a status claim.
 
