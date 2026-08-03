@@ -371,10 +371,11 @@ process*.
 Canary D crashed at tick 25361 inside `ProteinProcessingII.m`'s call
 `RandStream.mnrnd(1, p)` with a **column** probability vector `p`. The
 old `scripts/matlab/mnrnd.m` built histogram bin edges as
-`edges = [0, cumsum(p)]` directly from the raw (possibly sparse)
-probability vector; any zero-probability category produces a duplicate
-edge (e.g. `p=[0.5 0 0.3 0 0.2]` -> `edges=[0 0.5 0.5 0.8 0.8 1]`), and
-`histcounts` rejects non-strictly-increasing edges. This is a
+`edges = [0, cumsum(p)]` directly from the raw sparse probability vector,
+then forced `edges(end)=1`. Trailing zero-probability categories can leave
+the penultimate cumulative edge at a floating-point value slightly above
+1; forcing the final edge to exactly 1 then creates a genuinely decreasing
+edge pair and MATLAB raises `MATLAB:histcounts:DecreasingBinEdges`. This is a
 pre-existing defect in the accepted-base shim, not a new regression, and
 it is orthogonal to row/column orientation (the crash trigger was
 `p`'s sparsity, not its shape).
@@ -448,5 +449,4 @@ fix and remains outside any exact-match claim.
   same `validate_existing_event_window` gauntlet. The prior file's
   SHA-256 is recorded in the plan/manifest before any such replacement so
   its identity is never lost even though it is never deleted up front.
-
 

@@ -14,15 +14,13 @@ function counts = mnrnd(n, p, varargin)
 % be told apart from one produced under the current revision.
 %
 % Canary D root cause (fixed here): the previous revision built
-% edges = [0 cumsum(p)] directly from the FULL probability vector,
-% including zero-probability categories. A zero-probability category
-% contributes 0 to cumsum, producing a DUPLICATE (non-strictly-increasing)
-% edge value -- e.g. p = [0.5 0 0.3 0.2] -> edges = [0 0.5 0.5 0.8 1] --
-% which reproduces exactly the "BinEdges must be non-decreasing"-style
-% failure ProteinProcessingII.m:394 hit at tick 25361 (a sparse
-% peptidase/transferase probability vector with structurally-zero
-% categories -- not a row/column orientation issue; p(:)' below already
-% normalizes orientation safely regardless).
+% edges = [0 cumsum(p)] directly from the FULL sparse probability vector,
+% then forced edges(end)=1. A trailing run of zero-probability categories
+% can leave the penultimate cumulative edge slightly above 1 through
+% floating-point summation; forcing the final edge to exactly 1 then makes
+% the pair genuinely decreasing and triggers
+% MATLAB:histcounts:DecreasingBinEdges. This is not a row/column issue;
+% p(:)' below already normalizes orientation.
 %
 % Fix: bin edges are built ONLY from the strictly-positive categories (so
 % every edge step is > 0, hence strictly increasing by construction), and
@@ -94,8 +92,8 @@ positive_idx = find(p_row > 0);
 p_pos = p_row(positive_idx);
 
 % Every step added to cumsum here is strictly > 0 (positive_idx only
-% keeps strictly-positive categories), so edges is guaranteed strictly
-% increasing -- no duplicate-edge/zero-probability-category defect.
+% keeps strictly-positive categories), and there is no trailing zero run
+% whose final clamp can create a decreasing edge pair.
 edges = [0, cumsum(p_pos)];
 edges(end) = 1;
 
