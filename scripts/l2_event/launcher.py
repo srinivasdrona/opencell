@@ -109,6 +109,53 @@ CYTOKINESIS_SCALAR_FINITE_OBSERVABLES = (
 # silently skip-valid against a v2 spec.
 EVENT_OBSERVABLE_PROJECTION_VERSION = 2
 
+# Path to the repo-owned mnrnd compatibility shim (see scripts/matlab/
+# mnrnd.m's own docstring for the Canary D root cause: the previous
+# revision built histogram bin edges directly from a probability vector
+# that could contain zero-probability categories, producing duplicate
+# non-strictly-increasing edges). build_matlab_command's unconditional
+# addpath('scripts/matlab') means this file shadows the real
+# Statistics-Toolbox mnrnd for EVERY extraction job (fixed or anchor, any
+# process -- the scheduler runs every process's evolveState() every
+# tick), so every trace must be identity-bound to the exact revision of
+# this file that produced it.
+MNRND_SHIM_PATH = REPO_ROOT / "scripts" / "matlab" / "mnrnd.m"
+
+# Coarse, human-bumped version gate for scripts/matlab/mnrnd.m's on-disk
+# revision. Bump this (and the corresponding literal
+# extract_per_process_traces_v2.m writes into metadata.mnrnd_shim_version)
+# only when the shim's algorithm/semantics change. This is deliberately a
+# SEPARATE version namespace from EVENT_OBSERVABLE_PROJECTION_VERSION
+# (that one tracks the Cytokinesis anchor observable projection schema;
+# this one tracks the mnrnd RNG compatibility shim, which every window
+# kind and every process is exposed to).
+#
+# 1: first identity-bound revision -- fixes the duplicate-edge/
+# zero-probability-category defect (Canary D, tick 25361,
+# ProteinProcessingII.m:394). Any pre-existing trace (of ANY window kind,
+# including 'fixed', since the path-shadow was already unconditionally
+# active before this fix) lacks this metadata field entirely and must
+# therefore regenerate_invalid, never silently skip_valid.
+MNRND_SHIM_VERSION = 1
+
+
+def mnrnd_shim_sha256_hex(path: Path = MNRND_SHIM_PATH) -> str:
+    """SHA-256 (lowercase hex) of ``scripts/matlab/mnrnd.m``, with CR
+    (0x0D) bytes stripped first so a CRLF-checked-out file hashes
+    identically to an LF one -- matches the LF-normalization
+    ``extract_per_process_traces_v2.m``'s own
+    ``mnrnd_shim_sha256_hex(matlab_dir)`` MATLAB helper applies when it
+    persists the ACTUAL hash into a trace's metadata at extraction time.
+    ``validate_existing_event_window`` calls this to compute the
+    EXPECTED hash fresh from whatever ``mnrnd.m`` is on disk right now
+    (never a hardcoded string literal), so an edit to the shim file
+    invalidates every prior trace even if nobody remembered to bump
+    ``MNRND_SHIM_VERSION`` too.
+    """
+    raw = path.read_bytes().replace(b"\r", b"")
+    return hashlib.sha256(raw).hexdigest()
+
+
 # Suffix for a not-yet-validated regeneration's output directory (see
 # `temp_output_subdir_for`/`finalize_atomic_regeneration`). Never the real
 # per-process-trace directory a `skip_valid` lookup or the standard mid-cycle
@@ -600,6 +647,41 @@ def _window_boundary_kind(path: Path) -> str:
     return "neither"
 
 
+def _read_mnrnd_shim_metadata(path: Path) -> dict[str, Any]:
+    """Read the mnrnd-shim identity-binding metadata
+    (``mnrnd_shim_version``/``mnrnd_shim_sha256``)
+    ``extract_per_process_traces_v2.m`` persists for EVERY 'fixed' or
+    'anchor' trace (never just anchor -- the addpath('scripts/matlab')
+    path-shadow build_matlab_command applies is window-kind-agnostic), so
+    ``validate_existing_event_window`` can cross-check that an on-disk
+    trace was produced under the current, fixed revision of
+    ``scripts/matlab/mnrnd.m`` -- never trusting structural/tick agreement
+    alone (a trace produced under a stale/pre-fix mnrnd.m is contract-
+    complete in every other respect). Any key absent from ``metadata``
+    maps to ``None`` (never raises for a missing key, matching a
+    pre-identity-binding trace written before this check existed); an
+    unreadable/corrupt file DOES raise ``OSError``/``ValueError``/
+    ``KeyError`` -- callers must catch those explicitly (see
+    ``validate_existing_event_window``), consistent with
+    ``_window_boundary_kind``'s and ``_read_anchor_signal_metadata``'s
+    corrupt-file handling.
+    """
+    import h5py
+
+    result: dict[str, Any] = {"mnrnd_shim_version": None, "mnrnd_shim_sha256": None}
+    with h5py.File(path, "r") as handle:
+        metadata = handle.get("metadata")
+        if metadata is None:
+            return result
+        if "mnrnd_shim_version" in metadata:
+            value, problem = _read_optional_scalar(metadata, "mnrnd_shim_version")
+            if problem is None and value is not None:
+                result["mnrnd_shim_version"] = int(value)
+        if "mnrnd_shim_sha256" in metadata:
+            result["mnrnd_shim_sha256"] = _decode_char_metadata(metadata["mnrnd_shim_sha256"][()])
+    return result
+
+
 def _read_anchor_signal_metadata(path: Path) -> dict[str, Any]:
     """Read the anchor-config identity-binding metadata
     (``signal_kind``/``signal_property``/``signal_field``/
@@ -729,7 +811,12 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
     ``max_search_ticks``/observable-projection-schema-version must match
     the on-disk trace's own persisted anchor-config metadata -- so a trace
     produced for a DIFFERENT fixed-offset or anchor-signal request can
-    never ``skip_valid`` against this one.
+    never ``skip_valid`` against this one. Independently of window kind,
+    ``mnrnd_shim_version``/``mnrnd_shim_sha256`` must match the current
+    ``scripts/matlab/mnrnd.m`` on disk (see ``_read_mnrnd_shim_metadata``)
+    -- a trace produced under a stale/pre-fix revision of that
+    unconditionally-path-shadowed RNG compatibility shim must never
+    ``skip_valid``, for either 'fixed' or 'anchor' traces.
 
     Never crashes on a corrupt/malformed file (Opus 5 rejection finding):
     every path that opens/parses the file (the loader call and the two
@@ -777,6 +864,32 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
         return False, (
             f"on-disk window kind={on_disk_kind!r} != requested window_contract={spec.window_contract!r} "
             "(a trace produced under a different window_contract must never be silently reused)"
+        )
+
+    # mnrnd-shim identity binding (legacy-mnrnd defect fix): applies to
+    # BOTH 'fixed' and 'anchor' specs -- build_matlab_command's
+    # addpath('scripts/matlab') path-shadow is window-kind-agnostic, so a
+    # trace produced under a stale/pre-fix scripts/matlab/mnrnd.m must
+    # never skip_valid regardless of window kind, even a 'fixed' window
+    # whose own captured process never itself calls mnrnd (the shadow was
+    # active for the WHOLE simulated run, every process, every tick).
+    try:
+        mnrnd_meta = _read_mnrnd_shim_metadata(path)
+    except (OSError, ValueError, KeyError) as exc:
+        return False, f"{path}: failed to inspect mnrnd shim identity-binding metadata ({type(exc).__name__}: {exc})"
+    if mnrnd_meta["mnrnd_shim_version"] != MNRND_SHIM_VERSION:
+        return False, (
+            f"metadata.mnrnd_shim_version={mnrnd_meta['mnrnd_shim_version']!r} != expected "
+            f"{MNRND_SHIM_VERSION!r} -- trace was produced under a stale/pre-fix or unversioned "
+            "scripts/matlab/mnrnd.m path-shadow (see EVENT_WINDOW_EXTRACTOR_CONTRACT.md 'Legacy mnrnd "
+            "compatibility')"
+        )
+    expected_mnrnd_sha256 = mnrnd_shim_sha256_hex()
+    if mnrnd_meta["mnrnd_shim_sha256"] != expected_mnrnd_sha256:
+        return False, (
+            f"metadata.mnrnd_shim_sha256={mnrnd_meta['mnrnd_shim_sha256']!r} != current "
+            f"scripts/matlab/mnrnd.m sha256 {expected_mnrnd_sha256!r} -- the shim file changed since "
+            "this trace was produced"
         )
 
     if isinstance(spec, FixedWindowSpec):

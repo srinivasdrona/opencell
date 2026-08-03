@@ -208,6 +208,37 @@ def test_chromosome_object_excluded_only_for_diameter_decrease_anchor():
     assert "chromosome" not in boolean_case_body
 
 
+def test_mnrnd_shim_identity_metadata_written_for_fixed_and_anchor_not_legacy():
+    """Legacy-mnrnd defect fix static proof: mnrnd_shim_version/
+    mnrnd_shim_sha256 must be written for BOTH 'fixed' and 'anchor'
+    window_contract values (the addpath('scripts/matlab') path-shadow is
+    window-kind-agnostic -- every process's evolveState() runs every
+    tick regardless of which one is being captured), and must NEVER be
+    written for the '' (no window_contract) legacy path, which preserves
+    its exact pre-M4 metadata shape."""
+    source = _read_source()
+
+    assert source.count("metadata.mnrnd_shim_version = int32(1);") == 1
+    assert source.count("metadata.mnrnd_shim_sha256 = mnrnd_shim_sha256_hex(matlab_dir);") == 1
+    assert "function hash_hex = mnrnd_shim_sha256_hex(matlab_dir)" in source
+
+    # The single assignment site must be guarded by
+    # strcmp(window_contract, 'fixed') || strcmp(window_contract, 'anchor')
+    # -- not nested separately inside each branch (which could drift out
+    # of sync) and not unconditional (which would corrupt the legacy ''
+    # metadata shape).
+    guard_match = re.search(
+        r"if strcmp\(window_contract, 'fixed'\) \|\| strcmp\(window_contract, 'anchor'\)\n"
+        r"(.*?)\n\s*end\n",
+        source,
+        re.DOTALL,
+    )
+    assert guard_match is not None, "could not locate the mnrnd-shim-metadata guard block"
+    guard_body = guard_match.group(1)
+    assert "metadata.mnrnd_shim_version" in guard_body
+    assert "metadata.mnrnd_shim_sha256" in guard_body
+
+
 def _octave_executable() -> str | None:
     """Locate an Octave CLI binary on PATH, or return None if unavailable.
 

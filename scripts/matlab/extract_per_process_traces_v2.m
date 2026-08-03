@@ -215,6 +215,29 @@ for i = 1:numel(process_names)
         'snapshot_properties', {snapshot_props} ...
     );
 
+    if strcmp(window_contract, 'fixed') || strcmp(window_contract, 'anchor')
+        % mnrnd shim identity-binding metadata (legacy-mnrnd defect fix,
+        % post-Turn-3): scripts/l2_event/launcher.py's build_matlab_command
+        % always prepends addpath('scripts/matlab') for EVERY event-window
+        % extraction job (fixed or anchor, any process -- the scheduler
+        % runs every process's evolveState() every tick), so
+        % scripts/matlab/mnrnd.m unconditionally shadows the real
+        % Statistics-Toolbox mnrnd for the whole run, not just for
+        % Cytokinesis/ProteinProcessingII. A trace produced under a
+        % stale/pre-fix (duplicate-edge-unsafe) revision of that file must
+        % never silently skip_valid against today's fixed shim:
+        % mnrnd_shim_version is a coarse, human-bumped gate;
+        % mnrnd_shim_sha256 is the strong content binding that also catches
+        % an edit nobody remembered to version-bump. See
+        % validate_existing_event_window (scripts/l2_event/launcher.py) and
+        % docs/phase_f/l2_event/EVENT_WINDOW_EXTRACTOR_CONTRACT.md ("Legacy
+        % mnrnd compatibility"). Written for 'fixed' and 'anchor' only --
+        % the '' (no window_contract) legacy path below is intentionally
+        % left untouched to preserve its exact pre-M4 metadata shape.
+        metadata.mnrnd_shim_version = int32(1);
+        metadata.mnrnd_shim_sha256 = mnrnd_shim_sha256_hex(matlab_dir);
+    end
+
     % M4 stride/window-boundary metadata contract (docs/phase_f/l2_event/
     % EVENT_WINDOW_EXTRACTOR_CONTRACT.md) -- only written when the caller
     % opted into a window_contract; '' (default) preserves the exact
@@ -853,6 +876,33 @@ end
 
 function token = normalize_name_token(s)
 token = lower(regexprep(char(s), '[^a-zA-Z0-9]', ''));
+end
+
+function hash_hex = mnrnd_shim_sha256_hex(matlab_dir)
+% mnrnd_shim_sha256_hex  SHA-256 (lowercase hex) of scripts/matlab/mnrnd.m,
+% with CR (0x0D) bytes stripped first so a CRLF-checked-out file hashes
+% identically to an LF one. scripts/l2_event/launcher.py's
+% mnrnd_shim_sha256_hex Python helper normalizes the same way when
+% computing the EXPECTED hash at validate_existing_event_window time, so
+% the two independently-computed hashes agree byte-for-byte regardless of
+% checkout line-ending settings.
+%
+% No Statistics/other toolbox required: java.security.MessageDigest is
+% part of the JVM every desktop MATLAB release embeds. This function is
+% only ever called from the real (never-run-in-CI) extraction path, never
+% from the Octave-based pure-function regression test for mnrnd.m itself.
+mnrnd_path = fullfile(matlab_dir, 'mnrnd.m');
+fid = fopen(mnrnd_path, 'rb');
+if fid < 0
+    error('extract_per_process_traces_v2:mnrnd_shim_unreadable', ...
+        'could not open %s to compute its identity-binding hash', mnrnd_path);
+end
+raw = fread(fid, Inf, '*uint8')';
+fclose(fid);
+raw = raw(raw ~= uint8(13));
+digest = java.security.MessageDigest.getInstance('SHA-256');
+digest_bytes = typecast(digest.digest(raw), 'uint8');
+hash_hex = lower(sprintf('%02x', digest_bytes));
 end
 
 function ensure_wholecell_runtime_paths(repo_root)
