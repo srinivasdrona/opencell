@@ -348,7 +348,9 @@ These are gate-independent. They apply to every rung.
 3. **Raw portable artifacts.** Evidence must be verifiable from a fresh clone.
    The live evidence root is gitignored; the tracked portable mirror is
    `docs/phase_f/l2_2_design_a/evidence_bundle/`, carrying the mandatory
-   authority files and sidecars byte-for-byte.
+   authority files and sidecars byte-for-byte — the sole exception being
+   `input_manifest.json`, whose input paths are normalized to repo-relative
+   POSIX form while its gated content is preserved exactly.
 4. **Source and input hashes are the gating link.** Every recorded input
    sha256 is re-compared against the file's current on-disk sha256; drift is
    `STALE_VS_TREE`, naming the path. **Content hashes, not git plumbing, are
