@@ -721,6 +721,13 @@
   ],
   "process": "FtsZPolymerization",
   "rng_seed": 0,
+  "substrate_stoichiometry_clause_coverage": {
+    "gdp_coupling_nonzero_ticks": 1,
+    "gtp_coupling_nonzero_ticks": 63,
+    "hydrolysis_shortfall_nonzero_ticks": 0,
+    "n_ticks": 100,
+    "note": "Exact invariant equality is asserted on all n_ticks ticks unconditionally (see _check_substrate_stoichiometry). These counts report how many of those ticks had a nonzero value for each term -- i.e. branch/clause coverage, not invariant-correctness coverage. hydrolysis_shortfall_nonzero_ticks=0 means the PI/H2O/H shortfall-compensation branch was checked as identically zero on every tick in this seed, never validated against a nonzero shortfall value."
+  },
   "summary": {
     "enzymes_l1_max": 29.0,
     "enzymes_l1_mean": 11.69,
@@ -729,5 +736,6 @@
     "substrates_l1_mean": 1.18,
     "substrates_l1_zero_ticks": 37
   },
-  "trace_path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/FtsZPolymerization_100ticks.mat"
+  "trace_path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/FtsZPolymerization_100ticks.mat",
+  "trace_sha256": "c0797bcb84fa6041875caddf6a7c195362fdad64fd80412a34946a914aaa9ee1"
 }

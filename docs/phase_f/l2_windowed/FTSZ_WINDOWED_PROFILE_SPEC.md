@@ -1,9 +1,13 @@
 # FtsZPolymerization windowed/continuous fidelity profile — spec
 
 STATUS: branch-local spec for `agent/l2-ftsz-windowed-profile`. Documents the
-Turn-1 intent (approved with adjudications) and the Turn-2 implementation.
-Does not itself reclassify anything in the live catalog or event registry —
-see `proposed_patches/ftsz_polymerization_windowed_v1.catalog_patch.yaml` for
+Turn-1 intent (approved with adjudications), the Turn-2 implementation, and
+the Turn-3 closeout (Opus review findings: unconditional stoichiometry check,
+accurate per-clause coverage reporting, trace provenance anchoring, corrected
+enzyme WID cardinality/mapping, and a non-dirtying telemetry artifact
+design). Does not itself reclassify anything in the live catalog or event
+registry — see
+`proposed_patches/ftsz_polymerization_windowed_v1.catalog_patch.yaml` for
 the proposed (unapplied) patch.
 
 ## 1. Why FtsZPolymerization must leave `EVENT_CLASS`
@@ -91,6 +95,17 @@ canary enforces invariants that are exactly provable, tick-by-tick, from
    process): `H2O_delta == -PI_delta`, `H_delta == PI_delta`,
    `GDP_delta == -dot(n_gdp, enzyme_delta) + PI_delta`,
    `GTP_delta == -dot(n_gtp, enzyme_delta) - PI_delta`, and `PI_delta >= 0`.
+   **Called unconditionally on every tick** (Turn-3 fix), including ticks
+   where the substrate delta dict is empty `{}` — an empty dict makes every
+   `.get(wid, 0.0)` default to 0.0, which is only a valid outcome when
+   `dot(n_gtp, enzyme_delta) == dot(n_gdp, enzyme_delta) == 0`. Turn-2's
+   original `if substrate_delta:` guard would have silently skipped this
+   check on a tick where a bug dropped the `substrates` key entirely; Turn-3
+   removed that guard and added a mutation-inversion test
+   (`test_empty_substrate_delta_fails_on_nonzero_coupling_ticks`) that forces
+   `substrate_delta={}` against the real per-tick enzyme deltas and proves
+   the check now fails on exactly the ticks with real nonzero GTP/GDP
+   coupling (63/100 — independently re-derived in the test, not hardcoded).
 3. **Integrality and finiteness**: every emitted enzyme/substrate delta is
    finite and an integer (reuses the shared `assert_delta_integral` helper
    pattern from `l2_replay_common.py`).
@@ -102,13 +117,25 @@ tolerances — there is no fudge factor to launder a real bug through.
 
 ## 6. Raw per-tick discrepancy telemetry (reported, not gated)
 
-For each of the 100 ticks, the canary computes and writes to
-`docs/phase_f/l2_windowed/ftsz_seed0_honest_mode_telemetry.json`:
+For each of the 100 ticks, the canary computes telemetry and (Turn-3) writes
+it to pytest's `tmp_path` only, then compares it field-by-field (excluding
+the environment-dependent `trace_path`) against a checked-in reference
+snapshot at `docs/phase_f/l2_windowed/ftsz_seed0_honest_mode_telemetry.json`
+as a reproducibility assertion. The test never overwrites that tracked file
+as a side effect of running — regenerating the reference is a deliberate,
+reviewed act (done once for this Turn-3 schema update; see git history of
+that file). The telemetry includes:
 
 - `enzymes` L1 and L∞ discrepancy between OC's honest-mode delta and Karr's
   observed delta (WID-aligned via `process.enzyme_wids`).
 - `substrates` L1 and L∞ discrepancy (WID-aligned via `process.substrate_wids`).
 - Summary stats (mean/max/zero-match-tick-count) per channel.
+- `trace_sha256`: the exact SHA256 of the `.mat` file the run read from
+  (see §8a, Trace provenance).
+- `substrate_stoichiometry_clause_coverage`: per-clause branch-coverage
+  counters (see table below) — explicitly NOT a correctness claim, since
+  invariant equality is asserted unconditionally on all 100 ticks regardless
+  of these counts (§5, item 2).
 
 **Observed real values (seed 0, N=1, 100 ticks, honest ODE mode, no
 trace_hint)**:
@@ -118,6 +145,24 @@ trace_hint)**:
 | `enzymes` | 11.69 | 29.0 | 0 / 100 |
 | `substrates` | 1.18 | 6.0 | 37 / 100 |
 
+**Substrate-stoichiometry clause coverage (branch coverage, not invariant
+correctness — see the distinction below)**:
+
+| clause | nonzero on | meaning |
+|---|---|---|
+| GTP coupling (`dot(n_gtp, enzyme_delta) != 0`) | 63 / 100 OC ticks | `GTP_delta == -n_gtp.d_enzyme - PI_delta` term actually exercised nonzero |
+| GDP coupling (`dot(n_gdp, enzyme_delta) != 0`) | 1 / 100 OC ticks | `GDP_delta == -n_gdp.d_enzyme + PI_delta` term actually exercised nonzero |
+| PI/H2O/H hydrolysis-shortfall (`PI_delta > 0`) | 0 / 100 OC ticks | **unexercised** — the shortfall-compensation branch (`H2O_delta == -PI_delta`, `H_delta == PI_delta`, and the `+ PI_delta` terms above) was checked as identically zero on every tick in this one seed; its nonzero behavior has never been validated by this canary |
+
+**Exact invariant correctness is a separate claim from branch/clause
+coverage.** The stoichiometry equations in §5 item 2 are asserted `==` on
+all 100 ticks unconditionally, including the 37/100 ticks with zero
+substrate delta and the 100/100 ticks with zero hydrolysis-shortfall value —
+those ticks correctly satisfy the equations at value 0, but they do not
+exercise (and therefore cannot falsify) the shortfall-compensation branch's
+behavior when it is actually nonzero. Any future seed/trace where
+`PI_delta > 0` occurs would be the first real test of that specific branch.
+
 This is real, unmodified, non-fabricated telemetry from one run. It shows
 nontrivial divergence between OC's honest BDF-integrated trajectory and
 Karr's custom-ODE23S + independent-RNG-stream trajectory. This is expected
@@ -126,6 +171,25 @@ is **explicitly not judged pass/fail** by this task (adjudication #1/#2) —
 it is reported as diagnostic evidence for whoever eventually builds the
 N=50 gate (§7).
 
+### 6a. Trace provenance (N=1 anchor)
+
+The canary asserts (fails loudly, not silently, on mismatch) that the trace
+file `resolve_trace_path("FtsZPolymerization")` resolves to has this exact
+SHA256 before doing anything else:
+
+- **`FtsZPolymerization_100ticks.mat`** (the actual extraction target read by
+  `cell_vector`/`resolve_trace_path` in this canary):
+  `c0797bcb84fa6041875caddf6a7c195362fdad64fd80412a34946a914aaa9ee1`
+  (full 64-hex-char SHA256, verified in-branch).
+
+A different artifact exists elsewhere in this repo's inventory —
+`data/karr_fixtures/per_process_replay/FtsZPolymerization.npz`, SHA256
+`348db55cf64c97c11fc5e94f7f9d2b93f77a9da7edf93647d8e41570a311fdaf` — which
+is **explicitly not** the extraction target of this canary. It is a
+different replay run with divergent RNG pools/state (a separate harness
+invocation, not the seed-0 Karr ground-truth trace), and must not be
+conflated with the `.mat` trace above when reasoning about N=1 provenance.
+
 ## 7. Future N=50 gate contract (documented now, NOT implemented)
 
 Per adjudication #2, this task does **not** implement a threshold, invented
@@ -133,6 +197,7 @@ or otherwise. When 49 additional seeds of `FtsZPolymerization_100ticks.mat`
 exist on disk (mirroring the RibosomeAssembly precedent's exact missing-data
 shape — see `docs/phase_f/l2_event/RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md`
 for the analogous report structure), the eventual gate must:
+
 
 - Use a **Karr-only seed-cluster / split-half null**: partition the 50 Karr
   seeds into two halves, compute the chosen distance metric (below) between
@@ -161,15 +226,26 @@ branch.
 
 ## 8. Karr↔OC WID / index mapping (for reference)
 
-- `enzyme_wids` (5): index 0 = free FtsZ monomer, 1 = FtsZ-GDP monomer,
-  2 = FtsZ-GTP-activated monomer/nucleus seed, 3.. = growing polymer forms up
-  to the 9-mer (`enzyme_index_ftsz`, `enzyme_index_ftsz_gdp`,
-  `enzyme_index_ftsz_9mer` name the boundary indices used by the invariant
-  checks). `n_monomers` gives the monomer-equivalent weight per index (used
-  by the conservation invariant).
-- `substrate_wids` = `['GDP', 'GTP', 'PI', 'H2O', 'H']` (indices 0-4). The
-  hydrolysis-shortfall compensation vector (both MATLAB and OC) is
-  `[+1, -1, +1, -1, +1]` in this exact order applied to
+- `enzyme_wids` has **11** entries (Turn-3 correction — an earlier draft of
+  this spec incorrectly stated 5, which is actually the substrate cardinality
+  below), verified in-branch from the live fixture:
+  `['MG_224_MONOMER', 'MG_224_MONOMER_GDP', 'MG_224_MONOMER_GTP',
+  'MG_224_2MER_GTP', 'MG_224_3MER_GTP', 'MG_224_4MER_GTP', 'MG_224_5MER_GTP',
+  'MG_224_6MER_GTP', 'MG_224_7MER_GTP', 'MG_224_8MER_GTP',
+  'MG_224_9MER_GTP']`. Index 0 = free FtsZ monomer
+  (`enzyme_index_ftsz == 0`), index 1 = FtsZ-GDP monomer
+  (`enzyme_index_ftsz_gdp == 1`), index 2 = FtsZ-GTP-activated
+  monomer/nucleus seed (`enzyme_index_ftsz_gtp == 2`), indices 3-10 = growing
+  polymer forms from the 2-mer through the 9-mer
+  (`enzyme_index_ftsz_dimer == 3`, `enzyme_index_ftsz_9mer == 10`).
+  `n_monomers = [1, 1, 1, 2, 3, 4, 5, 6, 7, 8, 9]` gives the monomer-equivalent
+  weight per index (used by the conservation invariant); `n_gtp = [0, 0, 1,
+  2, 3, 4, 5, 6, 7, 8, 9]` and `n_gdp = [0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0]` give
+  the per-index GTP/GDP coupling weights used by the stoichiometry invariant
+  (§5 item 2).
+- `substrate_wids` = `['GDP', 'GTP', 'PI', 'H2O', 'H']` (**5** entries,
+  indices 0-4). The hydrolysis-shortfall compensation vector (both MATLAB
+  and OC) is `[+1, -1, +1, -1, +1]` in this exact order applied to
   `[GDP, GTP, PI, H2O, H]` — i.e. GTP genuinely is reduced by the shortfall
   term too, not just GDP/PI/H2O/H (this was mis-stated in an earlier Turn-1
   draft and corrected before this spec was written).

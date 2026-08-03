@@ -23,15 +23,25 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
+import h5py  # noqa: E402
 from l2_replay_common import (  # noqa: E402
     build_state_template,
+    cell_vector,
+    collect_count_delta_dicts,
+    infer_wids_for_observable,
+    overlay_observable_into_state,
     overlay_trace_after_hint,
     refresh_allocator_views,
+    resolve_trace_path,
 )
 from test_karr_ftsz_polymerization_honest_canary import (  # noqa: E402
+    _OBSERVABLE_TO_WIDS_ATTR,
+    _OBSERVABLES,
+    _TRACE_PROCESS_NAME,
     DIAGNOSTIC_ONLY_CHANNELS,
     GATE_CHANNELS,
     _assert_no_oracle_leakage,
+    _check_substrate_stoichiometry,
     _monomer_conservation_delta,
     classify_ensemble_support,
 )
@@ -275,3 +285,118 @@ def test_diagnostic_only_channels_excluded_from_gate_set() -> None:
             "explicit decision"
         )
     assert set(GATE_CHANNELS) == {"enzymes", "substrates"}
+
+
+# ---------------------------------------------------------------------------
+# 9. Turn-3 closeout: substrate-delta-dropped mutation must fail, not
+#    silently pass, on ticks with real GTP/GDP coupling
+# ---------------------------------------------------------------------------
+
+
+def test_empty_substrate_delta_fails_on_nonzero_coupling_ticks() -> None:
+    """Regression guard for the Turn-2 gap where `_check_substrate_stoichiometry`
+    was only called `if substrate_delta:` -- meaning a bug that dropped the
+    `substrates` key from `next_update`'s return value entirely (mutating
+    `_substrate_delta_dict` to return `{}`) would have silently skipped the
+    check rather than failing it. Replays all 100 real honest-mode ticks,
+    forces `substrate_delta={}` at the stoichiometry-check call site, and
+    proves it now raises on exactly the ticks with real (nonzero) GTP/GDP
+    enzyme-substrate coupling -- independently re-derived here from the same
+    real enzyme deltas (not the hardcoded literal 63 from telemetry), so this
+    test cannot rot into a numerology check."""
+    process = KarrFtsZPolymerizationProcess({"rng_seed": 0})
+    trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+
+    with h5py.File(trace_path, "r") as trace:
+        n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+        state_template = build_state_template(process)
+
+        wids_by_observable: dict[str, list[str]] = {}
+        for observable in _OBSERVABLES:
+            karr_before = cell_vector(trace, "states_before", observable, 0)
+            wids_by_observable[observable] = infer_wids_for_observable(
+                process,
+                state_template,
+                observable,
+                karr_len=int(karr_before.shape[0]),
+                explicit_attr=_OBSERVABLE_TO_WIDS_ATTR.get(observable),
+            )
+
+        real_pass_count = 0
+        forced_empty_fail_count = 0
+        independently_expected_fail_count = 0
+
+        for tick in range(n_ticks):
+            state = build_state_template(process)
+            before_vectors = {
+                observable: cell_vector(trace, "states_before", observable, tick)
+                for observable in _OBSERVABLES
+            }
+            for observable in _OBSERVABLES:
+                overlay_observable_into_state(
+                    process=process,
+                    state=state,
+                    observable=observable,
+                    vector=before_vectors[observable],
+                    wids=wids_by_observable[observable],
+                )
+            refresh_allocator_views(process, state)
+            update = process.next_update(1.0, state)
+            deltas_by_label = dict(collect_count_delta_dicts(update))
+            enzyme_delta = deltas_by_label.get("enzymes", {})
+            substrate_delta = deltas_by_label.get("substrates", {})
+
+            # Sanity: the real (unmutated) delta must satisfy the invariant --
+            # this is already asserted every run by the canary itself, but is
+            # re-confirmed here so the forced-empty comparison below is
+            # against a known-good baseline, not an assumption.
+            _check_substrate_stoichiometry(
+                process, enzyme_delta=enzyme_delta, substrate_delta=substrate_delta, tick=tick
+            )
+            real_pass_count += 1
+
+            # Independently derive whether this tick SHOULD fail once
+            # substrate_delta is zeroed: true iff real GTP or GDP coupling is
+            # nonzero (computed here from enzyme_delta directly, mirroring but
+            # not importing _substrate_coupling_flags, so this is a genuinely
+            # separate re-derivation rather than trusting the module under test).
+            delta_vec = np.asarray(
+                [float(enzyme_delta.get(wid, 0.0)) for wid in process.enzyme_wids],
+                dtype=np.float64,
+            )
+            n_gtp_dot = float(np.dot(process.n_gtp, delta_vec))
+            n_gdp_dot = float(np.dot(process.n_gdp, delta_vec))
+            should_fail_if_forced_empty = (abs(n_gtp_dot) > 1e-9) or (abs(n_gdp_dot) > 1e-9)
+            if should_fail_if_forced_empty:
+                independently_expected_fail_count += 1
+
+            raised = False
+            try:
+                _check_substrate_stoichiometry(
+                    process, enzyme_delta=enzyme_delta, substrate_delta={}, tick=tick
+                )
+            except AssertionError:
+                raised = True
+
+            assert raised == should_fail_if_forced_empty, (
+                f"tick={tick}: forcing substrate_delta={{}} "
+                f"{'raised' if raised else 'did not raise'}, but independently "
+                f"derived expectation was {'fail' if should_fail_if_forced_empty else 'pass'} "
+                f"(n_gtp_dot={n_gtp_dot}, n_gdp_dot={n_gdp_dot})"
+            )
+            if raised:
+                forced_empty_fail_count += 1
+
+            from l2_replay_common import apply_count_update
+
+            apply_count_update(state, update)
+
+        assert real_pass_count == n_ticks, (
+            "real substrate_delta must satisfy the invariant every tick"
+        )
+        assert forced_empty_fail_count == independently_expected_fail_count
+        assert forced_empty_fail_count > 0, (
+            "expected at least one tick with real nonzero GTP/GDP coupling in "
+            "this trace -- if this is ever 0, the mutation this test targets "
+            "would be undetectable by construction, defeating its purpose"
+        )

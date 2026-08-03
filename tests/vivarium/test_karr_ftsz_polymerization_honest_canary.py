@@ -37,6 +37,7 @@ WHAT THIS TEST IS NOT
 
 from __future__ import annotations
 
+import hashlib
 import json
 import sys
 from pathlib import Path
@@ -97,9 +98,37 @@ REQUIRED_N_SEEDS = (
 )
 ACTUAL_N_SEEDS = 1  # measured: identical seed-0 trace hash across every worktree + main + mirrors
 
-_TELEMETRY_ARTIFACT = (
+# Provenance anchor for the N=1 seed this canary actually exercises. This is the
+# full SHA256 of the exact file `resolve_trace_path` resolves to, NOT the
+# `per_process_replay/FtsZPolymerization.npz` artifact (SHA256
+# 348db55cf64c97c11fc5e94f7f9d2b93f77a9da7edf93647d8e41570a311fdaf) referenced
+# elsewhere in this repo's inventory notes -- that NPZ is a *different* replay
+# run (divergent RNG pools/state produced by a separate harness invocation) and
+# is not the extraction target of this canary. The canary reads directly from
+# the HDF5 `.mat` trace below via `resolve_trace_path`/`cell_vector`.
+TRACE_SHA256 = "c0797bcb84fa6041875caddf6a7c195362fdad64fd80412a34946a914aaa9ee1"
+
+# Reference (checked-in, read-only) telemetry snapshot. The test NEVER writes
+# to this path -- it is compared against a freshly computed run (written to
+# pytest's `tmp_path`) as a reproducibility assertion. Regenerating this
+# reference (if the honest-mode trajectory ever legitimately changes) is a
+# deliberate, reviewed act, not a side effect of running the test suite.
+_EXPECTED_TELEMETRY_ARTIFACT = (
     _REPO_ROOT / "docs" / "phase_f" / "l2_windowed" / "ftsz_seed0_honest_mode_telemetry.json"
 )
+
+# Fields that are legitimately environment-dependent (absolute paths differ by
+# worktree/machine) and therefore excluded from the strict reproducibility
+# comparison against the checked-in reference.
+_TELEMETRY_ENV_DEPENDENT_FIELDS = ("trace_path",)
+
+
+def _sha256_file(path: Path) -> str:
+    digest = hashlib.sha256()
+    with open(path, "rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return digest.hexdigest()
 
 
 def classify_ensemble_support(n_seeds: int, required_n_seeds: int = REQUIRED_N_SEEDS) -> str:
@@ -151,6 +180,18 @@ def _check_substrate_stoichiometry(
         H_delta    == +shortfall
         GDP_delta  == -n_gdp . d_enzyme + shortfall
         GTP_delta  == -n_gtp . d_enzyme - shortfall
+
+    MUST be called unconditionally, on every tick, even when `substrate_delta`
+    is `{}` (a genuinely-zero-delta tick, or -- the failure mode this guards
+    against -- a bug that drops the substrates key from the update entirely).
+    An empty dict means every `.get(wid, 0.0)` below defaults to 0.0, which is
+    only a valid stoichiometric outcome when `n_gtp_dot == n_gdp_dot == 0`; if
+    enzymes changed (nonzero `n_gtp_dot`/`n_gdp_dot`) while `substrate_delta`
+    is empty, the GDP/GTP equations below correctly fail. See the inversion
+    test `test_empty_substrate_delta_fails_on_nonzero_coupling_ticks` in
+    test_karr_ftsz_polymerization_honest_canary_inversions.py, which forces
+    `substrate_delta={}` and proves this raises on exactly the ticks where
+    real GTP/GDP coupling is nonzero.
     """
     delta_vec = np.asarray(
         [float(enzyme_delta.get(wid, 0.0)) for wid in process.enzyme_wids], dtype=np.float64
@@ -177,11 +218,46 @@ def _check_substrate_stoichiometry(
     )
 
 
+def _substrate_coupling_flags(
+    process: KarrFtsZPolymerizationProcess,
+    *,
+    enzyme_delta: dict[str, float],
+    substrate_delta: dict[str, float],
+) -> dict[str, bool]:
+    """Per-tick clause-coverage flags for the stoichiometry check above.
+    These report which branches of the formula were actually exercised by
+    THIS one seed/trace -- exact invariant correctness (asserted every tick
+    regardless) is a separate claim from "this branch's value range was ever
+    nonzero in the data we have". Both are reported in telemetry so the two
+    claims are never conflated."""
+    delta_vec = np.asarray(
+        [float(enzyme_delta.get(wid, 0.0)) for wid in process.enzyme_wids], dtype=np.float64
+    )
+    n_gtp_dot = float(np.dot(process.n_gtp, delta_vec))
+    n_gdp_dot = float(np.dot(process.n_gdp, delta_vec))
+    pi_delta = float(substrate_delta.get(process.pi_wid, 0.0))
+    return {
+        "gtp_coupling": abs(n_gtp_dot) > 1e-9,
+        "gdp_coupling": abs(n_gdp_dot) > 1e-9,
+        "hydrolysis_shortfall": pi_delta > 1e-9,
+    }
+
+
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
-def test_karr_ftsz_polymerization_honest_mode_windowed_canary(rng_seed: int) -> None:
+def test_karr_ftsz_polymerization_honest_mode_windowed_canary(
+    rng_seed: int, tmp_path: Path
+) -> None:
     from l2_replay_common import forbid_sut_oracle_file_io
 
     trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+    actual_trace_sha256 = _sha256_file(trace_path)
+    assert actual_trace_sha256 == TRACE_SHA256, (
+        f"trace file at {trace_path} has sha256={actual_trace_sha256}, expected "
+        f"{TRACE_SHA256}. This is the N=1 provenance anchor for this canary -- "
+        "if this legitimately changed (e.g. a deliberate re-extraction), update "
+        "TRACE_SHA256 as part of that reviewed change, not silently here."
+    )
+
     with h5py.File(trace_path, "r") as trace:
         n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
         assert n_ticks == 100
@@ -226,6 +302,7 @@ def test_karr_ftsz_polymerization_honest_mode_windowed_canary(rng_seed: int) -> 
         telemetry: dict[str, Any] = {
             "process": _TRACE_PROCESS_NAME,
             "trace_path": str(trace_path),
+            "trace_sha256": actual_trace_sha256,
             "rng_seed": int(rng_seed),
             "n_ticks": n_ticks,
             "n_seeds_available": ACTUAL_N_SEEDS,
@@ -236,6 +313,9 @@ def test_karr_ftsz_polymerization_honest_mode_windowed_canary(rng_seed: int) -> 
             "karr_mutated_tick_counts": mutated_tick_counts,
             "per_tick": [],
         }
+        gtp_coupling_ticks = 0
+        gdp_coupling_ticks = 0
+        hydrolysis_shortfall_ticks = 0
 
         for tick in range(n_ticks):
             state = build_state_template(process)
@@ -285,10 +365,21 @@ def test_karr_ftsz_polymerization_honest_mode_windowed_canary(rng_seed: int) -> 
                 f"n_monomers.d_enzymes={monomer_delta} (expected 0)"
             )
 
-            if substrate_delta:
-                _check_substrate_stoichiometry(
-                    process, enzyme_delta=enzyme_delta, substrate_delta=substrate_delta, tick=tick
-                )
+            # Called unconditionally (not `if substrate_delta:`): an empty
+            # substrate_delta dict means zero deltas by construction
+            # (`.get(wid, 0.0)` defaults), which the check below only accepts
+            # when enzyme deltas also imply zero GTP/GDP coupling this tick.
+            # See _check_substrate_stoichiometry's docstring and the
+            # corresponding mutation-inversion test.
+            _check_substrate_stoichiometry(
+                process, enzyme_delta=enzyme_delta, substrate_delta=substrate_delta, tick=tick
+            )
+            coupling_flags = _substrate_coupling_flags(
+                process, enzyme_delta=enzyme_delta, substrate_delta=substrate_delta
+            )
+            gtp_coupling_ticks += int(coupling_flags["gtp_coupling"])
+            gdp_coupling_ticks += int(coupling_flags["gdp_coupling"])
+            hydrolysis_shortfall_ticks += int(coupling_flags["hydrolysis_shortfall"])
 
             if any(abs(float(v)) > 0.0 for v in enzyme_delta.values()):
                 oc_nonvacuous_ticks += 1
@@ -348,6 +439,33 @@ def test_karr_ftsz_polymerization_honest_mode_windowed_canary(rng_seed: int) -> 
         )
         telemetry["oc_nonvacuous_ticks"] = oc_nonvacuous_ticks
 
+        # Clause-coverage counters (see _substrate_coupling_flags docstring):
+        # these are NOT a pass/fail gate -- they record, honestly, which
+        # branches of the (exactly-checked-every-tick) stoichiometry formula
+        # actually took a nonzero value in this one seed/trace. In particular
+        # the PI/H2O/H hydrolysis-shortfall branch is *never* exercised
+        # (0/100) in this trace: the formula's shortfall terms are checked
+        # (as `== 0`) every tick, but their nonzero-value behavior is
+        # unvalidated by this seed. This distinguishes "the invariant holds
+        # everywhere we checked" from "every branch of the invariant was
+        # exercised with a nonzero value".
+        telemetry["substrate_stoichiometry_clause_coverage"] = {
+            "gtp_coupling_nonzero_ticks": gtp_coupling_ticks,
+            "gdp_coupling_nonzero_ticks": gdp_coupling_ticks,
+            "hydrolysis_shortfall_nonzero_ticks": hydrolysis_shortfall_ticks,
+            "n_ticks": n_ticks,
+            "note": (
+                "Exact invariant equality is asserted on all n_ticks ticks "
+                "unconditionally (see _check_substrate_stoichiometry). These "
+                "counts report how many of those ticks had a nonzero value "
+                "for each term -- i.e. branch/clause coverage, not "
+                "invariant-correctness coverage. hydrolysis_shortfall_nonzero_ticks"
+                "=0 means the PI/H2O/H shortfall-compensation branch was "
+                "checked as identically zero on every tick in this seed, "
+                "never validated against a nonzero shortfall value."
+            ),
+        }
+
         enz_l1_values = [row["enzymes_l1"] for row in telemetry["per_tick"]]
         sub_l1_values = [row["substrates_l1"] for row in telemetry["per_tick"]]
         telemetry["summary"] = {
@@ -359,8 +477,41 @@ def test_karr_ftsz_polymerization_honest_mode_windowed_canary(rng_seed: int) -> 
             "substrates_l1_zero_ticks": int(sum(1 for v in sub_l1_values if v == 0.0)),
         }
 
-        _TELEMETRY_ARTIFACT.parent.mkdir(parents=True, exist_ok=True)
-        _TELEMETRY_ARTIFACT.write_text(json.dumps(telemetry, indent=2, sort_keys=True) + "\n")
+        # Write the freshly computed telemetry to pytest's tmp_path ONLY --
+        # this test must never dirty the tracked reference artifact as a side
+        # effect of running. The tracked file
+        # (_EXPECTED_TELEMETRY_ARTIFACT) is a checked-in, human-reviewed
+        # reference snapshot; regenerating it is a deliberate, separate act.
+        fresh_telemetry_path = tmp_path / "ftsz_seed0_honest_mode_telemetry.json"
+        fresh_telemetry_path.write_text(json.dumps(telemetry, indent=2, sort_keys=True) + "\n")
+
+        # Reproducibility assertion: the honest-mode trajectory is fully
+        # deterministic given rng_seed=0 (process.next_update draws from a
+        # per-instance np.random.default_rng seeded once at construction, and
+        # the same process instance is reused for all n_ticks ticks). Compare
+        # the freshly computed telemetry against the checked-in reference,
+        # ignoring only the environment-dependent absolute path field.
+        assert _EXPECTED_TELEMETRY_ARTIFACT.exists(), (
+            f"expected reference telemetry artifact missing: "
+            f"{_EXPECTED_TELEMETRY_ARTIFACT}. This file is a checked-in "
+            "baseline, not test output -- it must exist in the repo."
+        )
+        expected_telemetry = json.loads(_EXPECTED_TELEMETRY_ARTIFACT.read_text())
+        fresh_comparable = {
+            k: v for k, v in telemetry.items() if k not in _TELEMETRY_ENV_DEPENDENT_FIELDS
+        }
+        expected_comparable = {
+            k: v for k, v in expected_telemetry.items() if k not in _TELEMETRY_ENV_DEPENDENT_FIELDS
+        }
+        assert fresh_comparable == expected_comparable, (
+            "freshly computed honest-mode telemetry does not match the "
+            f"checked-in reference at {_EXPECTED_TELEMETRY_ARTIFACT} (ignoring "
+            f"environment-dependent fields {_TELEMETRY_ENV_DEPENDENT_FIELDS}). "
+            "Either the honest-mode trajectory genuinely changed (update the "
+            "reference as a deliberate, reviewed change) or this run is "
+            f"non-reproducible. Fresh output written to {fresh_telemetry_path} "
+            "for diffing."
+        )
 
         status = classify_ensemble_support(ACTUAL_N_SEEDS)
         assert (
@@ -371,13 +522,20 @@ def test_karr_ftsz_polymerization_honest_mode_windowed_canary(rng_seed: int) -> 
             f"N={REQUIRED_N_SEEDS} required by PROCESS_CATALOG.yaml for a gated "
             "verdict. Structural invariants (monomer conservation, substrate "
             "stoichiometry, finite/nonnegative/integer state) held for all "
-            f"{n_ticks} honest-mode ticks; no trace_hint reached next_update. "
-            f"Discrepancy telemetry (seed 0): enzymes L1 mean="
+            f"{n_ticks} honest-mode ticks (unconditionally, incl. zero-delta "
+            "ticks); no trace_hint reached next_update. Clause coverage: GTP "
+            f"coupling nonzero on {gtp_coupling_ticks}/{n_ticks} ticks, GDP "
+            f"coupling nonzero on {gdp_coupling_ticks}/{n_ticks}, PI/H2O/H "
+            f"hydrolysis-shortfall nonzero on {hydrolysis_shortfall_ticks}/{n_ticks} "
+            "(unexercised branch -- checked as zero every tick, not validated "
+            "nonzero). Discrepancy telemetry (seed 0, trace sha256="
+            f"{actual_trace_sha256[:12]}...): enzymes L1 mean="
             f"{telemetry['summary']['enzymes_l1_mean']:.4f} max="
             f"{telemetry['summary']['enzymes_l1_max']:.4f} "
             f"zero-ticks={telemetry['summary']['enzymes_l1_zero_ticks']}/{n_ticks}; "
             f"substrates L1 mean={telemetry['summary']['substrates_l1_mean']:.4f} "
             f"max={telemetry['summary']['substrates_l1_max']:.4f} "
             f"zero-ticks={telemetry['summary']['substrates_l1_zero_ticks']}/{n_ticks}. "
-            f"Full per-tick telemetry: {_TELEMETRY_ARTIFACT}."
+            f"Full per-tick telemetry (fresh, tmp): {fresh_telemetry_path}; "
+            f"reference: {_EXPECTED_TELEMETRY_ARTIFACT}."
         )
