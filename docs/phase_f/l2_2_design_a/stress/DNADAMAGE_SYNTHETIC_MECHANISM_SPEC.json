@@ -1,0 +1,84 @@
+{
+  "schema_version": "1.0.0",
+  "process": "DNADamage",
+  "classification": "CONDITION_GATED_CANDIDATE",
+  "gating": "NON_GATING",
+  "condition_type": "SYNTHETIC_MECHANISM_CONDITION",
+  "biological_dose_claim": false,
+  "phenotype_claim": false,
+  "unblocks_l2_5": false,
+  "execution_status": "PREREGISTERED_NOT_EXECUTED",
+  "primary_source": {
+    "path": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m",
+    "sha256": "b5441dc0840b05f4e6f4d38710c80b9eb03ac799435f99e7a2a95699ee48b7ec",
+    "rate_formula_lines": [474, 487],
+    "sampling_lines": [535, 568]
+  },
+  "fixture": {
+    "path": "data/karr_fixtures/per_process/DNADamage_flat.mat",
+    "sha256": "3ed7510504b3f9b246cb5f843983ad214d419698832db612f1366a9b67c404c1"
+  },
+  "support_design": {
+    "n_seeds": 50,
+    "m_ticks": 20,
+    "existing_pooled_support_floor": 50,
+    "support_multiplier": 2,
+    "target_expected_pooled_events": 100,
+    "dose_formula": "target_expected_pooled_events / (n_seeds * m_ticks * sum_per_unit_radiation_rate)",
+    "dose_units": "synthetic radiation-substrate units; statistical mechanism-test scale, not a biological dose"
+  },
+  "conditions": {
+    "no_stimulus": {
+      "UVB_radiation": 0.0,
+      "gamma_radiation": 0.0,
+      "expected_role": "quiescent negative control; never a zero-equals-zero PASS"
+    },
+    "uvb_mechanism": {
+      "radiation_wid": "UVB_radiation",
+      "radiation_gated_reaction_count": 11,
+      "sum_per_unit_radiation_rate_per_tick": 0.013379543476309085,
+      "injected_radiation_value": 7.474096569667582,
+      "expected_events_per_seed_window": 2.0,
+      "target_chromosome_field": "intrastrandCrossLinks"
+    },
+    "gamma_mechanism": {
+      "radiation_wid": "gamma_radiation",
+      "radiation_gated_reaction_count": 12,
+      "sum_per_unit_radiation_rate_per_tick": 0.10654022010427577,
+      "injected_radiation_value": 0.9386126657343624,
+      "expected_events_per_seed_window": 2.0,
+      "target_chromosome_field": "damagedBases"
+    }
+  },
+  "rng_schedule": {
+    "process_rng_seed_ids": "2000..2049",
+    "chromosome_rng_seed_ids": "3000..3049",
+    "pairing": "process seed 2000+i pairs with chromosome seed 3000+i for i=0..49",
+    "streams_are_distinct": true,
+    "global_rng_forbidden": true
+  },
+  "evidence_contract": {
+    "control_verdict": "NOT_APPLICABLE",
+    "stimulus_support_failure": "INSUFFICIENT_KARR_SUPPORT",
+    "stimulus_metrics": [
+      "per-kind incidence",
+      "pooled first-fire timing",
+      "field-specific sparse nnz magnitude/topology",
+      "small-molecule substrate writeback"
+    ],
+    "numeric_threshold_source": "Karr-only seed-cluster null; no fixed tolerance",
+    "exact_invariants": [
+      "DNADamage never removes existing damage",
+      "only the source-mapped damage field is written for each radiation condition",
+      "all sparse positions/strands are in bounds",
+      "no DNARepair output is consumed"
+    ]
+  },
+  "anti_laundering": {
+    "prediction_inputs": ["conditioned states_before", "static fixture", "this frozen spec"],
+    "states_after_access": "compare phase only",
+    "sut_access": false,
+    "trace_hint_access": false,
+    "stored_verdict_authority": false
+  }
+}
