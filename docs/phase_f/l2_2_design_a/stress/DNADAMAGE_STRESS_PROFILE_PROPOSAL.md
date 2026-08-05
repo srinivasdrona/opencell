@@ -1,6 +1,33 @@
 # DNADamage synthetic mechanism-fidelity profile
 
-**Status:** preregistered, not executed, non-gating.
+**Status:** preregistered predictions frozen (2026-06-14); OC-side canary
+EXECUTED 2026-08-05 (N=50 seeds x M=20 ticks); still non-gating.
+
+## Execution update (2026-08-05)
+
+The canary described below has been executed:
+`scripts/dna_damage_mechanism_canary.py` -> checked-in result
+`DNADAMAGE_MECHANISM_CANARY_RESULT.json`. It runs the real
+`KarrDNADamageProcess.next_update` across the frozen 50x20 design under
+`no_stimulus`, `uvb_mechanism`, and `gamma_mechanism`, and compares OC's
+empirical firing/payload against the Karr-analytical (fixture-derived, never
+fabricated) expectation for every `primary_projection` channel in the
+catalog. Result: both stimulus conditions verdict `MECHANISM_MISMATCH` (OC's
+lumped per-kind Poisson rate model diverges sharply from Karr's per-reaction
+`calcExpectedReactionRates` formula -- UVB overfires ~988/1000 pooled ticks
+vs an analytical expectation of ~97; gamma underfires 0/1000 vs an
+analytical expectation of ~96), `no_stimulus` stays `NOT_APPLICABLE` (never
+scored as a pass), and `hollidayJunctions` is reported
+`NOT_GATEABLE_MISSING_OC_CHANNEL` (OC's `ports_schema()` does not wire it).
+This is real, non-trivial, source-backed OC-side evidence -- it is still
+explicitly **not** a claim about the biological L2.2 event-class gate, which
+remains `MISSING_EVIDENCE` in `evidence_index.json` because no
+empirically-executed Karr trace exists under any stimulus condition (no
+MATLAB toolchain available in this environment). See the result JSON's
+`biological_l2_2_event_class_gate` for the precise required extraction
+contract. `PROCESS_CATALOG.yaml`'s DNADamage `notes`/`blocked_on` fields have
+been corrected accordingly (the prior "L2.2 GREEN. blocked_on cleared." note
+was a zero==zero quiescent-replay artifact and has been retracted).
 
 The local Karr source contains no nonzero calibrated UVB or gamma condition:
 the concrete condition fixtures set radiation to zero. Therefore this profile
