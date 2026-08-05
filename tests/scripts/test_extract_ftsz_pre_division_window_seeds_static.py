@@ -200,6 +200,91 @@ def test_force_seeds_parameter_deletes_and_reextracts_named_seeds_only():
     assert "if ~force_this" in source
 
 
+def _assert_post_delete_existence_recheck_bails_out(source: str) -> None:
+    """Final-fix static assertion: `delete(out_path)` must be immediately
+    followed (still inside the `force_this` branch, before anything else
+    runs) by an `if exist(out_path, 'file')` recheck whose body records the
+    seed as failed and `continue`s -- it must NEVER fall through to
+    mkdir/extract_per_process_traces_v2, and must never print a DONE line.
+    `delete()` can silently fail to remove a file (permissions, another
+    process holding it open, a read-only attribute, a network-share quirk)
+    without MATLAB raising an error, so `exist()` is the only reliable
+    post-condition check; skipping it would let a stale invalid/duplicate
+    file masquerade as a successful re-extraction.
+
+    Raises ``AssertionError`` (via a plain ``assert``) if the check is
+    missing, malformed, or the recheck's failure path is not reached
+    before the extraction call further down the function -- this is a
+    shared helper so the exact same logic can be run against both the real
+    driver source (must pass) and a deliberately mutated copy with the
+    recheck stripped out (must fail -- see
+    test_post_delete_existence_recheck_removal_is_caught_by_this_test
+    below)."""
+    delete_idx = source.index("delete(out_path);")
+    tail = source[delete_idx + len("delete(out_path);") :]
+    recheck_match = re.search(
+        r"\A\s*\n\s*if exist\(out_path, 'file'\)\n(.*?)\n\s*end\n",
+        tail,
+        re.DOTALL,
+    )
+    assert recheck_match is not None, (
+        "delete(out_path) must be immediately followed by an "
+        "if exist(out_path, 'file') post-delete recheck block"
+    )
+    recheck_body = recheck_match.group(1)
+    assert "failed_seeds{end + 1} = sprintf(" in recheck_body, (
+        "post-delete recheck must record the seed as failed"
+    )
+    assert "continue;" in recheck_body, "post-delete recheck must bail out via continue"
+    assert "extract_per_process_traces_v2(" not in recheck_body, (
+        "post-delete recheck must never itself call the extractor"
+    )
+    assert "[ftsz-extract] seed %d DONE:" not in recheck_body, (
+        "post-delete recheck must never print the DONE success line"
+    )
+
+    # The recheck's guard block must sit strictly BEFORE the try/extract
+    # call further down the function -- i.e. a still-present file after
+    # delete() can never reach the extraction call at all.
+    try_idx = source.index("try\n        extract_per_process_traces_v2(")
+    recheck_end_idx = delete_idx + len("delete(out_path);") + recheck_match.end()
+    assert recheck_end_idx < try_idx, (
+        "post-delete recheck must precede the extraction call in the function body"
+    )
+
+
+def test_post_delete_existence_recheck_present_and_bails_out_before_extraction():
+    """Positive check: the real driver source has the post-delete
+    existence recheck, and it is structurally wired to bail out before any
+    extraction call."""
+    _assert_post_delete_existence_recheck_bails_out(_read_source())
+
+
+def test_post_delete_existence_recheck_removal_is_caught_by_this_test():
+    """Adversarial proof (not just a description): take the real source,
+    mechanically strip out exactly the post-delete recheck block (the
+    smallest edit that reverts to the pre-fix behavior of trusting
+    delete() unconditionally), and prove
+    _assert_post_delete_existence_recheck_bails_out raises on the mutated
+    copy. This demonstrates the regression this fix closes is actually
+    detectable by this test suite, not merely asserted in prose."""
+    source = _read_source()
+    mutated, n_subs = re.subn(
+        r"(delete\(out_path\);\n)\s*if exist\(out_path, 'file'\)\n.*?\n\s*end\n",
+        r"\1",
+        source,
+        count=1,
+        flags=re.DOTALL,
+    )
+    assert n_subs == 1, (
+        "mutation did not remove the post-delete recheck block -- test setup is broken"
+    )
+    assert mutated != source
+
+    with pytest.raises(AssertionError):
+        _assert_post_delete_existence_recheck_bails_out(mutated)
+
+
 def _octave_executable() -> str | None:
     for name in ("octave-cli", "octave"):
         path = shutil.which(name)

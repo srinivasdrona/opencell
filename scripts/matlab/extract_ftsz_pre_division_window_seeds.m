@@ -42,7 +42,13 @@ function extract_ftsz_pre_division_window_seeds(seed_start, seed_end, force_seed
 % plain skip-if-exists path alone would leave such a file on disk forever,
 % since "the file exists" would keep matching true. See that module's
 % resumable_extraction_command(), which emits this argument populated with
-% exactly its own audit's invalid_seeds list.
+% exactly its own audit's invalid_seeds list. After delete(out_path), the
+% path's existence is explicitly re-checked (delete() can silently fail to
+% remove a file -- permissions, another process holding it open, a
+% read-only attribute -- without MATLAB raising an error): if the file is
+% still present, that seed is recorded as failed and skipped (never
+% extracted into, never a DONE) so a stale invalid/duplicate file can never
+% masquerade as a successful re-extraction.
 %
 % No MATLAB/Octave process is invoked by importing or reading this file --
 % it only runs when explicitly executed via `run(...)` / `-batch`.
@@ -100,6 +106,20 @@ for s = seed_start:seed_end
         end
         fprintf('[ftsz-extract] seed %d: force_seeds requested, deleting existing output and re-extracting: %s\n', s, out_path);
         delete(out_path);
+        if exist(out_path, 'file')
+            % delete() can silently fail to remove a file (permissions,
+            % another process holding it open, a read-only attribute, an
+            % NFS/network-share quirk, etc.) without MATLAB raising an
+            % error -- exist() is the only reliable post-condition check.
+            % Extracting into a path whose stale bad content was never
+            % actually removed would silently keep the invalid/duplicate
+            % file in place while looking like a successful re-extraction.
+            % This must be treated as a real failure of this seed (counted
+            % toward the aggregate nonzero exit below), never a DONE.
+            fprintf('[ftsz-extract] seed %d FAILED: force_seeds delete did not remove existing output: %s\n', s, out_path);
+            failed_seeds{end + 1} = sprintf('seed %d: force_seeds delete did not remove existing output: %s', s, out_path); %#ok<AGROW>
+            continue;
+        end
     end
 
     if ~exist(out_root, 'dir')
