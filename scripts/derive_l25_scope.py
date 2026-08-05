@@ -154,15 +154,23 @@ def _l2_1_verdict(name: str) -> tuple[str, dict[str, Any]]:
     return str(result["verdict"]), result
 
 
-def _l2_2_verdicts() -> dict[str, tuple[str, dict[str, Any]]]:
+def _l2_2_verdicts(catalog_path: Path) -> dict[str, tuple[str, dict[str, Any]]]:
     """Fresh, live rebuild of the L2.2 mechanical evidence index (all in-scope rows).
 
     Never reads the tracked evidence_index.json -- calls the same builder the
     project's own audit tooling uses to detect STALE_VS_TREE, so a code
     change since the last committed snapshot downgrades the verdict here too.
+
+    ``catalog_path`` must be the single resolved path from
+    ``pairmat._load_catalog(_REPO)`` (see ``build_payload``) -- passed
+    through explicitly rather than letting ``build_evidence_index`` fall
+    back to its own default (``schema.CATALOG_PATH``, itself sourced from
+    ``scripts/l22_extraction/derive_scope.py``'s independently hardcoded
+    constant) so the L2.2 in-scope set is derived from the exact same file
+    as the raw catalog rows and pair schemas, never a second candidate.
     """
     try:
-        payload = l22gen.build_evidence_index()
+        payload = l22gen.build_evidence_index(catalog_path=catalog_path)
     except Exception as exc:  # pragma: no cover - environment/data dependency
         return {"__error__": ("ERROR", {"error": f"build_evidence_index failed: {exc}"})}
     out: dict[str, tuple[str, dict[str, Any]]] = {}
@@ -171,8 +179,10 @@ def _l2_2_verdicts() -> dict[str, tuple[str, dict[str, Any]]]:
     return out
 
 
-def derive_process_verdicts(catalog_rows: dict[str, dict[str, Any]]) -> list[ProcessVerdict]:
-    l2_2_rows = _l2_2_verdicts()
+def derive_process_verdicts(
+    catalog_rows: dict[str, dict[str, Any]], catalog_path: Path
+) -> list[ProcessVerdict]:
+    l2_2_rows = _l2_2_verdicts(catalog_path)
     l2_2_error = l2_2_rows.pop("__error__", None)
 
     verdicts: list[ProcessVerdict] = []
@@ -407,18 +417,20 @@ def _pair_record_to_dict(pair: pairmat.PairRecord) -> dict[str, Any]:
 
 
 def build_payload() -> tuple[dict[str, Any], bool]:
-    # Single authoritative catalog-path resolution, reused for both this
-    # script's own raw-row parse and the pair/schema machinery below.
+    # Single authoritative catalog-path resolution, reused for this script's
+    # own raw-row parse, the pair/schema machinery below, AND the L2.2
+    # in-scope verdict rebuild (`derive_process_verdicts` threads it through
+    # to `_l2_2_verdicts` -> `l22gen.build_evidence_index(catalog_path=...)`).
     # `derive_l25_pair_matrix._load_catalog`'s candidate-list precedence
     # (docs/phase_f/PROCESS_CATALOG.yaml, then
     # docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml) is resolved exactly
     # once here -- if a future docs/phase_f/PROCESS_CATALOG.yaml is ever
-    # created, both derivations will agree on which file "the catalog" is
-    # instead of a second, independently hardcoded path silently reading a
-    # different file and creating split authority.
+    # created, all three inputs (raw rows, pair schemas, L2.2 verdicts) will
+    # agree on which file "the catalog" is instead of one or more of them
+    # silently falling back to a different, independently hardcoded path.
     catalog_lookup, catalog_path, _fallback_mode = pairmat._load_catalog(_REPO)
     catalog_rows = _load_raw_catalog_rows(catalog_path)
-    verdicts = derive_process_verdicts(catalog_rows)
+    verdicts = derive_process_verdicts(catalog_rows, catalog_path)
     eligibility = {v.name: v for v in verdicts}
 
     # Reuse the structural WID-overlap machinery unmodified, but override its

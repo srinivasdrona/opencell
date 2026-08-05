@@ -392,11 +392,22 @@ def test_catalog_path_resolution_is_shared_not_independently_hardcoded(monkeypat
     docs/phase_f/PROCESS_CATALOG.yaml starts taking precedence over
     docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml. Patching
     `pairmat._load_catalog`'s resolved path -- the single authoritative
-    resolution point -- must be sufficient to redirect BOTH the schema
-    loader and build_payload's own raw-row parse. If derive_l25_scope.py
-    still had a second, independently hardcoded path constant, this
-    monkeypatch would have no effect on the raw-row parse and this test
-    would fail."""
+    resolution point -- must be sufficient to redirect all three inputs
+    that ultimately depend on "which file is the catalog":
+      1. the pair schemas' `l2_2_passed`/`oracle_type` fields, which consume
+         the `catalog_lookup` dict `_load_catalog` returns directly (no
+         separate re-read possible, by construction of a single call site);
+      2. build_payload's own raw-row parse (`_load_raw_catalog_rows`); and
+      3. the L2.2 in-scope verdict rebuild
+         (`l22gen.build_evidence_index(catalog_path=...)`), which -- before
+         this fix -- fell back to its own default `schema.CATALOG_PATH`
+         (sourced from a THIRD independently hardcoded constant in
+         `scripts/l22_extraction/derive_scope.py`) instead of the path
+         `pairmat._load_catalog` resolved.
+    If derive_l25_scope.py still had a second, independently hardcoded path
+    constant for (2), or failed to thread the resolved path into (3), this
+    monkeypatch would have no effect on that input and the corresponding
+    assertion below would fail."""
     real_catalog_path = scope._REPO / "docs" / "phase_f" / "l2_2_design_a" / "PROCESS_CATALOG.yaml"
     fake_catalog = tmp_path / "PROCESS_CATALOG.yaml"
     fake_catalog.write_text(real_catalog_path.read_text(encoding="utf-8"), encoding="utf-8")
@@ -409,20 +420,36 @@ def test_catalog_path_resolution_is_shared_not_independently_hardcoded(monkeypat
 
     monkeypatch.setattr(pairmat, "_load_catalog", _fake_load_catalog)
 
-    seen_paths: list[Path] = []
+    seen_raw_row_paths: list[Path] = []
     real_load_rows = scope._load_raw_catalog_rows
 
     def _spy_load_rows(path):
-        seen_paths.append(path)
+        seen_raw_row_paths.append(path)
         return real_load_rows(path)
 
     monkeypatch.setattr(scope, "_load_raw_catalog_rows", _spy_load_rows)
 
+    seen_l22_catalog_paths: list[Path] = []
+    real_build_evidence_index = scope.l22gen.build_evidence_index
+
+    def _spy_build_evidence_index(**kwargs):
+        seen_l22_catalog_paths.append(kwargs.get("catalog_path"))
+        return real_build_evidence_index(**kwargs)
+
+    monkeypatch.setattr(scope.l22gen, "build_evidence_index", _spy_build_evidence_index)
+
     scope.build_payload()
 
-    assert seen_paths == [fake_catalog], (
+    assert seen_raw_row_paths == [fake_catalog], (
         "build_payload must resolve the catalog path exactly once via "
         "derive_l25_pair_matrix._load_catalog and reuse it for its own "
         "raw-row parse -- a second, independently hardcoded path would "
         "silently ignore this monkeypatch and keep reading the real file"
+    )
+    assert seen_l22_catalog_paths == [fake_catalog], (
+        "build_payload must thread the same resolved catalog path into the "
+        "L2.2 evidence rebuild (l22gen.build_evidence_index) -- falling "
+        "back to build_evidence_index's own default (schema.CATALOG_PATH) "
+        "would silently derive the L2.2 in-scope verdict set from a "
+        "different file than the raw rows and pair schemas"
     )
