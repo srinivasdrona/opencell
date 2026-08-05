@@ -61,39 +61,6 @@ function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, se
 % Output file:
 %   data/m1_sources/karr_native/<output_subdir>/<Process>_<n_ticks>ticks.mat
 % containing states_before, states_after, metadata (-v7.3).
-%
-% pool_before / requirements / allocations (build-step-0,
-%   docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md D1/A05/A08): for
-%   window_contract '' or 'fixed' ONLY (the 'anchor' path below,
-%   capture_anchor_window, is NOT extended -- out of scope for this change,
-%   see docs/phase_f note at its call site), each output additionally
-%   carries three top-level structs, each with a single '.substrates' cell
-%   array (same per-tick indexing and same target-process substrate WID
-%   ordering as states_before.substrates / states_after.substrates):
-%     pool_before.substrates{t}  : Karr's GLOBAL pre-allocation metabolite
-%                                  pool (mets.counts, evolveState.m:24)
-%                                  restricted to this process's own
-%                                  substrateMetaboliteGlobalCompartmentIndexs,
-%                                  captured BEFORE any process in the tick's
-%                                  scheduler loop consumes it.
-%     requirements.substrates{t} : this process's own row of Karr's
-%                                  `requirements` matrix (evolveState.m:
-%                                  31-35), i.e. its pre-allocation demand.
-%     allocations.substrates{t}  : this process's own row of Karr's
-%                                  `allocations` matrix (evolveState.m:37),
-%                                  i.e. what it was actually granted --
-%                                  identical to states_before.substrates by
-%                                  construction (states_before already
-%                                  reflects post-allocation substrates,
-%                                  A05), kept for an independent oracle
-%                                  cross-check rather than assumed.
-% These three groups are the ONLY sanctioned source for the L2.5
-% composition-boundary allocator oracle
-% (tests/vivarium/l2_replay_common.py::load_composition_allocator_oracle).
-% states_before/states_after MUST NEVER be reused to fabricate a pool or a
-% request at a composition boundary (A05) -- that was Finding #20's root
-% cause; this extension is precisely what makes the honest, non-fabricated
-% path possible.
 
 if nargin < 4 || isempty(seed)
     seed = uint32(0);
@@ -195,14 +162,6 @@ for i = 1:numel(process_names)
     window_anchor_tick = [];
     onset_tick = [];
 
-    % pool_before/requirements/allocations (build-step-0, see module header
-    % and docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md D1): only populated on
-    % the 'fixed'/'' path below. The 'anchor' path (capture_anchor_window)
-    % is NOT extended here -- out of scope for this change; the '_100ticks'
-    % composition traces this feeds (tests/vivarium/l2_replay_common.py)
-    % are all fixed-window extractions, never anchor-window ones.
-    have_allocator_oracle = false;
-
     if strcmp(window_contract, 'anchor')
         % Division-anchored window: no caller burn-in -- the window start is
         % discovered from the real Cytokinesis/CellGeometry completion
@@ -216,33 +175,22 @@ for i = 1:numel(process_names)
             states_before.(snapshot_props{p}) = cell(n_ticks, 1);
             states_after.(snapshot_props{p}) = cell(n_ticks, 1);
         end
-        pool_before = struct();
-        requirements = struct();
-        allocations = struct();
-        pool_before.substrates = cell(n_ticks, 1);
-        requirements.substrates = cell(n_ticks, 1);
-        allocations.substrates = cell(n_ticks, 1);
-        have_allocator_oracle = true;
 
         % Optional event-window burn-in: advance the whole simulation tick_offset
         % ticks without snapshotting, so the subsequent n_ticks capture a window
         % where an otherwise-quiescent-at-birth process is active.
         for bt = 1:tick_offset
-            [sim, ~, ~, ~, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props);
+            [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props);
         end
 
         for t = 1:n_ticks
             try
-                [sim, before_tick, after_tick, pool_before_t, requirements_t, allocations_t] = ...
-                    evolve_state_with_tap(sim, target_idx, snapshot_props);
+                [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props);
                 for p = 1:numel(snapshot_props)
                     prop = snapshot_props{p};
                     states_before.(prop){t, 1} = before_tick.(prop);
                     states_after.(prop){t, 1} = after_tick.(prop);
                 end
-                pool_before.substrates{t, 1} = pool_before_t;
-                requirements.substrates{t, 1} = requirements_t;
-                allocations.substrates{t, 1} = allocations_t;
             catch err
                 ok = false;
                 error_message = sprintf('tick %d failed:\n%s', t, getReport(err, 'extended', 'hyperlinks', 'off'));
@@ -346,12 +294,7 @@ for i = 1:numel(process_names)
         end
     end
 
-    if have_allocator_oracle
-        save(out_path, 'states_before', 'states_after', 'metadata', ...
-            'pool_before', 'requirements', 'allocations', '-v7.3');
-    else
-        save(out_path, 'states_before', 'states_after', 'metadata', '-v7.3');
-    end
+    save(out_path, 'states_before', 'states_after', 'metadata', '-v7.3');
     fprintf('[trace_v2] saved: %s\n', out_path);
 end
 
@@ -411,8 +354,7 @@ if strcmp(window_contract, 'anchor') && strcmp(anchor_opts.signal_kind, 'diamete
 end
 end
 
-function [sim, before_tick, after_tick, pool_before_target, requirements_target, allocations_target] = ...
-    evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts)
+function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts)
 % evolve_state_with_tap  One tick of the allocator-correct scheduler loop,
 % tapping the target process's properties immediately before/after its own
 % evolveState() call.
@@ -423,37 +365,15 @@ function [sim, before_tick, after_tick, pool_before_target, requirements_target,
 % passed) so before_tick/after_tick carry the real per-tick numeric event-
 % observable projection (see merge_event_observables) that
 % capture_anchor_window uses to detect onset/completion.
-%
-% pool_before_target/requirements_target/allocations_target (build-step-0,
-% docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md D1): the target process's own
-% row of, respectively, the TRUE global pre-allocation pool (mets.counts
-% captured before ANY process in this tick's scheduler loop consumes it,
-% evolveState.m:24), the `requirements` matrix (evolveState.m:31-35), and
-% the `allocations` matrix (evolveState.m:37) -- restricted to the target
-% process's own substrateMetaboliteGlobalCompartmentIndexs, same ordering
-% as before_tick.substrates/after_tick.substrates. Callers that only need
-% before_tick/after_tick (the burn-in loop, capture_anchor_window) may
-% simply not capture these extra outputs -- MATLAB does not require every
-% declared output to be requested by the caller.
 if nargin < 4
     anchor_opts = [];
 end
 before_tick = empty_snapshot_struct(snapshot_props);
 after_tick = empty_snapshot_struct(snapshot_props);
-pool_before_target = [];
-requirements_target = [];
-allocations_target = [];
 
 time = sim.state_time;
 mets = sim.state_metabolite;
 stim = sim.state_stimulus;
-% Snapshot the GLOBAL pre-allocation pool now, before this tick's scheduler
-% loop below mutates mets.counts process-by-process (evolveState.m:24).
-% MATLAB numeric arrays are value types, so this copy is immune to the
-% later in-place mets.counts(gidx) = ... mutations -- unlike states_before
-% (A05: already each process's OWN post-allocation share), this is the
-% true, undivided pool.
-pool_before_full = mets.counts;
 
 time.values = time.values + sim.stepSizeSec;
 stim.values = edu.stanford.covert.cell.sim.constant.Condition.applyConditions( ...
@@ -521,9 +441,6 @@ for i = 1:nProcesses
         if ~isempty(anchor_opts)
             before_tick = merge_event_observables(before_tick, mod, anchor_opts);
         end
-        pool_before_target = pool_before_full(gidx);
-        requirements_target = reshape(requirements(gidx, proc_idx), size(gidx));
-        allocations_target = allocation;
     end
 
     mod.evolveState();
