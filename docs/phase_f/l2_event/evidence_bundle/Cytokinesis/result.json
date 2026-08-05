@@ -1,5 +1,5 @@
 {
-  "adapter_id": "cytokinesis.karr_only_smoke.v1",
+  "adapter_id": "cytokinesis.pinched_diameter_completion.v1",
   "channels": [],
   "event_timing_model": "single_firing",
   "mode": "structural_smoke",
