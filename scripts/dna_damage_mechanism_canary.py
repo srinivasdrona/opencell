@@ -37,12 +37,14 @@ CLI:
 from __future__ import annotations
 
 import argparse
+import functools
 import json
 import sys
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
+import h5py
 import numpy as np
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -58,7 +60,7 @@ from _dna_damage_stress_common import (  # noqa: E402
     load_spec,
     per_field_expected_counts,
 )
-from l2_replay_common import build_state_template  # noqa: E402
+from l2_replay_common import build_state_template, cell_vector  # noqa: E402
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess  # noqa: E402
@@ -80,12 +82,17 @@ PRIMARY_PROJECTION_FIELDS = (
 )
 
 # Karr-recognized damage-associated chromosome fields DNADamage's own
-# ports_schema() does NOT wire (see karr_dna_damage.py `_SPARSE_DAMAGE_FIELDS`
-# -- 6 of the 11 ChromosomeStore.FIELDS, missing `hollidayJunctions`). This is
-# a structural OC-side gap, independent of any Karr-trace availability
+# ports_schema() does NOT wire. Derived dynamically (never hardcoded) from
+# a live KarrDNADamageProcess().ports_schema()["chromosome"] key set, so
+# this stays correct automatically if the production port is ever extended
+# -- a structural OC-side gap, independent of any Karr-trace availability
 # question; the canary must report it explicitly rather than silently
 # treating an absent port as a zero-event field.
-_STRUCTURALLY_ABSENT_OC_FIELDS = frozenset({"hollidayJunctions"})
+@functools.lru_cache(maxsize=1)
+def _structurally_absent_oc_fields() -> frozenset[str]:
+    schema = KarrDNADamageProcess({}).ports_schema()["chromosome"]
+    return frozenset(PRIMARY_PROJECTION_FIELDS) - set(schema.keys())
+
 
 CONDITIONS = ("no_stimulus", "uvb_mechanism", "gamma_mechanism")
 
@@ -102,11 +109,8 @@ _PROCESS_SEED_BASE = 2000
 
 
 def _available_sparse_fields() -> tuple[str, ...]:
-    return tuple(
-        field
-        for field in PRIMARY_PROJECTION_FIELDS
-        if field not in _STRUCTURALLY_ABSENT_OC_FIELDS
-    )
+    absent = _structurally_absent_oc_fields()
+    return tuple(field for field in PRIMARY_PROJECTION_FIELDS if field not in absent)
 
 
 def _apply_chromosome_update(state: dict[str, Any], update: dict[str, Any], process: KarrDNADamageProcess) -> None:
@@ -148,19 +152,38 @@ def run_condition(
     chromosome port actually exposes, plus an explicit
     ``structurally_absent_fields`` list for the ones it does not (never
     silently coerced to a measured zero).
+
+    Per the frozen spec's own ``support_design.fire_predicate`` and each
+    stimulus condition's ``allowed_chromosome_fields``, the "did this tick
+    fire" determination (and hence ``pooled_fire_ticks``/
+    ``damage_event_present``) is restricted to only that condition's
+    allowed field(s) -- e.g. ``uvb_mechanism`` fires only on
+    ``intrastrandCrossLinks``. Any nonzero delta observed on a field
+    OUTSIDE the condition's allowed set (e.g. the spontaneous, unradiated
+    ``depurination``/``abasicSites`` pathway firing during a UVB
+    condition) is measured and reported but explicitly excluded from the
+    fire count, and flagged under ``out_of_scope_nonzero_fields`` as a
+    potential exact-invariant violation rather than silently pooled in.
+    ``no_stimulus`` has no ``allowed_chromosome_fields`` in the spec (it is
+    a negative control, not a mechanism condition) -- all available fields
+    are checked for firing there, since the point is to prove nothing
+    fires anywhere.
     """
     spec = load_spec()
     condition = spec["conditions"][condition_name]
     radiation_wid = condition.get("radiation_wid")
     dose = float(condition.get("injected_radiation_value", 0.0)) if radiation_wid else 0.0
+    available_fields = _available_sparse_fields()
+    allowed_fields = tuple(condition.get("allowed_chromosome_fields", available_fields))
+    out_of_scope_fields = tuple(f for f in available_fields if f not in allowed_fields)
 
     pooled_fire_ticks = 0
-    per_field_delta_nnz: dict[str, int] = {field: 0 for field in _available_sparse_fields()}
+    per_field_delta_nnz: dict[str, int] = {field: 0 for field in available_fields}
     per_seed_event_counts: list[int] = []
+    out_of_scope_nonzero_fields: set[str] = set()
 
     for i in range(n_seeds):
         process = KarrDNADamageProcess({"rng_seed": _PROCESS_SEED_BASE + i})
-        available_fields = _available_sparse_fields()
         state = build_state_template(process)
         if radiation_wid:
             state.setdefault("substrates", {})[radiation_wid] = dose
@@ -176,8 +199,10 @@ def run_condition(
                 delta = after[field] - before[field]
                 assert delta >= 0, f"field {field} unexpectedly lost damage (delta={delta})"
                 per_field_delta_nnz[field] += delta
-                if delta > 0:
+                if delta > 0 and field in allowed_fields:
                     tick_fired = True
+                if delta > 0 and field in out_of_scope_fields:
+                    out_of_scope_nonzero_fields.add(field)
             if tick_fired:
                 pooled_fire_ticks += 1
                 seed_events += 1
@@ -190,9 +215,11 @@ def run_condition(
         "n_seeds": n_seeds,
         "m_ticks": m_ticks,
         "n_trials": n_seeds * m_ticks,
+        "allowed_chromosome_fields": sorted(allowed_fields),
+        "out_of_scope_nonzero_fields": sorted(out_of_scope_nonzero_fields),
         "pooled_fire_ticks": pooled_fire_ticks,
         "per_field_delta_nnz": per_field_delta_nnz,
-        "structurally_absent_fields": sorted(_STRUCTURALLY_ABSENT_OC_FIELDS),
+        "structurally_absent_fields": sorted(_structurally_absent_oc_fields()),
         "per_seed_event_counts": per_seed_event_counts,
         "damage_event_present": pooled_fire_ticks > 0,
     }
@@ -266,7 +293,7 @@ def evaluate_mechanism_distance(result: dict[str, Any], *, n_seeds: int, m_ticks
             "karr_analytical_expected_count": expected,
             "applicable": expected > 0.0 or observed > 0,
         }
-    for field in sorted(_STRUCTURALLY_ABSENT_OC_FIELDS):
+    for field in sorted(_structurally_absent_oc_fields()):
         payload_component[field] = {
             "oc_observed_delta_nnz": None,
             "karr_analytical_expected_count": float(field_expected.get(field, 0.0)),
@@ -289,28 +316,127 @@ def evaluate_mechanism_distance(result: dict[str, Any], *, n_seeds: int, m_ticks
     return out
 
 
+# Karr per-process trace subdirectory names/patterns to scan for a DNADamage
+# trace. `per_process_traces`/`per_process_traces_v2` each hold a single
+# quiescent 100-tick trace; `per_process_traces_v2_event_s*` would hold
+# per-seed stimulus-conditioned traces IF the extractor supported injecting
+# a radiation override (it does not, at time of writing -- see
+# `extractor_gap` below); `dnadamage_fullcycle` holds one long (32400-tick)
+# full-cell-cycle trace. All three known, non-glob directories DO exist on
+# disk; each must be individually classified (never treated as absent
+# merely because it is not "found", and never treated as sufficient merely
+# because it exists -- see `_classify_trace`).
+_TRACE_DIR_PATTERNS: tuple[str, ...] = (
+    "per_process_traces",
+    "per_process_traces_v2",
+    "per_process_traces_v2_event_s*",
+    "dnadamage_fullcycle",
+)
+
+# Statistics/classification ratio, NOT a biology parameter (same category as
+# the Wilson z-score constant above): a trace's observed radiation-substrate
+# value must reach at least this fraction of the frozen spec's own
+# injected_radiation_value for that condition before the trace is
+# classified "stimulus_conditioned" rather than "vacuous_no_stimulus"
+# ambient noise. The known ambient baseline in every DNADamage trace on
+# disk today is UVB_radiation ~= 0.0 and gamma_radiation ~= 2.8e-11 -- 9-12
+# orders of magnitude below 1% of any frozen dose (~0.94-7.47) -- so the
+# exact fraction chosen here does not affect the classification of any
+# currently known trace; it only needs to separate "genuinely ambient" from
+# "an actually injected dose," which any value across a wide range would do
+# identically for the traces that exist today.
+_STIMULUS_CLASSIFICATION_MIN_DOSE_FRACTION = 0.01
+
+
+@functools.lru_cache(maxsize=1)
+def _radiation_substrate_indices() -> dict[str, int]:
+    process = KarrDNADamageProcess({})
+    return {name: process.substrate_wids.index(name) for name in ("UVB_radiation", "gamma_radiation")}
+
+
+def _trace_max_radiation_values(path: Path, *, max_samples: int = 200) -> dict[str, float]:
+    """Scan a v7.3/HDF5 Karr per-process trace (h5py; scipy.io.loadmat
+    cannot parse the v7.3 format these traces are stored in) and return the
+    max observed UVB_radiation/gamma_radiation substrate value across up to
+    ``max_samples`` evenly spaced ticks in ``states_before/substrates``.
+    """
+    indices = _radiation_substrate_indices()
+    maxima = {name: 0.0 for name in indices}
+    with h5py.File(path, "r") as handle:
+        ds = handle["states_before/substrates"]
+        n_ticks = max(ds.shape)
+        step = max(1, n_ticks // max_samples)
+        for tick in range(0, n_ticks, step):
+            vec = cell_vector(handle, "states_before", "substrates", tick)
+            for name, idx in indices.items():
+                if idx < vec.size:
+                    maxima[name] = max(maxima[name], float(vec[idx]))
+    return maxima
+
+
+def _classify_trace(path: Path, spec: dict[str, Any]) -> dict[str, Any]:
+    """Classify one on-disk DNADamage trace as vacuous/ambient or
+    stimulus-conditioned, using the frozen spec's own injected doses as the
+    (non-fabricated) classification reference -- never a hand-typed
+    biology number."""
+    try:
+        maxima = _trace_max_radiation_values(path)
+    except Exception as exc:  # unreadable/corrupt/unexpected-shape trace
+        return {"path": str(path), "classification": "UNREADABLE", "error": str(exc)}
+
+    uvb_dose = float(spec["conditions"]["uvb_mechanism"]["injected_radiation_value"])
+    gamma_dose = float(spec["conditions"]["gamma_mechanism"]["injected_radiation_value"])
+    uvb_max = maxima.get("UVB_radiation", 0.0)
+    gamma_max = maxima.get("gamma_radiation", 0.0)
+    is_stimulus_conditioned = (
+        uvb_max >= uvb_dose * _STIMULUS_CLASSIFICATION_MIN_DOSE_FRACTION
+        or gamma_max >= gamma_dose * _STIMULUS_CLASSIFICATION_MIN_DOSE_FRACTION
+    )
+    return {
+        "path": str(path),
+        "observed_max_UVB_radiation": uvb_max,
+        "observed_max_gamma_radiation": gamma_max,
+        "spec_uvb_mechanism_injected_dose": uvb_dose,
+        "spec_gamma_mechanism_injected_dose": gamma_dose,
+        "classification": "stimulus_conditioned" if is_stimulus_conditioned else "vacuous_no_stimulus",
+    }
+
+
 def probe_biological_gate_blocker() -> dict[str, Any]:
-    """Check whether a REAL, empirically-executed Karr trace exists under
-    any stimulus condition for DNADamage. If not (the case at the time of
-    writing -- no MATLAB toolchain is available in this environment and no
-    such trace has ever been extracted), return a precise, non-fabricated
-    extraction contract rather than silently passing or skipping the
-    biological L2.2 event-class gate.
+    """Check whether a REAL, empirically-executed, NONTRIVIAL (stimulus-
+    conditioned) Karr trace exists for DNADamage. Every known trace
+    directory (`per_process_traces`, `per_process_traces_v2`,
+    `per_process_traces_v2_event_s*`, `dnadamage_fullcycle`) is scanned and
+    every found trace is individually classified via
+    `_classify_trace` -- traces that exist but carry only ambient
+    radiation-substrate values are reported as `vacuous_no_stimulus`, not
+    silently omitted or conflated with "no trace exists at all". Only if
+    zero NONTRIVIAL stimulus-conditioned traces are found does the
+    biological L2.2 event-class gate return BLOCKED, together with a
+    precise, non-fabricated extraction contract for what a stimulus-
+    conditioned trace would require.
     """
     candidate_roots = [
         REPO_ROOT / "data" / "m1_sources" / "karr_native",
         Path("/mnt/e/opencell/data/m1_sources/karr_native"),
         Path("E:/opencell/data/m1_sources/karr_native"),
     ]
-    found: list[str] = []
+    found_paths: set[Path] = set()
     for root in candidate_roots:
         if not root.is_dir():
             continue
-        for candidate_dir in sorted(root.glob("per_process_traces_v2_event_s*")):
-            for mat in candidate_dir.glob("DNADamage_*ticks.mat"):
-                found.append(str(mat))
+        for pattern in _TRACE_DIR_PATTERNS:
+            for candidate_dir in sorted(root.glob(pattern)):
+                if not candidate_dir.is_dir():
+                    continue
+                for mat in candidate_dir.glob("DNADamage_*ticks.mat"):
+                    found_paths.add(mat.resolve())
 
     spec = load_spec()
+    classified_traces = [_classify_trace(path, spec) for path in sorted(found_paths, key=str)]
+    nontrivial_traces = [c for c in classified_traces if c.get("classification") == "stimulus_conditioned"]
+    vacuous_traces = [c for c in classified_traces if c.get("classification") == "vacuous_no_stimulus"]
+
     uvb = spec["conditions"]["uvb_mechanism"]
     gamma = spec["conditions"]["gamma_mechanism"]
     required_extraction_contract = {
@@ -339,15 +465,56 @@ def probe_biological_gate_blocker() -> dict[str, Any]:
         ),
         "oc_port_gap": (
             "Independently of any extraction, KarrDNADamageProcess.ports_schema() does "
-            f"not wire {sorted(_STRUCTURALLY_ABSENT_OC_FIELDS)!r} -- no delta on that "
+            f"not wire {sorted(_structurally_absent_oc_fields())!r} -- no delta on that "
             "field can ever be observed on the OC side until that port is extended."
         ),
     }
 
+    verdict = "NEEDS_MANUAL_REVIEW" if nontrivial_traces else "BLOCKED_MISSING_NONTRIVIAL_KARR_STIMULUS_TRACE"
+
     return {
-        "real_stimulus_karr_traces_found": found,
-        "biological_gate_verdict": "BLOCKED_MISSING_KARR_STIMULUS_TRACE" if not found else "NEEDS_MANUAL_REVIEW",
+        "karr_traces_found": classified_traces,
+        "karr_traces_found_count": len(classified_traces),
+        "vacuous_no_stimulus_traces_found_count": len(vacuous_traces),
+        "nontrivial_stimulus_conditioned_traces_found_count": len(nontrivial_traces),
+        "real_stimulus_karr_traces_found": [c["path"] for c in nontrivial_traces],
+        "blocker_precision_note": (
+            f"{len(classified_traces)} DNADamage trace(s) exist on disk and were scanned "
+            f"({len(vacuous_traces)} classified vacuous_no_stimulus, "
+            f"{len(nontrivial_traces)} classified stimulus_conditioned). The blocker is "
+            "'no NONTRIVIAL stimulus-conditioned Karr trace', not 'no files exist'."
+        ),
+        "biological_gate_verdict": verdict,
         "required_extraction_contract": required_extraction_contract,
+    }
+
+
+def _kind_rates_provenance() -> dict[str, Any]:
+    """Fix #1 companion (Rule 8): record the effective kind_rates_per_s a
+    freshly constructed KarrDNADamageProcess uses, plus a live, runtime
+    check that no per-tick oracle trace-rate override path exists on the
+    production process at all (not merely "was not used this run").
+    Expected: no such path/attribute -- `trace_rate_override_mechanism_exists`
+    must be False.
+    """
+    process = KarrDNADamageProcess({})
+    return {
+        "kind_rates_per_s": dict(process.kind_rates_per_s),
+        "trace_rate_override_mechanism_exists": (
+            hasattr(process, "_load_trace_kind_rates")
+            or "trace_path" in KarrDNADamageProcess.defaults
+            or "use_trace_rates_if_available" in KarrDNADamageProcess.defaults
+            or hasattr(process, "trace_kind_rates_per_s")
+            or hasattr(process, "used_trace_rates")
+        ),
+        "trace_rate_override_path_used": False,
+        "note": (
+            "KarrDNADamageProcess no longer supports any per-tick oracle trace-rate "
+            "override (Rule 8 fix, 2026-08-05 remediation). kind_rates_per_s above is "
+            "always exactly the canonical default or an explicit caller-supplied "
+            "override; it is never derived from DNADamage_100ticks.mat or any other "
+            "per-tick trace."
+        ),
     }
 
 
@@ -371,6 +538,17 @@ def run_canary(*, n_seeds: int, m_ticks: int) -> dict[str, Any]:
         "m_ticks": m_ticks,
         "spec_ref": "docs/phase_f/l2_2_design_a/stress/DNADAMAGE_SYNTHETIC_MECHANISM_SPEC.json",
         "spec_execution_status_at_run": spec["execution_status"],
+        "spec_execution_status_note": (
+            "execution_status describes whether a real Karr/MATLAB stimulus-conditioned "
+            "run has ever been executed (it has not -- PREREGISTERED_NOT_EXECUTED remains "
+            "true and is not changed by this canary). It does NOT describe whether this "
+            "OC-side mechanism canary itself has run; see "
+            "oc_mechanism_canary_execution_status for that, which is a distinct, "
+            "explicitly non-biological, non-L2.2-evidence status."
+        ),
+        "oc_mechanism_canary_execution_status": "EXECUTED",
+        "oc_mechanism_canary_is_biological_l2_2_evidence": False,
+        "kind_rates_provenance": _kind_rates_provenance(),
         "conditions": results,
         "mechanism_distance": distances,
         "biological_l2_2_event_class_gate": blocker,

@@ -150,13 +150,41 @@ def test_mechanism_distance_never_silently_defaults_to_pass(small_run: dict) -> 
 def test_biological_gate_blocker_is_precise_and_not_a_pass(small_run: dict) -> None:
     """The actual biological L2.2 event-class gate (evidence_index.json's
     DNADamage/latest_event row) must never be reported PASS/GREEN by this
-    canary: no real empirical Karr stimulus trace exists, so the verdict
-    must be a precise BLOCKED status naming the exact required inputs,
-    sourced from the frozen spec (never hand-duplicated numbers)."""
+    canary: no NONTRIVIAL (stimulus-conditioned) empirical Karr trace
+    exists, so the verdict must be a precise BLOCKED status naming the
+    exact required inputs, sourced from the frozen spec (never
+    hand-duplicated numbers). The blocker must be precise about *why*:
+    traces DO exist on disk (per_process_traces, per_process_traces_v2,
+    dnadamage_fullcycle all carry a DNADamage trace) but every one of them
+    is classified vacuous/ambient, not stimulus-conditioned -- the
+    canary must never conflate "found but vacuous" with "no files found
+    at all"."""
     gate = small_run["biological_l2_2_event_class_gate"]
     assert gate["biological_gate_verdict"] != "PASS"
-    assert gate["biological_gate_verdict"] == "BLOCKED_MISSING_KARR_STIMULUS_TRACE"
+    assert gate["biological_gate_verdict"] == "BLOCKED_MISSING_NONTRIVIAL_KARR_STIMULUS_TRACE"
     assert gate["real_stimulus_karr_traces_found"] == []
+
+    # Precision requirement: the blocker must be "no nontrivial stimulus
+    # trace", not "no files exist" -- assert traces were actually found and
+    # explicitly classified as vacuous, not merely absent, whenever the
+    # known Karr trace data is reachable in this environment.
+    karr_native_root = Path("/mnt/e/opencell/data/m1_sources/karr_native")
+    if not karr_native_root.is_dir():
+        karr_native_root = Path("E:/opencell/data/m1_sources/karr_native")
+    if karr_native_root.is_dir():
+        assert gate["karr_traces_found_count"] >= 1
+        assert gate["nontrivial_stimulus_conditioned_traces_found_count"] == 0
+        assert gate["vacuous_no_stimulus_traces_found_count"] == gate["karr_traces_found_count"]
+        for trace in gate["karr_traces_found"]:
+            assert trace["classification"] == "vacuous_no_stimulus"
+            # Ambient radiation baseline must be far below the frozen spec's
+            # injected dose -- never itself misclassified as a real stimulus.
+            assert trace["observed_max_UVB_radiation"] < trace["spec_uvb_mechanism_injected_dose"]
+            assert trace["observed_max_gamma_radiation"] < trace["spec_gamma_mechanism_injected_dose"]
+        found_dir_names = {Path(t["path"]).parent.name for t in gate["karr_traces_found"]}
+        assert "per_process_traces" in found_dir_names
+        assert "per_process_traces_v2" in found_dir_names
+        assert "dnadamage_fullcycle" in found_dir_names
 
     spec = load_spec()
     contract = gate["required_extraction_contract"]
@@ -203,13 +231,20 @@ def test_production_dna_damage_module_has_no_oracle_trace_reads() -> None:
     read any per-tick oracle trace file (``*_100ticks*``, ``*_20ticks*``,
     ``per_process_traces_v2_event*``) from its own code path. It may read
     the tracked canonical fixture (model parameters, not per-tick oracle
-    observations) -- that is explicitly allowed."""
+    observations) -- that is explicitly allowed. Regression for the Rule 8
+    violation flagged in review: a `_load_trace_kind_rates`/`trace_path`
+    per-tick oracle-rate override previously existed (silently inert only
+    because scipy.io.loadmat cannot parse the v7.3 trace format) and has
+    since been removed entirely."""
     source = (REPO_ROOT / "opencell" / "vivarium" / "karr_dna_damage.py").read_text(encoding="utf-8")
     forbidden_patterns = [
         r"per_process_traces_v2_event",
+        r"_100ticks",
         r"_20ticks",
         r"states_before\[",
         r"states_after\[",
+        r"trace_path",
+        r"_load_trace_kind_rates",
     ]
     for pattern in forbidden_patterns:
         assert not re.search(pattern, source), f"production module matches forbidden oracle pattern: {pattern}"
@@ -226,3 +261,82 @@ def test_checked_in_full_scale_result_matches_catalog_n_and_m() -> None:
     assert payload["m_ticks"] == 20
     assert payload["biological_l2_2_event_class_gate"]["biological_gate_verdict"] != "PASS"
     assert payload["mechanism_distance"]["no_stimulus"]["verdict"] == "NOT_APPLICABLE"
+
+
+def test_structurally_absent_fields_are_schema_derived_not_hardcoded() -> None:
+    """The set of catalog primary_projection fields DNADamage's own
+    ports_schema() does not wire must be computed live from a real
+    KarrDNADamageProcess().ports_schema()["chromosome"] key set, not a
+    hardcoded frozenset -- so it stays correct automatically if the
+    production port is ever extended or narrowed."""
+    from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
+
+    live_schema_keys = set(KarrDNADamageProcess({}).ports_schema()["chromosome"].keys())
+    expected_absent = frozenset(canary.PRIMARY_PROJECTION_FIELDS) - live_schema_keys
+
+    canary._structurally_absent_oc_fields.cache_clear()
+    computed_absent = canary._structurally_absent_oc_fields()
+    assert computed_absent == expected_absent
+    # Ground-truth sanity: today this is exactly hollidayJunctions.
+    assert computed_absent == frozenset({"hollidayJunctions"})
+    assert "_STRUCTURALLY_ABSENT_OC_FIELDS" not in dir(canary)
+
+
+def test_fire_predicate_is_restricted_to_each_conditions_allowed_fields() -> None:
+    """Per the frozen spec's own `support_design.fire_predicate` and each
+    condition's `allowed_chromosome_fields`, a tick only counts as "fired"
+    for a stimulus condition if the net nnz increase is on that condition's
+    allowed field(s) -- e.g. uvb_mechanism may only fire on
+    intrastrandCrossLinks, gamma_mechanism only on damagedBases/
+    strandBreaks. A field outside the allowed set (e.g. the unradiated,
+    always-on depurination pathway writing abasicSites) must never be
+    pooled into that condition's fire count."""
+    spec = load_spec()
+    for condition_name in ("uvb_mechanism", "gamma_mechanism"):
+        result = canary.run_condition(condition_name, n_seeds=10, m_ticks=20)
+        allowed = set(spec["conditions"][condition_name]["allowed_chromosome_fields"])
+        assert set(result["allowed_chromosome_fields"]) == allowed
+        # Every reported out-of-scope-nonzero field (if any) must be
+        # outside the allowed set -- proves the restriction is real, not
+        # a no-op relabeling of the same field set.
+        for field in result["out_of_scope_nonzero_fields"]:
+            assert field not in allowed
+            assert field in result["per_field_delta_nnz"]
+
+    # no_stimulus has no allowed_chromosome_fields in the frozen spec (it
+    # is a negative control, not a mechanism condition) -- all available
+    # fields must be checked there, since the point is proving nothing
+    # fires anywhere.
+    no_stim_result = canary.run_condition("no_stimulus", n_seeds=10, m_ticks=20)
+    assert set(no_stim_result["allowed_chromosome_fields"]) == set(canary._available_sparse_fields())
+    assert "allowed_chromosome_fields" not in spec["conditions"]["no_stimulus"]
+
+
+def test_kind_rates_provenance_reports_no_trace_override(small_run: dict) -> None:
+    """Fix #1 companion: the canary result must record the process's
+    effective kind_rates_per_s and explicitly confirm no per-tick
+    oracle-trace-rate override mechanism exists on the production process
+    (expected: False/no such path)."""
+    provenance = small_run["kind_rates_provenance"]
+    assert provenance["trace_rate_override_mechanism_exists"] is False
+    assert provenance["trace_rate_override_path_used"] is False
+    from opencell.vivarium.karr_dna_damage import _DEFAULT_KIND_RATES_PER_S
+
+    assert provenance["kind_rates_per_s"] == _DEFAULT_KIND_RATES_PER_S
+
+
+def test_execution_status_is_reconciled_without_biological_claim(small_run: dict) -> None:
+    """Fix #5: the frozen spec's `execution_status` (which describes
+    whether a real Karr/MATLAB stimulus-conditioned run has ever executed
+    -- it has not) must not be conflated with whether this OC-side
+    mechanism canary has executed (it has, repeatedly). The result JSON
+    must carry an explicit, separate status for the OC-canary execution
+    that is clearly labeled non-biological, non-L2.2 evidence."""
+    spec = load_spec()
+    assert small_run["spec_execution_status_at_run"] == spec["execution_status"] == "PREREGISTERED_NOT_EXECUTED"
+    assert small_run["oc_mechanism_canary_execution_status"] == "EXECUTED"
+    assert small_run["oc_mechanism_canary_is_biological_l2_2_evidence"] is False
+    assert "spec_execution_status_note" in small_run
+    assert "does not" in small_run["spec_execution_status_note"] or "NOT describe" in small_run[
+        "spec_execution_status_note"
+    ]

@@ -1,7 +1,36 @@
 {
   "biological_dose_claim": false,
   "biological_l2_2_event_class_gate": {
-    "biological_gate_verdict": "BLOCKED_MISSING_KARR_STIMULUS_TRACE",
+    "biological_gate_verdict": "BLOCKED_MISSING_NONTRIVIAL_KARR_STIMULUS_TRACE",
+    "blocker_precision_note": "3 DNADamage trace(s) exist on disk and were scanned (3 classified vacuous_no_stimulus, 0 classified stimulus_conditioned). The blocker is 'no NONTRIVIAL stimulus-conditioned Karr trace', not 'no files exist'.",
+    "karr_traces_found": [
+      {
+        "classification": "vacuous_no_stimulus",
+        "observed_max_UVB_radiation": 0.0,
+        "observed_max_gamma_radiation": 2.799999988811752e-11,
+        "path": "/mnt/e/opencell/data/m1_sources/karr_native/dnadamage_fullcycle/DNADamage_32400ticks.mat",
+        "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+        "spec_uvb_mechanism_injected_dose": 7.474096569667582
+      },
+      {
+        "classification": "vacuous_no_stimulus",
+        "observed_max_UVB_radiation": 0.0,
+        "observed_max_gamma_radiation": 2.799999988811752e-11,
+        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces/DNADamage_100ticks.mat",
+        "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+        "spec_uvb_mechanism_injected_dose": 7.474096569667582
+      },
+      {
+        "classification": "vacuous_no_stimulus",
+        "observed_max_UVB_radiation": 0.0,
+        "observed_max_gamma_radiation": 2.799999988811752e-11,
+        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/DNADamage_100ticks.mat",
+        "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+        "spec_uvb_mechanism_injected_dose": 7.474096569667582
+      }
+    ],
+    "karr_traces_found_count": 3,
+    "nontrivial_stimulus_conditioned_traces_found_count": 0,
     "real_stimulus_karr_traces_found": [],
     "required_extraction_contract": {
       "expected_output_path_pattern": "data/m1_sources/karr_native/per_process_traces_v2_event_s{seed:03d}/DNADamage_20ticks.mat",
@@ -28,17 +57,23 @@
         "process_rng_seed_ids": "2000..2049",
         "streams_are_distinct": true
       }
-    }
+    },
+    "vacuous_no_stimulus_traces_found_count": 3
   },
   "condition_type": "SYNTHETIC_MECHANISM_CONDITION",
   "conditions": {
     "gamma_mechanism": {
+      "allowed_chromosome_fields": [
+        "damagedBases",
+        "strandBreaks"
+      ],
       "condition": "gamma_mechanism",
       "damage_event_present": false,
       "injected_radiation_value": 0.9386126657343624,
       "m_ticks": 20,
       "n_seeds": 50,
       "n_trials": 1000,
+      "out_of_scope_nonzero_fields": [],
       "per_field_delta_nnz": {
         "abasicSites": 0,
         "damagedBases": 0,
@@ -106,12 +141,21 @@
       ]
     },
     "no_stimulus": {
+      "allowed_chromosome_fields": [
+        "abasicSites",
+        "damagedBases",
+        "damagedSugarPhosphates",
+        "gapSites",
+        "intrastrandCrossLinks",
+        "strandBreaks"
+      ],
       "condition": "no_stimulus",
       "damage_event_present": false,
       "injected_radiation_value": 0.0,
       "m_ticks": 20,
       "n_seeds": 50,
       "n_trials": 1000,
+      "out_of_scope_nonzero_fields": [],
       "per_field_delta_nnz": {
         "abasicSites": 0,
         "damagedBases": 0,
@@ -179,12 +223,16 @@
       ]
     },
     "uvb_mechanism": {
+      "allowed_chromosome_fields": [
+        "intrastrandCrossLinks"
+      ],
       "condition": "uvb_mechanism",
       "damage_event_present": true,
       "injected_radiation_value": 7.474096569667582,
       "m_ticks": 20,
       "n_seeds": 50,
       "n_trials": 1000,
+      "out_of_scope_nonzero_fields": [],
       "per_field_delta_nnz": {
         "abasicSites": 0,
         "damagedBases": 0,
@@ -253,7 +301,18 @@
     }
   },
   "gating": "NON_GATING",
-  "generated_at": "2026-08-05T08:17:40.783071+00:00",
+  "generated_at": "2026-08-05T12:08:44.389953+00:00",
+  "kind_rates_provenance": {
+    "kind_rates_per_s": {
+      "alkylation": 0.0,
+      "depurination": 8.4e-05,
+      "oxidative": 1.7e-11,
+      "uv_like": 0.6
+    },
+    "note": "KarrDNADamageProcess no longer supports any per-tick oracle trace-rate override (Rule 8 fix, 2026-08-05 remediation). kind_rates_per_s above is always exactly the canonical default or an explicit caller-supplied override; it is never derived from DNADamage_100ticks.mat or any other per-tick trace.",
+    "trace_rate_override_mechanism_exists": false,
+    "trace_rate_override_path_used": false
+  },
   "m_ticks": 20,
   "mechanism_distance": {
     "gamma_mechanism": {
@@ -369,9 +428,12 @@
     }
   },
   "n_seeds": 50,
+  "oc_mechanism_canary_execution_status": "EXECUTED",
+  "oc_mechanism_canary_is_biological_l2_2_evidence": false,
   "phenotype_claim": false,
   "process": "DNADamage",
   "schema_version": "1.0.0",
   "spec_execution_status_at_run": "PREREGISTERED_NOT_EXECUTED",
+  "spec_execution_status_note": "execution_status describes whether a real Karr/MATLAB stimulus-conditioned run has ever been executed (it has not -- PREREGISTERED_NOT_EXECUTED remains true and is not changed by this canary). It does NOT describe whether this OC-side mechanism canary itself has run; see oc_mechanism_canary_execution_status for that, which is a distinct, explicitly non-biological, non-L2.2-evidence status.",
   "spec_ref": "docs/phase_f/l2_2_design_a/stress/DNADAMAGE_SYNTHETIC_MECHANISM_SPEC.json"
 }

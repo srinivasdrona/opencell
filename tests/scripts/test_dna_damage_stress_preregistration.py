@@ -29,6 +29,24 @@ def test_spec_is_explicitly_non_biological_and_non_gating():
     assert spec["execution_status"] == "PREREGISTERED_NOT_EXECUTED"
 
 
+def test_mechanism_canary_status_is_reconciled_and_scoped_separately_from_execution_status():
+    """Fix #5 (Day-32/33 remediation): execution_status describes only Karr/
+    MATLAB execution (still, correctly, PREREGISTERED_NOT_EXECUTED) and must
+    not be overloaded to also mean "the OC-side mechanism canary has never
+    run" -- it has, repeatedly. mechanism_canary_status is a distinct,
+    additive field (no frozen prediction value above it was changed) that
+    reconciles this without ever claiming biological L2.2 evidence."""
+    spec = _load_spec()
+    assert spec["execution_status"] == "PREREGISTERED_NOT_EXECUTED"
+    status = spec["mechanism_canary_status"]
+    assert status["status"] == "EXECUTED"
+    assert status["is_biological_l2_2_evidence"] is False
+    assert status["is_karr_matlab_execution"] is False
+    assert status["executor"] == "scripts/dna_damage_mechanism_canary.py"
+    assert "execution_status_scope_note" in spec
+
+
+
 def test_fixture_hash_and_mechanical_doses_rederive_exactly():
     spec = _load_spec()
     assert _sha256(FIXTURE_PATH) == spec["fixture"]["sha256"]
