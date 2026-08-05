@@ -40,6 +40,7 @@ from l2_replay_common import (
     project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
+    refresh_allocator_views_composition,
     resolve_trace_path,
 )
 from l2_replay_common import (
@@ -1399,6 +1400,58 @@ def run_integrated_replay_v2(
                     for obs in ctx.spec.observables
                 }
 
+            # Composition-boundary allocation (process closure before pair
+            # execution): collect every composed process's own Karr-oracle
+            # substrate need for this tick and run the REAL allocator
+            # arithmetic once, simultaneously, before any process in the
+            # composition executes. Replaces the idealized per-process
+            # `refresh_allocator_views` grant (see docs/phase_f/
+            # INTEGRITY_AUDIT_PRE_L25.md Finding #20) with genuine
+            # contention via KarrAllocationStep. Uses the tick-start pool
+            # (before_vectors are per-process oracle observations, computed
+            # above for every process before any of them has executed this
+            # tick), consistent with evolveState.m's precompute-then-execute
+            # semantics (docs/phase_f/L2_5_HARNESS_DESIGN.md Baseline fact 5).
+            composition_requests = {
+                contexts[name].process.name: dict(
+                    zip(
+                        contexts[name].wids_by_observable["substrates"],
+                        before_vectors[name]["substrates"].tolist(),
+                        strict=False,
+                    )
+                )
+                for name in ordered
+                if "substrates" in contexts[name].spec.observables
+            }
+
+            # `shared_state` is a fresh per-tick template (`_build_shared_state_template`
+            # seeds every port from each process's own port-schema default, e.g. 0.0
+            # for "substrates" -- see docs/phase_f/L2_5_HARNESS_DESIGN.md). Only
+            # `ordered[0]`'s "substrates" slice gets overlaid before the per-process
+            # loop runs; every other composed process's own substrate WIDs are still
+            # at that 0.0 default at this point. Reading the pool here without first
+            # overlaying every process's own tick-start substrate view would starve
+            # not-yet-overlaid WIDs to an artificial zero pool, corrupting the
+            # allocator's `counts_available` for WIDs owned by later processes even
+            # when they are NOT contended with any other composed process. Overlay
+            # every process's own "substrates" observable first so the pool the
+            # allocator sees is the true, complete tick-start pool.
+            for name in ordered:
+                ctx = contexts[name]
+                if "substrates" in ctx.spec.observables:
+                    overlay_observable_into_state(
+                        process=ctx.process,
+                        state=shared_state,
+                        observable="substrates",
+                        vector=before_vectors[name]["substrates"],
+                        wids=ctx.wids_by_observable["substrates"],
+                        store_path_override=ctx.spec.store_path_override,
+                    )
+            refresh_allocator_views_composition(
+                request_vectors=composition_requests,
+                state=shared_state,
+            )
+
             for name in ordered:
                 ctx = contexts[name]
                 owned_observables = _owned_observables(ctx.spec)
@@ -1489,7 +1542,6 @@ def run_integrated_replay_v2(
                 # counterfactual contract in _build_counterfactual_step_vector.
                 _inject_hidden_read_surface(ctx=ctx, state=shared_state, tick=tick)
 
-                refresh_allocator_views(ctx.process, shared_state)
                 update = ctx.process.next_update(1.0, shared_state)
                 _apply_update(shared_state, update)
                 for obs, master_before in owned_master_before_step.items():

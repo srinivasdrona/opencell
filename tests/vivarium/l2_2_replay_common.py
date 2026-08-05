@@ -38,6 +38,7 @@ from l2_replay_common import (
     project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
+    refresh_allocator_views_composition,
     resolve_trace_path,
 )
 from l2_replay_common import (
@@ -309,6 +310,50 @@ def run_integrated_replay(*, under_test_processes: list[str], rng_seed: int) -> 
                     wids=src.wids_by_observable[obs],
                 )
 
+            # Composition-boundary allocation (process closure before pair
+            # execution): collect every composed process's own Karr-oracle
+            # substrate need for this tick and run the REAL allocator
+            # arithmetic once, simultaneously, before any process in the
+            # pair executes. Replaces the idealized per-process
+            # `refresh_allocator_views` grant (see docs/phase_f/
+            # INTEGRITY_AUDIT_PRE_L25.md Finding #20) with genuine
+            # contention via KarrAllocationStep.
+            composition_requests = {
+                contexts[name].process.name: dict(
+                    zip(
+                        contexts[name].wids_by_observable["substrates"],
+                        before_vectors[name]["substrates"].tolist(),
+                        strict=False,
+                    )
+                )
+                for name in ordered
+                if "substrates" in contexts[name].spec.observables
+            }
+            # The `source_by_observable` pass above overlays "substrates" using
+            # only ONE representative owner process's own WID subset (the
+            # first `ordered` entry that declares the observable). Any other
+            # composed process's OWN exclusive substrate WIDs are therefore
+            # still at the shared_state template default (0.0) at this point.
+            # Feeding that partially-initialized pool into the allocator would
+            # starve those not-yet-overlaid WIDs to zero -- overlay every
+            # composed process's own "substrates" slice here so the allocator
+            # sees the true, complete tick-start pool for every WID, not just
+            # the single owner's subset.
+            for name in ordered:
+                ctx = contexts[name]
+                if "substrates" in ctx.spec.observables:
+                    overlay_observable_into_state(
+                        process=ctx.process,
+                        state=shared_state,
+                        observable="substrates",
+                        vector=before_vectors[name]["substrates"],
+                        wids=ctx.wids_by_observable["substrates"],
+                    )
+            refresh_allocator_views_composition(
+                request_vectors=composition_requests,
+                state=shared_state,
+            )
+
             for name in ordered:
                 ctx = contexts[name]
                 for obs in ctx.spec.trace_after_hint_observables:
@@ -319,7 +364,6 @@ def run_integrated_replay(*, under_test_processes: list[str], rng_seed: int) -> 
                         wids=ctx.wids_by_observable[obs],
                     )
 
-                refresh_allocator_views(ctx.process, shared_state)
                 update = ctx.process.next_update(1.0, shared_state)
                 _apply_update(shared_state, update)
                 upstream = [p for p in ordered if ordered.index(p) < ordered.index(name)]

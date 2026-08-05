@@ -14,6 +14,8 @@ import h5py
 import numpy as np
 import pytest
 
+from opencell.vivarium.karr_allocation_step import KarrAllocationStep
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _TRACE_BASE_REL = Path("data/m1_sources/karr_native/per_process_traces_v2")
 _FIXTURE_BASE_REL = Path("data/karr_fixtures/per_process")
@@ -776,6 +778,113 @@ def refresh_allocator_views(process: Any, state: dict[str, Any]) -> None:
             for wid in list(proc_alloc.keys()):
                 if wid in substrates:
                     proc_alloc[wid] = float(max(0.0, float(substrates[wid])))
+
+
+def compute_composition_allocations(
+    *,
+    requests_by_process: dict[str, dict[str, float]],
+    pool: dict[str, float],
+) -> dict[str, dict[str, float]]:
+    """Run Karr's real proportional-allocation arithmetic across every
+    process contending for a shared substrate pool at the composition
+    boundary.
+
+    Wraps ``KarrAllocationStep.next_update`` (Karr's uncapped proportional
+    fair share, floored --
+    ``@Simulation/evolveState.m:24-37``) so simultaneous requests genuinely
+    contend, instead of each process independently receiving the full
+    observed pool. That independent-grant behavior is what
+    ``refresh_allocator_views`` performs above, which is CORRECT ONLY for
+    isolated single-process replay (Karr's ``states_before`` there is
+    already that one process's post-allocation share -- see
+    docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md, A05/D1) and WRONG at a
+    multi-process composition boundary, where it grants every composed
+    process the same shared pool value independently
+    (docs/phase_f/INTEGRITY_AUDIT_PRE_L25.md Finding #20).
+
+    ``requests_by_process`` and the returned allocation dict are both keyed
+    by the *runtime* process name (``process.name``, e.g.
+    ``"karr_translation_v3"``) -- the same identity space
+    ``KarrAllocationStep`` itself normalizes via ``KEY_ALIASES``. A process
+    with an all-zero (or empty) request dict is still enrolled as a
+    consumer so it is reported with an explicit 0.0 allocation rather than
+    silently dropped (mirrors the zero-demand-row guard in D3 of
+    L2_0A_ALLOCATOR_INPUT_GATE.md).
+    """
+    if not isinstance(pool, dict) or not requests_by_process:
+        return {}
+    consumer_processes = [
+        (proc_name, sorted(reqs.keys())) for proc_name, reqs in requests_by_process.items()
+    ]
+    all_wids = sorted({wid for reqs in requests_by_process.values() for wid in reqs} | set(pool))
+    if not all_wids:
+        return {}
+    step = KarrAllocationStep({"consumer_processes": consumer_processes, "substrate_wids": all_wids})
+    update = step.next_update(1.0, {"substrates": dict(pool), "requests": requests_by_process})
+    return update.get("substrates_allocated", {})
+
+
+def apply_composition_allocations(
+    state: dict[str, Any],
+    allocations: dict[str, dict[str, float]],
+) -> None:
+    """Write ``compute_composition_allocations`` output into
+    ``state['substrates_allocated'][<process.name>]``.
+
+    Only WIDs already declared by the process's own ``ports_schema`` (i.e.
+    already present as keys in its ``substrates_allocated`` sub-dict) are
+    overwritten. This never introduces keys a process's schema does not
+    expect -- the same guard shape as ``refresh_allocator_views`` above.
+    """
+    allocated_root = state.get("substrates_allocated", {})
+    if not isinstance(allocated_root, dict):
+        return
+    for proc_name, proc_alloc in allocations.items():
+        target = allocated_root.get(proc_name)
+        if not isinstance(target, dict):
+            continue
+        for wid, value in proc_alloc.items():
+            if wid in target:
+                target[wid] = float(value)
+
+
+def refresh_allocator_views_composition(
+    *,
+    request_vectors: dict[str, dict[str, float]],
+    state: dict[str, Any],
+) -> None:
+    """Composition-boundary allocator refresh: real contention, not a grant.
+
+    Call this exactly ONCE per tick, for every process in the composition
+    SIMULTANEOUSLY, before ANY of those processes' ``next_update`` has run
+    this tick -- matching Karr's real per-tick semantics documented in
+    ``docs/phase_f/L2_5_HARNESS_DESIGN.md`` Baseline fact 5
+    (``@Simulation/evolveState.m``: allocation is precomputed for all
+    processes, then each process executes with its fixed allocation).
+
+    ``request_vectors`` must be keyed by ``process.name`` (the same key
+    ``KarrAllocationStep`` and ``refresh_allocator_views`` use), typically
+    built from each process's own Karr-oracle ``states_before`` substrate
+    observation for the tick -- i.e. the same value
+    ``refresh_allocator_views`` used to grant unconditionally, now submitted
+    as a REQUEST that must contend with every other composed process's
+    request against the shared ``state['substrates']`` pool.
+
+    Calling this per-process, interleaved with execution (the previous
+    ``refresh_allocator_views`` call site inside the composition tick
+    loop), would reintroduce the idealized-grant bug one level down:
+    processes later in composition order would see an already-partially-
+    consumed pool credited to them in full, rather than contending for the
+    tick-start pool alongside every other composed process. If the calling
+    harness cannot collect every process's request before any process
+    consumes, that is a phase-ordering bug in the harness, not something
+    this function can paper over.
+    """
+    pool = state.get("substrates", {})
+    if not isinstance(pool, dict) or not request_vectors:
+        return
+    allocations = compute_composition_allocations(requests_by_process=request_vectors, pool=pool)
+    apply_composition_allocations(state, allocations)
 
 
 def _iter_numeric_leaf_dicts(node: Any, prefix: str = "") -> list[tuple[str, dict[str, float]]]:
