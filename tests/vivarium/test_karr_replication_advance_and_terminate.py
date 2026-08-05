@@ -50,12 +50,17 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
+import numpy as np
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
+_TEST_DIR = Path(__file__).resolve().parent
+if str(_TEST_DIR) not in sys.path:
+    sys.path.insert(0, str(_TEST_DIR))
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet
 from opencell.vivarium.karr_replication import KarrReplicationProcess, ReplicationTopologyError
@@ -81,6 +86,51 @@ def _ssb_positions(process: KarrReplicationProcess, lo: int, hi: int) -> list[in
     bound` for any window this file constructs."""
     step = process.ssb8mer_footprint_bp + process.ssb_complex_spacing_bp
     return list(range(lo, hi, step))
+
+
+class _StubDwellRNG:
+    """Deterministic stand-in for `self._rng`, isolating `_rna_polymerase_
+    collision_stall`'s single `.poisson(...)` dwell draw for the
+    Finding-4 composition test below (`test_advance_stalls_not_crashes_
+    on_transcription_produced_rna_polymerase_occupancy`) -- a real,
+    independently-seeded draw would only sometimes land "dwelling" for
+    any given cell (Replication.m:862's genuine per-tick stochasticity),
+    so this pins the outcome to isolate whether the MECHANISM itself
+    works, not RNG-stream-position luck. `.random()` delegates to a fixed
+    value for Finding 3's unrelated same-tick-vs-deferred-termination coin
+    (irrelevant to this test's own assertions either way)."""
+
+    def __init__(self, dwelling: tuple[bool, bool, bool, bool]) -> None:
+        self._dwelling = dwelling
+
+    def random(self, *args: object, **kwargs: object) -> float:
+        return 0.9
+
+    def poisson(self, *args: object, **kwargs: object) -> Any:
+        return np.array([0 if dwell else 1 for dwell in self._dwelling])
+
+
+def _build_replication_tick_state(*, tick: int) -> tuple[KarrReplicationProcess, dict[str, Any]]:
+    """Loads a REAL, fully fixture-consistent Replication oracle pre-state
+    for `tick` -- the SAME no-hint "states_before"-only loader
+    (`_build_tick_state`) used by
+    `test_karr_replication_seed0_topology_diagnostic.py` (no trace-hint/
+    oracle-after values are ever read; `forbid_sut_oracle_file_io` in that
+    module enforces this for the full no-hint pipeline -- this helper
+    reuses only its state-construction half, not its own oracle-file
+    access, since this file's own tests never call `next_update` on trace
+    data directly). Used here to seed a realistic full-genome
+    `complexBoundSites`/`polymerizedRegions` baseline for the Finding-4
+    RNA-polymerase composition test, rather than hand-constructing a
+    synthetic full-genome state from scratch (which -- as this file's
+    Okazaki-fragment-boundary scenarios already show -- requires
+    reproducing many interacting mother/daughter-strand invariants that
+    only real fixture data satisfies for free)."""
+    from l2_replay_common import resolve_trace_path
+    from test_karr_replication_seed0_topology_diagnostic import _build_tick_state
+
+    trace_path = resolve_trace_path("Replication")
+    return _build_tick_state(trace_path, tick)
 
 
 # ----------------------------------------------------------------------
@@ -1034,3 +1084,197 @@ def test_lagging_strand_primer_length_cap_lifted_once_progress_reaches_primer_le
     )
 
     assert result["actual_left_bp"] == 50
+
+
+# ----------------------------------------------------------------------
+# Finding 4 (2026-08-05, five-gap follow-up item #4): composition-facing
+# tests proving the two literal Karr stall mechanisms that REPLACED the
+# prior fail-closed `ReplicationTopologyError` raises
+# (`_rna_polymerase_collision_stall`/`_terc_linking_stall`, both already
+# unit-tested directly in `test_karr_replication_ssb_gate_and_occlusion.py`
+# against hand-derived formula inputs) also integrate correctly through
+# the FULL `_advance_replication_forks` production entry point when
+# exercised against realistic OTHER-process-produced chromosome
+# occupancy/state -- i.e. Replication genuinely STALLS, not crashes, when
+# Transcription has bound an RNA polymerase on the chromosome, or
+# DNASupercoiling has left a nonzero linking number at the terC boundary.
+# ----------------------------------------------------------------------
+
+
+def test_advance_stalls_not_crashes_on_transcription_produced_rna_polymerase_occupancy(
+    process: KarrReplicationProcess,
+) -> None:
+    """Composition-facing (Finding 4, item #4): starts from a REAL, fully
+    fixture-consistent tick-1 pre-state of the Replication oracle trace
+    (`_build_tick_state`, the same no-hint "states_before" loader used by
+    `test_karr_replication_seed0_topology_diagnostic.py` -- no trace-hint/
+    oracle-after values), then adds exactly ONE synthetic bound complex
+    with the real `rna_polymerase_global_index` -- standing in for state
+    Transcription's own process would leave on `complexBoundSites` after
+    binding an RNA polymerase -- positioned in column 0's own quadrant
+    (`lagging_strand_indexs[0]`), `rna_pol_footprint` + 2bp ahead of the
+    real helicase position in its direction of travel (matching
+    `_rna_polymerase_collision_stall`'s own cap formula, Replication.m:
+    855: `helicasePos(1) - (positions + rnaPolFtpt)`). With the Poisson
+    dwell draw stubbed "dwelling" for this one cell (isolating the
+    mechanism itself, not RNG-stream-position luck -- a real,
+    independently-seeded draw would only sometimes land here, matching
+    Replication.m:862's genuine per-tick stochasticity), the SAME 5bp
+    budget that advances the helicase in FULL without the RNAP present
+    (baseline) is capped to exactly 2bp with it present -- proving the
+    full production path stalls gracefully instead of raising, using only
+    real oracle pre-state plus one realistic synthetic occupant (no
+    fabricated genome-wide state)."""
+    process_baseline, state = _build_replication_tick_state(tick=1)
+    store = ChromosomeStore.from_state_mapping(state["chromosome"], shape=process_baseline.chromosome_shape)
+    complex_bound_sites = store.get_field("complexBoundSites")
+    helicase_pos = process_baseline._helicase_positions(complex_bound_sites)
+    assert helicase_pos[0] != -1  # tick 1 has an active, bound helicase (verified via probe)
+
+    process_baseline._rng = _StubDwellRNG(dwelling=(False, False, False, False))
+    baseline = process_baseline._advance_replication_forks(
+        chromosome_store=store,
+        complex_bound_sites=complex_bound_sites,
+        budget_left_bp=5,
+        budget_right_bp=5,
+        enzymes_next={},
+        bound_next={},
+    )
+    baseline_helicase = process_baseline._helicase_positions(baseline["complex_bound_sites"])
+    assert baseline_helicase[0] == helicase_pos[0] - 5  # unobstructed: full budget consumed
+
+    process_occluded, state2 = _build_replication_tick_state(tick=1)
+    rna_pol_footprint = process_occluded._foreign_dna_footprint_by_global_index[
+        process_occluded.rna_polymerase_global_index
+    ]
+    rnap_pos = helicase_pos[0] - rna_pol_footprint - 2
+    strand = int(process_occluded.lagging_strand_indexs[0])
+    entries = [*complex_bound_sites.to_regions(), (rnap_pos, strand, process_occluded.rna_polymerase_global_index)]
+    occupied = SparseTriplet.from_regions(entries, shape=process_occluded.chromosome_shape)
+
+    process_occluded._rng = _StubDwellRNG(dwelling=(True, False, False, False))
+    stalled = process_occluded._advance_replication_forks(
+        chromosome_store=store,
+        complex_bound_sites=occupied,
+        budget_left_bp=5,
+        budget_right_bp=5,
+        enzymes_next={},
+        bound_next={},
+    )
+    stalled_helicase = process_occluded._helicase_positions(stalled["complex_bound_sites"])
+    # Capped to stop exactly short of the synthetic RNA polymerase's own
+    # footprint -- helicase_pos[0] - (rnap_pos + rna_pol_footprint) == 2 --
+    # not raised, not silently ignored.
+    assert stalled_helicase[0] == helicase_pos[0] - 2
+    assert stalled_helicase[1] == baseline_helicase[1]  # column 1 (uninvolved) unaffected
+
+
+def test_advance_stalls_not_crashes_on_dna_supercoiling_produced_terc_linking_number(
+    process: KarrReplicationProcess,
+) -> None:
+    """Composition-facing (Finding 4, item #4): constructs column 0's REAL
+    LAST Okazaki fragment before terC (`fidx0 = len(primase_binding_
+    locations[0]) - 1`, whose fragment start `a0[fidx0-1]` and terminal
+    boundary `a0[fidx0] == process.terc_position_bp` are both real fixture
+    values, not fabricated) with the helicase positioned so this tick's
+    unconstrained 5bp leading advance would cross terC by exactly 1bp
+    (`_terc_linking_stall`'s own "crosses this tick" predicate). A
+    nonzero `linkingNumbers` entry at the EXACT position
+    `_terc_linking_stall` itself reads (Replication.m:824's
+    `linkingNumbers([min(c.terCPosition+1, helicasePos(2)+helFtpt5-1) 1])`
+    -- standing in for whatever state DNASupercoiling's own process would
+    leave there) makes column 0's advance zero (branch 2: the daughter
+    strand at terC is not yet polymerized) -- the helicase genuinely
+    stalls at its pre-tick position rather than crossing, while the SAME
+    scenario with that linking number absent (baseline) crosses in full.
+    Both runs go through the complete `_advance_replication_forks` entry
+    point with no crash, only a graceful cap -- proving Karr's real
+    stall semantics, not the prior fail-closed raise."""
+    lead0, lead1 = process.leading_strand_indexs
+    lag0, _lag1 = process.lagging_strand_indexs
+    lag1 = int(process.lagging_strand_indexs[1])
+    a0 = process.primase_binding_locations[0]
+    fidx0 = len(a0) - 1
+    hol_ftpt = process.polymerase_holoenzyme_footprint_bp
+    cor_ftpt5 = process.core_footprint_5prime_bp
+    hel_ftpt5 = process.helicase_footprint_5prime_bp
+    terc = process.terc_position_bp
+
+    starts0 = int(a0[fidx0 - 1])
+    lead_bp = 4  # helicase is 4bp short of terC before this tick
+    advance_requested = lead_bp + 1  # 5bp requested budget crosses by exactly 1bp
+    helicase_pos0 = terc + 1 + lead_bp - hel_ftpt5
+    helicase_pos1 = 9000  # far below terC: `_far_from_terc_helicase`-style inert column 1
+    lead_pol_pos0 = 300000  # decoupled from helicase_pos0 (matches _advance_scenario_col0_fidx1 convention)
+    lead_pol_pos1 = 300001
+
+    progress_before = 200
+    lagging_pos0_before = starts0 - progress_before
+    lag_raw0 = (lagging_pos0_before - hol_ftpt + cor_ftpt5 + 1) % process.sequence_len_bp
+    backup_clamp0 = int(a0[fidx0]) - (hol_ftpt - cor_ftpt5) + 1
+
+    entries = [
+        (helicase_pos0, lead0, process.helicase_global_index),
+        (helicase_pos1, lead1, process.helicase_global_index),
+        (lead_pol_pos0, lead0, process.core_beta_clamp_gamma_complex_global_index),
+        (lead_pol_pos1, lead1, process.core_beta_clamp_gamma_complex_global_index),
+        (lag_raw0, lag0, process.core_beta_clamp_primase_global_index),
+        (backup_clamp0, lag0, process.beta_clamp_global_index),
+    ]
+    for pos in _ssb_positions(process, helicase_pos0 + 5, starts0 - 5):
+        entries.append((pos, int(process.leading_strand_indexs[1]), process.ssb8mer_global_index))
+    complex_bound_sites = _bound_sites(process, entries)
+
+    store = ChromosomeStore(shape=process.chromosome_shape)
+    leading_position0 = lead_pol_pos0 + cor_ftpt5
+    # `_set_region_unwound`'s own mother-shrink window for this tick's
+    # UNCONSTRAINED (baseline, no-veto) advance -- exactly
+    # `[helicase_pos0 + hel_ftpt5 - advance_requested + 1, ... +
+    # advance_requested)` (see `_unwind_window`, column 0) -- narrowly
+    # placed to cover ONLY that window and deliberately NOT
+    # `terc_position_0based` (`terc - 1`, 2bp below this window's own
+    # lower edge), which must remain UNPOLYMERIZED for branch 2's "not
+    # already polymerized" veto condition to hold.
+    unwind_lo = helicase_pos0 + hel_ftpt5 - advance_requested + 1
+    store.set_field(
+        "polymerizedRegions",
+        SparseTriplet.from_regions(
+            [
+                (leading_position0, lead0, 10000),
+                (lagging_pos0_before, lag0, progress_before),
+                (unwind_lo, lag1, advance_requested),
+            ],
+            shape=process.chromosome_shape,
+        ),
+    )
+
+    # --- Baseline: no linking-number entry recorded anywhere -> crosses terC in full.
+    baseline = process._advance_replication_forks(
+        chromosome_store=store,
+        complex_bound_sites=complex_bound_sites,
+        budget_left_bp=advance_requested,
+        budget_right_bp=0,
+        enzymes_next={},
+        bound_next={},
+    )
+    baseline_helicase = process._helicase_positions(baseline["complex_bound_sites"])
+    assert baseline_helicase[0] == helicase_pos0 - advance_requested
+
+    # --- Same scenario, but DNASupercoiling has left a nonzero linking
+    # number at the exact position Replication.m:824 itself reads.
+    check_pos_0based = min(terc + 1, helicase_pos1 + hel_ftpt5 - 1) - 1
+    store.set_field(
+        "linkingNumbers",
+        SparseTriplet.from_regions([(check_pos_0based, lead0, 1)], shape=process.chromosome_shape),
+    )
+    stalled = process._advance_replication_forks(
+        chromosome_store=store,
+        complex_bound_sites=complex_bound_sites,
+        budget_left_bp=advance_requested,
+        budget_right_bp=0,
+        enzymes_next={},
+        bound_next={},
+    )
+    stalled_helicase = process._helicase_positions(stalled["complex_bound_sites"])
+    assert stalled_helicase[0] == helicase_pos0  # genuinely stalled at terC, not crossed, not crashed
+    assert stalled_helicase[1] == baseline_helicase[1] == helicase_pos1  # column 1 (uninvolved) unaffected

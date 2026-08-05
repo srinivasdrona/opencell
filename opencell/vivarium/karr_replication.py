@@ -232,14 +232,15 @@ class ReplicationTopologyError(RuntimeError):
     or out-of-sync condition rather than silently mis-deriving fork/
     fragment state. Mirrors Karr's own ``MException('Replication:error',
     ...)`` fail-fast idiom (``Replication.m``, e.g. ``helicasePosition``
-    :1415-1423, ``evolveState`` replisome-sync check :572-578) plus two
-    deliberately-deferred-but-fail-closed conditions (adjudication #2):
-    a foreign (non-Replication) bound complex on a replication strand
-    (RNA-polymerase-collision proxy, since RNA polymerase is the only
-    other DNA-binding process live in the isolated per-process replay)
-    and a nonzero ``linkingNumbers`` entry inside the terC-adjacent
-    window a fork is about to enter (terC linking-number veto proxy,
-    ``unwindAndPolymerizeDNA`` :824-846).
+    :1415-1423, ``evolveState`` replisome-sync check :572-578) plus the
+    remaining genuinely out-of-scope condition (adjudication #2): an
+    UNRECOGNIZED foreign bound complex on a replication strand with no
+    fixture DNA-footprint entry (``_occlusion_advance_cap``'s own
+    fail-closed guard). RNA-polymerase-collision stall
+    (``unwindAndPolymerizeDNA`` :845-863) and the terC linking-number
+    veto (``unwindAndPolymerizeDNA`` :820-843) are now ported literally
+    (Finding 4/5: ``_rna_polymerase_collision_stall``/
+    ``_terc_linking_stall``), not fail-closed proxies.
     """
 
 
@@ -520,12 +521,12 @@ class KarrReplicationProcess(Process):
         )
 
         # Set of enzyme global indices this process itself ever binds to
-        # `complexBoundSites`. Used to fail closed (rather than silently
-        # mis-derive fork/fragment positions) if a foreign bound complex
-        # (e.g. RNA polymerase mid-collision, `Replication.m`'s
-        # `rnaPolymeraseCollisionMeanDwellTime` stall path, ~line 855) is
-        # ever observed inside the fork-adjacent window -- that machinery is
-        # explicitly out of scope for this port (see module docstring).
+        # `complexBoundSites`. Used by `_occlusion_advance_cap` to exclude
+        # this process's OWN complexes from the generic foreign-occupancy
+        # extent cap (RNA polymerase is excluded there too, separately --
+        # see `_rna_polymerase_global_indexs` below -- and handled instead
+        # by the dedicated `_rna_polymerase_collision_stall` Poisson-dwell
+        # port, Finding 4/5).
         self._own_bindable_global_indexs = frozenset(
             {
                 self.helicase_global_index,
@@ -557,12 +558,13 @@ class KarrReplicationProcess(Process):
             c.idx_1based: c.dna_footprint for c in _complex_model.complexes.values()
         }
         # RNA-polymerase-specific stall/collision (Replication.m:846-863)
-        # and the terC linking-number veto (Replication.m:820-838, handled
-        # separately by `_assert_no_terc_linking_veto`) remain explicitly
-        # out of scope (adjudication #2); resolved once here by WID so the
+        # is now ported literally by `_rna_polymerase_collision_stall`
+        # (Finding 4/5), and the terC linking-number veto (Replication.m:
+        # 820-838) by `_terc_linking_stall` -- both replacing the prior
+        # fail-closed raises. Resolved once here by WID so the
         # occlusion-cap path can distinguish "ordinary foreign occupant ->
-        # cap" from "RNA polymerase -> still hard-fail" without hardcoding
-        # global-index magic numbers.
+        # generic extent cap" from "RNA polymerase -> dedicated Poisson-
+        # dwell stall" without hardcoding global-index magic numbers.
         self._rna_polymerase_global_indexs = frozenset(
             _complex_model[wid].idx_1based for wid in ("RNA_POLYMERASE", "RNA_POLYMERASE_HOLOENZYME")
         )
@@ -992,45 +994,117 @@ class KarrReplicationProcess(Process):
             )
         return (result[0], result[1])
 
-    def _assert_no_rna_polymerase_occlusion(
+    def _rna_polymerase_collision_stall(
         self,
         complex_bound_sites: SparseTriplet,
         *,
-        strand: int,
-        window_lo: int,
-        window_hi: int,
-        context: str,
-    ) -> None:
-        # Scoped, source-faithful stand-in for Karr's RNA-polymerase-
-        # collision stall path (Replication.m:846-863), explicitly deferred
-        # for this port (adjudication #2). Ordinary foreign occupancy
-        # (e.g. DnaA-ATP complexes) is handled separately by
-        # `_occlusion_advance_cap`'s literal `isRegionAccessible` extent-cap
-        # port (adjudication follow-up: "generic occlusion narrowly but
-        # fail closed... generic occupancy alone must not raise"); only an
-        # RNA-polymerase(-holoenzyme) occupant in the about-to-be-swept
-        # window still hard-fails here, since that machinery's actual
-        # Poisson dwell/stall behavior is not ported.
-        if window_hi <= window_lo:
-            return
-        mask = (
-            (complex_bound_sites.strands == strand)
-            & (complex_bound_sites.positions >= window_lo)
-            & (complex_bound_sites.positions < window_hi)
-        )
-        if not np.any(mask):
-            return
+        helicase_pos: tuple[int, int],
+        lagging_pol_pos: tuple[int, int],
+        leading_advance: tuple[int, int],
+    ) -> tuple[int, int, int | None, int | None]:
+        """Literal port of Replication.m:845-863's RNA-polymerase-collision
+        Poisson-dwell stall, REPLACING the prior fail-closed hard raise
+        (`_assert_no_rna_polymerase_occlusion`, Finding 4/5) with Karr's
+        real stochastic stall semantics for each of the 4 replisome
+        components (leading strand column 0/1, lagging strand column
+        0/1): if an RNA polymerase is bound anywhere on that component's
+        OWN relevant strand-pair ahead of it in its direction of travel,
+        and an independent `Poisson(1/rnaPolymeraseCollisionMeanDwellTime)
+        == 0` draw for that cell says "still dwelling" this tick, the
+        corresponding advance/budget is capped to the distance remaining
+        before the RNA polymerase's own footprint (never below 0, never
+        increased) -- a real stall, not a crash.
+
+        Matches Karr's own OUTER gate literally (Replication.m:846-848):
+        the WHOLE block (all 4 Poisson draws) is skipped entirely -- no
+        draw, no cap -- unless at least one RNA polymerase (or holoenzyme)
+        is bound ANYWHERE on the whole chromosome, not merely near a fork;
+        this is Karr's actual condition (`[posStrands, vals] =
+        find(c.complexBoundSites); tfs = ismembc(vals,
+        rnaPolymeraseIndexs); if any(tfs)`), not a narrower window check.
+        All 4 draws share ONE `self._rng.poisson(...)` call (`randStream.
+        random('poisson', 1/dwell, [2 2])` in MATLAB) -- distributionally
+        equivalent (4 iid Poisson(rate) draws); this process never touches
+        global RNG state.
+
+        Strand grouping (verified against `Replication.m`'s own
+        `leadingStrandIndexs = [1 4]` / `laggingStrandIndexs = [3 2]`
+        constants, 1-based): Karr's `mod(strand,2)==1` ("odd") is exactly
+        `{leadingStrandIndexs(1), laggingStrandIndexs(1)} = {1, 3}` --
+        column 0's own two strands (0-based
+        `{leading_strand_indexs[0], lagging_strand_indexs[0]}`);
+        `mod(strand,2)==0` ("even") is `{leadingStrandIndexs(2),
+        laggingStrandIndexs(2)} = {4, 2}` -- column 1's own two strands
+        (0-based `{leading_strand_indexs[1], lagging_strand_indexs[1]}`).
+        Note the lagging-strand cells (`tmpLimits(2,:)`) deliberately
+        check the OTHER column's strand group -- the SAME cross-column
+        template relationship already established and used by
+        `_num_lagging_template_bound_ssbs` (a fork's lagging strand
+        physically continues from the OTHER fork's leading-strand
+        template on this circular chromosome).
+
+        Returns `(advance0, advance1, lagging_cap0, lagging_cap1)`: the
+        two lagging caps are `None` when Karr's outer gate does not fire
+        this tick (no RNA polymerase bound anywhere) or when this cell's
+        Poisson draw was NOT "dwelling" (i.e. no cap applies this tick);
+        callers apply a non-`None` lagging cap to that column's per-tick
+        lagging BUDGET (`remaining`, BEFORE its Okazaki-fragment while
+        loop begins), since Karr's `unwindAndPolymerizeDNA` computes and
+        applies `limits(2,:)` as a single per-tick total with no further
+        per-fragment sub-division (this process's own multi-fragment-
+        boundary-crossing while-loop is a separately adjudicated OC-only
+        extension; see its call site).
+        """
         rna_pol = np.asarray(sorted(self._rna_polymerase_global_indexs), dtype=np.int64)
-        rna_pol_mask = mask & np.isin(complex_bound_sites.values, rna_pol)
-        if np.any(rna_pol_mask):
-            idx = int(np.flatnonzero(rna_pol_mask)[0])
-            raise ReplicationTopologyError(
-                f"Unsupported RNA-polymerase occupancy blocks literal Replication topology advance "
-                f"({context}): global-index={int(complex_bound_sites.values[idx])} at position="
-                f"{int(complex_bound_sites.positions[idx])}, strand={int(strand)}. RNA-polymerase-"
-                "collision-stall machinery is out of scope for this port (adjudication #2); this "
-                "condition requires that work before it can proceed."
-            )
+        rna_pol_mask = np.isin(complex_bound_sites.values, rna_pol)
+        advance0, advance1 = leading_advance
+        if not np.any(rna_pol_mask):
+            return advance0, advance1, None, None
+
+        positions = complex_bound_sites.positions[rna_pol_mask]
+        strands = complex_bound_sites.strands[rna_pol_mask]
+        rna_pol_footprint = self._foreign_dna_footprint_by_global_index[self.rna_polymerase_global_index]
+
+        col0_strands = (int(self.leading_strand_indexs[0]), int(self.lagging_strand_indexs[0]))
+        col1_strands = (int(self.leading_strand_indexs[1]), int(self.lagging_strand_indexs[1]))
+        col0_mask = np.isin(strands, col0_strands)
+        col1_mask = np.isin(strands, col1_strands)
+
+        # tmpLimits(1,1) / tmpLimits(1,2) / tmpLimits(2,1) / tmpLimits(2,2)
+        # (Replication.m:855-858); defaults to 0 for any cell with no RNA
+        # polymerase found in its own quadrant -- ported literally, not
+        # guarded further, matching Karr's own unconditional `tmpLimits =
+        # zeros(2, 2)` initialization.
+        tmp_limits = [0, 0, 0, 0]  # leading0, leading1, lagging0, lagging1
+        m = col0_mask & (positions < helicase_pos[0])
+        if np.any(m):
+            tmp_limits[0] = int(np.min(helicase_pos[0] - (positions[m] + rna_pol_footprint)))
+        m = col1_mask & (positions > helicase_pos[1])
+        if np.any(m):
+            tmp_limits[1] = int(np.min(positions[m] - (helicase_pos[1] + self.helicase_footprint_bp)))
+        if lagging_pol_pos[0] != -1:
+            m = col1_mask & (positions > lagging_pol_pos[0])
+            if np.any(m):
+                tmp_limits[2] = int(
+                    np.min(positions[m] - (lagging_pol_pos[0] + self.polymerase_holoenzyme_footprint_bp))
+                )
+        if lagging_pol_pos[1] != -1:
+            m = col0_mask & (positions < lagging_pol_pos[1])
+            if np.any(m):
+                tmp_limits[3] = int(np.min(lagging_pol_pos[1] - (positions[m] + rna_pol_footprint)))
+
+        dwelling = self._rng.poisson(1.0 / self.rna_polymerase_collision_mean_dwell_time_s, size=4) == 0
+        lagging_cap0: int | None = None
+        lagging_cap1: int | None = None
+        if dwelling[0]:
+            advance0 = min(advance0, max(0, tmp_limits[0]))
+        if dwelling[1]:
+            advance1 = min(advance1, max(0, tmp_limits[1]))
+        if dwelling[2]:
+            lagging_cap0 = max(0, tmp_limits[2])
+        if dwelling[3]:
+            lagging_cap1 = max(0, tmp_limits[3])
+        return advance0, advance1, lagging_cap0, lagging_cap1
 
     @staticmethod
     def _footprint_overhangs(total_footprint: int) -> tuple[int, int]:
@@ -1066,9 +1140,12 @@ class KarrReplicationProcess(Process):
         `requested_advance` reduced (never increased, never made negative)
         to stop exactly short of the nearest foreign complex's own
         footprint -- the foreign complex is never mutated or removed, and
-        this never raises for ordinary occupancy (only
-        `_assert_no_rna_polymerase_occlusion`/`_assert_no_terc_linking_veto`
-        still hard-fail, for the two conditions explicitly still deferred).
+        this never raises for ordinary occupancy. RNA-polymerase
+        occupancy is EXCLUDED from this generic cap entirely (see
+        `foreign_mask` below) -- it is handled by the dedicated
+        `_rna_polymerase_collision_stall` Poisson-dwell port instead
+        (Finding 4/5), matching Karr's own separate `isRegionAccessible`
+        exclusion-list argument for RNA polymerase at this call site.
 
         Derivation (validated against this process's own accepted
         `_leading_position`/`_unwind_window` footprint-offset conventions,
@@ -1123,36 +1200,164 @@ class KarrReplicationProcess(Process):
             best_cap = min(best_cap, max(0, d_max))
         return best_cap
 
-    def _assert_no_terc_linking_veto(
+    def _leading_advance_precap(
+        self,
+        column: int,
+        *,
+        complex_bound_sites: SparseTriplet,
+        polymerized: SparseTriplet,
+        budget: int,
+    ) -> int:
+        """Pure, non-mutating port of Replication.m:768-796's per-column
+        leading-strand `limits(1,:)` computation THROUGH the two
+        `isRegionAccessible` occlusion caps (primase/DNA-pol-kinetics
+        primer-length cap -- Finding 2; SSB gate; lead-gap gate -- Finding
+        1; helicase occlusion cap; leading-polymerase occlusion cap) --
+        everything BEFORE the terC linking-number veto (820-843) and the
+        RNA-polymerase-collision stall (845-863), both of which need BOTH
+        columns' own pre-cap values computed jointly from the SAME
+        untouched per-tick snapshot (Karr computes the whole `limits` 2x2
+        matrix before mutating anything for either fork). OC's own
+        `_advance_replication_forks` processes columns sequentially --
+        mutating column 0's own state fully before even starting column
+        1 -- so this helper is called for BOTH columns from the pre-tick
+        snapshot in a pre-pass (see that method's call site), before
+        either column's own mutations occur, to preserve that joint-
+        computation requirement for the two steps that need it.
+        """
+        helicase_pos = self._helicase_positions(complex_bound_sites)
+        leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
+        lagging_pol_pos = self._lagging_polymerase_positions(complex_bound_sites)
+        lagging_pos = self._lagging_position(lagging_pol_pos)
+        fragment_index = self._okazaki_fragment_index(lagging_pos, polymerized)
+        ssb_gate = self._are_lagging_strand_ssb_sites_bound(complex_bound_sites, helicase_pos, fragment_index)
+
+        leading_advance = budget
+        leading_distance_since_origin = self._leading_strand_distance_since_origin(
+            self._leading_position(leading_pol_pos), column
+        )
+        leading_advance = self._primer_length_capped_step(leading_distance_since_origin, leading_advance)
+        leading_advance = leading_advance if ssb_gate[column] else 0
+        leading_advance = (
+            leading_advance if self._leading_strand_lead_gap_ok(column, helicase_pos, fragment_index) else 0
+        )
+        if leading_advance > 0:
+            direction = -1 if column == 0 else 1
+            leading_strand = int(self.leading_strand_indexs[column])
+            leading_advance = self._occlusion_advance_cap(
+                complex_bound_sites,
+                strand=leading_strand,
+                anchor=helicase_pos[column],
+                direction=direction,
+                own_footprint_3prime=self.helicase_footprint_3prime_bp,
+                requested_advance=leading_advance,
+                context=f"advance col{column} leading strand (helicase precap)",
+            )
+            leading_advance = self._occlusion_advance_cap(
+                complex_bound_sites,
+                strand=leading_strand,
+                anchor=leading_pol_pos[column],
+                direction=direction,
+                own_footprint_3prime=self.polymerase_holoenzyme_footprint_3prime_bp,
+                requested_advance=leading_advance,
+                context=f"advance col{column} leading strand (leading polymerase precap)",
+            )
+        return leading_advance
+
+    def _terc_linking_stall(
         self,
         chromosome_store: ChromosomeStore,
         *,
-        column: int,
-        window_lo: int,
-        window_hi: int,
-    ) -> None:
-        # Scoped, source-faithful stand-in for Karr's terC linking-number
-        # veto (Replication.m:820-838), explicitly deferred for this port
-        # (adjudication #2). Fails closed with telemetry rather than
-        # silently ignoring a nonzero linking number recorded in the window
-        # a fork is about to unwind/polymerize through near terC, since that
-        # is exactly the condition the deferred veto machinery exists to
-        # handle.
-        if window_hi <= self.terc_position_bp or window_lo > self.terc_position_bp:
-            return
+        helicase_pos: tuple[int, int],
+        leading_advance: tuple[int, int],
+    ) -> tuple[int, int]:
+        """Literal, full (all 3 branches) port of Replication.m:820-843's
+        terC linking-number veto, REPLACING the prior fail-closed
+        `_assert_no_terc_linking_veto` raise (Finding 4). Computed from the
+        SAME per-tick snapshot as `_leading_advance_precap` (both columns'
+        pre-terC `leading_advance` values plus `helicase_pos`), matching
+        Karr's own single evaluation before either column's mutation
+        occurs this tick.
+
+        All three MATLAB if/elseif branches:
+          1. BOTH columns simultaneously cross terC this tick AND a
+             nonzero linking number is recorded at the check position ->
+             a fair coin (`ceil(2*this.randStream.rand())`, mapped to
+             {0, 1} 0-based) zeros exactly one column's advance, drawn
+             from this process's own seeded `self._rng` (never global
+             state).
+          2. ONLY column 0 crosses this tick (column 1 does not) AND
+             nonzero linking number AND the daughter strand at
+             `[c.terCPosition, 2]` (0-based: `terc_position_0based`,
+             `lagging_strand_indexs[1]`) is NOT already polymerized ->
+             zero column 0.
+          3. ONLY column 1 crosses this tick (column 0 does not) AND
+             nonzero linking number AND `[c.terCPosition+1, 2]` (0-based:
+             `terc_position_bp`, same strand) is NOT already polymerized
+             -> zero column 1.
+
+        "Crosses this tick" per column (Replication.m:820-823/832-833/839-
+        840): the helicase's own 5'-edge has NOT yet reached terC before
+        this tick's advance, but WOULD reach/pass it if this tick's own
+        (pre-terC-veto) `leading_advance` were applied in full -- i.e. a
+        persistent-state before/after-this-tick pair, not a one-tick
+        lockstep threshold.
+
+        Position/strand derivations verified against `Chromosome.m`'s own
+        `leadingStrandIndexs=[1,4]` / `laggingStrandIndexs=[3,2]`
+        constants (1-based): the linking-number-lookup strand (Karr's raw
+        literal "1") is `leading_strand_indexs[0]`; both
+        `isRegionPolymerized` checks' raw literal strand "2" is
+        `lagging_strand_indexs[1]` (identical for both branches 2 and 3,
+        NOT parametrized by which column is zeroed).
+        """
+        hel_ftpt5 = self.helicase_footprint_5prime_bp
+        terc = self.terc_position_bp
+        advance0, advance1 = leading_advance
+
+        col0_before = helicase_pos[0] + hel_ftpt5 >= terc + 1
+        col0_this_tick = (helicase_pos[0] + hel_ftpt5 - advance0) < terc + 1
+        col0_crossing = col0_before and col0_this_tick
+
+        col1_before = helicase_pos[1] + hel_ftpt5 - 1 <= terc
+        col1_this_tick = (helicase_pos[1] + hel_ftpt5 - 1 + advance1) > terc
+        col1_crossing = col1_before and col1_this_tick
+
+        if not (col0_crossing or col1_crossing):
+            return advance0, advance1
+
         linking = chromosome_store.get_field("linkingNumbers")
-        if linking.values.size == 0:
-            return
-        mask = (linking.positions >= window_lo) & (linking.positions < window_hi)
-        if np.any(mask) and np.any(linking.values[mask] != 0):
-            idx = int(np.flatnonzero(mask)[0])
-            raise ReplicationTopologyError(
-                f"terC linking-number veto condition detected near position {self.terc_position_bp} "
-                f"(column {column}, window [{window_lo}, {window_hi})): nonzero linkingNumbers entry "
-                f"at position={int(linking.positions[idx])}. Generic terC linking-number veto "
-                "machinery is out of scope for this port (adjudication #2); this condition requires "
-                "that work before it can proceed."
+        check_pos_0based = min(terc + 1, helicase_pos[1] + hel_ftpt5 - 1) - 1
+        linking_nonzero = False
+        if linking.values.size:
+            mask = (linking.positions == check_pos_0based) & (
+                linking.strands == int(self.leading_strand_indexs[0])
             )
+            if np.any(mask):
+                linking_nonzero = bool(np.any(np.abs(linking.values[mask]) > 1e-6))
+        if not linking_nonzero:
+            return advance0, advance1
+
+        polymerized = chromosome_store.get_field("polymerizedRegions")
+        lagging_strand_1 = int(self.lagging_strand_indexs[1])
+
+        if col0_crossing and col1_crossing:
+            # Branch 1 (Replication.m:820-826).
+            if self._rng.random() >= 0.5:
+                return 0, advance1
+            return advance0, 0
+
+        if col0_crossing:
+            # Branch 2 (Replication.m:827-833).
+            if not self._is_region_polymerized(polymerized, self.terc_position_0based, lagging_strand_1):
+                return 0, advance1
+            return advance0, advance1
+
+        # Branch 3 (Replication.m:834-840): col1_crossing is True here
+        # (the "neither crossing" case already returned above).
+        if not self._is_region_polymerized(polymerized, self.terc_position_bp, lagging_strand_1):
+            return advance0, 0
+        return advance0, advance1
 
     def _initiate_okazaki_fragments(
         self,
@@ -1976,6 +2181,24 @@ class KarrReplicationProcess(Process):
         (Karr's real per-tick call semantics: a subfunction only sees state
         as of when IT runs) -- so termination is deferred to the very next
         tick's own stall-retry check instead of firing in the same tick.
+
+        Finding 4 (composition, 2026-08-05): the two literal stall
+        mechanisms invoked from the pre-pass above
+        (`_terc_linking_stall`/`_rna_polymerase_collision_stall`) are
+        exercised here not only in isolation (unit tests in
+        `test_karr_replication_ssb_gate_and_occlusion.py`, against
+        formula-derived inputs) but also through this ENTIRE method, using
+        realistic other-process-produced chromosome occupancy/state --
+        `test_advance_stalls_not_crashes_on_transcription_produced_rna_
+        polymerase_occupancy` (a synthetic bound RNA polymerase, standing
+        in for Transcription's own binding, atop a REAL fixture-consistent
+        tick-1 pre-state) and `test_advance_stalls_not_crashes_on_dna_
+        supercoiling_produced_terc_linking_number` (a synthetic nonzero
+        `linkingNumbers` entry, standing in for DNASupercoiling's own
+        state, at column 0's real terminal Okazaki fragment) in
+        `test_karr_replication_advance_and_terminate.py` -- proving both
+        mechanisms genuinely STALL this method's real advance (never
+        raise) when driven by realistic cross-process chromosome state.
         """
         polymerized = chromosome_store.get_field("polymerizedRegions")
         strand_breaks = chromosome_store.get_field("strandBreaks")
@@ -2003,6 +2226,52 @@ class KarrReplicationProcess(Process):
             complex_bound_sites, enzymes_next=enzymes_next, bound_next=bound_next
         )
 
+        # --- Pre-pass (Finding 4, Replication.m:759-863): compute BOTH
+        # columns' pre-terC leading advance from the SAME untouched
+        # per-tick snapshot, then apply the terC linking-number veto and
+        # the RNA-polymerase-collision stall jointly. Karr's own
+        # `unwindAndPolymerizeDNA` computes the whole 2x2 `limits` matrix
+        # from one pre-tick snapshot before mutating anything for EITHER
+        # fork; the per-column loop below instead processes column 0 fully
+        # (including its own state mutations) before even starting column
+        # 1, so these two joint-computation-requiring steps (the terC
+        # veto's "both columns crossing simultaneously" branch needs both
+        # columns' crossing state at once; the RNA-polymerase stall shares
+        # one 4-cell Poisson draw across both columns x leading/lagging)
+        # are evaluated here, up front, against the pre-mutation snapshot,
+        # rather than inline inside the per-column loop. Each column's own
+        # occlusion-cap computation only ever reads that column's OWN two
+        # strands (never the other column's, which is mutated first in the
+        # loop below for column 0) -- see `_leading_advance_precap` -- so
+        # reusing these precomputed values later in the loop is safe.
+        pre_pass_helicase_pos = self._helicase_positions(complex_bound_sites)
+        pre_pass_lagging_pol_pos = self._lagging_polymerase_positions(complex_bound_sites)
+        leading_advance_precap = (
+            self._leading_advance_precap(
+                0,
+                complex_bound_sites=complex_bound_sites,
+                polymerized=polymerized,
+                budget=int(budget_left_bp),
+            ),
+            self._leading_advance_precap(
+                1,
+                complex_bound_sites=complex_bound_sites,
+                polymerized=polymerized,
+                budget=int(budget_right_bp),
+            ),
+        )
+        leading_advance_precap = self._terc_linking_stall(
+            chromosome_store, helicase_pos=pre_pass_helicase_pos, leading_advance=leading_advance_precap
+        )
+        leading_advance0, leading_advance1, lagging_cap0, lagging_cap1 = self._rna_polymerase_collision_stall(
+            complex_bound_sites,
+            helicase_pos=pre_pass_helicase_pos,
+            lagging_pol_pos=pre_pass_lagging_pol_pos,
+            leading_advance=leading_advance_precap,
+        )
+        leading_advance_by_column = (leading_advance0, leading_advance1)
+        lagging_budget_cap_by_column = (lagging_cap0, lagging_cap1)
+
         actual_bp = [0, 0]
         for column, budget in ((0, int(budget_left_bp)), (1, int(budget_right_bp))):
             # NOTE: deliberately no `if budget <= 0: continue` here --
@@ -2022,43 +2291,18 @@ class KarrReplicationProcess(Process):
             direction = -1 if column == 0 else 1
             lag_direction = 1 if column == 0 else -1
 
-            # SSB gate evaluated once at the top of this column's processing
-            # (Replication.m:762-763 `areLaggingStrandSSBSitesBound` gate on
-            # `limits(1,:)`), against pre-mutation state.
-            helicase_pos = self._helicase_positions(complex_bound_sites)
-            leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
+            # This column has not split into separate leading/lagging
+            # replisomes yet (Replication.m:707-727 `tfs`-false case; no
+            # backup beta-clamp has reached the first Okazaki-fragment
+            # site -- see `_bind_initial_lagging_polymerase`, a benign,
+            # multi-tick-persistent early-replication state, not an
+            # error). There is, by definition, no lagging fragment to
+            # bound the leading strand's advance against in this window,
+            # so the "leading capped to lagging_actual" invariant below
+            # (the already-adjudicated steady-state simplification) must
+            # NOT apply here.
             lagging_pol_pos = self._lagging_polymerase_positions(complex_bound_sites)
-            # Replication.m:707-727 `tfs`-false case: this column has not
-            # split into separate leading/lagging replisomes yet (no
-            # backup beta-clamp has reached the first Okazaki-fragment site
-            # -- see `_bind_initial_lagging_polymerase`, a benign,
-            # multi-tick-persistent early-replication state, not an error).
-            # There is, by definition, no lagging fragment to bound the
-            # leading strand's advance against in this window, so the
-            # "leading capped to lagging_actual" invariant below (the
-            # already-adjudicated steady-state simplification) must NOT
-            # apply here.
             not_yet_split = lagging_pol_pos[column] == -1
-            lagging_pos = self._lagging_position(lagging_pol_pos)
-            fragment_index = self._okazaki_fragment_index(lagging_pos, polymerized)
-            ssb_gate = self._are_lagging_strand_ssb_sites_bound(complex_bound_sites, helicase_pos, fragment_index)
-            # Replication.m:762-764 reads `helicasePos`/`fPos` once, before
-            # any of this tick's polymerization occurs; snapshot both here
-            # (fragment_index is reassigned below as the lagging while-loop
-            # advances) so the lead-gap gate below evaluates the same
-            # pre-mutation state Karr's `limits(1,:)` gate does, not the
-            # loop's post-advance fragment_index.
-            pre_advance_helicase_pos = helicase_pos
-            pre_advance_fragment_index = fragment_index
-            # Replication.m:757 `leadingPolPos = this.leadingPolymerasePosition`
-            # -- read once, before this tick's polymerization; the leading
-            # strand's OWN position is never mutated by the lagging
-            # while-loop below, but snapshot it explicitly anyway (rather
-            # than relying on that incidental fact) so the primer-length
-            # distance-since-origin computation below is visibly tied to
-            # the same pre-mutation read Karr's `limits(1,:)` primase-
-            # kinetics term uses.
-            pre_advance_leading_pol_pos = leading_pol_pos
 
             # --- lagging strand FIRST: chunked across Okazaki fragments,
             # inline termination on each boundary; a termination-gate
@@ -2074,8 +2318,21 @@ class KarrReplicationProcess(Process):
             # gate there instead); this comment previously described a
             # same-tick lockstep cap that no longer exists.
             lagging_actual = 0
+            # Finding 4 (Replication.m:845-863): apply the RNA-polymerase-
+            # collision Poisson-dwell cap (computed jointly for both
+            # columns in the pre-pass above) to this column's WHOLE
+            # per-tick lagging budget up front -- Karr's own
+            # `unwindAndPolymerizeDNA` computes and applies `limits(2,:)`
+            # as a single per-tick total with no further per-fragment
+            # sub-division; only this process's own multi-fragment-
+            # boundary-crossing while-loop below is an OC-specific
+            # extension (separately adjudicated), so the cap belongs here,
+            # not inside the loop.
             remaining = budget
+            if lagging_budget_cap_by_column[column] is not None:
+                remaining = min(remaining, lagging_budget_cap_by_column[column])
             while True:
+
                 lagging_pol_pos = self._lagging_polymerase_positions(complex_bound_sites)
                 if lagging_pol_pos[column] == -1:
                     break
@@ -2154,13 +2411,6 @@ class KarrReplicationProcess(Process):
 
                 pre_lagging_pos = lagging_pos[column]
                 lo, hi = self._growth_window(pre_lagging_pos, direction=lag_direction, step=step)
-                self._assert_no_rna_polymerase_occlusion(
-                    complex_bound_sites,
-                    strand=lagging_strand,
-                    window_lo=lo,
-                    window_hi=hi,
-                    context=f"advance col{column} lagging strand",
-                )
                 step = self._occlusion_advance_cap(
                     complex_bound_sites,
                     strand=lagging_strand,
@@ -2214,97 +2464,29 @@ class KarrReplicationProcess(Process):
                     if not terminated:
                         break
 
-            # --- leading strand + helicase: single-step advance, zeroed
-            # entirely if the SSB gate is not satisfied, else the persistent
-            # lead-gap gate below (Replication.m:773 `limits(1,:) .*
-            # (leadingPos ~= 0)`: the leading strand's own budget does not
-            # depend on `laggingPos`/`lagging_actual` at all -- Karr's
-            # `limits(1,:)` and `limits(2,:)` are computed independently,
-            # each capped by its own occlusion/kinetics extent, and only
-            # coupled via the lead-gap gate below, never via a same-tick
-            # lockstep. The prior `leading_advance = ... else lagging_actual`
-            # lockstep (superseded by this port) was a conservative
-            # under-approximation that could never let leading outrun
-            # lagging even transiently; this is corrected here. NOTE: the
-            # final `actual_bp[column]` bookkeeping below still reports
+            # --- leading strand + helicase: single-step advance using the
+            # jointly-precomputed `leading_advance_by_column[column]`
+            # (Finding 4 pre-pass above already applied: budget -> primer-
+            # length cap (Finding 2) -> SSB gate -> lead-gap gate (Finding
+            # 1) -> helicase/leading-polymerase occlusion caps -> terC
+            # linking-number veto -> RNA-polymerase-collision stall).
+            # Karr's `limits(1,:)` and `limits(2,:)` are computed
+            # independently, each capped by its own occlusion/kinetics
+            # extent, and only coupled via the lead-gap gate, never via a
+            # same-tick lockstep with `lagging_actual`. NOTE: the final
+            # `actual_bp[column]` bookkeeping below still reports
             # `lagging_actual` when split (an existing, separately-scoped
             # adjudication -- Finding 2/limits-port territory), so a
-            # helicase that outpaces lagging under this gate now
-            # genuinely advances further than the substrate demand
-            # currently charged for that tick; that residual substrate-
-            # accounting gap is NOT part of this port (out of scope here).
-            leading_advance = budget
-            # Replication.m:769-770/774-775 primase kinetics (Finding 2):
-            # while the leading strand has not yet traveled a full
-            # `primerLength` bp since the replication origin, this tick's
-            # advance is capped to whatever primer length remains rather
-            # than the full elongation budget. In practice this only binds
-            # in the first tick(s) immediately after fork initiation (the
-            # leading strand travels the length of the whole chromosome
-            # arm afterward, far past `primerLength`), but is ported
-            # unconditionally/literally rather than special-cased to that
-            # window.
-            leading_distance_since_origin = self._leading_strand_distance_since_origin(
-                self._leading_position(pre_advance_leading_pol_pos), column
-            )
-            leading_advance = self._primer_length_capped_step(leading_distance_since_origin, leading_advance)
-            leading_advance = leading_advance if ssb_gate[column] else 0
-            # Replication.m:812-818 "prevent leading strand from getting
-            # too far ahead of lagging strand": the persistent >=2x mean-
-            # Okazaki-fragment-length gap gate, evaluated against the
-            # pre-tick helicase/fragment-start snapshot -- NOT re-derived
-            # from `lagging_actual` (that lockstep cap was an
-            # under-approximation now superseded by this literal port; a
-            # helicase that has run ahead of the lagging strand across
-            # several prior ticks is allowed to keep advancing here as
-            # long as the persistent gap has not yet reached the
-            # threshold, and is only zeroed once it has).
-            leading_advance = (
-                leading_advance
-                if self._leading_strand_lead_gap_ok(column, pre_advance_helicase_pos, pre_advance_fragment_index)
-                else 0
-            )
+            # helicase that outpaces lagging under this gate now genuinely
+            # advances further than the substrate demand currently charged
+            # for that tick; that residual substrate-accounting gap is NOT
+            # part of this port (Finding 5 territory).
+            leading_advance = leading_advance_by_column[column]
             if leading_advance > 0:
                 helicase_pos = self._helicase_positions(complex_bound_sites)
                 leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
                 pre_leading_pos = self._leading_position(leading_pol_pos)[column]
                 lo, hi = self._growth_window(pre_leading_pos, direction=direction, step=leading_advance)
-                self._assert_no_rna_polymerase_occlusion(
-                    complex_bound_sites,
-                    strand=leading_strand,
-                    window_lo=lo,
-                    window_hi=hi,
-                    context=f"advance col{column} leading strand",
-                )
-                # Two independent `isRegionAccessible` extent-cap checks
-                # (Replication.m:786-793): one against the helicase's own
-                # footprint (anchored on its own raw bound position), one
-                # against the leading polymerase's own (assembled-
-                # holoenzyme) footprint. MATLAB chains both against the
-                # SAME `limits(1,:)`, each pass only ever able to further
-                # REDUCE it -- feeding the first cap's result as the second
-                # cap's `requested_advance` is the literal equivalent.
-                leading_advance = self._occlusion_advance_cap(
-                    complex_bound_sites,
-                    strand=leading_strand,
-                    anchor=helicase_pos[column],
-                    direction=direction,
-                    own_footprint_3prime=self.helicase_footprint_3prime_bp,
-                    requested_advance=leading_advance,
-                    context=f"advance col{column} leading strand (helicase)",
-                )
-                leading_advance = self._occlusion_advance_cap(
-                    complex_bound_sites,
-                    strand=leading_strand,
-                    anchor=leading_pol_pos[column],
-                    direction=direction,
-                    own_footprint_3prime=self.polymerase_holoenzyme_footprint_3prime_bp,
-                    requested_advance=leading_advance,
-                    context=f"advance col{column} leading strand (leading polymerase)",
-                )
-            if leading_advance > 0:
-                lo, hi = self._growth_window(pre_leading_pos, direction=direction, step=leading_advance)
-                self._assert_no_terc_linking_veto(chromosome_store, column=column, window_lo=lo, window_hi=hi)
                 # `setRegionUnwound`'s own span (Replication.m:904-905) is
                 # anchored on the HELICASE's pre-advance position plus its
                 # own footprint offset, NOT on `_leading_position` (the

@@ -1,5 +1,6 @@
-"""Standalone tests for the c1 (SSB-gate getters) and c2 (fail-closed scoped
-occlusion/terC-linking guards) additions to `KarrReplicationProcess`.
+"""Standalone tests for the c1 (SSB-gate getters) and Finding-4 (RNA-
+polymerase-collision Poisson-dwell stall + terC linking-number veto)
+additions to `KarrReplicationProcess`.
 
 c1 ports Replication.m:1583-1673 (`get.leadingStrandBoundSSBs`/
 `get.laggingStrandBoundSSBs`/`get.numLaggingTemplateBoundSSBs`/
@@ -8,17 +9,17 @@ footprint/spacing constants and the real `primase_binding_locations` arrays
 (no fabricated numbers -- every threshold below is hand-derived from those
 constants, see comments).
 
-c2 is a scoped, source-faithful stand-in for the generic
-`Chromosome.isRegionAccessible` extent machinery (Replication.m:786-801) and
-the terC linking-number veto (Replication.m:820-838), both explicitly
-deferred for this port (adjudication #2 and its follow-up "generic
-occlusion narrowly but fail closed" adjudication): the RNA-polymerase-
-collision-stall path (Replication.m:846-863) and the terC linking-number
-veto remain explicit, hard-fail-with-telemetry conditions
-(`_assert_no_rna_polymerase_occlusion`/`_assert_no_terc_linking_veto`);
-ordinary foreign chromosome occupancy (e.g. a bound DnaA-ATP complex) is
-instead handled by `_occlusion_advance_cap`, a literal, narrowly-scoped port
-of `isRegionAccessible`'s extent-cap arithmetic (Replication.m:786-796,
+Finding 4 (2026-08-05) REPLACES the prior fail-closed stand-ins for the
+RNA-polymerase-collision-stall path (Replication.m:845-863) and the terC
+linking-number veto (Replication.m:820-843) -- `_assert_no_rna_polymerase_
+occlusion`/`_assert_no_terc_linking_veto` (hard raises) are gone; this file
+now tests their literal-port replacements, `_rna_polymerase_collision_stall`
+(a real stochastic Poisson-dwell cap, using this process's own seeded
+`self._rng`, never global state) and `_terc_linking_stall` (all 3 MATLAB
+if/elseif branches). Ordinary foreign chromosome occupancy (e.g. a bound
+DnaA-ATP complex) is unaffected by this Finding and remains handled by
+`_occlusion_advance_cap`, a literal, narrowly-scoped port of
+`isRegionAccessible`'s extent-cap arithmetic (Replication.m:786-796,
 `Chromosome.m:651-745`/`calculateFootprintOverhangs` at `Chromosome.m:4241-
 4244`) that REDUCES (never raises on) the requested advance to stop short
 of the nearest foreign complex's own footprint.
@@ -31,7 +32,9 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
+import numpy as np
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -39,12 +42,40 @@ if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet
-from opencell.vivarium.karr_replication import KarrReplicationProcess, ReplicationTopologyError
+from opencell.vivarium.karr_replication import KarrReplicationProcess
 
 
 @pytest.fixture(scope="module")
 def process() -> KarrReplicationProcess:
     return KarrReplicationProcess({})
+
+
+class _StubPoissonRNG:
+    """Deterministic stand-in for `self._rng`, isolating
+    `_rna_polymerase_collision_stall`'s single `.poisson(...)` draw: returns
+    a fixed 4-cell dwelling pattern (0 == "dwelling", matching the
+    production `poisson(...) == 0` test; any nonzero == "not dwelling"),
+    regardless of the requested rate. `.random()` is intentionally absent
+    -- `_rna_polymerase_collision_stall` itself never calls it, so any
+    accidental call surfaces as an `AttributeError` rather than silently
+    returning a plausible-looking value."""
+
+    def __init__(self, dwelling: tuple[bool, bool, bool, bool]) -> None:
+        self._dwelling = dwelling
+
+    def poisson(self, *args: object, **kwargs: object) -> Any:
+        return np.array([0 if dwell else 1 for dwell in self._dwelling])
+
+
+class _StubCoinRNG:
+    """Deterministic stand-in for `self._rng`, isolating `_terc_linking_
+    stall`'s branch-1 (both-columns-crossing) fair-coin `.random()` draw."""
+
+    def __init__(self, coin_value: float) -> None:
+        self._coin_value = coin_value
+
+    def random(self, *args: object, **kwargs: object) -> Any:
+        return self._coin_value
 
 
 def _bound_sites(process: KarrReplicationProcess, entries: list[tuple[int, int, int]]) -> SparseTriplet:
@@ -211,97 +242,134 @@ def test_are_lagging_strand_ssb_sites_bound_false_when_helicase_unbound(
 
 
 # ----------------------------------------------------------------------
-# c2: _assert_no_rna_polymerase_occlusion
+# Finding 4: _rna_polymerase_collision_stall
 # ----------------------------------------------------------------------
 
 
-def test_assert_no_rna_polymerase_occlusion_passes_on_empty_window(
+def test_rna_polymerase_collision_stall_noop_when_no_rna_polymerase_bound(
     process: KarrReplicationProcess,
 ) -> None:
+    """Karr's own OUTER gate (Replication.m:846-848, `if any(tfs)`): with no
+    RNA polymerase bound ANYWHERE on the chromosome, the whole mechanism is
+    skipped entirely -- no draw, no cap, `leading_advance` passed through
+    unchanged and both lagging caps `None`."""
     sites = _empty_triplet(process)
-    process._assert_no_rna_polymerase_occlusion(
-        sites, strand=process.leading_strand_indexs[0], window_lo=1000, window_hi=2000, context="test"
+    process._rng = _StubPoissonRNG(dwelling=(True, True, True, True))
+    advance0, advance1, cap0, cap1 = process._rna_polymerase_collision_stall(
+        sites, helicase_pos=(1000, 5000), lagging_pol_pos=(-1, -1), leading_advance=(50, 60)
     )
+    assert (advance0, advance1, cap0, cap1) == (50, 60, None, None)
 
 
-def test_assert_no_rna_polymerase_occlusion_passes_on_own_complex(
+def test_rna_polymerase_collision_stall_passthrough_when_not_dwelling(
     process: KarrReplicationProcess,
 ) -> None:
+    """Gate fires (RNA polymerase bound somewhere), but this cell's own
+    Poisson draw is NOT "dwelling" (nonzero draw) -- no cap applied."""
     strand = process.leading_strand_indexs[0]
-    sites = _bound_sites(process, [(1500, strand, process.helicase_global_index)])
-    process._assert_no_rna_polymerase_occlusion(
-        sites, strand=strand, window_lo=1000, window_hi=2000, context="test"
+    sites = _bound_sites(process, [(800, strand, process.rna_polymerase_global_index)])
+    process._rng = _StubPoissonRNG(dwelling=(False, False, False, False))
+    advance0, advance1, cap0, cap1 = process._rna_polymerase_collision_stall(
+        sites, helicase_pos=(1000, 5000), lagging_pol_pos=(-1, -1), leading_advance=(50, 60)
     )
+    assert (advance0, advance1, cap0, cap1) == (50, 60, None, None)
 
 
-def test_assert_no_rna_polymerase_occlusion_passes_on_generic_foreign_complex(
+def test_rna_polymerase_collision_stall_caps_leading0_when_dwelling(
     process: KarrReplicationProcess,
 ) -> None:
-    # Generic foreign occupancy (e.g. the standalone DNA_POLYMERASE_GAMMA_
-    # COMPLEX subunit, never bound alone by this process -- only as part of
-    # the `core_beta_clamp_gamma_complex`/`two_core_beta_clamp_gamma_complex_
-    # primase` composites) is NOT an RNA-polymerase occupant, so this guard
-    # must NOT raise for it -- that case is instead handled by
-    # `_occlusion_advance_cap` (a reduction, not a hard fail); see the
-    # "generic occlusion narrowly but fail closed... generic occupancy alone
-    # must not raise" adjudication.
+    """Literal `tmpLimits(1,1)` (Replication.m:855): an RNA polymerase (or
+    holoenzyme) bound on column 0's own strand pair, ahead of the helicase
+    in its (decreasing) direction of travel, caps `leading_advance[0]` to
+    the gap remaining before the RNA polymerase's own footprint -- but only
+    when this cell's dwell draw fires."""
     strand = process.leading_strand_indexs[0]
-    assert process.gamma_complex_global_index not in process._rna_polymerase_global_indexs
-    sites = _bound_sites(process, [(1500, strand, process.gamma_complex_global_index)])
-    process._assert_no_rna_polymerase_occlusion(
-        sites, strand=strand, window_lo=1000, window_hi=2000, context="test"
+    rna_pol_footprint = process._foreign_dna_footprint_by_global_index[process.rna_polymerase_global_index]
+    helicase_pos0 = 1000
+    rna_pol_pos = 800
+    sites = _bound_sites(process, [(rna_pol_pos, strand, process.rna_polymerase_global_index)])
+    process._rng = _StubPoissonRNG(dwelling=(True, False, False, False))
+    advance0, advance1, cap0, cap1 = process._rna_polymerase_collision_stall(
+        sites, helicase_pos=(helicase_pos0, 500_000), lagging_pol_pos=(-1, -1), leading_advance=(1_000, 60)
     )
+    expected_cap = max(0, helicase_pos0 - (rna_pol_pos + rna_pol_footprint))
+    assert advance0 == expected_cap
+    assert advance1 == 60
+    assert cap0 is None
+    assert cap1 is None
 
 
-def test_assert_no_rna_polymerase_occlusion_passes_on_own_complex_different_strand(
+def test_rna_polymerase_collision_stall_zeros_leading1_when_dwelling_with_no_rna_polymerase_in_own_quadrant(
     process: KarrReplicationProcess,
 ) -> None:
-    # An RNA-polymerase occupant on a *different* strand than the one being
-    # checked must not trigger the guard.
-    strand = process.leading_strand_indexs[0]
-    other_strand = process.leading_strand_indexs[1]
-    sites = _bound_sites(process, [(1500, other_strand, process.rna_polymerase_global_index)])
-    process._assert_no_rna_polymerase_occlusion(
-        sites, strand=strand, window_lo=1000, window_hi=2000, context="test"
+    """COUNTERINTUITIVE-BUT-LITERAL Karr behavior (verified directly against
+    Replication.m:855-858's unconditional `tmpLimits = zeros(2, 2)`
+    initialization): the outer gate is GLOBAL (any RNA polymerase bound
+    ANYWHERE fires it for all 4 cells), but each cell's own `tmpLimits`
+    value defaults to 0 when no RNA polymerase happens to be found in that
+    cell's OWN quadrant -- so a "dwelling" draw for a cell with nothing
+    nearby still zeroes it, rather than being treated as a benign no-op.
+    Here the only bound RNA polymerase is on column 0's strands (nowhere
+    near column 1's), yet column 1's leading advance is still zeroed
+    because its own dwell draw fired."""
+    col0_strand = process.leading_strand_indexs[0]
+    sites = _bound_sites(process, [(800, col0_strand, process.rna_polymerase_global_index)])
+    process._rng = _StubPoissonRNG(dwelling=(False, True, False, False))
+    advance0, advance1, cap0, cap1 = process._rna_polymerase_collision_stall(
+        sites, helicase_pos=(1000, 5000), lagging_pol_pos=(-1, -1), leading_advance=(50, 60)
     )
+    assert advance0 == 50
+    assert advance1 == 0
+    assert cap0 is None
+    assert cap1 is None
 
 
-def test_assert_no_rna_polymerase_occlusion_raises_on_rna_polymerase(
+def test_rna_polymerase_collision_stall_caps_lagging0_budget_when_dwelling(
     process: KarrReplicationProcess,
 ) -> None:
-    strand = process.leading_strand_indexs[0]
-    sites = _bound_sites(process, [(1500, strand, process.rna_polymerase_global_index)])
-    with pytest.raises(ReplicationTopologyError, match="RNA-polymerase"):
-        process._assert_no_rna_polymerase_occlusion(
-            sites, strand=strand, window_lo=1000, window_hi=2000, context="fork-advance"
-        )
+    """Literal `tmpLimits(2,1)` (Replication.m:857): column 0's LAGGING
+    strand cell deliberately checks column 1's own strand pair (the
+    cross-column template relationship, matching `_num_lagging_template_
+    bound_ssbs`), capping the returned `lagging_cap0` (a per-tick BUDGET
+    cap, not a direct `leading_advance` element) rather than `advance0`."""
+    col1_strand = process.leading_strand_indexs[1]
+    holo_footprint = process.polymerase_holoenzyme_footprint_bp
+    lagging_pol_pos0 = 2000
+    rna_pol_pos = 2500
+    sites = _bound_sites(process, [(rna_pol_pos, col1_strand, process.rna_polymerase_global_index)])
+    process._rng = _StubPoissonRNG(dwelling=(False, False, True, False))
+    advance0, advance1, cap0, cap1 = process._rna_polymerase_collision_stall(
+        sites,
+        helicase_pos=(1_000_000, 2_000_000),
+        lagging_pol_pos=(lagging_pol_pos0, -1),
+        leading_advance=(50, 60),
+    )
+    assert advance0 == 50
+    assert advance1 == 60
+    assert cap0 == max(0, rna_pol_pos - (lagging_pol_pos0 + holo_footprint))
+    assert cap1 is None
 
 
-def test_assert_no_rna_polymerase_occlusion_raises_on_rna_polymerase_holoenzyme(
+def test_rna_polymerase_collision_stall_uses_first_rna_polymerase_index_footprint(
     process: KarrReplicationProcess,
 ) -> None:
+    """Karr always uses the FIRST RNA polymerase index's footprint
+    (`rnaPolFtpt = c.getDNAFootprint([], rnaPolymeraseIndexs(1))`)
+    regardless of which RNA-polymerase VARIANT (`RNA_POLYMERASE` vs
+    `RNA_POLYMERASE_HOLOENZYME`) is actually bound at a given site -- so
+    the cap computed for a bound holoenzyme must use the SAME footprint
+    constant as the bare-RNA-polymerase test above, not the holoenzyme's
+    own (generally larger) footprint."""
     strand = process.leading_strand_indexs[0]
-    sites = _bound_sites(process, [(1500, strand, process.rna_polymerase_holoenzyme_global_index)])
-    with pytest.raises(ReplicationTopologyError, match="RNA-polymerase"):
-        process._assert_no_rna_polymerase_occlusion(
-            sites, strand=strand, window_lo=1000, window_hi=2000, context="fork-advance"
-        )
-
-
-def test_assert_no_rna_polymerase_occlusion_noop_on_empty_or_inverted_window(
-    process: KarrReplicationProcess,
-) -> None:
-    strand = process.leading_strand_indexs[0]
-    sites = _bound_sites(process, [(1500, strand, process.rna_polymerase_global_index)])
-    # window_hi <= window_lo must be treated as an empty (no-op) window even
-    # though an RNA-polymerase occupant exists at a position that would
-    # otherwise be "inside" the numeric range.
-    process._assert_no_rna_polymerase_occlusion(
-        sites, strand=strand, window_lo=2000, window_hi=1000, context="test"
+    rna_pol_footprint = process._foreign_dna_footprint_by_global_index[process.rna_polymerase_global_index]
+    helicase_pos0 = 1000
+    rna_pol_pos = 800
+    sites = _bound_sites(process, [(rna_pol_pos, strand, process.rna_polymerase_holoenzyme_global_index)])
+    process._rng = _StubPoissonRNG(dwelling=(True, False, False, False))
+    advance0, _advance1, _cap0, _cap1 = process._rna_polymerase_collision_stall(
+        sites, helicase_pos=(helicase_pos0, 500_000), lagging_pol_pos=(-1, -1), leading_advance=(1_000, 60)
     )
-    process._assert_no_rna_polymerase_occlusion(
-        sites, strand=strand, window_lo=1500, window_hi=1500, context="test"
-    )
+    assert advance0 == max(0, helicase_pos0 - (rna_pol_pos + rna_pol_footprint))
 
 
 # ----------------------------------------------------------------------
@@ -556,53 +624,216 @@ def test_occlusion_advance_cap_real_tick13_dnaa_atp_7mer_column1(
 
 
 # ----------------------------------------------------------------------
-# c2: _assert_no_terc_linking_veto
+# Finding 4: _terc_linking_stall
 # ----------------------------------------------------------------------
 
 
-def test_assert_no_terc_linking_veto_passes_when_window_misses_terc(
+def _crossing_helicase_and_advance(
+    process: KarrReplicationProcess, *, column: int, lead_bp: int
+) -> tuple[int, int]:
+    """Constructs a `(helicase_pos, advance)` pair for `column` such that
+    `_terc_linking_stall`'s own "crosses terC this tick" predicate is
+    satisfied by exactly `lead_bp` bp (the helicase's own 5' edge is
+    `lead_bp` bp short of terC before this tick's advance, and this tick's
+    own `advance` is `lead_bp + 1` bp -- just enough to cross)."""
+    hel_ftpt5 = process.helicase_footprint_5prime_bp
+    terc = process.terc_position_bp
+    advance = lead_bp + 1
+    if column == 0:
+        # col0_before: helicase_pos + hel_ftpt5 >= terc + 1
+        # col0_this_tick: (helicase_pos + hel_ftpt5 - advance) < terc + 1
+        helicase_pos = terc + 1 + lead_bp - hel_ftpt5
+        return helicase_pos, advance
+    # col1_before: helicase_pos + hel_ftpt5 - 1 <= terc
+    # col1_this_tick: (helicase_pos + hel_ftpt5 - 1 + advance) > terc
+    helicase_pos = terc - lead_bp + 1 - hel_ftpt5
+    return helicase_pos, advance
+
+
+def _far_from_terc_helicase(process: KarrReplicationProcess, *, column: int) -> int:
+    """A helicase position guaranteed to leave `column` NOT crossing terC
+    this tick regardless of `leading_advance`, used to hold the other
+    column inert while isolating a single-column-crossing branch."""
+    terc = process.terc_position_bp
+    if column == 0:
+        # col0_before requires helicase_pos + hel_ftpt5 >= terc + 1; make
+        # this false unconditionally by placing the helicase far below terC.
+        return 0
+    # col1_before requires helicase_pos + hel_ftpt5 - 1 <= terc; make this
+    # false unconditionally by placing the helicase far past terC.
+    return terc + process.sequence_len_bp // 4
+
+
+def test_terc_linking_stall_passthrough_when_neither_column_crossing(
     process: KarrReplicationProcess,
 ) -> None:
     store = ChromosomeStore(shape=process.chromosome_shape)
+    helicase_pos = (
+        _far_from_terc_helicase(process, column=0),
+        _far_from_terc_helicase(process, column=1),
+    )
+    advance0, advance1 = process._terc_linking_stall(
+        store, helicase_pos=helicase_pos, leading_advance=(50, 60)
+    )
+    assert (advance0, advance1) == (50, 60)
+
+
+def test_terc_linking_stall_passthrough_when_crossing_but_linking_all_zero(
+    process: KarrReplicationProcess,
+) -> None:
+    store = ChromosomeStore(shape=process.chromosome_shape)
+    helicase_pos0, advance0_in = _crossing_helicase_and_advance(process, column=0, lead_bp=5)
+    helicase_pos = (helicase_pos0, _far_from_terc_helicase(process, column=1))
+    advance0, advance1 = process._terc_linking_stall(
+        store, helicase_pos=helicase_pos, leading_advance=(advance0_in, 60)
+    )
+    assert (advance0, advance1) == (advance0_in, 60)
+
+
+def test_terc_linking_stall_branch2_zeros_column0_when_daughter_strand_not_polymerized(
+    process: KarrReplicationProcess,
+) -> None:
+    """Branch 2 (Replication.m:827-833): column 0 alone crosses terC this
+    tick, a nonzero linking number is recorded at the check position, and
+    the daughter strand at `[terC, laggingStrandIndexs(2)]` is NOT already
+    polymerized -> zero column 0's advance."""
+    store = ChromosomeStore(shape=process.chromosome_shape)
+    helicase_pos0, advance0_in = _crossing_helicase_and_advance(process, column=0, lead_bp=5)
+    helicase_pos1 = _far_from_terc_helicase(process, column=1)
+    check_pos_0based = min(process.terc_position_bp + 1, helicase_pos1 + process.helicase_footprint_5prime_bp - 1) - 1
     store.set_field(
         "linkingNumbers",
         SparseTriplet.from_regions(
-            [(process.terc_position_bp + 10_000, process.leading_strand_indexs[0], 3)],
+            [(check_pos_0based, process.leading_strand_indexs[0], 5)],
             shape=process.chromosome_shape,
         ),
     )
-    process._assert_no_terc_linking_veto(
-        store, column=0, window_lo=100, window_hi=200,
+    advance0, advance1 = process._terc_linking_stall(
+        store, helicase_pos=(helicase_pos0, helicase_pos1), leading_advance=(advance0_in, 60)
     )
+    assert (advance0, advance1) == (0, 60)
 
 
-def test_assert_no_terc_linking_veto_passes_when_linking_numbers_all_zero(
+def test_terc_linking_stall_branch2_noop_when_daughter_strand_already_polymerized(
     process: KarrReplicationProcess,
 ) -> None:
+    """Same setup as above, but the daughter strand IS already
+    polymerized at the check position -- branch 2's veto must NOT fire."""
     store = ChromosomeStore(shape=process.chromosome_shape)
-    process._assert_no_terc_linking_veto(
-        store,
-        column=0,
-        window_lo=process.terc_position_bp - 10,
-        window_hi=process.terc_position_bp + 10,
-    )
-
-
-def test_assert_no_terc_linking_veto_raises_on_nonzero_linking_number_near_terc(
-    process: KarrReplicationProcess,
-) -> None:
-    store = ChromosomeStore(shape=process.chromosome_shape)
+    helicase_pos0, advance0_in = _crossing_helicase_and_advance(process, column=0, lead_bp=5)
+    helicase_pos1 = _far_from_terc_helicase(process, column=1)
+    check_pos_0based = min(process.terc_position_bp + 1, helicase_pos1 + process.helicase_footprint_5prime_bp - 1) - 1
     store.set_field(
         "linkingNumbers",
         SparseTriplet.from_regions(
-            [(process.terc_position_bp, process.leading_strand_indexs[0], 5)],
+            [(check_pos_0based, process.leading_strand_indexs[0], 5)],
             shape=process.chromosome_shape,
         ),
     )
-    with pytest.raises(ReplicationTopologyError, match="terC linking-number veto"):
-        process._assert_no_terc_linking_veto(
-            store,
-            column=0,
-            window_lo=process.terc_position_bp - 10,
-            window_hi=process.terc_position_bp + 10,
-        )
+    store.set_field(
+        "polymerizedRegions",
+        SparseTriplet.from_regions(
+            [(process.terc_position_0based, process.lagging_strand_indexs[1], 1)],
+            shape=process.chromosome_shape,
+        ),
+    )
+    advance0, advance1 = process._terc_linking_stall(
+        store, helicase_pos=(helicase_pos0, helicase_pos1), leading_advance=(advance0_in, 60)
+    )
+    assert (advance0, advance1) == (advance0_in, 60)
+
+
+def test_terc_linking_stall_branch3_zeros_column1_when_daughter_strand_not_polymerized(
+    process: KarrReplicationProcess,
+) -> None:
+    """Branch 3 (Replication.m:834-840): the column-1-alone-crossing
+    mirror of branch 2 above."""
+    store = ChromosomeStore(shape=process.chromosome_shape)
+    helicase_pos1, advance1_in = _crossing_helicase_and_advance(process, column=1, lead_bp=5)
+    helicase_pos0 = _far_from_terc_helicase(process, column=0)
+    check_pos_0based = min(process.terc_position_bp + 1, helicase_pos1 + process.helicase_footprint_5prime_bp - 1) - 1
+    store.set_field(
+        "linkingNumbers",
+        SparseTriplet.from_regions(
+            [(check_pos_0based, process.leading_strand_indexs[0], 5)],
+            shape=process.chromosome_shape,
+        ),
+    )
+    advance0, advance1 = process._terc_linking_stall(
+        store, helicase_pos=(helicase_pos0, helicase_pos1), leading_advance=(70, advance1_in)
+    )
+    assert (advance0, advance1) == (70, 0)
+
+
+def test_terc_linking_stall_branch3_noop_when_daughter_strand_already_polymerized(
+    process: KarrReplicationProcess,
+) -> None:
+    store = ChromosomeStore(shape=process.chromosome_shape)
+    helicase_pos1, advance1_in = _crossing_helicase_and_advance(process, column=1, lead_bp=5)
+    helicase_pos0 = _far_from_terc_helicase(process, column=0)
+    check_pos_0based = min(process.terc_position_bp + 1, helicase_pos1 + process.helicase_footprint_5prime_bp - 1) - 1
+    store.set_field(
+        "linkingNumbers",
+        SparseTriplet.from_regions(
+            [(check_pos_0based, process.leading_strand_indexs[0], 5)],
+            shape=process.chromosome_shape,
+        ),
+    )
+    store.set_field(
+        "polymerizedRegions",
+        SparseTriplet.from_regions(
+            [(process.terc_position_bp, process.lagging_strand_indexs[1], 1)],
+            shape=process.chromosome_shape,
+        ),
+    )
+    advance0, advance1 = process._terc_linking_stall(
+        store, helicase_pos=(helicase_pos0, helicase_pos1), leading_advance=(70, advance1_in)
+    )
+    assert (advance0, advance1) == (70, advance1_in)
+
+
+def test_terc_linking_stall_branch1_coin_zeros_column0_on_high_draw(
+    process: KarrReplicationProcess,
+) -> None:
+    """Branch 1 (Replication.m:820-826): BOTH columns cross terC
+    simultaneously this tick with a nonzero linking number recorded -- a
+    fair coin (drawn from this process's own seeded `self._rng`, never
+    global state) zeros exactly one column. `self._rng.random() >= 0.5`
+    zeros column 0 per `_terc_linking_stall`'s own literal mapping."""
+    store = ChromosomeStore(shape=process.chromosome_shape)
+    helicase_pos0, advance0_in = _crossing_helicase_and_advance(process, column=0, lead_bp=5)
+    helicase_pos1, advance1_in = _crossing_helicase_and_advance(process, column=1, lead_bp=5)
+    check_pos_0based = min(process.terc_position_bp + 1, helicase_pos1 + process.helicase_footprint_5prime_bp - 1) - 1
+    store.set_field(
+        "linkingNumbers",
+        SparseTriplet.from_regions(
+            [(check_pos_0based, process.leading_strand_indexs[0], 5)],
+            shape=process.chromosome_shape,
+        ),
+    )
+    process._rng = _StubCoinRNG(coin_value=0.9)
+    advance0, advance1 = process._terc_linking_stall(
+        store, helicase_pos=(helicase_pos0, helicase_pos1), leading_advance=(advance0_in, advance1_in)
+    )
+    assert (advance0, advance1) == (0, advance1_in)
+
+
+def test_terc_linking_stall_branch1_coin_zeros_column1_on_low_draw(
+    process: KarrReplicationProcess,
+) -> None:
+    store = ChromosomeStore(shape=process.chromosome_shape)
+    helicase_pos0, advance0_in = _crossing_helicase_and_advance(process, column=0, lead_bp=5)
+    helicase_pos1, advance1_in = _crossing_helicase_and_advance(process, column=1, lead_bp=5)
+    check_pos_0based = min(process.terc_position_bp + 1, helicase_pos1 + process.helicase_footprint_5prime_bp - 1) - 1
+    store.set_field(
+        "linkingNumbers",
+        SparseTriplet.from_regions(
+            [(check_pos_0based, process.leading_strand_indexs[0], 5)],
+            shape=process.chromosome_shape,
+        ),
+    )
+    process._rng = _StubCoinRNG(coin_value=0.1)
+    advance0, advance1 = process._terc_linking_stall(
+        store, helicase_pos=(helicase_pos0, helicase_pos1), leading_advance=(advance0_in, advance1_in)
+    )
+    assert (advance0, advance1) == (advance0_in, 0)
