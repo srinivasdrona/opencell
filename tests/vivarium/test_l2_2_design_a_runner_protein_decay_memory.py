@@ -24,7 +24,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -134,7 +133,7 @@ def test_protein_decay_tick_outputs_identical_bounded_vs_unbounded_cache(
     unbounded_results = _run_grid(unbounded_cache)
 
     assert len(bounded_results) == len(unbounded_results) == n_seeds * m_ticks
-    for bounded, unbounded in zip(bounded_results, unbounded_results):
+    for bounded, unbounded in zip(bounded_results, unbounded_results, strict=True):
         assert bounded["sample_seed"] == unbounded["sample_seed"]
         for channel in ("substrates", "monomers", "complexs"):
             np.testing.assert_array_equal(bounded[channel], unbounded[channel])

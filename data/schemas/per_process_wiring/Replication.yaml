@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "KarrReplicationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_replication.py"
-        lines: "1228-1228"
+        lines: "1253-1253"
         note: "Inline request construction and allocator clipping."
         symbol: "KarrReplicationProcess.next_update"
       supporting:
@@ -48,7 +48,7 @@ integration_touchpoints:
       symbol: "KarrReplicationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_replication.py"
-        lines: "1228-1228"
+        lines: "1253-1253"
         note: "Current per-tick update path."
         symbol: "KarrReplicationProcess.next_update"
       supporting:

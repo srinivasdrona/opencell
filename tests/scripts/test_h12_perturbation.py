@@ -1291,7 +1291,7 @@ def test_build_ppii_scarcity_perturbation_artifact_observed_stochastic_when_clea
     assert artifact["verdict"] == "H12_PERTURBATION_SCARCITY_OBSERVED_STOCHASTIC"
     assert artifact["gating"].startswith("NON_GATING")
     assert "H12_CONFIRMED" not in artifact["verdict"]
-    assert "H12_PERTURBATION_CONFIRMED" != artifact["verdict"]
+    assert artifact["verdict"] != "H12_PERTURBATION_CONFIRMED"
     assert artifact["mode"] == "full"
 
 
@@ -1492,7 +1492,7 @@ def test_build_macromol_perturbation_artifact_never_claims_h12_confirmed_even_if
 
 
 def test_module_constants_match_pre_registered_spec():
-    with open(hp.SPEC_PATH, "r", encoding="utf-8") as fh:
+    with open(hp.SPEC_PATH, encoding="utf-8") as fh:
         spec = json.load(fh)
     scn_ppii = spec["scenarios"]["protein_processing_ii_scenario_a_full_saturating"]
     assert "58" in scn_ppii["derivation"]["enzymes_signalPeptidase"]
@@ -1509,7 +1509,7 @@ def test_module_constants_match_pre_registered_spec():
 
 
 def test_spec_records_ppii_scarcity_guard_as_explicitly_out_of_scope():
-    with open(hp.SPEC_PATH, "r", encoding="utf-8") as fh:
+    with open(hp.SPEC_PATH, encoding="utf-8") as fh:
         spec = json.load(fh)
     assert "explicitly_out_of_scope_for_octave_execution" in spec
     assert "protein_processing_ii_scarcity_guard_branch" in spec["explicitly_out_of_scope_for_octave_execution"]
@@ -1523,7 +1523,7 @@ def test_descoped_scarcity_guard_is_actually_covered_by_existing_formula_test():
 
 
 def test_n_seeds_matches_spec_seed_count():
-    with open(hp.SPEC_PATH, "r", encoding="utf-8") as fh:
+    with open(hp.SPEC_PATH, encoding="utf-8") as fh:
         spec = json.load(fh)
     assert hp.N_SEEDS == spec["seeds"]["count"] == 50
 
@@ -1560,8 +1560,8 @@ def test_existing_gated_h12_artifacts_are_untouched_by_perturbation_module():
     # The two Round-3-accepted OBSERVED_REGIME artifacts must remain exactly
     # as accepted; this module writes only to the perturbation/ subdirectory.
     gated_dir = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "h12"
-    assert hp.OUT_DIR == gated_dir / "perturbation"
-    assert hp.OUT_DIR != gated_dir
+    assert gated_dir / "perturbation" == hp.OUT_DIR
+    assert gated_dir != hp.OUT_DIR
 
 
 # ---------------------------------------------------------------------------

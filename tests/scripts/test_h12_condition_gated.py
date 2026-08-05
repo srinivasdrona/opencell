@@ -65,7 +65,7 @@ PROCESS_CATALOG_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "PROCE
 
 @pytest.fixture(scope="module")
 def artifact() -> dict:
-    with open(hcg.OUT_PATH, "r", encoding="utf-8") as fh:
+    with open(hcg.OUT_PATH, encoding="utf-8") as fh:
         return json.load(fh)
 
 

@@ -756,7 +756,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:calcResourceRequirements_Current:519
         status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1228
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
         note: 'No Replication `RequestCalculator*` exists in `opencell/vivarium/karr_request_calculators.py`
 
           (search for `Replication` / `karr_replication` returned no matches). The request surface is
@@ -774,7 +774,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:evolveState:568
         status: confirmed
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1228
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
         note: 'Direct runtime entrypoint. `next_update` is the Replication process update method, dispatching
           to
 
@@ -786,7 +786,7 @@ processes:
       initiateReplication:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:initiateReplication:616
         status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1228
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
         note: 'Folded into the `"initiating"` branch of `next_update`: `if replication_state == "initiating":`
 
           followed by `update["chromosome"] = {"replication_state": "elongating", "polymerizedRegions":
@@ -800,7 +800,7 @@ processes:
       unwindAndPolymerizeDNA:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:unwindAndPolymerizeDNA:692
         status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1228
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
         note: 'Folded into the `"elongating"` branch of `next_update`. OC computes
 
           `desired_demand = self._demand_from_advances(desired_left_bp, desired_right_bp)`
@@ -825,7 +825,7 @@ processes:
       initiateOkazakiFragment:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:initiateOkazakiFragment:1030
         status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._next_update_from_trace_hint:1041
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._next_update_from_trace_hint:1066
         note: 'Folded into trace-hint replay rather than a standalone OC def. In `_next_update_from_trace_hint`,
 
           `beta_binding_events = max(0, bound_next[self.enzyme_wid_beta_clamp] - bound_now[self.enzyme_wid_beta_clamp])`
@@ -838,7 +838,7 @@ processes:
       terminateOkazakiFragment:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:terminateOkazakiFragment:1095
         status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._next_update_from_trace_hint:1041
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._next_update_from_trace_hint:1066
         note: 'Also folded into trace-hint replay. `_emit_hint_delta(...)` mirrors the hinted bound/free
           enzyme
 
@@ -852,7 +852,7 @@ processes:
       ligateDNA:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:ligateDNA:1220
         status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._next_update_from_trace_hint:1041
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._next_update_from_trace_hint:1066
         note: 'Folded into `_next_update_from_trace_hint`: `ligase_capacity = self._stochastic_round(ligase_available
           * dt * self.ligase_rate_per_s)`
 
@@ -864,7 +864,7 @@ processes:
       terminateReplication:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:terminateReplication:1253
         status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1228
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
         note: 'Folded into the completion branch of `next_update`. When both forks reach terC,
 
           `completion = self._completion_update()` and
@@ -1221,7 +1221,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m:evolveState:618
         status: confirmed
-        oc: opencell/vivarium/karr_transcription_v3.py:KarrTranscriptionV3Process.next_update:170
+        oc: opencell/vivarium/karr_transcription_v3.py:KarrTranscriptionV3Process.next_update:189
         note: Karr 618-973 runs the RNAP state machine and calls computeRNAPolymeraseTUBindingProbabilities()
           at 753; karr_composite.py:210 binds karr_transcription to KarrTranscriptionV3Process, whose
           next_update does `synth_gene_per_s = tx_v2.predict_gene_synthesis_per_s(self.mechanism_inputs,

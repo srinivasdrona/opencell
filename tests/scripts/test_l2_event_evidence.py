@@ -157,7 +157,7 @@ def test_audit_index_flags_incomplete_row_as_a_problem_not_a_silent_pass(tmp_pat
 
     incomplete = _fake_artifacts()
     del incomplete["provenance.json"]
-    run_dir = evidence.write_run_artifacts("TestProc", "run1", incomplete)
+    evidence.write_run_artifacts("TestProc", "run1", incomplete)
     # Deliberately do NOT call bundle_run (which would itself refuse via
     # FileNotFoundError, per test_bundle_run_requires_all_mandatory_files_present
     # above) -- instead hand-build an INCOMPLETE index row directly, the way

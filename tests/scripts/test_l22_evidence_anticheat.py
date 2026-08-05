@@ -38,7 +38,6 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.l22_evidence import catalog as cat  # noqa: E402
 from scripts.l22_evidence import generator as gen  # noqa: E402
 from scripts.l22_evidence import schema  # noqa: E402
-
 from tests.scripts._l22_evidence_fixtures import (  # noqa: E402
     default_input_records,
     write_mandatory_sidecars,
@@ -258,7 +257,6 @@ def test_closed_form_confirmed_without_h12_support_is_non_green(tmp_path):
 
 
 def test_closed_form_confirmed_with_valid_h12_support_is_green(tmp_path):
-    entry = _ENTRIES["tRNAAminoacylation"]
     from scripts.l22_evidence import h12
 
     h12_path = tmp_path / "h12_evidence.json"

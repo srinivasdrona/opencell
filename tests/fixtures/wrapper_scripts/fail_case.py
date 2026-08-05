@@ -7,7 +7,7 @@ always reporting success.
 
 
 def test_deliberately_fails() -> None:
-    assert False, "intentional failure fixture for wrapper exit-code tests"
+    raise AssertionError("intentional failure fixture for wrapper exit-code tests")
 
 
 # NOTE: this file is intentionally named `fail_case.py` (not `test_*.py`) so

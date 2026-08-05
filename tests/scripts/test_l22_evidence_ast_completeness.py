@@ -24,7 +24,6 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts.l22_evidence import catalog as cat  # noqa: E402
 from scripts.l22_evidence import schema  # noqa: E402
-
 from tests.scripts._l22_ast_import_audit import (  # noqa: E402
     ImportAuditError,
     first_party_import_files,

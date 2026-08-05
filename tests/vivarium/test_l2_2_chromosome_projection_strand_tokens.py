@@ -19,7 +19,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import numpy as np
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -30,10 +29,9 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
-from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
-
 import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 
+from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
 
 _SHAPE = (100, 4)
 

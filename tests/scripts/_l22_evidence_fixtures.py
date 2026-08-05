@@ -34,8 +34,10 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.l22_evidence import schema  # noqa: E402
-from scripts.l22_evidence import sweep  # noqa: E402
+from scripts.l22_evidence import (
+    schema,  # noqa: E402
+    sweep,  # noqa: E402
+)
 from scripts.l22_evidence import verdict as vd  # noqa: E402
 from scripts.l22_evidence.populate import _git_dirty, _git_sha  # noqa: E402
 

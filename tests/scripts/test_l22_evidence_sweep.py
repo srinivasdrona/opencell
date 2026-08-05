@@ -25,10 +25,14 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.l22_evidence import schema  # noqa: E402
-from scripts.l22_evidence import sweep  # noqa: E402
-
-from tests.scripts._l22_evidence_fixtures import write_mandatory_sidecars, write_valid_sweep_provenance  # noqa: E402
+from scripts.l22_evidence import (
+    schema,  # noqa: E402
+    sweep,  # noqa: E402
+)
+from tests.scripts._l22_evidence_fixtures import (  # noqa: E402
+    write_mandatory_sidecars,
+    write_valid_sweep_provenance,
+)
 
 # A single real, always-tracked repo file used as a stand-in
 # `input_manifest.json["inputs"]` entry throughout this file: since R3, an

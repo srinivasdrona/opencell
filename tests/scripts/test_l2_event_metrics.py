@@ -530,8 +530,8 @@ def test_payload_gate_big_small_masking_worst_component_verdict_wins():
     oc_big = [v + (i % 5) * 20.0 for i, v in enumerate(karr_big)]
     karr_small = [5.0 + (i % 3) * 0.01 for i in range(30)]
     oc_small = [v + 3.0 for v in karr_small]
-    karr_payloads = [{"BIG": b, "SMALL": s} for b, s in zip(karr_big, karr_small)]
-    oc_payloads = [{"BIG": b, "SMALL": s} for b, s in zip(oc_big, oc_small)]
+    karr_payloads = [{"BIG": b, "SMALL": s} for b, s in zip(karr_big, karr_small, strict=True)]
+    oc_payloads = [{"BIG": b, "SMALL": s} for b, s in zip(oc_big, oc_small, strict=True)]
 
     result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng())
 
@@ -582,7 +582,10 @@ def test_payload_gate_per_component_null_is_not_pooled_across_components():
     component in the SAME cohort must produce DIFFERENT q95_null values."""
     low_variance = [5.0, 5.0, 5.0, 5.0, 6.0, 4.0] * 5
     high_variance = [0.0, 10.0, 0.0, 10.0, 20.0, -10.0] * 5
-    karr_payloads = [{"lo": lo, "hi": hi} for lo, hi in zip(low_variance, high_variance)]
+    karr_payloads = [
+        {"lo": lo, "hi": hi}
+        for lo, hi in zip(low_variance, high_variance, strict=True)
+    ]
     oc_payloads = [dict(p) for p in karr_payloads]
     result = metrics.payload_gate(_by_seed(karr_payloads), _by_seed(oc_payloads), rng=_rng(1))
     per_component = {c.component: c for c in result.per_component}

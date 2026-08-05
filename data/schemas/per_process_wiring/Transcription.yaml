@@ -48,7 +48,7 @@ integration_touchpoints:
       symbol: "KarrTranscriptionV3Process.next_update"
       source:
         path: "opencell/vivarium/karr_transcription_v3.py"
-        lines: "170-170"
+        lines: "189-189"
         note: "Current OC mechanism-based per-tick transcription update."
         symbol: "KarrTranscriptionV3Process.next_update"
       supporting:

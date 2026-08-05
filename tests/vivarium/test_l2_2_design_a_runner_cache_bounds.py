@@ -46,7 +46,6 @@ from pathlib import Path
 import numpy as np
 import pytest
 
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -58,7 +57,6 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 from tests.vivarium import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
-
 
 # All 18 per-tick process factories keyed on `_sample_seed(seed, tick)`,
 # including `_protein_decay_process` (bound in the prior commit) so this
@@ -287,7 +285,7 @@ def test_macromol_tick_outputs_identical_bounded_vs_unbounded_cache(
     unbounded_results = _run_grid(unbounded_cache)
 
     assert len(bounded_results) == len(unbounded_results) == n_seeds * m_ticks
-    for bounded, unbounded in zip(bounded_results, unbounded_results):
+    for bounded, unbounded in zip(bounded_results, unbounded_results, strict=True):
         assert bounded["sample_seed"] == unbounded["sample_seed"]
         for channel in ("substrates", "monomers", "complexs"):
             np.testing.assert_array_equal(bounded[channel], unbounded[channel])

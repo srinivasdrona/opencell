@@ -15,8 +15,8 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
-import verify_multiseed_pilot as pilot  # noqa: E402
 import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
+import verify_multiseed_pilot as pilot  # noqa: E402
 
 
 def _pilot_files_present() -> bool:

@@ -398,7 +398,7 @@ def _seed_schema_preflight(seed_paths: list[Path], *, process_name: str | None =
                         "together instead of mixing schemas."
                     )
                 group = handle[section]
-                keys = tuple(sorted(str(key) for key in group.keys()))
+                keys = tuple(sorted(str(key) for key in group))
                 if section not in expected_keys:
                     expected_keys[section] = keys
                 elif keys != expected_keys[section]:

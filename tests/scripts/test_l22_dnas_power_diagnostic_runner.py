@@ -76,9 +76,11 @@ def test_seed_count_override_restores_original_after_exit():
 def test_seed_count_override_restores_original_even_on_exception():
     helpers = _fake_helpers_module(v2_ensemble_seed_counts={100: 100})
     original = helpers.load_karr_oracle
-    with pytest.raises(RuntimeError):
-        with diagnostic_runner.seed_count_override(helpers, "DNASupercoiling", 100):
-            raise RuntimeError("boom")
+    with (
+        pytest.raises(RuntimeError),
+        diagnostic_runner.seed_count_override(helpers, "DNASupercoiling", 100),
+    ):
+        raise RuntimeError("boom")
     assert helpers.load_karr_oracle is original
 
 

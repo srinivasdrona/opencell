@@ -30,7 +30,6 @@ if str(REPO_ROOT) not in sys.path:
 from scripts.l22_evidence import catalog as cat  # noqa: E402
 from scripts.l22_evidence import generator as gen  # noqa: E402
 from scripts.l22_evidence import schema  # noqa: E402
-
 from tests.scripts._l22_evidence_fixtures import write_full_valid_evidence  # noqa: E402
 
 _ENTRIES = cat.in_scope_processes()
