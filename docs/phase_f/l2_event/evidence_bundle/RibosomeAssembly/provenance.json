@@ -1,8 +1,8 @@
 {
   "adapter_id": "ribosome_assembly.gate.v1",
   "adapter_module": "scripts.l2_event.adapters.ribosome_assembly_gate",
-  "generated_at": "2026-08-05T12:14:08.847685+00:00",
-  "git_sha": "34b6c0a2957c1c1536bc7d20770177f7cbeaae18",
+  "generated_at": "2026-08-05T15:44:44.984239+00:00",
+  "git_sha": "abb569705603c26e0d5496b46e8c6726caef51dd",
   "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
   "karr_source": "data/m1_sources/karr_native",
   "process": "RibosomeAssembly",
