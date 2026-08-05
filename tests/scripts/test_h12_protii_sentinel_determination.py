@@ -162,10 +162,51 @@ def _as_matlab_literal(arg: str) -> str | None:
     return None
 
 
+# MATLAB's "command syntax" lets any function be invoked without
+# parens/commas, e.g. `addpath ../matlab` (equivalent to
+# `addpath('../matlab')`) or `addpath ../matlab -end` (equivalent to
+# `addpath('../matlab', '-end')`) -- every word after the function name is
+# taken as a literal string, never a variable dereference. This is a
+# distinct call form from `addpath(...)`, and `_extract_call_arg_texts`
+# above (which requires a literal `(` right after the name, modulo
+# whitespace) does not see it at all, so it must be checked separately.
+_COMMAND_FORM_ADDPATH = re.compile(r"(?<![.\w])addpath\s+(?!\()\S")
+
+
+def _assert_no_command_form_addpath(source: str, path: Path) -> None:
+    """Fail if `addpath` is ever invoked using MATLAB/Octave command syntax
+    anywhere in `source` -- e.g. `addpath ../matlab`, `addpath
+    'scripts/matlab'`, or even a bare `addpath wholecell_src` (which in
+    command syntax is NOT the identifier's value, but the literal 6-char
+    directory name "wholecell_src" -- command syntax never dereferences
+    variables). The only authorized `addpath` invocation anywhere in these
+    files is the functional-call form `addpath(wholecell_src)`, so ANY
+    command-form invocation is rejected outright, regardless of what
+    literal path it appears to name."""
+    m = _COMMAND_FORM_ADDPATH.search(source)
+    if m is None:
+        return
+    line_start = source.rfind("\n", 0, m.start()) + 1
+    line_end = source.find("\n", m.start())
+    line_end = len(source) if line_end == -1 else line_end
+    offending_line = source[line_start:line_end].strip()
+    raise AssertionError(
+        f"{path.name}: found a MATLAB command-syntax addpath invocation "
+        f"({offending_line!r}) -- the only authorized addpath usage in this "
+        "file is the functional-call form addpath(wholecell_src); command "
+        "syntax (e.g. 'addpath ../matlab') is a distinct MATLAB call form "
+        "that bypasses the functional-call argument parser entirely and "
+        "must never appear here"
+    )
+
+
 def _assert_addpath_only_resolves_to_wholecell_src(path: Path) -> None:
     """Structurally enforce the intended Scenario B addpath contract for a
     single `.m` file:
 
+      0. `addpath` is never invoked via MATLAB command syntax anywhere in
+         the file (e.g. `addpath ../matlab`) -- only the functional-call
+         form is ever accepted (see `_assert_no_command_form_addpath`).
       1. Every `fullfile(...)` call's literal arguments are scanned for a
          contiguous ('scripts','matlab') or ('..','matlab') subsequence
          (case-insensitive) -- either would resolve to the manual mnrnd
@@ -176,21 +217,24 @@ def _assert_addpath_only_resolves_to_wholecell_src(path: Path) -> None:
          case-insensitive) catches any single-literal spelling of
          `scripts/matlab` or a relative `../matlab` that isn't inside a
          `fullfile(...)` call.
-      3. There is EXACTLY ONE `addpath(...)` call in the file, and its
-         sole argument is the bare identifier `wholecell_src` -- not a
-         literal, not `fullfile(...)`, not any other expression.
+      3. There is EXACTLY ONE `addpath(...)` functional-call in the file,
+         and its sole argument is the bare identifier `wholecell_src` --
+         not a literal, not `fullfile(...)`, not any other expression.
       4. Every assignment to the bare name `wholecell_src` (not a
          qualified/field name like `report.wholecell_src_root_used`) has a
          right-hand side that is exactly `getenv('PPII_WHOLECELL_SRC_ROOT')`
          -- so the identifier addpath'd in (3) cannot itself have been
          quietly redefined to point at the shim directory.
 
-    Together (3)+(4) mean the ONLY thing this file can ever addpath is
-    whatever `PPII_WHOLECELL_SRC_ROOT` resolves to at runtime, and (1)+(2)
-    mean nothing anywhere in the file can construct a path that resolves
-    to the manual shim's directory in the first place.
+    Together (0)+(3)+(4) mean the ONLY thing this file can ever addpath is
+    whatever `PPII_WHOLECELL_SRC_ROOT` resolves to at runtime, via exactly
+    one accepted call FORM, and (1)+(2) mean nothing anywhere in the file
+    can construct a path that resolves to the manual shim's directory in
+    the first place.
     """
     source = path.read_text(encoding="utf-8")
+
+    _assert_no_command_form_addpath(source, path)
 
     for args_text in _extract_call_arg_texts(source, "fullfile"):
         literals = [_as_matlab_literal(a) for a in _split_top_level_args(args_text)]
@@ -234,30 +278,64 @@ def _assert_addpath_only_resolves_to_wholecell_src(path: Path) -> None:
 
 
 _EQUIVALENCE_WORD = re.compile(r"\bbit[- ]identical\b|\bequivalent\b|\bidentical\b", re.IGNORECASE)
-_STATS_TOOLBOX_OR_REAL_MNRND_MENTION = re.compile(r"statistics toolbox|real\s+mnrnd", re.IGNORECASE)
+# Matches both the classic "Statistics Toolbox" name and its real,
+# current product name "Statistics and Machine Learning Toolbox" (MATLAB
+# renamed it in R2015b) so a docstring using either spelling is recognized.
+_STATS_TOOLBOX_OR_REAL_MNRND_MENTION = re.compile(
+    r"statistics(?:\s+and\s+machine\s+learning)?\s+toolbox|real\s+mnrnd", re.IGNORECASE
+)
 _NEGATION_WORD = re.compile(r"\b(not|never|n't|no|isn't|doesn't|cannot|can't)\b", re.IGNORECASE)
+# Clause boundaries used to scope the negation search: sentence-final
+# punctuation, plus a comma or a contrastive/subordinating conjunction.
+# Without this, a negation word from an earlier, UNRELATED clause (e.g.
+# "Although this is not a perfect implementation, this output is
+# bit-identical to ...") falls inside a fixed-width character window and
+# is wrongly credited to the later, actually-unnegated equivalence claim.
+_CLAUSE_BOUNDARY = re.compile(r"[.!?;,]|\b(?:but|however|yet|although|though)\b", re.IGNORECASE)
+
+
+def _clause_start(text: str, before: int) -> int:
+    """Return the index of the start of the clause immediately preceding
+    position `before` in `text`: one character past the nearest clause
+    boundary (see `_CLAUSE_BOUNDARY`) found by scanning backward from
+    `before`, or 0 if `before` is in the first clause of `text`."""
+    boundary_end = 0
+    for m in _CLAUSE_BOUNDARY.finditer(text, 0, before):
+        boundary_end = m.end()
+    return boundary_end
 
 
 def _assert_no_unsupported_equivalence_claim(source: str, label: str) -> None:
-    """Semantic guard (not a blind substring ban): permits truthful
-    disclaimers such as "NOT bit-identical to the Statistics Toolbox's
-    mnrnd" or "never claims bit-identity with the real mnrnd" (both true
-    and desirable to state), but fails on any UNNEGATED claim that the
+    """Semantic guard (not a blind substring ban, and not a fixed-width
+    character window): permits truthful disclaimers such as "NOT
+    bit-identical to the Statistics Toolbox's mnrnd" or "never claims
+    bit-identity with the real mnrnd" (both true and desirable to state),
+    but fails on any UNNEGATED claim, WITHIN THE SAME CLAUSE, that the
     manual shim IS bit-identical/equivalent/identical to the real
-    Statistics Toolbox mnrnd -- a false claim this determination
-    explicitly rules out, since the two algorithms consume the RNG
-    stream's uniforms in structurally different amounts/orders.
+    Statistics (and Machine Learning) Toolbox mnrnd -- a false claim this
+    determination explicitly rules out, since the two algorithms consume
+    the RNG stream's uniforms in structurally different amounts/orders.
 
-    Scoped to matches near a "Statistics Toolbox"/"real mnrnd" mention so
-    unrelated, true statements (e.g. mnrnd.m's own "pure language core,
-    identical in MATLAB and Octave") are not flagged.
+    Clause-aware (see `_clause_start`): a negation word only counts if it
+    appears in the SAME clause as the equivalence word, i.e. after the
+    nearest preceding clause boundary (sentence-final punctuation, comma,
+    or a contrastive/subordinating conjunction like "but"/"however"/
+    "although"). A negation in an earlier, punctuation-separated clause
+    about something else entirely no longer incorrectly excuses a later,
+    actually-unnegated equivalence claim.
+
+    Scoped to matches near a "Statistics (and Machine Learning) Toolbox"/
+    "real mnrnd" mention so unrelated, true statements (e.g. mnrnd.m's own
+    "pure language core, identical in MATLAB and Octave") are not
+    flagged.
     """
     for m in _EQUIVALENCE_WORD.finditer(source):
         context = source[max(0, m.start() - 20) : m.end() + 80]
         if not _STATS_TOOLBOX_OR_REAL_MNRND_MENTION.search(context):
             continue
-        preceding = source[max(0, m.start() - 45) : m.start()]
-        assert _NEGATION_WORD.search(preceding), (
+        clause_start = _clause_start(source, m.start())
+        clause_text = source[clause_start : m.start()]
+        assert _NEGATION_WORD.search(clause_text), (
             f"{label}: found an unnegated claim ({m.group(0)!r} near offset {m.start()}) "
             "that the manual mnrnd shim is bit-identical/equivalent/identical to the "
             "real Statistics Toolbox mnrnd -- this determination requires the opposite "
@@ -403,6 +481,14 @@ def test_scenario_b_matlab_scripts_addpath_only_ever_resolves_to_wholecell_src(p
             False,
             id="wholecell-src-redefined-to-shim-dir",
         ),
+        pytest.param("addpath ../matlab\n", False, id="command-form-relative-dotdot"),
+        pytest.param("addpath '../matlab'\n", False, id="command-form-quoted-relative"),
+        pytest.param("addpath wholecell_src\n", False, id="command-form-bareword-not-a-variable"),
+        pytest.param(
+            "addpath(wholecell_src);\nwholecell_src = getenv('PPII_WHOLECELL_SRC_ROOT');\naddpath ../matlab\n",
+            False,
+            id="command-form-appended-after-authorized-call",
+        ),
     ],
 )
 def test_addpath_structural_guard_rejects_every_named_bypass_shape(source, should_pass, tmp_path):
@@ -410,9 +496,14 @@ def test_addpath_structural_guard_rejects_every_named_bypass_shape(source, shoul
     no-trace-cribbing / adversarial-probe discipline): proves
     `_assert_addpath_only_resolves_to_wholecell_src` actually rejects every
     bypass shape named in the task (relative literal, fullfile-split
-    literal, fullfile-relative, and a redefined `wholecell_src` variable),
-    not just the two real on-disk files, which could otherwise pass this
-    guard vacuously if the checker itself were too permissive."""
+    literal, fullfile-relative, a redefined `wholecell_src` variable, and
+    MATLAB *command-syntax* `addpath ../matlab` in its bare, quoted, and
+    bareword-argument forms -- command syntax never dereferences a
+    variable, so even `addpath wholecell_src` in command form adds a
+    literal directory named "wholecell_src", not the authorized path, and
+    is therefore always rejected regardless of what follows it), not just
+    the two real on-disk files, which could otherwise pass this guard
+    vacuously if the checker itself were too permissive."""
     probe_path = tmp_path / "probe.m"
     probe_path.write_text(source, encoding="utf-8")
     if should_pass:
@@ -450,13 +541,45 @@ def test_addpath_structural_guard_rejects_every_named_bypass_shape(source, shoul
             False,
             id="false-unnegated-equivalent-claim",
         ),
+        pytest.param(
+            "Although this is not a perfect implementation, this output is "
+            "bit-identical to the Statistics Toolbox's mnrnd.",
+            False,
+            id="clause-aware-false-negative-although-clause",
+        ),
+        pytest.param(
+            "This function does not exist in Octave; however, the draws are "
+            "equivalent to Statistics Toolbox's mnrnd.",
+            False,
+            id="clause-aware-false-negative-however-clause",
+        ),
+        pytest.param(
+            "This shim is NOT bit-identical to the real Statistics and "
+            "Machine Learning Toolbox's mnrnd.",
+            True,
+            id="truthful-negated-disclaimer-real-product-name",
+        ),
+        pytest.param(
+            "This shim is bit-identical to the Statistics and Machine "
+            "Learning Toolbox's mnrnd.",
+            False,
+            id="false-unnegated-claim-real-product-name",
+        ),
     ],
 )
 def test_equivalence_claim_guard_permits_truthful_disclaimers_but_rejects_false_claims(source, should_pass):
     """Adversarial probe for the semantic equivalence-claim guard itself:
     proves it passes truthful negated disclaimers and unrelated uses of
     "identical", but fails an unnegated claim that the shim IS
-    bit-identical/equivalent to the real Statistics Toolbox mnrnd."""
+    bit-identical/equivalent to the real Statistics Toolbox mnrnd.
+
+    Also proves the guard is clause-aware, not a fixed-width character
+    window: a negation word ("not"/"however") from an earlier, unrelated
+    clause must NOT excuse a later, actually-unnegated equivalence claim
+    once a clause boundary (here a comma or "however,") has been crossed.
+    And it recognizes the real, current MATLAB product name "Statistics
+    and Machine Learning Toolbox" (the toolbox was renamed from
+    "Statistics Toolbox" in R2015b), not only the legacy short name."""
     if should_pass:
         _assert_no_unsupported_equivalence_claim(source, label="probe")
     else:

@@ -175,24 +175,31 @@ were written) so a future edit cannot silently reintroduce this bypass:
 
 - **Addpath-argument guard** (`_assert_addpath_only_resolves_to_wholecell_src`,
   exercised against both `run_ppii_scenario_b_matlab.m` and
-  `probe_matlab_environment.m`): parses every `addpath(...)` and
-  `fullfile(...)` call's actual arguments via paren/quote-balanced scanning
-  (not a single regex over raw text), and requires (a) the file's ONLY
-  `addpath(...)` call is the bare identifier form `addpath(wholecell_src)`,
-  (b) every assignment to the bare name `wholecell_src` has a right-hand
-  side of exactly `getenv('PPII_WHOLECELL_SRC_ROOT')`, and (c) no
-  `fullfile(...)` call anywhere in the file contains a contiguous
-  `('scripts','matlab')` or `('..','matlab')` literal-argument pair. This
-  structurally rejects `addpath('../matlab')`,
-  `addpath(fullfile(repo_root,'scripts','matlab'))`,
-  `addpath(fullfile(this_dir,'..','matlab'))`, and a `wholecell_src`
-  variable quietly redefined to a shim-directory path — not just the
-  literal `"scripts/matlab'"` substring a naive check would look for. The
-  guard's own adversarial probe test
+  `probe_matlab_environment.m`): first rejects, file-wide, ANY MATLAB
+  *command-syntax* `addpath` invocation (e.g. `addpath ../matlab`,
+  `addpath '../matlab'`, or even `addpath wholecell_src` written without
+  parentheses) — command syntax never dereferences a variable, so a
+  bareword argument is always taken as a literal directory name, not the
+  variable's value, which makes every command-form `addpath` unauthorized
+  regardless of what follows it. It then parses every remaining
+  `addpath(...)` and `fullfile(...)` call's actual arguments via
+  paren/quote-balanced scanning (not a single regex over raw text), and
+  requires (a) the file's ONLY *functional-form* `addpath(...)` call is the
+  bare identifier form `addpath(wholecell_src)`, (b) every assignment to
+  the bare name `wholecell_src` has a right-hand side of exactly
+  `getenv('PPII_WHOLECELL_SRC_ROOT')`, and (c) no `fullfile(...)` call
+  anywhere in the file contains a contiguous `('scripts','matlab')` or
+  `('..','matlab')` literal-argument pair. This structurally rejects
+  `addpath('../matlab')`, `addpath(fullfile(repo_root,'scripts','matlab'))`,
+  `addpath(fullfile(this_dir,'..','matlab'))`, a `wholecell_src` variable
+  quietly redefined to a shim-directory path, and any command-syntax
+  `addpath` bypass — not just the literal `"scripts/matlab'"` substring a
+  naive check would look for. The guard's own adversarial probe test
   (`test_addpath_structural_guard_rejects_every_named_bypass_shape`) proves
-  it actually rejects each of these four shapes on synthetic input, not
-  only the two real files (which could otherwise pass vacuously if the
-  checker were too permissive).
+  it actually rejects each of these shapes (four functional-form and four
+  command-form variants) on synthetic input, not only the two real files
+  (which could otherwise pass vacuously if the checker were too
+  permissive).
 - **Equivalence-claim guard** (`_assert_no_unsupported_equivalence_claim`,
   exercised against `scripts/matlab/mnrnd.m`'s docstring): permits truthful,
   negated disclaimers such as "NOT bit-identical to the Statistics
@@ -203,9 +210,22 @@ were written) so a future edit cannot silently reintroduce this bypass:
   mnrnd. It also ignores unrelated, true uses of "identical" that are not
   about Statistics Toolbox equivalence (e.g. the shim's own "pure language
   core, identical in MATLAB and Octave" remark about its bin-counting
-  loop). Its own adversarial probe test
+  loop). The mention check recognizes both the legacy short name
+  "Statistics Toolbox" and the real, current MATLAB product name
+  "Statistics and Machine Learning Toolbox" (renamed in R2015b). The
+  negation search is **clause-aware, not a fixed-width character window**:
+  it only credits a negation word found after the nearest preceding clause
+  boundary (sentence-final punctuation, a comma, or a contrastive/
+  subordinating conjunction such as "but"/"however"/"although"/"though"),
+  so a negation word from an earlier, grammatically unrelated clause (e.g.
+  "Although this is not a perfect implementation, this output is
+  bit-identical to the Statistics Toolbox's mnrnd.") can no longer
+  incorrectly excuse a later, actually-unnegated equivalence claim in a
+  different clause. Its own adversarial probe test
   (`test_equivalence_claim_guard_permits_truthful_disclaimers_but_rejects_false_claims`)
-  proves both directions on synthetic input.
+  proves both directions on synthetic input, including the clause-boundary
+  false-negative shapes above and the "Statistics and Machine Learning
+  Toolbox" phrasing.
 
 ## 5. Even a clean full-mode Scenario B run would not close the sentinel
 
