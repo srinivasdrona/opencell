@@ -235,7 +235,7 @@
   "unblocks_l2_5": false,
   "maintainer_decision_made": false,
   "e1_provenance_ref": "docs/phase_f/l2_2_design_a/h12/MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md",
-  "e1_provenance_ref_sha256_lf_normalized": "334cbca976fd52de649fad039606b250a805d6faa0645764cdfc058442246409",
+  "e1_provenance_ref_sha256_lf_normalized": "b3a11d95f593a136016649e855a424b4c52b9c044379d9694f302ec8067f9b05",
   "accepted_h12_artifact_ref": {
     "path": "docs/phase_f/l2_2_design_a/h12/MacromolecularComplexation_h12.json",
     "sha256_lf_normalized": "02652958f5a7b193ce182db32a10503c6a565c657dd2f91b0b5dd6bcff0a3229",
@@ -349,7 +349,7 @@
   ],
   "generator_source_path": "scripts/l22_evidence/h12_condition_gated.py",
   "generator_source_sha256_lf_normalized": "ca3b4b120fe39eee8867aac9be9e8d35ff714ba4a6c81cd9b519914ad21c7219",
-  "generated_at": "2026-08-02T12:41:11.957646+00:00",
+  "generated_at": "2026-08-05T17:44:39.584784+00:00",
   "anti_laundering_attestation": {
     "census_inputs": [
       "states_before",

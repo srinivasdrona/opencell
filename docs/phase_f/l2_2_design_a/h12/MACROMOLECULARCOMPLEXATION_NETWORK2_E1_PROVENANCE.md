@@ -168,46 +168,104 @@ via a full-natural-lifecycle probe, which **is** in scope for this
 change: `scripts/matlab/full_cycle_event_scan_macromol.m` +
 `scripts/l22_evidence/h12_lifecycle_reachability.py`.
 
-**Mechanism.** The probe runs the real Karr per-tick scheduler (resource
-allocation via `calcResourceRequirements_Current` + `evolveState()` in
-`randperm` process order — the identical mechanism as the already-accepted
-`full_cycle_event_scan_v2.m`, the precedent used to justify
-RibosomeAssembly's `tick_offset=200` re-extraction) for a single seed
-(seed=0), starting at cell birth, with **no conditioning of any pool or
-constant**. It tracks E1's local substrate pool (`MG_429_MONOMER`) and
-network-2 complex deltas every tick, logging to CSV, and stops on
+**Mechanism (corrected 2026-08 post-review; see finding #2 of the second,
+blocking Opus review round).** An earlier version of this probe
+reimplemented the scheduler's outer loop by hand (a single global
+`randperm(nProcesses)` shared across all ticks, no
+tRNAAminoacylation-before-Translation ordering constraint, and a
+try/catch that silently swallowed `applyOptions`/seeding failures). That
+was a synthetic approximation of the scheduler and has been removed. The
+corrected probe instead calls the real, unmodified public method
+`sim.evolveState()` once per tick as a black box — this performs, inside
+the real engine and per real seeded `sim.randStream.randperm(nProcesses)`
+process ordering (re-drawn every tick, not once globally), real
+per-process resource-requirement estimation and allocation, and the
+tRNAAminoacylation-before-Translation rejection loop documented in
+`Simulation.evolveState.m:47-54` (translation is skipped/retried behind
+aminoacylation within the same tick's process ordering). No part of the
+scheduler is reimplemented by this script. Seeding
+(`sim.applyOptions('seed', ...)` + `sim.seedRandStream()`) is fail-closed:
+any error there is allowed to throw and abort the run rather than being
+swallowed. The probe runs for a single seed (seed=0), starting at cell
+birth, with **no conditioning of any pool or constant**, tracking E1's
+directly-state-read monomer count (`e1_monomer_count_direct_state_read`,
+see §"E1 terminology" below) and BOTH network-2 complexes' deltas
+per-identity (not summed) every tick, logging to CSV with a
+cancellation-safe write gate (`any_complex_changed = any(d(:) ~= 0)`,
+not a signed sum — see "CSV logging correctness" below), and stopping on
 `Geometry.pinched` (natural cell division) or a 33,000-tick ceiling.
 
+**CSV logging correctness.** A first attempt at this corrected probe used
+`any_complex_delta_total = sum(d(:))` (a **signed sum across the entire
+complexs state vector**) as the CSV write-gate. This can equal exactly 0
+even when a net2-relevant complex genuinely changed, if some unrelated
+complex changed by an opposite amount in the same tick — silently
+dropping that tick's row, including genuine net2-formation rows, from the
+CSV. This was caught by comparing the script's own live in-memory event
+counter (printed to stdout each 1,000 ticks) against an independent
+Python recompute from the CSV: the two diverged, which is only possible
+if some real event never made it into the file. The fix,
+`any_complex_changed = any(d(:) ~= 0)`, is used for both the write gate
+and the `n_any_complex_events` counter; `any_complex_delta_total` is
+retained in the CSV as informational-only and is never a gate again. The
+run reported below is a **full, fresh restart from tick 1** with this fix
+already in place (MATLAB's `randStream` state cannot be resumed
+mid-run, so re-using the flawed run's partial data was not possible and
+was not done).
+
 **Result.** The run was deliberately stopped by the operator at real,
-simulated tick 24,300 (of the 33,000-tick ceiling; natural division was
+simulated tick 18,300 (of the 33,000-tick ceiling; natural division was
 not reached) once the accumulated evidence was already decisive and
-strictly increasing with no sign of plateauing:
+monotonically increasing across both complex identities with no sign of
+plateauing. All counts below are **formation-only**
+(`n_net2_formation_events_by_complex` in the artifact/CSV recompute):
+raw per-tick deltas mix real complex formation (+1) with
+degradation/turnover (-1), and counting sign-agnostically would let a
+complex already nonzero at cell birth log a pure-degradation tick as if
+it had "fired," overstating competition evidence.
 
-| quantity | value |
+| quantity | complex 1: `MG_041_062_429_PENTAMER` | complex 2: `MG_041_069_429_PENTAMER` |
+|---|---|---|
+| net2 complex index (0-based fixture) | 22 | 23 |
+| formation-only events observed (ticks 1 – 18,300) | **9** | **3** |
+| first formation tick | 8,386 | 8,569 |
+| max observed absolute per-tick delta | 1 | 1 |
+
+| scalar quantity | value |
 |---|---|
-| E1 pool remains exactly 0 | ticks 1 – 5,891 |
-| first tick E1 pool > 0 | tick 5,892 |
-| tick E1 pool first reaches 2 (the exact 2-copies-per-pentamer stoichiometric requirement) | ~tick 8,100 |
-| first real network≥2 complex-formation event | tick 8,166 |
-| total real network≥2 events observed (tick 1 – 24,300) | **27**, growing steadily/non-monotonic-but-net-increasing throughout, not a one-off burst |
-| max E1 pool observed | 2 |
+| E1 direct-state-read count remains exactly 0 | ticks 1 – 8,263 |
+| first tick E1 direct-state-read count > 0 | 8,264 |
+| max E1 direct-state-read count observed | 2 (the exact 2-copies-per-pentamer stoichiometric requirement) |
+| last logged tick | 18,300 |
+| `pinched` reached | false (operator-stopped, not a natural cycle boundary) |
 
-Each of the 27 events was independently verified (via the raw CSV) to
-co-occur with `e1_pool == 2` and `net2_complex_delta_sum == 1` at that
-tick — the exact stoichiometric signature network 2 requires, arising
-from the real scheduler with no synthetic pool injection, no fixture
-edits, and no conditioning of any kind.
+Both complexes fired for real, independently, with **overlapping but
+distinguishable onset ticks and both identities represented in the
+formation count** (9 vs. 3, not a degenerate single-candidate draw where
+one complex never forms at all) — this is the per-identity evidence
+finding #3 required, sufficient to evaluate genuine 2-way competition
+rather than assume it. Every formation-only event was independently
+recomputed straight from the raw CSV via
+`scripts/l22_evidence/h12_lifecycle_reachability.py::_recompute_from_csv`
+and cross-checked against the artifact-generation path
+(`tests/scripts/test_h12_lifecycle_reachability.py`); no event count in
+this section is asserted by hand.
 
 **Conclusion for §3's question.** This directly falsifies the "E1 always
 zero / genuine biological ceiling for this population" hypothesis and
 confirms the "M=100/`tick_offset=0` sampling-window artifact" hypothesis
 — the same class of effect already established in this codebase for
 `RibosomeAssembly` (tick~238 activation), just manifesting far later
-(~tick 5,892) for this process's free E1 pool. Across the natural
-50-seed × 100-tick population, E1 is fixture-constant zero not because
-network 2 can never fire, but because the accepted window (ticks 0-99)
-ends roughly 58x before E1 first becomes nonzero in this seed's real
-trajectory.
+(tick 8,264) for this process's E1 count. Across the natural 50-seed ×
+100-tick population, E1 is fixture-constant zero not because network 2
+can never fire, but because the accepted window (ticks 0-99) ends
+roughly 82x before E1 first becomes nonzero in this seed's real,
+correctly-scheduled trajectory. (An earlier, scheduler-flawed version of
+this probe had observed E1 leaving zero much earlier, around tick 5,892 —
+that figure is superseded and disclosed here only to record that
+scheduler-ordering fidelity, per finding #2, measurably changes this
+process's dynamics; the tick-8,264 figure above is the one derived from
+the real scheduler and is the one that stands.)
 
 **Scope, explicitly disclosed and not overstated.**
 
@@ -217,8 +275,12 @@ trajectory.
   natural census and condition-gated candidate remain the only N=50
   evidence, and are unchanged by this addendum.
 - This run did **not** reach natural cell division (`Geometry.pinched`);
-  it covers ticks 1-24,300 of an estimated ~32,400-tick natural cycle
-  (~75%). It is real, but partial, coverage of one lifecycle.
+  it covers ticks 1-18,300 of an estimated ~32,400-tick natural cycle
+  (**~56%, partial coverage, disclosed as such** — not the ~75% an
+  earlier, since-discarded run reached; that earlier run's data could not
+  be reused because it predates the CSV cancellation-gate fix above, and
+  MATLAB's RNG stream cannot be resumed mid-run, so a full restart was
+  required rather than an extension).
 - This addendum does **not** flip
   `condition_gated/MacromolecularComplexation_h12_condition_gated.json`'s
   own `lifecycle_reachability_status` field, which remains, correctly and
@@ -234,9 +296,23 @@ trajectory.
   consumed by `verdict.py`, `generator.py`, `PROCESS_CATALOG.yaml`, or
   `evidence_index.json`, and never claims `H12_CONFIRMED`,
   `H12_OBSERVED_REGIME`, `PASS`, or an enacted `CONDITION_GATED` value.
-- §4's independent, unaffected conclusion still holds: network 2's
-  competitive branch is Monte Carlo by construction
-  (`buildProteinComplexs_montecarlokinetic` draws `randStream.rand()`
-  each iteration), so `H12_CONFIRMED` remains structurally inapplicable
-  to this unit regardless of how the reachability question resolves.
+- **On `H12_CONFIRMED` inapplicability (finding #6): static-source
+  reasoning and this addendum's empirical finding are kept separate, not
+  conflated.** The static-source argument — that
+  `buildProteinComplexs_montecarlokinetic`
+  (`MacromolecularComplexation.m` lines 334-357) draws
+  `randStream.rand()` each iteration and therefore has no closed form for
+  the selected-complex sequence — holds by source inspection alone and
+  does not depend on any run's tick count or event count; it is stated
+  as a structural/source fact in §4 above. This addendum's empirical
+  contribution is narrower and additive: it shows the Monte Carlo
+  competition branch is not merely theoretically reachable but is
+  actually, repeatedly exercised by the real, unconditioned scheduler for
+  BOTH complex identities (9 and 3 formation events respectively) within
+  a real partial lifecycle — i.e., the competition is
+  **load-bearing in practice for this seed**, not just structurally
+  possible on paper. Neither claim substitutes for the other, and this
+  addendum does not assert that a corrected per-identity scan alone
+  proves load-bearing competition across all 50 seeds — only for the one
+  seed actually run.
 

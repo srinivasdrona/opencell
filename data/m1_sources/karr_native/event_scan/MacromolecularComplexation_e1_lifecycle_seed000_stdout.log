@@ -11,21 +11,21 @@
 In addpath (line 70)
 In setPath>setPathHelper (line 68)
 In setPath (line 27)
-In full_cycle_event_scan_macromol (line 32)
+In full_cycle_event_scan_macromol (line 74)
 In run (line 100)] 
 [Warning: Function ismatrix has the same name as a MATLAB built-in. We suggest you rename the function to avoid a potential name conflict.] 
 [> In path (line 89)
 In addpath (line 70)
 In setPath>setPathHelper (line 68)
 In setPath (line 27)
-In full_cycle_event_scan_macromol (line 32)
+In full_cycle_event_scan_macromol (line 74)
 In run (line 100)] 
 [Warning: Function issymmetric has the same name as a MATLAB built-in. We suggest you rename the function to avoid a potential name conflict.] 
 [> In path (line 89)
 In addpath (line 70)
 In setPath>setPathHelper (line 68)
 In setPath (line 27)
-In full_cycle_event_scan_macromol (line 32)
+In full_cycle_event_scan_macromol (line 74)
 In run (line 100)] 
 
 [macromol-scan] === MacromolecularComplexation (seed=0, up to 33000 ticks, natural cycle, pinch-stop) ===
@@ -35,39 +35,21 @@ In run (line 100)]
 [karr_bootstrap] simulation loaded; n_processes = 28
 [macromol-scan] found MacromolecularComplexation at index 9
 [macromol-scan] E1 local substrate index = 193; network-2 complex indices = [23 24]
-[macromol-scan] tick 1000/33000 (6.7 min) max_e1=0 net2_events=0
-[macromol-scan] tick 2000/33000 (13.3 min) max_e1=0 net2_events=0
-[macromol-scan] tick 3000/33000 (22.1 min) max_e1=0 net2_events=0
-[macromol-scan] tick 4000/33000 (31.1 min) max_e1=0 net2_events=0
-[macromol-scan] tick 5000/33000 (40.0 min) max_e1=0 net2_events=0
-[macromol-scan] tick 6000/33000 (48.6 min) max_e1=1 net2_events=0
-[macromol-scan] tick 7000/33000 (56.9 min) max_e1=1 net2_events=0
-[Warning: DnaA complex not decayed] 
-[> In edu.stanford.covert.cell.sim.state/ProteinComplex/updateExternalState (line 186)
-In edu.stanford.covert.cell.sim.process/ProteinDecay/evolveState_DegradeComplexes (line 738)
-In edu.stanford.covert.cell.sim.process/ProteinDecay/evolveState (line 535)
-In full_cycle_event_scan_macromol (line 163)
-In run (line 100)] 
-[macromol-scan] tick 8000/33000 (65.1 min) max_e1=1 net2_events=0
-[macromol-scan] tick 9000/33000 (73.6 min) max_e1=2 net2_events=5
-[macromol-scan] tick 10000/33000 (80.8 min) max_e1=2 net2_events=5
-[macromol-scan] tick 11000/33000 (87.8 min) max_e1=2 net2_events=8
-[macromol-scan] tick 12000/33000 (95.2 min) max_e1=2 net2_events=10
-[Warning: DnaA complex not decayed] 
-[> In edu.stanford.covert.cell.sim.state/ProteinComplex/updateExternalState (line 186)
-In edu.stanford.covert.cell.sim.process/ProteinDecay/evolveState_DegradeComplexes (line 738)
-In edu.stanford.covert.cell.sim.process/ProteinDecay/evolveState (line 535)
-In full_cycle_event_scan_macromol (line 163)
-In run (line 100)] 
-[macromol-scan] tick 13000/33000 (103.4 min) max_e1=2 net2_events=13
-[macromol-scan] tick 14000/33000 (111.0 min) max_e1=2 net2_events=14
-[macromol-scan] tick 15000/33000 (118.5 min) max_e1=2 net2_events=20
-[macromol-scan] tick 16000/33000 (125.5 min) max_e1=2 net2_events=20
-[macromol-scan] tick 17000/33000 (131.9 min) max_e1=2 net2_events=21
-[macromol-scan] tick 18000/33000 (139.6 min) max_e1=2 net2_events=22
-[macromol-scan] tick 19000/33000 (147.1 min) max_e1=2 net2_events=22
-[macromol-scan] tick 20000/33000 (155.4 min) max_e1=2 net2_events=24
-[macromol-scan] tick 21000/33000 (164.4 min) max_e1=2 net2_events=26
-[macromol-scan] tick 22000/33000 (173.8 min) max_e1=2 net2_events=27
-[macromol-scan] tick 23000/33000 (182.9 min) max_e1=2 net2_events=27
-[macromol-scan] tick 24000/33000 (191.9 min) max_e1=2 net2_events=27
+[macromol-scan] tick 1000/33000 (5.0 min) max_e1=0 net2_events=[0 0]
+[macromol-scan] tick 2000/33000 (9.5 min) max_e1=0 net2_events=[0 0]
+[macromol-scan] tick 3000/33000 (14.0 min) max_e1=0 net2_events=[0 0]
+[macromol-scan] tick 4000/33000 (18.8 min) max_e1=0 net2_events=[0 0]
+[macromol-scan] tick 5000/33000 (23.5 min) max_e1=0 net2_events=[0 0]
+[macromol-scan] tick 6000/33000 (28.3 min) max_e1=0 net2_events=[0 0]
+[macromol-scan] tick 7000/33000 (33.3 min) max_e1=0 net2_events=[0 0]
+[macromol-scan] tick 8000/33000 (38.5 min) max_e1=0 net2_events=[0 0]
+[macromol-scan] tick 9000/33000 (43.5 min) max_e1=2 net2_events=[4 2]
+[macromol-scan] tick 10000/33000 (48.8 min) max_e1=2 net2_events=[4 2]
+[macromol-scan] tick 11000/33000 (54.3 min) max_e1=2 net2_events=[8 4]
+[macromol-scan] tick 12000/33000 (59.7 min) max_e1=2 net2_events=[8 4]
+[macromol-scan] tick 13000/33000 (65.0 min) max_e1=2 net2_events=[12 4]
+[macromol-scan] tick 14000/33000 (70.3 min) max_e1=2 net2_events=[12 4]
+[macromol-scan] tick 15000/33000 (75.9 min) max_e1=2 net2_events=[12 4]
+[macromol-scan] tick 16000/33000 (81.8 min) max_e1=2 net2_events=[14 4]
+[macromol-scan] tick 17000/33000 (87.8 min) max_e1=2 net2_events=[14 6]
+[macromol-scan] tick 18000/33000 (94.3 min) max_e1=2 net2_events=[16 6]

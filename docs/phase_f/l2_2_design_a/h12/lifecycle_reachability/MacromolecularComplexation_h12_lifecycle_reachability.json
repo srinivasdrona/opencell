@@ -15,43 +15,69 @@
   "unblocks_current_row": false,
   "unblocks_l2_5": false,
   "maintainer_decision_made": false,
-  "scope_note": "This artifact reports evidence from EXACTLY ONE seed (seed=0) run for its full natural lifecycle via the real Karr per-tick scheduler (resource allocation + evolveState in real process order), starting from cell birth, with NO conditioning of any pool or constant. It is NOT N=50 seed coverage and must never be read as such; the accepted 50-seed x 100-tick natural census (docs/phase_f/l2_2_design_a/h12/MacromolecularComplexation_h12.json) and condition-gated candidate (condition_gated/MacromolecularComplexation_h12_condition_gated.json) remain the N=50 evidence; this module supplies the complementary long-window x single-seed axis. Generalizing this single seed's outcome to all 50 seeds, or to every possible lifecycle, is explicitly NOT claimed.",
+  "scope_note": "This artifact reports evidence from EXACTLY ONE seed (seed=0) run for its full natural lifecycle via the real Karr per-tick scheduler (the real, unmodified sim.evolveState() public method, called as a black box once per tick -- Simulation.randStream is private, so this is the only externally callable way to get byte-for-byte real seeded process ordering and the tRNAAminoacylation-before-Translation rejection loop), starting from cell birth, with NO conditioning of any pool or constant. It is NOT N=50 seed coverage and must never be read as such; the accepted 50-seed x 100-tick natural census (docs/phase_f/l2_2_design_a/h12/MacromolecularComplexation_h12.json) and condition-gated candidate (condition_gated/MacromolecularComplexation_h12_condition_gated.json) remain the N=50 evidence; this module supplies the complementary long-window x single-seed axis. Generalizing this single seed's outcome to all 50 seeds, or to every possible lifecycle, is explicitly NOT claimed.",
   "seed_count": 1,
   "partial_coverage": true,
-  "partial_coverage_note": "Run was deliberately stopped after tick 24300 (of a 33000-tick ceiling, estimated ~32,400-tick natural cycle) once the accumulated real evidence (max_e1_pool=2.0, n_net2_events=27, both strictly increasing and not yet plateaued) was already sufficient to falsify the 'E1 always zero / genuine biological ceiling' hypothesis. Natural cell division was NOT reached in this run; n_ticks_ran is a lower bound on ticks actually simulated (the CSV only logs every 25th tick, or on an event, so the true kill point may be up to 24 ticks later than the last logged row).",
+  "partial_coverage_note": "Run was deliberately stopped after tick 18300 (of a 33000-tick ceiling, estimated ~32,400-tick natural cycle) once the accumulated real evidence (max_e1_value=2.0, n_net2_formation_events_by_complex=[9, 3], both strictly increasing and not yet plateaued) was already sufficient to falsify the 'E1 always zero / genuine biological ceiling' hypothesis. Natural cell division was NOT reached in this run; n_ticks_ran is a lower bound on ticks actually simulated (the CSV only logs every 25th tick, or on an event, so the true kill point may be up to 24 ticks later than the last logged row). Per-identity competition evidence (network2_competition_status) is similarly a lower bound: additional ticks could still make a currently-silent complex fire.",
   "probe": {
     "seed": 0,
     "n_ticks_max": 33000,
-    "n_ticks_ran": 24300,
+    "n_ticks_ran": 18300,
     "stop_reason": "operator_stopped_after_decisive_evidence",
     "e1_whole_cell_model_id": "MG_429_MONOMER",
+    "e1_field_name": "e1_monomer_count_direct_state_read",
+    "e1_field_semantics": "Direct copyFromState()-synced mirror of the shared MG_429_MONOMER count; NOT drawn via the competitive metabolite-allocation mechanism (substrateMetaboliteLocalIndexs and substrateMetaboliteGlobalCompartmentIndexs are both empty for this process; calcResourceRequirements_Current() unconditionally returns zeros, confirmed live and idempotent across repeated calls). Neither the old 'free cellular pool' phrasing nor 'allocated process share' is accurate; see module docstring.",
     "e1_local_substrate_index_1based": 193,
+    "net2_complex_names": [
+      "MG_041_062_429_PENTAMER",
+      "MG_041_069_429_PENTAMER"
+    ],
     "net2_complex_indices_1based": [
       23,
       24
     ],
-    "max_e1_pool": 2.0,
-    "first_e1_nonzero_tick": 5892,
-    "n_any_complex_events": 3912,
-    "n_net2_events": 27,
-    "first_net2_event_tick": 8166
+    "max_e1_value": 2.0,
+    "first_e1_nonzero_tick": 8264,
+    "n_any_complex_events": 3341,
+    "n_net2_events_by_complex": [
+      18,
+      6
+    ],
+    "first_net2_event_tick_by_complex": [
+      8386,
+      8569
+    ],
+    "n_net2_formation_events_by_complex": [
+      9,
+      3
+    ],
+    "first_net2_formation_tick_by_complex": [
+      8386,
+      8569
+    ],
+    "max_net2_delta_by_complex": [
+      1.0,
+      1.0
+    ]
   },
   "outcome": "network2_fired_naturally",
   "e1_ever_nonzero": true,
   "network2_ever_fired_naturally": true,
-  "mechanism": "Real per-tick scheduler: resource allocation (calcResourceRequirements_Current -> proportional allocation) then evolveState() in randperm process order, identical mechanism to scripts/matlab/full_cycle_event_scan_v2.m (the already-accepted precedent used to justify RibosomeAssembly's tick_offset=200 re-extraction). No conditioning, no synthetic pool injection, no fixture edits -- this is the natural lifecycle as the real scheduler produces it.",
-  "stop_condition": "Geometry.pinched (natural cell division boundary), identical stopping condition to scripts/matlab/extract_cell_cycle_trajectory.m -- ticks after this boundary are never scanned or counted as 'natural'.",
+  "network2_competition_status": "both_complexes_fired",
+  "network2_competition_status_note": "Derived from n_net2_formation_events_by_complex (delta > 0 ticks only), NOT the sign-agnostic n_net2_events_by_complex -- a complex already present at cell birth could show a real later degradation event (delta < 0) with zero formation events ever observed, and counting that as 'fired' would overstate competition evidence (see _recompute_from_csv docstring). 'both_complexes_fired' is empirical evidence (this seed only) that both MG_041_062_429_PENTAMER and MG_041_069_429_PENTAMER are independently viable formation candidates -- i.e. load-bearing competition, not a degenerate single-candidate draw. 'single_complex_only_fired' means only one of the two ever formed in this run (which may still resolve differently with more ticks/seeds -- see partial_coverage_note). This status is empirical and does NOT by itself establish that H12_CONFIRMED is structurally inapplicable; the static-source argument (buildProteinComplexs_montecarlokinetic always calls randStream.rand() regardless of competition) is separate and is documented in the E1 provenance doc, not derived from this field.",
+  "mechanism": "Real, unmodified sim.evolveState() public method called once per tick as a black box -- Simulation.randStream is a private property, so this is the only externally callable way to reproduce byte-for-byte real seeded process ordering (randStream.randperm(nProcesses)) plus the tRNAAminoacylation-before-Translation rejection loop (Simulation.evolveState.m:47-54) and the real per-process resource allocation formula. No scheduler logic is reimplemented by the probe script. Target-process substrates/complexs are read via target_proc.copyFromState() (a pure, side-effect-free read) immediately before and after each sim.evolveState() call and diffed, independent of any assumption about cross-process write ordering within the tick. No conditioning, no synthetic pool injection, no fixture edits -- this is the natural lifecycle as the real scheduler produces it.",
+  "stop_condition": "Geometry.pinched (natural cell division boundary), identical stopping condition to scripts/matlab/extract_cell_cycle_trajectory.m -- ticks after this boundary are never scanned or counted as 'natural'. stop_reason records whether this boundary was actually reached (natural_cell_division_pinch), the tick budget was exhausted without it (max_ticks_reached_no_division), or the run was manually stopped early once evidence was already decisive (operator_stopped_after_decisive_evidence, see partial_coverage_note).",
   "matlab_script_path": "scripts/matlab/full_cycle_event_scan_macromol.m",
-  "matlab_script_sha256_lf_normalized": "ac72950b2df6b9f19273157015bad27987b6aef0015db6bbbd7f99e5708ef913",
+  "matlab_script_sha256_lf_normalized": "8e286d5c65177e3d80a39a2a2e24a5ebd4182c67b7b1a14f361b0e06fd40a833",
   "raw_csv_path": "data/m1_sources/karr_native/event_scan/MacromolecularComplexation_e1_lifecycle_seed000.csv",
-  "raw_csv_sha256": "368c797f7a412dcf676a7e66468690197ec00c7f89fe122577c9ae9d5f8c3db2",
+  "raw_csv_sha256": "1286b1ceef0f9612360e08c41e83d7cbbd87ed76f93d091688bdfb0401ea62d4",
   "raw_summary_path": null,
   "raw_summary_sha256": null,
   "raw_log_path": "data/m1_sources/karr_native/event_scan/MacromolecularComplexation_e1_lifecycle_seed000_stdout.log",
-  "raw_log_sha256": "c88d3fce631ab9f8153cf0470a52c6579d0ff2c2d1a033dfbb778ae49ca40c5a",
+  "raw_log_sha256": "48f80eb8624894b1fb578a2b7b06beb214b9ef2afd93bd80f1c5921a760a665d",
   "generator_source_path": "scripts/l22_evidence/h12_lifecycle_reachability.py",
-  "generator_source_sha256_lf_normalized": "6fbef184b719d50bc0b47e8c9963b238badbecd6b7a101b7a3bf013a39488aa1",
+  "generator_source_sha256_lf_normalized": "0efb502e5f95bc88e80e3c62c389468cc6acabc5276edd47f38450bb3b423351",
   "condition_gated_artifact_ref": "docs/phase_f/l2_2_design_a/h12/condition_gated/MacromolecularComplexation_h12_condition_gated.json",
   "e1_provenance_ref": "docs/phase_f/l2_2_design_a/h12/MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md",
-  "e1_provenance_ref_sha256_lf_normalized": "334cbca976fd52de649fad039606b250a805d6faa0645764cdfc058442246409"
+  "e1_provenance_ref_sha256_lf_normalized": "b3a11d95f593a136016649e855a424b4c52b9c044379d9694f302ec8067f9b05"
 }
