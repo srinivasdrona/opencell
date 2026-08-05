@@ -56,7 +56,7 @@ def test_registry_reflects_actual_adapter_availability_not_aspirational_claims()
     assert registry["RibosomeAssembly"].adapter_status == "structural_smoke_only"
     assert registry["RibosomeAssembly"].adapter_id == "ribosome_assembly.smoke.v1"
     assert registry["Cytokinesis"].adapter_status == "structural_smoke_only"
-    assert registry["Cytokinesis"].adapter_id == "cytokinesis.karr_only_smoke.v1"
+    assert registry["Cytokinesis"].adapter_id == "cytokinesis.pinched_diameter_completion.v1"
     for name in ("DNADamage", "FtsZPolymerization"):
         assert registry[name].adapter_status == "not_implemented"
         assert registry[name].adapter_id is None
@@ -64,6 +64,30 @@ def test_registry_reflects_actual_adapter_availability_not_aspirational_claims()
         assert entry.adapter_status != "gating_ready", (
             f"{entry.process}: no process may claim gating_ready in this foundation task."
         )
+
+
+def test_registry_cytokinesis_adapter_id_resolves_to_the_real_adapter():
+    """Opus review (2026-08-05, post-Canary-D): the registry must never
+    invent a bespoke adapter_id string for a process that already has a
+    real, registered adapter class -- it must name that adapter's own
+    `adapter_id` class attribute exactly, so `adapter_id` always resolves
+    to real, importable code (never a dangling label some future reader
+    could mistake for a distinct adapter that doesn't exist)."""
+    from scripts.l2_event.adapters.cytokinesis import CytokinesisEventAdapter
+
+    registry = load_registry()
+    assert registry["Cytokinesis"].adapter_id == CytokinesisEventAdapter.adapter_id
+    assert registry["Cytokinesis"].adapter_id == CytokinesisEventAdapter().adapter_id
+
+
+def test_registry_ribosome_assembly_adapter_id_resolves_to_the_real_adapter():
+    """Same binding check as the Cytokinesis test above, applied to the
+    other real adapter this registry names -- both rows must resolve to
+    real code, not just Cytokinesis."""
+    from scripts.l2_event.adapters.ribosome_assembly_smoke import RibosomeAssemblySmokeAdapter
+
+    registry = load_registry()
+    assert registry["RibosomeAssembly"].adapter_id == RibosomeAssemblySmokeAdapter.adapter_id
 
 
 def test_validate_against_catalog_is_clean_for_the_shipped_registry():

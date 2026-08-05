@@ -198,3 +198,36 @@ Updated status:
 - All other "intentionally paused" items above (L2.5, L3, FtsZ/DNADamage
   catalog adoption) are unaffected and remain paused.
 
+## Addendum (2026-08-05, later same day): Opus review round 2 fixes
+
+Opus reviewed the addendum above as `APPROVE_AS_CANARY` conditional on
+five reuse/integration fixes, all applied; see
+`docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md` §10 for the full
+rule-by-rule detail. Summary:
+
+- `event_registry.yaml`'s Cytokinesis `adapter_id` corrected to the real
+  `CytokinesisEventAdapter.adapter_id`
+  (`cytokinesis.pinched_diameter_completion.v1`), not the invented
+  `cytokinesis.karr_only_smoke.v1` label used above.
+- Exact span corrected to **3871** ticks (the addendum above's "~3872"
+  was an imprecise rounding of the real
+  `division_relative_onset_tick=-3871` recorded in the evidence itself).
+- `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`'s Cytokinesis row
+  reconciled: `M_ticks: 4000`, `seed_window.tick_range_from_division:
+  [-3999, 0]`, with a new `blocked_on` note that `N=50` stays
+  unauthorized until a full 50-seed survey
+  (`scripts/l2_event/survey_cytokinesis_onset_span.py`, read-only, never
+  launches MATLAB itself) determines the real cohort-wide maximum span.
+- `write_cytokinesis_canary_d_evidence.py` now fails closed on
+  process/seed mismatch and refuses to regenerate evidence while the
+  registry/adapter module has uncommitted changes (two-commit
+  reproducibility: code+registry landed in one commit, evidence
+  regenerated in a dedicated follow-up commit so `provenance.git_sha`
+  genuinely names a commit containing the exact `registry_sha256`
+  recorded alongside it).
+- Stale test docstrings (`test_l2_event_adapters_cytokinesis.py`'s
+  `_entry()` helper) and `L2_EVENT_FOUNDATION_STATUS.md`'s missing-data
+  matrix row refreshed to match.
+- **Status unchanged**: Cytokinesis Canary D remains closed/successful;
+  N=50 remains **not authorized**.
+

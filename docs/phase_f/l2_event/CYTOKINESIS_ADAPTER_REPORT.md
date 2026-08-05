@@ -486,3 +486,80 @@ predicates, required-input manifest) is unchanged.
   (both skip if the local trace is absent). The mnrnd histogram-edge-bug
   regression coverage was already complete in `tests/scripts/test_mnrnd_shim.py`
   (17 cases) before this task; no gap was found there.
+
+## 10. Addendum (2026-08-05, Opus review round 2): reuse/integration fixes
+
+Opus reviewed §9 as `APPROVE_AS_CANARY`, conditional on fixing five
+reuse/integration findings before merge. This addendum corrects §9's
+record accordingly (§9 is left in place, not rewritten, per this file's
+own append-only convention).
+
+1. **Adapter identity corrected.** `cytokinesis.karr_only_smoke.v1` (§9)
+   was a bespoke, invented adapter_id string that did not resolve to any
+   real code. `event_registry.yaml`'s Cytokinesis row and
+   `write_cytokinesis_canary_d_evidence.py`'s `ADAPTER_ID` constant now
+   both resolve to `CytokinesisEventAdapter.adapter_id` itself
+   (`cytokinesis.pinched_diameter_completion.v1`) -- the real, registered
+   adapter for this process. `adapter_status` stays
+   `structural_smoke_only`: only the adapter's read-only, Karr-side-only
+   helpers (`karr_pinched_diameter_sequence`/`find_onset_tick`/
+   `find_completion_tick`) are exercised, never
+   `CytokinesisEventAdapter.oc_observation` (still blocked on the
+   missing `geometry`/`ftsZRing`/`chromosome` snapshot fields, per §9).
+   New test:
+   `tests/scripts/test_l2_event_registry.py::test_registry_cytokinesis_adapter_id_resolves_to_the_real_adapter`.
+2. **Fail-closed seed/process binding.** `build_evidence` now refuses
+   (raises `ValueError`) unless the loaded trace's own
+   `window.process_name == "Cytokinesis"` and `window.seed == --seed`,
+   checked immediately after loading and before any further processing --
+   closes a real gap where a mislabeled or wrong-seed trace file could
+   have silently produced evidence bound to the wrong provenance.
+   Adversarial tests:
+   `tests/scripts/test_write_cytokinesis_canary_d_evidence.py::test_build_evidence_refuses_mismatched_process_name`
+   and `::test_build_evidence_refuses_mismatched_seed`.
+3. **Exact span corrected: 3871 ticks, not "~3872".** §9 itself was
+   internally inconsistent (stating "~3872" in one bullet and "~3871" in
+   another). The ground truth, read directly off the generated evidence
+   (`docs/phase_f/l2_event/evidence_bundle/Cytokinesis/SUMMARY.json`:
+   `onset_tick=27556`, `completion_tick=31427`,
+   `division_relative_onset_tick=-3871`), is **3871** ticks
+   (`completion_tick - onset_tick`), not an approximation. All downstream
+   docs/catalog entries now use this exact figure.
+4. **Catalog reconciled.** `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`'s
+   Cytokinesis row is no longer left at the stale `M_ticks: 100` /
+   `seed_window: [-50, 0]` values §9 flagged as wrong -- it now reads
+   `M_ticks: 4000` / `seed_window.tick_range_from_division: [-3999, 0]`
+   (the validated seed-0 lower bound; the exact retry size that
+   succeeded), with a new `blocked_on` field stating explicitly that
+   `N=50` remains unauthorized until a full 50-seed survey determines the
+   real cohort-wide maximum span. A new read-only survey tool,
+   `scripts/l2_event/survey_cytokinesis_onset_span.py`, computes the
+   onset-to-completion span for whatever seeds already exist on disk and
+   explicitly refuses to claim a cohort-wide maximum from a partial
+   sample (tested in
+   `tests/scripts/test_survey_cytokinesis_onset_span.py`). It never
+   launches a MATLAB extraction itself.
+5. **Two-commit provenance reproducibility.** `provenance.json`'s
+   `git_sha` must name a commit that actually contains the exact registry
+   state its `registry_sha256` records. The evidence bundle committed
+   alongside §9 was generated in the SAME dirty working tree as the code
+   changes, so its `git_sha` did not yet name a commit containing that
+   final state. `write_cytokinesis_canary_d_evidence.py` now refuses
+   (`_assert_registry_and_adapter_committed`) to generate evidence while
+   the registry or the Cytokinesis adapter module has uncommitted
+   working-tree changes; the evidence bundle here was regenerated in a
+   dedicated follow-up commit AFTER all code/registry/catalog fixes
+   landed, so `git_sha` now genuinely names a commit containing this
+   exact `registry_sha256`. Tests:
+   `tests/scripts/test_write_cytokinesis_canary_d_evidence.py::test_assert_registry_and_adapter_committed_raises_when_dirty`
+   / `::test_assert_registry_and_adapter_committed_silent_when_clean`
+   / `::test_git_porcelain_status_passes_translated_git_dir_args_through`.
+6. **Stale test docstring corrected.** `tests/scripts/test_l2_event_adapters_cytokinesis.py`'s
+   `_entry()` helper docstring claimed the real registry "stays frozen at
+   `adapter_status: not_implemented`" -- no longer true since §9;
+   corrected to describe the helper's synthetic `gating_ready` default as
+   deliberately independent of whatever the real registry says.
+   `docs/phase_f/l2_event/L2_EVENT_FOUNDATION_STATUS.md`'s Cytokinesis
+   row in the "exact missing-data matrix" table is likewise refreshed
+   from `0 / 50` / `not_implemented` to `1 / 50` /
+   `structural_smoke_only`, with a note pointing at this section.

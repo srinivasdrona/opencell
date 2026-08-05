@@ -361,7 +361,7 @@ processes:
     bucket: EVENT_CLASS
     harness_type: event_class
     in_scope_L2_2: true
-    M_ticks: 100
+    M_ticks: 4000
     N_seeds: 50
     event_density: sparse                 # only active during division
     input_channels: [substrates, enzymes, chromosome]
@@ -369,11 +369,12 @@ processes:
     event_channels: [chromosome]
     primary_channel: substrates
     karr_artifact: per_process_traces_v2
-    rationale_M: "default; only fires during division window"
-    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS. v3.7 (2026-06-16): SUT audit DIVERGENT_DOCUMENTED. v3.8 (2026-06-16): FIXED at 3cee339 — full 5-phase FtsZ ring port replacing Karr-light v1. All 5 stochastic phases, edge state tracking, geometry, mass conservation. Algorithm now faithful to Karr. Still EVENT_CLASS — needs event-window traces for distributional validation."
+    rationale_M: "2026-08-05 (Canary D closeout): the old M_ticks=100 'default' failed closed -- seed 0's real onset-to-completion span is 3871 ticks (onset_tick=27556, completion_tick=31427), not ~50-100. 4000 is the smallest validated seed-0 LOWER BOUND (the exact retry size that succeeded), NOT a confirmed cohort-wide maximum -- see blocked_on."
+    blocked_on: "N=50 sweep unauthorized until scripts/l2_event/survey_cytokinesis_onset_span.py reports a FULL (50/50 seed) survey of the real onset-to-completion span and the cohort-wide maximum is reconciled into M_ticks/seed_window here. Do not run an uncontrolled 50-seed extraction to determine this number -- generate seeds one at a time via the resumable/atomic scripts/l2_event/launcher.py and re-run the survey once all 50 exist."
+    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS. v3.7 (2026-06-16): SUT audit DIVERGENT_DOCUMENTED. v3.8 (2026-06-16): FIXED at 3cee339 — full 5-phase FtsZ ring port replacing Karr-light v1. All 5 stochastic phases, edge state tracking, geometry, mass conservation. Algorithm now faithful to Karr. Still EVENT_CLASS — needs event-window traces for distributional validation. v3.9 (2026-08-05): Canary D CLOSED — real seed-0 anchor trace extracted post-mnrnd-shim-fix (data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat). M_ticks/seed_window reconciled to the seed-0 lower bound (see rationale_M); still 1/50 required seeds, N=50 remains blocked (see blocked_on). See docs/phase_f/l2_event/event_registry.yaml + docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md §9 for full detail."
     seed_window:
-      tick_range_from_division: [-50, 0]       # active only in the immediate pre-division window
-      rationale: "Cytokinesis is biologically active only in late cell cycle around division"
+      tick_range_from_division: [-3999, 0]     # reconciled 2026-08-05: seed-0 lower bound, not yet a cohort-wide maximum (see blocked_on)
+      rationale: "Cytokinesis is biologically active only in late cell cycle around division. 2026-08-05: the prior [-50,0] rationale assumed a span far too short for the real Karr dynamics (3871 ticks observed on seed 0); [-3999,0] is the validated seed-0 lower bound pending a full 50-seed survey (scripts/l2_event/survey_cytokinesis_onset_span.py)."
 
   # ===== TRIVIAL_RNG (5) — optional confirmation runs ========================
 

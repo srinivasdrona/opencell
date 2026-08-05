@@ -36,7 +36,7 @@ assumed:
 
 | Process | In v4 scope (spec §8) | Event-window traces on disk | Seeds available / required | Adapter status | Notes |
 |---|---|---|---|---|---|
-| **Cytokinesis** | Yes | **0** | 0 / 50 | `not_implemented` | No event-window extraction has ever run for this process. `event_timing_model: single_firing`, `magnitude_gateable: false` per D6 (no non-redundant payload channel exists on the OC port yet). |
+| **Cytokinesis** | Yes | **1** (seed 000) | 1 / 50 | `structural_smoke_only` | Canary D closed 2026-08-05 (`Cytokinesis_4000ticks.mat`, mnrnd-shim-bound). Adapter_id resolves to the real `CytokinesisEventAdapter.adapter_id` (`cytokinesis.pinched_diameter_completion.v1`); only its read-only Karr-side helpers are exercised (`structural_smoke_only`, not gating). `event_timing_model: single_firing`, `magnitude_gateable: false` per D6. N=50 blocked on a full-cohort onset-span survey (`scripts/l2_event/survey_cytokinesis_onset_span.py`) -- see `docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md` §§9-10. |
 | **RibosomeAssembly** | Yes | **1** (seed 000) | 1 / 50 | `structural_smoke_only` | Only process with any adapter at all, and it is explicitly read-only/non-gating. `event_timing_model: repeated_firing`, `magnitude_gateable: true`. |
 | **DNADamage** | **No** (deferred, spec §8 out-of-scope #2) | 0 | 0 / 50 | `not_implemented` | Deferred to a future L2.stress gate: baseline Karr cycles do not spontaneously exercise DNA damage. |
 | **FtsZPolymerization** | **No** (deferred, spec §8 out-of-scope #1) | 0 | 0 / 50 | `not_implemented` | Gradient/continuous polymerization, not a binary firing event; v0.3 already deferred it and v4 does not reopen the decision. |

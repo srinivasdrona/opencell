@@ -27,8 +27,10 @@ Hard rule compliance:
 from __future__ import annotations
 
 import argparse
+import subprocess
 import uuid
-from datetime import datetime, timezone
+from collections.abc import Sequence
+from datetime import UTC, datetime
 from pathlib import Path
 
 import h5py
@@ -36,11 +38,12 @@ import numpy as np
 
 from scripts.l2_event import evidence, metrics
 from scripts.l2_event.adapters.cytokinesis import (
+    CytokinesisEventAdapter,
     find_completion_tick,
     find_onset_tick,
     karr_pinched_diameter_sequence,
 )
-from scripts.l2_event.registry import registry_sha256
+from scripts.l2_event.registry import REGISTRY_PATH, registry_sha256
 from scripts.l2_event.schema import (
     SCHEMA_VERSION,
     InputManifest,
@@ -49,10 +52,23 @@ from scripts.l2_event.schema import (
     ProvenanceDoc,
     ResultDoc,
 )
-from scripts.l2_event.window_loader import _decode_char_metadata, classify_trace_dir, load_event_window
+from scripts.l2_event.window_loader import (
+    _decode_char_metadata,
+    classify_trace_dir,
+    load_event_window,
+)
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+_ADAPTER_MODULE_PATH = _REPO_ROOT / "scripts" / "l2_event" / "adapters" / "cytokinesis.py"
 
 PROCESS = "Cytokinesis"
-ADAPTER_ID = "cytokinesis.karr_only_smoke.v1"
+#: This resolves to the REAL, registered `CytokinesisEventAdapter`'s own
+#: `adapter_id` -- never a bespoke/invented label. Only its read-only
+#: Karr-side helpers (`karr_pinched_diameter_sequence`/`find_onset_tick`/
+#: `find_completion_tick`) are exercised here (see module docstring on
+#: why this evidence cannot be a full OC-vs-Karr comparison yet); the
+#: adapter identity is real even though today's *use* of it is smoke-only.
+ADAPTER_ID = CytokinesisEventAdapter.adapter_id
 
 REQUIRED_OBSERVABLES = (
     "substrates",
@@ -75,8 +91,94 @@ def _read_metadata_string(handle: h5py.File, key: str) -> str:
     return _decode_char_metadata(np.asarray(handle["metadata"][key][()]))
 
 
+def _resolve_git_dir_args() -> list[str]:
+    """Returns the ``--git-dir=...`` args (or ``[]``) needed to run ``git``
+    against THIS worktree from a WSL-hosted git binary. Mirrors
+    ``scripts/l2_event/evidence.py``'s ``current_git_sha()`` fallback
+    exactly: a Windows-git-created linked worktree's ``.git`` gitlink
+    stores a Windows-style absolute ``gitdir:`` path that a WSL-hosted
+    git cannot resolve directly (plain ``git status`` fails outright with
+    "not a git repository" -- confirmed empirically in this worktree).
+    Without this translation, :func:`_git_porcelain_status` would
+    silently return empty/failed output and the dirty-tree guard below
+    would never fire under the WSL execution this project mandates for
+    all Python/tests -- exactly the "fail open" bug this exists to avoid."""
+    probe = subprocess.run(
+        ["git", "rev-parse", "--git-dir"], cwd=_REPO_ROOT, capture_output=True, text=True, timeout=10
+    )
+    if probe.returncode == 0:
+        return []
+    git_file = _REPO_ROOT / ".git"
+    if not git_file.is_file():
+        return []
+    content = git_file.read_text().strip()
+    if not content.startswith("gitdir:"):
+        return []
+    gitdir = content.split(":", 1)[1].strip()
+    translated = evidence._translate_windows_gitdir(gitdir)
+    if translated is None:
+        return []
+    return [f"--git-dir={translated}"]
+
+
+def _git_porcelain_status(paths: Sequence[Path]) -> str:
+    """Thin, mockable wrapper around ``git status --porcelain -- <paths>``
+    (worktree-gitdir-aware, see :func:`_resolve_git_dir_args`). Isolated
+    into its own function so tests can monkeypatch it directly (rather
+    than shelling out to a real git repo) to exercise both the clean and
+    dirty branches of :func:`_assert_registry_and_adapter_committed`
+    deterministically."""
+    result = subprocess.run(
+        ["git", *_resolve_git_dir_args(), "status", "--porcelain", "--", *[str(p) for p in paths]],
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+        timeout=10,
+    )
+    return result.stdout
+
+
+def _assert_registry_and_adapter_committed(registry_path: Path) -> None:
+    """Two-commit reproducibility guard (Opus review, 2026-08-05 item 3):
+    ``provenance.json``'s ``git_sha`` must name a commit that actually
+    CONTAINS the exact registry/adapter state this evidence was generated
+    against. Refuses (raises) if the registry file or the Cytokinesis
+    adapter module has uncommitted working-tree changes at generation
+    time -- the sanctioned workflow is: commit code/registry fixes FIRST,
+    THEN regenerate evidence in a follow-up commit, never in the same
+    dirty tree. (If ``git`` itself is unavailable -- e.g. a stripped CI
+    image -- ``git status`` simply returns a non-zero/empty result and
+    this check is skipped rather than blocking evidence generation on an
+    unrelated environment gap; the reproducibility guarantee this exists
+    for is a worktree-local discipline, not a hard runtime dependency.)"""
+    status = _git_porcelain_status([registry_path, _ADAPTER_MODULE_PATH])
+    if status.strip():
+        raise RuntimeError(
+            "refusing to generate evidence: the registry and/or the Cytokinesis "
+            f"adapter module have uncommitted working-tree changes:\n{status}"
+            "Commit code/registry fixes FIRST, then regenerate evidence in a "
+            "follow-up commit so provenance.git_sha names a commit that actually "
+            "contains this exact registry_sha256 (two-commit reproducibility)."
+        )
+
+
 def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = None) -> Path:
     window = load_event_window(trace_path, required_observables=REQUIRED_OBSERVABLES)
+
+    if window.process_name != PROCESS:
+        raise ValueError(
+            f"trace metadata process_name={window.process_name!r} != expected {PROCESS!r}; "
+            "refusing to write Cytokinesis evidence bound to a different process's trace "
+            "(fail-closed)."
+        )
+    if window.seed != seed:
+        raise ValueError(
+            f"trace metadata seed={window.seed} != requested --seed {seed}; refusing to write "
+            "evidence bound to the wrong seed (fail-closed)."
+        )
+
+    resolved_registry_path = registry_path if registry_path is not None else REGISTRY_PATH
+    _assert_registry_and_adapter_committed(resolved_registry_path)
 
     before, after = karr_pinched_diameter_sequence(window)
     onset_offset = find_onset_tick(before, after)
@@ -111,8 +213,8 @@ def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = 
     division_relative_onset = onset_abs - completion_abs
     division_relative_completion = completion_abs - completion_abs  # == 0 by definition
 
-    run_id = f"seed{seed:03d}-{datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}"
-    generated_at = datetime.now(timezone.utc).isoformat()
+    run_id = f"seed{seed:03d}-{datetime.now(UTC).strftime('%Y%m%dT%H%M%SZ')}-{uuid.uuid4().hex[:8]}"
+    generated_at = datetime.now(UTC).isoformat()
 
     result_doc = ResultDoc(
         schema_version=SCHEMA_VERSION,
@@ -175,7 +277,7 @@ def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = 
         adapter_module="scripts.l2_event.adapters.cytokinesis",
         karr_source=str(trace_path.parent.resolve()),
         git_sha=evidence.current_git_sha(),
-        registry_sha256=registry_sha256(registry_path) if registry_path else registry_sha256(),
+        registry_sha256=registry_sha256(resolved_registry_path),
         generated_at=generated_at,
         k_eng_provenance=metrics.K_ENG_PROVENANCE,
     )
