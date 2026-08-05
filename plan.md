@@ -59,6 +59,20 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Live state (2026-08-05) — parallel L2.5 prerequisite closure:**
+- Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."** Fix and verify every applicable gap before L2.5 eligibility (`DECISIONS.md`: `no-known-gap-waivers`).
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `3ad6a21`, 151 commits ahead / 0 behind `origin/main` @ `01d54ae`.
+- Baseline integration is complete: `0e8ec4c` merged origin's green CI/README history; `3ad6a21` repaired 29 merged-branch Ruff findings and rebound stale Replication/Transcription L1b anchors.
+- Merged blocking surfaces are green: Ruff, naked-number lint, 402 unit tests, L1b 115/115 methods + 28/28 wiring rows, L2.0, Gate 1, Gate 2 and schema validation. The 553-test repair cohort passed; its 11 skips are the explicitly local-only bounded multi-seed pilot tests and were audited with `-rs`.
+- Five dependency-independent worktrees now branch from `3ad6a21`:
+  1. `E:\opencell-worktrees\l25-scope-ratification-20260805` (`agent/l25-scope-ratification-20260805`);
+  2. `E:\opencell-worktrees\l22-replication-closure-20260805` (`agent/l22-replication-closure-20260805`);
+  3. `E:\opencell-worktrees\l22-dnas-closure-20260805` (`agent/l22-dnas-closure-20260805`);
+  4. `E:\opencell-worktrees\l2-event-closure-20260805` (`agent/l2-event-closure-20260805`);
+  5. `E:\opencell-worktrees\l22-natural-gap-closure-20260805` (`agent/l22-natural-gap-closure-20260805`).
+- Background implementers are not yet dispatched. Every lane must use the mandatory three-slot prompt architecture: `DELIBERATE_ACTION_PREFIX_v2` + the appropriate slot-2 template + a case-specific slot 3 quoting the authoritative spec/catalog entry.
+- L2.5 pair execution remains blocked until process closure and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted. Scope ratification may proceed in parallel.
+
 **Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
 
 **🛑 GATE 2 STATUS (post GPT-5.4 rubber-duck) — honest scope: per-process INPUT FIDELITY (vocab + reaction stoichiometry) vs the frozen spec. NOT cross-process wiring (that is L1b Half B + L3).** `scripts/gate2_verify_oc_vs_spec.py` compares each OC `Karr<X>Process` to the frozen spec. After the rubber-duck (logged: `sha256:ab399ac…`), strengthened + correctly scoped:
