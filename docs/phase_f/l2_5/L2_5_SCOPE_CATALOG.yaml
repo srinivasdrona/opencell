@@ -1,0 +1,432 @@
+schema_version: 1
+denominator:
+  canonical_karr_process_count: 28
+  source: docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml (processes list length; path resolved via derive_l25_pair_matrix._load_catalog's
+    candidate precedence, the single authoritative catalog-path resolution)
+  total_pairs_c_28_2: 378
+  structural_shared_pool_pairs: 256
+  structural_disjoint_pairs: 122
+registry_integrity:
+  ok: true
+  violations: []
+eligibility_rule:
+  bit_identity_bucket_deterministic: eligible iff a fresh scripts/probe_l2_1_strict_rubric.audit_one_process
+    verdict == GENUINE (PARTIAL/COINCIDENTAL/UNINFORMATIVE/FAIL/ERROR are not eligible)
+  distributional_bucket_stochastic: eligible iff a fresh scripts.l22_evidence.generator.build_evidence_index()
+    row mechanical_verdict == PASS (the tracked evidence_index.json is never read for this determination)
+  fail_closed_on_error: true
+known_gap_overlay:
+  method: live grep of each process's oc_module source for the literal token `trace_hint`; not a hardcoded
+    process-name list
+  reference: docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md
+processes:
+- name: ChromosomeCondensation
+  bucket: DETERMINISTIC
+  oracle_type: bit_identity
+  oc_module: opencell/vivarium/karr_chromosome_condensation.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_chromosome_condensation.py (cf.
+    docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: ChromosomeSegregation
+  bucket: DETERMINISTIC
+  oracle_type: bit_identity
+  oc_module: opencell/vivarium/karr_chromosome_segregation.py
+  gate_verdict: UNINFORMATIVE
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: Cytokinesis
+  bucket: EVENT_CLASS
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_cytokinesis.py
+  gate_verdict: MISSING_EVIDENCE
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: DNADamage
+  bucket: EVENT_CLASS
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_dna_damage.py
+  gate_verdict: MISSING_EVIDENCE
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: DNARepair
+  bucket: ALGORITHMIC_DEEP
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_dna_repair.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_dna_repair.py (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: DNASupercoiling
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_dna_supercoiling.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_dna_supercoiling.py (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: FtsZPolymerization
+  bucket: EVENT_CLASS
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_ftsz_polymerization.py
+  gate_verdict: MISSING_EVIDENCE
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_ftsz_polymerization.py (cf.
+    docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: HostInteraction
+  bucket: DETERMINISTIC
+  oracle_type: bit_identity
+  oc_module: opencell/vivarium/karr_host_interaction.py
+  gate_verdict: UNINFORMATIVE
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: MacromolecularComplexation
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_macromolecular_complexation.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: Metabolism
+  bucket: TRIVIAL_RNG
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_metabolism.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_metabolism.py (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: ProteinActivation
+  bucket: DETERMINISTIC
+  oracle_type: bit_identity
+  oc_module: opencell/vivarium/karr_protein_activation.py
+  gate_verdict: GENUINE
+  eligible: true
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: true
+- name: ProteinDecay
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_protein_decay_light.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_protein_decay_light.py (cf.
+    docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: ProteinFolding
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_protein_folding.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: ProteinModification
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_protein_modification.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_protein_modification.py (cf.
+    docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: ProteinProcessingI
+  bucket: TRIVIAL_RNG
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_protein_processing_i.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: ProteinProcessingII
+  bucket: TRIVIAL_RNG
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_protein_processing_ii.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: ProteinTranslocation
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_protein_translocation.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: RNADecay
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_rna_decay.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_rna_decay.py (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: RNAModification
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_rna_modification.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_rna_modification.py (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: RNAProcessing
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_rna_processing.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: Replication
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_replication.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_replication.py (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: ReplicationInitiation
+  bucket: ALGORITHMIC_DEEP
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_replication_initiation.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_replication_initiation.py (cf.
+    docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: RibosomeAssembly
+  bucket: EVENT_CLASS
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_ribosome_assembly.py
+  gate_verdict: MISSING_EVIDENCE
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+- name: TerminalOrganelleAssembly
+  bucket: DETERMINISTIC
+  oracle_type: bit_identity
+  oc_module: opencell/vivarium/karr_terminal_organelle_assembly.py
+  gate_verdict: GENUINE
+  eligible: true
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_terminal_organelle_assembly.py
+    (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: Transcription
+  bucket: ALGORITHMIC_DEEP
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_transcription.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_transcription.py (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: TranscriptionalRegulation
+  bucket: DETERMINISTIC
+  oracle_type: bit_identity
+  oc_module: opencell/vivarium/karr_transcriptional_regulation.py
+  gate_verdict: COINCIDENTAL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_transcriptional_regulation.py
+    (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: Translation
+  bucket: ALGORITHMIC_DEEP
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_translation.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: true
+  gap_reason: live `trace_hint` reference found in opencell/vivarium/karr_translation.py (cf. docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md)
+  eligible_gap_free: false
+- name: tRNAAminoacylation
+  bucket: ALGORITHMIC_SHALLOW
+  oracle_type: distributional
+  oc_module: opencell/vivarium/karr_trna_aminoacylation.py
+  gate_verdict: FAIL
+  eligible: false
+  known_short_circuit_gap: false
+  gap_reason: null
+  eligible_gap_free: false
+pair_universe:
+  total: 378
+  shared_pool: 256
+  disjoint: 122
+  eligible_pairs: 0
+  gap_free_eligible_pairs: 0
+coverage_classes:
+- kind: oracle_complexity
+  value: deterministic_deterministic
+- kind: oracle_complexity
+  value: deterministic_stochastic
+- kind: oracle_complexity
+  value: stochastic_stochastic
+- kind: contention_tier
+  value: '1'
+- kind: contention_tier
+  value: '2'
+- kind: contention_tier
+  value: '3'
+- kind: shared_wid_channel
+  value: complexs
+- kind: shared_wid_channel
+  value: enzymes
+- kind: shared_wid_channel
+  value: monomers
+- kind: shared_wid_channel
+  value: rnas
+- kind: shared_wid_channel
+  value: substrates
+coverage_report:
+- class:
+    kind: oracle_complexity
+    value: deterministic_deterministic
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: oracle_complexity
+    value: deterministic_stochastic
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: oracle_complexity
+    value: stochastic_stochastic
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: contention_tier
+    value: '1'
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: contention_tier
+    value: '2'
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: contention_tier
+    value: '3'
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: complexs
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: enzymes
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: monomers
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: rnas
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: substrates
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+selected_pairs: []
+uncovered_classes:
+- class:
+    kind: oracle_complexity
+    value: deterministic_deterministic
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: oracle_complexity
+    value: deterministic_stochastic
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: oracle_complexity
+    value: stochastic_stochastic
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: contention_tier
+    value: '1'
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: contention_tier
+    value: '2'
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: contention_tier
+    value: '3'
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: complexs
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: enzymes
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: monomers
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: rnas
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+- class:
+    kind: shared_wid_channel
+    value: substrates
+  covered: false
+  reason: UNCOVERED_NO_ELIGIBLE_PAIR
+summary:
+  n_eligible_processes: 2
+  n_eligible_gap_free_processes: 1
+  n_known_gap_processes: 15
+  n_selected_pairs: 0
+  n_uncovered_classes: 11
+  ok: false
+generated_at: '2039-02-11T00:14:27Z'
+content_hash: eb34a57dcba863693b61d711b3fb3c3111f5f6823ab0dc5f6094b2b2cd31c87e
