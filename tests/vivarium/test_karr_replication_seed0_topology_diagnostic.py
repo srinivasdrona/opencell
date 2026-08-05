@@ -45,34 +45,40 @@ initiation ticks immediately adjacent to/before each real expected tick
 (e.g. 46,47 before the real 48; 65 before the real 66) and spurious/
 duplicate termination ticks in multi-tick runs immediately before/at each
 real expected tick (e.g. 49,50,51 before/at the real 52; both columns at
-91 instead of one). Root-cause diagnosis (see
-`_probe_g1_boundary`-style per-tick inspection performed during this
-pass, not committed as a scratch file): at ticks 46/47/49/50/51 etc. the
-oracle's OWN recorded `states_before` pre-tick position/fragment-progress
-values have NOT yet reached the real completion/initiation boundary
-(confirmed directly against `_okazaki_fragment_progress`/
-`_okazaki_fragment_length` computed from the oracle's own historical
-`polymerizedRegions`) -- but THIS diagnostic's own per-tick
-nucleotide-advance budget (`desired_step_bp`
-=floor(`fork_polymerization_rate_bp_per_s` * dt), scaled by
-`substrates_allocated`; Karr's own `evolveState`/allocator machinery, NOT
-part of this topology port's scope, and explicitly preserved unchanged
-per the c3 adjudication: "Preserve the existing accepted total
-nucleotide-advance/dNTP budget calculation unchanged") does not
-reconstruct the REAL oracle's own historical per-tick consumed advance
-amount for an ISOLATED, per-tick-reset construction. Our own simulated
-advance for that single tick can therefore legitimately reach (and, in
-this per-tick-reset harness, immediately act on) a fragment-completion/
-initiation boundary a few bp/ticks earlier than the oracle's real,
-continuously-accumulated trajectory did. This is a genuine, understood
-residual gap in the isolated-tick diagnostic's budget reconstruction --
-NOT a defect in the ported position/fragment/merge state machine itself,
-and it is explicitly out of scope for this pass per the untouched-budget-
-calculation adjudication. `test_seed0_events_are_a_superset_of_expected_
-ticks` below asserts what CAN currently be honestly claimed (every real
-event tick is present in both paths, i.e. no event is silently missing);
-it deliberately does NOT assert exact equality, and must not be
-mistaken for the acceptance criterion Opus specified.
+91 instead of one).
+
+FINDING 2 UPDATE (2026-08-05): this residual is a genuine IMPLEMENTATION
+GAP in the ported budget/`limits` machinery, not merely a harness
+per-tick-reset artifact -- correcting a prior mischaracterization in this
+docstring. Root-cause diagnosis (per-tick inspection of the oracle's own
+`states_before` pre-tick position/fragment-progress values, confirmed
+directly against `_okazaki_fragment_progress`/`_okazaki_fragment_length`
+computed from the oracle's own historical `polymerizedRegions`): at ticks
+46/47/49/50/51 etc. the oracle's own recorded pre-tick state has NOT yet
+reached the real completion/initiation boundary, yet THIS diagnostic's
+own per-tick advance reaches it early. Replication.m:768-782's primase-
+kinetics `limits` (primer-length-vs-progress cap, replacing a flat
+`floor(rate*dt)` budget) has since been ported literally
+(`_primer_length_capped_step`/`_leading_strand_distance_since_origin`);
+it is CONFIRMED CORRECT (matches the literal MATLAB formula, verified by
+dedicated unit tests) but CONFIRMED INSUFFICIENT ALONE to close this
+specific tick-set mismatch -- re-running this exact scan after that port
+still reproduces the identical spurious tick set unchanged (46,47,65
+extra-init; 49,50,51,75 extra-term; both columns at 91). The remaining
+gap is real production-code missing behavior, most likely
+Replication.m:786-808's per-strand `isRegionAccessible` sequence/
+occupancy-aware extents and/or the RNA-polymerase-collision and terC/
+linking-number stall semantics at Replication.m:820-863 (Finding 4
+territory, not yet ported at the time of this update) -- NOT an
+inherent, unfixable property of a per-tick-reset construction. It is
+explicitly out of scope for the current pass only in the narrow sense
+that it has not yet been implemented, not because it is unimplementable
+or immaterial. `test_seed0_events_are_a_superset_of_expected_ticks`
+below asserts what CAN currently be honestly claimed (every real event
+tick is present in both paths, i.e. no event is silently missing); it
+deliberately does NOT assert exact equality, and must not be mistaken
+for the acceptance criterion Opus specified, nor read as evidence that
+exact equality is structurally unreachable.
 
 SSB-CYCLE STOCHASTIC DIVERGENCE (historical context, now empirically
 superseded by the finding above -- retained only for provenance):
@@ -190,11 +196,14 @@ def test_seed0_events_are_a_superset_of_expected_ticks_bypass_probe() -> None:
     initiation/termination events is still reached (no event is silently
     missing) -- but this does NOT demonstrate exact real-path fidelity:
     both this bypass path and the genuine real path also fire additional,
-    spurious near-boundary ticks (see module docstring's G1 update for the
-    diagnosed root cause: an isolated-per-tick advance-budget
-    reconstruction mismatch, not a topology-state-machine defect). Passing
-    this test must NOT be read as a claim that the ported topology machine
-    reproduces Karr's real event timing exactly.
+    spurious near-boundary ticks (see module docstring's Finding 2 update
+    for the diagnosed root cause: a genuine implementation gap in the
+    ported `limits`/occlusion-extent machinery -- primer-length primase
+    kinetics alone confirmed insufficient, per-strand accessibility and
+    RNAP-collision/terC stall semantics not yet ported -- not an inherent
+    per-tick-reset-harness artifact). Passing this test must NOT be read
+    as a claim that the ported topology machine reproduces Karr's real
+    event timing exactly, nor that the gap is unfixable.
     """
     init_ticks, term_ticks = _run_events_scan(bypass_ssb_cycle=True)
 

@@ -888,6 +888,39 @@ class KarrReplicationProcess(Process):
             return (tmp - helicase_pos[0] - self.helicase_footprint_bp) < 2 * mean_len
         return (helicase_pos[1] - tmp) < 2 * mean_len
 
+    def _leading_strand_distance_since_origin(self, leading_pos: tuple[int, int], column: int) -> int:
+        # Replication.m:769-770 `primerLength - (chrLen - leadingPos(1))` /
+        # `primerLength - (leadingPos(2) - 1)`: distance already traveled by
+        # the leading strand since the replication origin, in Karr's own
+        # 1-based chrLen/leadingPos terms. Translated to OC's 0-based
+        # `leading_pos` (OC = MATLAB - 1): column 0's origin boundary is
+        # `sequence_len_bp - 1` (the last valid 0-based position, matching
+        # MATLAB's `chrLen`); column 1's origin boundary is `0`. Both
+        # differences are shift-invariant so this is an exact, not
+        # approximate, port.
+        if column == 0:
+            return (self.sequence_len_bp - 1) - leading_pos[0]
+        return leading_pos[1]
+
+    def _primer_length_capped_step(self, distance_since_fragment_start: int, proposed_step: int) -> int:
+        # Replication.m:768-775 "primase kinetics" + "DNA polymerase
+        # kinetics" fallback: `limits(i,j) = primerLength - distance;
+        # limits(limits <= 0) = dnaPolymeraseElongationRate`. While a
+        # strand has not yet traveled a full `primerLength` since its own
+        # start (fragment start for lagging, replication-origin start for
+        # leading), this tick's step is capped to whatever primer length
+        # remains -- never expanded past it, so a single tick cannot leap
+        # over the RNA-primer-synthesis boundary. Once that distance
+        # threshold is crossed, the raw primase-kinetics value is <= 0 and
+        # Karr falls back to the flat `dnaPolymeraseElongationRate`, which
+        # is exactly `proposed_step` here (the already-computed, possibly
+        # substrate-scaled, per-tick elongation budget) -- so the `else`
+        # branch is a genuine no-op cap, not a separate rate constant.
+        primer_residual = self.primer_length - distance_since_fragment_start
+        if primer_residual > 0:
+            return min(proposed_step, primer_residual)
+        return proposed_step
+
     def _num_lagging_template_bound_ssbs(
         self,
         complex_bound_sites: SparseTriplet,
@@ -1980,20 +2013,29 @@ class KarrReplicationProcess(Process):
             # loop's post-advance fragment_index.
             pre_advance_helicase_pos = helicase_pos
             pre_advance_fragment_index = fragment_index
+            # Replication.m:757 `leadingPolPos = this.leadingPolymerasePosition`
+            # -- read once, before this tick's polymerization; the leading
+            # strand's OWN position is never mutated by the lagging
+            # while-loop below, but snapshot it explicitly anyway (rather
+            # than relying on that incidental fact) so the primer-length
+            # distance-since-origin computation below is visibly tied to
+            # the same pre-mutation read Karr's `limits(1,:)` primase-
+            # kinetics term uses.
+            pre_advance_leading_pol_pos = leading_pol_pos
 
             # --- lagging strand FIRST: chunked across Okazaki fragments,
             # inline termination on each boundary; a termination-gate
             # failure stops the loop (legitimate stall) leaving leftover
             # budget unconsumed for this tick. Lagging is the bottleneck
-            # strand (discontinuous, restarted every fragment), so its
-            # actual achieved distance this tick is computed first and then
-            # used to cap the leading strand below -- this is the literal
-            # "leading must not outrun lagging" invariant (Replication.m's
-            # `limits`/Okazaki-loop distance cap), applied conservatively
-            # as a zero-gap cap rather than the full `limits` sub-step
-            # machinery (out of scope per adjudication; a strictly *safer*
-            # under-approximation, never allows leading to advance past
-            # what lagging has actually achieved this tick).
+            # strand (discontinuous, restarted every fragment); this loop
+            # computes its actual achieved distance this tick, capping each
+            # fragment's own step by the primer-length primase-kinetics
+            # gate below (Replication.m:768-775, Finding 2) in addition to
+            # the fragment's own remaining length. NOTE: the leading
+            # strand's own budget below is fully decoupled from
+            # `lagging_actual` (Finding 1 -- see the persistent lead-gap
+            # gate there instead); this comment previously described a
+            # same-tick lockstep cap that no longer exists.
             lagging_actual = 0
             remaining = budget
             while True:
@@ -2033,6 +2075,35 @@ class KarrReplicationProcess(Process):
                 if remaining <= 0:
                     break
                 step = min(remaining, remaining_in_fragment)
+                # Replication.m:771/774-775 primase kinetics: while this
+                # fragment has not yet accumulated `primerLength` bp of its
+                # own progress, this tick's step for it is capped to
+                # whatever primer length remains, not the full elongation
+                # budget -- this is what lets a just-initiated fragment
+                # advance only ~`primerLength` bp on its first tick instead
+                # of immediately consuming the full flat per-tick rate.
+                # Karr's `unwindAndPolymerizeDNA` computes exactly ONE such
+                # non-re-entrant step per tick per column -- the ONLY
+                # reason this loop can otherwise continue on to a further
+                # iteration within the same tick is this OC-specific
+                # multi-fragment-boundary-crossing extension (adjudicated
+                # c3 scope, see module docstring). Once the primer-length
+                # cap has ACTUALLY throttled this iteration's step (i.e.
+                # this tick's motion genuinely landed inside the still-
+                # forming-primer window), that throttle is this whole
+                # tick's answer for this column -- consuming the rest of
+                # `remaining` here (e.g. by immediately crossing into the
+                # NEXT fragment's own fresh, un-throttled budget) would
+                # silently launder the cap away one loop iteration later
+                # and reproduce the exact `floor(rate*dt)` bug this port
+                # exists to fix. No effect when the cap does not bind
+                # (`capped_step == step`, e.g. deep steady-state
+                # elongation or a small already-sub-primer-length step).
+                capped_step = self._primer_length_capped_step(fragment_progress[column], step)
+                primer_capped_this_tick = capped_step < step
+                step = capped_step
+                if primer_capped_this_tick:
+                    remaining = 0
 
                 pre_lagging_pos = lagging_pos[column]
                 lo, hi = self._growth_window(pre_lagging_pos, direction=lag_direction, step=step)
@@ -2103,6 +2174,20 @@ class KarrReplicationProcess(Process):
             # currently charged for that tick; that residual substrate-
             # accounting gap is NOT part of this port (out of scope here).
             leading_advance = budget
+            # Replication.m:769-770/774-775 primase kinetics (Finding 2):
+            # while the leading strand has not yet traveled a full
+            # `primerLength` bp since the replication origin, this tick's
+            # advance is capped to whatever primer length remains rather
+            # than the full elongation budget. In practice this only binds
+            # in the first tick(s) immediately after fork initiation (the
+            # leading strand travels the length of the whole chromosome
+            # arm afterward, far past `primerLength`), but is ported
+            # unconditionally/literally rather than special-cased to that
+            # window.
+            leading_distance_since_origin = self._leading_strand_distance_since_origin(
+                self._leading_position(pre_advance_leading_pol_pos), column
+            )
+            leading_advance = self._primer_length_capped_step(leading_distance_since_origin, leading_advance)
             leading_advance = leading_advance if ssb_gate[column] else 0
             # Replication.m:812-818 "prevent leading strand from getting
             # too far ahead of lagging strand": the persistent >=2x mean-

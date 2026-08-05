@@ -809,3 +809,115 @@ def test_leading_strand_lead_gap_grows_stalls_and_recovers_no_hint_trajectory(
     assert any(a > 0 for a in lagging_actual_history[40:]), "lagging must resume once unblocked"
     assert helicase_history[-1] != plateau, "helicase must resume moving after lagging catches up"
     assert helicase_history[-1] < plateau, "helicase's resumed movement must still be in the same (col0, -1) direction"
+
+
+# ----------------------------------------------------------------------
+# Finding 2: Replication.m:768-775 primase-kinetics `limits` primer-length
+# cap, replacing a fixed `floor(rate*dt)` budget. `_primer_length_capped_
+# step`/`_leading_strand_distance_since_origin` are pure functions;
+# `_advance_replication_forks` integration coverage below (lagging strand)
+# proves the cap actually constrains a real, returned advance, not just
+# the helper in isolation.
+# ----------------------------------------------------------------------
+
+
+def test_primer_length_capped_step_caps_when_distance_below_primer_length(
+    process: KarrReplicationProcess,
+) -> None:
+    """Literal port of Replication.m:768-775's raw `primerLength -
+    distance` term when it is still positive (i.e. the strand has not yet
+    traveled a full primer length since its own start): the returned step
+    must be the SMALLER of the requested step and the remaining primer
+    residual, never the full requested step."""
+    assert process.primer_length == 11  # real fixture value asserted so this test fails loudly if the fixture ever changes
+    # distance=0 (fragment/fork just started): residual == primer_length itself.
+    assert process._primer_length_capped_step(0, 100) == 11
+    # distance=5: residual == 11-5 == 6.
+    assert process._primer_length_capped_step(5, 100) == 6
+    # requested step already below the residual: no cap needed, returned unchanged.
+    assert process._primer_length_capped_step(0, 3) == 3
+
+
+def test_primer_length_capped_step_falls_back_to_full_rate_once_past_primer_length(
+    process: KarrReplicationProcess,
+) -> None:
+    """Literal port of Replication.m:775's `limits(limits <= 0) =
+    dnaPolymeraseElongationRate` fallback: once distance-since-start
+    reaches (or exceeds) `primerLength`, the raw primase-kinetics term is
+    <= 0 and Karr reverts to the flat elongation-rate budget -- here,
+    the already-computed `proposed_step` passed in is returned completely
+    UNCHANGED (no cap at all), proving this is a genuine no-op past the
+    threshold, not a permanently-binding constraint."""
+    assert process._primer_length_capped_step(11, 100) == 100  # distance == primerLength exactly: residual == 0
+    assert process._primer_length_capped_step(12, 100) == 100  # distance past primerLength
+    assert process._primer_length_capped_step(10_000, 5) == 5  # deep steady-state elongation, small requested step
+
+
+def test_leading_strand_distance_since_origin_matches_literal_matlab_formula(
+    process: KarrReplicationProcess,
+) -> None:
+    """Replication.m:769-770: `primerLength - (chrLen - leadingPos(1))` /
+    `primerLength - (leadingPos(2) - 1)`, i.e. distance-since-origin ==
+    `chrLen - leadingPos(1)` (col 0) / `leadingPos(2) - 1` (col 1) in
+    Karr's 1-based terms. Translated to OC's 0-based `leading_pos` (OC ==
+    MATLAB - 1, a shift-invariant difference): column 0's origin boundary
+    is `sequence_len_bp - 1` (distance 0 there); column 1's origin
+    boundary is `0` (distance == the raw 0-based position itself)."""
+    seq_len = process.sequence_len_bp
+    # Column 0: right at the origin boundary -> distance 0.
+    assert process._leading_strand_distance_since_origin((seq_len - 1, 0), 0) == 0
+    # Column 0: 100bp already traveled from the origin boundary.
+    assert process._leading_strand_distance_since_origin((seq_len - 101, 0), 0) == 100
+    # Column 1: right at the origin boundary -> distance 0.
+    assert process._leading_strand_distance_since_origin((0, 0), 1) == 0
+    # Column 1: 100bp already traveled from the origin boundary.
+    assert process._leading_strand_distance_since_origin((0, 100), 1) == 100
+
+
+def test_lagging_strand_primer_length_caps_first_tick_advance_after_fragment_start(
+    process: KarrReplicationProcess,
+) -> None:
+    """Integration-level proof (via the real `_advance_replication_forks`
+    entry point, not just the pure helper) that Replication.m:768-775's
+    primase-kinetics cap genuinely constrains a returned advance: a
+    lagging strand with `progress_before=0` (fragment just initiated, 0bp
+    of its own progress yet) requesting a 50bp budget must advance only
+    11bp (`primer_length`) this tick -- NOT the full 50bp a flat
+    `floor(rate*dt)` budget alone would have granted before this port."""
+    scenario = _advance_scenario_col0_fidx1(process, progress_before=0, with_backup_clamp=True)
+
+    result = process._advance_replication_forks(
+        chromosome_store=scenario["store"],
+        complex_bound_sites=scenario["complex_bound_sites"],
+        budget_left_bp=50,
+        budget_right_bp=0,
+        enzymes_next={},
+        bound_next={},
+    )
+
+    assert result["actual_left_bp"] == process.primer_length == 11
+
+
+def test_lagging_strand_primer_length_cap_lifted_once_progress_reaches_primer_length(
+    process: KarrReplicationProcess,
+) -> None:
+    """Companion to the test above: once `progress_before` already equals
+    `primer_length` (the fragment has already traveled a full primer
+    length), the raw primase-kinetics term is <= 0 and Karr's own fallback
+    to the flat elongation-rate budget applies -- the requested 50bp
+    budget must be granted in FULL this tick (modulo the fragment's own
+    remaining length, which at `progress_before=11` is still far greater
+    than 50), proving the cap is a genuine one-tick-window transient, not
+    a permanent throttle."""
+    scenario = _advance_scenario_col0_fidx1(process, progress_before=process.primer_length, with_backup_clamp=True)
+
+    result = process._advance_replication_forks(
+        chromosome_store=scenario["store"],
+        complex_bound_sites=scenario["complex_bound_sites"],
+        budget_left_bp=50,
+        budget_right_bp=0,
+        enzymes_next={},
+        bound_next={},
+    )
+
+    assert result["actual_left_bp"] == 50
