@@ -93,6 +93,40 @@ acceptance test and its passing must not be read as a claim of real-path
 fidelity; see the update above for what it actually demonstrates now
 (identical results to the real path, not independent confirmation of
 exact-tick correctness).
+
+FINDING 3 UPDATE (2026-08-05): `_advance_replication_forks` now draws one
+fair coin per tick (Replication.m:604-607's `randStream.randperm`,
+literally reduced to its pairwise marginal: P=1/2 for any 2 elements of a
+uniform random permutation) deciding whether `terminateOkazakiFragment`
+is drawn to run before or after `unwindAndPolymerizeDNA` in a tick where
+that tick's own advance is what completes a fragment -- see
+`_advance_replication_forks`'s docstring and
+`test_karr_replication_advance_and_terminate.py::
+test_finding3_terminate_ordering_coin_same_tick_vs_deferred_no_hint_trajectory`
+for the literal port and its dedicated continuous-trajectory regression.
+This is drawn from the SAME per-process `self._rng` stream the SSB cycle
+(`dissociate_free_ssb_complexes`/`free_and_bind_ssbs`) already draws
+from, matching Karr's real model (a single ordered `randStream` per
+process, not a separate stream per subfunction) -- so the coin's exact
+stream POSITION, and therefore its outcome, now legitimately depends on
+how many SSB-cycle draws happened earlier that same tick. At seed0,
+every checked tick in the active-replisome window has 26-33 SSB8mer
+sites bound, so the SSB cycle's own dissociation draw
+(`free_and_bind_ssbs`'s `self._rng.random(ssb_indices.size)`) is
+essentially ALWAYS nonzero-length there -- meaning the coin's outcome at
+a given tick now routinely differs between the SSB-cycle-bypassed probe
+(zero draws before the coin) and the genuine real path (a real,
+tick-varying number of draws before the coin). `test_real_path_matches_
+bypass_path_exactly_ssb_cycle_no_longer_the_confound` below is corrected
+accordingly: its ORIGINAL claim (bypass and real paths produce identical
+tick sets) is superseded by this newly-introduced, understood,
+MECHANISM-DRIVEN divergence source -- not a return of the ORIGINAL
+SSB-cycle confound that test was built to rule out. A companion check
+(`test_finding3_coin_is_the_sole_new_real_vs_bypass_divergence_source`)
+proves this directly: forcing the SAME external coin value into BOTH
+paths (while leaving the SSB cycle's OTHER real draws untouched) restores
+exact real==bypass equality, isolating the new divergence to exactly the
+coin's stream-position sensitivity and nothing else.
 """
 
 from __future__ import annotations
@@ -102,6 +136,7 @@ from pathlib import Path
 from typing import Any
 
 import h5py
+import numpy as np
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -126,6 +161,30 @@ _EXPECTED_INITIATION_TICKS = frozenset({15, 22, 31, 48, 66, 84})
 _EXPECTED_TERMINATION_TICKS = frozenset({52, 76, 91, 92})
 
 
+class _FixedCoinRealSSB:
+    """RNG proxy for isolating Finding 3's coin from the SSB cycle's own
+    (unaffected, still-genuinely-stochastic) draws: intercepts ONLY the
+    no-arg `.random()` call (`_advance_replication_forks`'s coin is the
+    sole no-arg `.random()` call anywhere in the no-hint path --
+    `_stochastic_round`'s own no-arg `.random()` calls live exclusively in
+    `_next_update_from_trace_hint`, never reached here) and returns a
+    fixed value for it, while `.random(n)`/`.choice(...)` (the SSB cycle's
+    dissociation-mask and site-selection draws) delegate to a real,
+    independently-seeded generator so that machinery is untouched."""
+
+    def __init__(self, seed: int, coin_value: float) -> None:
+        self._real = np.random.default_rng(seed)
+        self._coin_value = coin_value
+
+    def random(self, *args: object, **kwargs: object) -> Any:
+        if not args and not kwargs:
+            return self._coin_value
+        return self._real.random(*args, **kwargs)
+
+    def choice(self, *args: object, **kwargs: object) -> Any:
+        return self._real.choice(*args, **kwargs)
+
+
 def _build_tick_state(trace_path: Path, tick: int) -> tuple[KarrReplicationProcess, dict[str, Any]]:
     process = KarrReplicationProcess({"rng_seed": 0})
     state = build_state_template(process)
@@ -143,13 +202,21 @@ def _build_tick_state(trace_path: Path, tick: int) -> tuple[KarrReplicationProce
     return process, state
 
 
-def _run_events_scan(*, bypass_ssb_cycle: bool) -> tuple[list[int], dict[int, list[int]]]:
+def _run_events_scan(
+    *, bypass_ssb_cycle: bool, fixed_coin: float | None = None
+) -> tuple[list[int], dict[int, list[int]]]:
     trace_path = resolve_trace_path("Replication")
     init_ticks: list[int] = []
     term_ticks: dict[int, list[int]] = {}
 
     for tick in range(100):
         process, state = _build_tick_state(trace_path, tick)
+        if fixed_coin is not None:
+            # Finding 3 isolation probe: pin the sole no-arg `.random()`
+            # call (the same-tick-vs-deferred termination coin) while
+            # leaving the SSB cycle's own `.random(n)`/`.choice(...)`
+            # draws genuinely stochastic (see `_FixedCoinRealSSB`).
+            process._rng = _FixedCoinRealSSB(seed=0, coin_value=fixed_coin)
         if bypass_ssb_cycle:
             # See module docstring: isolates the deterministic topology
             # machine from the separately-scoped SSB-cycle stochastic
@@ -204,6 +271,15 @@ def test_seed0_events_are_a_superset_of_expected_ticks_bypass_probe() -> None:
     per-tick-reset-harness artifact). Passing this test must NOT be read
     as a claim that the ported topology machine reproduces Karr's real
     event timing exactly, nor that the gap is unfixable.
+
+    FINDING 3 NOTE: this probe uses `bypass_ssb_cycle=True`, so Finding
+    3's coin (see module docstring) is always drawn as the tick's first
+    `self._rng` call here -- this test's superset claim is therefore
+    unaffected by Finding 3 (a deferred completion still shows up on a
+    LATER probed tick's own oracle-fed pre-state reaching the same
+    boundary independently; it is not depending on any specific tick's
+    coin outcome to satisfy the "every expected tick is present"
+    property).
     """
     init_ticks, term_ticks = _run_events_scan(bypass_ssb_cycle=True)
 
@@ -214,23 +290,68 @@ def test_seed0_events_are_a_superset_of_expected_ticks_bypass_probe() -> None:
     assert not missing_term, f"missing expected termination ticks: {sorted(missing_term)}"
 
 
-def test_real_path_matches_bypass_path_exactly_ssb_cycle_no_longer_the_confound() -> None:
-    """Opus G1 finding: after the `free_and_bind_ssbs` fork-window scoping
-    fix, the GENUINE real path (`bypass_ssb_cycle=False`, i.e. the actual
-    no-hint `next_update` branch with no special-casing) produces the
-    EXACT SAME initiation/termination tick sets as the SSB-state-bypass
-    probe above -- proving the SSB-cycle stochastic re-draw is no longer a
-    meaningful source of real-vs-bypass divergence at seed0 (prior to this
-    fix, the two paths diverged and the module wrongly attributed ALL of
-    that divergence to the SSB-cycle's per-tick-fresh-RNG-draw). This is a
-    real, currently-true, and currently-verified claim; it does NOT assert
-    exact equality against Karr's real event ticks (see module docstring
-    for the separately-diagnosed residual gap that prevents that)."""
+def test_real_path_init_ticks_match_bypass_term_divergence_is_finding3_coin_explained() -> None:
+    """UPDATED under Finding 3 (2026-08-05): this test's ORIGINAL claim
+    (real and SSB-cycle-bypassed paths produce IDENTICAL initiation AND
+    termination tick sets) is now superseded and must not be re-asserted
+    as-is -- see module docstring's "FINDING 3 UPDATE". Init-tick equality
+    still holds unconditionally (initiation never depends on the new
+    coin). Term-tick equality NO LONGER holds, and -- unlike an earlier
+    draft of this correction -- term EVENT COUNT can also legitimately
+    differ (verified empirically: 5 vs 9 at seed0), because this
+    harness's own `_build_tick_state` construction resets to a BRAND NEW
+    process from the oracle's real pre-tick state every tick (see module
+    docstring's PROVENANCE CAVEAT): if the coin defers a completion to
+    "next tick's unconditional retry" (see `_advance_replication_forks`),
+    that retry never actually happens in THIS harness, because tick+1's
+    probe is seeded from the ORACLE's own already-advanced state, not
+    from tick t's OC-internal post-advance state -- so a deferred
+    completion silently vanishes from this specific scan entirely rather
+    than moving to the next tick, for both real and bypass. Real and
+    bypass paths defer at different, stream-position-dependent ticks, so
+    they can lose different completions to this harness gap, which is
+    why total counts also diverge. This is a harness-construction
+    artifact of Finding 3 interacting with the per-tick-reset design (NOT
+    lost data in the actual, continuously-evolving production code path
+    -- see `test_finding3_terminate_ordering_coin_same_tick_vs_deferred_
+    no_hint_trajectory` in test_karr_replication_advance_and_terminate.py
+    for the continuous 2-tick trajectory proving no real data loss).
+    Consequently this test can ONLY honestly assert init-tick equality;
+    term-tick/count comparison in this per-tick-reset harness is not a
+    meaningful signal under Finding 3 and must not be asserted here. See
+    `test_finding3_coin_is_the_sole_new_real_vs_bypass_divergence_source`
+    below for the isolation proof that FIXING the coin (removing its
+    stream-position sensitivity, not the harness gap) restores exact
+    term-tick equality too."""
     real_init, real_term = _run_events_scan(bypass_ssb_cycle=False)
     bypass_init, bypass_term = _run_events_scan(bypass_ssb_cycle=True)
 
     assert real_init == bypass_init
-    assert real_term == bypass_term
+    # Term-tick/count equality is deliberately NOT asserted here under
+    # Finding 3 -- see docstring above. `real_term`/`bypass_term` are
+    # still returned by `_run_events_scan` and retained as local
+    # variables for readability/debuggability, not asserted against.
+    del real_term, bypass_term
+
+
+def test_finding3_coin_is_the_sole_new_real_vs_bypass_divergence_source() -> None:
+    """Isolation proof for the divergence documented above: when BOTH the
+    real and bypass scans are run with the SAME externally-fixed coin
+    value (via `_FixedCoinRealSSB`, which leaves the SSB cycle's own
+    `.random(n)`/`.choice(...)` draws genuinely stochastic and untouched),
+    exact real==bypass equality is restored for BOTH initiation and
+    termination tick sets, for both coin polarities. This proves the new
+    divergence is caused SOLELY by the coin's stream-position sensitivity
+    (a legitimate, literal consequence of porting Karr's shared-
+    `randStream` semantics) and not by any reintroduction of the original,
+    pre-G1 SSB-cycle confound this file's earlier tests were built to
+    rule out."""
+    for coin_value in (0.1, 0.9):
+        real_init, real_term = _run_events_scan(bypass_ssb_cycle=False, fixed_coin=coin_value)
+        bypass_init, bypass_term = _run_events_scan(bypass_ssb_cycle=True, fixed_coin=coin_value)
+
+        assert real_init == bypass_init, f"coin={coin_value}: init tick sets diverged"
+        assert real_term == bypass_term, f"coin={coin_value}: term tick sets diverged"
 
 
 def test_seed0_full_pipeline_no_hint_diagnostic_runs_without_exception() -> None:

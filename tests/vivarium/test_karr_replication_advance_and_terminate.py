@@ -464,6 +464,119 @@ def new_strand_break_recorded(process: KarrReplicationProcess, result: dict) -> 
     return result["strand_breaks"].to_regions() == [(process.sequence_len_bp - 1, 2, 1)]
 
 
+class _FixedCoin:
+    """Deterministic stand-in for `np.random.default_rng` exposing only the
+    single no-arg `.random()` call `_advance_replication_forks` draws for
+    Finding-3's per-tick advance-vs-terminate ordering coin. Direct calls to
+    `_advance_replication_forks` (as these tests make, bypassing
+    `_apply_ssb_cycle`/`next_update`) never reach any OTHER RNG-consuming
+    helper (`free_and_bind_ssbs`, `dissociate_free_ssb_complexes`,
+    `_stochastic_round`), so this narrow stub is sufficient and does not
+    risk masking an unexpected additional draw elsewhere."""
+
+    def __init__(self, value: float) -> None:
+        self._value = value
+
+    def random(self, *args: object, **kwargs: object) -> float:
+        return self._value
+
+
+def test_finding3_terminate_ordering_coin_same_tick_vs_deferred_no_hint_trajectory(
+    process: KarrReplicationProcess,
+) -> None:
+    """Finding 3 (Replication.m:604-607): Karr's `evolveState` draws a fresh
+    `randStream.randperm` every tick, so whether `terminateOkazakiFragment`
+    runs before or after `unwindAndPolymerizeDNA` in a tick where THIS
+    tick's own advance is what completes a fragment is genuinely a per-tick
+    coin flip (P=1/2 for any 2 elements of a uniform random permutation,
+    Replication.m:1097-1099's `this.okazakiFragmentProgress` read is live
+    mutable state). This is a CONTINUOUS 2-tick trajectory regression (not
+    the single-tick-isolated-oracle-probe style used by
+    `test_karr_replication_seed0_topology_diagnostic.py`, which structurally
+    cannot observe a deferred completion since it re-seeds a brand new
+    process from oracle-supplied per-tick state every tick with no
+    carry-over): it proves the SAME underlying scenario is handled
+    correctly under EITHER coin outcome, and that a deferred completion is
+    genuinely picked up the very next tick, not silently lost.
+    """
+    scenario_kwargs = dict(progress_before=1385 - 3, with_backup_clamp=True)
+
+    # --- coin lands "after" (>= 0.5): terminate observes this tick's own
+    # freshly-completed fragment and fires in the SAME tick's call.
+    same_tick_process = KarrReplicationProcess({})
+    same_tick_process._rng = _FixedCoin(0.9)
+    scenario = _advance_scenario_col0_fidx1(same_tick_process, **scenario_kwargs)
+    result = same_tick_process._advance_replication_forks(
+        chromosome_store=scenario["store"],
+        complex_bound_sites=scenario["complex_bound_sites"],
+        budget_left_bp=5,
+        budget_right_bp=0,
+        enzymes_next={},
+        bound_next={},
+    )
+    same_tick_fragment_index = same_tick_process._okazaki_fragment_index(
+        same_tick_process._lagging_position(
+            same_tick_process._lagging_polymerase_positions(result["complex_bound_sites"])
+        ),
+        result["polymerized"],
+    )
+    assert same_tick_fragment_index[0] == 2  # handed off to the NEXT fragment already
+    assert result["strand_breaks"].to_regions() != []  # nick recorded THIS tick
+
+    # --- coin lands "before" (< 0.5): terminate would have run BEFORE this
+    # tick's own advance and so cannot observe this tick's completion --
+    # deferred to the NEXT tick's unconditional stall-retry check instead
+    # of firing now. Position/polymerized-region bookkeeping for the
+    # completed step itself is UNCHANGED either way (only the termination
+    # side-effect -- handoff/nick -- is deferred).
+    deferred_process = KarrReplicationProcess({})
+    deferred_process._rng = _FixedCoin(0.1)
+    scenario2 = _advance_scenario_col0_fidx1(deferred_process, **scenario_kwargs)
+    tick1_result = deferred_process._advance_replication_forks(
+        chromosome_store=scenario2["store"],
+        complex_bound_sites=scenario2["complex_bound_sites"],
+        budget_left_bp=5,
+        budget_right_bp=0,
+        enzymes_next={},
+        bound_next={},
+    )
+    # The fragment-boundary POSITION already moved this tick regardless of
+    # termination timing (movement is not coin-gated, only the
+    # `terminateOkazakiFragment` side effects are) -- `_okazaki_fragment_index`
+    # is a pure position/`primaseBindingLocations` geometry lookup, so it is
+    # NOT diagnostic of whether termination itself fired. The genuinely
+    # diagnostic side effects are the `strandBreaks` nick and the backup-
+    # beta-clamp release/rebind handoff, both performed only inside
+    # `_terminate_okazaki_fragment_column`.
+    assert tick1_result["strand_breaks"].to_regions() == []  # no nick yet: deferred
+
+    # NEXT tick: zero further budget, but the pending completed-and-
+    # unterminated fragment is retried unconditionally (the top-of-loop
+    # stall-retry branch, never coin-gated) and now DOES fire -- proving
+    # the deferral is genuinely a 1-tick delay, not data loss. A fresh coin
+    # draw this second tick (still 0.1, "before") is irrelevant here since
+    # this path is the unconditional retry, not the coin-gated branch.
+    tick2_store = ChromosomeStore(shape=deferred_process.chromosome_shape)
+    tick2_store.set_field("polymerizedRegions", tick1_result["polymerized"])
+    tick2_store.set_field("strandBreaks", tick1_result["strand_breaks"])
+    tick2_result = deferred_process._advance_replication_forks(
+        chromosome_store=tick2_store,
+        complex_bound_sites=tick1_result["complex_bound_sites"],
+        budget_left_bp=0,
+        budget_right_bp=0,
+        enzymes_next={},
+        bound_next={},
+    )
+    tick2_fragment_index = deferred_process._okazaki_fragment_index(
+        deferred_process._lagging_position(
+            deferred_process._lagging_polymerase_positions(tick2_result["complex_bound_sites"])
+        ),
+        tick2_result["polymerized"],
+    )
+    assert tick2_fragment_index[0] == 2  # handed off now, one tick later
+    assert tick2_result["strand_breaks"].to_regions() != []  # nick recorded on the retry
+
+
 def test_advance_zero_budget_still_terminates_pending_complete_fragment(
     process: KarrReplicationProcess,
 ) -> None:

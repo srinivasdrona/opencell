@@ -1934,18 +1934,55 @@ class KarrReplicationProcess(Process):
         leading-strand + helicase single-step advance (SSB-gated,
         occlusion/terC-veto checked), lagging-strand fragment-chunked
         advance with inline termination (`unwindAndPolymerizeDNA`/
-        `terminateOkazakiFragment`, adjudicated c3/d scope). Fixed causal
-        order per column -- advance, then terminate-if-boundary-reached,
-        repeated until the column's budget is exhausted or a termination-
-        gate stall leaves budget unconsumed (a legitimate stall, not a bug;
-        adjudication's fixed-causal-order scope simplification). Returns a
-        dict with the updated triplets and the ACTUAL bp advanced per
-        column (which may be less than the requested budget), so the
-        caller can reconcile substrate accounting against actual
-        consumption rather than the requested amount.
+        `terminateOkazakiFragment`). Returns a dict with the updated
+        triplets and the ACTUAL bp advanced per column (which may be less
+        than the requested budget), so the caller can reconcile substrate
+        accounting against actual consumption rather than the requested
+        amount.
+
+        Finding 3 (Replication.m:604-607): Karr's `evolveState` does NOT
+        call these two subfunctions in a fixed order -- every tick it draws
+        `order = this.randStream.randperm(numel(subfunctions))` over the
+        WHOLE subfunction list (`initiateReplication`, `ligateDNA`,
+        `dissociateFreeSSBComplexes`, `freeAndBindSSBs`, and -- only while
+        any replisome is active -- `unwindAndPolymerizeDNA`,
+        `initiateOkazakiFragment`, `terminateOkazakiFragment`,
+        `terminateReplication`) and executes them in that random order.
+        Most of that list is architecturally forced into a fixed OC order
+        by real state-threading dependencies that have nothing to do with
+        fidelity choice (e.g. the SSB cycle must run, and be re-read, before
+        this fork-advance pass so the SSB-gate proxy below sees fresh data;
+        see `_apply_ssb_cycle`'s call site in `next_update`) -- those
+        orderings remain an explicit, tested, OPEN deviation (see
+        `test_karr_replication_subfunction_order_gap.py`), since a fully
+        general randomized-dispatch rewrite of the fused pipeline is out of
+        scope here and unproven to change any observable behavior (the SSB
+        cycle binds/releases SSBs only on `leading_strand_indexs`, disjoint
+        from the lagging-strand-indexed sites `initiateOkazakiFragment`/
+        fork-advance touch, and consumes disjoint enzyme pools).
+
+        The ONE sub-ordering below that IS ported faithfully: whether
+        `terminateOkazakiFragment` is drawn before or after
+        `unwindAndPolymerizeDNA` in a tick where this tick's own advance is
+        what completes a fragment. For any two distinct elements of a
+        uniformly random permutation of N elements, P(A precedes B) = 1/2
+        exactly, independent of N or the other elements -- so this reduces
+        to one fair coin per tick (shared across both columns, since Karr's
+        single `unwindAndPolymerizeDNA`/`terminateOkazakiFragment` calls
+        each handle both forks internally in one randperm-ordered pass),
+        drawn from the process's own seeded `self._rng` (never global
+        state). If terminate is drawn to run BEFORE this tick's advance, it
+        cannot observe a completion this tick's own advance just produced
+        (Karr's real per-tick call semantics: a subfunction only sees state
+        as of when IT runs) -- so termination is deferred to the very next
+        tick's own stall-retry check instead of firing in the same tick.
         """
         polymerized = chromosome_store.get_field("polymerizedRegions")
         strand_breaks = chromosome_store.get_field("strandBreaks")
+        # Replication.m:604-607: one fair coin per tick (see docstring
+        # above) -- shared by both columns, drawn once regardless of how
+        # many columns/fragments this call ends up processing.
+        terminate_drawn_after_advance_this_tick = bool(self._rng.random() >= 0.5)
 
         helicase_pos = self._helicase_positions(complex_bound_sites)
         leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
@@ -2052,11 +2089,21 @@ class KarrReplicationProcess(Process):
                 if remaining_in_fragment <= 0:
                     # The fragment is already fully polymerized (e.g. a
                     # termination-gate stall from an earlier tick that has
-                    # now cleared) -- Replication.m's `terminateOkazakiFragment`
+                    # now cleared, OR Finding 3's coin deferred this SAME
+                    # column's own just-completed fragment on a PRIOR call
+                    # within this tick's while-loop -- see the coin-gated
+                    # branch below) -- Replication.m's `terminateOkazakiFragment`
                     # is re-evaluated fresh every tick regardless of whether
                     # `unwindAndPolymerizeDNA` made new progress this tick,
                     # so a pending-but-not-yet-terminated fragment must be
-                    # retried here even when this tick's budget is 0.
+                    # retried here even when this tick's budget is 0. This
+                    # retry is deliberately UNCONDITIONAL (not coin-gated):
+                    # Finding 3's ordering ambiguity applies only to whether
+                    # THIS SAME tick's own advance can be observed by
+                    # terminate; a fragment left over from an EARLIER tick
+                    # (or an earlier iteration already accounted for) is by
+                    # definition no longer "this tick's own completion" from
+                    # terminate's perspective, so no further coin applies.
                     # Without this retry, a fragment that completed while
                     # gated (gap/equality/SSB-not-yet-satisfied) would never
                     # terminate once the gate clears on a later tick with no
@@ -2143,6 +2190,19 @@ class KarrReplicationProcess(Process):
                 remaining -= step
 
                 if step == remaining_in_fragment:
+                    if not terminate_drawn_after_advance_this_tick:
+                        # Finding 3 (Replication.m:604-607): this tick's
+                        # coin drew terminateOkazakiFragment to run BEFORE
+                        # unwindAndPolymerizeDNA -- it cannot see the
+                        # completion THIS iteration's own step just
+                        # produced (Replication.m:1097-1099 reads live
+                        # `this.okazakiFragmentProgress`). Leave the
+                        # fragment fully polymerized but unterminated for
+                        # now; the unconditional top-of-loop stall-retry
+                        # branch above picks it up on the very next real
+                        # tick's call (a fresh coin, matching Karr's real
+                        # per-tick draw), not lost.
+                        break
                     complex_bound_sites, strand_breaks, terminated = self._terminate_okazaki_fragment_column(
                         column,
                         complex_bound_sites=complex_bound_sites,
