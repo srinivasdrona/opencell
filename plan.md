@@ -88,6 +88,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `procii-closer` — ProteinProcessingII H12/sentinel closure;
   - `macromol-closer` — MacromolecularComplexation lifecycle/H12 closure.
   - `allocator-harness-closer` — replace idealized composition grants with real `KarrAllocationStep` contention semantics.
+- Live review/follow-up state:
+  - `replication-opus-review`, `dnadamage-opus-review`, `l25-scope-opus-review` — Opus 5 branch reviews running;
+  - `procii-closer` — follow-up requested to make the mnrnd-shim wiring guard structural and align the determination text;
+  - `ftsz-event-closer` — follow-up requested after Opus found extraction-driver exit-code, invalid-seed resumability and cwd-root defects;
+  - `ftsz-opus-review` completed with `APPROVE_AS_BLOCKER_TOOLING`; no evidence-integrity defect, merge waits for the tooling follow-up.
 - L2.5 pair execution remains blocked until process closure and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted. Scope ratification may proceed in parallel.
 
 **Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
