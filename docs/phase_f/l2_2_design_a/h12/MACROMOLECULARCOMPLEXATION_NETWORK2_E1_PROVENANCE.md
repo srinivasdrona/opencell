@@ -156,3 +156,87 @@ extraction authorized).
   `tick_offset` extraction, could at most move this row from
   "unreachable in the sampled window" to "reachable but still
   irreducibly stochastic" — never to a closed-form match.
+
+## 5. Addendum (2026-08-05): §3's question answered by a real full-cycle probe
+
+Worktree `E:\opencell-worktrees\l22-macromol-closure-20260805`, branch
+`agent/l22-macromol-closure-20260805`. §3 above left the "genuine
+ceiling vs. sampling-window artifact" question explicitly unresolved and
+declared a `tick_offset>0` re-extraction out of scope for that change.
+This addendum reports the result of exercising that exact alternative
+via a full-natural-lifecycle probe, which **is** in scope for this
+change: `scripts/matlab/full_cycle_event_scan_macromol.m` +
+`scripts/l22_evidence/h12_lifecycle_reachability.py`.
+
+**Mechanism.** The probe runs the real Karr per-tick scheduler (resource
+allocation via `calcResourceRequirements_Current` + `evolveState()` in
+`randperm` process order — the identical mechanism as the already-accepted
+`full_cycle_event_scan_v2.m`, the precedent used to justify
+RibosomeAssembly's `tick_offset=200` re-extraction) for a single seed
+(seed=0), starting at cell birth, with **no conditioning of any pool or
+constant**. It tracks E1's local substrate pool (`MG_429_MONOMER`) and
+network-2 complex deltas every tick, logging to CSV, and stops on
+`Geometry.pinched` (natural cell division) or a 33,000-tick ceiling.
+
+**Result.** The run was deliberately stopped by the operator at real,
+simulated tick 24,300 (of the 33,000-tick ceiling; natural division was
+not reached) once the accumulated evidence was already decisive and
+strictly increasing with no sign of plateauing:
+
+| quantity | value |
+|---|---|
+| E1 pool remains exactly 0 | ticks 1 – 5,891 |
+| first tick E1 pool > 0 | tick 5,892 |
+| tick E1 pool first reaches 2 (the exact 2-copies-per-pentamer stoichiometric requirement) | ~tick 8,100 |
+| first real network≥2 complex-formation event | tick 8,166 |
+| total real network≥2 events observed (tick 1 – 24,300) | **27**, growing steadily/non-monotonic-but-net-increasing throughout, not a one-off burst |
+| max E1 pool observed | 2 |
+
+Each of the 27 events was independently verified (via the raw CSV) to
+co-occur with `e1_pool == 2` and `net2_complex_delta_sum == 1` at that
+tick — the exact stoichiometric signature network 2 requires, arising
+from the real scheduler with no synthetic pool injection, no fixture
+edits, and no conditioning of any kind.
+
+**Conclusion for §3's question.** This directly falsifies the "E1 always
+zero / genuine biological ceiling for this population" hypothesis and
+confirms the "M=100/`tick_offset=0` sampling-window artifact" hypothesis
+— the same class of effect already established in this codebase for
+`RibosomeAssembly` (tick~238 activation), just manifesting far later
+(~tick 5,892) for this process's free E1 pool. Across the natural
+50-seed × 100-tick population, E1 is fixture-constant zero not because
+network 2 can never fire, but because the accepted window (ticks 0-99)
+ends roughly 58x before E1 first becomes nonzero in this seed's real
+trajectory.
+
+**Scope, explicitly disclosed and not overstated.**
+
+- This is **one seed** (seed=0), not N=50. It does not claim every seed's
+  E1-onset timing is identical, nor that all 50 seeds would show
+  network≥2 firing by the same tick (or at all) — the accepted 50-seed
+  natural census and condition-gated candidate remain the only N=50
+  evidence, and are unchanged by this addendum.
+- This run did **not** reach natural cell division (`Geometry.pinched`);
+  it covers ticks 1-24,300 of an estimated ~32,400-tick natural cycle
+  (~75%). It is real, but partial, coverage of one lifecycle.
+- This addendum does **not** flip
+  `condition_gated/MacromolecularComplexation_h12_condition_gated.json`'s
+  own `lifecycle_reachability_status` field, which remains, correctly and
+  intentionally, pinned to the literal string `"UNRESOLVED"`
+  (`tests/scripts/test_h12_condition_gated.py`) — that field is scoped
+  narrowly to "would a `tick_offset>0` RE-EXTRACTION of the accepted
+  100-tick trace resolve this", a different (and narrower) question than
+  the one this full-scheduler probe answers. This addendum instead
+  records its own finding in a new, separate, NON-GATING artifact:
+  `docs/phase_f/l2_2_design_a/h12/lifecycle_reachability/
+  MacromolecularComplexation_h12_lifecycle_reachability.json`
+  (`scripts/l22_evidence/h12_lifecycle_reachability.py`), which is not
+  consumed by `verdict.py`, `generator.py`, `PROCESS_CATALOG.yaml`, or
+  `evidence_index.json`, and never claims `H12_CONFIRMED`,
+  `H12_OBSERVED_REGIME`, `PASS`, or an enacted `CONDITION_GATED` value.
+- §4's independent, unaffected conclusion still holds: network 2's
+  competitive branch is Monte Carlo by construction
+  (`buildProteinComplexs_montecarlokinetic` draws `randStream.rand()`
+  each iteration), so `H12_CONFIRMED` remains structurally inapplicable
+  to this unit regardless of how the reachability question resolves.
+
