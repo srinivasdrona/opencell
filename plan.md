@@ -94,7 +94,6 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `l25-scope-opus-final` — final review of unified catalog authority and 20-test cleanup at `f5e9d0f`;
   - `l25-scope-ratifier` completed all requested fixes; derivation remains 28 processes, 2 eligible, 1 gap-free, 0 selected pairs.
   - `procii-opus-final-review` — reviewing final command-form addpath and clause-aware equivalence guards at `b417572`;
-  - `ftsz-opus-final` — final review of the force-delete verification fix at `de31c3e`;
   - `dnadamage-opus-final` — final review of Rule-8 removal and broadened vacuous-trace classification at `a1df739`;
   - `procii-opus-rereview` — reviewing the structural shim-path and semantic-equivalence guard fixes at `0613d84`;
   - `ribosome-opus-review` — reviewing the completed 50-seed RibosomeAssembly gating bundle at `34b6c0a`;
@@ -105,6 +104,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `dnadamage-opus-review` completed with `APPROVE_AS_BLOCKER_DOC`; blocker conclusion reproduced, merge waits for the Rule-8 and audit-strength follow-up.
   - `replication-opus-review` completed with `APPROVE_AS_PARTIAL`; chromosome improvement reproduced, but no merge until the five applicable gaps above are fixed.
   - `allocator-opus-review` completed `BLOCKING`; the 58F/34P/42S sweep is invalid and must be superseded, not interpreted as real contention.
+  - FtsZ tooling integrated to local `main` at `52c0eb0`; final Opus review approved, merged audit remains fail-closed at `INSUFFICIENT_ENSEMBLE` (0/50).
   - `ribosome-opus-review` completed: scientific evidence chain verified; merge waits for the registry/extractor/documentation follow-up and then event-index regeneration.
   - `macromol-opus-review` completed `BLOCKING`; the reachability finding is real, but current branch verification/provenance is false at HEAD and cannot support the H12 taxonomy conclusion.
 - L2.5 pair execution remains blocked until process closure and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted. Scope ratification may proceed in parallel.
