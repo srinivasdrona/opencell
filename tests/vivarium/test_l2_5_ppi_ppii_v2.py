@@ -190,16 +190,27 @@ def test_l2_5_ppi_ppii_allocator_invariants() -> None:
         h5py.File(resolve_trace_path("ProteinProcessingI"), "r") as trace_ppi,
         h5py.File(resolve_trace_path("ProteinProcessingII"), "r") as trace_ppii,
     ):
-        traces = {"ProteinProcessingI": trace_ppi, "ProteinProcessingII": trace_ppii}
-        oracle_status = composition_allocator_oracle_status(traces)
-        if oracle_status is not None:
-            pytest.skip(f"L2.5 SKIP: {oracle_status}")
-
         wids_ppi = _seed_state_from_trace(state, ppi, trace_ppi, tick=0)
         wids_ppii = _seed_state_from_trace(state, ppii, trace_ppii, tick=0)
 
         substrate_wids_ppi = wids_ppi["substrates"]
         substrate_wids_ppii = wids_ppii["substrates"]
+
+        # Allocator-facing dicts MUST be keyed by the RUNTIME process.name
+        # (e.g. "karr_protein_processing_i"), never the MATLAB-canonical
+        # display name ("ProteinProcessingI") used only for trace-path
+        # resolution above -- state['substrates_allocated'] is keyed by
+        # runtime name via each process's own ports_schema(), and mixing
+        # the two key spaces is exactly the silent no-op bug a blocking
+        # review found here (apply_composition_allocations now raises hard
+        # on that mismatch instead).
+        composition_wids_by_process = {
+            ppi.name: substrate_wids_ppi,
+            ppii.name: substrate_wids_ppii,
+        }
+        oracle_status = composition_allocator_oracle_status(composition_wids_by_process)
+        if oracle_status is not None:
+            pytest.skip(f"L2.5 SKIP: {oracle_status}")
 
         water_before = _total_water(state, substrate_wids_ppi)
 
@@ -207,11 +218,7 @@ def test_l2_5_ppi_ppii_allocator_invariants() -> None:
         # simultaneously, across both composed processes -- never grant each
         # process the full pool independently and sequentially.
         pool_before, requirements_by_process = load_composition_allocator_oracle(
-            traces=traces,
-            wids_by_process={
-                "ProteinProcessingI": substrate_wids_ppi,
-                "ProteinProcessingII": substrate_wids_ppii,
-            },
+            wids_by_process=composition_wids_by_process,
             tick=0,
         )
         refresh_allocator_views_composition(

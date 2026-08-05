@@ -4,6 +4,7 @@ import copy
 import inspect
 import os
 import re
+import sys
 from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cache, lru_cache
@@ -15,9 +16,23 @@ import h5py
 import numpy as np
 import pytest
 
-from opencell.vivarium.karr_allocation_step import KarrAllocationStep
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+
+# `scripts` is not an installed package -- it is only importable with the
+# repo root on sys.path. This mirrors the bootstrap already used by
+# tests/integration/test_l2_0a_allocator_gate.py, which is the module this
+# file's global-oracle composition loader reuses (never duplicates).
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from opencell.vivarium.karr_allocation_step import KEY_ALIASES, KarrAllocationStep  # noqa: E402
+from scripts.l2_inventory_probe import FIXTURE_NAME  # noqa: E402
+from scripts.probe_l2_0a_allocator_input import (  # noqa: E402
+    AllocatorOracle,
+    flat_index_candidates,
+    load_allocator_oracle,
+)
+
 _TRACE_BASE_REL = Path("data/m1_sources/karr_native/per_process_traces_v2")
 _FIXTURE_BASE_REL = Path("data/karr_fixtures/per_process")
 _L2_TOLERANCE_TABLE_REL = Path("docs/phase_e/L2_TOLERANCE_TABLE.md")
@@ -867,7 +882,29 @@ def compute_composition_allocations(
         return {}
     step = KarrAllocationStep({"consumer_processes": consumer_processes, "substrate_wids": all_wids})
     update = step.next_update(1.0, {"substrates": dict(pool), "requests": requests_by_process})
-    return update.get("substrates_allocated", {})
+    raw_allocations = update.get("substrates_allocated", {})
+    # KarrAllocationStep's own output rows are a UNION of every composed
+    # process's WIDs (see ports_schema/next_update in karr_allocation_step.py
+    # -- molecule_names is the union across ALL consumer_processes), so an
+    # un-projected row would carry WIDs this particular process never itself
+    # requested. Project each row back down to only the WIDs that process
+    # declared, so apply_composition_allocations' raise-on-mismatch guard
+    # never sees a spuriously "unexpected" WID that is really just another
+    # process's request key.
+    #
+    # KarrAllocationStep normalizes proc_name keys through KEY_ALIASES (so
+    # an alias and its canonical name collapse into ONE consumer -- see
+    # test_process_key_normalization_merges_alias_and_canonical_as_one_consumer),
+    # so the projection must group by that SAME canonical key (merging each
+    # alias's own WIDs into its canonical entry), never by the raw,
+    # pre-normalization ``requests_by_process`` keys.
+    canonical_wids: dict[str, set[str]] = {}
+    for proc_name, reqs in requests_by_process.items():
+        canonical_wids.setdefault(KEY_ALIASES.get(proc_name, proc_name), set()).update(reqs)
+    return {
+        proc_name: {wid: float(raw_allocations.get(proc_name, {}).get(wid, 0.0)) for wid in wids}
+        for proc_name, wids in canonical_wids.items()
+    }
 
 
 def apply_composition_allocations(
@@ -877,21 +914,44 @@ def apply_composition_allocations(
     """Write ``compute_composition_allocations`` output into
     ``state['substrates_allocated'][<process.name>]``.
 
-    Only WIDs already declared by the process's own ``ports_schema`` (i.e.
-    already present as keys in its ``substrates_allocated`` sub-dict) are
-    overwritten. This never introduces keys a process's schema does not
-    expect -- the same guard shape as ``refresh_allocator_views`` above.
+    ``compute_composition_allocations`` already projects each process's row
+    down to only the WIDs that process itself declared as a request (see its
+    docstring), so every ``(proc_name, wid)`` pair reaching this function is
+    an EXPECTED write target, never a spurious union artifact. Per the
+    second blocking re-review (point 3): a process/WID pair with no matching
+    destination in ``state['substrates_allocated']`` is therefore always a
+    genuine bug -- a runtime/canonical process-name keying mismatch (the
+    root cause of the standalone PPI/PPII anti-pattern this guard was added
+    for) or a missing ``ports_schema`` declaration -- and MUST raise, never
+    silently no-op past it.
     """
     allocated_root = state.get("substrates_allocated", {})
     if not isinstance(allocated_root, dict):
-        return
+        raise MissingAllocatorOracleError(
+            "state['substrates_allocated'] is missing or not a dict; cannot apply "
+            "composition allocations without a declared target for any process."
+        )
     for proc_name, proc_alloc in allocations.items():
         target = allocated_root.get(proc_name)
         if not isinstance(target, dict):
-            continue
+            raise MissingAllocatorOracleError(
+                f"composition allocation computed a row for process.name={proc_name!r} "
+                "but state['substrates_allocated'] has no matching key. Composition "
+                "callers must key requests/allocations by the RUNTIME process.name "
+                "(e.g. 'karr_protein_processing_i'), never a MATLAB-canonical display "
+                "name (e.g. 'ProteinProcessingI') -- that mismatch is exactly what "
+                "silently no-op'd the standalone PPI/PPII allocator path before this "
+                "guard existed."
+            )
         for wid, value in proc_alloc.items():
-            if wid in target:
-                target[wid] = float(value)
+            if wid not in target:
+                raise MissingAllocatorOracleError(
+                    f"composition allocation computed wid={wid!r} for "
+                    f"process.name={proc_name!r} but that process's own "
+                    "substrates_allocated schema (ports_schema) does not declare "
+                    "this WID."
+                )
+            target[wid] = float(value)
 
 
 class MissingAllocatorOracleError(RuntimeError):
@@ -910,104 +970,224 @@ class MissingAllocatorOracleError(RuntimeError):
     already-decided allocations through the allocator a second time, which
     reproduces nothing Karr actually computed.
 
-    The only sanctioned oracle is Karr's own ``pool_before`` (global
-    ``mets.counts`` pre-allocation, ``evolveState.m:24``) and
-    ``requirements`` (``evolveState.m:31-35``), extracted directly by
-    ``scripts/matlab/extract_per_process_traces_v2.m`` (build-step-0,
-    requires MATLAB -- currently unavailable in this environment; the
-    extracted ``*_100ticks.mat`` trace fixtures do not yet carry these
-    groups). Callers MUST catch this exception and skip closed
-    (``pytest.skip("... MISSING_ALLOCATOR_ORACLE ...")``); they must never
+    The only sanctioned oracle is the L2.0a GLOBAL allocator oracle
+    (``data/m1_sources/karr_native/l2_0a_allocator_oracle_s000.mat``,
+    produced by ``scripts/matlab/extract_l2_0a_allocator_oracle.m`` and
+    loaded via ``scripts/probe_l2_0a_allocator_input.py``): Karr's own
+    ``pool_before`` (global ``mets.counts`` pre-allocation,
+    ``evolveState.m:24``) and per-process ``requirements``
+    (``evolveState.m:31-35``) captured across ALL 28 processes for one
+    real, seeded, fitted simulation. A second blocking review superseded
+    the earlier per-process-trace-group design (the ``*_100ticks.mat``
+    fixtures were never extended with these groups; see
+    ``80f6465``/provenance retraction) in favor of this single canonical
+    artifact, which already exists on ``main`` and does not need to be
+    rebuilt. Callers MUST catch this exception and skip closed
+    (``pytest.skip("... MISSING_ALLOCATOR_ORACLE ...")`` or
+    ``... ALLOCATOR_ORACLE_TICK_COVERAGE_EXCEEDED ...``); they must never
     substitute an approximation to force a pass.
     """
 
 
+# The extraction script hardcodes single-tick capture (a full multi-tick
+# ``evolveState`` advance hits a pre-existing, out-of-scope MATLAB bug in
+# Transcription/releaseProteinFromSites -- see
+# scripts/matlab/extract_l2_0a_allocator_oracle.m's own header comment).
+# This is a genuine, currently-unresolved tick-coverage limitation, not a
+# harness bug: fixing it would require editing process biology code, which
+# is out of scope here. Composition callers requesting any tick outside
+# this tuple must fail closed with ALLOCATOR_ORACLE_TICK_COVERAGE_EXCEEDED
+# rather than silently reusing tick-0 data for a later tick.
+GLOBAL_ALLOCATOR_ORACLE_TICKS_COVERED: tuple[int, ...] = (0,)
+
+_RUNTIME_VARIANT_SUFFIX_RE = re.compile(r"_v\d+$")
+
+
+@cache
+def _global_allocator_oracle() -> AllocatorOracle | None:
+    """Load (and cache) the L2.0a global allocator oracle, or ``None`` if
+    the gitignored local artifact has not been extracted in this worktree.
+
+    Thin wrapper around ``scripts/probe_l2_0a_allocator_input.py::
+    load_allocator_oracle`` -- never re-implements oracle parsing here.
+    """
+    from scripts.probe_l2_0a_allocator_input import ORACLE_PATH
+
+    if not ORACLE_PATH.exists():
+        return None
+    return load_allocator_oracle(ORACLE_PATH)
+
+
+def _canonical_process_name_for_runtime(runtime_name: str) -> str | None:
+    """Map a runtime ``process.name`` (e.g. ``"karr_protein_processing_i"``)
+    to the MATLAB-canonical process name the global oracle indexes by (e.g.
+    ``"ProteinProcessingI"``), reusing the single source of truth for this
+    mapping (``scripts/l2_inventory_probe.py::FIXTURE_NAME``).
+
+    Runtime variant names such as ``"karr_translation_v3"`` or
+    ``"karr_transcription_v2"`` are not themselves present in
+    ``FIXTURE_NAME`` (only their unsuffixed base names are), so a trailing
+    ``_v<digits>`` suffix is stripped before lookup. Returns ``None`` if no
+    mapping exists even after stripping.
+    """
+    canonical = FIXTURE_NAME.get(runtime_name)
+    if canonical is not None:
+        return canonical
+    stripped = _RUNTIME_VARIANT_SUFFIX_RE.sub("", runtime_name)
+    return FIXTURE_NAME.get(stripped)
+
+
 def composition_allocator_oracle_status(
-    traces: dict[str, h5py.File],
+    wids_by_process: dict[str, list[str]],
+    *,
+    tick: int = 0,
 ) -> str | None:
-    """Existence-only probe: return ``None`` iff every named process's
-    already-open trace handle carries BOTH the ``pool_before`` and
-    ``requirements`` groups (the extended schema documented in
-    ``scripts/matlab/extract_per_process_traces_v2.m``'s module header).
-    Otherwise return a human-readable ``MISSING_ALLOCATOR_ORACLE`` reason
-    naming exactly which process(es) lack it, safe to call once before a
+    """Return ``None`` iff the L2.0a global allocator oracle is present,
+    covers ``tick``, and every named runtime process resolves both a
+    canonical name and an unambiguous flat allocator-metabolite index for
+    each of its declared WIDs. Otherwise return a human-readable status
+    string identifying exactly what is missing, safe to call once before a
     tick loop to skip closed immediately rather than run any tick.
     """
-    missing = sorted(
-        name
-        for name, trace in traces.items()
-        if "pool_before" not in trace or "requirements" not in trace
-    )
-    if not missing:
-        return None
-    return (
-        "MISSING_ALLOCATOR_ORACLE: extracted trace fixture(s) for "
-        f"{missing} do not contain 'pool_before'/'requirements' groups. "
-        "The true pre-allocation Karr allocator oracle "
-        "(@Simulation/evolveState.m:24-37) is not yet captured -- "
-        "docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md A05 forbids "
-        "reusing 'states_before' (each process's OWN post-allocation "
-        "substrate state) as a substitute pool or request. Build-step-0 "
-        "(extend scripts/matlab/extract_per_process_traces_v2.m to emit "
-        "pool_before/requirements/allocations, requires MATLAB -- "
-        "unavailable in this environment) has not landed for these "
-        "fixtures. Composition allocation is skipped closed, not "
-        "fabricated."
-    )
+    if tick not in GLOBAL_ALLOCATOR_ORACLE_TICKS_COVERED:
+        return (
+            "ALLOCATOR_ORACLE_TICK_COVERAGE_EXCEEDED: the L2.0a global "
+            f"allocator oracle covers tick(s) {GLOBAL_ALLOCATOR_ORACLE_TICKS_COVERED} "
+            f"only, but tick={tick} was requested. The extraction script "
+            "(scripts/matlab/extract_l2_0a_allocator_oracle.m) hardcodes "
+            "single-tick capture because a full multi-tick evolveState "
+            "advance hits a pre-existing, out-of-scope MATLAB bug in "
+            "Transcription/releaseProteinFromSites (see that script's "
+            "header comment) -- this is a genuine unresolved tick-coverage "
+            "blocker, not something this harness change may fix."
+        )
+
+    oracle = _global_allocator_oracle()
+    if oracle is None:
+        from scripts.probe_l2_0a_allocator_input import ORACLE_PATH
+
+        return (
+            "MISSING_ALLOCATOR_ORACLE: the L2.0a global allocator oracle "
+            f"has not yet been extracted in this worktree ({ORACLE_PATH} "
+            "does not exist -- it is a gitignored, per-worktree local "
+            "artifact). Run: "
+            "E:\\MATLAB\\bin\\matlab.exe -batch \"addpath('scripts/matlab'); "
+            "extract_l2_0a_allocator_oracle(1, 0)\" from the repo root. "
+            "This is NOT a claim that MATLAB itself is unavailable -- "
+            "MATLAB is installed at E:\\MATLAB\\bin\\matlab.exe and the "
+            "extraction script runs successfully; the artifact is simply "
+            "not (yet) present in this specific worktree. Composition "
+            "allocation is skipped closed, not fabricated."
+        )
+
+    unresolved: list[str] = []
+    for runtime_name, wids in wids_by_process.items():
+        if not wids:
+            continue
+        canonical = _canonical_process_name_for_runtime(runtime_name)
+        if canonical is None or canonical not in oracle.process_names:
+            unresolved.append(f"{runtime_name}: no canonical process-name mapping")
+            continue
+        # Per-WID resolution (metabolite-universe membership, compartment
+        # disambiguation) is intentionally NOT checked here: an individual
+        # WID that isn't part of the allocator-metabolite universe, or that
+        # resolves ambiguously, is simply not an allocator input for that
+        # WID and is skipped by load_composition_allocator_oracle below --
+        # never treated as a harness error (point 2 of the redesign
+        # mandate). Only the process-level canonical-name mapping, which is
+        # required to run the allocator step at all, is a hard status
+        # check.
+
+    if unresolved:
+        return (
+            "MISSING_ALLOCATOR_ORACLE: unresolved runtime process name(s) "
+            f"against the global oracle's canonical process list: {unresolved}."
+        )
+    return None
 
 
 def load_composition_allocator_oracle(
     *,
-    traces: dict[str, h5py.File],
     wids_by_process: dict[str, list[str]],
-    tick: int,
+    tick: int = 0,
 ) -> tuple[dict[str, float], dict[str, dict[str, float]]]:
-    """Load the TRUE composition-boundary allocator oracle for one tick:
+    """Load the TRUE composition-boundary allocator oracle for ``tick``:
     the global pre-allocation substrate pool (``pool_before``) and each
-    named process's own ``requirements`` row, both read directly from the
-    extended MATLAB extraction (never derived from ``states_before`` or
-    any other process-output proxy -- see ``MissingAllocatorOracleError``).
+    named runtime process's own ``requirements`` row, both resolved
+    directly from the L2.0a global allocator oracle (never derived from
+    ``states_before`` or any other process-output proxy -- see
+    ``MissingAllocatorOracleError``).
 
-    Raises :class:`MissingAllocatorOracleError` if any named process's
-    trace lacks the ``pool_before``/``requirements`` groups, OR if two
-    processes report inconsistent ``pool_before`` values for the same WID
-    at the same tick (both are extracted from the same canonical Karr run,
-    so they MUST agree -- a mismatch means the extraction/tick alignment is
-    broken, not a value to silently prefer one process's report over
-    another's).
+    Each runtime process's declared WIDs are resolved to the oracle's flat
+    metabolite-compartment index space via
+    ``scripts/probe_l2_0a_allocator_input.py::flat_index_candidates`` (the
+    same resolution machinery the L2.0a gate itself uses). A WID that is
+    not part of the allocator-metabolite universe at all, or that resolves
+    ambiguously (multiple candidate compartments with no way to
+    disambiguate), is skipped -- it is simply not an allocator input for
+    this WID, matching the standalone gate's own "unmapped" handling, and
+    must never trigger a shape error (point 2 of the redesign mandate).
+    WIDs that DO resolve are included in ``pool_before``/
+    ``requirements_by_process`` and MUST subsequently be applied to real
+    process state by ``apply_composition_allocations``, which raises hard
+    on any resolved WID that fails to land.
+
+    Raises :class:`MissingAllocatorOracleError` if the oracle is absent,
+    the requested tick exceeds coverage, a runtime process cannot be
+    mapped to its canonical oracle name, or two processes report
+    inconsistent ``pool_before`` values for the same resolved WID (both
+    are read from the same canonical Karr run, so they MUST agree).
     """
-    status = composition_allocator_oracle_status(traces)
+    status = composition_allocator_oracle_status(wids_by_process, tick=tick)
     if status is not None:
         raise MissingAllocatorOracleError(status)
 
+    oracle = _global_allocator_oracle()
+    assert oracle is not None  # status would have raised above otherwise
+
     pool_before: dict[str, float] = {}
     requirements_by_process: dict[str, dict[str, float]] = {}
-    for name, wids in wids_by_process.items():
+    for runtime_name, wids in wids_by_process.items():
+        requirements_by_process[runtime_name] = {}
         if not wids:
-            requirements_by_process[name] = {}
             continue
-        trace = traces[name]
-        pool_vec = cell_vector(trace, "pool_before", "substrates", tick)
-        req_vec = cell_vector(trace, "requirements", "substrates", tick)
-        if pool_vec.shape[0] != len(wids) or req_vec.shape[0] != len(wids):
+        canonical = _canonical_process_name_for_runtime(runtime_name)
+        if canonical is None:
             raise MissingAllocatorOracleError(
-                f"{name}: pool_before/requirements vector length "
-                f"({pool_vec.shape[0]}/{req_vec.shape[0]}) at tick {tick} "
-                f"does not match its own declared substrate WID count "
-                f"({len(wids)})."
+                f"{runtime_name}: no canonical process-name mapping in "
+                "scripts/l2_inventory_probe.py::FIXTURE_NAME (even after "
+                "stripping a trailing _v<digits> runtime-variant suffix)."
             )
-        proc_pool = dict(zip(wids, pool_vec.tolist(), strict=False))
-        for wid, value in proc_pool.items():
+        proc_idx = oracle.process_names.index(canonical)
+        for wid in wids:
+            candidates = flat_index_candidates(oracle, wid)
+            if not candidates:
+                continue  # not an allocator-metabolite input; not an error
+            local_hits = [
+                idx
+                for idx in candidates
+                if oracle.requirements[proc_idx, idx] != 0.0
+                or oracle.allocations[proc_idx, idx] != 0.0
+            ]
+            if len(local_hits) == 1:
+                flat_index = local_hits[0]
+            elif len(candidates) == 1:
+                flat_index = candidates[0]
+            else:
+                continue  # ambiguous compartment resolution; skip, don't fabricate
+            value = float(oracle.pool_before[flat_index])
             prior = pool_before.get(wid)
             if prior is not None and abs(prior - value) > 1e-6:
                 raise MissingAllocatorOracleError(
                     f"pool_before inconsistency for wid={wid} at tick={tick}: "
-                    f"{prior} (earlier process) vs {value} ({name}) -- the "
-                    "global pool must be identical across every process's "
-                    "own extraction at the same tick."
+                    f"{prior} (earlier process) vs {value} ({runtime_name}) -- "
+                    "the global pool must be identical across every "
+                    "process's own resolution at the same tick."
                 )
             pool_before[wid] = value
-        requirements_by_process[name] = dict(zip(wids, req_vec.tolist(), strict=False))
+            requirements_by_process[runtime_name][wid] = float(
+                oracle.requirements[proc_idx, flat_index]
+            )
     return pool_before, requirements_by_process
 
 

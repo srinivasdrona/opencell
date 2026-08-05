@@ -1376,19 +1376,36 @@ def run_integrated_replay_v2(
             )
 
         # Composition-boundary allocation requires the TRUE Karr allocator
-        # oracle (pool_before + requirements, evolveState.m:24-37) -- see
+        # oracle (the L2.0a global oracle: pool_before + requirements across
+        # all 28 processes, evolveState.m:24-37) -- see
         # docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md A05/D1. `states_before`
         # is each process's OWN post-allocation substrate state and must
         # NEVER be reused (via overlay, sum, or as a request proxy) to
-        # fabricate a pool. If the extended extraction (scripts/matlab/
-        # extract_per_process_traces_v2.m build-step-0) has not landed for
-        # these trace fixtures, fail CLOSED here, before any tick runs,
-        # rather than approximate.
-        oracle_status = composition_allocator_oracle_status(
-            {contexts[name].process.name: contexts[name].trace for name in ordered}
-        )
+        # fabricate a pool. If the global oracle artifact has not been
+        # extracted locally in this worktree (gitignored;
+        # scripts/matlab/extract_l2_0a_allocator_oracle.m), fail CLOSED
+        # here, before any tick runs, rather than approximate.
+        composition_wids_by_process = {
+            contexts[name].process.name: (
+                contexts[name].wids_by_observable["substrates"]
+                if "substrates" in contexts[name].spec.observables
+                else []
+            )
+            for name in ordered
+        }
+        oracle_status = composition_allocator_oracle_status(composition_wids_by_process)
         if oracle_status is not None:
             pytest.skip(f"L2.2.v2 SKIP: {oracle_status}")
+        # The upfront status check only probes tick 0 (its default); this
+        # replay drives every tick in range(n_ticks), so also check the
+        # LAST tick it will request. If n_ticks exceeds the global oracle's
+        # single-tick coverage, skip closed here -- before any tick runs --
+        # rather than succeed at tick 0 and raise mid-loop at tick 1.
+        max_tick_status = composition_allocator_oracle_status(
+            composition_wids_by_process, tick=n_ticks - 1
+        )
+        if max_tick_status is not None:
+            pytest.skip(f"L2.2.v2 SKIP: {max_tick_status}")
 
         for tick in range(n_ticks):
             shared_state = _build_shared_state_template(
@@ -1418,29 +1435,22 @@ def run_integrated_replay_v2(
                 }
 
             # Composition-boundary allocation (process closure before pair
-            # execution): the TRUE Karr allocator oracle (pool_before +
-            # requirements, evolveState.m:24-37), never derived from
-            # states_before/state['substrates'] (docs/phase_f/
-            # L2_0A_ALLOCATOR_INPUT_GATE.md A05 -- states_before is each
-            # process's OWN post-allocation substrate state; reusing it as
-            # a pool or request is exactly the fabrication A05 forbids and
-            # was Finding #20's remediation's own initial bug). Run the
-            # real allocator arithmetic once, simultaneously, before any
-            # process in the composition executes. Oracle availability was
-            # already verified once for all ticks by the upfront
+            # execution): the TRUE Karr allocator oracle (the L2.0a global
+            # oracle: pool_before + requirements across all 28 processes,
+            # evolveState.m:24-37), never derived from states_before/
+            # state['substrates'] (docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md
+            # A05 -- states_before is each process's OWN post-allocation
+            # substrate state; reusing it as a pool or request is exactly
+            # the fabrication A05 forbids and was Finding #20's
+            # remediation's own initial bug). Run the real allocator
+            # arithmetic once, simultaneously, before any process in the
+            # composition executes. Oracle availability was already
+            # verified once for all ticks by the upfront
             # `composition_allocator_oracle_status` skip above; any
             # per-tick failure here is a genuine data problem, not an
             # expected skip path, so it is intentionally NOT re-caught.
             pool_before, requirements_by_process = load_composition_allocator_oracle(
-                traces={contexts[name].process.name: contexts[name].trace for name in ordered},
-                wids_by_process={
-                    contexts[name].process.name: (
-                        contexts[name].wids_by_observable["substrates"]
-                        if "substrates" in contexts[name].spec.observables
-                        else []
-                    )
-                    for name in ordered
-                },
+                wids_by_process=composition_wids_by_process,
                 tick=tick,
             )
             refresh_allocator_views_composition(

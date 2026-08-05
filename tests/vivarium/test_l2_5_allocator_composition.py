@@ -34,7 +34,9 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from types import SimpleNamespace
 
+import numpy as np
 import pytest
 
 # Ensure pytest imports from this worktree even if another editable install exists.
@@ -237,7 +239,12 @@ def test_process_key_normalization_merges_alias_and_canonical_as_one_consumer() 
 # --- apply_composition_allocations / refresh_allocator_views_composition ---
 
 
-def test_apply_composition_allocations_only_writes_declared_wids() -> None:
+def test_apply_composition_allocations_writes_all_declared_wids_and_raises_on_undeclared() -> None:
+    """Superseded by the hard-raise contract (point 3 of the redesign
+    mandate): a computed allocation for a WID the target process's own
+    schema does not declare is now a raise, never a silent drop -- see
+    ``test_apply_composition_allocations_raises_on_missing_expected_wid``.
+    Declared WIDs must still be written correctly when every key matches."""
     state = {
         "substrates_allocated": {
             "proc_a": {"ATP": 0.0},
@@ -247,7 +254,7 @@ def test_apply_composition_allocations_only_writes_declared_wids() -> None:
     apply_composition_allocations(
         state,
         {
-            "proc_a": {"ATP": 5.0, "UNDECLARED_WID": 999.0},
+            "proc_a": {"ATP": 5.0},
             "proc_b": {"ATP": 3.0, "GTP": 2.0},
         },
     )
@@ -394,39 +401,186 @@ def test_refresh_allocator_views_composition_populates_every_composed_process_ro
 # --- Oracle availability: fail-closed skip, never fabricate -----------------
 
 
-def test_composition_allocator_oracle_status_reports_missing_groups() -> None:
-    """`composition_allocator_oracle_status` must flag any process whose
-    trace lacks `pool_before`/`requirements`, by name, without raising."""
-    empty_trace_a = {}
-    empty_trace_b = {"pool_before": object(), "requirements": object()}
-    status = composition_allocator_oracle_status(
-        {"proc_a": empty_trace_a, "proc_b": empty_trace_b}
+def test_composition_allocator_oracle_status_reports_missing_canonical_mapping(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`composition_allocator_oracle_status` must flag a runtime process
+    name that cannot be mapped to the global oracle's canonical process
+    list, by name, without raising."""
+    import l2_replay_common as helper
+
+    fake_oracle = SimpleNamespace(process_names=("Metabolism",))
+    monkeypatch.setattr(helper, "_global_allocator_oracle", lambda: fake_oracle)
+    status = helper.composition_allocator_oracle_status(
+        {"not_a_real_runtime_process_name": ["ATP"]}
     )
     assert status is not None
     assert "MISSING_ALLOCATOR_ORACLE" in status
-    assert "proc_a" in status
-    assert "proc_b" not in status
+    assert "not_a_real_runtime_process_name" in status
 
 
-def test_composition_allocator_oracle_status_none_when_all_processes_have_oracle() -> None:
-    trace_with_oracle = {"pool_before": object(), "requirements": object()}
-    status = composition_allocator_oracle_status(
-        {"proc_a": trace_with_oracle, "proc_b": trace_with_oracle}
-    )
+def test_composition_allocator_oracle_status_none_when_oracle_absent_and_no_processes() -> None:
+    """An empty `wids_by_process` never needs the oracle at all: no
+    process to resolve means nothing can fail to resolve."""
+    status = composition_allocator_oracle_status({})
     assert status is None
 
 
-def test_load_composition_allocator_oracle_raises_when_oracle_missing() -> None:
+def test_composition_allocator_oracle_status_tick_coverage_exceeded() -> None:
+    status = composition_allocator_oracle_status({"karr_metabolism": ["ATP"]}, tick=1)
+    assert status is not None
+    assert "ALLOCATOR_ORACLE_TICK_COVERAGE_EXCEEDED" in status
+
+
+def test_load_composition_allocator_oracle_raises_when_oracle_missing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
     """`load_composition_allocator_oracle` must raise
     `MissingAllocatorOracleError` (never fabricate a pool/requests from
-    some other proxy) when any named process's trace lacks the oracle
-    groups."""
+    some other proxy) when the global oracle artifact is absent."""
+    import l2_replay_common as helper
+
+    monkeypatch.setattr(helper, "_global_allocator_oracle", lambda: None)
     with pytest.raises(MissingAllocatorOracleError):
         load_composition_allocator_oracle(
-            traces={"proc_a": {}},
-            wids_by_process={"proc_a": ["ATP"]},
+            wids_by_process={"karr_metabolism": ["ATP"]},
             tick=0,
         )
+
+
+def test_load_composition_allocator_oracle_raises_on_tick_coverage_exceeded() -> None:
+    with pytest.raises(MissingAllocatorOracleError, match="ALLOCATOR_ORACLE_TICK_COVERAGE_EXCEEDED"):
+        load_composition_allocator_oracle(
+            wids_by_process={"karr_metabolism": ["ATP"]},
+            tick=5,
+        )
+
+
+def test_load_composition_allocator_oracle_raises_on_unmappable_runtime_name(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """point 3 / point 5: a runtime process name with no canonical mapping
+    must raise, never be silently dropped."""
+    import l2_replay_common as helper
+
+    fake_oracle = SimpleNamespace(
+        process_names=("Metabolism",),
+        pool_before=None,
+        requirements=None,
+        allocations=None,
+    )
+    monkeypatch.setattr(helper, "_global_allocator_oracle", lambda: fake_oracle)
+    monkeypatch.setattr(helper, "composition_allocator_oracle_status", lambda *a, **k: None)
+    with pytest.raises(MissingAllocatorOracleError):
+        load_composition_allocator_oracle(
+            wids_by_process={"totally_unknown_runtime_name": ["ATP"]},
+            tick=0,
+        )
+
+
+def test_load_composition_allocator_oracle_non_metabolite_wid_is_skipped_not_an_error(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """point 2: a declared substrate WID that is not part of the
+    allocator-metabolite universe at all (e.g. a non-metabolite local
+    substrate observable) must be silently excluded, never raise or
+    trigger a shape error."""
+    import l2_replay_common as helper
+
+    fake_oracle = SimpleNamespace(
+        process_names=("Metabolism",),
+        metabolite_wids=("ATP",),
+        compartment_wids=("c",),
+        counts_shape=(1, 1),
+        pool_before=np.array([5.0]),
+        requirements=np.array([[3.0]]),
+        allocations=np.array([[3.0]]),
+    )
+    monkeypatch.setattr(helper, "_global_allocator_oracle", lambda: fake_oracle)
+    monkeypatch.setattr(helper, "composition_allocator_oracle_status", lambda *a, **k: None)
+    pool, reqs = load_composition_allocator_oracle(
+        wids_by_process={"karr_metabolism": ["ATP", "NOT_A_METABOLITE_WID"]},
+        tick=0,
+    )
+    assert pool == {"ATP": 5.0}
+    assert reqs == {"karr_metabolism": {"ATP": 3.0}}
+    assert "NOT_A_METABOLITE_WID" not in reqs["karr_metabolism"]
+
+
+def test_global_allocator_oracle_covers_all_28_processes_when_present() -> None:
+    """point 6: the composition denominator must be the COMPLETE 28-process
+    set, not a partial subset -- skip (not fail) if the gitignored local
+    oracle artifact has not been extracted in this worktree."""
+    import l2_replay_common as helper
+
+    oracle = helper._global_allocator_oracle()
+    if oracle is None:
+        pytest.skip(
+            "MISSING_ALLOCATOR_ORACLE: local oracle artifact not extracted "
+            "in this worktree (gitignored; see composition_allocator_oracle_status)"
+        )
+    assert len(oracle.process_names) == 28
+    assert oracle.requirements.shape[0] == 28
+    assert oracle.allocations.shape[0] == 28
+
+
+def test_composition_boundary_computed_matches_extracted_allocations_exactly() -> None:
+    """point 2/6: run KarrAllocationStep across the COMPLETE 28-process
+    requirements matrix pulled straight from the global oracle, and assert
+    computed grants exactly equal Karr's own extracted allocations, at
+    least for one real resolvable (process, wid) cell. Skips closed if the
+    oracle has not been extracted locally."""
+    import l2_replay_common as helper
+
+    from scripts.probe_l2_0a_allocator_input import (
+        build_wid_mappings,
+        load_process_substrate_wids,
+        run_allocator_full_matrix,
+    )
+
+    oracle = helper._global_allocator_oracle()
+    if oracle is None:
+        pytest.skip("MISSING_ALLOCATOR_ORACLE: local oracle artifact not extracted")
+    process_substrate_wids = load_process_substrate_wids()
+    mappings, _unmapped = build_wid_mappings(oracle, process_substrate_wids)
+    assert mappings, "expected at least one resolvable (process, wid) cell"
+    allocations_by_process = run_allocator_full_matrix(oracle)
+    checked = 0
+    for (process_name, wid), mapping in mappings.items():
+        proc_idx = oracle.process_names.index(process_name)
+        expected = float(oracle.allocations[proc_idx, mapping.flat_index])
+        observed = float(allocations_by_process.get(process_name, {}).get(mapping.mc_key, 0.0))
+        assert round(expected) == round(observed), (
+            f"{process_name}/{wid}->{mapping.mc_key}: expected={expected} observed={observed}"
+        )
+        checked += 1
+    assert checked > 0
+
+
+def test_apply_composition_allocations_raises_on_runtime_canonical_key_mismatch() -> None:
+    """point 3: this is exactly the standalone PPI/PPII anti-pattern --
+    computing allocations keyed by a MATLAB-canonical display name
+    ("ProteinProcessingI") while `state['substrates_allocated']` is keyed
+    by the runtime `process.name` ("karr_protein_processing_i") must raise,
+    never silently no-op."""
+    state = {
+        "substrates_allocated": {
+            "karr_protein_processing_i": {"ATP": 0.0},
+        }
+    }
+    with pytest.raises(MissingAllocatorOracleError, match="RUNTIME process.name"):
+        apply_composition_allocations(state, {"ProteinProcessingI": {"ATP": 5.0}})
+
+
+def test_apply_composition_allocations_raises_on_missing_expected_wid() -> None:
+    state = {"substrates_allocated": {"proc_a": {"ATP": 0.0}}}
+    with pytest.raises(MissingAllocatorOracleError, match="does not declare this WID"):
+        apply_composition_allocations(state, {"proc_a": {"GTP": 5.0}})
+
+
+def test_apply_composition_allocations_raises_when_substrates_allocated_missing() -> None:
+    with pytest.raises(MissingAllocatorOracleError):
+        apply_composition_allocations({}, {"proc_a": {"ATP": 5.0}})
 
 
 # --- Source-level regression guard: no idealized grant left in the harness -
