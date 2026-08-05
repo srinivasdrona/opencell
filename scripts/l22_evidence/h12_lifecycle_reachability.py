@@ -6,29 +6,65 @@ artifact answering ONE narrow, falsifiable question left explicitly
 `LIFECYCLE_REACHABILITY_NOTE`) and by `docs/phase_f/l2_2_design_a/h12/
 MACROMOLECULARCOMPLEXATION_NETWORK2_E1_PROVENANCE.md`:
 
-    Across a full natural Karr cell cycle (birth to division, real
-    per-tick scheduler order, NO conditioning of any pool/constant), does
-    E1's free-monomer pool (`MG_429_MONOMER`, PTS system E1) ever leave
-    zero, and does network >= 2 ever actually form a complex?
+    Across a (possibly partial) natural Karr cell cycle (birth to
+    division, REAL scheduler order via `Simulation.evolveState()`, NO
+    conditioning of any pool/constant), does E1's directly state-mirrored
+    monomer count (`MG_429_MONOMER`) ever leave zero, and does network
+    >= 2 ever actually form either of its two competing pentamers --
+    reported per-complex-identity, not summed, so genuine 2-way
+    competition can be distinguished from a degenerate single-candidate
+    draw?
 
 This is DIFFERENT evidence from the accepted 50-seed x 100-tick natural
 census (`h12.py`) and from the accepted condition-gated candidate
 (`h12_condition_gated.py`): those sample only ticks 0..99 from cell birth
 across 50 independent seeds (a SHORT WINDOW x WIDE SEED coverage); this
-module instead runs ONE seed for the process's entire natural lifecycle
-via the real scheduler (`scripts/matlab/full_cycle_event_scan_macromol.m`,
-modeled on the already-accepted `full_cycle_event_scan_v2.m` mechanism
-used to justify RibosomeAssembly's `tick_offset=200` re-extraction) --
-a LONG WINDOW x SINGLE SEED probe. The two are complementary, not
-substitutes; this module never claims to supersede or resolve the other
-artifact's own `lifecycle_reachability_status` field (that field remains
-pinned to the literal `"UNRESOLVED"` by
+module instead runs ONE seed for (up to) the process's entire natural
+lifecycle via the REAL scheduler (`scripts/matlab/
+full_cycle_event_scan_macromol.m`, which calls the real, unmodified
+public method `sim.evolveState()` once per tick -- see that script's own
+docstring for why this is the only externally-callable way to get
+byte-for-byte real scheduler semantics, since `Simulation.randStream` is
+a private property) -- a LONG WINDOW x SINGLE SEED probe. The two are
+complementary, not substitutes; this module never claims to supersede or
+resolve the other artifact's own `lifecycle_reachability_status` field
+(that field remains pinned to the literal `"UNRESOLVED"` by
 `tests/scripts/test_h12_condition_gated.py`, intentionally, because IT is
 scoped to "would a `tick_offset>0` RE-EXTRACTION resolve this", a
 question this module does not answer either -- this module instead runs
 the real full-length scheduler directly, which is strictly stronger
 evidence than any single fixed-window re-extraction, but is still only
 ONE seed, not fifty).
+
+======================================================================
+E1 FIELD NAME (corrected post-review; do not reuse the old "e1_pool"
+terminology anywhere new)
+======================================================================
+`MacromolecularComplexation.calcResourceRequirements_Current()`
+unconditionally returns all-zero requirements, and this process's
+`substrateMetaboliteGlobalCompartmentIndexs`/`substrateMetaboliteLocalIndexs`
+are both empty (confirmed live, not just by static source read; see
+`scripts/matlab/full_cycle_event_scan_macromol.m`'s header comment for
+the diagnostic). E1 is therefore NOT drawn through the shared,
+competitive metabolite-allocation mechanism for this process at all. The
+field is reported as `e1_monomer_count_direct_state_read`: a direct,
+non-competitive, `copyFromState()`-synced mirror of the shared monomer
+count. This is neither the old "free cellular pool" phrasing (which
+wrongly implied a shared/contested resource) nor "allocated process
+share" (which would wrongly imply metabolite-allocation competition that
+does not apply to this substrate).
+
+======================================================================
+PER-COMPLEX (NOT SUMMED) REPORTING
+======================================================================
+The two network>=2 pentamers (`MG_041_062_429_PENTAMER`,
+`MG_041_069_429_PENTAMER`) are reported as independent time series and
+independent event counts. Summing their deltas into one scalar can mask
+cancellation and cannot distinguish genuine 2-way competition (both
+complexes independently viable formation candidates) from a degenerate
+single-candidate draw (only one of the two ever fires). This module
+derives and records `network2_competition_status` explicitly from the
+per-complex counts for exactly this reason.
 
 ======================================================================
 WHAT THIS ARTIFACT DOES NOT CLAIM
@@ -46,14 +82,20 @@ WHAT THIS ARTIFACT DOES NOT CLAIM
   (still, correctly, `"UNRESOLVED"` there -- see module docstring above).
 - It does NOT claim H12_CONFIRMED, H12_OBSERVED_REGIME, PASS, or any
   enacted CONDITION_GATED value as its own `classification`.
+- It does NOT claim `network2_competition_status ==
+  "both_complexes_fired"` implies H12_CONFIRMED is proven structurally
+  inapplicable on its own; that is a separate, static-source argument
+  (the Monte Carlo branch always calls `randStream.rand()` regardless of
+  competition) documented in the E1 provenance doc, kept explicitly
+  distinct from this artifact's empirical competition finding.
 - It does NOT run MATLAB itself. It reads already-generated, hash-bound
   raw probe output (`data/m1_sources/karr_native/event_scan/
   MacromolecularComplexation_e1_lifecycle_seed{seed:03d}.csv` +
   `..._summary.json`), produced by a separate, one-time, real MATLAB
   execution of `scripts/matlab/full_cycle_event_scan_macromol.m`. This
   module never fabricates or edits that raw output; it only reads,
-  cross-checks (recomputing `max_e1_pool`/`n_net2_events` directly from
-  the CSV and hard-failing on any mismatch with the summary JSON), and
+  cross-checks (recomputing every headline number directly from the CSV
+  and hard-failing on any mismatch with the summary JSON), and
   hash-binds it.
 """
 from __future__ import annotations
@@ -73,6 +115,8 @@ if str(REPO_ROOT) not in sys.path:
 PROCESS = "MacromolecularComplexation"
 REQUIRED_BRANCH = "network_ge2_fires"
 E1_WHOLE_CELL_MODEL_ID = "MG_429_MONOMER"
+E1_FIELD_NAME = "e1_monomer_count_direct_state_read"
+NET2_COMPLEX_NAMES = ("MG_041_062_429_PENTAMER", "MG_041_069_429_PENTAMER")
 SEED = 0
 N_TICKS_MAX = 33000
 
@@ -125,13 +169,16 @@ VALID_STOP_REASONS = frozenset(
 
 SCOPE_NOTE = (
     "This artifact reports evidence from EXACTLY ONE seed (seed=0) run for its full natural lifecycle "
-    "via the real Karr per-tick scheduler (resource allocation + evolveState in real process order), "
-    "starting from cell birth, with NO conditioning of any pool or constant. It is NOT N=50 seed "
-    "coverage and must never be read as such; the accepted 50-seed x 100-tick natural census "
-    "(docs/phase_f/l2_2_design_a/h12/MacromolecularComplexation_h12.json) and condition-gated candidate "
-    "(condition_gated/MacromolecularComplexation_h12_condition_gated.json) remain the N=50 evidence; "
-    "this module supplies the complementary long-window x single-seed axis. Generalizing this single "
-    "seed's outcome to all 50 seeds, or to every possible lifecycle, is explicitly NOT claimed."
+    "via the real Karr per-tick scheduler (the real, unmodified sim.evolveState() public method, called "
+    "as a black box once per tick -- Simulation.randStream is private, so this is the only externally "
+    "callable way to get byte-for-byte real seeded process ordering and the tRNAAminoacylation-before-"
+    "Translation rejection loop), starting from cell birth, with NO conditioning of any pool or "
+    "constant. It is NOT N=50 seed coverage and must never be read as such; the accepted 50-seed x "
+    "100-tick natural census (docs/phase_f/l2_2_design_a/h12/MacromolecularComplexation_h12.json) and "
+    "condition-gated candidate (condition_gated/MacromolecularComplexation_h12_condition_gated.json) "
+    "remain the N=50 evidence; this module supplies the complementary long-window x single-seed axis. "
+    "Generalizing this single seed's outcome to all 50 seeds, or to every possible lifecycle, is "
+    "explicitly NOT claimed."
 )
 
 
@@ -188,12 +235,40 @@ def _recompute_from_csv(csv_path: Path) -> dict:
     """Independently recompute the headline numbers directly from the raw
     per-tick CSV, so a tampered/hand-edited summary JSON can never be
     trusted on its own -- mirrors h12_condition_gated.py's
-    never-trust-payload-alone style."""
-    max_e1_pool = 0.0
+    never-trust-payload-alone style. Network>=2 deltas are recomputed
+    PER COMPLEX (not summed) so genuine 2-way competition can be told
+    apart from a degenerate single-candidate draw (finding #3).
+
+    Both a sign-agnostic "any change" count (n_net2_events_by_complex,
+    cross-checked against the MATLAB summary JSON when present) AND a
+    sign-restricted "real formation" count (n_net2_formation_events_by_complex,
+    delta > 0 only) are tracked. The latter is what actually answers the
+    competition question -- a complex whose local pentamer count is
+    already nonzero at cell birth (per MacromolecularComplexation.m's own
+    "Initialization" semantics) can show a real, later degradation event
+    (delta < 0) with NO corresponding formation event ever observed in the
+    scanned window; counting that as "fired" would overstate evidence of
+    competitive formation. n_net2_formation_events_by_complex is always
+    derived directly from the CSV (never taken from the MATLAB summary
+    JSON, which does not carry this sign-restricted breakdown), so it is
+    self-consistent by construction rather than cross-checked.
+
+    n_any_complex_events is derived from the CSV's any_complex_changed
+    column (a cancellation-safe any(d ~= 0) boolean written by the probe),
+    NOT from any_complex_delta_total (a signed SUM across every complex
+    species, which can itself cancel to exactly 0 when two unrelated
+    complexes change by opposite amounts in the same tick -- the same
+    class of cancellation bug this module's per-complex reporting exists
+    to avoid, discovered when it also silently gated OUT the CSV row for
+    a real net2 event in an earlier revision of the probe script)."""
+    max_e1_value = 0.0
     first_e1_nonzero_tick = -1
     n_any_complex_events = 0
-    n_net2_events = 0
-    first_net2_event_tick = -1
+    n_net2_events_by_complex = [0, 0]
+    first_net2_event_tick_by_complex = [-1, -1]
+    n_net2_formation_events_by_complex = [0, 0]
+    first_net2_formation_tick_by_complex = [-1, -1]
+    max_net2_delta_by_complex = [0.0, 0.0]
     last_tick = 0
     pinched_at_tick = -1
     with open(csv_path, encoding="utf-8", newline="") as fh:
@@ -201,31 +276,64 @@ def _recompute_from_csv(csv_path: Path) -> dict:
         for row in reader:
             tick = int(row["tick"])
             last_tick = max(last_tick, tick)
-            e1_pool = float(row["e1_pool"])
-            any_delta = float(row["any_complex_delta"])
-            net2_delta = float(row["net2_complex_delta_sum"])
+            e1_value = float(row[E1_FIELD_NAME])
+            # any_complex_changed is a cancellation-safe boolean (any(d ~= 0)
+            # in the MATLAB probe) -- unlike any_complex_delta_total (a
+            # SIGNED SUM across every complex species), it cannot be
+            # spuriously zero when two unrelated complexes change by
+            # opposite amounts in the same tick. It is REQUIRED (fail
+            # closed, not defaulted) so a CSV produced by the pre-fix
+            # summed-only probe can never be silently treated as if it
+            # captured every event.
+            any_changed = row["any_complex_changed"].strip() in ("1", "true", "True")
+            net2_deltas = [
+                float(row[f"complex1_delta_{NET2_COMPLEX_NAMES[0]}"]),
+                float(row[f"complex2_delta_{NET2_COMPLEX_NAMES[1]}"]),
+            ]
             pinched = row["pinched"].strip() in ("1", "true", "True")
-            if e1_pool > max_e1_pool:
-                max_e1_pool = e1_pool
-            if e1_pool > 0 and first_e1_nonzero_tick < 0:
+            if e1_value > max_e1_value:
+                max_e1_value = e1_value
+            if e1_value > 0 and first_e1_nonzero_tick < 0:
                 first_e1_nonzero_tick = tick
-            if any_delta != 0:
+            if any_changed:
                 n_any_complex_events += 1
-            if net2_delta != 0:
-                n_net2_events += 1
-                if first_net2_event_tick < 0:
-                    first_net2_event_tick = tick
+            for c in range(2):
+                if net2_deltas[c] != 0:
+                    n_net2_events_by_complex[c] += 1
+                    if first_net2_event_tick_by_complex[c] < 0:
+                        first_net2_event_tick_by_complex[c] = tick
+                if net2_deltas[c] > 0:
+                    n_net2_formation_events_by_complex[c] += 1
+                    if first_net2_formation_tick_by_complex[c] < 0:
+                        first_net2_formation_tick_by_complex[c] = tick
+                if abs(net2_deltas[c]) > max_net2_delta_by_complex[c]:
+                    max_net2_delta_by_complex[c] = abs(net2_deltas[c])
             if pinched and pinched_at_tick < 0:
                 pinched_at_tick = tick
     return {
-        "max_e1_pool": max_e1_pool,
+        "max_e1_value": max_e1_value,
         "first_e1_nonzero_tick": first_e1_nonzero_tick,
         "n_any_complex_events": n_any_complex_events,
-        "n_net2_events": n_net2_events,
-        "first_net2_event_tick": first_net2_event_tick,
+        "n_net2_events_by_complex": n_net2_events_by_complex,
+        "first_net2_event_tick_by_complex": first_net2_event_tick_by_complex,
+        "n_net2_formation_events_by_complex": n_net2_formation_events_by_complex,
+        "first_net2_formation_tick_by_complex": first_net2_formation_tick_by_complex,
+        "max_net2_delta_by_complex": max_net2_delta_by_complex,
         "last_logged_tick": last_tick,
         "pinched_at_tick": pinched_at_tick,
     }
+
+
+def _competition_status(n_net2_formation_events_by_complex: list[int]) -> str:
+    """Derived from FORMATION-only counts (delta > 0), not sign-agnostic
+    event counts -- see _recompute_from_csv docstring for why this
+    distinction matters for an honest competition claim."""
+    fired = [n > 0 for n in n_net2_formation_events_by_complex]
+    if all(fired):
+        return "both_complexes_fired"
+    if any(fired):
+        return "single_complex_only_fired"
+    return "neither_fired"
 
 
 def build_lifecycle_reachability_artifact(
@@ -246,15 +354,16 @@ def build_lifecycle_reachability_artifact(
         # every headline number against an independent CSV recomputation.
         summary = _load_json(summary_path)
 
-        if recomputed["max_e1_pool"] != summary.get("max_e1_pool"):
+        if recomputed["max_e1_value"] != summary.get("max_e1_value"):
             raise ValueError(
-                "CSV-recomputed max_e1_pool does not match summary JSON's max_e1_pool -- "
-                f"recomputed={recomputed['max_e1_pool']!r} summary={summary.get('max_e1_pool')!r}"
+                "CSV-recomputed max_e1_value does not match summary JSON's max_e1_value -- "
+                f"recomputed={recomputed['max_e1_value']!r} summary={summary.get('max_e1_value')!r}"
             )
-        if recomputed["n_net2_events"] != summary.get("n_net2_events"):
+        if recomputed["n_net2_events_by_complex"] != summary.get("n_net2_events_by_complex"):
             raise ValueError(
-                "CSV-recomputed n_net2_events does not match summary JSON's n_net2_events -- "
-                f"recomputed={recomputed['n_net2_events']!r} summary={summary.get('n_net2_events')!r}"
+                "CSV-recomputed n_net2_events_by_complex does not match summary JSON's "
+                f"n_net2_events_by_complex -- recomputed={recomputed['n_net2_events_by_complex']!r} "
+                f"summary={summary.get('n_net2_events_by_complex')!r}"
             )
         if recomputed["n_any_complex_events"] != summary.get("n_any_complex_events"):
             raise ValueError(
@@ -282,11 +391,12 @@ def build_lifecycle_reachability_artifact(
 
         e1_local_substrate_index_1based = summary["e1_local_substrate_index_1based"]
         net2_complex_indices_1based = summary["net2_complex_indices_1based"]
-        max_e1_pool = summary["max_e1_pool"]
+        max_e1_value = summary["max_e1_value"]
         first_e1_nonzero_tick = summary["first_e1_nonzero_tick"]
         n_any_complex_events = summary["n_any_complex_events"]
-        n_net2_events = summary["n_net2_events"]
-        first_net2_event_tick = summary["first_net2_event_tick"]
+        n_net2_events_by_complex = summary["n_net2_events_by_complex"]
+        first_net2_event_tick_by_complex = summary["first_net2_event_tick_by_complex"]
+        max_net2_delta_by_complex = summary["max_net2_delta_by_complex"]
     else:
         # --- Path B: the run was deliberately stopped by the operator
         # before the loop could break out and write its own summary JSON
@@ -323,24 +433,35 @@ def build_lifecycle_reachability_artifact(
             stdout_log_path
         )
         stop_reason = STOP_REASON_OPERATOR_STOPPED
-        max_e1_pool = recomputed["max_e1_pool"]
+        max_e1_value = recomputed["max_e1_value"]
         first_e1_nonzero_tick = recomputed["first_e1_nonzero_tick"]
         n_any_complex_events = recomputed["n_any_complex_events"]
-        n_net2_events = recomputed["n_net2_events"]
-        first_net2_event_tick = recomputed["first_net2_event_tick"]
+        n_net2_events_by_complex = recomputed["n_net2_events_by_complex"]
+        first_net2_event_tick_by_complex = recomputed["first_net2_event_tick_by_complex"]
+        max_net2_delta_by_complex = recomputed["max_net2_delta_by_complex"]
         raw_log_used = True
 
-    e1_ever_nonzero = max_e1_pool > 0
-    network2_ever_fired = n_net2_events > 0
-    if network2_ever_fired and not e1_ever_nonzero:
+    # Formation-only (delta > 0) counts are ALWAYS sourced from the CSV
+    # recomputation directly, in both Path A and Path B -- the MATLAB
+    # summary JSON does not carry this sign-restricted breakdown, so there
+    # is nothing to cross-check it against; it is self-consistent by
+    # construction (see _recompute_from_csv docstring).
+    n_net2_formation_events_by_complex = recomputed["n_net2_formation_events_by_complex"]
+    first_net2_formation_tick_by_complex = recomputed["first_net2_formation_tick_by_complex"]
+
+    e1_ever_nonzero = max_e1_value > 0
+    network2_ever_formed = any(n > 0 for n in n_net2_formation_events_by_complex)
+    if network2_ever_formed and not e1_ever_nonzero:
         raise ValueError(
-            "n_net2_events > 0 while max_e1_pool == 0 -- network 2 requires E1 > 0 by stoichiometry (2 "
-            "copies of E1 per pentamer, see network2_layout in the condition-gated artifact); this "
-            "combination is structurally impossible and indicates a corrupted/tampered summary"
+            "n_net2_formation_events_by_complex has a nonzero entry while max_e1_value == 0 -- network 2 "
+            "requires E1 > 0 by stoichiometry (2 copies of E1 per pentamer, see network2_layout in the "
+            "condition-gated artifact); this combination is structurally impossible and indicates a "
+            "corrupted/tampered summary"
         )
+    competition_status = _competition_status(n_net2_formation_events_by_complex)
 
     outcome = (
-        "network2_fired_naturally" if network2_ever_fired
+        "network2_fired_naturally" if network2_ever_formed
         else "e1_became_nonzero_but_network2_did_not_fire" if e1_ever_nonzero
         else "e1_remained_zero_throughout_scanned_window"
     )
@@ -349,12 +470,14 @@ def build_lifecycle_reachability_artifact(
         (
             f"Run was deliberately stopped after tick {n_ticks_ran} (of a {N_TICKS_MAX}-tick ceiling, "
             "estimated ~32,400-tick natural cycle) once the accumulated real evidence "
-            f"(max_e1_pool={max_e1_pool!r}, n_net2_events={n_net2_events!r}, both strictly increasing "
-            "and not yet plateaued) was already sufficient to falsify the 'E1 always zero / genuine "
-            "biological ceiling' hypothesis. Natural cell division was NOT reached in this run; "
-            "n_ticks_ran is a lower bound on ticks actually simulated (the CSV only logs every 25th "
-            "tick, or on an event, so the true kill point may be up to 24 ticks later than the last "
-            "logged row)."
+            f"(max_e1_value={max_e1_value!r}, "
+            f"n_net2_formation_events_by_complex={n_net2_formation_events_by_complex!r}, "
+            "both strictly increasing and not yet plateaued) was already sufficient to falsify the 'E1 "
+            "always zero / genuine biological ceiling' hypothesis. Natural cell division was NOT reached "
+            "in this run; n_ticks_ran is a lower bound on ticks actually simulated (the CSV only logs "
+            "every 25th tick, or on an event, so the true kill point may be up to 24 ticks later than the "
+            "last logged row). Per-identity competition evidence (network2_competition_status) is "
+            "similarly a lower bound: additional ticks could still make a currently-silent complex fire."
         )
         if partial_coverage
         else None
@@ -381,28 +504,65 @@ def build_lifecycle_reachability_artifact(
             "n_ticks_ran": n_ticks_ran,
             "stop_reason": stop_reason,
             "e1_whole_cell_model_id": E1_WHOLE_CELL_MODEL_ID,
+            "e1_field_name": E1_FIELD_NAME,
+            "e1_field_semantics": (
+                "Direct copyFromState()-synced mirror of the shared MG_429_MONOMER count; NOT drawn via "
+                "the competitive metabolite-allocation mechanism (substrateMetaboliteLocalIndexs and "
+                "substrateMetaboliteGlobalCompartmentIndexs are both empty for this process; "
+                "calcResourceRequirements_Current() unconditionally returns zeros, confirmed live and "
+                "idempotent across repeated calls). Neither the old 'free cellular pool' phrasing nor "
+                "'allocated process share' is accurate; see module docstring."
+            ),
             "e1_local_substrate_index_1based": e1_local_substrate_index_1based,
+            "net2_complex_names": list(NET2_COMPLEX_NAMES),
             "net2_complex_indices_1based": net2_complex_indices_1based,
-            "max_e1_pool": max_e1_pool,
+            "max_e1_value": max_e1_value,
             "first_e1_nonzero_tick": first_e1_nonzero_tick,
             "n_any_complex_events": n_any_complex_events,
-            "n_net2_events": n_net2_events,
-            "first_net2_event_tick": first_net2_event_tick,
+            "n_net2_events_by_complex": n_net2_events_by_complex,
+            "first_net2_event_tick_by_complex": first_net2_event_tick_by_complex,
+            "n_net2_formation_events_by_complex": n_net2_formation_events_by_complex,
+            "first_net2_formation_tick_by_complex": first_net2_formation_tick_by_complex,
+            "max_net2_delta_by_complex": max_net2_delta_by_complex,
         },
         "outcome": outcome,
         "e1_ever_nonzero": e1_ever_nonzero,
-        "network2_ever_fired_naturally": network2_ever_fired,
+        "network2_ever_fired_naturally": network2_ever_formed,
+        "network2_competition_status": competition_status,
+        "network2_competition_status_note": (
+            "Derived from n_net2_formation_events_by_complex (delta > 0 ticks only), NOT the "
+            "sign-agnostic n_net2_events_by_complex -- a complex already present at cell birth could show "
+            "a real later degradation event (delta < 0) with zero formation events ever observed, and "
+            "counting that as 'fired' would overstate competition evidence (see _recompute_from_csv "
+            "docstring). 'both_complexes_fired' is empirical evidence (this seed only) that both "
+            f"{NET2_COMPLEX_NAMES[0]} and {NET2_COMPLEX_NAMES[1]} are independently viable formation "
+            "candidates -- i.e. load-bearing competition, not a degenerate single-candidate draw. "
+            "'single_complex_only_fired' means only one of the two ever formed in this run (which "
+            "may still resolve differently with more ticks/seeds -- see partial_coverage_note). "
+            "This status is empirical and does NOT by itself establish that H12_CONFIRMED is "
+            "structurally inapplicable; the static-source argument (buildProteinComplexs_montecarlokinetic "
+            "always calls randStream.rand() regardless of competition) is separate and is documented in "
+            "the E1 provenance doc, not derived from this field."
+        ),
         "mechanism": (
-            "Real per-tick scheduler: resource allocation (calcResourceRequirements_Current -> "
-            "proportional allocation) then evolveState() in randperm process order, identical mechanism "
-            "to scripts/matlab/full_cycle_event_scan_v2.m (the already-accepted precedent used to justify "
-            "RibosomeAssembly's tick_offset=200 re-extraction). No conditioning, no synthetic pool "
-            "injection, no fixture edits -- this is the natural lifecycle as the real scheduler produces it."
+            "Real, unmodified sim.evolveState() public method called once per tick as a black box -- "
+            "Simulation.randStream is a private property, so this is the only externally callable way "
+            "to reproduce byte-for-byte real seeded process ordering (randStream.randperm(nProcesses)) "
+            "plus the tRNAAminoacylation-before-Translation rejection loop (Simulation.evolveState.m:47-54) "
+            "and the real per-process resource allocation formula. No scheduler logic is reimplemented by "
+            "the probe script. Target-process substrates/complexs are read via target_proc.copyFromState() "
+            "(a pure, side-effect-free read) immediately before and after each sim.evolveState() call and "
+            "diffed, independent of any assumption about cross-process write ordering within the tick. No "
+            "conditioning, no synthetic pool injection, no fixture edits -- this is the natural lifecycle "
+            "as the real scheduler produces it."
         ),
         "stop_condition": (
             "Geometry.pinched (natural cell division boundary), identical stopping condition to "
             "scripts/matlab/extract_cell_cycle_trajectory.m -- ticks after this boundary are never "
-            "scanned or counted as 'natural'."
+            "scanned or counted as 'natural'. stop_reason records whether this boundary was actually "
+            "reached (natural_cell_division_pinch), the tick budget was exhausted without it "
+            "(max_ticks_reached_no_division), or the run was manually stopped early once evidence was "
+            "already decisive (operator_stopped_after_decisive_evidence, see partial_coverage_note)."
         ),
         "matlab_script_path": "scripts/matlab/full_cycle_event_scan_macromol.m",
         "matlab_script_sha256_lf_normalized": _sha256_lf_normalized(MATLAB_SCRIPT_PATH),
@@ -514,18 +674,50 @@ def validate_lifecycle_reachability_artifact(payload: dict) -> str | None:
     elif payload.get("partial_coverage_note") is not None:
         return "partial_coverage_note must be null when partial_coverage is False"
 
-    max_e1_pool = probe.get("max_e1_pool")
-    n_net2_events = probe.get("n_net2_events")
+    max_e1_value = probe.get("max_e1_value")
+    n_net2_events_by_complex = probe.get("n_net2_events_by_complex")
+    n_net2_formation_events_by_complex = probe.get("n_net2_formation_events_by_complex")
     e1_ever_nonzero = payload.get("e1_ever_nonzero")
     network2_ever_fired = payload.get("network2_ever_fired_naturally")
-    if (max_e1_pool is not None and max_e1_pool > 0) != bool(e1_ever_nonzero):
-        return "e1_ever_nonzero is inconsistent with probe.max_e1_pool"
-    if (n_net2_events is not None and n_net2_events > 0) != bool(network2_ever_fired):
-        return "network2_ever_fired_naturally is inconsistent with probe.n_net2_events"
+    if not (isinstance(n_net2_events_by_complex, list) and len(n_net2_events_by_complex) == 2):
+        return f"probe.n_net2_events_by_complex must be a length-2 list (got {n_net2_events_by_complex!r})"
+    if not (
+        isinstance(n_net2_formation_events_by_complex, list) and len(n_net2_formation_events_by_complex) == 2
+    ):
+        return (
+            "probe.n_net2_formation_events_by_complex must be a length-2 list "
+            f"(got {n_net2_formation_events_by_complex!r})"
+        )
+    # Formation counts (delta > 0) can never exceed sign-agnostic event counts
+    # (delta != 0) per complex -- every formation tick is also a nonzero-delta
+    # tick, so this is a cheap internal-consistency check.
+    for c in range(2):
+        if n_net2_formation_events_by_complex[c] > n_net2_events_by_complex[c]:
+            return (
+                f"probe.n_net2_formation_events_by_complex[{c}] "
+                f"({n_net2_formation_events_by_complex[c]!r}) exceeds probe.n_net2_events_by_complex[{c}] "
+                f"({n_net2_events_by_complex[c]!r}) -- formation-only counts must be a subset of "
+                "sign-agnostic event counts"
+            )
+    if (max_e1_value is not None and max_e1_value > 0) != bool(e1_ever_nonzero):
+        return "e1_ever_nonzero is inconsistent with probe.max_e1_value"
+    any_net2_formed = any(n > 0 for n in n_net2_formation_events_by_complex)
+    if any_net2_formed != bool(network2_ever_fired):
+        return (
+            "network2_ever_fired_naturally is inconsistent with probe.n_net2_formation_events_by_complex "
+            "(the FORMATION-only, delta>0 counts -- see network2_competition_status_note)"
+        )
     if network2_ever_fired and not e1_ever_nonzero:
         return (
             "network2_ever_fired_naturally=True while e1_ever_nonzero=False is structurally impossible "
             "(network 2 requires E1 > 0 by stoichiometry) -- tampered artifact?"
+        )
+
+    expected_competition_status = _competition_status(n_net2_formation_events_by_complex)
+    if payload.get("network2_competition_status") != expected_competition_status:
+        return (
+            f"network2_competition_status does not match derived value (got "
+            f"{payload.get('network2_competition_status')!r}, expected {expected_competition_status!r})"
         )
 
     expected_outcome = (
@@ -535,6 +727,14 @@ def validate_lifecycle_reachability_artifact(payload: dict) -> str | None:
     )
     if payload.get("outcome") != expected_outcome:
         return f"outcome does not match derived value (got {payload.get('outcome')!r}, expected {expected_outcome!r})"
+
+    if probe.get("e1_field_name") != E1_FIELD_NAME:
+        return f"probe.e1_field_name must be exactly {E1_FIELD_NAME!r} (got {probe.get('e1_field_name')!r})"
+    if probe.get("net2_complex_names") != list(NET2_COMPLEX_NAMES):
+        return (
+            f"probe.net2_complex_names must be exactly {list(NET2_COMPLEX_NAMES)!r} "
+            f"(got {probe.get('net2_complex_names')!r})"
+        )
 
     # --- Hash-bind every referenced file to the CURRENT working tree / raw
     # output on disk (stale-artifact / hand-edited-summary / tampered-CSV
@@ -579,15 +779,21 @@ def validate_lifecycle_reachability_artifact(payload: dict) -> str | None:
     # --- Independent re-derivation directly from the raw CSV: never trust
     # the payload's own headline numbers without recomputing them.
     recomputed = _recompute_from_csv(raw_csv_path)
-    if recomputed["max_e1_pool"] != max_e1_pool:
+    if recomputed["max_e1_value"] != max_e1_value:
         return (
-            f"CSV-recomputed max_e1_pool ({recomputed['max_e1_pool']!r}) does not match payload's "
-            f"probe.max_e1_pool ({max_e1_pool!r})"
+            f"CSV-recomputed max_e1_value ({recomputed['max_e1_value']!r}) does not match payload's "
+            f"probe.max_e1_value ({max_e1_value!r})"
         )
-    if recomputed["n_net2_events"] != n_net2_events:
+    if recomputed["n_net2_events_by_complex"] != n_net2_events_by_complex:
         return (
-            f"CSV-recomputed n_net2_events ({recomputed['n_net2_events']!r}) does not match payload's "
-            f"probe.n_net2_events ({n_net2_events!r})"
+            f"CSV-recomputed n_net2_events_by_complex ({recomputed['n_net2_events_by_complex']!r}) does "
+            f"not match payload's probe.n_net2_events_by_complex ({n_net2_events_by_complex!r})"
+        )
+    if recomputed["n_net2_formation_events_by_complex"] != n_net2_formation_events_by_complex:
+        return (
+            "CSV-recomputed n_net2_formation_events_by_complex "
+            f"({recomputed['n_net2_formation_events_by_complex']!r}) does not match payload's "
+            f"probe.n_net2_formation_events_by_complex ({n_net2_formation_events_by_complex!r})"
         )
     if recomputed["n_any_complex_events"] != probe.get("n_any_complex_events"):
         return "CSV-recomputed n_any_complex_events does not match payload's probe.n_any_complex_events"
