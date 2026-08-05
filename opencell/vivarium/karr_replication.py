@@ -864,6 +864,30 @@ class KarrReplicationProcess(Process):
             return 0
         return int(self.primase_binding_locations[1][fragment_index_c - 1])
 
+    def _leading_strand_lead_gap_ok(
+        self,
+        column: int,
+        helicase_pos: tuple[int, int],
+        fragment_index: tuple[int, int],
+    ) -> bool:
+        # Replication.m:812-818 "prevent leading strand from getting too far
+        # ahead of lagging strand": `tmp = fPos`, falling back to the
+        # chromosome-end (col 0) / origin (col 1) boundary when no lagging
+        # Okazaki fragment is yet bound (`fPos(i) == 0`) -- the identical
+        # fallback `_fragment_start_or_boundary` already implements for the
+        # sibling `areLaggingStrandSSBSitesBound` getter. This is a
+        # *persistent* gap-vs-threshold gate (evaluated against the current
+        # fragment start, not against how far lagging advanced this
+        # particular tick), so a helicase that outran lagging on earlier
+        # ticks can keep going here as long as the gap has not yet reached
+        # `2 * okazakiFragmentMeanLength`, and recovers once lagging closes
+        # it back up -- never a one-tick lockstep cap.
+        tmp = self._fragment_start_or_boundary(fragment_index[column], column)
+        mean_len = self.okazaki_fragment_mean_length_bp
+        if column == 0:
+            return (tmp - helicase_pos[0] - self.helicase_footprint_bp) < 2 * mean_len
+        return (helicase_pos[1] - tmp) < 2 * mean_len
+
     def _num_lagging_template_bound_ssbs(
         self,
         complex_bound_sites: SparseTriplet,
@@ -1948,6 +1972,14 @@ class KarrReplicationProcess(Process):
             lagging_pos = self._lagging_position(lagging_pol_pos)
             fragment_index = self._okazaki_fragment_index(lagging_pos, polymerized)
             ssb_gate = self._are_lagging_strand_ssb_sites_bound(complex_bound_sites, helicase_pos, fragment_index)
+            # Replication.m:762-764 reads `helicasePos`/`fPos` once, before
+            # any of this tick's polymerization occurs; snapshot both here
+            # (fragment_index is reassigned below as the lagging while-loop
+            # advances) so the lead-gap gate below evaluates the same
+            # pre-mutation state Karr's `limits(1,:)` gate does, not the
+            # loop's post-advance fragment_index.
+            pre_advance_helicase_pos = helicase_pos
+            pre_advance_fragment_index = fragment_index
 
             # --- lagging strand FIRST: chunked across Okazaki fragments,
             # inline termination on each boundary; a termination-gate
@@ -2052,17 +2084,41 @@ class KarrReplicationProcess(Process):
                         break
 
             # --- leading strand + helicase: single-step advance, zeroed
-            # entirely if the SSB gate is not satisfied. When the column
-            # has already split (steady state), capped to `lagging_actual`
-            # (see above, an already-adjudicated conservative
-            # under-approximation of the full `limits` sub-step machinery).
-            # When the column has NOT yet split (`not_yet_split`), the
-            # leading strand advances independently up to the full budget
-            # (Replication.m:773 `limits(1,:) .* (leadingPos~=0)`, gated
-            # only by its own bound state and the SSB gate -- never by
-            # `laggingPos`, which does not exist yet for this column).
-            leading_advance = budget if not_yet_split else lagging_actual
+            # entirely if the SSB gate is not satisfied, else the persistent
+            # lead-gap gate below (Replication.m:773 `limits(1,:) .*
+            # (leadingPos ~= 0)`: the leading strand's own budget does not
+            # depend on `laggingPos`/`lagging_actual` at all -- Karr's
+            # `limits(1,:)` and `limits(2,:)` are computed independently,
+            # each capped by its own occlusion/kinetics extent, and only
+            # coupled via the lead-gap gate below, never via a same-tick
+            # lockstep. The prior `leading_advance = ... else lagging_actual`
+            # lockstep (superseded by this port) was a conservative
+            # under-approximation that could never let leading outrun
+            # lagging even transiently; this is corrected here. NOTE: the
+            # final `actual_bp[column]` bookkeeping below still reports
+            # `lagging_actual` when split (an existing, separately-scoped
+            # adjudication -- Finding 2/limits-port territory), so a
+            # helicase that outpaces lagging under this gate now
+            # genuinely advances further than the substrate demand
+            # currently charged for that tick; that residual substrate-
+            # accounting gap is NOT part of this port (out of scope here).
+            leading_advance = budget
             leading_advance = leading_advance if ssb_gate[column] else 0
+            # Replication.m:812-818 "prevent leading strand from getting
+            # too far ahead of lagging strand": the persistent >=2x mean-
+            # Okazaki-fragment-length gap gate, evaluated against the
+            # pre-tick helicase/fragment-start snapshot -- NOT re-derived
+            # from `lagging_actual` (that lockstep cap was an
+            # under-approximation now superseded by this literal port; a
+            # helicase that has run ahead of the lagging strand across
+            # several prior ticks is allowed to keep advancing here as
+            # long as the persistent gap has not yet reached the
+            # threshold, and is only zeroed once it has).
+            leading_advance = (
+                leading_advance
+                if self._leading_strand_lead_gap_ok(column, pre_advance_helicase_pos, pre_advance_fragment_index)
+                else 0
+            )
             if leading_advance > 0:
                 helicase_pos = self._helicase_positions(complex_bound_sites)
                 leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)

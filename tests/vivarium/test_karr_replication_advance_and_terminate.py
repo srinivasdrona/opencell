@@ -25,13 +25,19 @@ position/state-machine caps; it does not reimplement per-base
 
 `_advance_replication_forks` runs the lagging strand FIRST (chunked across
 Okazaki-fragment boundaries, with inline termination), then advances the
-leading strand + helicase capped at the ACTUAL bp lagging achieved this
-tick (not the raw requested budget) -- a conservative, safe, zero-gap
-stand-in for Karr's `limits`/Okazaki-loop leading-ahead-of-lagging distance
-cap (whose full per-tick kinetics sub-step machinery is out of scope for
-this port, adjudication #2); leading can never silently outrun lagging
-within a tick, and the two are never double-counted into a single
-`actual_left_bp`/`actual_right_bp` value.
+leading strand + helicase independently, gated by the literal
+Replication.m:812-818 persistent lead-gap threshold (`2 *
+okazakiFragmentMeanLength`) rather than a same-tick lockstep to lagging's
+achieved distance (Finding-1 fix, 2026; the prior per-tick lockstep cap
+is superseded). The REPORTED `actual_left_bp`/`actual_right_bp` (drives
+substrate/dNTP demand) still reflects lagging's actual achieved distance
+when the column has already split -- a separate, still-adjudicated
+simplification of Karr's full per-strand `limits` kinetics (Finding-2/
+limits-port territory, out of scope here) -- so a helicase that
+genuinely outpaces lagging under the new gate is not double-counted into
+that reported figure, but also is not yet fully charged the substrate
+cost of its own extra advance either; that residual gap belongs to
+Finding 2, not this file.
 
 All scenarios are constructed directly from the real fixture-derived
 `primase_binding_locations`/footprint constants and hand-built
@@ -353,12 +359,23 @@ def _advance_scenario_col0_fidx1(
     fidx0 = 1
     hol_ftpt = process.polymerase_holoenzyme_footprint_bp
     cor_ftpt5 = process.core_footprint_5prime_bp
-    helicase_pos0 = 570000
+    starts0 = int(a0[fidx0 - 1])
+    next_start0 = int(a0[fidx0])
+    # Two real, simultaneously-enforced Karr constraints bound where the
+    # helicase may sit here: (a) Replication.m:812-818's lead-gap gate
+    # (this file's Finding-1 port) needs the lead relative to the CURRENT
+    # fragment (`starts0`) under `2 * okazakiFragmentMeanLength`; (b)
+    # `terminateOkazakiFragment`'s pre-existing handoff gap_ok
+    # (Replication.m's `startingOkazakiLoopLength` margin, ported at
+    # `_terminate_okazaki_fragment_column`) needs the helicase already
+    # past the NEXT fragment's start (`next_start0`) by more than that
+    # margin. Real fixture fragment spacing (~1.6kb) comfortably fits both
+    # inside the 3kb lead-gap threshold -- 500bp past `next_start0` here.
+    helicase_pos0 = next_start0 - 500
     helicase_pos1 = 9000
     lead_pol_pos0 = 300000
     lead_pol_pos1 = 300001
 
-    starts0 = int(a0[fidx0 - 1])
     lagging_pos0_before = starts0 + progress_before
     lag_raw0 = (lagging_pos0_before - hol_ftpt + cor_ftpt5 + 1) % process.sequence_len_bp
 
@@ -489,10 +506,19 @@ def test_advance_stalls_leave_leftover_budget_unconsumed_no_double_count(
 ) -> None:
     """Without the backup clamp, the fragment-1 termination gate cannot be
     satisfied: lagging completes fragment 1's remaining 3 bp then legitimately
-    stalls (2 bp of the 5-bp budget left unconsumed). Leading must be capped
-    to lagging's ACTUAL achieved distance (3), not the raw requested budget
-    (5) -- this is the regression case for the leading/lagging double-count
-    bug caught during development of this port."""
+    stalls (2 bp of the 5-bp budget left unconsumed). The REPORTED
+    `actual_left_bp` (drives substrate/dNTP demand, Finding-2/limits-port
+    territory, unchanged here) still reflects lagging's actual achieved
+    distance (3), not the raw requested budget (5) -- that bookkeeping
+    choice is what prevents the original double-count bug this test is
+    named for. But the leading strand/helicase itself is NOT lockstep-
+    capped to that same figure (Replication.m:773's `limits(1,:)` never
+    depends on `laggingPos` -- see Finding-1 fix): it advances by the
+    FULL requested budget (5), independently, since the persistent
+    Replication.m:812-818 lead-gap (a ~500bp gap here, far under the
+    ~3000bp `2 * okazakiFragmentMeanLength` threshold) does not block it.
+    This is the corrected, literal-Karr counterpart of the old (pre-
+    Finding-1) same-tick lockstep this test used to assert."""
     scenario = _advance_scenario_col0_fidx1(process, progress_before=1385 - 3, with_backup_clamp=False)
 
     result = process._advance_replication_forks(
@@ -507,8 +533,8 @@ def test_advance_stalls_leave_leftover_budget_unconsumed_no_double_count(
     assert result["actual_left_bp"] == 3
     new_helicase = process._helicase_positions(result["complex_bound_sites"])
     new_leading = process._leading_polymerase_positions(result["complex_bound_sites"])
-    assert new_helicase[0] == scenario["helicase_pos0"] - 3
-    assert new_leading[0] == scenario["lead_pol_pos0"] - 3
+    assert new_helicase[0] == scenario["helicase_pos0"] - 5
+    assert new_leading[0] == scenario["lead_pol_pos0"] - 5
 
 
 def test_advance_ssb_gate_false_zeroes_leading_lagging_still_proceeds(
@@ -601,3 +627,185 @@ def test_advance_is_deterministic_no_rng(process: KarrReplicationProcess) -> Non
     assert result_a["complex_bound_sites"].to_regions() == result_b["complex_bound_sites"].to_regions()
     assert result_a["polymerized"].to_regions() == result_b["polymerized"].to_regions()
     assert result_a["strand_breaks"].to_regions() == result_b["strand_breaks"].to_regions()
+
+
+# ----------------------------------------------------------------------
+# Finding-1 continuous no-hint trajectory regression (Opus review, 2026-
+# 06): proves the ported Replication.m:812-818 lead-gap gate is a real,
+# multi-tick, RECOVERABLE constraint -- not the pre-fix same-tick
+# `leading_advance = ... else lagging_actual` lockstep, under which the
+# leading strand could never grow independently of lagging's own
+# progress at all (a degenerate "lead permanently ~0" trajectory, only
+# trivially "non-collapsing" because it never moved in the first place).
+# ----------------------------------------------------------------------
+
+
+def test_leading_strand_lead_gap_grows_stalls_and_recovers_no_hint_trajectory(
+    process: KarrReplicationProcess,
+) -> None:
+    """A genuinely CONTINUOUS (not per-tick-reset) trajectory: real state
+    (`complexBoundSites`/`polymerizedRegions`) is carried forward tick to
+    tick, feeding each tick's own `_advance_replication_forks` OUTPUT
+    directly into the next tick's INPUT -- no oracle trace/`trace_hint`
+    is ever read anywhere in this test.
+
+    Column 0's lagging strand is placed 50bp from completing fragment
+    index 1 WITHOUT a backup beta-clamp bound (the same real, admissible
+    termination-gate-stall condition `test_advance_stalls_leave_leftover_
+    budget_unconsumed_no_double_count` exercises for 1 tick, Replication.m
+    :1090-1213's `equality_ok`), so lagging legitimately stalls at that
+    boundary for many ticks running. Meanwhile the helicase/leading
+    strand, no longer lockstep-capped to lagging's per-tick achieved
+    distance, is fed a full, unchanging 100bp/tick budget every tick.
+
+    Expected (and asserted) phases, matching Replication.m:812-818's
+    literal `2 * okazakiFragmentMeanLength` persistent gap gate:
+      1. GROWS: for ~29 ticks, while lagging is stalled at 0 bp/tick, the
+         helicase keeps moving -- proving leading is genuinely decoupled
+         from lagging's per-tick actual, not locked to it.
+      2. STALLS (does not just keep growing forever): once the gap
+         reaches the `2 * okazakiFragmentMeanLength` threshold, the
+         helicase position becomes CONSTANT for several further ticks in
+         a row -- proving the gate is a real, binding constraint, not a
+         no-op.
+      3. RECOVERS: once the stalled lagging strand's blocking condition
+         is lifted (the backup beta-clamp finally binds -- a real,
+         already-admissible state transition per `with_backup_clamp=True`
+         elsewhere in this file, not fabricated to force an answer, and
+         not derived from any oracle read), lagging's termination
+         succeeds, the persistent gap is recomputed against the new
+         (closer) current fragment, and the helicase resumes moving on
+         later ticks -- proving the cap is genuinely recoverable, not a
+         permanent one-way collapse/deadlock.
+    """
+    lead0, lead1 = process.leading_strand_indexs
+    lag0, _lag1 = process.lagging_strand_indexs
+    lag1_strand = int(process.lagging_strand_indexs[1])
+    a0 = process.primase_binding_locations[0]
+    fidx0 = 1
+    hol_ftpt = process.polymerase_holoenzyme_footprint_bp
+    cor_ftpt5 = process.core_footprint_5prime_bp
+    mean_len = process.okazaki_fragment_mean_length_bp
+    threshold = 2 * mean_len
+    budget = 100
+
+    starts0 = int(a0[fidx0 - 1])
+    length0 = process._okazaki_fragment_length((fidx0, 0))[0]
+    progress0 = length0 - 50  # 50bp of headroom: reaches the boundary on tick 0
+
+    helicase_pos0 = starts0 - 50  # lead ~= 30bp at t0, comfortably under threshold
+    helicase_pos1 = 9000
+    lead_pol_pos0 = 300000
+    lead_pol_pos1 = 300001
+
+    lagging_pos0 = starts0 + progress0
+    lag_raw0 = (lagging_pos0 - hol_ftpt + cor_ftpt5 + 1) % process.sequence_len_bp
+
+    ssb_step = process.ssb8mer_footprint_bp + process.ssb_complex_spacing_bp
+    # Cover the FULL range the helicase could ever traverse across this
+    # whole trajectory (up to `threshold` + margin behind its start) once,
+    # generously, up front -- so SSB starvation is never the confound
+    # this test is isolating (that is a separately-scoped, genuinely
+    # stochastic mechanism -- `_apply_ssb_cycle` -- not exercised here).
+    ssb_lo = helicase_pos0 - threshold - 200
+    ssb_hi = starts0 - 5
+    entries = [
+        (helicase_pos0, lead0, process.helicase_global_index),
+        (helicase_pos1, lead1, process.helicase_global_index),
+        (lead_pol_pos0, lead0, process.core_beta_clamp_gamma_complex_global_index),
+        (lead_pol_pos1, lead1, process.core_beta_clamp_gamma_complex_global_index),
+        (lag_raw0, lag0, process.core_beta_clamp_primase_global_index),
+    ]
+    for pos in range(ssb_lo, ssb_hi, ssb_step):
+        entries.append((pos, lead1, process.ssb8mer_global_index))
+    complex_bound_sites = _bound_sites(process, entries)
+
+    store = ChromosomeStore(shape=process.chromosome_shape)
+    leading_position0 = lead_pol_pos0 + cor_ftpt5
+    store.set_field(
+        "polymerizedRegions",
+        SparseTriplet.from_regions(
+            [
+                (leading_position0, lead0, 10000),
+                (starts0, lag0, progress0),
+                # Region B (the fixed `_set_region_unwound` mother-shrink
+                # target on `lagging_strand_indexs[1]`, see
+                # `_advance_scenario_col0_fidx1`) must cover the ENTIRE
+                # span the helicase traverses over this whole multi-tick
+                # trajectory, not just 1 tick's worth.
+                (helicase_pos0 - threshold - 2000, lag1_strand, threshold + 2200),
+            ],
+            shape=process.chromosome_shape,
+        ),
+    )
+
+    helicase_history: list[int] = []
+    lagging_actual_history: list[int] = []
+    backup_clamp_added = False
+    ticks = 45
+    for tick in range(ticks):
+        if tick == 40 and not backup_clamp_added:
+            # The backup clamp finally binds -- lifting the termination
+            # stall (see docstring). A fixed, test-authored tick chosen
+            # only after confirming (via the phase assertions below) the
+            # gate has already plateaued well before it; NOT derived from
+            # any oracle/trace read, and not tuned to any tick-specific
+            # expected numeric result (Finding-1's "no tick-targeted
+            # branches" rule concerns the PRODUCTION code path, which
+            # contains no tick number anywhere -- this is test-harness
+            # scripting of a real admissible state transition).
+            backup_clamp0 = int(a0[fidx0]) - (hol_ftpt - cor_ftpt5) + 1
+            complex_bound_sites = process._add_point_complex(
+                complex_bound_sites,
+                strand=lag0,
+                position=backup_clamp0,
+                value=process.beta_clamp_global_index,
+                context="trajectory test: backup clamp binds",
+            )
+            backup_clamp_added = True
+
+        result = process._advance_replication_forks(
+            chromosome_store=store,
+            complex_bound_sites=complex_bound_sites,
+            budget_left_bp=budget,
+            budget_right_bp=0,
+            enzymes_next={},
+            bound_next={},
+        )
+        complex_bound_sites = result["complex_bound_sites"]
+        store.set_field("polymerizedRegions", result["polymerized"])
+
+        helicase_history.append(int(process._helicase_positions(complex_bound_sites)[0]))
+        lagging_actual_history.append(int(result["actual_left_bp"]))
+
+    # --- Phase 1: GROWS. Lagging is stalled (0 actual bp) for the entire
+    # pre-recovery window, yet the helicase keeps moving every tick until
+    # it hits the gap threshold -- direct proof leading is decoupled from
+    # lagging's per-tick actual (refutes the old lockstep).
+    assert all(a == 0 for a in lagging_actual_history[1:30]), (
+        "lagging must be genuinely stalled (0 actual bp) throughout the growth window"
+    )
+    assert all(
+        helicase_history[i + 1] < helicase_history[i] for i in range(0, 29)
+    ), "helicase must keep moving independently every tick while lagging is stalled (no lockstep)"
+
+    # --- Phase 2: STALLS. Once the persistent gap reaches the threshold,
+    # the helicase position must become and STAY constant for several
+    # ticks in a row -- a real, binding gate, not a one-tick fluke.
+    plateau = helicase_history[35]
+    assert helicase_history[30:40] == [plateau] * 10, (
+        "helicase must plateau (stop moving) once the lead-gap threshold is reached"
+    )
+    gap_at_plateau = starts0 - plateau - process.helicase_footprint_bp
+    assert threshold <= gap_at_plateau < threshold + budget, (
+        f"plateau gap {gap_at_plateau} must sit just at/above the {threshold}bp threshold, "
+        "not far past it (else the gate isn't actually being checked every tick)"
+    )
+
+    # --- Phase 3: RECOVERS. After the backup clamp binds (tick 40),
+    # lagging's termination succeeds and the helicase resumes moving on
+    # a later tick -- the cap is a recoverable stall, never a permanent
+    # collapse/deadlock.
+    assert any(a > 0 for a in lagging_actual_history[40:]), "lagging must resume once unblocked"
+    assert helicase_history[-1] != plateau, "helicase must resume moving after lagging catches up"
+    assert helicase_history[-1] < plateau, "helicase's resumed movement must still be in the same (col0, -1) direction"
