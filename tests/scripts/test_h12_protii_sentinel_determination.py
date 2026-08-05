@@ -27,6 +27,7 @@ Run via `bin\\oc-pytest tests/scripts/test_h12_protii_sentinel_determination.py 
 from __future__ import annotations
 
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -52,6 +53,217 @@ MANUAL_MNRND_SHIM = REPO_ROOT / "scripts" / "matlab" / "mnrnd.m"
 
 def _load_artifact() -> dict:
     return json.loads(ARTIFACT_PATH.read_text(encoding="utf-8"))
+
+
+# ---------------------------------------------------------------------------
+# Structural (paren/quote-aware) MATLAB call-argument parsing helpers.
+#
+# These exist because a plain substring search (e.g. `"scripts/matlab'" not
+# in source`) misses semantically-equivalent ways of spelling the same
+# addpath target: `addpath('../matlab')`, `addpath(fullfile(this_dir, '..',
+# 'matlab'))`, `addpath(fullfile(repo_root, 'scripts', 'matlab'))`, or a
+# variable built up in several steps. Parsing the actual call arguments (via
+# balanced paren/quote scanning, not a single regex over the whole line)
+# lets the test assert the POSITIVE contract -- the only addpath(...) call
+# is `addpath(wholecell_src)` with `wholecell_src` bound to exactly
+# `getenv('PPII_WHOLECELL_SRC_ROOT')` -- rather than an open-ended list of
+# banned spellings that can never be exhaustive.
+# ---------------------------------------------------------------------------
+
+
+def _extract_call_arg_texts(source: str, func_name: str) -> list[str]:
+    """Return the raw (unsplit) argument-list text of every top-level
+    `func_name(...)` call in `source`, located by balanced paren/quote
+    scanning rather than a single regex, so parens/quotes nested inside an
+    argument (e.g. another function call) do not truncate the match."""
+    calls = []
+    for m in re.finditer(rf"(?<![.\w]){re.escape(func_name)}\s*\(", source):
+        i = m.end()
+        depth = 1
+        in_squote = False
+        in_dquote = False
+        start = i
+        while i < len(source) and depth > 0:
+            ch = source[i]
+            if in_squote:
+                if ch == "'":
+                    if i + 1 < len(source) and source[i + 1] == "'":
+                        i += 1  # MATLAB '' escaped-quote inside a literal
+                    else:
+                        in_squote = False
+            elif in_dquote:
+                if ch == '"':
+                    in_dquote = False
+            elif ch == "'":
+                in_squote = True
+            elif ch == '"':
+                in_dquote = True
+            elif ch == "(":
+                depth += 1
+            elif ch == ")":
+                depth -= 1
+            i += 1
+        calls.append(source[start : i - 1])
+    return calls
+
+
+def _split_top_level_args(args_text: str) -> list[str]:
+    """Split a call's raw argument text on top-level commas only (commas
+    inside nested parens/brackets/quotes do not split)."""
+    parts: list[str] = []
+    current: list[str] = []
+    depth = 0
+    in_squote = False
+    in_dquote = False
+    i = 0
+    while i < len(args_text):
+        ch = args_text[i]
+        if in_squote:
+            current.append(ch)
+            if ch == "'":
+                if i + 1 < len(args_text) and args_text[i + 1] == "'":
+                    current.append(args_text[i + 1])
+                    i += 1
+                else:
+                    in_squote = False
+        elif in_dquote:
+            current.append(ch)
+            if ch == '"':
+                in_dquote = False
+        elif ch == "'":
+            in_squote = True
+            current.append(ch)
+        elif ch == '"':
+            in_dquote = True
+            current.append(ch)
+        elif ch in "([{":
+            depth += 1
+            current.append(ch)
+        elif ch in ")]}":
+            depth -= 1
+            current.append(ch)
+        elif ch == "," and depth == 0:
+            parts.append("".join(current).strip())
+            current = []
+        else:
+            current.append(ch)
+        i += 1
+    parts.append("".join(current).strip())
+    return [p for p in parts if p != ""]
+
+
+def _as_matlab_literal(arg: str) -> str | None:
+    """If `arg` (already trimmed) is a single quoted MATLAB/Octave string
+    literal, return its unquoted value; otherwise `None` (it is an
+    identifier, expression, or call)."""
+    arg = arg.strip()
+    if len(arg) >= 2 and arg[0] == arg[-1] and arg[0] in "'\"":
+        return arg[1:-1].replace("''", "'")
+    return None
+
+
+def _assert_addpath_only_resolves_to_wholecell_src(path: Path) -> None:
+    """Structurally enforce the intended Scenario B addpath contract for a
+    single `.m` file:
+
+      1. Every `fullfile(...)` call's literal arguments are scanned for a
+         contiguous ('scripts','matlab') or ('..','matlab') subsequence
+         (case-insensitive) -- either would resolve to the manual mnrnd
+         shim's directory (`scripts/matlab`), the second being the
+         relative sibling-dir spelling from
+         `scripts/matlab_h12_perturbation/`.
+      2. A defense-in-depth literal-text scan (both path separators,
+         case-insensitive) catches any single-literal spelling of
+         `scripts/matlab` or a relative `../matlab` that isn't inside a
+         `fullfile(...)` call.
+      3. There is EXACTLY ONE `addpath(...)` call in the file, and its
+         sole argument is the bare identifier `wholecell_src` -- not a
+         literal, not `fullfile(...)`, not any other expression.
+      4. Every assignment to the bare name `wholecell_src` (not a
+         qualified/field name like `report.wholecell_src_root_used`) has a
+         right-hand side that is exactly `getenv('PPII_WHOLECELL_SRC_ROOT')`
+         -- so the identifier addpath'd in (3) cannot itself have been
+         quietly redefined to point at the shim directory.
+
+    Together (3)+(4) mean the ONLY thing this file can ever addpath is
+    whatever `PPII_WHOLECELL_SRC_ROOT` resolves to at runtime, and (1)+(2)
+    mean nothing anywhere in the file can construct a path that resolves
+    to the manual shim's directory in the first place.
+    """
+    source = path.read_text(encoding="utf-8")
+
+    for args_text in _extract_call_arg_texts(source, "fullfile"):
+        literals = [_as_matlab_literal(a) for a in _split_top_level_args(args_text)]
+        lowered = [lit.lower() if lit is not None else None for lit in literals]
+        for i in range(len(lowered) - 1):
+            pair = (lowered[i], lowered[i + 1])
+            assert pair != ("scripts", "matlab"), (
+                f"{path.name}: fullfile(...) constructs a ('scripts','matlab') path "
+                "-- would resolve to the manual mnrnd shim's directory"
+            )
+            assert pair != ("..", "matlab"), (
+                f"{path.name}: fullfile(...) constructs a relative ('..','matlab') "
+                "path -- would resolve to the manual mnrnd shim's directory from "
+                "scripts/matlab_h12_perturbation/"
+            )
+
+    normalized_single_quoted = source.replace("\\", "/").replace('"', "'").lower()
+    assert "'scripts/matlab'" not in normalized_single_quoted, (
+        f"{path.name}: literal 'scripts/matlab' path fragment found"
+    )
+    assert "'../matlab'" not in normalized_single_quoted, f"{path.name}: literal '../matlab' path fragment found"
+
+    addpath_args = _extract_call_arg_texts(source, "addpath")
+    assert len(addpath_args) == 1, (
+        f"{path.name}: expected exactly one addpath(...) call, found {len(addpath_args)}: {addpath_args!r}"
+    )
+    sole_arg = addpath_args[0].strip()
+    assert sole_arg == "wholecell_src", (
+        f"{path.name}: addpath(...) must take the bare identifier 'wholecell_src' as "
+        f"its ONLY argument, got {sole_arg!r} -- a literal, fullfile(...), or any "
+        "other expression here would bypass this structural check"
+    )
+
+    assignments = re.findall(r"(?<![.\w])wholecell_src\s*=\s*([^;]+);", source)
+    assert assignments, f"{path.name}: no assignment to the bare identifier wholecell_src found"
+    for rhs in assignments:
+        assert rhs.strip() == "getenv('PPII_WHOLECELL_SRC_ROOT')", (
+            f"{path.name}: wholecell_src must be assigned exactly from "
+            f"getenv('PPII_WHOLECELL_SRC_ROOT'), got {rhs.strip()!r}"
+        )
+
+
+_EQUIVALENCE_WORD = re.compile(r"\bbit[- ]identical\b|\bequivalent\b|\bidentical\b", re.IGNORECASE)
+_STATS_TOOLBOX_OR_REAL_MNRND_MENTION = re.compile(r"statistics toolbox|real\s+mnrnd", re.IGNORECASE)
+_NEGATION_WORD = re.compile(r"\b(not|never|n't|no|isn't|doesn't|cannot|can't)\b", re.IGNORECASE)
+
+
+def _assert_no_unsupported_equivalence_claim(source: str, label: str) -> None:
+    """Semantic guard (not a blind substring ban): permits truthful
+    disclaimers such as "NOT bit-identical to the Statistics Toolbox's
+    mnrnd" or "never claims bit-identity with the real mnrnd" (both true
+    and desirable to state), but fails on any UNNEGATED claim that the
+    manual shim IS bit-identical/equivalent/identical to the real
+    Statistics Toolbox mnrnd -- a false claim this determination
+    explicitly rules out, since the two algorithms consume the RNG
+    stream's uniforms in structurally different amounts/orders.
+
+    Scoped to matches near a "Statistics Toolbox"/"real mnrnd" mention so
+    unrelated, true statements (e.g. mnrnd.m's own "pure language core,
+    identical in MATLAB and Octave") are not flagged.
+    """
+    for m in _EQUIVALENCE_WORD.finditer(source):
+        context = source[max(0, m.start() - 20) : m.end() + 80]
+        if not _STATS_TOOLBOX_OR_REAL_MNRND_MENTION.search(context):
+            continue
+        preceding = source[max(0, m.start() - 45) : m.start()]
+        assert _NEGATION_WORD.search(preceding), (
+            f"{label}: found an unnegated claim ({m.group(0)!r} near offset {m.start()}) "
+            "that the manual mnrnd shim is bit-identical/equivalent/identical to the "
+            "real Statistics Toolbox mnrnd -- this determination requires the opposite "
+            "(the algorithms are NOT equivalent); any text making this comparison must "
+            "say so explicitly, e.g. 'NOT bit-identical'"
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -155,33 +367,101 @@ def test_manual_mnrnd_shim_file_exists_and_is_unrelated_subsystem():
     artifact, not a typo'd path that would vacuously pass."""
     assert MANUAL_MNRND_SHIM.is_file()
     source = MANUAL_MNRND_SHIM.read_text(encoding="utf-8")
-    # The shim must keep disclosing it is a minimal fallback (not a
-    # bit-identical reimplementation of the real Statistics Toolbox mnrnd).
     assert "Minimal multinomial RNG fallback" in source
-    assert "bit-identical" not in source.lower()
     assert "Deliberately does NOT call histcounts" in source
+    # Semantic (not blind-substring) guard: the shim's docstring may
+    # truthfully disclose it is NOT bit-identical/equivalent to the real
+    # Statistics Toolbox mnrnd, but must never claim that it IS.
+    _assert_no_unsupported_equivalence_claim(source, label=str(MANUAL_MNRND_SHIM))
 
 
 @pytest.mark.parametrize("path", [SCENARIO_B_DRIVER, SCENARIO_B_PROBE])
-def test_scenario_b_matlab_scripts_never_addpath_manual_mnrnd_shim_dir(path):
-    """Regression guard: neither genuine-MATLAB Scenario B script may ever
-    addpath the Octave/manual-shim directory (`scripts/matlab`) -- that
-    would silently make MATLAB resolve `mnrnd` to the different-algorithm
-    manual shim instead of the real Statistics Toolbox implementation (or
-    instead of erroring honestly when the toolbox is absent)."""
-    source = path.read_text(encoding="utf-8")
-    assert "scripts/matlab'" not in source
-    assert "scripts\\matlab'" not in source
-    assert "scripts/matlab\"" not in source
+def test_scenario_b_matlab_scripts_addpath_only_ever_resolves_to_wholecell_src(path):
+    """Structural guard: parses the actual `addpath(...)`/`fullfile(...)`
+    call arguments in each genuine-MATLAB Scenario B script (via
+    paren/quote-aware scanning, NOT a substring match over the raw text),
+    and requires that the file's ONLY `addpath(...)` call is
+    `addpath(wholecell_src)` with `wholecell_src` bound to exactly
+    `getenv('PPII_WHOLECELL_SRC_ROOT')`. This structurally rules out
+    `addpath('../matlab')`, `addpath(fullfile(this_dir, '..', 'matlab'))`,
+    `addpath(fullfile(repo_root, 'scripts', 'matlab'))`, and any
+    variable-indirected path that resolves to the manual mnrnd shim's
+    directory (`scripts/matlab`) -- not just the specific literal
+    spellings a substring check would need to enumerate."""
+    _assert_addpath_only_resolves_to_wholecell_src(path)
 
 
-def test_scenario_b_matlab_scripts_addpath_only_the_real_wholecell_src_root():
-    """Positive control for the guard above: both scripts DO addpath the
-    resolved WholeCell src root (containing the real RandStream/mnrnd),
-    proving the absence check above is not vacuous."""
-    for path in (SCENARIO_B_DRIVER, SCENARIO_B_PROBE):
-        source = path.read_text(encoding="utf-8")
-        assert "addpath(wholecell_src)" in source
+@pytest.mark.parametrize(
+    ("source", "should_pass"),
+    [
+        pytest.param("addpath(wholecell_src);\nwholecell_src = getenv('PPII_WHOLECELL_SRC_ROOT');\n", True, id="authorized"),
+        pytest.param("addpath('../matlab');\n", False, id="relative-literal"),
+        pytest.param("addpath(fullfile(repo_root, 'scripts', 'matlab'));\n", False, id="fullfile-scripts-matlab"),
+        pytest.param("addpath(fullfile(this_dir, '..', 'matlab'));\n", False, id="fullfile-dotdot-matlab"),
+        pytest.param(
+            "addpath(wholecell_src);\nwholecell_src = fullfile(repo_root, 'scripts', 'matlab');\n",
+            False,
+            id="wholecell-src-redefined-to-shim-dir",
+        ),
+    ],
+)
+def test_addpath_structural_guard_rejects_every_named_bypass_shape(source, should_pass, tmp_path):
+    """Adversarial probe for the guard itself (per FIX_TEMPLATE_L2_REPLAY's
+    no-trace-cribbing / adversarial-probe discipline): proves
+    `_assert_addpath_only_resolves_to_wholecell_src` actually rejects every
+    bypass shape named in the task (relative literal, fullfile-split
+    literal, fullfile-relative, and a redefined `wholecell_src` variable),
+    not just the two real on-disk files, which could otherwise pass this
+    guard vacuously if the checker itself were too permissive."""
+    probe_path = tmp_path / "probe.m"
+    probe_path.write_text(source, encoding="utf-8")
+    if should_pass:
+        _assert_addpath_only_resolves_to_wholecell_src(probe_path)
+    else:
+        with pytest.raises(AssertionError):
+            _assert_addpath_only_resolves_to_wholecell_src(probe_path)
+
+
+@pytest.mark.parametrize(
+    ("source", "should_pass"),
+    [
+        pytest.param(
+            "This shim is NOT bit-identical to the real Statistics Toolbox mnrnd.",
+            True,
+            id="truthful-negated-disclaimer",
+        ),
+        pytest.param(
+            "This shim never claims to be equivalent to the Statistics Toolbox mnrnd.",
+            True,
+            id="truthful-never-claims",
+        ),
+        pytest.param(
+            "the bin-counting loop is identical in MATLAB and Octave",
+            True,
+            id="unrelated-identical-claim-ignored",
+        ),
+        pytest.param(
+            "This shim is bit-identical to the real Statistics Toolbox mnrnd.",
+            False,
+            id="false-unnegated-bit-identical-claim",
+        ),
+        pytest.param(
+            "This shim is equivalent to the Statistics Toolbox mnrnd.",
+            False,
+            id="false-unnegated-equivalent-claim",
+        ),
+    ],
+)
+def test_equivalence_claim_guard_permits_truthful_disclaimers_but_rejects_false_claims(source, should_pass):
+    """Adversarial probe for the semantic equivalence-claim guard itself:
+    proves it passes truthful negated disclaimers and unrelated uses of
+    "identical", but fails an unnegated claim that the shim IS
+    bit-identical/equivalent to the real Statistics Toolbox mnrnd."""
+    if should_pass:
+        _assert_no_unsupported_equivalence_claim(source, label="probe")
+    else:
+        with pytest.raises(AssertionError):
+            _assert_no_unsupported_equivalence_claim(source, label="probe")
 
 
 def test_h12_perturbation_module_never_references_manual_mnrnd_shim():

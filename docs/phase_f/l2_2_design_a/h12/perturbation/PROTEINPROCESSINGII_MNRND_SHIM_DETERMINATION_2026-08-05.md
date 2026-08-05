@@ -168,9 +168,44 @@ blocker without changing Karr semantics"; it would change Karr semantics**:
 remove the Statistics Toolbox blocker for Scenario B full-mode execution.
 The blocker is genuine and stays honestly documented as
 `statistics_toolbox_installed: false` in the canary artifact.
-`tests/scripts/test_h12_protii_sentinel_determination.py` adds a permanent
-regression guard (§6 below) so a future edit cannot silently wire the shim
-into the Scenario B driver without a test flagging it for review.
+`tests/scripts/test_h12_protii_sentinel_determination.py` adds two permanent,
+structurally-enforced regression guards (not substring/literal-string bans,
+which would only catch the specific spellings anticipated at the time they
+were written) so a future edit cannot silently reintroduce this bypass:
+
+- **Addpath-argument guard** (`_assert_addpath_only_resolves_to_wholecell_src`,
+  exercised against both `run_ppii_scenario_b_matlab.m` and
+  `probe_matlab_environment.m`): parses every `addpath(...)` and
+  `fullfile(...)` call's actual arguments via paren/quote-balanced scanning
+  (not a single regex over raw text), and requires (a) the file's ONLY
+  `addpath(...)` call is the bare identifier form `addpath(wholecell_src)`,
+  (b) every assignment to the bare name `wholecell_src` has a right-hand
+  side of exactly `getenv('PPII_WHOLECELL_SRC_ROOT')`, and (c) no
+  `fullfile(...)` call anywhere in the file contains a contiguous
+  `('scripts','matlab')` or `('..','matlab')` literal-argument pair. This
+  structurally rejects `addpath('../matlab')`,
+  `addpath(fullfile(repo_root,'scripts','matlab'))`,
+  `addpath(fullfile(this_dir,'..','matlab'))`, and a `wholecell_src`
+  variable quietly redefined to a shim-directory path — not just the
+  literal `"scripts/matlab'"` substring a naive check would look for. The
+  guard's own adversarial probe test
+  (`test_addpath_structural_guard_rejects_every_named_bypass_shape`) proves
+  it actually rejects each of these four shapes on synthetic input, not
+  only the two real files (which could otherwise pass vacuously if the
+  checker were too permissive).
+- **Equivalence-claim guard** (`_assert_no_unsupported_equivalence_claim`,
+  exercised against `scripts/matlab/mnrnd.m`'s docstring): permits truthful,
+  negated disclaimers such as "NOT bit-identical to the Statistics
+  Toolbox's mnrnd" (which this document's own analysis above establishes
+  is true — the two algorithms consume the RNG stream's uniforms in
+  different amounts/orders), but fails on any *unnegated* claim that the
+  shim IS bit-identical/equivalent/identical to the real Statistics Toolbox
+  mnrnd. It also ignores unrelated, true uses of "identical" that are not
+  about Statistics Toolbox equivalence (e.g. the shim's own "pure language
+  core, identical in MATLAB and Octave" remark about its bin-counting
+  loop). Its own adversarial probe test
+  (`test_equivalence_claim_guard_permits_truthful_disclaimers_but_rejects_false_claims`)
+  proves both directions on synthetic input.
 
 ## 5. Even a clean full-mode Scenario B run would not close the sentinel
 
