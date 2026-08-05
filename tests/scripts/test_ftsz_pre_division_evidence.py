@@ -423,8 +423,8 @@ def test_audit_against_real_data_roots_reports_insufficient_ensemble_with_exact_
 def test_resumable_extraction_command_is_well_formed_and_driver_exists():
     missing = list(range(REQUIRED_N_SEEDS))
     command = resumable_extraction_command(missing)
-    assert "extract_ftsz_pre_division_window_seeds(0, 49)" in command
-    assert f"Missing seeds ({REQUIRED_N_SEEDS})" in command
+    assert "extract_ftsz_pre_division_window_seeds(0, 49, [])" in command
+    assert f"NO output file at all -- extracted fresh, never overwritten: {missing}" in command
     assert _MATLAB_DRIVER.exists(), (
         f"resumable_extraction_command references {_MATLAB_DRIVER}, which must exist "
         "on disk for the command to actually be runnable."
@@ -433,3 +433,67 @@ def test_resumable_extraction_command_is_well_formed_and_driver_exists():
 
 def test_resumable_extraction_command_empty_for_no_missing_seeds():
     assert resumable_extraction_command([]) == ""
+
+
+def test_resumable_extraction_command_passes_invalid_seeds_as_force_seeds_not_missing():
+    """Opus 5 review finding: a seed with an existing-but-rejected/duplicate
+    file must never be silently folded into the plain "missing" command --
+    the driver's skip-if-exists check would then leave the bad file on disk
+    forever. The invalid seed(s) must appear in the emitted command's third
+    (force_seeds) argument, and the command text must explicitly warn that
+    the plain path alone would not re-extract them."""
+    command = resumable_extraction_command(missing_seeds=[7, 8], invalid_seeds=[3])
+    # Range spans both missing and invalid seeds; force_seeds names ONLY
+    # the invalid one.
+    assert "extract_ftsz_pre_division_window_seeds(3, 8, [3])" in command
+    assert "2 seed(s) with NO output file at all" in command
+    assert "1 seed(s) already have an on-disk" in command
+    assert "[3]" in command
+    assert "would leave them stale forever" in command
+
+
+def test_resumable_extraction_command_invalid_seeds_alone_still_forces_overwrite():
+    command = resumable_extraction_command(missing_seeds=[], invalid_seeds=[12])
+    assert "extract_ftsz_pre_division_window_seeds(12, 12, [12])" in command
+    assert "0 seed(s) with NO output file" in command
+    assert "1 seed(s) already have an on-disk" in command
+
+
+def test_audit_never_folds_invalid_present_seed_into_missing_seeds(tmp_path):
+    """End-to-end proof (real audit, not just the command builder in
+    isolation): a seed whose file exists but is rejected must show up in
+    report.invalid_seeds and report.rejected_windows, and must NEVER appear
+    in report.missing_seeds -- and the emitted resumable command must name
+    it as a force_seeds entry, not a plain-range extraction target."""
+    root = tmp_path / "karr_native"
+    _write_ftsz_window(
+        _trace_path(root, 5), seed=5, n_ticks=100, tick_start=1901
+    )  # wrong n_ticks -> rejected
+
+    report = audit_pre_division_evidence(data_roots=(root,))
+    assert report.found_seeds == []
+    assert report.rejected_windows[0]["seed"] == 5
+    assert 5 in report.invalid_seeds
+    assert 5 not in report.missing_seeds
+    assert 0 in report.missing_seeds  # every other required seed is truly absent
+    assert "[5]" in report.resumable_extraction_command
+    assert "force_seeds" in report.resumable_extraction_command or "already have an on-disk" in (
+        report.resumable_extraction_command
+    )
+
+
+def test_audit_never_folds_duplicate_present_seed_into_missing_seeds(tmp_path):
+    root = tmp_path / "karr_native"
+    _write_ftsz_window(_trace_path(root, 0), seed=0, n_ticks=REQUIRED_M_TICKS, tick_start=1801)
+    import shutil
+
+    dst = _trace_path(root, 1)
+    dst.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copyfile(_trace_path(root, 0), dst)  # byte-identical -> duplicate
+
+    report = audit_pre_division_evidence(data_roots=(root,))
+    assert report.duplicate_seeds and report.duplicate_seeds[0]["seed"] == 1
+    assert 1 in report.invalid_seeds
+    assert 1 not in report.missing_seeds
+    assert 0 not in report.missing_seeds  # seed 0 itself was accepted (found)
+    assert 0 in report.found_seeds

@@ -140,6 +140,22 @@ prints the exact, resumable MATLAB invocation
 (`scripts/matlab/extract_ftsz_pre_division_window_seeds.m`) needed to close
 the gap -- re-running it skips any seed whose output already exists.
 
+`missing_seeds` (no candidate file discovered at all) and `invalid_seeds`
+(a candidate file exists but was rejected by `validate_seed_window`, or is
+a byte-identical duplicate of another seed's content) are reported as
+separate lists on `PreDivisionAuditReport` and are NEVER conflated: an
+invalid/duplicate seed already has a file at the exact path the driver's
+skip-if-exists check looks for, so folding it into "missing" would produce
+a resumable command that silently does nothing for it. The driver's third,
+opt-in `force_seeds` argument names exactly the `invalid_seeds` list --
+those seeds' existing files are deleted then re-extracted; every other
+seed in range keeps the plain skip-if-exists behavior, so a caller can
+never blanket-overwrite a good ensemble by accident. The driver itself
+resolves `repo_root` from its own file location (`mfilename('fullpath')`),
+never from `pwd`, and accumulates per-seed failures into a single
+aggregating `error(...)` thrown after the loop -- any seed failure fails
+the whole batch (nonzero `matlab -batch` exit), never a silent exit 0.
+
 ## 8. Current real-world result (2026-08-05)
 
 Zero `per_process_traces_v2_event_s*/FtsZPolymerization_200ticks.mat` files
@@ -151,7 +167,7 @@ main checkout). Running `audit_pre_division_evidence()` against
 ```
 status=INSUFFICIENT_ENSEMBLE deficit=50/50
 Resumable extraction command:
-  matlab -batch "addpath(genpath('scripts/matlab')); extract_ftsz_pre_division_window_seeds(0, 49)"
+  matlab -batch "addpath(genpath('scripts/matlab')); extract_ftsz_pre_division_window_seeds(0, 49, [])"
 ```
 
 MATLAB is available only on the Windows side (`E:\MATLAB\bin\matlab.exe`),

@@ -415,17 +415,55 @@ def compute_seed_evidence(seed: int, grid: WindowGrid) -> SeedWindowEvidence:
 # ---------------------------------------------------------------------------
 
 
-def resumable_extraction_command(missing_seeds: list[int]) -> str:
-    if not missing_seeds:
+def resumable_extraction_command(missing_seeds: list[int], invalid_seeds: list[int] = ()) -> str:
+    """Build the exact, copy-pasteable ``matlab -batch`` command that closes
+    the reported deficit.
+
+    ``missing_seeds``: seeds with NO candidate file discovered at all (see
+    ``discover_candidate_paths``) -- the driver's plain skip-if-exists path
+    extracts these safely with zero risk of overwriting anything.
+
+    ``invalid_seeds``: seeds that DO have an on-disk file (so they are
+    *not* in ``missing_seeds``) but that file was rejected by
+    ``validate_seed_window`` (``rejected_windows``) or flagged as a
+    byte-identical duplicate of another seed (``duplicate_seeds``). These
+    must NEVER be silently folded into "missing" and handed to the plain
+    command above: the driver's own skip-if-exists check would see "the
+    file exists" and leave the bad file on disk forever, so the reported
+    deficit could never actually close. They are instead passed as the
+    driver's explicit, opt-in ``force_seeds`` third argument, which deletes
+    and re-extracts ONLY the named seeds -- every other seed in range keeps
+    normal skip-if-exists behavior, so a caller can never blanket-overwrite
+    a good ensemble by accident.
+    """
+    invalid_seeds = sorted(invalid_seeds)
+    all_seeds = sorted(set(missing_seeds) | set(invalid_seeds))
+    if not all_seeds:
         return ""
-    start, end = missing_seeds[0], missing_seeds[-1]
+    start, end = all_seeds[0], all_seeds[-1]
+    force_literal = "[" + ", ".join(str(s) for s in invalid_seeds) + "]"
+    notes = [
+        f"{len(missing_seeds)} seed(s) with NO output file at all -- extracted fresh, "
+        f"never overwritten: {missing_seeds}."
+    ]
+    if invalid_seeds:
+        notes.append(
+            f"{len(invalid_seeds)} seed(s) already have an on-disk "
+            f"{_TRACE_FILENAME} that was REJECTED (invalid window) or flagged as a "
+            f"content DUPLICATE of another seed -- NOT counted toward the ensemble, "
+            f"and NOT safe to leave in place: {invalid_seeds}. These are passed as "
+            f"the driver's explicit force_seeds argument below, which deletes and "
+            f"re-extracts ONLY these seeds; the plain skip-if-exists path alone "
+            f"would leave them stale forever because their file already exists."
+        )
     return (
         "matlab -batch \"addpath(genpath('scripts/matlab')); "
-        f'extract_ftsz_pre_division_window_seeds({start}, {end})"'
+        f'extract_ftsz_pre_division_window_seeds({start}, {end}, {force_literal})"'
         f"  # resumable: re-running skips any seed whose "
         f"data/m1_sources/karr_native/{_EVENT_WINDOW_DIR_PREFIX}NNN/{_TRACE_FILENAME} "
-        f"already exists. Missing seeds ({len(missing_seeds)}): {missing_seeds}. "
-        f"Driver: {_MATLAB_DRIVER_REL}."
+        f"already exists UNLESS that seed is named in the third argument. "
+        + " ".join(notes)
+        + f" Driver: {_MATLAB_DRIVER_REL}."
     )
 
 
@@ -446,6 +484,8 @@ class PreDivisionAuditReport:
     per_seed_evidence: list[SeedWindowEvidence] = field(default_factory=list)
     status: str = "INSUFFICIENT_ENSEMBLE"
     deficit: int = 0
+    missing_seeds: list[int] = field(default_factory=list)
+    invalid_seeds: list[int] = field(default_factory=list)
     resumable_extraction_command: str = ""
     monomer_primary_statistic: dict[str, float] | None = None
     activity_summary: dict[str, int] = field(default_factory=dict)
@@ -462,6 +502,8 @@ class PreDivisionAuditReport:
             "per_seed_evidence": [e.to_json() for e in self.per_seed_evidence],
             "status": self.status,
             "deficit": self.deficit,
+            "missing_seeds": self.missing_seeds,
+            "invalid_seeds": self.invalid_seeds,
             "resumable_extraction_command": self.resumable_extraction_command,
             "monomer_primary_statistic": self.monomer_primary_statistic,
             "activity_summary": self.activity_summary,
@@ -511,7 +553,22 @@ def audit_pre_division_evidence(
 
     deficit = max(0, REQUIRED_N_SEEDS - len(found_seeds))
     status = "INSUFFICIENT_ENSEMBLE" if deficit > 0 else "SUFFICIENT_ENSEMBLE"
-    missing_seeds = sorted(set(range(REQUIRED_N_SEEDS)) - set(found_seeds))
+
+    # Three-way partition of every seed in [0, REQUIRED_N_SEEDS) that is not
+    # a validated/found seed -- NEVER conflated into one "missing" bucket
+    # (Opus 5 review finding): a seed can be truly absent (no candidate file
+    # discovered at all -- discover_candidate_paths never saw it) or it can
+    # be PRESENT-but-bad (rejected by validate_seed_window, or a
+    # byte-identical duplicate of another seed's content). The latter two
+    # already have an on-disk file at the exact path the extraction driver's
+    # skip-if-exists check looks for, so they must never be handed to the
+    # plain "missing" resumable command -- that command would silently do
+    # nothing for them, since "the file exists" would keep matching true.
+    invalid_seed_numbers = {int(e["seed"]) for e in rejected_windows} | {
+        int(e["seed"]) for e in duplicate_seeds
+    }
+    missing_seeds = sorted(seed for seed in range(REQUIRED_N_SEEDS) if seed not in candidates)
+    invalid_seeds = sorted(seed for seed in range(REQUIRED_N_SEEDS) if seed in invalid_seed_numbers)
 
     monomer_stat: dict[str, float] | None = None
     if per_seed_evidence:
@@ -544,7 +601,9 @@ def audit_pre_division_evidence(
         per_seed_evidence=per_seed_evidence,
         status=status,
         deficit=deficit,
-        resumable_extraction_command=resumable_extraction_command(missing_seeds),
+        missing_seeds=missing_seeds,
+        invalid_seeds=invalid_seeds,
+        resumable_extraction_command=resumable_extraction_command(missing_seeds, invalid_seeds),
         monomer_primary_statistic=monomer_stat,
         activity_summary=activity_summary,
     )
