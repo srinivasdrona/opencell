@@ -87,6 +87,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `dnadamage-event-closer` — source-backed non-zero DNADamage evidence;
   - `procii-closer` — ProteinProcessingII H12/sentinel closure;
   - `macromol-closer` — MacromolecularComplexation lifecycle/H12 closure.
+  - `allocator-harness-closer` — replace idealized composition grants with real `KarrAllocationStep` contention semantics.
 - L2.5 pair execution remains blocked until process closure and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted. Scope ratification may proceed in parallel.
 
 **Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
