@@ -91,7 +91,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Live review/follow-up state:
   - `replication-closer` — follow-up requested for five Opus-confirmed gaps: Karr lead/limits semantics, randomized ordering, stall-vs-raise behavior, no-hint byproducts and ligation;
   - `allocator-opus-rereview` — reviewing the new explicit `pool_before`/requirements fail-closed contract at `ec9e649`; Windows MATLAB availability means extraction remains actionable, not terminally blocked;
-  - L2.5 scope branch `45eeff2` received final Opus approval; integration pending. Derivation is 28 processes, 2 eligible, 1 gap-free, 0 selected pairs and 11 uncovered classes.
+  - L2.5 scope ratification integrated to local `main` at `d90e5cb`: 28 processes, 378/256/122 pair split, 2 eligible, 1 gap-free, 0 selected pairs and 11 uncovered classes. Pair execution remains closed.
   - `procii-opus-hash-review` — reviewing the simplified exact-hash audited-input guard at `8239d1b`;
   - `dnadamage-opus-final` — final review of Rule-8 removal and broadened vacuous-trace classification at `a1df739`;
   - `procii-opus-rereview` — reviewing the structural shim-path and semantic-equivalence guard fixes at `0613d84`;
