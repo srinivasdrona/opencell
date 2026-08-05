@@ -30,7 +30,7 @@ def _base_state(
     initial_substrate: float = 0.0,
     allocated_override: dict[str, float] | None = None,
 ) -> dict[str, Any]:
-    request_wids = [*process.dntp_wids, process.atp_wid]
+    request_wids = [*process.dntp_wids, process.atp_wid, process.h2o_wid]
     chromosome = process.build_default_chromosome_state(replication_state=replication_state)
     return {
         "chromosome": chromosome,
@@ -489,7 +489,7 @@ def test_idle_state_with_helicase_bound_but_no_leading_polymerase_stays_idle() -
     must NOT promote -- Karr's own gate is an AND of both conditions, with
     no OR-shortcut on a partial signal."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _base_state(p, replication_state="idle", initial_substrate=1e9, allocated_override=alloc)
     state["boundEnzymes"] = {wid: 0.0 for wid in p.enzyme_wids}
     state["boundEnzymes"][p.enzyme_wid_helicase] = 2.0
@@ -513,7 +513,7 @@ def test_idle_state_with_fork_progress_but_no_bound_enzymes_stays_idle() -> None
     (`isAnyHelicaseBound && all(leadingStrandElongating)`,
     Replication.m:596), never on region layout, so this must stay idle."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _base_state(p, replication_state="idle", initial_substrate=1e9, allocated_override=alloc)
     state["chromosome"]["polymerizedRegions"] = p._build_polymerized_regions(
         left_progress_bp=500,
@@ -547,7 +547,7 @@ def test_idle_state_with_fully_composed_pre_split_replisome_promotes_to_elongati
     shape and asserts the process now advances the fork instead of
     no-op'ing."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="idle",
@@ -583,7 +583,7 @@ def test_idle_state_with_single_helicase_post_split_replisome_promotes_to_elonga
     document that the promotion decision does not depend on this
     aggregate count either, matching Karr's real `any(...)` semantics."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="idle",
@@ -618,7 +618,7 @@ def test_idle_state_with_fully_split_steady_state_replisome_promotes_to_elongati
     Karr-sync-check-invariant formula (Replication.m:566-578) must
     recognize this composition and promote."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="idle",
@@ -669,7 +669,7 @@ def test_initiating_transitions_to_elongating_and_seeds_polymerized_regions() ->
         p,
         replication_state="initiating",
         initial_substrate=1e6,
-        allocated_override={wid: 1e6 for wid in [*p.dntp_wids, p.atp_wid]},
+        allocated_override={wid: 1e6 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]},
     )
     update = p.next_update(1.0, state)
     assert update["chromosome"]["replication_state"] == "elongating"
@@ -683,7 +683,7 @@ def test_initiating_transitions_to_elongating_and_seeds_polymerized_regions() ->
 
 def test_elongation_advances_and_consumes_dntps() -> None:
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="elongating",
@@ -719,7 +719,7 @@ def test_completion_sets_state_and_emits_event_once() -> None:
     regions (the `desired_left_bp <= 0 and desired_right_bp <= 0` early
     exit), not a scalar dial."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _base_state(
         p,
         replication_state="elongating",
@@ -779,7 +779,7 @@ def test_partial_run_monotonic_no_nan_mass_closes_within_fragment() -> None:
     dNTP/ATP mass-conservation identical to the unchanged pre-topology
     substrate-accounting formula."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e12 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e12 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="elongating",
@@ -1071,7 +1071,7 @@ def test_set_region_unwound_noop_on_empty_span() -> None:
 
 def test_next_update_invokes_initiate_and_advance_helpers(monkeypatch: Any) -> None:
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="elongating",
@@ -1108,7 +1108,7 @@ def test_next_update_fails_if_initiate_helper_deleted(monkeypatch: Any) -> None:
     otherwise the wiring test above could pass on dead code that is never
     actually on the call path (no dead-code false coverage)."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="elongating",
@@ -1127,7 +1127,7 @@ def test_next_update_fails_if_initiate_helper_deleted(monkeypatch: Any) -> None:
 
 def test_next_update_fails_if_advance_helper_deleted(monkeypatch: Any) -> None:
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="elongating",
@@ -1152,7 +1152,7 @@ def test_next_update_invokes_set_region_unwound_on_active_leading_advance(monkey
     genuinely on `next_update`'s active leading-strand-advance call path,
     for a real generic active-elongating tick."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="elongating",
@@ -1179,7 +1179,7 @@ def test_next_update_fails_if_set_region_unwound_helper_deleted(monkeypatch: Any
     """No dead-code false coverage: breaking `_set_region_unwound` must
     change/fail the result of a real active tick."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="elongating",
@@ -1205,7 +1205,7 @@ def test_next_update_does_not_call_legacy_monolithic_builder_in_active_topology_
     per-fragment pipeline is the only path to a `polymerizedRegions`
     update in that case."""
     p = KarrReplicationProcess({})
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _active_replisome_base_state(
         p,
         replication_state="elongating",
@@ -1268,7 +1268,7 @@ def test_next_update_raises_when_active_but_no_lagging_polymerase_and_no_bootstr
         shape=p.chromosome_shape,
     )
 
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _base_state(
         p,
         replication_state="elongating",
@@ -1340,7 +1340,7 @@ def test_next_update_benign_skip_when_leading_still_combined_and_no_lagging_yet(
         shape=p.chromosome_shape,
     )
 
-    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid]}
+    alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _base_state(
         p,
         replication_state="elongating",
@@ -1368,4 +1368,4 @@ def test_next_update_benign_skip_when_leading_still_combined_and_no_lagging_yet(
     # matching every other active-elongating tick -- this is not a
     # blanket "do nothing" skip.
     assert p.name in update["requests"]
-    assert set(update["requests"][p.name]) == {*p.dntp_wids, p.atp_wid}
+    assert set(update["requests"][p.name]) == {*p.dntp_wids, p.atp_wid, p.h2o_wid}

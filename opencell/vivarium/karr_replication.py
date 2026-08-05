@@ -2765,7 +2765,13 @@ class KarrReplicationProcess(Process):
         return chrom_update
 
     def ports_schema(self) -> dict[str, Any]:
-        request_wids = [*self.dntp_wids, self.atp_wid]
+        # Finding 5 (Replication.m:944): `unwindLimits = min(unwinds,
+        # floor(unwinds / sum(unwinds) * min(this.substrates([atp; water]))))`
+        # -- water gates the unwind extent identically to ATP (same `n`
+        # cost subtracted from both), so it must be requested/allocated
+        # alongside dNTP+ATP, not merely subtracted unconditionally after
+        # the fact.
+        request_wids = [*self.dntp_wids, self.atp_wid, self.h2o_wid]
         chromosome_schema = {
             field: sparse_triplet_schema(self.chromosome_shape, emit=(field == "polymerizedRegions"))
             for field in CHROMOSOME_FIELDS
@@ -2818,7 +2824,7 @@ class KarrReplicationProcess(Process):
         }
 
     def _zero_requests(self) -> dict[str, float]:
-        return {wid: 0.0 for wid in [*self.dntp_wids, self.atp_wid]}
+        return {wid: 0.0 for wid in [*self.dntp_wids, self.atp_wid, self.h2o_wid]}
 
     def _allocated_or_state(
         self,
@@ -2860,7 +2866,12 @@ class KarrReplicationProcess(Process):
         dntp_counts = self._partition_counts(total_polymerized_nt)
 
         demand = {wid: int(dntp_counts[idx]) for idx, wid in enumerate(self.dntp_wids)}
-        demand[self.atp_wid] = int(np.ceil(self.helicase_atp_per_bp * float(total_advanced_bp)))
+        atp_demand = int(np.ceil(self.helicase_atp_per_bp * float(total_advanced_bp)))
+        demand[self.atp_wid] = atp_demand
+        # Replication.m:944: `n = sum(unwindLimits(1,:))` is subtracted from
+        # BOTH ATP and water identically (line ~925-930) -- water is not a
+        # separate cost basis, it is the same `n`.
+        demand[self.h2o_wid] = atp_demand
         return demand
 
     def _completion_update(self) -> dict[str, Any]:
@@ -3186,6 +3197,93 @@ class KarrReplicationProcess(Process):
         if frac <= 0.0:
             return base
         return base + int(self._rng.random() < frac)
+
+    def _ligate_dna_no_hint(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        dt: float,
+        enzymes_next: dict[str, float],
+        substrates_next: dict[str, float],
+        update: dict[str, Any],
+    ) -> None:
+        """No-hint literal port of `ligateDNA` (Replication.m:1220-1248):
+        seal up to `numReactions` EXISTING single-strand nicks
+        (`strandBreaks`), consuming 1 NAD and producing 1 NMN + 1 AMP + 1 H
+        per sealed nick. `numReactions` is
+        `min(nick_count, stochasticRound(ligase * dt * ligaseRate),
+        nad_available)`, matching Karr's own literal formula
+        (Replication.m:1227-1231) exactly. This mirrors the arithmetic the
+        oracle-assisted `_next_update_from_trace_hint` path already
+        implements correctly (lines ~3395-3435) -- that block reads
+        trace-hint-derived `enzymes_next`/`substrates_next` snapshots;
+        this counterpart reads the SAME real, live values the rest of
+        `next_update`'s no-hint path already threads through, with no
+        trace-hint/oracle-after data. Mutates `chromosome_store`'s
+        `strandBreaks` field in place (via `set_field`) and
+        `substrates_next` in place -- callers must read the post-call
+        state, not a return value, matching this module's established
+        `enzymes_next`/`substrates_next` accumulator convention. Also
+        writes `update["chromosome"]["strandBreaks"]` directly (matching
+        `_apply_ssb_cycle`'s own convention for `complexBoundSites`) so a
+        sealed nick is never lost even on ticks where the caller's
+        subsequent activity gate returns early before the fork-advance
+        pipeline's own final `update["chromosome"]["strandBreaks"]`
+        assignment would otherwise run.
+
+        Called from `next_update` BEFORE the SSB-cycle/fork-advance
+        pipeline, matching Karr's own fixed (pre-`randperm`) subfunction
+        list order (Replication.m:588-593: `ligateDNA` precedes
+        `unwindAndPolymerizeDNA`/`terminateOkazakiFragment`) -- so this
+        tick's ligation only ever sees nicks from a PRIOR tick's
+        termination, never one this same tick's own advance is about to
+        create; a deterministic ordering choice, not tied to any specific
+        tick number (the existing Finding-3 fixed-subfunction-order
+        deviation this reuses is itself an explicit, tested, OPEN
+        deviation from Karr's per-tick `randperm`).
+
+        Site-selection deviation (explicit, OPEN, tested): Karr's own
+        `bindProteinToChromosome` call chooses WHICH `numReactions` nicks
+        (of however many currently exist) get sealed via its own generic,
+        cross-process complex-binding site-choice machinery when nicks
+        outnumber the reaction budget -- porting that generic machinery
+        faithfully is out of this finding's narrow substrate/byproduct
+        scope. This port instead seals the lowest `(strand, position)`
+        sorted nicks first: a fixed, deterministic, non-tick-targeted
+        tie-break, analogous to the already-adjudicated fixed-
+        subfunction-order deviation (Finding 3). See
+        `test_karr_replication_ligate_dna_no_hint.py`.
+        """
+        strand_breaks = chromosome_store.get_field("strandBreaks")
+        nick_count = int(strand_breaks.values.size)
+        if nick_count == 0:
+            return
+
+        ligase_available = float(enzymes_next.get(self.enzyme_wid_ligase, 0.0))
+        ligase_capacity = self._stochastic_round(ligase_available * float(dt) * self.ligase_rate_per_s)
+        nad_available = _read_nonnegative_int(substrates_next.get(self.nad_wid, 0.0))
+        num_reactions = min(nick_count, max(0, ligase_capacity), nad_available)
+        if num_reactions <= 0:
+            return
+
+        order = np.lexsort((strand_breaks.positions, strand_breaks.strands))
+        sealed = order[:num_reactions]
+        keep_mask = np.ones(nick_count, dtype=bool)
+        keep_mask[sealed] = False
+
+        sealed_strand_breaks = SparseTriplet(
+            positions=strand_breaks.positions[keep_mask],
+            strands=strand_breaks.strands[keep_mask],
+            values=strand_breaks.values[keep_mask],
+            shape=strand_breaks.shape,
+        )
+        chromosome_store.set_field("strandBreaks", sealed_strand_breaks)
+        update.setdefault("chromosome", {})["strandBreaks"] = sealed_strand_breaks.to_state()
+
+        substrates_next[self.nad_wid] = float(substrates_next.get(self.nad_wid, 0.0) - float(num_reactions))
+        substrates_next[self.nmn_wid] = float(substrates_next.get(self.nmn_wid, 0.0) + float(num_reactions))
+        substrates_next[self.amp_wid] = float(substrates_next.get(self.amp_wid, 0.0) + float(num_reactions))
+        substrates_next[self.h_wid] = float(substrates_next.get(self.h_wid, 0.0) + float(num_reactions))
 
     def _emit_hint_delta(
         self,
@@ -3558,6 +3656,24 @@ class KarrReplicationProcess(Process):
             # Unknown state: keep requests at zero and do nothing.
             return _finalize_no_hint_update(update)
 
+        # Finding 5 (Replication.m:588-593): `ligateDNA` is one of the
+        # BASE (pre-`randperm`) subfunctions -- unconditional on replisome
+        # activity, run before `unwindAndPolymerizeDNA`/
+        # `terminateOkazakiFragment`. It only ever operates on nicks that
+        # already existed BEFORE this tick (this tick's own termination,
+        # below, has not run yet), matching that fixed order. Mutates
+        # `chromosome_store`'s `strandBreaks` field directly, so
+        # `_advance_replication_forks`'s own `chromosome_store.get_field(
+        # "strandBreaks")` read (inside the fork-advance pipeline below)
+        # picks up the post-ligation nick count automatically.
+        self._ligate_dna_no_hint(
+            chromosome_store=chromosome_store,
+            dt=dt,
+            enzymes_next=enzymes_next,
+            substrates_next=substrates_next,
+            update=update,
+        )
+
         self._apply_ssb_cycle(
             dt=dt,
             chromosome_store=chromosome_store,
@@ -3756,6 +3872,26 @@ class KarrReplicationProcess(Process):
         for wid, amount in real_demand.items():
             if int(amount) > 0:
                 substrates_next[wid] = float(substrates_next.get(wid, 0.0) - float(amount))
+
+        # Finding 5 (Replication.m:925-946): the unconditional byproducts of
+        # the SAME reconciled `n = real_demand[atp_wid]` unwinding cost
+        # consumed just above -- ADP/phosphate/hydrogen, 1:1 with `n` -- and
+        # of the dNTPs just consumed -- diphosphate (PPi), 1:1 with the total
+        # nt actually polymerized. These are never resource-gated (Karr adds
+        # them unconditionally after computing the already-scarcity-limited
+        # `n`/`usedDNTPs`), so -- unlike ATP/water/dNTP above -- they are
+        # applied directly to `substrates_next`, not routed through the
+        # `requests`/`substrates_allocated` scarcity machinery.
+        unwound_bp = int(real_demand.get(self.atp_wid, 0))
+        if unwound_bp > 0:
+            substrates_next[self.adp_wid] = float(substrates_next.get(self.adp_wid, 0.0) + float(unwound_bp))
+            substrates_next[self.pi_wid] = float(substrates_next.get(self.pi_wid, 0.0) + float(unwound_bp))
+            substrates_next[self.h_wid] = float(substrates_next.get(self.h_wid, 0.0) + float(unwound_bp))
+        polymerized_nt = sum(int(real_demand.get(wid, 0)) for wid in self.dntp_wids)
+        if polymerized_nt > 0:
+            substrates_next[self.ppi_wid] = float(
+                substrates_next.get(self.ppi_wid, 0.0) + float(polymerized_nt)
+            )
 
         # initiateOkazakiFragment (Replication.m:600, 1030-1090): bind a new
         # backup beta-clamp at the next not-yet-initiated fragment's start,
