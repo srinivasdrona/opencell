@@ -89,10 +89,19 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `macromol-closer` — MacromolecularComplexation lifecycle/H12 closure.
   - `allocator-harness-closer` — replace idealized composition grants with real `KarrAllocationStep` contention semantics.
 - Live review/follow-up state:
-  - `replication-opus-review`, `dnadamage-opus-review`, `l25-scope-opus-review` — Opus 5 branch reviews running;
+  - `replication-closer` — follow-up requested for five Opus-confirmed gaps: Karr lead/limits semantics, randomized ordering, stall-vs-raise behavior, no-hint byproducts and ligation;
+  - `allocator-harness-closer` — rework requested after Opus proved the fabricated post-allocation pool caused the nine new failures; real `pool_before` + requirements oracle is now mandatory or the harness must fail closed;
+  - `l25-scope-ratifier` — follow-up requested to fail closed on registry/pair-universe drift and correct the zero-pair rationale;
+  - `l25-scope-opus-review` completed: derivation reproduced, merge waits for the two fail-closed/documentation fixes above;
   - `procii-closer` — follow-up requested to make the mnrnd-shim wiring guard structural and align the determination text;
   - `ftsz-event-closer` — follow-up requested after Opus found extraction-driver exit-code, invalid-seed resumability and cwd-root defects;
+  - `dnadamage-event-closer` — follow-up requested to remove the latent production `*_100ticks` oracle-rate read, broaden trace inventory and correct provenance/status details;
+  - `procii-opus-rereview` — reviewing the structural shim-path and semantic-equivalence guard fixes at `0613d84`;
+  - `ribosome-opus-review` — reviewing the completed 50-seed RibosomeAssembly gating bundle at `34b6c0a`;
   - `ftsz-opus-review` completed with `APPROVE_AS_BLOCKER_TOOLING`; no evidence-integrity defect, merge waits for the tooling follow-up.
+  - `dnadamage-opus-review` completed with `APPROVE_AS_BLOCKER_DOC`; blocker conclusion reproduced, merge waits for the Rule-8 and audit-strength follow-up.
+  - `replication-opus-review` completed with `APPROVE_AS_PARTIAL`; chromosome improvement reproduced, but no merge until the five applicable gaps above are fixed.
+  - `allocator-opus-review` completed `BLOCKING`; the 58F/34P/42S sweep is invalid and must be superseded, not interpreted as real contention.
 - L2.5 pair execution remains blocked until process closure and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted. Scope ratification may proceed in parallel.
 
 **Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
