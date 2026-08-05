@@ -3,6 +3,18 @@
 Turn-2 deliverable for the L2.event -> continuous/windowed reclassification
 of FtsZPolymerization (see docs/phase_f/l2_windowed/FTSZ_WINDOWED_PROFILE_SPEC.md).
 
+> **2026-08-05 update:** this N=1, non-division-anchored diagnostic is
+> superseded for CATALOG CONFORMANCE (live PROCESS_CATALOG.yaml row:
+> `bucket: EVENT_CLASS`, `N_seeds: 50`, `M_ticks: 200`,
+> `seed_window.tick_range_from_division: [-200, 0]`) by the pre-division
+> event-window evidence path in
+> `scripts/l2_event/ftsz_pre_division_evidence.py` and
+> `tests/scripts/test_ftsz_pre_division_evidence.py` (spec:
+> `docs/phase_f/l2_windowed/FTSZ_PRE_DIVISION_EVENT_WINDOW_SPEC.md`). This
+> file is NOT deleted -- its N=1, non-division-anchored, no-hint invariant
+> checks remain valid evidence in their own right -- but it is no longer
+> the process's catalog-conformance evidence path.
+
 WHAT THIS TEST IS
 - Runs `KarrFtsZPolymerizationProcess.next_update` per-tick against the only
   on-disk FtsZ trace (seed 0, 100 ticks,
