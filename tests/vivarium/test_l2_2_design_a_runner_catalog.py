@@ -7,7 +7,6 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -42,7 +41,7 @@ def _fake_metabolism_oracle(*, tick_count: int = 2, dim: int = 4) -> dict[str, o
 def _fake_metabolism_process(dim: int = 4) -> SimpleNamespace:
     return SimpleNamespace(
         _sub_ids=tuple(f"S{idx}" for idx in range(dim)),
-        enzyme_wids=tuple("E0 E1".split()),
+        enzyme_wids=tuple(["E0", "E1"]),
     )
 
 

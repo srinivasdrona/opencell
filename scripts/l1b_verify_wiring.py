@@ -1025,19 +1025,20 @@ def check_matlab_anchors_resolve(
     del produced_wids
     del external_wids
     del external_wids_source
+    anchors = _collect_matlab_anchors(row)
+    skipped_external = False
     matlab_root = repo_root / "data" / "m1_sources" / "WholeCell"
     if not matlab_root.exists():
-        return CheckResult(
-            verdict="PASS",
-            details=[
-                "WARN: MATLAB source tree (data/m1_sources/WholeCell) not present; "
-                "MATLAB-anchor resolution skipped. That tree is a gitignored external "
-                "clone (absent in CI). MATLAB anchors are verified locally / in the "
-                "nightly full-source job where the clone is present.",
-            ],
-        )
-    anchors = _collect_matlab_anchors(row)
-    return _validate_anchor_refs(
+        external_prefix = "data/m1_sources/WholeCell/"
+        filtered = [
+            anchor
+            for anchor in anchors
+            if not anchor.path.replace("\\", "/").startswith(external_prefix)
+        ]
+        skipped_external = len(filtered) != len(anchors)
+        anchors = filtered
+
+    result = _validate_anchor_refs(
         anchor_refs=anchors,
         strict_anchors=strict_anchors,
         repo_root=repo_root,
@@ -1047,6 +1048,17 @@ def check_matlab_anchors_resolve(
         allow_md_extract_docs=True,
         resolve_matlab_paths=True,
     )
+    if skipped_external:
+        warning = (
+            "WARN: MATLAB source tree (data/m1_sources/WholeCell) not present; "
+            "anchors inside that gitignored external clone were skipped, while "
+            "synthetic, mirror and derived-doc anchors were still validated."
+        )
+        result = {
+            "verdict": result["verdict"],
+            "details": [warning, *result["details"]],
+        }
+    return result
 
 
 def check_oc_anchors_resolve(

@@ -6,15 +6,14 @@ import json
 import platform
 import subprocess
 import sys
-from functools import lru_cache
 from datetime import UTC, datetime
+from functools import lru_cache
 from pathlib import Path
 from typing import Any, Literal
 
 import numpy as np
 import yaml
-from scipy.stats import kurtosis, ks_2samp, skew
-
+from scipy.stats import ks_2samp, kurtosis, skew
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -36,13 +35,13 @@ from _l2_2_design_a_projections import (  # noqa: E402
     hurdle_event_rate_plus_conditional_scaled_distance,
     per_component_scaled_distance,
 )
+
 from opencell.m1 import calc_flux_bounds as cfb  # noqa: E402
 from opencell.m1.fva import (  # noqa: E402
     fva_range,
     new_fva_solver_telemetry,
     substrate_delta_range_from_fva,
 )
-
 
 HARNESS_VERSION = "design_a_v1_3"
 # v1.4 adds optional primary-channel `per_component` / `hurdle` diagnostic blocks
@@ -642,10 +641,7 @@ def _projection_component_scales(
     for idx, component_name in enumerate(projection_spec):
         values = np.asarray(karr_projection_vectors[:, :, idx], dtype=np.float64).reshape(-1)
         nonzero = np.abs(values[np.abs(values) > 1e-12])
-        if nonzero.size == 0:
-            scale = 1.0
-        else:
-            scale = float(max(np.percentile(nonzero, 95), 1.0))
+        scale = 1.0 if nonzero.size == 0 else float(max(np.percentile(nonzero, 95), 1.0))
         scales[str(component_name)] = scale
     return scales
 

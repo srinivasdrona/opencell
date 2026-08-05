@@ -118,9 +118,11 @@ class KarrChromosomeSegregationProcess(Process):
         if self.gtp_cost <= 0.0:
             raise ValueError(f"gtp_cost must be > 0, got {self.gtp_cost}")
 
-        if bool(self.parameters.get("include_topoiv_gate", False)):
-            if self.topoiv_wid not in self.required_enzyme_wids:
-                self.required_enzyme_wids.append(self.topoiv_wid)
+        if (
+            bool(self.parameters.get("include_topoiv_gate", False))
+            and self.topoiv_wid not in self.required_enzyme_wids
+        ):
+            self.required_enzyme_wids.append(self.topoiv_wid)
         self._partition_enzyme_wids()
 
     def _load_fixture(self, path: str | Path) -> None:

@@ -1,5 +1,8 @@
-import sys, h5py, numpy as np
 from pathlib import Path
+
+import h5py
+import numpy as np
+
 
 def classify_mat(path):
     print(f"\n=== {path} ===")
@@ -18,14 +21,16 @@ def classify_mat(path):
             print(f"  channels: {len(channels)}  n_ticks: {n_ticks}")
             print(f"  {'channel':<32} {'len':>5} {'sum_t0':>14} {'snap_eq_rate':>13} {'verdict'}")
             for ch in channels:
-                ds_b = sb[ch]; ds_a = sa[ch]
+                ds_b = sb[ch]
+                ds_a = sa[ch]
                 # peek tick 0 length + sum
                 try:
                     v_b0 = np.asarray(f[ds_b[0,0]][()]).flatten()
                 except Exception:
                     continue
                 # snapshot equality: compare states_before[t+1] to states_after[t]
-                eq = 0; total = 0
+                eq = 0
+                total = 0
                 for t in range(min(n_ticks - 1, 20)):
                     try:
                         a = np.asarray(f[ds_a[0,t]][()]).flatten()
@@ -52,7 +57,9 @@ paths = [
 ]
 # also find all per_process_traces MATs
 import glob
+
 for p in sorted(glob.glob('/mnt/e/opencell-worktrees/l2-matlab-reextract/data/m1_sources/karr_native/per_process_traces/*_100ticks.mat')):
-    if p not in paths: paths.append(p)
+    if p not in paths:
+        paths.append(p)
 for p in paths:
     classify_mat(p)

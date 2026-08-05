@@ -273,7 +273,7 @@ class ProteinDecayLightProcess(Process):
         unique_mono, mono_counts = np.unique(mature_monomer_compartments, return_counts=True)
         membrane_candidates: list[tuple[int, int]] = []
         cytosol_id_set = {int(x) for x in cytosol_ids.tolist()}
-        for comp_id, comp_count in zip(unique_mono.tolist(), mono_counts.tolist()):
+        for comp_id, comp_count in zip(unique_mono.tolist(), mono_counts.tolist(), strict=False):
             if int(comp_id) in cytosol_id_set:
                 continue
             membrane_candidates.append((int(comp_count), int(comp_id)))
@@ -645,7 +645,7 @@ class ProteinDecayLightProcess(Process):
             )
             - 1,
         )
-        peptidase_costs = np.arange(1, aborted.shape[0] + 1, dtype=np.int64)
+        np.arange(1, aborted.shape[0] + 1, dtype=np.int64)
 
         if np.any(cleavages):
             if enzymes.size <= self.enzyme_index_ftsh_protease:

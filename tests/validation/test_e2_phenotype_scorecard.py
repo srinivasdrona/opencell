@@ -18,8 +18,8 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
-from opencell.validation.phenotype_registry import Bucket, PHENOTYPES
 from opencell.validation import phenotype_extractors as ex
+from opencell.validation.phenotype_registry import PHENOTYPES, Bucket
 from opencell.validation.phenotype_scorecard import (
     E2_SCORECARD_PATH,
     load_v6_trajectory_fixture,

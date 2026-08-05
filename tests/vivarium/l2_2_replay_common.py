@@ -28,7 +28,6 @@ if str(_HELPER_DIR) not in sys.path:
 from l2_replay_common import (
     apply_count_update,
     assert_delta_integral,
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
     audit_trace_mutated_ticks,
     build_state_template,
     cell_vector,
@@ -41,9 +40,12 @@ from l2_replay_common import (
     refresh_allocator_views,
     resolve_trace_path,
 )
+from l2_replay_common import (
+    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
+)
+
 from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
 from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
-
 
 _COMPOSITION_ORDER = ("Translation", "RNAProcessing")
 # Oracle-injection policy for observables that are not uniquely "owned":

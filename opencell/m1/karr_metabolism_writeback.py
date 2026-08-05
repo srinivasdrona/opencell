@@ -63,7 +63,7 @@ class KarrWritebackFixture:
     step_size_sec: float = 1.0
 
     @classmethod
-    def from_mat(cls, path: str | Path) -> "KarrWritebackFixture":
+    def from_mat(cls, path: str | Path) -> KarrWritebackFixture:
         """Load all required indices/constants from Metabolism_flat.mat."""
         mat = loadmat(str(path), squeeze_me=True, struct_as_record=False)
         fix = mat["data"].fixture

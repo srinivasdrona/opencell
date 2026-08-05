@@ -11,15 +11,16 @@ stall signaling. Repair chemistry and lesion-class-specific chromosome arrays
 
 from __future__ import annotations
 
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Any, Iterable
+from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
-from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
 from opencell.m_gen_constants import GENOME_LENGTH_BP as _DEFAULT_SEQUENCE_LENGTH_NT
+from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
 from opencell.vivarium.chromosome_views import current_damage_sites
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNADamage_flat.mat"

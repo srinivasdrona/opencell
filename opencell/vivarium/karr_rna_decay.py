@@ -18,7 +18,7 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
-_RNA_DECAY_FLAT = _FIXTURE_DIR / "RnaDecay_flat.mat"
+_RNA_DECAY_FLAT = _FIXTURE_DIR / "RNADecay_flat.mat"
 _RNA_STATE_CLASS = "edu.stanford.covert.cell.sim.state.Rna"
 _LN2 = math.log(2.0)
 _L2_RNA_SLOT_COUNTS_STATE_KEY = "_l2_rna_slot_counts"

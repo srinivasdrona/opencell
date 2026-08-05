@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 import h5py
@@ -69,9 +69,7 @@ def _mat_cell_vector(handle: h5py.File, group: str, name: str, tick: int) -> np.
     rows, cols = int(ds.shape[0]), int(ds.shape[1])
     if rows == 1 and cols >= (tick + 1):
         ref = ds[0, tick]
-    elif cols == 1 and rows >= (tick + 1):
-        ref = ds[tick, 0]
-    elif rows >= (tick + 1):
+    elif cols == 1 and rows >= (tick + 1) or rows >= (tick + 1):
         ref = ds[tick, 0]
     elif cols >= (tick + 1):
         ref = ds[0, tick]

@@ -27,9 +27,31 @@ def check_file(filepath: Path) -> list[str]:
     except (SyntaxError, UnicodeDecodeError):
         return []
 
+    named_constant_nodes: set[int] = set()
+    for statement in tree.body:
+        if isinstance(statement, ast.Assign):
+            targets = statement.targets
+            value = statement.value
+        elif isinstance(statement, ast.AnnAssign):
+            targets = [statement.target]
+            value = statement.value
+        else:
+            continue
+        if value is None or not any(
+            isinstance(target, ast.Name) and target.id.isupper() for target in targets
+        ):
+            continue
+        named_constant_nodes.update(
+            id(node)
+            for node in ast.walk(value)
+            if isinstance(node, ast.Constant) and isinstance(node.value, (int, float))
+        )
+
     warnings = []
     for node in ast.walk(tree):
         if isinstance(node, ast.Constant) and isinstance(node.value, (int, float)):
+            if id(node) in named_constant_nodes:
+                continue
             value = node.value
             if value in ALLOWLIST:
                 continue

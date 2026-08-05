@@ -36,8 +36,8 @@ from l2_replay_common import (  # noqa: E402
     project_observable_from_state,
     refresh_allocator_views,
 )
-from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
 
+from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
 
 OBSERVABLES: tuple[str, ...] = (
     "substrates",

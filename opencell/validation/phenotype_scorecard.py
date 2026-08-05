@@ -119,7 +119,7 @@ def _load_karr_flux_oracle_map() -> dict[str, float]:
     if fluxes.shape[0] != len(rxn_ids):
         return {}
     out: dict[str, float] = {}
-    for rxn_id, flux in zip(rxn_ids, fluxes):
+    for rxn_id, flux in zip(rxn_ids, fluxes, strict=False):
         try:
             out[str(rxn_id)] = float(flux)
         except (TypeError, ValueError):

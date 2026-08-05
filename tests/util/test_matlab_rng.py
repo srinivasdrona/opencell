@@ -19,7 +19,6 @@ if "opencell" in sys.modules:
 
 from opencell.util.matlab_rng import MatlabRandStream
 
-
 # Sources for vectors used in this file:
 # - MATLAB rand seed vectors + seed-0/5489 behavior:
 #   https://walkingrandomly.com/?p=5479

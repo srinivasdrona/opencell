@@ -21,8 +21,8 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 from opencell.state.chromosome_store import SparseTriplet
-from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 from opencell.vivarium.chromosome_views import current_damage_sites
+from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
 
 _DAMAGE_FIELDS = (
     "damagedBases",

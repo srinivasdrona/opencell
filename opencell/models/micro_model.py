@@ -15,6 +15,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from opencell.data.micro_model_parameters import MICRO_MODEL_PARAMETER_VALUES
+
 
 @dataclass(frozen=True)
 class MicroModelParams:
@@ -35,10 +37,18 @@ class MicroModelParams:
       gamma_P = ln(2) / 60 min                = 0.011552 /min
     """
 
-    alpha_m: float = 0.60  # k_R: transcription init rate (mRNA/min)
-    beta_m: float = math.log(2) / 2.0  # gamma_R: mRNA decay (1/min), 2-min half-life
-    alpha_p: float = 20.0 * math.log(2) / 2.0  # k_P: translation rate (b × gamma_R)
-    beta_p: float = math.log(2) / 60.0  # gamma_P: protein decay (1/min), 1-h half-life
+    alpha_m: float = MICRO_MODEL_PARAMETER_VALUES[
+        "thattai-2001-transcription-initiation-per-minute"
+    ]
+    beta_m: float = math.log(2) / MICRO_MODEL_PARAMETER_VALUES[
+        "thattai-2001-mrna-half-life-minutes"
+    ]
+    alpha_p: float = (
+        MICRO_MODEL_PARAMETER_VALUES["thattai-2001-protein-burst-size"] * beta_m
+    )
+    beta_p: float = math.log(2) / MICRO_MODEL_PARAMETER_VALUES[
+        "thattai-2001-protein-half-life-minutes"
+    ]
 
     @property
     def m_ss(self) -> float:

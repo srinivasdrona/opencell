@@ -37,8 +37,8 @@ from l2_replay_common import (  # noqa: E402
     project_observable_from_state,
     refresh_allocator_views,
 )
-from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
 
+from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
 
 OBSERVABLES: tuple[str, ...] = (
     "substrates",
@@ -92,7 +92,7 @@ def _load_karr_rna_tu_wids() -> tuple[str, ...]:
     states = np.asarray(getattr(fixture, "states", []), dtype=object).reshape(-1)
     for state in states:
         if hasattr(state, "transcriptionUnitWholeCellModelIDs"):
-            ids = _parse_object_ids(getattr(state, "transcriptionUnitWholeCellModelIDs"))
+            ids = _parse_object_ids(state.transcriptionUnitWholeCellModelIDs)
             if ids:
                 return tuple(ids)
     return tuple()

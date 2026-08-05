@@ -57,16 +57,16 @@ integration_touchpoints:
       symbol: "KarrRNAModificationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_rna_modification.py"
-        lines: "173-173"
+        lines: "192-192"
         note: "Per-tick update path that reads allocated substrates and writes substrate/RNA deltas."
         symbol: "KarrRNAModificationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_rna_modification.py"
-          lines: "305-322"
+          lines: "516-537"
           note: "Declared-enzyme input guard."
           symbol: KarrRNAModificationProcess._require_declared_enzyme_inputs
         - path: "opencell/vivarium/karr_rna_modification.py"
-          lines: "324-380"
+          lines: "440-453"
           note: "Deterministic plus stochastic residual reaction sampler."
           symbol: KarrRNAModificationProcess._compute_reaction_fluxes
       note: >-
@@ -160,7 +160,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Net substrate delta is assembled from reaction stoichiometry and completed reaction events."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative per-reaction coefficient; the total delta is the stoichiometric row dot product."
@@ -175,7 +175,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; several reaction families consume ATP."
@@ -190,7 +190,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; sulfur-transfer reactions consume cysteine."
@@ -205,7 +205,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; one-carbon reactions consume FTHF5 with glycine."
@@ -220,7 +220,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; lysidine synthesis consumes lysine."
@@ -236,7 +236,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; many methyl-transfer reactions produce AHCYS."
@@ -251,7 +251,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; ATP-driven families produce AMP."
@@ -266,7 +266,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; some families produce H as a byproduct."
@@ -281,7 +281,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; ATP-coupled families produce pyrophosphate."
@@ -296,7 +296,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "244-281"
+      lines: "192-313"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; one-carbon reactions produce THF."
@@ -426,12 +426,12 @@ source_anchors:
       symbol: KarrRNAModificationProcess.next_update
     enzyme_guard:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "305-322"
+      lines: "516-537"
       note: "Declared protein.counts / complex.counts inputs."
       symbol: KarrRNAModificationProcess._require_declared_enzyme_inputs
     flux_sampler:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "324-380"
+      lines: "440-453"
       note: "Deterministic plus stochastic residual reaction sampler."
       symbol: KarrRNAModificationProcess._compute_reaction_fluxes
     request_calculator:

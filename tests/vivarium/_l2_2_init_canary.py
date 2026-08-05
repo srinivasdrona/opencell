@@ -5,10 +5,11 @@ from __future__ import annotations
 import argparse
 import json
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 import h5py
 import numpy as np
@@ -29,11 +30,12 @@ from l2_replay_common import (  # noqa: E402
     load_fitted_init_from_mat,
     load_fixture_channel_wids,
     overlay_observable_into_state,
-    project_pair_to_wid_intersection,
     project_observable_from_state,
+    project_pair_to_wid_intersection,
     refresh_allocator_views,
     wasserstein_over_wid_intersection,
 )
+
 from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
 from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
 
@@ -95,29 +97,29 @@ def _observable_wids(process: Any, observables: tuple[str, ...]) -> dict[str, li
     for obs in observables:
         if obs == "substrates":
             if hasattr(process, "allocation_substrate_wids"):
-                out[obs] = [str(x) for x in getattr(process, "allocation_substrate_wids")]
+                out[obs] = [str(x) for x in process.allocation_substrate_wids]
             elif hasattr(process, "substrate_wids"):
-                out[obs] = [str(x) for x in getattr(process, "substrate_wids")]
+                out[obs] = [str(x) for x in process.substrate_wids]
             elif hasattr(process, "aa_ids"):
-                out[obs] = [str(x) for x in getattr(process, "aa_ids")]
+                out[obs] = [str(x) for x in process.aa_ids]
             elif hasattr(process, "consumed_substrates"):
-                out[obs] = [str(x) for x in getattr(process, "consumed_substrates")]
+                out[obs] = [str(x) for x in process.consumed_substrates]
             elif hasattr(process, "_substrate_wids"):
-                out[obs] = [str(x) for x in getattr(process, "_substrate_wids")]
+                out[obs] = [str(x) for x in process._substrate_wids]
             else:
                 out[obs] = []
         elif obs in {"enzymes", "boundEnzymes"}:
             if hasattr(process, "enzyme_wids"):
-                out[obs] = [str(x) for x in getattr(process, "enzyme_wids")]
+                out[obs] = [str(x) for x in process.enzyme_wids]
             elif hasattr(process, "fixture_enzyme_wids"):
-                out[obs] = [str(x) for x in getattr(process, "fixture_enzyme_wids")]
+                out[obs] = [str(x) for x in process.fixture_enzyme_wids]
             else:
                 out[obs] = []
         elif obs == "monomers":
             if hasattr(process, "protein_ids"):
-                out[obs] = [str(x) for x in getattr(process, "protein_ids")]
+                out[obs] = [str(x) for x in process.protein_ids]
             elif hasattr(process, "protein_wids"):
-                out[obs] = [str(x) for x in getattr(process, "protein_wids")]
+                out[obs] = [str(x) for x in process.protein_wids]
             else:
                 out[obs] = []
         else:
@@ -415,7 +417,7 @@ def run_canary(
     )
     init_ratio_terminal = {
         obs: _init_ratio_at_tick(rows, obs, terminal_tick)
-        for obs in spec.min_init_ratio_terminal.keys()
+        for obs in spec.min_init_ratio_terminal
     }
 
     payload = {

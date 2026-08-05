@@ -27,7 +27,7 @@ integration_touchpoints:
       symbol: "KarrDNARepairProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_repair.py"
-        lines: "378-378"
+        lines: "396-396"
         note: "Builds per-tick substrate requests from desired repairs."
         symbol: "KarrDNARepairProcess.next_update"
       supporting:
@@ -51,7 +51,7 @@ integration_touchpoints:
       symbol: "KarrDNARepairProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_repair.py"
-        lines: "378-378"
+        lines: "396-396"
         note: "Aggregated repair update, substrate writeback, and chromosome repair deltas."
         symbol: "KarrDNARepairProcess.next_update"
       supporting:
@@ -147,7 +147,7 @@ consume_stoichiometry:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_repair.py"
-      lines: "699-720"
+      lines: "731-800"
       note: "Per-pathway ATP cost and aggregate substrate-demand calculation."
       symbol: KarrDNARepairProcess.evolveState_Modification
     kind: expression
@@ -161,7 +161,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_dna_repair.py"
-      lines: "704-711"
+      lines: "731-800"
       note: "Current OC uses a fixed dNTP split across DATP/DCTP/DGTP/DTTP."
       symbol: KarrDNARepairProcess.evolveState_Modification
     note: "MATLAB does not use a global fixed split; OC does. See known_deviations."
@@ -176,7 +176,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_dna_repair.py"
-      lines: "704-711"
+      lines: "731-800"
       note: "Current OC uses a fixed dNTP split across DATP/DCTP/DGTP/DTTP."
       symbol: KarrDNARepairProcess.evolveState_Modification
     note: "MATLAB does not use a global fixed split; OC does. See known_deviations."
@@ -191,7 +191,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_dna_repair.py"
-      lines: "704-711"
+      lines: "731-800"
       note: "Current OC uses a fixed dNTP split across DATP/DCTP/DGTP/DTTP."
       symbol: KarrDNARepairProcess.evolveState_Modification
     note: "MATLAB does not use a global fixed split; OC does. See known_deviations."
@@ -206,7 +206,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_dna_repair.py"
-      lines: "704-711"
+      lines: "731-800"
       note: "Current OC uses a fixed dNTP split across DATP/DCTP/DGTP/DTTP."
       symbol: KarrDNARepairProcess.evolveState_Modification
     note: "MATLAB does not use a global fixed split; OC does. See known_deviations."

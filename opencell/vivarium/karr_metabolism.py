@@ -58,10 +58,10 @@ from vivarium.core.process import Process
 from opencell.m1 import calc_flux_bounds as cfb
 from opencell.m1 import karr_metabolism as km
 from opencell.m1.karr_metabolism_writeback import (
+    CYTOSOL,
     KarrWritebackFixture,
     apply_karr_substrate_writeback,
     project_to_flat_per_wid,
-    CYTOSOL,
 )
 from opencell.vivarium.karr_protein_decay_light import _Mcg16807
 

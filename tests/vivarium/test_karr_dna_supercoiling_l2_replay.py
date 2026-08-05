@@ -24,9 +24,6 @@ if str(_HELPER_DIR) not in sys.path:
 
 from l2_replay_common import (
     apply_count_update,
-    assert_delta_integral as _assert_delta_integral_shared,
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
-    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
     build_state_template,
     cell_vector,
     collect_count_delta_dicts,
@@ -36,6 +33,16 @@ from l2_replay_common import (
     project_observable_from_state,
     refresh_allocator_views,
 )
+from l2_replay_common import (
+    assert_delta_integral as _assert_delta_integral_shared,
+)
+from l2_replay_common import (
+    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
+)
+from l2_replay_common import (
+    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
+)
+
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet
 from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess
 

@@ -257,12 +257,11 @@ def _classify(name: str) -> dict:
                 # runner's distributional comparison and resolves the L2.2 > L2.1
                 # ordering inversion the Day-37 audit revealed.
                 oracle_type = getattr(spec, "oracle_type", "distributional")
-                if oracle_type == "bit_identity":
-                    if not np.array_equal(
-                        oc_after.astype(np.int64), karr_after.astype(np.int64)
-                    ):
-                        bit_identity_failures += 1
-                        break
+                if oracle_type == "bit_identity" and not np.array_equal(
+                    oc_after.astype(np.int64), karr_after.astype(np.int64)
+                ):
+                    bit_identity_failures += 1
+                    break
     except Exception as exc:
         handle.close()
         return {"name": name, "verdict": "ERROR", "error": f"run: {exc}"}

@@ -13,7 +13,6 @@ from opencell.m1 import karr_metabolism as km
 from opencell.m1.fva import fva_range, substrate_delta_range_from_fva
 from opencell.m1.karr_metabolism_writeback import KarrWritebackFixture
 
-
 _REPO = Path(__file__).resolve().parents[2]
 _GT_SAMPLE_PATH = (
     _REPO

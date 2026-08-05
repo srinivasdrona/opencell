@@ -51,6 +51,7 @@ SYNTHESIS_REACTION_INDICES: tuple[int, ...] = (6, 7, 9, 12, 13, 15)
 SYNTHESIS_PRODUCT_SPECIES: tuple[str, ...] = ("MA", "MA", "A", "MR", "MR", "R")
 
 SECONDS_PER_HOUR = 3600.0
+DEFAULT_GENE_ATOL = 1e-3
 EXTERNAL_GLUCOSE_SPECIES = "cglcex"
 # Chassagnole 2002 / BIOMD0000000051: PTS reaction (sugar phosphotransferase
 # system) is the glucose uptake step. Stoichiometry: cglcex + 65*cpep ->
@@ -195,7 +196,9 @@ class CoupledMetabolismTranscription:
     def species_layout(self) -> dict[str, list[str]]:
         return {"metabolism": list(self.met.species_ids), "gene": list(self.gene.species_ids)}
 
-    def vector_atols(self, met_atol: float = 1e-9, gene_atol: float = 1e-3) -> np.ndarray:
+    def vector_atols(
+        self, met_atol: float = 1e-9, gene_atol: float = DEFAULT_GENE_ATOL
+    ) -> np.ndarray:
         """Per-state atol vector for stiff solvers.
 
         Mixed-magnitude state: metabolism is mM (~1e-3 to ~1e0), gene is

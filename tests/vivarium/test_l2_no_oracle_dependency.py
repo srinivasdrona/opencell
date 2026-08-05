@@ -147,9 +147,9 @@ def test_l2_process_source_does_not_depend_on_replay_oracle(source_path: Path) -
             f"'output = oracle' anti-pattern and makes L2.1 GREEN meaningless. "
             f"Violations:\n  - " + "\n  - ".join(violations)
             + "\n\nFix: remove the oracle dependency. Process source must compute "
-            f"deltas from biology, reading only `states` (which the L2.1 harness "
-            f"overlays with oracle data on its behalf). See "
-            f"tests/vivarium/l2_replay_common.py for the contract."
+            "deltas from biology, reading only `states` (which the L2.1 harness "
+            "overlays with oracle data on its behalf). See "
+            "tests/vivarium/l2_replay_common.py for the contract."
         )
 
 

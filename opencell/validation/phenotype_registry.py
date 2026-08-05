@@ -2,8 +2,9 @@
 
 from __future__ import annotations
 
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Any, Callable, Literal
+from typing import Any, Literal
 
 from opencell.validation import phenotype_extractors as ex
 from opencell.validation.karr_reference_values import KARR_REFERENCE_VALUES

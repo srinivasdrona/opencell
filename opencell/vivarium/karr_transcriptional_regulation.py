@@ -353,7 +353,7 @@ class KarrTranscriptionalRegulationProcess(Process):
         binding = self._read_binding(states)
         binding_delta = np.zeros((self._n_tf, self._n_tu), dtype=np.int64)
 
-        for tf_i, tf_wid in enumerate(self.tf_wids):
+        for tf_i, _tf_wid in enumerate(self.tf_wids):
             total_copies = max(0, int(np.floor(float(tf_counts[tf_i]))))
             row = binding[tf_i].copy()
 

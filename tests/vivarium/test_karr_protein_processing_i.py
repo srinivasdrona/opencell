@@ -18,8 +18,8 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
-from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
 from opencell.vivarium.karr_composite import build_karr_chassis_v6
+from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
 
 
 def _blank_state(process: KarrProteinProcessingIProcess) -> dict[str, Any]:

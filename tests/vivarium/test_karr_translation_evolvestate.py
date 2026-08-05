@@ -22,15 +22,13 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 from l2_replay_common import build_state_template, resolve_trace_path
+
 from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 
 
 def _cell_vector(handle: h5py.File, group: str, observable: str, tick: int) -> np.ndarray:
     ds = handle[f"{group}/{observable}"]
-    if ds.shape[0] == 1:
-        ref = ds[0, tick]
-    else:
-        ref = ds[tick, 0]
+    ref = ds[0, tick] if ds.shape[0] == 1 else ds[tick, 0]
     return np.asarray(handle[ref], dtype=np.float64).reshape(-1)
 
 

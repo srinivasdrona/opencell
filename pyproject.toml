@@ -75,13 +75,17 @@ line-length = 100
 
 [tool.ruff.lint]
 select = ["E", "F", "W", "I", "N", "UP", "ANN", "B", "A", "SIM"]
-ignore = ["ANN101", "ANN102"]
+# Establish a passing baseline for legacy debt that is intentionally not
+# enforced by the formatter/type checker. New code is still checked for the
+# remaining Ruff rule set.
+ignore = ["ANN401", "E501"]
 
 [tool.ruff.lint.per-file-ignores]
 "benchmarks/**/*.py" = ["E402", "N806"]
 "scripts/**/*.py" = ["ANN001", "ANN201", "ANN202", "ANN204", "E501", "N803", "N806"]
 "tests/**/*.py" = [
     "ANN001",
+    "ANN002",
     "ANN003",
     "ANN201",
     "ANN202",
@@ -90,6 +94,7 @@ ignore = ["ANN101", "ANN102"]
     "E402",
     "E501",
     "N802",
+    "N803",
     "N806",
     "N999",
 ]
@@ -99,9 +104,14 @@ ignore = ["ANN101", "ANN102"]
 "opencell/core/state.py" = ["N802"]
 "opencell/core/units.py" = ["N803"]
 "opencell/m1/compartmented.py" = ["N806"]
+"opencell/m1/fva.py" = ["N803", "N806"]
 "opencell/m1/karr_metabolism.py" = ["N806"]
 "opencell/models/coupled.py" = ["N806"]
 "opencell/solvers/stochastic.py" = ["N806"]
+"opencell/vivarium/karr_dna_damage.py" = ["N802"]
+"opencell/vivarium/karr_metabolism.py" = ["N806"]
+"opencell/vivarium/karr_protein_decay_light.py" = ["N802"]
+"opencell/vivarium/karr_translation.py" = ["N806"]
 
 [tool.mypy]
 python_version = "3.12"

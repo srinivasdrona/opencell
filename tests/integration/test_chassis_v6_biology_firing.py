@@ -1,10 +1,10 @@
 from __future__ import annotations
 
+import random
+import sys
 from copy import deepcopy
 from dataclasses import dataclass
 from pathlib import Path
-import random
-import sys
 from typing import Any, TypedDict
 
 import numpy as np

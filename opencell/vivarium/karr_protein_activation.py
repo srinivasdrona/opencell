@@ -58,12 +58,9 @@ def _parse_stimulus_defaults(stimuli: object, n_stimuli: int) -> list[float]:
     values = np.asarray(stimuli, dtype=np.float64)
     if values.ndim == 0:
         return [float(values)] * n_stimuli
-    if values.ndim == 1:
-        vector = values.reshape(-1)
-    else:
-        # Karr stores process stimuli by compartment; evaluateActivationRules uses a
-        # single compartment slice per tick in this replay harness.
-        vector = values[:, 0].reshape(-1)
+    # Karr stores process stimuli by compartment; evaluateActivationRules uses a
+    # single compartment slice per tick in this replay harness.
+    vector = values.reshape(-1) if values.ndim == 1 else values[:, 0].reshape(-1)
 
     out = [0.0] * n_stimuli
     n = min(n_stimuli, int(vector.shape[0]))

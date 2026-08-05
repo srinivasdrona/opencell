@@ -22,8 +22,8 @@ if "opencell" in sys.modules:
 
 from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
-from opencell.vivarium.karr_composite import build_karr_chassis_v6
 from opencell.vivarium import karr_transcriptional_regulation as tx_reg_module
+from opencell.vivarium.karr_composite import build_karr_chassis_v6
 from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
 from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
 from opencell.vivarium.karr_transcriptional_regulation import (

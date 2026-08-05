@@ -8,8 +8,8 @@ from typing import Any
 import h5py
 import numpy as np
 import pytest
-from scipy.stats import ks_2samp, wasserstein_distance
 from scipy.io import loadmat
+from scipy.stats import ks_2samp, wasserstein_distance
 
 # Ensure imports resolve to this worktree.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -26,7 +26,10 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
-from l2_replay_common import load_fixture_channel_wids, wasserstein_over_wid_intersection  # noqa: E402
+from l2_replay_common import (  # noqa: E402
+    load_fixture_channel_wids,
+    wasserstein_over_wid_intersection,
+)
 
 _KARR_ROOT = (
     _REPO_ROOT
@@ -71,9 +74,7 @@ def _mat_cell_vector(handle: h5py.File, group: str, name: str, tick: int) -> np.
     rows, cols = int(ds.shape[0]), int(ds.shape[1])
     if rows == 1 and cols >= (tick + 1):
         ref = ds[0, tick]
-    elif cols == 1 and rows >= (tick + 1):
-        ref = ds[tick, 0]
-    elif rows >= (tick + 1):
+    elif cols == 1 and rows >= (tick + 1) or rows >= (tick + 1):
         ref = ds[tick, 0]
     elif cols >= (tick + 1):
         ref = ds[0, tick]
@@ -114,7 +115,7 @@ def _load_karr_rna_wids() -> tuple[str, ...]:
     states = np.asarray(getattr(fixture, "states", []), dtype=object).reshape(-1)
     for state in states:
         if hasattr(state, "transcriptionUnitWholeCellModelIDs"):
-            ids = _parse_object_ids(getattr(state, "transcriptionUnitWholeCellModelIDs"))
+            ids = _parse_object_ids(state.transcriptionUnitWholeCellModelIDs)
             if ids:
                 return tuple(ids)
     return tuple()

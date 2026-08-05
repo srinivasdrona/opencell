@@ -3,7 +3,7 @@ from __future__ import annotations
 import filecmp
 import json
 import sys
-from functools import lru_cache
+from functools import cache, lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -11,7 +11,6 @@ import h5py
 import numpy as np
 from scipy.io import loadmat
 from scipy.stats import wasserstein_distance
-
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -33,38 +32,43 @@ from l2_replay_common import (  # noqa: E402
     forbid_sut_oracle_file_io,
     load_fixture_channel_wids,
     overlay_observable_into_state,
-    overlay_trace_after_hint,
-    project_vector_onto_wids,
     project_observable_from_state,
     project_trace_matrix_to_482,
+    project_vector_onto_wids,
     refresh_allocator_views,
 )
-from opencell.m3 import translation as m3_karr_translation  # noqa: E402
+
 from opencell.m1 import karr_metabolism as m1_karr_metabolism  # noqa: E402
-from opencell.vivarium.karr_metabolism import KarrMetabolismProcess  # noqa: E402
-from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
-from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
-from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
-from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess  # noqa: E402
-from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess  # noqa: E402
-from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess  # noqa: E402
-from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess  # noqa: E402
-from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess  # noqa: E402
-from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess  # noqa: E402
-from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess  # noqa: E402
-from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess  # noqa: E402
-from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
-from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess  # noqa: E402
+from opencell.m3 import translation as m3_karr_translation  # noqa: E402
+from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess  # noqa: E402
+from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess  # noqa: E402
+from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess  # noqa: E402
 from opencell.vivarium.karr_macromolecular_complexation import (  # noqa: E402
     MacromolecularComplexationProcess,
 )
-from opencell.vivarium.karr_dna_supercoiling import KarrDNASupercoilingProcess  # noqa: E402
+from opencell.vivarium.karr_metabolism import KarrMetabolismProcess  # noqa: E402
+from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess  # noqa: E402
+from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess  # noqa: E402
+from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess  # noqa: E402
+from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess  # noqa: E402
+from opencell.vivarium.karr_protein_processing_ii import (
+    KarrProteinProcessingIIProcess,  # noqa: E402
+)
+from opencell.vivarium.karr_protein_translocation import (
+    KarrProteinTranslocationProcess,  # noqa: E402
+)
 from opencell.vivarium.karr_replication import KarrReplicationProcess  # noqa: E402
-from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess  # noqa: E402
-from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess  # noqa: E402
-from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
-
+from opencell.vivarium.karr_replication_initiation import (
+    KarrReplicationInitiationProcess,  # noqa: E402
+)
+from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess  # noqa: E402
+from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess  # noqa: E402
+from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess  # noqa: E402
+from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess  # noqa: E402
+from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
+from opencell.vivarium.karr_translation import KarrTranslationProcess  # noqa: E402
+from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess  # noqa: E402
 
 _ACTUAL_REPO_ROOT = Path(__file__).resolve().parents[2]
 L2_2_VALIDATION_SEED = 0xCA11B
@@ -442,8 +446,8 @@ def _load_seeded_mat_channels(
 
             before_group = handle["states_before"]
             after_group = handle["states_after"]
-            before_keys = tuple(sorted(str(key) for key in before_group.keys()))
-            after_keys = tuple(sorted(str(key) for key in after_group.keys()))
+            before_keys = tuple(sorted(str(key) for key in before_group))
+            after_keys = tuple(sorted(str(key) for key in after_group))
             if before_keys_expected is None:
                 before_keys_expected = before_keys
                 after_keys_expected = after_keys
@@ -1492,12 +1496,12 @@ def _trna_aminoacylation_channel_metadata() -> dict[str, Any]:
     }
 
 
-@lru_cache(maxsize=None)
+@cache
 def _metabolism_model() -> Any:
     return m1_karr_metabolism.load_default()
 
 
-@lru_cache(maxsize=None)
+@cache
 def _metabolism_dynamics() -> Any:
     # Day-38: pre-load dynamics inputs outside SUT-oracle guard since
     # dynamic_bounds=True needs the karr_native_m1_dynamics fixture.
@@ -1536,7 +1540,7 @@ def _metabolism_process(seed: int) -> KarrMetabolismProcess:
     return process
 
 
-@lru_cache(maxsize=None)
+@cache
 def _translation_model() -> Any:
     return m3_karr_translation.load_default()
 
@@ -2917,7 +2921,7 @@ def _transcription_projection_inputs() -> dict[str, Any]:
     rna_gene_projection: np.ndarray | None = None
     for state in states:
         if hasattr(state, "nascentRNAGeneComposition"):
-            rna_gene_projection = np.asarray(getattr(state, "nascentRNAGeneComposition"), dtype=np.float64)
+            rna_gene_projection = np.asarray(state.nascentRNAGeneComposition, dtype=np.float64)
             break
     if rna_gene_projection is None:
         raise ValueError(

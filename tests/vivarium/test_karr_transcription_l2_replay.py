@@ -24,9 +24,6 @@ if str(_HELPER_DIR) not in sys.path:
 
 from l2_replay_common import (
     apply_count_update,
-    assert_delta_integral as _assert_delta_integral_shared,
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
-    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
     build_state_template,
     cell_vector,
     collect_count_delta_dicts,
@@ -38,6 +35,16 @@ from l2_replay_common import (
     refresh_allocator_views,
     resolve_trace_path,
 )
+from l2_replay_common import (
+    assert_delta_integral as _assert_delta_integral_shared,
+)
+from l2_replay_common import (
+    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
+)
+from l2_replay_common import (
+    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
+)
+
 from opencell.vivarium.karr_transcription import KarrTranscriptionProcess
 
 _TRACE_PROCESS_NAME = "Transcription"

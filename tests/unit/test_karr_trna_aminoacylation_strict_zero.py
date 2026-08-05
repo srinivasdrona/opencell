@@ -31,13 +31,11 @@ def test_karr_trna_aminoacylation_strict_zero_no_global_fallback() -> None:
 
     monomer_enzyme_counts = {wid: 0.0 for wid in process.monomer_enzyme_wids}
     complex_enzyme_counts = {wid: 0.0 for wid in process.complex_enzyme_wids}
-    for enzyme_idx, coeff in enumerate(process.reaction_catalysis[reaction_idx]):
-        if coeff > 0:
-            enzyme_wid = process.enzyme_wids[enzyme_idx]
-            if enzyme_wid in process.complex_enzyme_wids:
-                complex_enzyme_counts[enzyme_wid] = 100.0
-            else:
-                monomer_enzyme_counts[enzyme_wid] = 100.0
+    for enzyme_wid in process.catalytic_enzyme_wids:
+        if enzyme_wid in process.complex_enzyme_wids:
+            complex_enzyme_counts[enzyme_wid] = 100.0
+        else:
+            monomer_enzyme_counts[enzyme_wid] = 100.0
 
     state = {
         "substrates": guarded_substrates,
@@ -68,18 +66,17 @@ def test_karr_trna_aminoacylation_accepts_legacy_rna_replay_keys() -> None:
     legacy_amino = np.zeros(len(process.aminoacylated_rna_wids), dtype=np.float64)
     seen: dict[str, np.ndarray] = {}
 
-    def _fake_compute_reaction_fluxes(
+    def _fake_compute_rna_fluxes(
         *,
         free_rna: np.ndarray,
         substrates: np.ndarray,
         enzymes: np.ndarray,
-        dt: float,
     ) -> np.ndarray:
-        _ = substrates, enzymes, dt
+        _ = substrates, enzymes
         seen["free_rna"] = np.asarray(free_rna, dtype=np.float64)
-        return np.zeros(process.reaction_stoich.shape[1], dtype=np.int64)
+        return np.zeros(len(process.free_rna_wids), dtype=np.int64)
 
-    process._compute_reaction_fluxes = _fake_compute_reaction_fluxes  # type: ignore[method-assign]
+    process._compute_rna_fluxes = _fake_compute_rna_fluxes  # type: ignore[method-assign]
 
     state = {
         "substrates": {wid: 0.0 for wid in process.substrate_wids},

@@ -5,7 +5,7 @@ import inspect
 import os
 import re
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import cache, lru_cache
 from numbers import Number
 from pathlib import Path
 from typing import Any
@@ -120,9 +120,7 @@ def cell_vector(handle: h5py.File, group: str, name: str, tick: int) -> np.ndarr
     rows, cols = int(ds.shape[0]), int(ds.shape[1])
     if rows == 1 and cols >= (tick + 1):
         ref = ds[0, tick]
-    elif cols == 1 and rows >= (tick + 1):
-        ref = ds[tick, 0]
-    elif rows >= (tick + 1):
+    elif cols == 1 and rows >= (tick + 1) or rows >= (tick + 1):
         ref = ds[tick, 0]
     elif cols >= (tick + 1):
         ref = ds[0, tick]
@@ -147,7 +145,7 @@ def _parse_wid_array(value: object) -> list[str]:
     return out
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_fixture_channel_wids(process_name: str, channel: str) -> tuple[str, ...]:
     field_by_channel = {
         "substrates": "substrateWholeCellModelIDs",
@@ -394,7 +392,7 @@ def infer_wids_for_observable(
     if store_path is not None:
         store = _get_nested_mapping(state_template, store_path)
         if isinstance(store, dict) and store:
-            keys = [str(k) for k in store.keys()]
+            keys = [str(k) for k in store]
             if len(keys) == karr_len:
                 return keys
             if keys:
@@ -445,7 +443,7 @@ def _monomer_enzyme_set(process: Any) -> set[str]:
 
 def _complex_enzyme_set(process: Any) -> set[str]:
     if hasattr(process, "complex_enzyme_wids"):
-        value = getattr(process, "complex_enzyme_wids")
+        value = process.complex_enzyme_wids
         if _is_nonempty_sequence(value):
             return {str(x) for x in value}
     return set()
