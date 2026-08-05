@@ -1,3 +1,24 @@
+"""Trace-hint replay tests for `KarrReplicationProcess` (activity/L2.1
+plumbing scope only -- NOT a continuous topology trajectory check).
+
+SCOPE CAVEAT: this file's tests overlay `trace_hint` (the oracle's own
+"after" values for this tick) into the input state before calling
+`next_update`, then assert the accepted real activity gate and the
+`strand_1..4` projection mapping. That validates the process's
+observable/projection PLUMBING and the L2.1 activity-inference fix; it is
+NOT evidence of continuous, path-consistent Okazaki-fragment topology
+fidelity, because each test tick is independently seeded from the
+oracle's own snapshot rather than carried forward from this process's own
+prior simulated tick. For the literal, no-hint topology state-machine
+(initiate/advance/terminate/merge) diagnostic -- including the seed0/
+100-tick per-tick Karr-before-reset scan of real initiation/termination
+event ticks -- see
+`test_karr_replication_seed0_topology_diagnostic.py`. Genuinely
+continuous (non-reset) multi-tick Replication still depends on
+`ReplicationInitiation`/direct process coupling, which is out of scope
+for this topology repair.
+"""
+
 from __future__ import annotations
 
 import sys

@@ -1,3 +1,17 @@
+"""Trace-hint replay tests for `KarrReplicationProcess` initiation
+activity (L2.1 plumbing scope only -- NOT a continuous topology
+trajectory check).
+
+SCOPE CAVEAT: as in `test_karr_replication_l2_replay.py`, these tests
+overlay `trace_hint` (the oracle's own "after" values) into the input
+state before calling `next_update`, and validate the accepted real
+activity-inference gate/plumbing -- not continuous, path-consistent
+Okazaki-fragment topology fidelity. Each tick is independently reset
+from the oracle's own snapshot. See
+`test_karr_replication_seed0_topology_diagnostic.py` for the no-hint,
+per-tick Karr-before-reset literal topology diagnostic.
+"""
+
 from __future__ import annotations
 
 import sys
