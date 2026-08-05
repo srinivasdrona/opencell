@@ -92,7 +92,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `replication-closer` — follow-up requested for five Opus-confirmed gaps: Karr lead/limits semantics, randomized ordering, stall-vs-raise behavior, no-hint byproducts and ligation;
   - `allocator-opus-rereview` — reviewing the new explicit `pool_before`/requirements fail-closed contract at `ec9e649`; Windows MATLAB availability means extraction remains actionable, not terminally blocked;
   - L2.5 scope ratification integrated to local `main` at `d90e5cb`: 28 processes, 378/256/122 pair split, 2 eligible, 1 gap-free, 0 selected pairs and 11 uncovered classes. Pair execution remains closed.
-  - ProteinProcessingII determination `8239d1b` received final Opus approval; integration pending. `SENTINEL_FAIL` remains correctly non-green because natural transferase branch coverage is absent.
+  - ProteinProcessingII determination integrated to local `main` at `eb37fe3`; 204 focused tests pass. `SENTINEL_FAIL` remains correctly non-green because natural transferase branch coverage is absent.
   - `dnadamage-opus-final` — final review of Rule-8 removal and broadened vacuous-trace classification at `a1df739`;
   - `procii-opus-rereview` — reviewing the structural shim-path and semantic-equivalence guard fixes at `0613d84`;
   - `ribosome-opus-final` — final review of registry truthfulness, atomic extraction and scope caveats at `abb5697`;
