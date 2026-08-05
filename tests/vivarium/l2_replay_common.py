@@ -4,6 +4,7 @@ import copy
 import inspect
 import os
 import re
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cache, lru_cache
 from numbers import Number
@@ -327,6 +328,51 @@ def schema_defaults(node: Any) -> Any:
 def build_state_template(process: Any) -> dict[str, Any]:
     schema = process.ports_schema()
     return {k: schema_defaults(v) for k, v in schema.items()}
+
+
+def merge_process_state_templates(processes: Sequence[Any]) -> dict[str, Any]:
+    """Merge every composed process's own :func:`build_state_template`
+    port-by-port, so the returned state carries EVERY composed process's
+    own port declarations -- not just the first process's.
+
+    This matters specifically for ``substrates_allocated``: each process
+    declares its own sub-dict keyed by its own ``self.name``
+    (e.g. ``{"substrates_allocated": {"karr_protein_folding": {...}}}``),
+    so building the shared template from only ONE process's schema (as a
+    prior version of the v1 composition harness did via
+    ``build_state_template(contexts[ordered[0]].process)``) silently drops
+    every OTHER composed process's ``substrates_allocated`` row entirely --
+    any allocator output written via :func:`apply_composition_allocations`
+    for those other processes has nowhere to land (``apply_composition_
+    allocations`` only writes into pre-existing keys, by design, so it
+    would silently no-op for them rather than corrupt anything -- but the
+    allocation is still lost, which is just as wrong for a downstream
+    consumer expecting it).
+
+    Uses ``setdefault`` per leaf key, so processes that declare disjoint
+    keys under the same port (the normal case for ``substrates_allocated``,
+    ``requests``: each process's own name is a distinct top-level key) are
+    additive and never clobber each other. Ports that are genuinely
+    process-agnostic shared state (e.g. ``substrates`` itself, the real
+    pool) are UNCHANGED by this merge beyond taking the union of declared
+    WID keys at their default value -- the actual pool values are written
+    later via the harness's existing overlay passes, never by this
+    function.
+    """
+    if not processes:
+        return {}
+    state = build_state_template(processes[0])
+    for process in processes[1:]:
+        template = build_state_template(process)
+        for port, port_state in template.items():
+            if port not in state:
+                state[port] = port_state
+                continue
+            existing = state[port]
+            if isinstance(existing, dict) and isinstance(port_state, dict):
+                for key, value in port_state.items():
+                    existing.setdefault(key, value)
+    return state
 
 
 def _get_nested_mapping(state: dict[str, Any], path: tuple[str, ...]) -> dict[str, Any] | None:
@@ -848,12 +894,139 @@ def apply_composition_allocations(
                 target[wid] = float(value)
 
 
+class MissingAllocatorOracleError(RuntimeError):
+    """The true pre-allocation allocator oracle is not available for a
+    composition-boundary tick.
+
+    Per ``docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md`` A05/D1:
+    ``states_before`` is each process's OWN post-allocation substrate
+    state, NOT the global pre-allocation pool -- it must never be reused
+    (via overlay, sum, max, or as a "request" proxy) to construct a
+    fabricated composition-boundary allocator input. That is exactly how
+    the original composition-contention fix (Finding #20 remediation,
+    pre-correction) was itself wrong: it built a "pool" by overlaying every
+    composed process's own post-allocation ``states_before`` value, and fed
+    those same post-allocation values back in as "requests" -- re-running
+    already-decided allocations through the allocator a second time, which
+    reproduces nothing Karr actually computed.
+
+    The only sanctioned oracle is Karr's own ``pool_before`` (global
+    ``mets.counts`` pre-allocation, ``evolveState.m:24``) and
+    ``requirements`` (``evolveState.m:31-35``), extracted directly by
+    ``scripts/matlab/extract_per_process_traces_v2.m`` (build-step-0,
+    requires MATLAB -- currently unavailable in this environment; the
+    extracted ``*_100ticks.mat`` trace fixtures do not yet carry these
+    groups). Callers MUST catch this exception and skip closed
+    (``pytest.skip("... MISSING_ALLOCATOR_ORACLE ...")``); they must never
+    substitute an approximation to force a pass.
+    """
+
+
+def composition_allocator_oracle_status(
+    traces: dict[str, h5py.File],
+) -> str | None:
+    """Existence-only probe: return ``None`` iff every named process's
+    already-open trace handle carries BOTH the ``pool_before`` and
+    ``requirements`` groups (the extended schema documented in
+    ``scripts/matlab/extract_per_process_traces_v2.m``'s module header).
+    Otherwise return a human-readable ``MISSING_ALLOCATOR_ORACLE`` reason
+    naming exactly which process(es) lack it, safe to call once before a
+    tick loop to skip closed immediately rather than run any tick.
+    """
+    missing = sorted(
+        name
+        for name, trace in traces.items()
+        if "pool_before" not in trace or "requirements" not in trace
+    )
+    if not missing:
+        return None
+    return (
+        "MISSING_ALLOCATOR_ORACLE: extracted trace fixture(s) for "
+        f"{missing} do not contain 'pool_before'/'requirements' groups. "
+        "The true pre-allocation Karr allocator oracle "
+        "(@Simulation/evolveState.m:24-37) is not yet captured -- "
+        "docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md A05 forbids "
+        "reusing 'states_before' (each process's OWN post-allocation "
+        "substrate state) as a substitute pool or request. Build-step-0 "
+        "(extend scripts/matlab/extract_per_process_traces_v2.m to emit "
+        "pool_before/requirements/allocations, requires MATLAB -- "
+        "unavailable in this environment) has not landed for these "
+        "fixtures. Composition allocation is skipped closed, not "
+        "fabricated."
+    )
+
+
+def load_composition_allocator_oracle(
+    *,
+    traces: dict[str, h5py.File],
+    wids_by_process: dict[str, list[str]],
+    tick: int,
+) -> tuple[dict[str, float], dict[str, dict[str, float]]]:
+    """Load the TRUE composition-boundary allocator oracle for one tick:
+    the global pre-allocation substrate pool (``pool_before``) and each
+    named process's own ``requirements`` row, both read directly from the
+    extended MATLAB extraction (never derived from ``states_before`` or
+    any other process-output proxy -- see ``MissingAllocatorOracleError``).
+
+    Raises :class:`MissingAllocatorOracleError` if any named process's
+    trace lacks the ``pool_before``/``requirements`` groups, OR if two
+    processes report inconsistent ``pool_before`` values for the same WID
+    at the same tick (both are extracted from the same canonical Karr run,
+    so they MUST agree -- a mismatch means the extraction/tick alignment is
+    broken, not a value to silently prefer one process's report over
+    another's).
+    """
+    status = composition_allocator_oracle_status(traces)
+    if status is not None:
+        raise MissingAllocatorOracleError(status)
+
+    pool_before: dict[str, float] = {}
+    requirements_by_process: dict[str, dict[str, float]] = {}
+    for name, wids in wids_by_process.items():
+        if not wids:
+            requirements_by_process[name] = {}
+            continue
+        trace = traces[name]
+        pool_vec = cell_vector(trace, "pool_before", "substrates", tick)
+        req_vec = cell_vector(trace, "requirements", "substrates", tick)
+        if pool_vec.shape[0] != len(wids) or req_vec.shape[0] != len(wids):
+            raise MissingAllocatorOracleError(
+                f"{name}: pool_before/requirements vector length "
+                f"({pool_vec.shape[0]}/{req_vec.shape[0]}) at tick {tick} "
+                f"does not match its own declared substrate WID count "
+                f"({len(wids)})."
+            )
+        proc_pool = dict(zip(wids, pool_vec.tolist(), strict=False))
+        for wid, value in proc_pool.items():
+            prior = pool_before.get(wid)
+            if prior is not None and abs(prior - value) > 1e-6:
+                raise MissingAllocatorOracleError(
+                    f"pool_before inconsistency for wid={wid} at tick={tick}: "
+                    f"{prior} (earlier process) vs {value} ({name}) -- the "
+                    "global pool must be identical across every process's "
+                    "own extraction at the same tick."
+                )
+            pool_before[wid] = value
+        requirements_by_process[name] = dict(zip(wids, req_vec.tolist(), strict=False))
+    return pool_before, requirements_by_process
+
+
 def refresh_allocator_views_composition(
     *,
-    request_vectors: dict[str, dict[str, float]],
+    pool_before: dict[str, float],
+    requirements_by_process: dict[str, dict[str, float]],
     state: dict[str, Any],
 ) -> None:
-    """Composition-boundary allocator refresh: real contention, not a grant.
+    """Composition-boundary allocator refresh: real contention against the
+    TRUE Karr oracle, not a grant, and not a fabricated pool.
+
+    ``pool_before`` and ``requirements_by_process`` MUST come from
+    :func:`load_composition_allocator_oracle` (Karr's own pre-allocation
+    ``mets.counts``/``requirements``, ``evolveState.m:24-35``) -- NEVER
+    derived from ``state['substrates']``, ``states_before``, or any other
+    process-output proxy. See :class:`MissingAllocatorOracleError` for why
+    that substitution is forbidden (it was the root cause of a real bug in
+    an earlier version of this function).
 
     Call this exactly ONCE per tick, for every process in the composition
     SIMULTANEOUSLY, before ANY of those processes' ``next_update`` has run
@@ -861,29 +1034,17 @@ def refresh_allocator_views_composition(
     ``docs/phase_f/L2_5_HARNESS_DESIGN.md`` Baseline fact 5
     (``@Simulation/evolveState.m``: allocation is precomputed for all
     processes, then each process executes with its fixed allocation).
-
-    ``request_vectors`` must be keyed by ``process.name`` (the same key
-    ``KarrAllocationStep`` and ``refresh_allocator_views`` use), typically
-    built from each process's own Karr-oracle ``states_before`` substrate
-    observation for the tick -- i.e. the same value
-    ``refresh_allocator_views`` used to grant unconditionally, now submitted
-    as a REQUEST that must contend with every other composed process's
-    request against the shared ``state['substrates']`` pool.
-
-    Calling this per-process, interleaved with execution (the previous
-    ``refresh_allocator_views`` call site inside the composition tick
-    loop), would reintroduce the idealized-grant bug one level down:
-    processes later in composition order would see an already-partially-
-    consumed pool credited to them in full, rather than contending for the
-    tick-start pool alongside every other composed process. If the calling
-    harness cannot collect every process's request before any process
-    consumes, that is a phase-ordering bug in the harness, not something
-    this function can paper over.
+    Calling this per-process, interleaved with execution, would
+    reintroduce the idealized-grant bug one level down: processes later in
+    composition order would see an already-partially-consumed pool
+    credited to them in full, rather than contending for the tick-start
+    pool alongside every other composed process.
     """
-    pool = state.get("substrates", {})
-    if not isinstance(pool, dict) or not request_vectors:
+    if not requirements_by_process:
         return
-    allocations = compute_composition_allocations(requests_by_process=request_vectors, pool=pool)
+    allocations = compute_composition_allocations(
+        requests_by_process=requirements_by_process, pool=pool_before
+    )
     apply_composition_allocations(state, allocations)
 
 

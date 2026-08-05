@@ -56,9 +56,11 @@ from l2_replay_common import (
     build_state_template,
     cell_vector,
     collect_count_delta_dicts,
+    composition_allocator_oracle_status,
     infer_wids_for_observable,
+    load_composition_allocator_oracle,
     overlay_observable_into_state,
-    refresh_allocator_views,
+    refresh_allocator_views_composition,
     resolve_trace_path,
 )
 
@@ -108,9 +110,15 @@ def _build_pair_state_template() -> tuple[
 def _seed_state_from_trace(
     state: dict,
     process: KarrProteinProcessingIProcess | KarrProteinProcessingIIProcess,
-    process_name: str,
+    trace: h5py.File,
     tick: int = 0,
 ) -> dict[str, list[str]]:
+    """Overlay ``trace``'s tick-``tick`` ``states_before`` observables into
+    ``state`` for ``process``. Does NOT grant an allocation -- composition
+    callers must run the shared-pool allocator (real oracle or fail-closed
+    skip) once, across every composed process, after all observables are
+    seeded (docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md A05/D1).
+    """
     observables = ("substrates", "enzymes", "boundEnzymes", "processedMonomers", "unprocessedMonomers")
     attr_map = {
         "substrates": "substrate_wids",
@@ -121,25 +129,23 @@ def _seed_state_from_trace(
     }
     template = build_state_template(process)
     wids_by_observable: dict[str, list[str]] = {}
-    with h5py.File(resolve_trace_path(process_name), "r") as trace:
-        for observable in observables:
-            karr_before = cell_vector(trace, "states_before", observable, tick)
-            wids = infer_wids_for_observable(
-                process,
-                template,
-                observable,
-                karr_len=int(karr_before.shape[0]),
-                explicit_attr=attr_map[observable],
-            )
-            wids_by_observable[observable] = wids
-            overlay_observable_into_state(
-                process=process,
-                state=state,
-                observable=observable,
-                vector=karr_before,
-                wids=wids,
-            )
-    refresh_allocator_views(process, state)
+    for observable in observables:
+        karr_before = cell_vector(trace, "states_before", observable, tick)
+        wids = infer_wids_for_observable(
+            process,
+            template,
+            observable,
+            karr_len=int(karr_before.shape[0]),
+            explicit_attr=attr_map[observable],
+        )
+        wids_by_observable[observable] = wids
+        overlay_observable_into_state(
+            process=process,
+            state=state,
+            observable=observable,
+            vector=karr_before,
+            wids=wids,
+        )
     return wids_by_observable
 
 
@@ -157,8 +163,10 @@ def _total_water(state: dict, wids: list[str]) -> float:
 def test_l2_5_ppi_ppii_allocator_invariants() -> None:
     """Allocator smoke: 3 of the 4 audit assertions.
 
-    Asserts on the shared state after one tick of PPI then PPII (sequential,
-    same composition order as the oracle-replay test):
+    Asserts on the shared state after one tick of PPI then PPII, contended
+    through the REAL Karr allocator at the composition boundary (never a
+    per-process independent full-pool grant -- docs/phase_f/
+    L2_0A_ALLOCATOR_INPUT_GATE.md A05/D1):
 
     1. No negative substrate counts after either process runs.
     2. Total water never goes negative; cumulative water consumption equals
@@ -170,97 +178,127 @@ def test_l2_5_ppi_ppii_allocator_invariants() -> None:
 
     DEFERRED #4: symmetric starvation under constrained water — requires a
     calibrated low-water setpoint; tracked in plan.md item 6c.
+
+    This test fails CLOSED (skip) rather than fabricating a pool/requests
+    from PPI/PPII's own ``states_before`` if the extended MATLAB extraction
+    (``pool_before``/``requirements``, build-step-0) has not landed for
+    these two trace fixtures.
     """
     ppi, ppii, state = _build_pair_state_template()
 
-    wids_ppi = _seed_state_from_trace(state, ppi, "ProteinProcessingI", tick=0)
-    wids_ppii = _seed_state_from_trace(state, ppii, "ProteinProcessingII", tick=0)
+    with (
+        h5py.File(resolve_trace_path("ProteinProcessingI"), "r") as trace_ppi,
+        h5py.File(resolve_trace_path("ProteinProcessingII"), "r") as trace_ppii,
+    ):
+        traces = {"ProteinProcessingI": trace_ppi, "ProteinProcessingII": trace_ppii}
+        oracle_status = composition_allocator_oracle_status(traces)
+        if oracle_status is not None:
+            pytest.skip(f"L2.5 SKIP: {oracle_status}")
 
-    substrate_wids_ppi = wids_ppi["substrates"]
-    substrate_wids_ppii = wids_ppii["substrates"]
+        wids_ppi = _seed_state_from_trace(state, ppi, trace_ppi, tick=0)
+        wids_ppii = _seed_state_from_trace(state, ppii, trace_ppii, tick=0)
 
-    water_before = _total_water(state, substrate_wids_ppi)
+        substrate_wids_ppi = wids_ppi["substrates"]
+        substrate_wids_ppii = wids_ppii["substrates"]
 
-    # Tick PPI then PPII against the shared state (canonical order from the harness).
-    refresh_allocator_views(ppi, state)
-    update_ppi = ppi.next_update(1.0, state)
-    apply_count_update(state, update_ppi)
-    water_after_ppi = _total_water(state, substrate_wids_ppi)
+        water_before = _total_water(state, substrate_wids_ppi)
 
-    refresh_allocator_views(ppii, state)
-    update_ppii = ppii.next_update(1.0, state)
-    apply_count_update(state, update_ppii)
-    water_after_ppii = _total_water(state, substrate_wids_ppii)
-
-    # ASSERTION 1: no negative substrate counts after either process.
-    substrate_counts = state.get("substrate_counts", {})
-    negative_wids = {
-        wid: count
-        for wid, count in substrate_counts.items()
-        if float(count) < 0.0
-    }
-    assert not negative_wids, (
-        f"L2.5 allocator invariant violated: negative substrate counts after "
-        f"PPI+PPII tick: {negative_wids}"
-    )
-
-    # ASSERTION 2 (water budget): no double-spend.
-    # The water level after each process must be <= water level before that process.
-    # And the cumulative drop must equal PPI's H2O delta + PPII's H2O delta
-    # (not less — would mean a process credited itself water it didn't have).
-    if not np.isnan(water_before):
-        assert water_after_ppi <= water_before + 1e-9, (
-            f"PPI returned more water than was available: "
-            f"before={water_before}, after_ppi={water_after_ppi}"
+        # Composition-boundary allocation: run the REAL Karr allocator once,
+        # simultaneously, across both composed processes -- never grant each
+        # process the full pool independently and sequentially.
+        pool_before, requirements_by_process = load_composition_allocator_oracle(
+            traces=traces,
+            wids_by_process={
+                "ProteinProcessingI": substrate_wids_ppi,
+                "ProteinProcessingII": substrate_wids_ppii,
+            },
+            tick=0,
         )
-        assert water_after_ppii <= water_after_ppi + 1e-9, (
-            f"PPII returned more water than was available after PPI: "
-            f"after_ppi={water_after_ppi}, after_ppii={water_after_ppii}"
-        )
-        # Sum-of-deltas reconciliation.
-        ppi_water_delta = _extract_water_delta(update_ppi, substrate_wids_ppi)
-        ppii_water_delta = _extract_water_delta(update_ppii, substrate_wids_ppii)
-        observed_drop = water_before - water_after_ppii
-        accounted_drop = -(ppi_water_delta + ppii_water_delta)
-        assert abs(observed_drop - accounted_drop) <= 1e-6, (
-            f"Water double-spend detected: observed drop {observed_drop}, "
-            f"sum of process deltas {accounted_drop} (PPI={ppi_water_delta}, "
-            f"PPII={ppii_water_delta})"
+        refresh_allocator_views_composition(
+            pool_before=pool_before,
+            requirements_by_process=requirements_by_process,
+            state=state,
         )
 
-    # ASSERTION 4 (namespace separation): PPI and PPII may both address the
-    # substrate pool by WID (that's the whole point of the shared pool), but
-    # their *monomer* deltas must address distinct namespaces. PPI cleaves
-    # unprocessedMonomers -> processedMonomers (deformylase + MAP). PPII does
-    # signal-sequence cleavage on a SUBSET of already-processed monomers. The
-    # subset overlap is expected at the WID level (PPII consumes some of what
-    # PPI produces) but per-tick the same delta must not appear twice from
-    # both processes (would mean PPI's emitted delta got double-counted).
-    ppi_monomer_keys = _monomer_delta_keys(update_ppi)
-    ppii_monomer_keys = _monomer_delta_keys(update_ppii)
-    # Per-tick double-counting check: if the same (port, wid) appears in both
-    # updates, the deltas must be independent allocations, not the same
-    # allocation surfaced twice. We can't detect "same allocation" without
-    # provenance plumbing, so this assertion is a structural guardrail: PPI
-    # and PPII must not BOTH emit identical (port, wid, value) triples in the
-    # same tick (would indicate cloned-update bug).
-    identical_triples = ppi_monomer_keys.intersection(ppii_monomer_keys)
-    # Note: WID overlap is allowed (both processes legitimately write to
-    # `monomer_counts.<some_wid>`); we only flag *value-identical* overlaps.
-    if identical_triples:
-        ppi_values = _collect_delta_values(update_ppi, identical_triples)
-        ppii_values = _collect_delta_values(update_ppii, identical_triples)
-        suspicious = {
-            triple
-            for triple in identical_triples
-            if ppi_values.get(triple) == ppii_values.get(triple)
-            and ppi_values.get(triple, 0.0) != 0.0
+        # Tick PPI then PPII against the now-allocated shared state (canonical
+        # order from the harness).
+        update_ppi = ppi.next_update(1.0, state)
+        apply_count_update(state, update_ppi)
+        water_after_ppi = _total_water(state, substrate_wids_ppi)
+
+        update_ppii = ppii.next_update(1.0, state)
+        apply_count_update(state, update_ppii)
+        water_after_ppii = _total_water(state, substrate_wids_ppii)
+
+        # ASSERTION 1: no negative substrate counts after either process.
+        substrate_counts = state.get("substrate_counts", {})
+        negative_wids = {
+            wid: count
+            for wid, count in substrate_counts.items()
+            if float(count) < 0.0
         }
-        assert not suspicious, (
-            f"L2.5 allocator namespace check: PPI and PPII emitted identical "
-            f"(port, wid, value) triples in same tick (possible cloned-update "
-            f"bug): {suspicious}"
+        assert not negative_wids, (
+            f"L2.5 allocator invariant violated: negative substrate counts after "
+            f"PPI+PPII tick: {negative_wids}"
         )
+
+        # ASSERTION 2 (water budget): no double-spend.
+        # The water level after each process must be <= water level before that process.
+        # And the cumulative drop must equal PPI's H2O delta + PPII's H2O delta
+        # (not less — would mean a process credited itself water it didn't have).
+        if not np.isnan(water_before):
+            assert water_after_ppi <= water_before + 1e-9, (
+                f"PPI returned more water than was available: "
+                f"before={water_before}, after_ppi={water_after_ppi}"
+            )
+            assert water_after_ppii <= water_after_ppi + 1e-9, (
+                f"PPII returned more water than was available after PPI: "
+                f"after_ppi={water_after_ppi}, after_ppii={water_after_ppii}"
+            )
+            # Sum-of-deltas reconciliation.
+            ppi_water_delta = _extract_water_delta(update_ppi, substrate_wids_ppi)
+            ppii_water_delta = _extract_water_delta(update_ppii, substrate_wids_ppii)
+            observed_drop = water_before - water_after_ppii
+            accounted_drop = -(ppi_water_delta + ppii_water_delta)
+            assert abs(observed_drop - accounted_drop) <= 1e-6, (
+                f"Water double-spend detected: observed drop {observed_drop}, "
+                f"sum of process deltas {accounted_drop} (PPI={ppi_water_delta}, "
+                f"PPII={ppii_water_delta})"
+            )
+
+        # ASSERTION 4 (namespace separation): PPI and PPII may both address the
+        # substrate pool by WID (that's the whole point of the shared pool), but
+        # their *monomer* deltas must address distinct namespaces. PPI cleaves
+        # unprocessedMonomers -> processedMonomers (deformylase + MAP). PPII does
+        # signal-sequence cleavage on a SUBSET of already-processed monomers. The
+        # subset overlap is expected at the WID level (PPII consumes some of what
+        # PPI produces) but per-tick the same delta must not appear twice from
+        # both processes (would mean PPI's emitted delta got double-counted).
+        ppi_monomer_keys = _monomer_delta_keys(update_ppi)
+        ppii_monomer_keys = _monomer_delta_keys(update_ppii)
+        # Per-tick double-counting check: if the same (port, wid) appears in both
+        # updates, the deltas must be independent allocations, not the same
+        # allocation surfaced twice. We can't detect "same allocation" without
+        # provenance plumbing, so this assertion is a structural guardrail: PPI
+        # and PPII must not BOTH emit identical (port, wid, value) triples in the
+        # same tick (would indicate cloned-update bug).
+        identical_triples = ppi_monomer_keys.intersection(ppii_monomer_keys)
+        # Note: WID overlap is allowed (both processes legitimately write to
+        # `monomer_counts.<some_wid>`); we only flag *value-identical* overlaps.
+        if identical_triples:
+            ppi_values = _collect_delta_values(update_ppi, identical_triples)
+            ppii_values = _collect_delta_values(update_ppii, identical_triples)
+            suspicious = {
+                triple
+                for triple in identical_triples
+                if ppi_values.get(triple) == ppii_values.get(triple)
+                and ppi_values.get(triple, 0.0) != 0.0
+            }
+            assert not suspicious, (
+                f"L2.5 allocator namespace check: PPI and PPII emitted identical "
+                f"(port, wid, value) triples in same tick (possible cloned-update "
+                f"bug): {suspicious}"
+            )
 
 
 def _extract_water_delta(update: dict, substrate_wids: list[str]) -> float:

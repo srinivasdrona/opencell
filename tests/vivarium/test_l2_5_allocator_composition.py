@@ -9,17 +9,33 @@ uncapped proportional arithmetic (`KarrAllocationStep`,
 `@Simulation/evolveState.m:24-37`), instead of each independently receiving
 the full observed pool.
 
+Per the blocking review correction (see the superseding provenance entry in
+`opencell/provenance/llm_interactions.jsonl`), the composition-boundary
+allocator input is now the TRUE Karr oracle (`pool_before`/`requirements`,
+`evolveState.m:24-37`), loaded via `load_composition_allocator_oracle` and
+NEVER derived from `states_before`/`state['substrates']`
+(docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md A05/D1). If that oracle is
+absent from a trace fixture (currently true for every fixture -- build-
+step-0 requires MATLAB, unavailable in this environment), every composition
+path fails CLOSED with a `MISSING_ALLOCATOR_ORACLE` skip rather than
+fabricating a pool.
+
 These tests exercise the shared helper directly (adversarial contention,
 oversupply, zero-demand, process-key normalization, fairness/order-
-invariance, no-overallocation) plus a source-level regression guard that the
-composition harnesses (`l2_2_replay_common.py`, `l2_2_replay_common_v2.py`)
-no longer call the idealized per-process grant inside their tick loops.
+invariance, no-overallocation, oracle-absent fail-closed behavior) plus a
+source-level regression guard that the composition harnesses
+(`l2_2_replay_common.py`, `l2_2_replay_common_v2.py`,
+`test_l2_5_ppi_ppii_v2.py`) no longer call the idealized per-process grant,
+and no longer read `state['substrates']` as a composition-boundary pool,
+inside their tick/composition logic.
 """
 
 from __future__ import annotations
 
 import sys
 from pathlib import Path
+
+import pytest
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -37,8 +53,11 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 from l2_replay_common import (  # noqa: E402
+    MissingAllocatorOracleError,
     apply_composition_allocations,
+    composition_allocator_oracle_status,
     compute_composition_allocations,
+    load_composition_allocator_oracle,
     refresh_allocator_views_composition,
 )
 
@@ -240,14 +259,14 @@ def test_refresh_allocator_views_composition_contends_instead_of_granting_full_p
     """The composition-boundary refresh must NOT grant every process the
     full shared pool independently (the bug this delegation fixes)."""
     state = {
-        "substrates": {"ATP": 10.0},
         "substrates_allocated": {
             "proc_a": {"ATP": 0.0},
             "proc_b": {"ATP": 0.0},
         },
     }
     refresh_allocator_views_composition(
-        request_vectors={
+        pool_before={"ATP": 10.0},
+        requirements_by_process={
             "proc_a": {"ATP": 6.0},
             "proc_b": {"ATP": 6.0},
         },
@@ -260,16 +279,154 @@ def test_refresh_allocator_views_composition_contends_instead_of_granting_full_p
     assert alloc_b != 10.0
     assert alloc_a == 5.0
     assert alloc_b == 5.0
-    assert alloc_a + alloc_b <= state["substrates"]["ATP"]
+    assert alloc_a + alloc_b <= 10.0
 
 
 def test_refresh_allocator_views_composition_empty_requests_is_a_noop() -> None:
     state = {
-        "substrates": {"ATP": 10.0},
         "substrates_allocated": {"proc_a": {"ATP": 7.0}},
     }
-    refresh_allocator_views_composition(request_vectors={}, state=state)
+    refresh_allocator_views_composition(
+        pool_before={"ATP": 10.0}, requirements_by_process={}, state=state
+    )
     assert state["substrates_allocated"]["proc_a"]["ATP"] == 7.0
+
+
+def test_refresh_allocator_views_composition_sole_demander_not_starved_by_zero_request_partner() -> None:
+    """A process requesting zero must get zero, but must NOT starve a
+    co-composed process that legitimately demands the pool -- i.e. the
+    zero-demand consumer is enrolled (reported explicitly, per
+    `compute_composition_allocations`'s docstring) but does not reduce the
+    sole real demander's uncapped proportional share."""
+    state = {
+        "substrates_allocated": {
+            "proc_a": {"ATP": 0.0},
+            "proc_b": {"ATP": 0.0},
+        },
+    }
+    refresh_allocator_views_composition(
+        pool_before={"ATP": 40.0},
+        requirements_by_process={
+            "proc_a": {"ATP": 0.0},
+            "proc_b": {"ATP": 25.0},
+        },
+        state=state,
+    )
+    assert state["substrates_allocated"]["proc_a"]["ATP"] == 0.0
+    # Sole real demander gets Karr's UNCAPPED proportional share: since it is
+    # the only demander, scale = pool/max(1,sum(requests)) = 40/25 = 1.6, so
+    # it receives its request scaled UP to the full pool (40.0), not capped
+    # at its own 25.0 request, and NOT reduced by the zero-request partner.
+    assert state["substrates_allocated"]["proc_b"]["ATP"] == 40.0
+
+
+def test_refresh_allocator_views_composition_process_order_cannot_overwrite_pool() -> None:
+    """Order of processes in `requirements_by_process` must not change the
+    resulting grants (dict iteration order independence at the harness
+    boundary, mirroring `test_order_invariance_reversed_enumeration_same_grants`
+    but through the full `refresh_allocator_views_composition` entry point)."""
+    forward_state = {
+        "substrates_allocated": {
+            "proc_a": {"ATP": 0.0},
+            "proc_b": {"ATP": 0.0},
+            "proc_c": {"ATP": 0.0},
+        },
+    }
+    refresh_allocator_views_composition(
+        pool_before={"ATP": 10.0},
+        requirements_by_process={
+            "proc_a": {"ATP": 6.0},
+            "proc_b": {"ATP": 6.0},
+            "proc_c": {"ATP": 3.0},
+        },
+        state=forward_state,
+    )
+    reversed_state = {
+        "substrates_allocated": {
+            "proc_c": {"ATP": 0.0},
+            "proc_b": {"ATP": 0.0},
+            "proc_a": {"ATP": 0.0},
+        },
+    }
+    refresh_allocator_views_composition(
+        pool_before={"ATP": 10.0},
+        requirements_by_process={
+            "proc_c": {"ATP": 3.0},
+            "proc_b": {"ATP": 6.0},
+            "proc_a": {"ATP": 6.0},
+        },
+        state=reversed_state,
+    )
+    for name in ("proc_a", "proc_b", "proc_c"):
+        assert (
+            forward_state["substrates_allocated"][name]["ATP"]
+            == reversed_state["substrates_allocated"][name]["ATP"]
+        )
+
+
+def test_refresh_allocator_views_composition_populates_every_composed_process_row() -> None:
+    """Every composed process's own `substrates_allocated` row must
+    actually receive its grant -- not just the first-declared process
+    (the v1 harness bug this correction pass also fixed via
+    `merge_process_state_templates`)."""
+    state = {
+        "substrates_allocated": {
+            "proc_a": {"ATP": 0.0, "GTP": 0.0},
+            "proc_b": {"ATP": 0.0},
+            "proc_c": {"GTP": 0.0},
+        },
+    }
+    refresh_allocator_views_composition(
+        pool_before={"ATP": 8.0, "GTP": 8.0},
+        requirements_by_process={
+            "proc_a": {"ATP": 4.0, "GTP": 4.0},
+            "proc_b": {"ATP": 4.0},
+            "proc_c": {"GTP": 4.0},
+        },
+        state=state,
+    )
+    assert state["substrates_allocated"]["proc_a"]["ATP"] == 4.0
+    assert state["substrates_allocated"]["proc_a"]["GTP"] == 4.0
+    assert state["substrates_allocated"]["proc_b"]["ATP"] == 4.0
+    assert state["substrates_allocated"]["proc_c"]["GTP"] == 4.0
+
+
+# --- Oracle availability: fail-closed skip, never fabricate -----------------
+
+
+def test_composition_allocator_oracle_status_reports_missing_groups() -> None:
+    """`composition_allocator_oracle_status` must flag any process whose
+    trace lacks `pool_before`/`requirements`, by name, without raising."""
+    empty_trace_a = {}
+    empty_trace_b = {"pool_before": object(), "requirements": object()}
+    status = composition_allocator_oracle_status(
+        {"proc_a": empty_trace_a, "proc_b": empty_trace_b}
+    )
+    assert status is not None
+    assert "MISSING_ALLOCATOR_ORACLE" in status
+    assert "proc_a" in status
+    assert "proc_b" not in status
+
+
+def test_composition_allocator_oracle_status_none_when_all_processes_have_oracle() -> None:
+    trace_with_oracle = {"pool_before": object(), "requirements": object()}
+    status = composition_allocator_oracle_status(
+        {"proc_a": trace_with_oracle, "proc_b": trace_with_oracle}
+    )
+    assert status is None
+
+
+def test_load_composition_allocator_oracle_raises_when_oracle_missing() -> None:
+    """`load_composition_allocator_oracle` must raise
+    `MissingAllocatorOracleError` (never fabricate a pool/requests from
+    some other proxy) when any named process's trace lacks the oracle
+    groups."""
+    with pytest.raises(MissingAllocatorOracleError):
+        load_composition_allocator_oracle(
+            traces={"proc_a": {}},
+            wids_by_process={"proc_a": ["ATP"]},
+            tick=0,
+        )
 
 
 # --- Source-level regression guard: no idealized grant left in the harness -
@@ -278,22 +435,40 @@ def test_refresh_allocator_views_composition_empty_requests_is_a_noop() -> None:
 def test_composition_harnesses_do_not_call_idealized_grant_in_tick_loop() -> None:
     """Static guard: `refresh_allocator_views` (the idealized per-process
     full-pool grant) must no longer appear inside the multi-process
-    composition tick loops of l2_2_replay_common.py / l2_2_replay_common_v2.py.
-    It remains valid ONLY at the isolated single-process counterfactual
-    replay call sites (`_build_counterfactual_step_vector`), which this test
-    explicitly allows."""
+    composition tick loops of l2_2_replay_common.py / l2_2_replay_common_v2.py
+    / test_l2_5_ppi_ppii_v2.py. It remains valid ONLY at the isolated
+    single-process counterfactual replay call sites
+    (`_build_counterfactual_step_vector`), which this test explicitly
+    allows.
+
+    Also guards against the exact fabrication anti-pattern the blocking
+    review found: no composition path may call
+    `refresh_allocator_views_composition` with the retired
+    `request_vectors=` kwarg (which read `state['substrates']` as the
+    allocator pool), and no composition path may pass `state['substrates']`/
+    `state.get('substrates'` as a would-be pool/request source.
+    """
     for relative_path, allowed_call_count in (
         ("tests/vivarium/l2_2_replay_common.py", 1),
         ("tests/vivarium/l2_2_replay_common_v2.py", 1),
+        ("tests/vivarium/test_l2_5_ppi_ppii_v2.py", 0),
     ):
         source = (_REPO_ROOT / relative_path).read_text(encoding="utf-8")
-        call_count = source.count("refresh_allocator_views(ctx.process")
+        call_count = source.count("refresh_allocator_views(ctx.process") + source.count(
+            "refresh_allocator_views(ppi"
+        )
         assert call_count == allowed_call_count, (
             f"{relative_path}: expected exactly {allowed_call_count} "
             f"idealized-grant call site(s) (isolated counterfactual replay "
             f"only), found {call_count}"
         )
         assert "refresh_allocator_views_composition(" in source, (
-            f"{relative_path}: composition tick loop must call the real "
+            f"{relative_path}: composition path must call the real "
             "contention-aware allocator helper"
+        )
+        assert "request_vectors=" not in source, (
+            f"{relative_path}: retired `request_vectors=` kwarg found -- "
+            "composition allocation must use the oracle-based "
+            "`pool_before=`/`requirements_by_process=` signature, never "
+            "state['substrates']-derived requests"
         )

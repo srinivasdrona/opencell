@@ -32,7 +32,10 @@ from l2_replay_common import (
     build_state_template,
     cell_vector,
     collect_count_delta_dicts,
+    composition_allocator_oracle_status,
     infer_wids_for_observable,
+    load_composition_allocator_oracle,
+    merge_process_state_templates,
     overlay_observable_into_state,
     overlay_trace_after_hint,
     project_karr_vector,
@@ -270,6 +273,21 @@ def run_integrated_replay(*, under_test_processes: list[str], rng_seed: int) -> 
         if no_op_messages:
             pytest.skip("L2.2 N/A: no-op trace for at least one under-test process. " + " | ".join(no_op_messages))
 
+        # Composition-boundary allocation requires the TRUE Karr allocator
+        # oracle (pool_before + requirements, evolveState.m:24-37) -- see
+        # docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md A05/D1.
+        # `states_before` is each process's OWN post-allocation substrate
+        # state and must NEVER be reused (via overlay, sum, or as a
+        # request proxy) to fabricate a pool. If the extended extraction
+        # (scripts/matlab/extract_per_process_traces_v2.m build-step-0)
+        # has not landed for these trace fixtures, fail CLOSED here, before
+        # any tick runs, rather than approximate.
+        oracle_status = composition_allocator_oracle_status(
+            {contexts[name].process.name: contexts[name].trace for name in ordered}
+        )
+        if oracle_status is not None:
+            pytest.skip(f"L2.2 SKIP: {oracle_status}")
+
         all_observables: list[str] = []
         for name in ordered:
             for obs in contexts[name].spec.observables:
@@ -284,7 +302,7 @@ def run_integrated_replay(*, under_test_processes: list[str], rng_seed: int) -> 
                     break
 
         for tick in range(n_ticks):
-            shared_state = build_state_template(contexts[ordered[0]].process)
+            shared_state = merge_process_state_templates([contexts[name].process for name in ordered])
             before_vectors: dict[str, dict[str, np.ndarray]] = {}
             after_vectors: dict[str, dict[str, np.ndarray]] = {}
             step_vectors: dict[tuple[str, str], np.ndarray] = {}
@@ -311,46 +329,34 @@ def run_integrated_replay(*, under_test_processes: list[str], rng_seed: int) -> 
                 )
 
             # Composition-boundary allocation (process closure before pair
-            # execution): collect every composed process's own Karr-oracle
-            # substrate need for this tick and run the REAL allocator
-            # arithmetic once, simultaneously, before any process in the
-            # pair executes. Replaces the idealized per-process
-            # `refresh_allocator_views` grant (see docs/phase_f/
-            # INTEGRITY_AUDIT_PRE_L25.md Finding #20) with genuine
-            # contention via KarrAllocationStep.
-            composition_requests = {
-                contexts[name].process.name: dict(
-                    zip(
-                        contexts[name].wids_by_observable["substrates"],
-                        before_vectors[name]["substrates"].tolist(),
-                        strict=False,
+            # execution): the TRUE Karr allocator oracle (pool_before +
+            # requirements, evolveState.m:24-37), never derived from
+            # states_before/state['substrates'] (docs/phase_f/
+            # L2_0A_ALLOCATOR_INPUT_GATE.md A05 -- states_before is each
+            # process's OWN post-allocation substrate state; reusing it as
+            # a pool or request is exactly the fabrication A05 forbids and
+            # was Finding #20's remediation's own initial bug). Run the
+            # real allocator arithmetic once, simultaneously, before any
+            # process in the composition executes. Oracle availability was
+            # already verified once for all ticks by the upfront
+            # `composition_allocator_oracle_status` skip above; any
+            # per-tick failure here is a genuine data problem, not an
+            # expected skip path, so it is intentionally NOT re-caught.
+            pool_before, requirements_by_process = load_composition_allocator_oracle(
+                traces={contexts[name].process.name: contexts[name].trace for name in ordered},
+                wids_by_process={
+                    contexts[name].process.name: (
+                        contexts[name].wids_by_observable["substrates"]
+                        if "substrates" in contexts[name].spec.observables
+                        else []
                     )
-                )
-                for name in ordered
-                if "substrates" in contexts[name].spec.observables
-            }
-            # The `source_by_observable` pass above overlays "substrates" using
-            # only ONE representative owner process's own WID subset (the
-            # first `ordered` entry that declares the observable). Any other
-            # composed process's OWN exclusive substrate WIDs are therefore
-            # still at the shared_state template default (0.0) at this point.
-            # Feeding that partially-initialized pool into the allocator would
-            # starve those not-yet-overlaid WIDs to zero -- overlay every
-            # composed process's own "substrates" slice here so the allocator
-            # sees the true, complete tick-start pool for every WID, not just
-            # the single owner's subset.
-            for name in ordered:
-                ctx = contexts[name]
-                if "substrates" in ctx.spec.observables:
-                    overlay_observable_into_state(
-                        process=ctx.process,
-                        state=shared_state,
-                        observable="substrates",
-                        vector=before_vectors[name]["substrates"],
-                        wids=ctx.wids_by_observable["substrates"],
-                    )
+                    for name in ordered
+                },
+                tick=tick,
+            )
             refresh_allocator_views_composition(
-                request_vectors=composition_requests,
+                pool_before=pool_before,
+                requirements_by_process=requirements_by_process,
                 state=shared_state,
             )
 
