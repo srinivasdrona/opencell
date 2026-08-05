@@ -91,17 +91,22 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Live review/follow-up state:
   - `replication-closer` — follow-up requested for five Opus-confirmed gaps: Karr lead/limits semantics, randomized ordering, stall-vs-raise behavior, no-hint byproducts and ligation;
   - `allocator-harness-closer` — rework requested after Opus proved the fabricated post-allocation pool caused the nine new failures; real `pool_before` + requirements oracle is now mandatory or the harness must fail closed;
-  - `l25-scope-ratifier` — follow-up requested to fail closed on registry/pair-universe drift and correct the zero-pair rationale;
-  - `l25-scope-opus-review` completed: derivation reproduced, merge waits for the two fail-closed/documentation fixes above;
-  - `procii-closer` — follow-up requested to make the mnrnd-shim wiring guard structural and align the determination text;
-  - `ftsz-event-closer` — follow-up requested after Opus found extraction-driver exit-code, invalid-seed resumability and cwd-root defects;
-  - `dnadamage-event-closer` — follow-up requested to remove the latent production `*_100ticks` oracle-rate read, broaden trace inventory and correct provenance/status details;
+  - `l25-scope-opus-final` — final review of unified catalog authority and 20-test cleanup at `f5e9d0f`;
+  - `l25-scope-ratifier` completed all requested fixes; derivation remains 28 processes, 2 eligible, 1 gap-free, 0 selected pairs.
+  - `procii-opus-final-review` — reviewing final command-form addpath and clause-aware equivalence guards at `b417572`;
+  - `ftsz-opus-final` — final review of the force-delete verification fix at `de31c3e`;
+  - `dnadamage-opus-final` — final review of Rule-8 removal and broadened vacuous-trace classification at `a1df739`;
   - `procii-opus-rereview` — reviewing the structural shim-path and semantic-equivalence guard fixes at `0613d84`;
   - `ribosome-opus-review` — reviewing the completed 50-seed RibosomeAssembly gating bundle at `34b6c0a`;
-  - `ftsz-opus-review` completed with `APPROVE_AS_BLOCKER_TOOLING`; no evidence-integrity defect, merge waits for the tooling follow-up.
+  - `cytokinesis-opus-review` — reviewing successful seed-0 Canary D and the discovered ~3,872-tick catalog-window contradiction at `6b7cf67`;
+  - `macromol-closer` — rework requested after Opus found stale artifact hashes, approximate scheduler ordering and collapsed complex identity; rerun must use real scheduler semantics and withdraw the falsified closed-form demotion rather than defer it;
+  - `ribosome-event-closer` — follow-up requested to fix the default registry regression, batch extractor exit/atomicity, promotion date and stale adapter/report prose before shared-index integration;
+  - `ftsz-event-closer` completed the requested tooling fixes; scientific status remains `INSUFFICIENT_ENSEMBLE` with 0/50 real anchored traces.
   - `dnadamage-opus-review` completed with `APPROVE_AS_BLOCKER_DOC`; blocker conclusion reproduced, merge waits for the Rule-8 and audit-strength follow-up.
   - `replication-opus-review` completed with `APPROVE_AS_PARTIAL`; chromosome improvement reproduced, but no merge until the five applicable gaps above are fixed.
   - `allocator-opus-review` completed `BLOCKING`; the 58F/34P/42S sweep is invalid and must be superseded, not interpreted as real contention.
+  - `ribosome-opus-review` completed: scientific evidence chain verified; merge waits for the registry/extractor/documentation follow-up and then event-index regeneration.
+  - `macromol-opus-review` completed `BLOCKING`; the reachability finding is real, but current branch verification/provenance is false at HEAD and cannot support the H12 taxonomy conclusion.
 - L2.5 pair execution remains blocked until process closure and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted. Scope ratification may proceed in parallel.
 
 **Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
