@@ -6,7 +6,7 @@ Distinct from ``tests/scripts/test_l2_event_adapters.py``'s coverage of
 ``ribosome_assembly.smoke.v1`` -- this file is scoped to the gating-capable
 adapter this task originally added as an unregistered candidate. It has
 since been PROMOTED to the live, registered ``gating_ready`` adapter for
-this process (2026-06-19, once all 50 required event-window seeds existed
+this process (2026-08-05, once all 50 required event-window seeds existed
 and validated -- see ``docs/phase_f/l2_event/
 RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md`` and
 ``tests/scripts/test_l2_event_ribosome_assembly_n50.py`` for the real
@@ -761,7 +761,7 @@ def test_payload_gate_direct_call_reports_missing_and_spurious_component_verdict
 
 # ---------------------------------------------------------------------------
 # Part 4 -- registry-status tests: this adapter is now the LIVE registered,
-# gating_ready row (promoted 2026-06-19 once the real 50-seed cohort was
+# gating_ready row (promoted 2026-08-05 once the real 50-seed cohort was
 # extracted and validated -- see
 # docs/phase_f/l2_event/RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md and
 # tests/scripts/test_l2_event_ribosome_assembly_n50.py for the real 50-seed

@@ -5,6 +5,7 @@ editing the catalog itself)."""
 
 from __future__ import annotations
 
+import json
 import sys
 from pathlib import Path
 
@@ -15,6 +16,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from scripts.l2_event.evidence import MANDATORY_FILES, TRACKED_BUNDLE_ROOT
+from scripts.l2_event.launcher import KARR_NATIVE_ROOT, event_window_mat_path
 from scripts.l2_event.registry import (
     REGISTRY_PATH,
     RegistryError,
@@ -23,9 +26,33 @@ from scripts.l2_event.registry import (
     resolve_process_entry,
     validate_against_catalog,
 )
+from scripts.l2_event.ribosome_assembly_seed_audit import (
+    DEFAULT_SPECS_PATH,
+    REQUIRED_N_SEEDS,
+    audit_ribosome_assembly_n50_seeds,
+)
 from scripts.l2_event.schema import REGISTRY_SCHEMA_VERSION
 
 _TARGET_PROCESSES = ("Cytokinesis", "RibosomeAssembly", "DNADamage", "FtsZPolymerization")
+
+
+def _all_50_real_seeds_present() -> bool:
+    """Existence-only pre-check for skipif -- mirrors the identical helper
+    in ``test_l2_event_ribosome_assembly_n50.py``. The truthfulness-guard
+    test below does the REAL validation; this only decides whether that
+    real validation can run at all in this environment (e.g. skipped on a
+    fresh clone where the gitignored 50-seed cohort was never extracted)."""
+    if not DEFAULT_SPECS_PATH.exists():
+        return False
+    for seed in range(REQUIRED_N_SEEDS):
+        path = event_window_mat_path("RibosomeAssembly", seed, n_ticks=100, karr_native_root=KARR_NATIVE_ROOT)
+        if not path.exists():
+            return False
+    return True
+
+
+_ALL_50_PRESENT = _all_50_real_seeds_present()
+_missing_reason = "Full 50-seed RibosomeAssembly event-window cohort not present locally"
 
 
 def test_registry_covers_exactly_the_four_target_processes():
@@ -46,18 +73,102 @@ def test_registry_v4_scope_matches_spec_section_8():
 
 
 def test_registry_reflects_actual_adapter_availability_not_aspirational_claims():
-    """Ground-truth audit: only RibosomeAssembly has any adapter at all,
-    and it is explicitly smoke-only, never gating_ready."""
+    """Ground-truth audit: RibosomeAssembly is the only process with a
+    real adapter, and (as of the 2026-08-05 promotion backed by a real,
+    audited N=50/M=200 evidence bundle -- see
+    ``test_ribosome_assembly_gating_ready_claim_is_backed_by_a_complete_hash_bound_n50_bundle``
+    below) is gating_ready, not merely structural-smoke-only. Cytokinesis,
+    DNADamage, and FtsZPolymerization have no adapter at all."""
     registry = load_registry()
-    assert registry["RibosomeAssembly"].adapter_status == "structural_smoke_only"
-    assert registry["RibosomeAssembly"].adapter_id == "ribosome_assembly.smoke.v1"
+    assert registry["RibosomeAssembly"].adapter_status == "gating_ready"
+    assert registry["RibosomeAssembly"].adapter_id == "ribosome_assembly.gate.v1"
     for name in ("Cytokinesis", "DNADamage", "FtsZPolymerization"):
         assert registry[name].adapter_status == "not_implemented"
         assert registry[name].adapter_id is None
-    for entry in registry.values():
+
+
+def test_no_process_other_than_ribosome_assembly_claims_gating_ready():
+    """Narrowed truthfulness guard: RibosomeAssembly's gating_ready claim
+    is independently justified below (real N=50 bundle, audited clean).
+    No OTHER process may claim gating_ready without equivalent backing
+    evidence -- none currently has any adapter at all, so none may claim
+    it. This replaces the earlier blanket 'no entry may ever claim
+    gating_ready in this foundation task' assumption, which the real
+    2026-08-05 RibosomeAssembly promotion correctly falsified."""
+    registry = load_registry()
+    for name, entry in registry.items():
+        if name == "RibosomeAssembly":
+            continue
         assert entry.adapter_status != "gating_ready", (
-            f"{entry.process}: no process may claim gating_ready in this foundation task."
+            f"{name}: no adapter/evidence exists to back a gating_ready claim."
         )
+
+
+@pytest.mark.skipif(not _ALL_50_PRESENT, reason=_missing_reason)
+def test_ribosome_assembly_gating_ready_claim_is_backed_by_a_complete_hash_bound_n50_bundle():
+    """The actual truthfulness guard (Opus review, 2026-08-05): a
+    ``gating_ready`` claim in the live registry must never be
+    aspirational or stale. This independently re-derives, from the real
+    on-disk seed cohort and the tracked evidence bundle -- NOT merely by
+    re-reading the registry's own prose -- that RibosomeAssembly's claim
+    is currently true:
+
+    1. the seed audit (the same one `ribosome_assembly_n50_gate` itself
+       refuses to compute without) reports all 50 seeds valid,
+       hash-bound, and non-aliased;
+    2. the tracked evidence bundle
+       (``docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/``) has
+       all 5 mandatory files, with a real PASS verdict computed in
+       ``mode: gate`` (never ``structural_smoke``/``NOT_APPLICABLE``)
+       over exactly 50 seeds on both sides;
+    3. the bundle's own recorded input hashes are exactly the 50 real,
+       distinct, currently-on-disk seed hashes the audit just
+       independently confirmed -- catching the case where the bundle was
+       promoted from a stale or different (e.g. partially aliased) seed
+       set than what is on disk today.
+
+    If a future change flips ``adapter_status`` back without also
+    reverting/regenerating this evidence, or the bundle silently
+    regresses (fewer seeds, hash drift, verdict overwritten), this test
+    fails."""
+    registry = load_registry()
+    assert registry["RibosomeAssembly"].adapter_status == "gating_ready"
+
+    audit_report = audit_ribosome_assembly_n50_seeds()
+    assert audit_report["all_seeds_valid"] is True, audit_report
+    assert audit_report["duplicated_hashes"] == {}, audit_report
+    assert audit_report["n_seeds_valid"] == REQUIRED_N_SEEDS
+    audit_hashes = {row["seed"]: row["sha256"] for row in audit_report["per_seed"]}
+    assert len(audit_hashes) == REQUIRED_N_SEEDS
+    assert all(h is not None for h in audit_hashes.values())
+
+    bundle_dir = TRACKED_BUNDLE_ROOT / "RibosomeAssembly"
+    on_disk = {p.name for p in bundle_dir.iterdir() if p.is_file()}
+    assert set(MANDATORY_FILES) <= on_disk, f"missing mandatory evidence file(s): {set(MANDATORY_FILES) - on_disk}"
+
+    result = json.loads((bundle_dir / "result.json").read_text(encoding="utf-8"))
+    assert result["mode"] == "gate"
+    assert result["verdict"] == "PASS"
+    assert result["n_seeds_karr"] == REQUIRED_N_SEEDS
+    assert result["n_seeds_oc"] == REQUIRED_N_SEEDS
+
+    input_manifest = json.loads((bundle_dir / "input_manifest.json").read_text(encoding="utf-8"))
+    manifest_entries = input_manifest["inputs"]
+    assert len(manifest_entries) == REQUIRED_N_SEEDS
+    manifest_hashes = {entry["seed"]: entry["sha256"] for entry in manifest_entries}
+    assert set(manifest_hashes) == set(range(REQUIRED_N_SEEDS))
+    assert len(set(manifest_hashes.values())) == REQUIRED_N_SEEDS, "bundle input_manifest hashes must be 50 DISTINCT values"
+
+    # The bundle's recorded hashes must match the CURRENT on-disk seed
+    # cohort the audit just re-validated -- not merely be internally
+    # self-consistent -- so a bundle promoted from stale/aliased seeds
+    # (and never regenerated after real seeds replaced them) cannot pass
+    # silently.
+    assert manifest_hashes == audit_hashes, (
+        "evidence bundle input_manifest hashes disagree with the live, "
+        "freshly-audited on-disk seed cohort -- the bundle is stale "
+        "relative to the seeds now on disk."
+    )
 
 
 def test_validate_against_catalog_is_clean_for_the_shipped_registry():

@@ -90,6 +90,16 @@ from scripts.l2_event.window_loader import classify_trace_dir  # noqa: E402
 
 PROCESS = "RibosomeAssembly"
 
+SCOPE_CAVEAT = (
+    "This PASS reflects OC's real per-tick port CONDITIONED on Karr's own "
+    "recorded states_before at every tick (the established test-harness "
+    "design used by this adapter and its seed-0 structural-smoke "
+    "predecessor alike) -- it is not an independent free-running forward "
+    "simulation. It demonstrates per-tick behavioral parity given Karr's "
+    "own trajectory, not agreement between two independently-evolved "
+    "trajectories. Do not read this PASS as free-running fidelity."
+)
+
 
 class GateRunRefused(Exception):  # noqa: N818
     # Matches this package's established RunnerRefusal/EventWindowRefused
@@ -275,6 +285,7 @@ def write_n50_gate_evidence(
         "channels": {c.channel: c.verdict for c in result.channels},
         "reasons": result.reasons,
         "generated_at": generated_at,
+        "scope_caveat": SCOPE_CAVEAT,
     }
 
     run_dir = evidence.write_run_artifacts(

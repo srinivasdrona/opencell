@@ -404,7 +404,7 @@ def test_main_gate_mode_always_refuses_for_ribosome_assembly_single_seed():
 
 
 def test_main_gate_mode_refuses_for_ribosome_assembly_full_ensemble_no_cli_wiring():
-    """As of the 2026-06-19 promotion, RibosomeAssembly IS
+    """As of the 2026-08-05 promotion, RibosomeAssembly IS
     ``adapter_status: gating_ready`` in the live registry, so
     ``check_ensemble_size``/``check_adapter`` no longer raise for this
     call. This still refuses because `main`'s own ``--mode gate`` CLI
@@ -420,7 +420,7 @@ def test_main_gate_mode_refuses_for_ribosome_assembly_full_ensemble_no_cli_wirin
 
 @pytest.mark.skipif(not _RA_TRACE.exists(), reason="Real RibosomeAssembly seed-000 event-window MAT not present locally")
 def test_main_smoke_mode_refuses_for_ribosome_assembly_now_that_it_is_gating_ready(tmp_path, monkeypatch):
-    """Historical note: before the 2026-06-19 promotion (see
+    """Historical note: before the 2026-08-05 promotion (see
     ``docs/phase_f/l2_event/event_registry.yaml`` and
     ``tests/scripts/test_l2_event_ribosome_assembly_n50.py`` for the real
     50-seed gate this promotion is based on), this exact CLI invocation

@@ -67,7 +67,7 @@ processes:
     required_n_seeds: 50
     deferred_reason: null
     notes: >
-      In v4 scope (spec §8, D2). PROMOTED to gating_ready (2026-06-19):
+      In v4 scope (spec §8, D2). PROMOTED to gating_ready (2026-08-05):
       all 50/50 required event-window seeds now exist on disk
       (data/m1_sources/karr_native/per_process_traces_v2_event_s{000..049}/
       RibosomeAssembly_100ticks.mat), each individually validated by
