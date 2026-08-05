@@ -10,8 +10,9 @@ Companion artifacts:
 - `scripts/derive_l25_scope.py` — deterministic deriver/validator that
   produces the catalog above from tracked/live inputs, never from stored
   verdict strings.
-- `tests/scripts/test_derive_l25_scope.py` — 14 focused tests (synthetic
-  algorithm tests + real-data regenerability tests).
+- `tests/scripts/test_derive_l25_scope.py` — 20 focused tests (synthetic
+  algorithm tests, real-data regenerability tests, registry/pair-universe
+  drift mutation tests, and catalog-path single-authority tests).
 
 ## DAP Intent
 
@@ -356,6 +357,39 @@ not deleted):
   `gap is True` for both cases.
 - Operator escalation: no.
 
+**Decision D8 — Single authoritative catalog-path resolution (added after Opus review)**
+- Question: `derive_l25_pair_matrix._load_catalog` already resolves
+  `PROCESS_CATALOG.yaml` via a candidate-list precedence
+  (`docs/phase_f/PROCESS_CATALOG.yaml` first, then
+  `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`); should
+  `derive_l25_scope.py`'s own raw-row parse (used for eligibility/verdicts)
+  resolve the path independently, or reuse `pairmat`'s resolution?
+- Options: (1) keep a second, independently hardcoded
+  `CATALOG_PATH = .../l2_2_design_a/PROCESS_CATALOG.yaml` constant (the
+  pre-review state); (2) call `pairmat._load_catalog(_REPO)` exactly once in
+  `build_payload()` and reuse its returned path for the raw-row parse too;
+  (3) duplicate the candidate-list logic locally.
+- Chosen: (2).
+- Rationale: (1) is a latent split-authority bug -- today both paths happen
+  to agree only because `docs/phase_f/PROCESS_CATALOG.yaml` does not exist
+  yet; if it were ever created, `pairmat._load_catalog` would silently start
+  reading the new file for schemas while the hardcoded `CATALOG_PATH`
+  constant kept reading the old file for eligibility, producing two
+  different processes lists with no error. (3) duplicates logic that
+  already exists and could drift out of sync on its own.
+- Tradeoffs: none; this is a pure refactor with no numeric effect (confirmed:
+  `docs/phase_f/PROCESS_CATALOG.yaml` does not exist today, so
+  `pairmat._load_catalog` resolves to the same
+  `l2_2_design_a/PROCESS_CATALOG.yaml` file either way).
+- Beat-4 inversion: a future `docs/phase_f/PROCESS_CATALOG.yaml` is added for
+  an unrelated reason and silently becomes "the" catalog for one half of
+  this script but not the other. Falsifier:
+  `test_catalog_path_resolution_is_shared_not_independently_hardcoded`
+  monkeypatches `pairmat._load_catalog`'s resolved path and asserts the
+  raw-row parse follows it; `test_no_independently_hardcoded_catalog_path_constant`
+  asserts no second `CATALOG_PATH` constant exists at all.
+- Operator escalation: no.
+
 ## Critique self-audit
 
 | Pre-mortem / hard rule | Addressed by |
@@ -369,6 +403,7 @@ not deleted):
 | No new infrastructure beyond simple tracked YAML + validator | D4; one new script + one new YAML + one new test file; no new schema family, no new harness |
 | Registry/pair-universe drift cannot silently flip `ok` to True | D6: `_check_registry_integrity()` hard-gates `ok`; `test_registry_integrity_*` mutation tests prove missing-TOML/catalog drift cannot shrink required coverage and pass anyway |
 | Unverifiable short-circuit status must not silently clear a gap | D7: fail-closed default; `test_grep_known_short_circuit_gap_missing_module_fails_closed` / `_none_module_fails_closed` |
+| A future `docs/phase_f/PROCESS_CATALOG.yaml` cannot create split catalog-path authority | D8: single `pairmat._load_catalog(_REPO)` resolution reused for both the raw-row parse and schemas; `test_catalog_path_resolution_is_shared_not_independently_hardcoded`, `test_no_independently_hardcoded_catalog_path_constant`, `test_build_payload_records_the_same_catalog_path_pairmat_resolves` |
 
 ## 10) Risks and residual unknowns
 

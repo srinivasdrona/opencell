@@ -1,7 +1,8 @@
 schema_version: 1
 denominator:
   canonical_karr_process_count: 28
-  source: docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml (processes list length)
+  source: docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml (processes list length; path resolved via derive_l25_pair_matrix._load_catalog's
+    candidate precedence, the single authoritative catalog-path resolution)
   total_pairs_c_28_2: 378
   structural_shared_pool_pairs: 256
   structural_disjoint_pairs: 122
@@ -427,5 +428,5 @@ summary:
   n_selected_pairs: 0
   n_uncovered_classes: 11
   ok: false
-generated_at: '2028-05-08T02:53:59Z'
-content_hash: 7fc46bd63c6d473fb0f8dc3b0b68202f110cfd2dc7378040f81e91a78c651bac
+generated_at: '2039-02-11T00:14:27Z'
+content_hash: eb34a57dcba863693b61d711b3fb3c3111f5f6823ab0dc5f6094b2b2cd31c87e

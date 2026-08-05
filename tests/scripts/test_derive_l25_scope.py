@@ -360,3 +360,69 @@ def test_registry_integrity_catches_catalog_side_drift(monkeypatch):
     assert "Metabolism" in violations
     assert "name-set mismatch" in violations
     assert "catalog process count is 27" in violations
+
+
+def test_no_independently_hardcoded_catalog_path_constant():
+    """derive_l25_scope.py must not define its own second PROCESS_CATALOG.yaml
+    path constant alongside derive_l25_pair_matrix's candidate-list
+    resolution -- exactly one function (`pairmat._load_catalog`) may decide
+    which file "the catalog" is, or a future
+    docs/phase_f/PROCESS_CATALOG.yaml could silently split the two
+    derivations onto different files."""
+    assert not hasattr(scope, "CATALOG_PATH"), (
+        "found a standalone CATALOG_PATH constant in derive_l25_scope.py -- "
+        "the catalog path must be resolved exactly once, via "
+        "derive_l25_pair_matrix._load_catalog(_REPO), and reused from there"
+    )
+
+
+def test_build_payload_records_the_same_catalog_path_pairmat_resolves():
+    """The `denominator.source` field recorded in the payload must name the
+    same file `derive_l25_pair_matrix._load_catalog` resolves to -- i.e.
+    build_payload's own raw-row parse and its schema/pair machinery agree on
+    one authoritative catalog path, not two independently-derived ones."""
+    _catalog_lookup, expected_path, _fallback_mode = pairmat._load_catalog(scope._REPO)
+    expected_rel = expected_path.relative_to(scope._REPO).as_posix()
+    payload, _ok = scope.build_payload()
+    assert payload["denominator"]["source"].startswith(expected_rel)
+
+
+def test_catalog_path_resolution_is_shared_not_independently_hardcoded(monkeypatch, tmp_path):
+    """Simulates the future scenario the operator flagged: a new
+    docs/phase_f/PROCESS_CATALOG.yaml starts taking precedence over
+    docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml. Patching
+    `pairmat._load_catalog`'s resolved path -- the single authoritative
+    resolution point -- must be sufficient to redirect BOTH the schema
+    loader and build_payload's own raw-row parse. If derive_l25_scope.py
+    still had a second, independently hardcoded path constant, this
+    monkeypatch would have no effect on the raw-row parse and this test
+    would fail."""
+    real_catalog_path = scope._REPO / "docs" / "phase_f" / "l2_2_design_a" / "PROCESS_CATALOG.yaml"
+    fake_catalog = tmp_path / "PROCESS_CATALOG.yaml"
+    fake_catalog.write_text(real_catalog_path.read_text(encoding="utf-8"), encoding="utf-8")
+
+    real_load_catalog = pairmat._load_catalog
+
+    def _fake_load_catalog(root):
+        lookup, _old_path, fallback_mode = real_load_catalog(root)
+        return lookup, fake_catalog, fallback_mode
+
+    monkeypatch.setattr(pairmat, "_load_catalog", _fake_load_catalog)
+
+    seen_paths: list[Path] = []
+    real_load_rows = scope._load_raw_catalog_rows
+
+    def _spy_load_rows(path):
+        seen_paths.append(path)
+        return real_load_rows(path)
+
+    monkeypatch.setattr(scope, "_load_raw_catalog_rows", _spy_load_rows)
+
+    scope.build_payload()
+
+    assert seen_paths == [fake_catalog], (
+        "build_payload must resolve the catalog path exactly once via "
+        "derive_l25_pair_matrix._load_catalog and reuse it for its own "
+        "raw-row parse -- a second, independently hardcoded path would "
+        "silently ignore this monkeypatch and keep reading the real file"
+    )

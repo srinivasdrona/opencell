@@ -60,7 +60,6 @@ import derive_l25_pair_matrix as pairmat  # noqa: E402 (flat sibling module)
 
 from scripts.l22_evidence import generator as l22gen  # noqa: E402
 
-CATALOG_PATH = _REPO / "docs" / "phase_f" / "l2_2_design_a" / "PROCESS_CATALOG.yaml"
 DEFAULT_OUT = _REPO / "docs" / "phase_f" / "l2_5" / "L2_5_SCOPE_CATALOG.yaml"
 SHORTCIRCUIT_AUDIT_DOC = "docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md"
 CANONICAL_STATE_GROUPS = pairmat.CANONICAL_STATE_GROUPS
@@ -408,7 +407,17 @@ def _pair_record_to_dict(pair: pairmat.PairRecord) -> dict[str, Any]:
 
 
 def build_payload() -> tuple[dict[str, Any], bool]:
-    catalog_rows = _load_raw_catalog_rows(CATALOG_PATH)
+    # Single authoritative catalog-path resolution, reused for both this
+    # script's own raw-row parse and the pair/schema machinery below.
+    # `derive_l25_pair_matrix._load_catalog`'s candidate-list precedence
+    # (docs/phase_f/PROCESS_CATALOG.yaml, then
+    # docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml) is resolved exactly
+    # once here -- if a future docs/phase_f/PROCESS_CATALOG.yaml is ever
+    # created, both derivations will agree on which file "the catalog" is
+    # instead of a second, independently hardcoded path silently reading a
+    # different file and creating split authority.
+    catalog_lookup, catalog_path, _fallback_mode = pairmat._load_catalog(_REPO)
+    catalog_rows = _load_raw_catalog_rows(catalog_path)
     verdicts = derive_process_verdicts(catalog_rows)
     eligibility = {v.name: v for v in verdicts}
 
@@ -417,7 +426,6 @@ def build_payload() -> tuple[dict[str, Any], bool]:
     # before computing pairs (the field name is kept only because PairRecord
     # is a frozen dataclass we do not want to fork; its *meaning* here is
     # "freshly-derived eligible", not "has passed L2.2").
-    catalog_lookup, _catalog_path, _fallback_mode = pairmat._load_catalog(_REPO)
     schemas = pairmat._load_process_schemas(_REPO, catalog_lookup)
     # `.get(..., False)` rather than `[...]`: a schema whose name is not in
     # `eligibility` at all (extra/renamed per-process TOML) must not crash
@@ -446,11 +454,24 @@ def build_payload() -> tuple[dict[str, Any], bool]:
 
     ok = len(selection["uncovered"]) == 0 and len(verdicts) == 28 and not registry_violations
 
+    try:
+        catalog_source_desc = catalog_path.relative_to(_REPO).as_posix()
+    except ValueError:
+        # Defensive only (e.g. a test double resolves to a path outside
+        # _REPO); production catalog_path is always _REPO-relative because
+        # pairmat._load_catalog(_REPO) only ever joins _REPO with a
+        # candidate-relative path.
+        catalog_source_desc = str(catalog_path)
+
     payload: dict[str, Any] = {
         "schema_version": 1,
         "denominator": {
             "canonical_karr_process_count": 28,
-            "source": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml (processes list length)",
+            "source": (
+                f"{catalog_source_desc} (processes list length; path resolved via "
+                "derive_l25_pair_matrix._load_catalog's candidate precedence, the "
+                "single authoritative catalog-path resolution)"
+            ),
             "total_pairs_c_28_2": len(all_pairs),
             "structural_shared_pool_pairs": len(shared_pool_pairs),
             "structural_disjoint_pairs": len(disjoint_pairs),
