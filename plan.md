@@ -61,15 +61,21 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Live state (2026-08-05) — parallel L2.5 prerequisite closure:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."** Fix and verify every applicable gap before L2.5 eligibility (`DECISIONS.md`: `no-known-gap-waivers`).
-- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `3ad6a21`, 151 commits ahead / 0 behind `origin/main` @ `01d54ae`.
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `5b5de6c`, 152 commits ahead / 0 behind `origin/main` @ `01d54ae`.
 - Baseline integration is complete: `0e8ec4c` merged origin's green CI/README history; `3ad6a21` repaired 29 merged-branch Ruff findings and rebound stale Replication/Transcription L1b anchors.
 - Merged blocking surfaces are green: Ruff, naked-number lint, 402 unit tests, L1b 115/115 methods + 28/28 wiring rows, L2.0, Gate 1, Gate 2 and schema validation. The 553-test repair cohort passed; its 11 skips are the explicitly local-only bounded multi-seed pilot tests and were audited with `-rs`.
-- Five dependency-independent worktrees now branch from `3ad6a21`:
+- Eleven worktrees now branch from the green `3ad6a21` baseline:
   1. `E:\opencell-worktrees\l25-scope-ratification-20260805` (`agent/l25-scope-ratification-20260805`);
   2. `E:\opencell-worktrees\l22-replication-closure-20260805` (`agent/l22-replication-closure-20260805`);
   3. `E:\opencell-worktrees\l22-dnas-closure-20260805` (`agent/l22-dnas-closure-20260805`);
-  4. `E:\opencell-worktrees\l2-event-closure-20260805` (`agent/l2-event-closure-20260805`);
-  5. `E:\opencell-worktrees\l22-natural-gap-closure-20260805` (`agent/l22-natural-gap-closure-20260805`).
+  4. `E:\opencell-worktrees\l2-event-ribosome-20260805` (`agent/l2-event-ribosome-20260805`);
+  5. `E:\opencell-worktrees\l2-event-cytokinesis-20260805` (`agent/l2-event-cytokinesis-20260805`);
+  6. `E:\opencell-worktrees\l2-event-ftsz-20260805` (`agent/l2-event-ftsz-20260805`);
+  7. `E:\opencell-worktrees\l2-event-dnadamage-20260805` (`agent/l2-event-dnadamage-20260805`);
+  8. `E:\opencell-worktrees\l22-procii-closure-20260805` (`agent/l22-procii-closure-20260805`);
+  9. `E:\opencell-worktrees\l22-macromol-closure-20260805` (`agent/l22-macromol-closure-20260805`);
+  10. `E:\opencell-worktrees\l2-event-closure-20260805` (`agent/l2-event-closure-20260805`) — reserved for integrating the four event-process branches and regenerating the shared event index;
+  11. `E:\opencell-worktrees\l22-natural-gap-closure-20260805` (`agent/l22-natural-gap-closure-20260805`) — reserved for integrating ProteinProcessingII + MacromolecularComplexation and regenerating the shared L2.2 index.
 - Background implementers are not yet dispatched. Every lane must use the mandatory three-slot prompt architecture: `DELIBERATE_ACTION_PREFIX_v2` + the appropriate slot-2 template + a case-specific slot 3 quoting the authoritative spec/catalog entry.
 - L2.5 pair execution remains blocked until process closure and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted. Scope ratification may proceed in parallel.
 
