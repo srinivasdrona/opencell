@@ -1,5 +1,21 @@
 # FtsZPolymerization windowed/continuous fidelity profile — spec
 
+> **2026-08-05 update:** the N=1, non-division-anchored honest diagnostic
+> this spec documents (§3 onward) is superseded for CATALOG CONFORMANCE by
+> the pre-division event-window evidence path in
+> `scripts/l2_event/ftsz_pre_division_evidence.py` (spec:
+> `docs/phase_f/l2_windowed/FTSZ_PRE_DIVISION_EVENT_WINDOW_SPEC.md`), which
+> targets the LIVE, unedited `PROCESS_CATALOG.yaml` row (`bucket:
+> EVENT_CLASS`, `M_ticks: 200`, `N_seeds: 50`,
+> `seed_window.tick_range_from_division: [-200, 0]`) directly, rather than
+> the `WINDOWED_CONTINUOUS_CLASS` reclassification this spec's §1 argues
+> for. That reclassification (`proposed_patches/
+> ftsz_polymerization_windowed_v1.catalog_patch.yaml`) remains unapplied.
+> `tests/vivarium/test_karr_ftsz_polymerization_honest_canary.py` (this
+> spec's diagnostic) is NOT deleted -- it remains valid N=1 evidence -- but
+> it no longer represents the catalog-conformance evidence path for this
+> process. This document's own content is otherwise unchanged below.
+
 STATUS: branch-local spec for `agent/l2-ftsz-windowed-profile`. Documents the
 Turn-1 intent (approved with adjudications), the Turn-2 implementation, and
 the Turn-3 closeout (Opus review findings: unconditional stoichiometry check,
