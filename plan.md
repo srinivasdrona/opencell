@@ -61,10 +61,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Live state (2026-08-05) — parallel L2.5 prerequisite closure:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."** Fix and verify every applicable gap before L2.5 eligibility (`DECISIONS.md`: `no-known-gap-waivers`).
-- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `5b5de6c`, 152 commits ahead / 0 behind `origin/main` @ `01d54ae`.
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `07270cd`, 154 commits ahead / 0 behind `origin/main` @ `01d54ae`.
 - Baseline integration is complete: `0e8ec4c` merged origin's green CI/README history; `3ad6a21` repaired 29 merged-branch Ruff findings and rebound stale Replication/Transcription L1b anchors.
 - Merged blocking surfaces are green: Ruff, naked-number lint, 402 unit tests, L1b 115/115 methods + 28/28 wiring rows, L2.0, Gate 1, Gate 2 and schema validation. The 553-test repair cohort passed; its 11 skips are the explicitly local-only bounded multi-seed pilot tests and were audited with `-rs`.
-- Eleven worktrees now branch from the green `3ad6a21` baseline:
+- Twelve worktrees now branch from the green `3ad6a21` baseline:
   1. `E:\opencell-worktrees\l25-scope-ratification-20260805` (`agent/l25-scope-ratification-20260805`);
   2. `E:\opencell-worktrees\l22-replication-closure-20260805` (`agent/l22-replication-closure-20260805`);
   3. `E:\opencell-worktrees\l22-dnas-closure-20260805` (`agent/l22-dnas-closure-20260805`);
@@ -76,6 +76,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   9. `E:\opencell-worktrees\l22-macromol-closure-20260805` (`agent/l22-macromol-closure-20260805`);
   10. `E:\opencell-worktrees\l2-event-closure-20260805` (`agent/l2-event-closure-20260805`) — reserved for integrating the four event-process branches and regenerating the shared event index;
   11. `E:\opencell-worktrees\l22-natural-gap-closure-20260805` (`agent/l22-natural-gap-closure-20260805`) — reserved for integrating ProteinProcessingII + MacromolecularComplexation and regenerating the shared L2.2 index.
+  12. `E:\opencell-worktrees\l25-allocator-harness-20260805` (`agent/l25-allocator-harness-20260805`) — replace idealized replay grants with the real `KarrAllocationStep` and prove contention/fairness before pair execution.
 - Live Sonnet implementers (all dispatched with the mandatory three-slot prompt architecture and isolated worktree ownership):
   - `l25-scope-ratifier` — L2.5 denominator and covering-set ratification;
   - `replication-closer` — real no-hint Replication source/event closure;
