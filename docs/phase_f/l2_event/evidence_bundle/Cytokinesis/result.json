@@ -1,0 +1,22 @@
+{
+  "adapter_id": "cytokinesis.karr_only_smoke.v1",
+  "channels": [],
+  "event_timing_model": "single_firing",
+  "mode": "structural_smoke",
+  "n_seeds_karr": 1,
+  "n_seeds_oc": 0,
+  "oc_only_fire_ticks": {},
+  "process": "Cytokinesis",
+  "reasons": [
+    "karr_only_structural_smoke: Canary D retry after the mnrnd shim repair. Proves the extractor/loader/adapter round-trip on one real anchor-mode seed; this is NOT a calibrated ensemble gate verdict and is NOT an OC-vs-Karr comparison (the anchor snapshot only carries boundEnzymes/enzymes/substrates + the 6 flattened diameter-anchor scalars, not full geometry/ftsZRing/chromosome objects -- an OC replay would require fabricating those fields, which is forbidden).",
+    "onset_tick=27556 (contraction onset: first strict pinchedDiameter decrease)",
+    "completion_tick=31427 (geometry pinch completion: first positive->zero transition)",
+    "tick_start=27428 n_ticks=4000 stride_contract_ok=True",
+    "division_relative_onset_tick=-3871 division_relative_completion_tick=0 (completion == the division-relative origin by this canary's own timing definition)",
+    "mnrnd_shim_version=1 mnrnd_shim_sha256=819218f9c4db0e9b24606e6bd9d34dd31600bfbdc764c8c46e17bf72da391e67",
+    "event_observable_projection_version=2"
+  ],
+  "schema_version": 1,
+  "verdict": "NOT_APPLICABLE",
+  "warnings": []
+}

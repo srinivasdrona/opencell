@@ -427,3 +427,62 @@ changes cannot alter the offset" and vestigial-input guards):
   timing-channel sensitivity, payload non-gating) are correct against
   the runner/metrics code as it exists today, not to certify real-data
   gating readiness.
+
+## 9. Addendum (2026-08-05): Canary D closeout, real seed-0 anchor trace
+
+This addendum supersedes the "does NOT claim" bullets above about "no
+MATLAB extraction" and "`event_registry.yaml` was NOT edited" -- both are
+no longer true as of this date; the rest of round 3 (adapter code,
+predicates, required-input manifest) is unchanged.
+
+- **What happened**: Canary D (the Cytokinesis event-window diagnostic,
+  paused since `docs/phase_f/CHECKPOINT_2026-08-03.md` pending the
+  `mnrnd` shim repair) was retried under the fixed, hash-bound shim
+  (`mnrnd_shim_version=1`,
+  `sha256=819218f9c4db0e9b24606e6bd9d34dd31600bfbdc764c8c46e17bf72da391e67`).
+  The first attempt used the catalog's `M_ticks: 100` default and failed
+  closed (no partial file written) with `onset_tick=27556 precedes the
+  captured window start tick_start=31328` -- a real, non-synthetic
+  finding: seed 0's actual onset-to-completion span is **~3872 ticks**
+  (`onset_tick=27556`, `completion/window_anchor=31427`), far longer than
+  a 100-tick capture buffer can hold. A second retry with `n_ticks=4000`
+  (same seed, same deterministic trajectory -- `n_ticks` only sizes the
+  capture buffer, it does not change the onset/completion search) reached
+  and validated a complete M4 anchor window:
+  `data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat`
+  (gitignored, local-only), `tick_start=27428 <= onset_tick=27556 <
+  window_anchor=31427`, `stride_contract_ok=True`.
+- **Karr-only structural smoke evidence** was written process-locally to
+  `docs/phase_f/l2_event/evidence_bundle/Cytokinesis/` (adapter_id
+  `cytokinesis.karr_only_smoke.v1`, `mode=structural_smoke`,
+  `verdict=NOT_APPLICABLE`) via a standalone script
+  (`scripts/l2_event/write_cytokinesis_canary_d_evidence.py`) that calls
+  only `evidence.write_run_artifacts`/`evidence.bundle_run` --
+  `evidence_index.json` was never touched.
+- **Why Karr-only, not an OC-vs-Karr comparison**: this anchor trace's
+  snapshot only carries `boundEnzymes`/`enzymes`/`substrates` plus the 6
+  flattened diameter-anchor scalars (§2's `pick_snapshot_properties`
+  blind spot for state-object references) -- not the full
+  `geometry`/`ftsZRing`/`chromosome` objects `oc_observation`/
+  `require_cytokinesis_state_inputs` need. Fabricating those fields to
+  force an OC replay would be a synthetic biology event; the evidence
+  instead uses only the adapter's pure, metadata-independent
+  `karr_pinched_diameter_sequence`/`find_onset_tick`/`find_completion_tick`
+  helpers against the real trace.
+- **New finding requiring catalog attention**: the catalog's `M_ticks:
+  100` ("default; only fires during division window") is not sufficient
+  to capture a real single-firing Cytokinesis anchor window, and the real
+  onset is `~3871` ticks before completion -- far outside the catalog's
+  `seed_window.tick_range_from_division: [-50, 0]` assumption. `N=50` is
+  not authorized until this is reconciled (a wider `M_ticks`/capture
+  buffer, and/or a revised `seed_window` rationale).
+- `event_registry.yaml`'s Cytokinesis row now reflects `adapter_id:
+  cytokinesis.karr_only_smoke.v1` / `adapter_status:
+  structural_smoke_only`, mirroring the RibosomeAssembly Canary A
+  precedent; it is still not `gating_ready`.
+- Regression tests added:
+  `tests/scripts/test_l2_event_window_loader.py::test_load_real_cytokinesis_seed0_event_trace_anchor_completeness`
+  and `::test_load_real_cytokinesis_seed0_event_trace_bound_to_final_mnrnd_shim`
+  (both skip if the local trace is absent). The mnrnd histogram-edge-bug
+  regression coverage was already complete in `tests/scripts/test_mnrnd_shim.py`
+  (17 cases) before this task; no gap was found there.

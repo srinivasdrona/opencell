@@ -1,0 +1,11 @@
+{
+  "adapter_id": "cytokinesis.karr_only_smoke.v1",
+  "adapter_module": "scripts.l2_event.adapters.cytokinesis",
+  "generated_at": "2026-08-05T12:27:59.091726+00:00",
+  "git_sha": "3ad6a21a74644929a70007705bc25ec4c5e10b0b",
+  "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
+  "karr_source": "data/m1_sources/karr_native/per_process_traces_v2_event_s000",
+  "process": "Cytokinesis",
+  "registry_sha256": "5ab08e038e75b74e7bc5148522933472faeaac267f05490a298004fce158da44",
+  "schema_version": 1
+}

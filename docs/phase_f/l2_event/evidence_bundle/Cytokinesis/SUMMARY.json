@@ -1,0 +1,17 @@
+{
+  "completion_tick": 31427,
+  "division_relative_completion_tick": 0,
+  "division_relative_onset_tick": -3871,
+  "event_observable_projection_version": 2,
+  "generated_at": "2026-08-05T12:27:59.091726+00:00",
+  "mnrnd_shim_sha256": "819218f9c4db0e9b24606e6bd9d34dd31600bfbdc764c8c46e17bf72da391e67",
+  "mnrnd_shim_version": 1,
+  "mode": "structural_smoke",
+  "n_ticks": 4000,
+  "onset_tick": 27556,
+  "process": "Cytokinesis",
+  "seed": 0,
+  "stride_contract_ok": true,
+  "tick_start": 27428,
+  "verdict": "NOT_APPLICABLE"
+}

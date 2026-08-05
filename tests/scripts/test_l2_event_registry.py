@@ -46,12 +46,18 @@ def test_registry_v4_scope_matches_spec_section_8():
 
 
 def test_registry_reflects_actual_adapter_availability_not_aspirational_claims():
-    """Ground-truth audit: only RibosomeAssembly has any adapter at all,
-    and it is explicitly smoke-only, never gating_ready."""
+    """Ground-truth audit: only RibosomeAssembly and Cytokinesis have any
+    adapter at all (both explicitly smoke-only, never gating_ready).
+    Cytokinesis gained a Karr-only structural-smoke adapter (2026-08-05,
+    Canary D closeout: real seed-0 anchor trace at n_ticks=4000) but this
+    is NOT a full OC-vs-Karr gate -- the anchor snapshot lacks the full
+    geometry/ftsZRing/chromosome objects a real comparison needs."""
     registry = load_registry()
     assert registry["RibosomeAssembly"].adapter_status == "structural_smoke_only"
     assert registry["RibosomeAssembly"].adapter_id == "ribosome_assembly.smoke.v1"
-    for name in ("Cytokinesis", "DNADamage", "FtsZPolymerization"):
+    assert registry["Cytokinesis"].adapter_status == "structural_smoke_only"
+    assert registry["Cytokinesis"].adapter_id == "cytokinesis.karr_only_smoke.v1"
+    for name in ("DNADamage", "FtsZPolymerization"):
         assert registry[name].adapter_status == "not_implemented"
         assert registry[name].adapter_id is None
     for entry in registry.values():
