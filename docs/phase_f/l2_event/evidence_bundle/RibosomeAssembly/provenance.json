@@ -1,11 +1,11 @@
 {
-  "adapter_id": "ribosome_assembly.smoke.v1",
-  "adapter_module": "scripts.l2_event.adapters.ribosome_assembly_smoke",
-  "generated_at": "2026-08-03T11:30:58.616366+00:00",
-  "git_sha": "a2eac5590bc2ba684ec1d1319ccf8d13f3598581",
+  "adapter_id": "ribosome_assembly.gate.v1",
+  "adapter_module": "scripts.l2_event.adapters.ribosome_assembly_gate",
+  "generated_at": "2026-08-05T09:36:21.162036+00:00",
+  "git_sha": "3ad6a21a74644929a70007705bc25ec4c5e10b0b",
   "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
-  "karr_source": "data/m1_sources/karr_native/per_process_traces_v2_event_s000",
+  "karr_source": "data/m1_sources/karr_native",
   "process": "RibosomeAssembly",
-  "registry_sha256": "216f03369daa1cff5579fb53b50bc0e08ff04d01e439b01b7fb2f2b8e6b0f45a",
+  "registry_sha256": "c11feda1eb1532a6fe874edb7bbacb77937a9351cf5343b64503652ef894550f",
   "schema_version": 1
 }

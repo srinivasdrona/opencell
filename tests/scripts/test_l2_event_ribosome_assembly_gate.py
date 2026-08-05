@@ -1,10 +1,17 @@
-"""Unit tests for the candidate gating-ready RibosomeAssembly adapter
+"""Unit tests for the RibosomeAssembly gate adapter
 (``scripts/l2_event/adapters/ribosome_assembly_gate.py``, adapter_id
 ``ribosome_assembly.gate.v1``).
 
 Distinct from ``tests/scripts/test_l2_event_adapters.py``'s coverage of
-``ribosome_assembly.smoke.v1`` -- this file is scoped to the NEW,
-gating-capable adapter this task adds. It is organized in three parts:
+``ribosome_assembly.smoke.v1`` -- this file is scoped to the gating-capable
+adapter this task originally added as an unregistered candidate. It has
+since been PROMOTED to the live, registered ``gating_ready`` adapter for
+this process (2026-06-19, once all 50 required event-window seeds existed
+and validated -- see ``docs/phase_f/l2_event/
+RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md`` and
+``tests/scripts/test_l2_event_ribosome_assembly_n50.py`` for the real
+50-seed gate computation this promotion is based on). This file is
+organized in four parts:
 
 1. Pure adapter unit tests (payload mapping, empty-update handling,
    fire_count tick-incidence semantics, multiple-particles-in-one-tick,
@@ -15,28 +22,27 @@ gating-capable adapter this task adds. It is organized in three parts:
    the same ground-truth fires (ticks [9, 17]) and mapped payload keys the
    existing smoke adapter already established, including the specific
    per-tick WID identity (RIBOSOME_50S@9, RIBOSOME_30S@17, both Karr and
-   OC) -- and that a swapped mapping breaks that identity -- AND proves
-   the runner still cannot reach a computed gate verdict on this file
-   today. Canary-A closeout: the real seed-0 MAT now carries a complete
-   M4 stride/tick-window contract (so the strict-mode window load itself
-   succeeds), but only 1 of the required 50 seeds exists on disk, so the
-   ensemble-size refusal alone still blocks a computed verdict -- the
-   only honest verdict for this file remains the existing
-   ``structural_smoke`` / ``NOT_APPLICABLE`` path.
+   OC) -- and that a swapped mapping breaks that identity -- AND proves a
+   single-seed cohort alone (this file's own seed-0 fixture) still cannot
+   reach a computed gate verdict, independent of registry promotion --
+   `evaluate_gate`'s `check_ensemble_size` gauntlet requires the full
+   50-seed ensemble no matter how the registry classifies the adapter; see
+   `test_l2_event_ribosome_assembly_n50.py` for the real 50-seed verdict.
 3. Synthetic 50-seed cohort tests driving ``scripts.l2_event.runner.
    evaluate_gate`` end-to-end through this adapter's own
    ``karr_observation``/``oc_observation`` methods (never constructing
    ``EventObservation``/``EventTimeline`` by hand) -- count/timing/payload
    PASS and FAIL, multiple particles forming in the same tick pooled into
    a real cohort, and missing/spurious OC payload components.
-4. Registry-refusal tests proving this adapter remains unreachable through
-   the real registry: ``evaluate_gate``/``check_adapter`` refuse this
-   candidate against the LIVE ``event_registry.yaml`` RibosomeAssembly row
-   (still declaring ``ribosome_assembly.smoke.v1``) with
-   ``ADAPTER_NOT_REGISTERED``, and a process-name mismatch is refused with
-   ``ADAPTER_PROCESS_MISMATCH`` -- this candidate adapter is never wired
-   into the real dispatch path by this module.
+4. Registry-status tests: ``check_adapter`` now ACCEPTS this adapter
+   against the LIVE, promoted ``event_registry.yaml`` RibosomeAssembly row
+   (``ribosome_assembly.gate.v1`` / ``gating_ready``), and still refuses
+   (``ADAPTER_NOT_REGISTERED``) against an in-memory stale/reverted row
+   declaring the prior ``ribosome_assembly.smoke.v1`` /
+   ``structural_smoke_only`` state -- a process-name mismatch is refused
+   with ``ADAPTER_PROCESS_MISMATCH``.
 """
+
 
 from __future__ import annotations
 
@@ -754,38 +760,58 @@ def test_payload_gate_direct_call_reports_missing_and_spurious_component_verdict
 
 
 # ---------------------------------------------------------------------------
-# Part 4 -- registry-refusal tests: this candidate adapter stays
-# unreachable/unregistered through the real dispatch path
+# Part 4 -- registry-status tests: this adapter is now the LIVE registered,
+# gating_ready row (promoted 2026-06-19 once the real 50-seed cohort was
+# extracted and validated -- see
+# docs/phase_f/l2_event/RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md and
+# tests/scripts/test_l2_event_ribosome_assembly_n50.py for the real 50-seed
+# gate computation this promotion is based on). Before that promotion, this
+# section proved the candidate adapter stayed unreachable through the real
+# dispatch path; it now proves the opposite (the live row matches this
+# adapter) AND still proves `check_adapter`/`evaluate_gate` refuse a
+# stale/reverted row -- via an in-memory `_entry(...)` override, never by
+# mutating the real, tracked `event_registry.yaml` (which a live-registry
+# assertion would require re-reverting between test runs).
 # ---------------------------------------------------------------------------
 
 
-def test_check_adapter_refuses_gate_adapter_against_the_live_registered_smoke_adapter():
-    """The LIVE, on-disk `event_registry.yaml` RibosomeAssembly row still
-    declares `ribosome_assembly.smoke.v1` (unchanged by this task -- no
-    registry edits made). `check_adapter` must refuse this candidate
-    `ribosome_assembly.gate.v1` adapter against that live row with
-    `ADAPTER_NOT_REGISTERED`, proving the new adapter is not reachable
-    through the real registry no matter how gate-capable its
-    implementation is."""
+def test_check_adapter_accepts_gate_adapter_against_the_live_promoted_registry_row():
+    """The LIVE, on-disk `event_registry.yaml` RibosomeAssembly row was
+    promoted to `ribosome_assembly.gate.v1` / `gating_ready` once all 50
+    required event-window seeds existed and validated (see
+    RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md). `check_adapter` must accept
+    (not raise for) this adapter against that live row now."""
     live_entry = resolve_process_entry("RibosomeAssembly")
-    assert live_entry.adapter_id == "ribosome_assembly.smoke.v1"
-    assert live_entry.adapter_status == "structural_smoke_only"
+    assert live_entry.adapter_id == "ribosome_assembly.gate.v1"
+    assert live_entry.adapter_status == "gating_ready"
+
+    check_adapter(RibosomeAssemblyGateAdapter(), "RibosomeAssembly", live_entry)  # must not raise
+
+
+def test_check_adapter_refuses_gate_adapter_against_a_stale_smoke_only_registry_row():
+    """A row that still declares the OLD `ribosome_assembly.smoke.v1` /
+    `structural_smoke_only` state (e.g. a stale checkout, or a future
+    regression that accidentally reverts the promotion) must still be
+    refused with `ADAPTER_NOT_REGISTERED` -- proving this adapter's
+    reachability depends on the registry's declared state, not merely on
+    the adapter's own capability."""
+    stale_entry = _entry(adapter_id="ribosome_assembly.smoke.v1", adapter_status="structural_smoke_only")
 
     with pytest.raises(RunnerRefusal) as exc_info:
-        check_adapter(RibosomeAssemblyGateAdapter(), "RibosomeAssembly", live_entry)
+        check_adapter(RibosomeAssemblyGateAdapter(), "RibosomeAssembly", stale_entry)
     assert exc_info.value.reason == "ADAPTER_NOT_REGISTERED"
 
 
-def test_evaluate_gate_refuses_gate_adapter_against_the_live_registered_smoke_adapter():
+def test_evaluate_gate_refuses_gate_adapter_against_a_stale_smoke_only_registry_row():
     """Same refusal, exercised through the full `evaluate_gate` entry point
     (M2: it always runs the same refusal gauntlet internally, so no direct
     caller -- this test included -- can reach a computed verdict by
     bypassing `check_adapter`)."""
-    live_entry = resolve_process_entry("RibosomeAssembly")
+    stale_entry = _entry(adapter_id="ribosome_assembly.smoke.v1", adapter_status="structural_smoke_only")
     with pytest.raises(RunnerRefusal) as exc_info:
         evaluate_gate(
             process="RibosomeAssembly",
-            registry_entry=live_entry,
+            registry_entry=stale_entry,
             adapter=RibosomeAssemblyGateAdapter(),
             karr_timelines=[],
             oc_timelines=[],
