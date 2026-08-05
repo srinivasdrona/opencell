@@ -295,3 +295,85 @@ scope:
 None of (1)-(3) is available in this session. `SENTINEL_FAIL` remains the
 correct, non-green mechanical verdict for the `ProteinProcessingII` row in
 `evidence_index.json`, unchanged.
+
+## 8. Hash-binding: what this determination's §4 conclusion is actually pinned to (final-round correction)
+
+**This conclusion applies to the exact audited file contents recorded
+below, not to "whatever these files currently say."** Any future edit to
+any of the five files listed here — including a purely cosmetic reformat,
+a comment change, or a whitespace-only reflow, not only a deliberate
+bypass — invalidates §4's "never wired in" conclusion and requires a
+deliberate re-audit before it can be trusted again. This is a strategic
+correction from the prior two rounds' approach (regex-based structural/
+semantic guards), not an abandonment of them: those guards are retained,
+but only as **defense-in-depth with an explicitly enumerated, non-universal
+scope** — they were never a complete parser for arbitrary future MATLAB
+syntax or prose, and this section stops implying otherwise.
+
+**The actual fail-closed mechanism is a hash pin**, not the regex guards.
+`tests/scripts/test_h12_protii_sentinel_determination.py::
+test_audited_scenario_b_wiring_files_match_hash_pinned_at_audit_time`
+recomputes each file's LF-normalized SHA-256
+(`h12._sha256_lf_normalized`, the same git-blob-consistent hash used
+elsewhere in this determination) and asserts it matches the value pinned
+during this audit:
+
+| File | `sha256_lf_normalized` (pinned 2026-08-05) |
+| --- | --- |
+| `scripts/l22_evidence/h12_perturbation.py` | `4cf991ec902b6590875c7eb9bb68cfff053e7afb9833093e6e16b5a2c908d272` |
+| `scripts/matlab_h12_perturbation/run_ppii_scenario_b_matlab.m` | `3a8a76ea6c4e892ba16ff8119ccce802c6ba64cf1d106c606048517252d9b535` |
+| `scripts/matlab_h12_perturbation/probe_matlab_environment.m` | `ee8d033188cde8aa559d8ebaa8ce810bae41512bce2d7870c6f4a2efdc4228e6` |
+| `scripts/matlab_h12_perturbation/evolveState_ppii_matlab.m` | `d3080131832d99a84c835271ea45d238f45d991ed65f810de5c15f226669e6d0` |
+| `scripts/matlab/mnrnd.m` | `819218f9c4db0e9b24606e6bd9d34dd31600bfbdc764c8c46e17bf72da391e67` |
+
+(`evolveState_ppii_matlab.m` is included as the sibling Scenario B driver
+`run_ppii_scenario_b_matlab.m` directly invokes per tick
+(`this = evolveState_ppii_matlab(this);`) and was read during this
+investigation, per `tests/scripts/test_h12_perturbation_source_binding.py`'s
+`MATLAB_BINDINGS`.)
+
+If any of these files' hash ever changes, the test above fails — not
+because the checker infers a bypass occurred, but because it **cannot tell
+the difference** between a bypass and a harmless edit, and fails closed
+either way. That failure is the intended, mandatory prompt: re-audit the
+addpath/equivalence-claim contract of the changed file by hand against its
+new contents before updating the pinned hash, rather than trusting the
+structural/semantic guards to have caught every possible change.
+
+**Why the regex guards alone are not sufficient (enumerated, not
+exhaustive):** `tests/scripts/test_h12_protii_sentinel_determination.py`
+now also includes explicit "documented scope gap" tests
+(`test_addpath_guard_documented_scope_gaps_are_not_detected_rely_on_hash_
+binding`, `test_equivalence_claim_guard_documented_scope_gaps_are_not_
+detected_rely_on_hash_binding`) that prove — rather than merely assert —
+concrete bypass shapes the guards do **not** catch:
+
+- The addpath guard only recognizes `addpath(...)` (functional and
+  command form) and `fullfile(...)` calls, plus a whole-file literal-text
+  scan for `scripts/matlab` / `../matlab`. It does not recognize MATLAB's
+  separate `path(...)` search-path function, a path string built via
+  bracket concatenation (`['scripts' filesep 'matlab']`) instead of
+  `fullfile(...)`/a literal, or a `setenv('PPII_WHOLECELL_SRC_ROOT', ...)`
+  call that redirects the environment variable's runtime value without
+  changing the literal `getenv(...)` text the assignment-check inspects.
+- The equivalence-claim guard's clause-boundary set is exactly
+  `. ! ? ; ,` plus "but"/"however"/"although"/"yet"/"though". It does not
+  treat a colon (`:`), an em-dash/double-hyphen (`--`), or conjunctions
+  such as "and"/"while" as clause boundaries, so a negation separated from
+  an actually-unnegated equivalence claim only by one of these forms is
+  not detected.
+
+These gaps are intentionally **not** patched this round — extending the
+regex further would only ever cover the specific shapes anticipated today,
+repeating the exact "complete parser" trap this round is correcting. They
+are covered by the hash-binding pin above instead: introducing any of
+these bypass shapes into one of the five audited files changes that
+file's hash and fails the pin, exactly as any other edit would.
+
+**Provenance correction:** the round-2 fix's provenance log entry
+(`event_id sha256:6dc305d44a02aa1688f8803b1a99ea006511eb19c6894ba1d84bc6d602bc00ed`)
+recorded an incomplete `linked_commits` chain — it omitted `4e4f966`, the
+very fix commit its `task_summary`/`output_summary` describe. Per the
+append-only provenance schema, this is corrected with a **new, superseding
+entry** (`--supersedes sha256:6dc305d...`), not an amendment to the
+existing JSONL line or git history.

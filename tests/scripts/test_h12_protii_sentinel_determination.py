@@ -22,6 +22,28 @@ pins two things:
      exactly the "distributionally different RNG" bypass this
      determination rules out.
 
+Point (2) is enforced by TWO different mechanisms, deliberately layered,
+per this file's final-round correction (see section 8 of the determination
+doc):
+
+  a. A hash-binding pin (`AUDITED_FILE_HASHES` below): every file this
+     determination's "never wired in" conclusion depends on is pinned to
+     its exact LF-normalized SHA-256 as read during this audit. This is
+     the actual fail-closed mechanism -- it catches ANY edit to these
+     files, including bypass shapes no parser below was written to
+     recognize.
+  b. Targeted structural/semantic guards (`_assert_addpath_only_resolves_
+     to_wholecell_src`, `_assert_no_unsupported_equivalence_claim`):
+     defense-in-depth with an explicitly enumerated, NON-universal scope
+     (see each guard's own docstring). These are deliberately NOT extended
+     into a complete parser for arbitrary future MATLAB syntax/prose --
+     see the "documented scope gap" tests near the bottom of this file for
+     concrete bypass shapes (`path(...)`, bracket-concatenated path
+     strings, `setenv` redirection, and clause-boundary punctuation/
+     conjunctions the equivalence guard does not treat as boundaries) that
+     these guards do NOT catch, and that (a) is what actually protects
+     against.
+
 Run via `bin\\oc-pytest tests/scripts/test_h12_protii_sentinel_determination.py -v`.
 """
 from __future__ import annotations
@@ -47,8 +69,40 @@ ARTIFACT_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "h12" / f"{PR
 EVIDENCE_INDEX_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "evidence_index.json"
 SCENARIO_B_DRIVER = REPO_ROOT / "scripts" / "matlab_h12_perturbation" / "run_ppii_scenario_b_matlab.m"
 SCENARIO_B_PROBE = REPO_ROOT / "scripts" / "matlab_h12_perturbation" / "probe_matlab_environment.m"
+# Sibling Scenario B driver actually read during this investigation: it is
+# the file `run_ppii_scenario_b_matlab.m` invokes directly for every tick
+# (`this = evolveState_ppii_matlab(this);`) and is the true-verbatim
+# real-RandStream harness whose exact wiring this determination depends on
+# just as much as the driver that calls it.
+SCENARIO_B_HARNESS = REPO_ROOT / "scripts" / "matlab_h12_perturbation" / "evolveState_ppii_matlab.m"
 H12_PERTURBATION_SOURCE = REPO_ROOT / "scripts" / "l22_evidence" / "h12_perturbation.py"
 MANUAL_MNRND_SHIM = REPO_ROOT / "scripts" / "matlab" / "mnrnd.m"
+
+# ---------------------------------------------------------------------------
+# Hash-binding: the fail-closed backstop for this determination's "never
+# wired in" conclusion (see module docstring point 2a and determination doc
+# section 8). Every file the conclusion depends on is pinned here to its
+# exact LF-normalized SHA-256 as read during THIS audit
+# (2026-08-05, commit chain 0357dec..b417572 plus this round). Recorded
+# hashes were computed with the same `h12._sha256_lf_normalized` used
+# throughout this file, via a one-off script run against this worktree.
+#
+# ANY future edit to any of these five files -- a bypass, a typo fix, a
+# reformat, this test cannot and does not try to tell the difference --
+# changes its hash and fails `test_audited_scenario_b_wiring_files_match_
+# hash_pinned_at_audit_time` below. That failure is the intended signal:
+# re-audit the addpath/equivalence-claim contract of the changed file by
+# hand (structural/semantic guards are defense-in-depth only, not a
+# complete parser -- see their docstrings and the "documented scope gap"
+# tests below) before updating the pinned hash.
+# ---------------------------------------------------------------------------
+AUDITED_FILE_HASHES: dict[Path, str] = {
+    H12_PERTURBATION_SOURCE: "4cf991ec902b6590875c7eb9bb68cfff053e7afb9833093e6e16b5a2c908d272",
+    SCENARIO_B_DRIVER: "3a8a76ea6c4e892ba16ff8119ccce802c6ba64cf1d106c606048517252d9b535",
+    SCENARIO_B_PROBE: "ee8d033188cde8aa559d8ebaa8ce810bae41512bce2d7870c6f4a2efdc4228e6",
+    SCENARIO_B_HARNESS: "d3080131832d99a84c835271ea45d238f45d991ed65f810de5c15f226669e6d0",
+    MANUAL_MNRND_SHIM: "819218f9c4db0e9b24606e6bd9d34dd31600bfbdc764c8c46e17bf72da391e67",
+}
 
 
 def _load_artifact() -> dict:
@@ -231,6 +285,30 @@ def _assert_addpath_only_resolves_to_wholecell_src(path: Path) -> None:
     one accepted call FORM, and (1)+(2) mean nothing anywhere in the file
     can construct a path that resolves to the manual shim's directory in
     the first place.
+
+    SCOPE (defense-in-depth only, deliberately NOT a complete parser -- see
+    `test_addpath_guard_documented_scope_gaps_are_not_detected_rely_on_
+    hash_binding` for concrete, currently-undetected bypass shapes and
+    determination doc section 8): this function recognizes exactly
+    `addpath(...)` (functional and command form) and `fullfile(...)` call
+    arguments, plus a whole-file literal-text scan for the two exact
+    substrings `scripts/matlab` and `../matlab`. It does NOT recognize:
+
+      * MATLAB's separate `path(...)` search-path function (a different,
+        broader mechanism than `addpath` that this checker never scans
+        for at all);
+      * a path string assembled via square-bracket concatenation (e.g.
+        `['scripts' filesep 'matlab']`) instead of `fullfile(...)` or a
+        single quoted literal;
+      * a `setenv('PPII_WHOLECELL_SRC_ROOT', ...)` call anywhere in the
+        file that redirects the environment variable's RUNTIME value out
+        from under an unchanged, textually-authorized
+        `getenv('PPII_WHOLECELL_SRC_ROOT')` call site.
+
+    These are documented, intentional non-goals of this parser (per the
+    directive to stop building a complete parser for arbitrary future
+    syntax); they are covered ONLY by the whole-file hash-binding pin
+    (`AUDITED_FILE_HASHES`), not by this function.
     """
     source = path.read_text(encoding="utf-8")
 
@@ -328,6 +406,22 @@ def _assert_no_unsupported_equivalence_claim(source: str, label: str) -> None:
     "real mnrnd" mention so unrelated, true statements (e.g. mnrnd.m's own
     "pure language core, identical in MATLAB and Octave") are not
     flagged.
+
+    SCOPE (defense-in-depth only, deliberately NOT a complete parser -- see
+    `test_equivalence_claim_guard_documented_scope_gaps_are_not_detected_
+    rely_on_hash_binding` for concrete, currently-undetected false-negative
+    shapes and determination doc section 8): `_CLAUSE_BOUNDARY` recognizes
+    exactly sentence-final punctuation (`. ! ?`), a comma (`,`), a
+    semicolon (`;`), and the contrastive/subordinating conjunctions "but",
+    "however", "although", "yet", "though". It does NOT treat a colon
+    (`:`), an em-dash or double-hyphen (`--`), or other coordinating/
+    subordinating conjunctions such as "and"/"while"/"since"/"whereas" as
+    clause boundaries -- a negation word separated from an actually-
+    unnegated equivalence claim only by one of these forms will not be
+    detected. This is a documented, intentional non-goal of this parser
+    (per the directive to stop building a complete parser for arbitrary
+    future prose); it is covered ONLY by the whole-file hash-binding pin
+    (`AUDITED_FILE_HASHES`), not by this function.
     """
     for m in _EQUIVALENCE_WORD.finditer(source):
         context = source[max(0, m.start() - 20) : m.end() + 80]
@@ -376,6 +470,31 @@ def test_fixture_hash_is_fresh_not_stale():
     payload = _load_artifact()
     fixture_path = REPO_ROOT / payload["fixture_path"]
     assert payload["fixture_sha256"] == h12._sha256_file(fixture_path)
+
+
+@pytest.mark.parametrize(
+    "path", list(AUDITED_FILE_HASHES), ids=[p.name for p in AUDITED_FILE_HASHES]
+)
+def test_audited_scenario_b_wiring_files_match_hash_pinned_at_audit_time(path):
+    """Fail-closed hash pin for this determination's "never wired in"
+    conclusion (see `AUDITED_FILE_HASHES` above and determination doc
+    section 8). This test does not, and structurally cannot, distinguish a
+    malicious bypass from a harmless reformat or comment fix -- both change
+    the LF-normalized SHA-256 identically. That is intentional: it forces a
+    deliberate, manual re-audit of the addpath/equivalence-claim contract
+    for the changed file before the pinned hash is updated, rather than
+    silently trusting a structural/semantic guard whose enumerated scope
+    (see their docstrings) is known to be incomplete."""
+    assert path.is_file(), f"{path}: audited file is missing -- re-audit required, not a silent skip"
+    actual = h12._sha256_lf_normalized(path)
+    assert actual == AUDITED_FILE_HASHES[path], (
+        f"{path.name}: LF-normalized SHA-256 changed from the hash pinned at audit "
+        f"time (expected {AUDITED_FILE_HASHES[path]}, got {actual}). This does not "
+        "necessarily mean a bypass was introduced -- but this test cannot tell the "
+        "difference, so it fails closed either way. Re-audit this file's addpath/"
+        "equivalence-claim contract by hand (determination doc section 8) before "
+        "updating this pinned hash."
+    )
 
 
 def test_decide_verdict_recomputation_from_stored_metrics_matches_artifact_exactly():
@@ -514,6 +633,55 @@ def test_addpath_structural_guard_rejects_every_named_bypass_shape(source, shoul
 
 
 @pytest.mark.parametrize(
+    "source",
+    [
+        pytest.param(
+            "addpath(wholecell_src);\n"
+            "wholecell_src = getenv('PPII_WHOLECELL_SRC_ROOT');\n"
+            "shim_dir = ['scripts' filesep 'matlab'];\n"
+            "path(shim_dir, path);\n",
+            id="path-function-bracket-concatenated-arg",
+        ),
+        pytest.param(
+            "setenv('PPII_WHOLECELL_SRC_ROOT', ['scripts' filesep 'matlab']);\n"
+            "addpath(wholecell_src);\n"
+            "wholecell_src = getenv('PPII_WHOLECELL_SRC_ROOT');\n",
+            id="setenv-redirects-env-var-before-getenv-call-site",
+        ),
+    ],
+)
+def test_addpath_guard_documented_scope_gaps_are_not_detected_rely_on_hash_binding(source, tmp_path):
+    """Documents (does NOT silently endorse) two genuine, currently-
+    undetected bypass shapes for `_assert_addpath_only_resolves_to_
+    wholecell_src`, per the directive to stop extending this parser for
+    arbitrary future MATLAB syntax and instead rely on the whole-file
+    hash-binding pin (`AUDITED_FILE_HASHES`) as the actual backstop:
+
+      * MATLAB's `path(...)` function is a distinct, broader search-path
+        mechanism than `addpath(...)` that this guard never scans for at
+        all. Building its argument via bracket concatenation
+        (`['scripts' filesep 'matlab']`) rather than `fullfile(...)` or a
+        single quoted literal also evades the literal-text and
+        fullfile-pair scans.
+      * A `setenv('PPII_WHOLECELL_SRC_ROOT', ...)` call anywhere in the
+        file redirects what `getenv('PPII_WHOLECELL_SRC_ROOT')` resolves
+        to at RUNTIME, without changing the literal RHS text
+        (`getenv('PPII_WHOLECELL_SRC_ROOT')`) the assignment-check
+        inspects -- a static-text parser cannot see this by construction.
+
+    If this test ever starts raising `AssertionError` because a future
+    change extended the guard to catch one of these shapes, that is fine
+    and expected -- update/remove the corresponding case here, it is not a
+    regression. What this test guards against is a reader assuming the
+    structural guard's silence on these inputs means they are safe; they
+    are not, and the hash-binding pin is what actually protects against
+    them being introduced into the real audited files."""
+    probe_path = tmp_path / "probe.m"
+    probe_path.write_text(source, encoding="utf-8")
+    _assert_addpath_only_resolves_to_wholecell_src(probe_path)
+
+
+@pytest.mark.parametrize(
     ("source", "should_pass"),
     [
         pytest.param(
@@ -565,6 +733,12 @@ def test_addpath_structural_guard_rejects_every_named_bypass_shape(source, shoul
             False,
             id="false-unnegated-claim-real-product-name",
         ),
+        pytest.param(
+            "This shim's draws are bit-identical to what the Statistics and "
+            "Machine Learning Toolbox (R2024a) mnrnd function would produce.",
+            False,
+            id="false-unnegated-claim-long-product-name-with-version-suffix",
+        ),
     ],
 )
 def test_equivalence_claim_guard_permits_truthful_disclaimers_but_rejects_false_claims(source, should_pass):
@@ -585,6 +759,56 @@ def test_equivalence_claim_guard_permits_truthful_disclaimers_but_rejects_false_
     else:
         with pytest.raises(AssertionError):
             _assert_no_unsupported_equivalence_claim(source, label="probe")
+
+
+@pytest.mark.parametrize(
+    "source",
+    [
+        pytest.param(
+            "This shim is not a general-purpose implementation: it is "
+            "bit-identical to the Statistics Toolbox mnrnd.",
+            id="colon-clause-boundary-gap",
+        ),
+        pytest.param(
+            "This shim is not meant for production use -- it is "
+            "bit-identical to the Statistics Toolbox mnrnd.",
+            id="double-dash-clause-boundary-gap",
+        ),
+        pytest.param(
+            "This shim does not require the Statistics Toolbox while "
+            "producing draws that are bit-identical to the Statistics "
+            "Toolbox's mnrnd.",
+            id="while-conjunction-clause-boundary-gap",
+        ),
+        pytest.param(
+            "This shim does not exist in Octave and is bit-identical to "
+            "the Statistics Toolbox's mnrnd.",
+            id="and-conjunction-clause-boundary-gap",
+        ),
+    ],
+)
+def test_equivalence_claim_guard_documented_scope_gaps_are_not_detected_rely_on_hash_binding(source):
+    """Documents (does NOT silently endorse) a genuine, currently-
+    undetected false-negative class for `_assert_no_unsupported_
+    equivalence_claim`, per the directive to stop extending this parser
+    for arbitrary future prose and instead rely on the whole-file
+    hash-binding pin (`AUDITED_FILE_HASHES`) as the actual backstop:
+    `_CLAUSE_BOUNDARY` does not treat a colon, an em-dash/double-hyphen,
+    or the conjunctions "and"/"while" as clause boundaries, so a negation
+    word separated from an actually-unnegated equivalence claim only by
+    one of these forms is (incorrectly) credited to the later clause and
+    the guard does not raise, even though the claim it lets through is
+    false.
+
+    If this test ever starts raising `AssertionError` because a future
+    change extended `_CLAUSE_BOUNDARY` to also treat one of these forms as
+    a boundary, that is fine and expected -- update/remove the
+    corresponding case here, it is not a regression. What this test
+    guards against is a reader assuming the guard's silence on these
+    inputs means the claim is truthful; it does not, and the hash-binding
+    pin is what actually protects against this exact phrasing being
+    introduced into the real audited file (`scripts/matlab/mnrnd.m`)."""
+    _assert_no_unsupported_equivalence_claim(source, label="probe")
 
 
 def test_h12_perturbation_module_never_references_manual_mnrnd_shim():
