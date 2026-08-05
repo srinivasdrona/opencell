@@ -183,14 +183,16 @@ def test_grep_known_short_circuit_gap_repo_relative_contract(tmp_path, monkeypat
     assert reason2 is None
 
 
-def test_grep_known_short_circuit_gap_missing_module_is_not_a_gap():
+def test_grep_known_short_circuit_gap_missing_module_fails_closed():
     gap, reason = scope._grep_known_short_circuit_gap("opencell/vivarium/does_not_exist_xyz.py")
-    assert gap is False
-    assert reason is not None and "does not exist" in reason
+    assert gap is True
+    assert reason is not None and "does not exist" in reason and "failing closed" in reason
 
 
-def test_grep_known_short_circuit_gap_none_module_is_not_a_gap():
-    assert scope._grep_known_short_circuit_gap(None) == (False, None)
+def test_grep_known_short_circuit_gap_none_module_fails_closed():
+    gap, reason = scope._grep_known_short_circuit_gap(None)
+    assert gap is True
+    assert reason is not None and "failing closed" in reason
 
 
 # ---------------------------------------------------------------------------
@@ -243,8 +245,15 @@ def test_no_selected_pair_ever_includes_an_ineligible_or_gapped_process():
 
 def test_summary_ok_matches_uncovered_classes_emptiness():
     payload, ok = scope.build_payload()
-    assert ok == (len(payload["uncovered_classes"]) == 0)
+    expected = (
+        len(payload["uncovered_classes"]) == 0
+        and len(payload["processes"]) == 28
+        and payload["registry_integrity"]["ok"]
+    )
+    assert ok == expected
     assert payload["summary"]["ok"] == ok
+    assert payload["registry_integrity"]["ok"] is True
+    assert payload["registry_integrity"]["violations"] == []
 
 
 def test_check_mode_matches_tracked_artifact(tmp_path):
@@ -259,3 +268,95 @@ def test_check_mode_matches_tracked_artifact(tmp_path):
         "tracked L2_5_SCOPE_CATALOG.yaml is stale vs. a fresh derivation -- "
         "regenerate with `bin\\oc-py scripts/derive_l25_scope.py`"
     )
+
+
+# ---------------------------------------------------------------------------
+# 3. Registry/pair-universe drift mutation tests
+# ---------------------------------------------------------------------------
+#
+# These prove the fail-closed contract requested after Opus review: missing
+# per-process TOMLs or catalog rows must never be able to shrink the
+# structural pair universe (and therefore the required coverage classes)
+# far enough to spuriously flip `ok` to True. All three monkeypatch the real
+# repo-loading functions so they still exercise the real 28-process data,
+# just with one function's return value truncated.
+
+
+def test_registry_integrity_flags_missing_schema_and_forces_ok_false(monkeypatch):
+    real_load = pairmat._load_process_schemas
+
+    def _drop_metabolism(root, catalog_lookup):
+        return [s for s in real_load(root, catalog_lookup) if s.name != "Metabolism"]
+
+    monkeypatch.setattr(pairmat, "_load_process_schemas", _drop_metabolism)
+    payload, ok = scope.build_payload()
+
+    assert ok is False
+    assert payload["registry_integrity"]["ok"] is False
+    violations = " ".join(payload["registry_integrity"]["violations"])
+    assert "Metabolism" in violations
+    assert "name-set mismatch" in violations
+    assert "378" in violations  # total pair count drift is also reported
+
+
+def test_registry_integrity_catches_drastic_schema_shrink_that_would_otherwise_look_covered(
+    monkeypatch,
+):
+    """Without the registry-integrity gate, shrinking the live schema set to
+    just the two structurally-disjoint eligible processes would make
+    ``shared_pool_pairs`` empty, ``_required_coverage_classes`` return an
+    empty list (nothing left to require coverage for), and the pre-fix
+    ``ok = len(uncovered) == 0 and len(verdicts) == 28`` formula would
+    therefore have spuriously reported ``ok=True`` -- even though 26 of 28
+    processes' per-process TOMLs had silently vanished from the pair
+    universe (``verdicts`` is derived from the catalog, not from
+    ``schemas``, so it stays at 28 regardless). This is exactly the
+    "hollow green" failure mode the registry-integrity check exists to
+    close."""
+    real_load = pairmat._load_process_schemas
+    keep = {"ProteinActivation", "TerminalOrganelleAssembly"}
+
+    def _shrink(root, catalog_lookup):
+        return [s for s in real_load(root, catalog_lookup) if s.name in keep]
+
+    monkeypatch.setattr(pairmat, "_load_process_schemas", _shrink)
+    payload, ok = scope.build_payload()
+
+    # Confirm the premise: the shrunk pair universe has zero shared-pool
+    # pairs (ProteinActivation x TerminalOrganelleAssembly is structurally
+    # disjoint), so there is nothing left that requires coverage.
+    assert payload["denominator"]["structural_shared_pool_pairs"] == 0
+    assert payload["summary"]["n_uncovered_classes"] == 0
+
+    # And yet ok must be False: registry_integrity catches the schema-count
+    # and pair-universe drift even though coverage looks trivially satisfied.
+    assert payload["registry_integrity"]["ok"] is False
+    assert ok is False
+    violations = " ".join(payload["registry_integrity"]["violations"])
+    assert "name-set mismatch" in violations
+    assert "378" in violations
+
+
+def test_registry_integrity_catches_catalog_side_drift(monkeypatch):
+    """Symmetric check for catalog-side (rather than schema-side) drift.
+    This direction is already caught by the pre-existing
+    ``len(verdicts) == 28`` guard, but registry_integrity must independently
+    flag and explain it too, since it is the single gate a reviewer is told
+    to check."""
+    real_load_rows = scope._load_raw_catalog_rows
+
+    def _drop_row(path):
+        rows = dict(real_load_rows(path))
+        rows.pop("Metabolism", None)
+        return rows
+
+    monkeypatch.setattr(scope, "_load_raw_catalog_rows", _drop_row)
+    payload, ok = scope.build_payload()
+
+    assert len(payload["processes"]) == 27
+    assert ok is False
+    assert payload["registry_integrity"]["ok"] is False
+    violations = " ".join(payload["registry_integrity"]["violations"])
+    assert "Metabolism" in violations
+    assert "name-set mismatch" in violations
+    assert "catalog process count is 27" in violations

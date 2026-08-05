@@ -5,6 +5,9 @@ denominator:
   total_pairs_c_28_2: 378
   structural_shared_pool_pairs: 256
   structural_disjoint_pairs: 122
+registry_integrity:
+  ok: true
+  violations: []
 eligibility_rule:
   bit_identity_bucket_deterministic: eligible iff a fresh scripts/probe_l2_1_strict_rubric.audit_one_process
     verdict == GENUINE (PARTIAL/COINCIDENTAL/UNINFORMATIVE/FAIL/ERROR are not eligible)
@@ -424,5 +427,5 @@ summary:
   n_selected_pairs: 0
   n_uncovered_classes: 11
   ok: false
-generated_at: '2002-05-07T09:13:06Z'
-content_hash: 320cf2f8beaf22688b082072cb42d9269b85d2845866fad1658a1264537cffca
+generated_at: '2028-05-08T02:53:59Z'
+content_hash: 7fc46bd63c6d473fb0f8dc3b0b68202f110cfd2dc7378040f81e91a78c651bac

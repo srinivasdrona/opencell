@@ -172,8 +172,16 @@ Running `bin\oc-py scripts/derive_l25_scope.py`:
   ProteinModification, RNADecay, RNAModification, Replication,
   ReplicationInitiation, TerminalOrganelleAssembly, Transcription,
   TranscriptionalRegulation, Translation).
-- **Eligible pairs: 0** (need ≥2 eligible processes to form a pair; only 1 is
-  gap-free, so **0 gap-free-eligible pairs exist** either way).
+- **Eligible pairs (within the 256-pair shared-pool surface): 0.** The 2
+  eligible processes *do* form one pair (ProteinActivation ×
+  TerminalOrganelleAssembly), but that pair is **structurally disjoint**
+  (zero WID overlap on every state group — confirmed via
+  `derive_l25_pair_matrix._compute_pairs`), i.e. it is one of the 122
+  structurally-out-of-scope pairs, not one of the 256 shared-pool pairs L2.5
+  actually gates. It is therefore correctly excluded from the eligible-pair
+  count regardless of eligibility. Separately, only 1 of the 2 eligible
+  processes is gap-free (TerminalOrganelleAssembly is not), so even if this
+  pair *had* been shared-pool it would still not qualify as gap-free-eligible.
 - **Selected pairs: 0. All 11 required coverage classes are UNCOVERED**
   (`UNCOVERED_NO_ELIGIBLE_PAIR`).
 - **Validator exit code: 1** (correct — see Beat 3 above).
@@ -183,8 +191,12 @@ starts only after L2.2 is all-green for every stochastic process that
 participates in any planned L2.5 pair"* — today, **zero** stochastic
 processes have a fresh, non-stale L2.2 PASS, so no stochastic-participating
 pair (211 SS + 43 DS = 254 of the 256 shared-pool pairs) can be selected
-without a waiver. The remaining 2 DD pairs both require ≥2 eligible
-deterministic processes with no known-gap, and only one such process exists.
+without a waiver. The 2 DD shared-pool pairs
+(ChromosomeCondensation+ChromosomeSegregation, HostInteraction+TerminalOrganelleAssembly
+per the stale Day-33 `l2_5_gate.pass_list`) each require a *different* pair
+of eligible deterministic processes than the one pair that actually is
+eligible today, and neither of those two structurally-shared-pool DD pairs
+has both members eligible.
 
 ## Superseded stale claims (explicit)
 
@@ -223,6 +235,19 @@ not deleted):
    `known_short_circuit_gap` column in `L2_5_SCOPE_CATALOG.yaml`, which
    self-updates as trace_hint references are removed. `plan.md`'s Day-40
    entry is left unedited as historical record.
+6. `docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md`'s hand-curated Day-35 process
+   list — **stale/incomplete**. Its 14-name list (Replication,
+   ReplicationInitiation, Metabolism, RNADecay, ProteinDecayLight,
+   Transcription, TerminalOrganelleAssembly, ChromosomeCondensation,
+   DNASupercoiling, FtsZPolymerization, ProteinModification,
+   TranscriptionalRegulation, Translation, TranslationV3) omits DNARepair
+   and RNAModification, both of which the live mechanical grep in
+   `_grep_known_short_circuit_gap` (the authoritative method per this
+   ratification's eligibility rule) correctly flags as still carrying a
+   `trace_hint` reference today. The static document is not edited (kept as
+   historical record of the Day-35 sweep); `L2_5_SCOPE_CATALOG.yaml`'s
+   `known_short_circuit_gap` column, mechanically re-derived on every run,
+   is the current source of truth and supersedes any hand-curated list.
 
 ## 5) Decision ledger
 
@@ -271,6 +296,66 @@ not deleted):
 - Beat-4 inversion: greedy could pick a pair that blocks a smaller solution for a later class. Falsifier: with today's data this is moot (0 eligible pairs); `test_selection_covers_a_class_with_a_gap_free_eligible_pair` and `test_selection_never_uses_a_known_gap_process_even_if_it_would_cover_a_class` exercise the logic on synthetic data where it matters.
 - Operator escalation: no.
 
+**Decision D6 — Registry/pair-universe drift hardening (added after Opus review)**
+- Question: can `ok=True` ever be reported when the *inputs* to the derivation
+  have silently drifted (a per-process TOML deleted, a catalog row lost) even
+  though the *coverage arithmetic* on the shrunk inputs happens to look
+  satisfied?
+- Options: (1) trust `len(verdicts) == 28` alone (the pre-review state); (2)
+  add an explicit `_check_registry_integrity()` gate asserting
+  `{catalog names} == {schema names}`, `len(catalog) == 28`,
+  `total_pairs == 378`, `shared_pool == 256`, `disjoint == 122`, wired into
+  `ok` as a hard AND; (3) re-derive the 28-count from a third independent
+  source as a triple-check.
+- Chosen: (2).
+- Rationale: (1) is unsound because `verdicts` is always computed from the
+  full catalog (`_load_raw_catalog_rows`) independently of whether the
+  *separate* schema-loading path (`pairmat._load_process_schemas`, reading
+  `data/schemas/per_process/*.toml`) still reflects all 28 processes — if a
+  TOML goes missing, `all_pairs`/`shared_pool_pairs` silently shrink,
+  `_required_coverage_classes` (computed only from the pairs it is given)
+  shrinks correspondingly, and a degenerate near-empty coverage requirement
+  can be trivially "satisfied" while `len(verdicts) == 28` remains true and
+  masks the drift. (3) is unnecessary new infrastructure for a problem (2)
+  already closes cheaply.
+- Tradeoffs: none identified; the check is pure arithmetic over data already
+  loaded, adds no new files or schemas.
+- Beat-4 inversion: exactly the failure `test_registry_integrity_catches_drastic_schema_shrink_that_would_otherwise_look_covered`
+  demonstrates directly — shrinking the live schema set to the 2 eligible
+  processes alone (whose only pair is structurally disjoint) drives
+  `structural_shared_pool_pairs` and `n_uncovered_classes` both to 0, which
+  the pre-review `ok` formula would have read as passing. Falsifier: that
+  test asserts `registry_integrity.ok is False` and `ok is False` under this
+  exact mutation.
+- Operator escalation: no.
+
+**Decision D7 — Fail-closed default for unverifiable `oc_module` in the short-circuit grep (added after Opus review)**
+- Question: what should `_grep_known_short_circuit_gap` return when a
+  process's `oc_module` is missing/`None` or its declared path does not
+  exist on disk (i.e. the live grep itself cannot run)?
+- Options: (1) fail open — treat "cannot verify" as "not a gap" (the
+  pre-review behavior); (2) fail closed — treat "cannot verify" as "is a
+  gap" (`known_short_circuit_gap=True`), which is the *safe* direction since
+  a `True` gap only ever narrows gap-free eligibility, never widens it; (3)
+  raise a hard error and abort the whole derivation.
+- Chosen: (2).
+- Rationale: `known_short_circuit_gap=True` is what excludes a process from
+  gap-free selection; defaulting an unverifiable module to `False` would
+  silently let a process whose short-circuit status literally cannot be
+  checked become gap-free-eligible — precisely the "waiver by omission"
+  failure mode this task's hard rules forbid. (3) is disproportionate: today
+  this branch is dead code (all 28 catalog rows declare an existing
+  `oc_module`), so aborting the whole run over a currently-unreachable path
+  would be over-engineering ahead of concrete pain.
+- Tradeoffs: none observed today (branch is currently unreachable, confirmed
+  by grep over the generated catalog); this is purely defensive for a future
+  catalog regression.
+- Beat-4 inversion: a future catalog edit drops a process's `oc_module`
+  field. Falsifier: `test_grep_known_short_circuit_gap_missing_module_fails_closed`
+  and `test_grep_known_short_circuit_gap_none_module_fails_closed` assert
+  `gap is True` for both cases.
+- Operator escalation: no.
+
 ## Critique self-audit
 
 | Pre-mortem / hard rule | Addressed by |
@@ -282,6 +367,8 @@ not deleted):
 | No known-gap waiver | D3: `eligible_gap_free` flag; selection algorithm structurally cannot pick a gap-flagged process (`test_selection_never_uses_a_known_gap_process_even_if_it_would_cover_a_class`) |
 | 28 Karr processes is the denominator | D1 |
 | No new infrastructure beyond simple tracked YAML + validator | D4; one new script + one new YAML + one new test file; no new schema family, no new harness |
+| Registry/pair-universe drift cannot silently flip `ok` to True | D6: `_check_registry_integrity()` hard-gates `ok`; `test_registry_integrity_*` mutation tests prove missing-TOML/catalog drift cannot shrink required coverage and pass anyway |
+| Unverifiable short-circuit status must not silently clear a gap | D7: fail-closed default; `test_grep_known_short_circuit_gap_missing_module_fails_closed` / `_none_module_fails_closed` |
 
 ## 10) Risks and residual unknowns
 

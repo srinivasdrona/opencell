@@ -117,12 +117,22 @@ def _grep_known_short_circuit_gap(oc_module: str | None) -> tuple[bool, str | No
     independent of whether L2.1/L2.2 currently report green. If the token is
     ever removed from a module, this check clears automatically -- it is not
     a hardcoded process-name list.
+
+    Fail-closed contract: when the module cannot be inspected at all (no
+    `oc_module` declared, or the declared path does not exist on disk), this
+    returns ``gap=True`` -- "cannot verify absence of a short-circuit" must
+    never be silently treated the same as "verified clean". As of this
+    writing all 28 catalog processes declare an existing `oc_module`, so this
+    branch is currently dead in practice; it exists so a future catalog
+    regression (a row losing its `oc_module`, or a module being deleted
+    without updating the catalog) fails a process *out* of gap-free
+    eligibility rather than silently clearing it.
     """
     if not oc_module:
-        return False, None
+        return True, "no oc_module declared in catalog; cannot verify absence of a short-circuit (failing closed)"
     module_path = _REPO / oc_module
     if not module_path.exists():
-        return False, f"oc_module path does not exist: {oc_module}"
+        return True, f"oc_module path does not exist: {oc_module} (failing closed)"
     text = module_path.read_text(encoding="utf-8", errors="replace")
     if "trace_hint" in text:
         return True, (
@@ -341,6 +351,49 @@ def select_minimal_covering_set(
     }
 
 
+def _check_registry_integrity(
+    catalog_rows: dict[str, dict[str, Any]],
+    schemas: list[pairmat.ProcessSchema],
+    all_pairs: list[pairmat.PairRecord],
+) -> list[str]:
+    """Hard structural sanity checks that must hold before eligibility and
+    coverage obligations mean anything at all.
+
+    A violation here means the *registry itself* has drifted -- a
+    per-process TOML went missing or gained an unexpected name, or the
+    WID-overlap pair universe no longer matches the structural
+    ``378 total / 256 shared-pool / 122 disjoint`` scope block quoted
+    verbatim from ``PROCESS_CATALOG.yaml`` in
+    ``docs/phase_f/L2_5_SCOPE_RATIFICATION.md``. Any violation forces
+    ``ok = False`` in ``build_payload`` regardless of the coverage outcome --
+    a shrunk registry must never be allowed to silently shrink the required
+    coverage classes (see ``_required_coverage_classes``, which only
+    considers classes structurally present among the pairs it is given) and
+    let a degenerate, under-populated case report ``ok=True``.
+    """
+    violations: list[str] = []
+    catalog_names = set(catalog_rows)
+    schema_names = {s.name for s in schemas}
+    if catalog_names != schema_names:
+        missing_schema = sorted(catalog_names - schema_names)
+        extra_schema = sorted(schema_names - catalog_names)
+        violations.append(
+            "schema/catalog name-set mismatch: "
+            f"missing_per_process_toml={missing_schema} extra_per_process_toml={extra_schema}"
+        )
+    if len(catalog_names) != 28:
+        violations.append(f"catalog process count is {len(catalog_names)}, expected 28")
+    if len(all_pairs) != 378:
+        violations.append(f"total pair count is {len(all_pairs)}, expected C(28,2)=378")
+    shared_pool_count = sum(1 for p in all_pairs if p.classification == "shared_pool")
+    disjoint_count = sum(1 for p in all_pairs if p.classification == "disjoint")
+    if shared_pool_count != 256:
+        violations.append(f"structural shared-pool pair count is {shared_pool_count}, expected 256")
+    if disjoint_count != 122:
+        violations.append(f"structural disjoint pair count is {disjoint_count}, expected 122")
+    return violations
+
+
 def _pair_record_to_dict(pair: pairmat.PairRecord) -> dict[str, Any]:
     return {
         "process_a": pair.process_a,
@@ -366,10 +419,24 @@ def build_payload() -> tuple[dict[str, Any], bool]:
     # "freshly-derived eligible", not "has passed L2.2").
     catalog_lookup, _catalog_path, _fallback_mode = pairmat._load_catalog(_REPO)
     schemas = pairmat._load_process_schemas(_REPO, catalog_lookup)
-    fresh_schemas = [replace(s, l2_2_passed=eligibility[s.name].eligible) for s in schemas]
+    # `.get(..., False)` rather than `[...]`: a schema whose name is not in
+    # `eligibility` at all (extra/renamed per-process TOML) must not crash
+    # payload construction -- it is instead caught and reported below by
+    # `_check_registry_integrity`, which forces `ok=False` for exactly this
+    # drift instead of letting a KeyError mask it or letting it silently
+    # default to eligible.
+    fresh_schemas = [
+        replace(
+            s,
+            l2_2_passed=(eligibility[s.name].eligible if s.name in eligibility else False),
+        )
+        for s in schemas
+    ]
     all_pairs = pairmat._compute_pairs(fresh_schemas)
     shared_pool_pairs = [p for p in all_pairs if p.classification == "shared_pool"]
     disjoint_pairs = [p for p in all_pairs if p.classification == "disjoint"]
+
+    registry_violations = _check_registry_integrity(catalog_rows, schemas, all_pairs)
 
     selection = select_minimal_covering_set(shared_pool_pairs, eligibility)
 
@@ -377,7 +444,7 @@ def build_payload() -> tuple[dict[str, Any], bool]:
     n_eligible_gap_free = sum(1 for v in verdicts if v.eligible_gap_free)
     n_known_gap = sum(1 for v in verdicts if v.known_short_circuit_gap)
 
-    ok = len(selection["uncovered"]) == 0 and len(verdicts) == 28
+    ok = len(selection["uncovered"]) == 0 and len(verdicts) == 28 and not registry_violations
 
     payload: dict[str, Any] = {
         "schema_version": 1,
@@ -387,6 +454,10 @@ def build_payload() -> tuple[dict[str, Any], bool]:
             "total_pairs_c_28_2": len(all_pairs),
             "structural_shared_pool_pairs": len(shared_pool_pairs),
             "structural_disjoint_pairs": len(disjoint_pairs),
+        },
+        "registry_integrity": {
+            "ok": not registry_violations,
+            "violations": registry_violations,
         },
         "eligibility_rule": {
             "bit_identity_bucket_deterministic": (
@@ -491,6 +562,11 @@ def print_summary(payload: dict[str, Any]) -> None:
         f"{d['structural_shared_pool_pairs']} structurally shared-pool, "
         f"{d['structural_disjoint_pairs']} structurally disjoint"
     )
+    registry = payload["registry_integrity"]
+    if not registry["ok"]:
+        print("REGISTRY INTEGRITY VIOLATIONS (registry/pair-universe drift detected):")
+        for violation in registry["violations"]:
+            print(f"  VIOLATION: {violation}")
     print(
         f"eligible processes: {s['n_eligible_processes']}/28 "
         f"({s['n_eligible_gap_free_processes']} gap-free, {s['n_known_gap_processes']} known-gap)"
