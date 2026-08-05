@@ -76,7 +76,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   9. `E:\opencell-worktrees\l22-macromol-closure-20260805` (`agent/l22-macromol-closure-20260805`);
   10. `E:\opencell-worktrees\l2-event-closure-20260805` (`agent/l2-event-closure-20260805`) — reserved for integrating the four event-process branches and regenerating the shared event index;
   11. `E:\opencell-worktrees\l22-natural-gap-closure-20260805` (`agent/l22-natural-gap-closure-20260805`) — reserved for integrating ProteinProcessingII + MacromolecularComplexation and regenerating the shared L2.2 index.
-- Background implementers are not yet dispatched. Every lane must use the mandatory three-slot prompt architecture: `DELIBERATE_ACTION_PREFIX_v2` + the appropriate slot-2 template + a case-specific slot 3 quoting the authoritative spec/catalog entry.
+- Live Sonnet implementers (all dispatched with the mandatory three-slot prompt architecture and isolated worktree ownership):
+  - `l25-scope-ratifier` — L2.5 denominator and covering-set ratification;
+  - `replication-closer` — real no-hint Replication source/event closure;
+  - `dnas-closer` — DNASupercoiling canonical sample/evidence closure;
+  - `ribosome-event-closer` — RibosomeAssembly N=50 event evidence;
+  - `cytokinesis-event-closer` — fixed-shim Canary D retry and event evidence;
+  - `ftsz-event-closer` — no-hint pre-division FtsZ event evidence;
+  - `dnadamage-event-closer` — source-backed non-zero DNADamage evidence;
+  - `procii-closer` — ProteinProcessingII H12/sentinel closure;
+  - `macromol-closer` — MacromolecularComplexation lifecycle/H12 closure.
 - L2.5 pair execution remains blocked until process closure and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted. Scope ratification may proceed in parallel.
 
 **Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
