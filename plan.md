@@ -92,12 +92,12 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `replication-closer` — follow-up requested for five Opus-confirmed gaps: Karr lead/limits semantics, randomized ordering, stall-vs-raise behavior, no-hint byproducts and ligation;
   - `allocator-opus-rereview` — reviewing the new explicit `pool_before`/requirements fail-closed contract at `ec9e649`; Windows MATLAB availability means extraction remains actionable, not terminally blocked;
   - L2.5 scope ratification integrated to local `main` at `d90e5cb`: 28 processes, 378/256/122 pair split, 2 eligible, 1 gap-free, 0 selected pairs and 11 uncovered classes. Pair execution remains closed.
-  - `procii-opus-hash-review` — reviewing the simplified exact-hash audited-input guard at `8239d1b`;
+  - ProteinProcessingII determination `8239d1b` received final Opus approval; integration pending. `SENTINEL_FAIL` remains correctly non-green because natural transferase branch coverage is absent.
   - `dnadamage-opus-final` — final review of Rule-8 removal and broadened vacuous-trace classification at `a1df739`;
   - `procii-opus-rereview` — reviewing the structural shim-path and semantic-equivalence guard fixes at `0613d84`;
   - `ribosome-opus-final` — final review of registry truthfulness, atomic extraction and scope caveats at `abb5697`;
   - `cytokinesis-event-closer` — follow-up requested to bind a real adapter id, enforce trace seed/process metadata, regenerate reproducible provenance and replace the false 100-tick catalog contract with a 4,000-tick seed-0 lower bound plus N=50 span-survey blocker;
-  - `dnas-opus-review` — reviewing N=100 power evidence (31/42 events versus canonical N=50's 17/24) at `a61f2c3`;
+  - `dnas-closer` — N=100 retained as supplemental only; fixed N=200 preregistration/extraction requested with distinct-seed support and an occurrence-rate guard because N=100 cleared by one OC event and W1 is insensitive.
   - `macromol-closer` — rework requested after Opus found stale artifact hashes, approximate scheduler ordering and collapsed complex identity; rerun must use real scheduler semantics and withdraw the falsified closed-form demotion rather than defer it;
   - `ribosome-event-closer` completed all requested fixes; 50-seed PASS remains unchanged and shared-index staleness is now mechanically detected.
   - `ftsz-event-closer` completed the requested tooling fixes; scientific status remains `INSUFFICIENT_ENSEMBLE` with 0/50 real anchored traces.
