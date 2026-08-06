@@ -73,16 +73,18 @@ def test_registry_v4_scope_matches_spec_section_8():
 
 
 def test_registry_reflects_actual_adapter_availability_not_aspirational_claims():
-    """Ground-truth audit: RibosomeAssembly is the only process with a
-    real adapter, and (as of the 2026-08-05 promotion backed by a real,
-    audited N=50/M=200 evidence bundle -- see
-    ``test_ribosome_assembly_gating_ready_claim_is_backed_by_a_complete_hash_bound_n50_bundle``
-    below) is gating_ready, not merely structural-smoke-only. Cytokinesis,
-    DNADamage, and FtsZPolymerization have no adapter at all."""
+    """Ground-truth audit of the two implemented adapters.
+
+    RibosomeAssembly is gating-ready because its N=50 bundle is audited
+    below. Cytokinesis has only a structural-smoke adapter and remains
+    non-gating pending the full span survey and OC-vs-Karr evidence.
+    DNADamage and FtsZPolymerization have no event adapters."""
     registry = load_registry()
     assert registry["RibosomeAssembly"].adapter_status == "gating_ready"
     assert registry["RibosomeAssembly"].adapter_id == "ribosome_assembly.gate.v1"
-    for name in ("Cytokinesis", "DNADamage", "FtsZPolymerization"):
+    assert registry["Cytokinesis"].adapter_status == "structural_smoke_only"
+    assert registry["Cytokinesis"].adapter_id == "cytokinesis.pinched_diameter_completion.v1"
+    for name in ("DNADamage", "FtsZPolymerization"):
         assert registry[name].adapter_status == "not_implemented"
         assert registry[name].adapter_id is None
 
@@ -169,6 +171,28 @@ def test_ribosome_assembly_gating_ready_claim_is_backed_by_a_complete_hash_bound
         "freshly-audited on-disk seed cohort -- the bundle is stale "
         "relative to the seeds now on disk."
     )
+def test_registry_cytokinesis_adapter_id_resolves_to_the_real_adapter():
+    """Opus review (2026-08-05, post-Canary-D): the registry must never
+    invent a bespoke adapter_id string for a process that already has a
+    real, registered adapter class -- it must name that adapter's own
+    `adapter_id` class attribute exactly, so `adapter_id` always resolves
+    to real, importable code (never a dangling label some future reader
+    could mistake for a distinct adapter that doesn't exist)."""
+    from scripts.l2_event.adapters.cytokinesis import CytokinesisEventAdapter
+
+    registry = load_registry()
+    assert registry["Cytokinesis"].adapter_id == CytokinesisEventAdapter.adapter_id
+    assert registry["Cytokinesis"].adapter_id == CytokinesisEventAdapter().adapter_id
+
+
+def test_registry_ribosome_assembly_adapter_id_resolves_to_the_real_adapter():
+    """Same binding check as the Cytokinesis test above, applied to the
+    other real adapter this registry names -- both rows must resolve to
+    real code, not just Cytokinesis."""
+    from scripts.l2_event.adapters.ribosome_assembly_gate import RibosomeAssemblyGateAdapter
+
+    registry = load_registry()
+    assert registry["RibosomeAssembly"].adapter_id == RibosomeAssemblyGateAdapter.adapter_id
 
 
 def test_validate_against_catalog_is_clean_for_the_shipped_registry():

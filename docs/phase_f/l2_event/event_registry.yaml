@@ -45,18 +45,49 @@ spec_ref: docs/phase_f/L2_EVENT_GATE_SPEC_v4.md
 processes:
   - process: Cytokinesis
     in_scope_v4: true
-    adapter_id: null
-    adapter_status: not_implemented
+    adapter_id: cytokinesis.pinched_diameter_completion.v1
+    adapter_status: structural_smoke_only
     event_timing_model: single_firing
     magnitude_gateable: false
     required_n_seeds: 50
     deferred_reason: null
     notes: >
-      In v4 scope (spec §8, D6). No event-window trace exists on disk for
-      Cytokinesis (0 seeds under any per_process_traces_v2_event_s* dir at
-      time of writing) -- see L2_EVENT_FOUNDATION_STATUS.md matrix. Per D6,
+      In v4 scope (spec §8, D6). Canary D closed 2026-08-05: 1 of 50
+      required event-window seeds now exists on disk (seed 000 under
+      data/m1_sources/karr_native/per_process_traces_v2_event_s000/
+      Cytokinesis_4000ticks.mat), regenerated after the mnrnd shim repair
+      (mnrnd_shim_version=1, sha256=819218f9c4db0e9b24606e6bd9d34dd
+      31600bfbdc764c8c46e17bf72da391e67) and validated against the full M4
+      contract. IMPORTANT finding: the catalog's `M_ticks: 100` default is
+      NOT sufficient to capture a real single-firing anchor window -- this
+      seed's real onset-to-completion span is 3871 ticks (onset_tick=27556,
+      completion/window_anchor=31427), far outside the catalog's assumed
+      [-50,0] division-relative range; n_ticks=4000 was required for the
+      extractor's fail-closed capture buffer to hold the whole interval.
+      Catalog reconciled 2026-08-05 to `M_ticks: 4000` / seed_window
+      [-3999,0] (the validated seed-0 LOWER BOUND, not yet a confirmed
+      cohort-wide maximum) -- see PROCESS_CATALOG.yaml's
+      `event_sweep_blocked_on` note (2026-08-06: renamed from `blocked_on`,
+      which collided with derive_l25_pair_matrix.py's generic L2.2
+      pass/fail fallback).
+      `adapter_id` here is `CytokinesisEventAdapter.adapter_id` (the real,
+      registered adapter for this process -- see
+      scripts/l2_event/adapters/cytokinesis.py), but `adapter_status` stays
+      `structural_smoke_only` because ONLY its read-only, Karr-side-only
+      helpers (karr_pinched_diameter_sequence/find_onset_tick/
+      find_completion_tick) are exercised by this evidence -- NOT an
+      OC-vs-Karr comparison via `CytokinesisEventAdapter.oc_observation`:
+      this anchor trace's snapshot only carries boundEnzymes/enzymes/
+      substrates plus the 6 flattened diameter-anchor scalars, not the full
+      geometry/ftsZRing/chromosome objects an OC replay would need (see
+      docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md). Per D6,
       magnitude is NOT_GATEABLE_REDUNDANT until the OC port grows a
       non-redundant payload; count + timing are the two gating channels.
+      N=50 sweep remains unauthorized until a 50-seed onset-span survey
+      (scripts/l2_event/survey_cytokinesis_onset_span.py) determines the
+      real cohort-wide maximum span -- the reconciled M_ticks=4000 is only
+      a seed-0-validated lower bound, never assumed sufficient for all 50
+      seeds.
 
   - process: RibosomeAssembly
     in_scope_v4: true

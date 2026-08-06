@@ -427,3 +427,175 @@ changes cannot alter the offset" and vestigial-input guards):
   timing-channel sensitivity, payload non-gating) are correct against
   the runner/metrics code as it exists today, not to certify real-data
   gating readiness.
+
+## 9. Addendum (2026-08-05): Canary D closeout, real seed-0 anchor trace
+
+This addendum supersedes the "does NOT claim" bullets above about "no
+MATLAB extraction" and "`event_registry.yaml` was NOT edited" -- both are
+no longer true as of this date; the rest of round 3 (adapter code,
+predicates, required-input manifest) is unchanged.
+
+- **What happened**: Canary D (the Cytokinesis event-window diagnostic,
+  paused since `docs/phase_f/CHECKPOINT_2026-08-03.md` pending the
+  `mnrnd` shim repair) was retried under the fixed, hash-bound shim
+  (`mnrnd_shim_version=1`,
+  `sha256=819218f9c4db0e9b24606e6bd9d34dd31600bfbdc764c8c46e17bf72da391e67`).
+  The first attempt used the catalog's `M_ticks: 100` default and failed
+  closed (no partial file written) with `onset_tick=27556 precedes the
+  captured window start tick_start=31328` -- a real, non-synthetic
+  finding: seed 0's actual onset-to-completion span is **~3872 ticks**
+  (`onset_tick=27556`, `completion/window_anchor=31427`), far longer than
+  a 100-tick capture buffer can hold. A second retry with `n_ticks=4000`
+  (same seed, same deterministic trajectory -- `n_ticks` only sizes the
+  capture buffer, it does not change the onset/completion search) reached
+  and validated a complete M4 anchor window:
+  `data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat`
+  (gitignored, local-only), `tick_start=27428 <= onset_tick=27556 <
+  window_anchor=31427`, `stride_contract_ok=True`.
+- **Karr-only structural smoke evidence** was written process-locally to
+  `docs/phase_f/l2_event/evidence_bundle/Cytokinesis/` (adapter_id
+  `cytokinesis.karr_only_smoke.v1`, `mode=structural_smoke`,
+  `verdict=NOT_APPLICABLE`) via a standalone script
+  (`scripts/l2_event/write_cytokinesis_canary_d_evidence.py`) that calls
+  only `evidence.write_run_artifacts`/`evidence.bundle_run` --
+  `evidence_index.json` was never touched.
+- **Why Karr-only, not an OC-vs-Karr comparison**: this anchor trace's
+  snapshot only carries `boundEnzymes`/`enzymes`/`substrates` plus the 6
+  flattened diameter-anchor scalars (§2's `pick_snapshot_properties`
+  blind spot for state-object references) -- not the full
+  `geometry`/`ftsZRing`/`chromosome` objects `oc_observation`/
+  `require_cytokinesis_state_inputs` need. Fabricating those fields to
+  force an OC replay would be a synthetic biology event; the evidence
+  instead uses only the adapter's pure, metadata-independent
+  `karr_pinched_diameter_sequence`/`find_onset_tick`/`find_completion_tick`
+  helpers against the real trace.
+- **New finding requiring catalog attention**: the catalog's `M_ticks:
+  100` ("default; only fires during division window") is not sufficient
+  to capture a real single-firing Cytokinesis anchor window, and the real
+  onset is `~3871` ticks before completion -- far outside the catalog's
+  `seed_window.tick_range_from_division: [-50, 0]` assumption. `N=50` is
+  not authorized until this is reconciled (a wider `M_ticks`/capture
+  buffer, and/or a revised `seed_window` rationale).
+- `event_registry.yaml`'s Cytokinesis row now reflects `adapter_id:
+  cytokinesis.karr_only_smoke.v1` / `adapter_status:
+  structural_smoke_only`, mirroring the RibosomeAssembly Canary A
+  precedent; it is still not `gating_ready`.
+- Regression tests added:
+  `tests/scripts/test_l2_event_window_loader.py::test_load_real_cytokinesis_seed0_event_trace_anchor_completeness`
+  and `::test_load_real_cytokinesis_seed0_event_trace_bound_to_final_mnrnd_shim`
+  (both skip if the local trace is absent). The mnrnd histogram-edge-bug
+  regression coverage was already complete in `tests/scripts/test_mnrnd_shim.py`
+  (17 cases) before this task; no gap was found there.
+
+## 10. Addendum (2026-08-05, Opus review round 2): reuse/integration fixes
+
+Opus reviewed §9 as `APPROVE_AS_CANARY`, conditional on fixing five
+reuse/integration findings before merge. This addendum corrects §9's
+record accordingly (§9 is left in place, not rewritten, per this file's
+own append-only convention).
+
+1. **Adapter identity corrected.** `cytokinesis.karr_only_smoke.v1` (§9)
+   was a bespoke, invented adapter_id string that did not resolve to any
+   real code. `event_registry.yaml`'s Cytokinesis row and
+   `write_cytokinesis_canary_d_evidence.py`'s `ADAPTER_ID` constant now
+   both resolve to `CytokinesisEventAdapter.adapter_id` itself
+   (`cytokinesis.pinched_diameter_completion.v1`) -- the real, registered
+   adapter for this process. `adapter_status` stays
+   `structural_smoke_only`: only the adapter's read-only, Karr-side-only
+   helpers (`karr_pinched_diameter_sequence`/`find_onset_tick`/
+   `find_completion_tick`) are exercised, never
+   `CytokinesisEventAdapter.oc_observation` (still blocked on the
+   missing `geometry`/`ftsZRing`/`chromosome` snapshot fields, per §9).
+   New test:
+   `tests/scripts/test_l2_event_registry.py::test_registry_cytokinesis_adapter_id_resolves_to_the_real_adapter`.
+2. **Fail-closed seed/process binding.** `build_evidence` now refuses
+   (raises `ValueError`) unless the loaded trace's own
+   `window.process_name == "Cytokinesis"` and `window.seed == --seed`,
+   checked immediately after loading and before any further processing --
+   closes a real gap where a mislabeled or wrong-seed trace file could
+   have silently produced evidence bound to the wrong provenance.
+   Adversarial tests:
+   `tests/scripts/test_write_cytokinesis_canary_d_evidence.py::test_build_evidence_refuses_mismatched_process_name`
+   and `::test_build_evidence_refuses_mismatched_seed`.
+3. **Exact span corrected: 3871 ticks, not "~3872".** §9 itself was
+   internally inconsistent (stating "~3872" in one bullet and "~3871" in
+   another). The ground truth, read directly off the generated evidence
+   (`docs/phase_f/l2_event/evidence_bundle/Cytokinesis/SUMMARY.json`:
+   `onset_tick=27556`, `completion_tick=31427`,
+   `division_relative_onset_tick=-3871`), is **3871** ticks
+   (`completion_tick - onset_tick`), not an approximation. All downstream
+   docs/catalog entries now use this exact figure.
+4. **Catalog reconciled.** `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`'s
+   Cytokinesis row is no longer left at the stale `M_ticks: 100` /
+   `seed_window: [-50, 0]` values §9 flagged as wrong -- it now reads
+   `M_ticks: 4000` / `seed_window.tick_range_from_division: [-3999, 0]`
+   (the validated seed-0 lower bound; the exact retry size that
+   succeeded), with a new `blocked_on` field stating explicitly that
+   `N=50` remains unauthorized until a full 50-seed survey determines the
+   real cohort-wide maximum span. A new read-only survey tool,
+   `scripts/l2_event/survey_cytokinesis_onset_span.py`, computes the
+   onset-to-completion span for whatever seeds already exist on disk and
+   explicitly refuses to claim a cohort-wide maximum from a partial
+   sample (tested in
+   `tests/scripts/test_survey_cytokinesis_onset_span.py`). It never
+   launches a MATLAB extraction itself.
+5. **Two-commit provenance reproducibility.** `provenance.json`'s
+   `git_sha` must name a commit that actually contains the exact registry
+   state its `registry_sha256` records. The evidence bundle committed
+   alongside §9 was generated in the SAME dirty working tree as the code
+   changes, so its `git_sha` did not yet name a commit containing that
+   final state. `write_cytokinesis_canary_d_evidence.py` now refuses
+   (`_assert_registry_and_adapter_committed`) to generate evidence while
+   the registry or the Cytokinesis adapter module has uncommitted
+   working-tree changes; the evidence bundle here was regenerated in a
+   dedicated follow-up commit AFTER all code/registry/catalog fixes
+   landed, so `git_sha` now genuinely names a commit containing this
+   exact `registry_sha256`. Tests:
+   `tests/scripts/test_write_cytokinesis_canary_d_evidence.py::test_assert_registry_and_adapter_committed_raises_when_dirty`
+   / `::test_assert_registry_and_adapter_committed_silent_when_clean`
+   / `::test_git_porcelain_status_passes_translated_git_dir_args_through`.
+6. **Stale test docstring corrected.** `tests/scripts/test_l2_event_adapters_cytokinesis.py`'s
+   `_entry()` helper docstring claimed the real registry "stays frozen at
+   `adapter_status: not_implemented`" -- no longer true since §9;
+   corrected to describe the helper's synthetic `gating_ready` default as
+   deliberately independent of whatever the real registry says.
+   `docs/phase_f/l2_event/L2_EVENT_FOUNDATION_STATUS.md`'s Cytokinesis
+   row in the "exact missing-data matrix" table is likewise refreshed
+   from `0 / 50` / `not_implemented` to `1 / 50` /
+   `structural_smoke_only`, with a note pointing at this section.
+
+## 11. Addendum (2026-08-06, Opus round 3): field-name collision + plan sync
+
+Opus flagged two final blockers on §10's fixes before merge:
+
+1. **`blocked_on` renamed to `event_sweep_blocked_on`.** §10 item 4
+   added a Cytokinesis `blocked_on` field to `PROCESS_CATALOG.yaml`.
+   `blocked_on` turned out to be a pre-existing, reserved key already
+   used by three other catalog entries (e.g. ChromosomeCondensation,
+   ChromosomeSegregation: `blocked_on: []`) and read directly by
+   `scripts/derive_l25_pair_matrix.py::_infer_l2_2_status()` as a
+   generic L2.2 pass/fail signal (any truthy value there flips
+   `l2_2_passed` to `False` for that process in the pairwise matrix).
+   Cytokinesis's non-empty string value collided with this and
+   incorrectly flipped its inferred `l2_2_passed` to `False`, even
+   though Cytokinesis's actual L2.2 in-scope status
+   (`in_scope_L2_2: true`) is unaffected by the narrower N=50
+   event-window-sweep authorization gate this field actually describes.
+   Renamed to `event_sweep_blocked_on` everywhere (catalog, registry
+   notes, survey script docstring); confirmed via direct probe that
+   `_infer_l2_2_status()` now falls back to `in_scope_L2_2` (`True`,
+   `fallback:in_scope_L2_2`) instead of the generic
+   `fallback:blocked_on` (`False`) path. Confirmed via
+   `python scripts/derive_l25_pair_matrix.py --check` that this
+   specific field was never the cause of the pair-matrix/list artifacts'
+   pre-existing staleness (that staleness predates this branch --
+   reproduced identically against the pre-round-2 catalog) so no
+   artifact regeneration was needed or performed for this fix. New
+   regression:
+   `tests/scripts/test_derive_l25_pair_matrix.py::test_cytokinesis_event_sweep_blocked_on_does_not_flip_l2_2_passed`.
+2. **`plan.md` operational handoff refreshed** to state the real,
+   current adapter_id (`cytokinesis.pinched_diameter_completion.v1`),
+   the reconciled `M_ticks=4000`/`seed_window=[-3999,0]` seed-0 lower
+   bound, and the surviving `1/50` span-survey blocker -- replacing a
+   stale mention of the earlier invented adapter_id as if it were still
+   current fact.

@@ -160,3 +160,96 @@ until explicitly reconciled: `docs/phase_f/l2_2_design_a/L2_2_GATE_TRACKER.md`,
 `docs/phase_f/L2_5_PAIR_TRACKER.md`, and
 `docs/phase_e/PROCESS_STATUS_ALL_29.md`.
 
+## Addendum (2026-08-05): Cytokinesis Canary D closed
+
+This addendum updates, but does not rewrite, the "### Cytokinesis" and
+"## What is intentionally paused" sections above (which describe the state
+*before* this retry).
+
+Canary D was retried under the fixed/hash-bound `mnrnd` shim
+(`mnrnd_shim_version=1`,
+`sha256=819218f9c4db0e9b24606e6bd9d34dd31600bfbdc764c8c46e17bf72da391e67`).
+The first attempt (catalog default `M_ticks=100`) failed closed -- a real
+finding, not the old `mnrnd` bug: seed 0's real onset-to-completion span is
+`~3872` ticks (`onset_tick=27556`, `completion=31427`), longer than a
+100-tick capture buffer. A second retry with `n_ticks=4000` (same seed,
+same deterministic trajectory) reached and validated a complete M4 anchor
+window (`tick_start=27428 <= onset_tick=27556 < window_anchor=31427`,
+`stride_contract_ok=True`). Process-local Karr-only structural-smoke
+evidence (`verdict=NOT_APPLICABLE`) was written to
+`docs/phase_f/l2_event/evidence_bundle/Cytokinesis/`; `evidence_index.json`
+was not touched. `event_registry.yaml`'s Cytokinesis row now records
+`adapter_id: cytokinesis.karr_only_smoke.v1` / `adapter_status:
+structural_smoke_only`. Full details:
+`docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md` §9.
+
+Updated status:
+
+- Cytokinesis Canary D: **closed** (1/50 event-window seeds now on disk,
+  M4-complete, shim-bound). Still only a structural smoke, not a gate.
+- **New blocker for N=50**: the catalog's `M_ticks: 100` default and
+  `seed_window.tick_range_from_division: [-50, 0]` rationale are
+  inconsistent with the real observed onset-to-completion span (~3872
+  ticks, not ~50). N=50 extraction at the current `M_ticks=100` would be
+  expected to fail closed for most/all seeds; the catalog parameter needs
+  reconciliation before a real sweep is attempted. This is unchanged from
+  "no N=50 extraction/sweep" being paused above, now for a concretely
+  identified reason rather than an open unknown.
+- All other "intentionally paused" items above (L2.5, L3, FtsZ/DNADamage
+  catalog adoption) are unaffected and remain paused.
+
+## Addendum (2026-08-05, later same day): Opus review round 2 fixes
+
+Opus reviewed the addendum above as `APPROVE_AS_CANARY` conditional on
+five reuse/integration fixes, all applied; see
+`docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md` §10 for the full
+rule-by-rule detail. Summary:
+
+- `event_registry.yaml`'s Cytokinesis `adapter_id` corrected to the real
+  `CytokinesisEventAdapter.adapter_id`
+  (`cytokinesis.pinched_diameter_completion.v1`), not the invented
+  `cytokinesis.karr_only_smoke.v1` label used above.
+- Exact span corrected to **3871** ticks (the addendum above's "~3872"
+  was an imprecise rounding of the real
+  `division_relative_onset_tick=-3871` recorded in the evidence itself).
+- `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`'s Cytokinesis row
+  reconciled: `M_ticks: 4000`, `seed_window.tick_range_from_division:
+  [-3999, 0]`, with a new `blocked_on` note that `N=50` stays
+  unauthorized until a full 50-seed survey
+  (`scripts/l2_event/survey_cytokinesis_onset_span.py`, read-only, never
+  launches MATLAB itself) determines the real cohort-wide maximum span.
+- `write_cytokinesis_canary_d_evidence.py` now fails closed on
+  process/seed mismatch and refuses to regenerate evidence while the
+  registry/adapter module has uncommitted changes (two-commit
+  reproducibility: code+registry landed in one commit, evidence
+  regenerated in a dedicated follow-up commit so `provenance.git_sha`
+  genuinely names a commit containing the exact `registry_sha256`
+  recorded alongside it).
+- Stale test docstrings (`test_l2_event_adapters_cytokinesis.py`'s
+  `_entry()` helper) and `L2_EVENT_FOUNDATION_STATUS.md`'s missing-data
+  matrix row refreshed to match.
+- **Status unchanged**: Cytokinesis Canary D remains closed/successful;
+  N=50 remains **not authorized**.
+
+## Addendum (2026-08-06): field-name collision fix + plan sync
+
+Opus flagged two final blockers on the round-2 fixes above:
+
+- The `blocked_on` field added to Cytokinesis's catalog row above
+  collided with a pre-existing, reserved `blocked_on` key that
+  `scripts/derive_l25_pair_matrix.py::_infer_l2_2_status()` reads as a
+  generic L2.2 pass/fail signal -- it was incorrectly flipping
+  Cytokinesis's inferred `l2_2_passed` to `False` in the pairwise
+  matrix. Renamed to `event_sweep_blocked_on` everywhere; confirmed via
+  `python scripts/derive_l25_pair_matrix.py --check` that the
+  pair-matrix/list artifacts' pre-existing staleness predates this
+  branch and is unrelated to this field (reproduced identically against
+  the pre-round-2 catalog), so no artifact regeneration was performed.
+  See `CYTOKINESIS_ADAPTER_REPORT.md` §11 for full detail.
+- `plan.md`'s operational handoff refreshed to the real, current
+  adapter_id and reconciled catalog values (was still citing the
+  earlier invented adapter_id as if current).
+- **Status unchanged**: Cytokinesis Canary D remains closed/successful;
+  N=50 remains **not authorized** (now backed by
+  `event_sweep_blocked_on`, not `blocked_on`).
+

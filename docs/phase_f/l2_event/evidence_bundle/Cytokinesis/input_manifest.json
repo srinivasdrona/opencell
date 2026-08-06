@@ -1,0 +1,14 @@
+{
+  "inputs": [
+    {
+      "n_ticks": 4000,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
+      "seed": 0,
+      "sha256": "de09b63ccd190c4e767bcf0eabe174065e880fa56d411ab4452fb51caa9cf1bd",
+      "tick_offset": 0.0,
+      "trace_kind": "event_window"
+    }
+  ],
+  "process": "Cytokinesis",
+  "schema_version": 1
+}

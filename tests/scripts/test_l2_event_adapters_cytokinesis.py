@@ -236,9 +236,18 @@ def _timeline(seed: int, fire_ticks: list[int], n_ticks: int = 30) -> EventTimel
 
 def _entry(**overrides) -> EventRegistryEntry:
     """A LOCALLY-constructed registry entry for `evaluate_gate` tests --
-    never the real `docs/phase_f/l2_event/event_registry.yaml`, which
-    stays frozen at `adapter_status: not_implemented` per this task's
-    scope."""
+    never the real `docs/phase_f/l2_event/event_registry.yaml`. As of the
+    2026-08-05 Canary D closeout the real registry row carries
+    `adapter_id: cytokinesis.pinched_diameter_completion.v1` (this
+    process's real, registered adapter -- see `CytokinesisEventAdapter`)
+    and `adapter_status: structural_smoke_only` (a read-only Karr-side
+    smoke check, NOT a computed gate verdict). This helper still
+    deliberately defaults to the synthetic `adapter_status: "gating_ready"`
+    (a status no real row may ever carry, per
+    `test_registry_reflects_actual_adapter_availability_not_aspirational_claims`)
+    purely so `evaluate_gate` tests below can exercise the gating-ready
+    code path in isolation, independent of whatever the real registry
+    currently says."""
     base = dict(
         process="Cytokinesis",
         in_scope_v4=True,

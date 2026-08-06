@@ -23,6 +23,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts.l2_event.window_loader import (
     EventWindowRefused,
+    _decode_char_metadata,
     classify_trace_dir,
     load_event_window,
 )
@@ -37,6 +38,17 @@ _REAL_RA_TRACE = (
 )
 
 _REAL_STANDARD_TRACE = REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_s001" / "Translation_100ticks.mat"
+
+_REAL_CYTOKINESIS_TRACE = (
+    REPO_ROOT
+    / "data"
+    / "m1_sources"
+    / "karr_native"
+    / "per_process_traces_v2_event_s000"
+    / "Cytokinesis_4000ticks.mat"
+)
+
+_CYTOKINESIS_MNRND_SHIM_SHA256 = "819218f9c4db0e9b24606e6bd9d34dd31600bfbdc764c8c46e17bf72da391e67"
 
 
 def _encode_char_metadata(text: str) -> np.ndarray:
@@ -319,6 +331,69 @@ def test_load_real_standard_mid_cycle_trace_refuses_not_event_window_trace():
     with pytest.raises(EventWindowRefused) as exc_info:
         load_event_window(_REAL_STANDARD_TRACE, required_observables=("substrates",))
     assert exc_info.value.reason == "NOT_EVENT_WINDOW_TRACE"
+
+
+@pytest.mark.skipif(not _REAL_CYTOKINESIS_TRACE.exists(), reason="Real Cytokinesis seed-000 event-window MAT not present locally")
+def test_load_real_cytokinesis_seed0_event_trace_anchor_completeness():
+    """Canary D closeout: the real seed-0 anchor-mode MAT produced after the
+    mnrnd shim repair must satisfy the full M4 contract under the STRICT
+    default (`require_stride_contract` defaults to True) -- stride=1, an
+    absolute `tick_start`, a `window_anchor` (completion/capture boundary),
+    and an `onset_tick` (contraction-onset timing anchor) with
+    `tick_start <= onset_tick < window_anchor`, per the ratified onset =
+    first strict `pinchedDiameter` decrease / completion = first
+    positive->zero transition definition. Must never pass on a truncated or
+    synthetically-flagged-complete search.
+
+    NOTE on n_ticks=4000 (not the catalog's `M_ticks: 100` default): the
+    first Canary D retry (n_ticks=100, matching the catalog default) failed
+    closed -- the real seed-0 trajectory's onset-to-completion span is
+    ~3872 ticks, far longer than a 100-tick capture buffer can hold. This
+    is a real finding (the catalog's `M_ticks: 100` "default" rationale is
+    not big enough to contain a real single-firing Cytokinesis anchor
+    window), not a threshold relaxation: n_ticks is a capture-buffer size,
+    the onset/completion detection and the `onset_tick >= tick_start`
+    refusal are completely unchanged and remained fail-closed throughout."""
+    observables = (
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "pinchedDiameter",
+        "ftsZRing_numEdgesOneStraight",
+        "ftsZRing_numEdgesTwoStraight",
+        "ftsZRing_numEdgesTwoBent",
+        "ftsZRing_numResidualBent",
+        "chromosome_segregated",
+    )
+    window = load_event_window(_REAL_CYTOKINESIS_TRACE, required_observables=observables)
+    assert window.process_name == "Cytokinesis"
+    assert window.seed == 0
+    assert window.n_ticks == 4000
+    assert window.stride_contract_ok is True
+    assert window.stride_contract_problems == ()
+    assert window.window_anchor is not None
+    assert window.onset_tick is not None
+    assert window.tick_start <= window.onset_tick < window.window_anchor
+    for observable in observables:
+        assert window.states_before[observable].shape[0] == 4000
+        assert window.states_after[observable].shape[0] == 4000
+
+
+
+@pytest.mark.skipif(not _REAL_CYTOKINESIS_TRACE.exists(), reason="Real Cytokinesis seed-000 event-window MAT not present locally")
+def test_load_real_cytokinesis_seed0_event_trace_bound_to_final_mnrnd_shim():
+    """The regenerated trace must carry provenance binding to the FINAL
+    (post-repair) mnrnd shim, not the version that crashed at tick 25,361 --
+    both the coarse version bump and the strong content-hash binding must
+    match what `scripts/matlab/mnrnd.m` hashes to today."""
+    with h5py.File(_REAL_CYTOKINESIS_TRACE, "r") as handle:
+        metadata = handle["metadata"]
+        shim_version = int(np.asarray(metadata["mnrnd_shim_version"][()]).reshape(-1)[0])
+        shim_sha256 = _decode_char_metadata(np.asarray(metadata["mnrnd_shim_sha256"][()]))
+        projection_version = int(np.asarray(metadata["event_observable_projection_version"][()]).reshape(-1)[0])
+    assert shim_version == 1
+    assert shim_sha256 == _CYTOKINESIS_MNRND_SHIM_SHA256
+    assert projection_version == 2
 
 
 # ---------------------------------------------------------------------------

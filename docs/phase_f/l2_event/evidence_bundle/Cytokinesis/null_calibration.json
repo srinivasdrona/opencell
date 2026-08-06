@@ -1,0 +1,9 @@
+{
+  "b_resamples": 0,
+  "channel": "n/a",
+  "cluster_unit": "seed",
+  "process": "Cytokinesis",
+  "q95_null": 0.0,
+  "schema_version": 1,
+  "statistic_name": "n/a"
+}
