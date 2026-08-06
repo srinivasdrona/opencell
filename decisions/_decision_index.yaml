@@ -38,3 +38,14 @@ decisions:
       - "L4 paper review challenges the FVA-feasibility methodology"
     superseded_by: null
 
+  - id: dec-004
+    title: "MacromolecularComplexation closed_form_dominant withdrawn from confirmed_biology_validated"
+    file: decisions/dec-004-macromol-network2-closed-form-dominant-withdrawn.md
+    status: active
+    created: 2026-08-05
+    invalidation_triggers:
+      - "A tick_offset>0 re-extraction of the accepted N=50 natural population shows network 2 firing within a revised M-tick window for a majority of seeds"
+      - "buildProteinComplexs_montecarlokinetic loses its randStream.rand() dependency (structural change, independently re-verified)"
+      - "Coordinator's re-run evidence_index.json sweep produces a disposition other than the predicted ordinary non-green fallthrough"
+    superseded_by: null
+
