@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
-  "content_hash": "1c9717298728a0470403e87610ac4c2f45a62537cd9f0b1f0ee884158ec2c0be",
+  "content_hash": "37b4816f59321c16336337d5b627812563b2f0500dacc5d9030c0695b146df0e",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-08-06T14:07:15.316688+00:00",
+  "generated_at": "2026-08-06T14:16:00.775944+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -121,7 +121,6 @@
       "process": "DNASupercoiling",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/DNASupercoiling_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)",
         "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
         "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
         "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
@@ -196,7 +195,6 @@
       "process": "MacromolecularComplexation",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/MacromolecularComplexation_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)",
         "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
         "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
         "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
@@ -458,7 +456,6 @@
       "process": "ProteinProcessingII",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/ProteinProcessingII_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)",
         "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
         "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
         "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
@@ -676,7 +673,6 @@
       "process": "Replication",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/Replication_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)",
         "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
         "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a60a3de8c440.., current=0bf545d5bf3f..)",
         "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
