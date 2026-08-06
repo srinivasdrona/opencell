@@ -27,9 +27,16 @@ from opencell.state.chromosome_store import (
     merge_adjacent_regions,
     sparse_triplet_schema,
 )
+from opencell.util import MatlabRandStream
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/Replication_flat.mat"
 _DEFAULT_CHROMOSOME_FIXTURE_PATH = "data/karr_fixtures/per_process/Chromosome_flat.mat"
+_DEFAULT_CHROMOSOME_SEQUENCE_PATH = "data/karr_fixtures/per_process/Chromosome_positive_strand.txt"
+_BASE_COMPLEMENT_LUT = np.arange(256, dtype=np.uint8)
+_BASE_COMPLEMENT_LUT[ord("A")] = ord("T")
+_BASE_COMPLEMENT_LUT[ord("C")] = ord("G")
+_BASE_COMPLEMENT_LUT[ord("G")] = ord("C")
+_BASE_COMPLEMENT_LUT[ord("T")] = ord("A")
 _PRE_LAGGING_DNTP_COUNTS: tuple[tuple[int, int, int, int], ...] = (
     (6, 0, 2, 14),
     (81, 20, 21, 78),
@@ -152,6 +159,60 @@ _REPLAY_DNTP_COUNTS: tuple[tuple[int, int, int, int], ...] = (
     (21, 23, 14, 42),
     (95, 42, 54, 109),
 )
+
+
+class _MatlabReplicationRNG:
+    """Adapter exposing the subset of NumPy-like RNG methods Replication uses."""
+
+    def __init__(self, seed: int) -> None:
+        self._stream = MatlabRandStream(int(seed))
+
+    def random(self, size: int | tuple[int, ...] | None = None) -> float | np.ndarray:
+        if size is None:
+            return float(self._stream.rand())
+        if isinstance(size, tuple):
+            return np.asarray(self._stream.rand(*size), dtype=np.float64)
+        return np.asarray(self._stream.rand(int(size)), dtype=np.float64)
+
+    def permutation(self, x: Any) -> np.ndarray:
+        if np.isscalar(x):
+            return np.asarray(self._stream.randperm(int(x)) - 1, dtype=np.int64)
+        arr = np.asarray(x)
+        order = np.asarray(self._stream.randperm(arr.size) - 1, dtype=np.int64)
+        return arr[order]
+
+    def choice(self, a: Any, size: int | None = None, replace: bool = False, **_: Any) -> Any:
+        if replace:
+            raise NotImplementedError("Replication RNG adapter only supports choice(..., replace=False)")
+        arr = np.arange(int(a), dtype=np.int64) if np.isscalar(a) else np.asarray(a)
+        if size is None:
+            return arr[int(self._stream.randperm(arr.size, 1)[0]) - 1]
+        order = np.asarray(self._stream.randperm(arr.size, int(size)) - 1, dtype=np.int64)
+        return arr[order]
+
+    def poisson(self, lam: float, size: int | tuple[int, ...] | None = None) -> int | np.ndarray:
+        lam_f = max(0.0, float(lam))
+        if size is None:
+            return self._poisson_scalar(lam_f)
+        if isinstance(size, tuple):
+            count = int(np.prod(size, dtype=np.int64))
+            draws = np.asarray([self._poisson_scalar(lam_f) for _ in range(count)], dtype=np.int64)
+            return draws.reshape(size)
+        return np.asarray([self._poisson_scalar(lam_f) for _ in range(int(size))], dtype=np.int64)
+
+    def randperm(self, n: int, k: int | None = None) -> np.ndarray:
+        return np.asarray(self._stream.randperm(int(n), None if k is None else int(k)) - 1, dtype=np.int64)
+
+    def _poisson_scalar(self, lam: float) -> int:
+        if lam <= 0.0:
+            return 0
+        threshold = math.exp(-lam)
+        product = 1.0
+        k = 0
+        while product > threshold:
+            k += 1
+            product *= float(self._stream.rand())
+        return k - 1
 _REPLAY_ATP_EVENTS: tuple[int, ...] = (
     46, 22, 200, 200, 200, 200, 200, 200, 200, 200,
     200, 200, 200, 200, 200, 201, 200, 200, 200, 200,
@@ -226,6 +287,31 @@ def _snap_integral(value: float) -> int:
     return int(np.rint(float(value)))
 
 
+def _load_chromosome_positive_sequence(
+    path: str | Path,
+    *,
+    expected_length: int,
+    expected_gc_content: float,
+) -> np.ndarray:
+    resolved = _resolve_fixture_path(path)
+    sequence = "".join(resolved.read_text(encoding="ascii").split())
+    if len(sequence) != expected_length:
+        raise ValueError(
+            f"Chromosome positive-strand sequence length {len(sequence)} does not match "
+            f"expected fixture length {expected_length}"
+        )
+    invalid_bases = sorted(set(sequence) - {"A", "C", "G", "T"})
+    if invalid_bases:
+        raise ValueError(f"Chromosome positive-strand sequence contains invalid bases: {invalid_bases}")
+    gc_content = float((sequence.count("G") + sequence.count("C")) / max(1, len(sequence)))
+    if not np.isclose(gc_content, expected_gc_content, atol=1e-12, rtol=0.0):
+        raise ValueError(
+            f"Chromosome positive-strand GC content {gc_content} does not match "
+            f"expected fixture GC content {expected_gc_content}"
+        )
+    return np.frombuffer(sequence.encode("ascii"), dtype=np.uint8)
+
+
 class ReplicationTopologyError(RuntimeError):
     """Raised when the literal Okazaki-fragment port hits an unsupported
 
@@ -251,6 +337,7 @@ class KarrReplicationProcess(Process):
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
         "chromosome_fixture_path": _DEFAULT_CHROMOSOME_FIXTURE_PATH,
+        "chromosome_sequence_path": _DEFAULT_CHROMOSOME_SEQUENCE_PATH,
         "time_step": 1.0,
         "fork_polymerization_rate_bp_per_s": None,
         "helicase_atp_per_bp": 1.0,
@@ -261,6 +348,7 @@ class KarrReplicationProcess(Process):
         self._load_fixtures(
             fixture_path=self.parameters["fixture_path"],
             chromosome_fixture_path=self.parameters["chromosome_fixture_path"],
+            chromosome_sequence_path=self.parameters["chromosome_sequence_path"],
         )
         rate_override = self.parameters.get("fork_polymerization_rate_bp_per_s")
         self.fork_polymerization_rate_bp_per_s = (
@@ -268,7 +356,7 @@ class KarrReplicationProcess(Process):
             if rate_override is not None
             else float(self.dna_polymerase_elongation_rate_bp_per_s)
         )
-        self._rng = np.random.default_rng(int(self.parameters.get("rng_seed", 0)))
+        self._rng = _MatlabReplicationRNG(int(self.parameters.get("rng_seed", 0)))
         self.helicase_atp_per_bp = max(0.0, float(self.parameters["helicase_atp_per_bp"]))
         self._completion_emitted = False
         self._replay_initialized = False
@@ -287,6 +375,7 @@ class KarrReplicationProcess(Process):
         self,
         fixture_path: str | Path,
         chromosome_fixture_path: str | Path,
+        chromosome_sequence_path: str | Path,
     ) -> None:
         replication_path = _resolve_fixture_path(fixture_path)
         chromosome_path = _resolve_fixture_path(chromosome_fixture_path)
@@ -428,12 +517,42 @@ class KarrReplicationProcess(Process):
         sequence_gc_content = float(_coerce_scalar(chromosome_fixture.sequenceGCContent))
         self.sequence_len_bp = max(1, sequence_len_bp)
         self.sequence_gc_content = float(np.clip(sequence_gc_content, a_min=0.0, a_max=1.0))
-        at_fraction = (1.0 - self.sequence_gc_content) / 2.0
-        gc_fraction = self.sequence_gc_content / 2.0
-
-        # Datp/Dctp/Dgtp/Dttp order from fixture substrateIndexs_dntp.
-        self._dntp_fractions = np.asarray([at_fraction, gc_fraction, gc_fraction, at_fraction])
-        self._dntp_fractions = self._dntp_fractions / np.sum(self._dntp_fractions)
+        self._chromosome_positive_sequence = _load_chromosome_positive_sequence(
+            chromosome_sequence_path,
+            expected_length=self.sequence_len_bp,
+            expected_gc_content=self.sequence_gc_content,
+        )
+        self.dna_strandedness_ssdna = int(_coerce_scalar(chromosome_fixture.dnaStrandedness_ssDNA))
+        self.dna_strandedness_dsdna = int(_coerce_scalar(chromosome_fixture.dnaStrandedness_dsDNA))
+        self.dna_strandedness_xsdna = int(_coerce_scalar(chromosome_fixture.dnaStrandedness_xsDNA))
+        self.complex_dna_footprint_binding_strandedness = np.asarray(
+            chromosome_fixture.complexDNAFootprintBindingStrandedness,
+            dtype=np.int64,
+        ).reshape(-1)
+        self.complex_dna_footprint_region_strandedness = np.asarray(
+            chromosome_fixture.complexDNAFootprintRegionStrandedness,
+            dtype=np.int64,
+        ).reshape(-1)
+        self.reaction_bound_monomer = np.asarray(
+            chromosome_fixture.reactionBoundMonomer,
+            dtype=np.int64,
+        ).reshape(-1)
+        self.reaction_bound_complex = np.asarray(
+            chromosome_fixture.reactionBoundComplex,
+            dtype=np.int64,
+        ).reshape(-1)
+        self.reaction_monomer_catalysis_matrix = np.asarray(
+            chromosome_fixture.reactionMonomerCatalysisMatrix,
+            dtype=np.int64,
+        )
+        self.reaction_complex_catalysis_matrix = np.asarray(
+            chromosome_fixture.reactionComplexCatalysisMatrix,
+            dtype=np.int64,
+        )
+        self.reaction_thresholds = np.asarray(
+            chromosome_fixture.reactionThresholds,
+            dtype=np.int64,
+        ).reshape(-1)
         self.leading_strand_indexs = (_parse_index_array(replication_fixture.leadingStrandIndexs) - 1).tolist()
         self.lagging_strand_indexs = (_parse_index_array(replication_fixture.laggingStrandIndexs) - 1).tolist()
         self.chromosome_shape = (self.sequence_len_bp, ChromosomeStore.DEFAULT_N_COMPARTMENTS)
@@ -1023,9 +1142,11 @@ class KarrReplicationProcess(Process):
         find(c.complexBoundSites); tfs = ismembc(vals,
         rnaPolymeraseIndexs); if any(tfs)`), not a narrower window check.
         All 4 draws share ONE `self._rng.poisson(...)` call (`randStream.
-        random('poisson', 1/dwell, [2 2])` in MATLAB) -- distributionally
-        equivalent (4 iid Poisson(rate) draws); this process never touches
-        global RNG state.
+        random('poisson', 1/dwell, [2 2])` in MATLAB); to preserve the
+        exact seeded cell-to-component mapping, the resulting 4 iid draws
+        are assigned into the 2x2 `(leading/lagging, column0/column1)`
+        matrix in MATLAB's own column-major order, not NumPy's default
+        row-major reshape. This process never touches global RNG state.
 
         Strand grouping (verified against `Replication.m`'s own
         `leadingStrandIndexs = [1 4]` / `laggingStrandIndexs = [3 2]`
@@ -1075,35 +1196,39 @@ class KarrReplicationProcess(Process):
         # polymerase found in its own quadrant -- ported literally, not
         # guarded further, matching Karr's own unconditional `tmpLimits =
         # zeros(2, 2)` initialization.
-        tmp_limits = [0, 0, 0, 0]  # leading0, leading1, lagging0, lagging1
+        tmp_limits = np.zeros((2, 2), dtype=np.int64)
         m = col0_mask & (positions < helicase_pos[0])
         if np.any(m):
-            tmp_limits[0] = int(np.min(helicase_pos[0] - (positions[m] + rna_pol_footprint)))
+            tmp_limits[0, 0] = int(np.min(helicase_pos[0] - (positions[m] + rna_pol_footprint)))
         m = col1_mask & (positions > helicase_pos[1])
         if np.any(m):
-            tmp_limits[1] = int(np.min(positions[m] - (helicase_pos[1] + self.helicase_footprint_bp)))
+            tmp_limits[0, 1] = int(np.min(positions[m] - (helicase_pos[1] + self.helicase_footprint_bp)))
         if lagging_pol_pos[0] != -1:
             m = col1_mask & (positions > lagging_pol_pos[0])
             if np.any(m):
-                tmp_limits[2] = int(
+                tmp_limits[1, 0] = int(
                     np.min(positions[m] - (lagging_pol_pos[0] + self.polymerase_holoenzyme_footprint_bp))
                 )
         if lagging_pol_pos[1] != -1:
             m = col0_mask & (positions < lagging_pol_pos[1])
             if np.any(m):
-                tmp_limits[3] = int(np.min(lagging_pol_pos[1] - (positions[m] + rna_pol_footprint)))
+                tmp_limits[1, 1] = int(np.min(lagging_pol_pos[1] - (positions[m] + rna_pol_footprint)))
 
-        dwelling = self._rng.poisson(1.0 / self.rna_polymerase_collision_mean_dwell_time_s, size=4) == 0
+        dwelling = np.reshape(
+            self._rng.poisson(1.0 / self.rna_polymerase_collision_mean_dwell_time_s, size=4) == 0,
+            (2, 2),
+            order="F",
+        )
         lagging_cap0: int | None = None
         lagging_cap1: int | None = None
-        if dwelling[0]:
-            advance0 = min(advance0, max(0, tmp_limits[0]))
-        if dwelling[1]:
-            advance1 = min(advance1, max(0, tmp_limits[1]))
-        if dwelling[2]:
-            lagging_cap0 = max(0, tmp_limits[2])
-        if dwelling[3]:
-            lagging_cap1 = max(0, tmp_limits[3])
+        if dwelling[0, 0]:
+            advance0 = min(advance0, max(0, int(tmp_limits[0, 0])))
+        if dwelling[0, 1]:
+            advance1 = min(advance1, max(0, int(tmp_limits[0, 1])))
+        if dwelling[1, 0]:
+            lagging_cap0 = max(0, int(tmp_limits[1, 0]))
+        if dwelling[1, 1]:
+            lagging_cap1 = max(0, int(tmp_limits[1, 1]))
         return advance0, advance1, lagging_cap0, lagging_cap1
 
     @staticmethod
@@ -1121,6 +1246,35 @@ class KarrReplicationProcess(Process):
         footprint3 = total_footprint - 1 - footprint5
         return footprint5, footprint3
 
+    @staticmethod
+    def _strand_pair_index(strand: int) -> int:
+        return int(strand) // 2
+
+    def _releasable_complex_indexs(
+        self,
+        *,
+        binding_monomers: tuple[int, ...] = (),
+        binding_complexes: tuple[int, ...] = (),
+    ) -> np.ndarray:
+        """Literal `Chromosome.getReleasableProteins` complex half
+        (`Chromosome.m:1575-1601`) for the current fixture matrices.
+
+        Indices remain in Karr's 1-based global-index space because
+        `complexBoundSites` values use that same vocabulary.
+        """
+        score = np.zeros_like(self.reaction_thresholds)
+        if binding_monomers:
+            monomer_cols = np.asarray(binding_monomers, dtype=np.int64) - 1
+            score = score + np.sum(self.reaction_monomer_catalysis_matrix[:, monomer_cols], axis=1)
+        if binding_complexes:
+            complex_cols = np.asarray(binding_complexes, dtype=np.int64) - 1
+            score = score + np.sum(self.reaction_complex_catalysis_matrix[:, complex_cols], axis=1)
+        releasable = self.reaction_bound_complex[score >= self.reaction_thresholds]
+        releasable = releasable[releasable != 0]
+        if releasable.size == 0:
+            return np.zeros(0, dtype=np.int64)
+        return np.unique(releasable.astype(np.int64, copy=False))
+
     def _occlusion_advance_cap(
         self,
         complex_bound_sites: SparseTriplet,
@@ -1130,6 +1284,7 @@ class KarrReplicationProcess(Process):
         direction: int,
         own_footprint_3prime: int,
         requested_advance: int,
+        binding_complex_global_indexs: tuple[int, ...],
         context: str,
     ) -> int:
         """Literal, narrowly-scoped port of `Chromosome.isRegionAccessible`'s
@@ -1160,17 +1315,42 @@ class KarrReplicationProcess(Process):
         """
         if requested_advance <= 0:
             return requested_advance
-        mask = complex_bound_sites.strands == strand
-        if not np.any(mask):
-            return requested_advance
         own = np.asarray(sorted(self._own_bindable_global_indexs), dtype=np.int64)
         rna_pol = np.asarray(sorted(self._rna_polymerase_global_indexs), dtype=np.int64)
-        values = complex_bound_sites.values[mask]
-        foreign_mask = ~np.isin(values, own) & ~np.isin(values, rna_pol)
+        releasable = self._releasable_complex_indexs(binding_complexes=binding_complex_global_indexs)
+        values = complex_bound_sites.values.astype(np.int64, copy=False)
+        foreign_mask = ~np.isin(values, own) & ~np.isin(values, rna_pol) & ~np.isin(values, releasable)
         if not np.any(foreign_mask):
             return requested_advance
-        positions = complex_bound_sites.positions[mask][foreign_mask].astype(np.int64)
+        positions = complex_bound_sites.positions[foreign_mask].astype(np.int64, copy=False)
         values = values[foreign_mask]
+        strands = complex_bound_sites.strands[foreign_mask].astype(np.int64, copy=False)
+
+        query_binding_strandedness = int(
+            self.complex_dna_footprint_binding_strandedness[binding_complex_global_indexs[0] - 1]
+        )
+        query_region_strandedness = int(
+            self.complex_dna_footprint_region_strandedness[binding_complex_global_indexs[0] - 1]
+        )
+        if query_region_strandedness == self.dna_strandedness_xsdna:
+            query_keys = np.zeros_like(strands)
+            foreign_keys = np.zeros_like(strands)
+        elif query_binding_strandedness == self.dna_strandedness_dsdna:
+            query_keys = np.full_like(strands, self._strand_pair_index(strand))
+            foreign_keys = np.floor_divide(strands, 2)
+        else:
+            query_keys = np.full_like(strands, int(strand))
+            foreign_strandedness = self.complex_dna_footprint_binding_strandedness[values - 1]
+            foreign_keys = np.where(
+                foreign_strandedness == self.dna_strandedness_dsdna,
+                self._strand_pair_index(strand),
+                strands,
+            )
+        strand_match = foreign_keys == query_keys
+        if not np.any(strand_match):
+            return requested_advance
+        positions = positions[strand_match]
+        values = values[strand_match]
 
         # Only complexes not already behind this own complex's OWN current
         # (pre-advance) leading edge can possibly restrict a *forward*
@@ -1251,6 +1431,7 @@ class KarrReplicationProcess(Process):
                 direction=direction,
                 own_footprint_3prime=self.helicase_footprint_3prime_bp,
                 requested_advance=leading_advance,
+                binding_complex_global_indexs=(self.helicase_global_index,),
                 context=f"advance col{column} leading strand (helicase precap)",
             )
             leading_advance = self._occlusion_advance_cap(
@@ -1260,6 +1441,7 @@ class KarrReplicationProcess(Process):
                 direction=direction,
                 own_footprint_3prime=self.polymerase_holoenzyme_footprint_3prime_bp,
                 requested_advance=leading_advance,
+                binding_complex_global_indexs=(self.two_core_beta_clamp_gamma_complex_primase_global_index,),
                 context=f"advance col{column} leading strand (leading polymerase precap)",
             )
         return leading_advance
@@ -2133,54 +2315,17 @@ class KarrReplicationProcess(Process):
         enzymes_next: dict[str, float],
         bound_next: dict[str, float],
     ) -> dict[str, Any]:
-        """Consume the ALREADY-COMPUTED, unchanged total per-tick
+        """Literal `unwindAndPolymerizeDNA` port for one scheduled MATLAB
+        subfunction call. Consumes the ALREADY-COMPUTED total per-tick
         nucleotide-advance budget (`budget_left_bp`/`budget_right_bp`, one
-        per fork column) via Karr's literal Okazaki-fragment state machine:
+        per fork column) via Karr's Okazaki-fragment state machine:
         leading-strand + helicase single-step advance (SSB-gated,
-        occlusion/terC-veto checked), lagging-strand fragment-chunked
-        advance with inline termination (`unwindAndPolymerizeDNA`/
-        `terminateOkazakiFragment`). Returns a dict with the updated
-        triplets and the ACTUAL bp advanced per column (which may be less
-        than the requested budget), so the caller can reconcile substrate
-        accounting against actual consumption rather than the requested
-        amount.
-
-        Finding 3 (Replication.m:604-607): Karr's `evolveState` does NOT
-        call these two subfunctions in a fixed order -- every tick it draws
-        `order = this.randStream.randperm(numel(subfunctions))` over the
-        WHOLE subfunction list (`initiateReplication`, `ligateDNA`,
-        `dissociateFreeSSBComplexes`, `freeAndBindSSBs`, and -- only while
-        any replisome is active -- `unwindAndPolymerizeDNA`,
-        `initiateOkazakiFragment`, `terminateOkazakiFragment`,
-        `terminateReplication`) and executes them in that random order.
-        Most of that list is architecturally forced into a fixed OC order
-        by real state-threading dependencies that have nothing to do with
-        fidelity choice (e.g. the SSB cycle must run, and be re-read, before
-        this fork-advance pass so the SSB-gate proxy below sees fresh data;
-        see `_apply_ssb_cycle`'s call site in `next_update`) -- those
-        orderings remain an explicit, tested, OPEN deviation (see
-        `test_karr_replication_subfunction_order_gap.py`), since a fully
-        general randomized-dispatch rewrite of the fused pipeline is out of
-        scope here and unproven to change any observable behavior (the SSB
-        cycle binds/releases SSBs only on `leading_strand_indexs`, disjoint
-        from the lagging-strand-indexed sites `initiateOkazakiFragment`/
-        fork-advance touch, and consumes disjoint enzyme pools).
-
-        The ONE sub-ordering below that IS ported faithfully: whether
-        `terminateOkazakiFragment` is drawn before or after
-        `unwindAndPolymerizeDNA` in a tick where this tick's own advance is
-        what completes a fragment. For any two distinct elements of a
-        uniformly random permutation of N elements, P(A precedes B) = 1/2
-        exactly, independent of N or the other elements -- so this reduces
-        to one fair coin per tick (shared across both columns, since Karr's
-        single `unwindAndPolymerizeDNA`/`terminateOkazakiFragment` calls
-        each handle both forks internally in one randperm-ordered pass),
-        drawn from the process's own seeded `self._rng` (never global
-        state). If terminate is drawn to run BEFORE this tick's advance, it
-        cannot observe a completion this tick's own advance just produced
-        (Karr's real per-tick call semantics: a subfunction only sees state
-        as of when IT runs) -- so termination is deferred to the very next
-        tick's own stall-retry check instead of firing in the same tick.
+        occlusion/terC-veto checked), lagging-strand fragment-local advance
+        up to the current fragment boundary, and the one-time first-fragment
+        split. `terminateOkazakiFragment`, `initiateOkazakiFragment`, and
+        `terminateReplication` are scheduled explicitly from `next_update`
+        in the same per-tick `randperm` order as `Replication.m:588-609`,
+        so this helper no longer inlines their state transitions.
 
         Finding 4 (composition, 2026-08-05): the two literal stall
         mechanisms invoked from the pre-pass above
@@ -2202,10 +2347,6 @@ class KarrReplicationProcess(Process):
         """
         polymerized = chromosome_store.get_field("polymerizedRegions")
         strand_breaks = chromosome_store.get_field("strandBreaks")
-        # Replication.m:604-607: one fair coin per tick (see docstring
-        # above) -- shared by both columns, drawn once regardless of how
-        # many columns/fragments this call ends up processing.
-        terminate_drawn_after_advance_this_tick = bool(self._rng.random() >= 0.5)
 
         helicase_pos = self._helicase_positions(complex_bound_sites)
         leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
@@ -2221,10 +2362,6 @@ class KarrReplicationProcess(Process):
                 "actual_left_bp": 0,
                 "actual_right_bp": 0,
             }
-
-        complex_bound_sites = self._bind_initial_lagging_polymerase(
-            complex_bound_sites, enzymes_next=enzymes_next, bound_next=bound_next
-        )
 
         # --- Pre-pass (Finding 4, Replication.m:759-863): compute BOTH
         # columns' pre-terC leading advance from the SAME untouched
@@ -2273,19 +2410,8 @@ class KarrReplicationProcess(Process):
         lagging_budget_cap_by_column = (lagging_cap0, lagging_cap1)
 
         actual_bp = [0, 0]
+        lagging_actual_by_column = [0, 0]
         for column, budget in ((0, int(budget_left_bp)), (1, int(budget_right_bp))):
-            # NOTE: deliberately no `if budget <= 0: continue` here --
-            # Replication.m's `terminateOkazakiFragment` is re-evaluated
-            # fresh every tick regardless of whether `unwindAndPolymerizeDNA`
-            # made any new progress this tick (Replication.m:599-602's fixed
-            # subfunction call order). A fragment that finished polymerizing
-            # on an earlier tick but was left gated (SSB not yet satisfied,
-            # backup-clamp mismatch) must still be retried for termination
-            # below even when this tick's own advance budget is 0; only
-            # actual MOVEMENT is skipped for a zero budget, never the
-            # termination retry itself (see the `remaining_in_fragment <= 0`
-            # branch inside the loop below, which does not gate on `budget`).
-
             leading_strand = int(self.leading_strand_indexs[column])
             lagging_strand = int(self.lagging_strand_indexs[column])
             direction = -1 if column == 0 else 1
@@ -2304,19 +2430,11 @@ class KarrReplicationProcess(Process):
             lagging_pol_pos = self._lagging_polymerase_positions(complex_bound_sites)
             not_yet_split = lagging_pol_pos[column] == -1
 
-            # --- lagging strand FIRST: chunked across Okazaki fragments,
-            # inline termination on each boundary; a termination-gate
-            # failure stops the loop (legitimate stall) leaving leftover
-            # budget unconsumed for this tick. Lagging is the bottleneck
-            # strand (discontinuous, restarted every fragment); this loop
-            # computes its actual achieved distance this tick, capping each
-            # fragment's own step by the primer-length primase-kinetics
-            # gate below (Replication.m:768-775, Finding 2) in addition to
-            # the fragment's own remaining length. NOTE: the leading
-            # strand's own budget below is fully decoupled from
-            # `lagging_actual` (Finding 1 -- see the persistent lead-gap
-            # gate there instead); this comment previously described a
-            # same-tick lockstep cap that no longer exists.
+            # --- lagging strand FIRST, but strictly as
+            # `unwindAndPolymerizeDNA`: advance only the currently-active
+            # fragment up to its own boundary. Fragment completion itself
+            # is observed later, if scheduled, by the separate
+            # `terminateOkazakiFragment` subfunction.
             lagging_actual = 0
             # Finding 4 (Replication.m:845-863): apply the RNA-polymerase-
             # collision Poisson-dwell cap (computed jointly for both
@@ -2344,38 +2462,7 @@ class KarrReplicationProcess(Process):
                 fragment_length = self._okazaki_fragment_length(fragment_index)
                 remaining_in_fragment = fragment_length[column] - fragment_progress[column]
                 if remaining_in_fragment <= 0:
-                    # The fragment is already fully polymerized (e.g. a
-                    # termination-gate stall from an earlier tick that has
-                    # now cleared, OR Finding 3's coin deferred this SAME
-                    # column's own just-completed fragment on a PRIOR call
-                    # within this tick's while-loop -- see the coin-gated
-                    # branch below) -- Replication.m's `terminateOkazakiFragment`
-                    # is re-evaluated fresh every tick regardless of whether
-                    # `unwindAndPolymerizeDNA` made new progress this tick,
-                    # so a pending-but-not-yet-terminated fragment must be
-                    # retried here even when this tick's budget is 0. This
-                    # retry is deliberately UNCONDITIONAL (not coin-gated):
-                    # Finding 3's ordering ambiguity applies only to whether
-                    # THIS SAME tick's own advance can be observed by
-                    # terminate; a fragment left over from an EARLIER tick
-                    # (or an earlier iteration already accounted for) is by
-                    # definition no longer "this tick's own completion" from
-                    # terminate's perspective, so no further coin applies.
-                    # Without this retry, a fragment that completed while
-                    # gated (gap/equality/SSB-not-yet-satisfied) would never
-                    # terminate once the gate clears on a later tick with no
-                    # remaining lagging-strand budget of its own.
-                    complex_bound_sites, strand_breaks, terminated = self._terminate_okazaki_fragment_column(
-                        column,
-                        complex_bound_sites=complex_bound_sites,
-                        polymerized=polymerized,
-                        strand_breaks=strand_breaks,
-                        enzymes_next=enzymes_next,
-                        bound_next=bound_next,
-                    )
-                    if not terminated:
-                        break
-                    continue
+                    break
                 if remaining <= 0:
                     break
                 step = min(remaining, remaining_in_fragment)
@@ -2418,6 +2505,7 @@ class KarrReplicationProcess(Process):
                     direction=lag_direction,
                     own_footprint_3prime=self.polymerase_holoenzyme_footprint_3prime_bp,
                     requested_advance=step,
+                    binding_complex_global_indexs=(self.core_beta_clamp_primase_global_index,),
                     context=f"advance col{column} lagging strand",
                 )
                 if step <= 0:
@@ -2440,29 +2528,7 @@ class KarrReplicationProcess(Process):
                 remaining -= step
 
                 if step == remaining_in_fragment:
-                    if not terminate_drawn_after_advance_this_tick:
-                        # Finding 3 (Replication.m:604-607): this tick's
-                        # coin drew terminateOkazakiFragment to run BEFORE
-                        # unwindAndPolymerizeDNA -- it cannot see the
-                        # completion THIS iteration's own step just
-                        # produced (Replication.m:1097-1099 reads live
-                        # `this.okazakiFragmentProgress`). Leave the
-                        # fragment fully polymerized but unterminated for
-                        # now; the unconditional top-of-loop stall-retry
-                        # branch above picks it up on the very next real
-                        # tick's call (a fresh coin, matching Karr's real
-                        # per-tick draw), not lost.
-                        break
-                    complex_bound_sites, strand_breaks, terminated = self._terminate_okazaki_fragment_column(
-                        column,
-                        complex_bound_sites=complex_bound_sites,
-                        polymerized=polymerized,
-                        strand_breaks=strand_breaks,
-                        enzymes_next=enzymes_next,
-                        bound_next=bound_next,
-                    )
-                    if not terminated:
-                        break
+                    break
 
             # --- leading strand + helicase: single-step advance using the
             # jointly-precomputed `leading_advance_by_column[column]`
@@ -2473,14 +2539,12 @@ class KarrReplicationProcess(Process):
             # Karr's `limits(1,:)` and `limits(2,:)` are computed
             # independently, each capped by its own occlusion/kinetics
             # extent, and only coupled via the lead-gap gate, never via a
-            # same-tick lockstep with `lagging_actual`. NOTE: the final
-            # `actual_bp[column]` bookkeeping below still reports
-            # `lagging_actual` when split (an existing, separately-scoped
-            # adjudication -- Finding 2/limits-port territory), so a
-            # helicase that outpaces lagging under this gate now genuinely
-            # advances further than the substrate demand currently charged
-            # for that tick; that residual substrate-accounting gap is NOT
-            # part of this port (Finding 5 territory).
+            # same-tick lockstep with `lagging_actual`. The separately
+            # returned per-column `leading_advance_by_column` and
+            # `lagging_actual_by_column` let the caller charge exact ATP/
+            # dNTP/PPI demand from the real strand motion even though the
+            # legacy `actual_bp[column]` scalar remains the fork-progress
+            # mirror used for `fork_position_bp`.
             leading_advance = leading_advance_by_column[column]
             if leading_advance > 0:
                 helicase_pos = self._helicase_positions(complex_bound_sites)
@@ -2559,6 +2623,7 @@ class KarrReplicationProcess(Process):
             # distance-to-terC bookkeeping already treats the leading
             # position as authoritative whenever lagging is unbound.
             actual_bp[column] = leading_advance if not_yet_split else lagging_actual
+            lagging_actual_by_column[column] = lagging_actual
 
         return {
             "complex_bound_sites": complex_bound_sites,
@@ -2566,6 +2631,11 @@ class KarrReplicationProcess(Process):
             "strand_breaks": strand_breaks,
             "actual_left_bp": actual_bp[0],
             "actual_right_bp": actual_bp[1],
+            "leading_advance_by_column": leading_advance_by_column,
+            "lagging_actual_by_column": (
+                lagging_actual_by_column[0],
+                lagging_actual_by_column[1],
+            ),
         }
 
     def build_default_chromosome_state(self, *, replication_state: str = "idle") -> dict[str, Any]:
@@ -2603,12 +2673,15 @@ class KarrReplicationProcess(Process):
         if unwind_len <= 0:
             return self._mother_polymerized_regions()
         middle_len = max(0, self.sequence_len_bp - 2 * unwind_len)
-        # Seed from the zero-progress fork mirror, not the full initiation
-        # unwind geometry, so the 1-based ORI edge does not produce a duplicate
-        # zero-position daughter entry after 0-based normalization.
+        # Karr's post-initiation zero-progress topology has BOTH daughter
+        # seeds on the fixed leading-daughter strand (`newStrd` in
+        # `setRegionUnwound`): one at the origin-proximal left edge and one
+        # at the wrapped right edge, with the mother strand retaining only
+        # the middle untouched span.
         return SparseTriplet.from_regions(
             [
                 (0, int(self.leading_strand_indexs[0]), self.sequence_len_bp),
+                (0, int(self.leading_strand_indexs[1]), unwind_len),
                 (unwind_len, int(self.lagging_strand_indexs[1]), middle_len),
                 (self.sequence_len_bp - unwind_len, int(self.leading_strand_indexs[1]), unwind_len),
             ],
@@ -2826,6 +2899,9 @@ class KarrReplicationProcess(Process):
     def _zero_requests(self) -> dict[str, float]:
         return {wid: 0.0 for wid in [*self.dntp_wids, self.atp_wid, self.h2o_wid]}
 
+    def _initiation_hydrolysis_cost(self) -> int:
+        return max(0, 2 * (1 + int(self._initiation_unwind_len)))
+
     def _allocated_or_state(
         self,
         allocated_state: dict[str, Any],
@@ -2833,6 +2909,23 @@ class KarrReplicationProcess(Process):
     ) -> int:
         allocated = float(allocated_state.get(wid, 0.0))
         return _read_nonnegative_int(allocated)
+
+    def _allocated_remaining(
+        self,
+        *,
+        allocated_state: dict[str, Any],
+        substrates_now: dict[str, Any],
+        substrates_next: dict[str, float],
+        wid: str,
+    ) -> int:
+        if wid not in allocated_state:
+            return _read_nonnegative_int(substrates_next.get(wid, 0.0))
+        remaining = (
+            float(allocated_state.get(wid, 0.0))
+            + float(substrates_next.get(wid, 0.0))
+            - float(substrates_now.get(wid, 0.0))
+        )
+        return max(0, _snap_integral(remaining))
 
     def _available_replay_count(
         self,
@@ -2851,7 +2944,9 @@ class KarrReplicationProcess(Process):
     def _partition_counts(self, total: int) -> np.ndarray:
         if total <= 0:
             return np.zeros(4, dtype=np.int64)
-        raw = self._dntp_fractions * float(total)
+        at_fraction = (1.0 - self.sequence_gc_content) / 2.0
+        gc_fraction = self.sequence_gc_content / 2.0
+        raw = np.asarray([at_fraction, gc_fraction, gc_fraction, at_fraction], dtype=np.float64) * float(total)
         base = np.floor(raw).astype(np.int64)
         remainder = int(total - int(np.sum(base)))
         if remainder > 0:
@@ -2860,13 +2955,109 @@ class KarrReplicationProcess(Process):
                 base[int(idx)] += 1
         return base
 
-    def _demand_from_advances(self, advance_left_bp: int, advance_right_bp: int) -> dict[str, int]:
-        total_advanced_bp = max(0, int(advance_left_bp)) + max(0, int(advance_right_bp))
-        total_polymerized_nt = 2 * total_advanced_bp
+    def _subsequence_base_counts(
+        self,
+        *,
+        anchor: int,
+        strand: int,
+        direction: int,
+        step: int,
+    ) -> np.ndarray:
+        if step <= 0:
+            return np.zeros(4, dtype=np.int64)
+        offsets = np.arange(int(step), dtype=np.int64)
+        positions = int(anchor) + offsets if direction >= 0 else int(anchor) - offsets
+        bases = self._chromosome_positive_sequence[positions % int(self.sequence_len_bp)]
+        if int(strand) % 2 == 1:
+            bases = _BASE_COMPLEMENT_LUT[bases]
+        return np.asarray(
+            [
+                int(np.count_nonzero(bases == ord("A"))),
+                int(np.count_nonzero(bases == ord("C"))),
+                int(np.count_nonzero(bases == ord("G"))),
+                int(np.count_nonzero(bases == ord("T"))),
+            ],
+            dtype=np.int64,
+        )
+
+    def _exact_dntp_counts_from_progression(
+        self,
+        *,
+        leading_positions: tuple[int, int],
+        lagging_positions: tuple[int, int],
+        leading_bp_by_column: tuple[int, int],
+        lagging_bp_by_column: tuple[int, int],
+    ) -> np.ndarray:
+        # Replication.m:939-942 counts dNTP consumption on the SYNTHESIZED
+        # daughter strands, not on the template strands that carry the
+        # replisome complexes in `complexBoundSites`. In OC's 0-based strand
+        # indexing that means:
+        # - leading column 0 -> MATLAB strand 2 -> OC strand 1
+        # - leading column 1 -> MATLAB strand 3 -> OC strand 2
+        # - lagging column 0 -> MATLAB strand 3 -> OC strand 2
+        # - lagging column 1 -> MATLAB strand 2 -> OC strand 1
+        return (
+            self._subsequence_base_counts(
+                anchor=int(leading_positions[0]),
+                strand=1,
+                direction=-1,
+                step=int(leading_bp_by_column[0]),
+            )
+            + self._subsequence_base_counts(
+                anchor=int(leading_positions[1]),
+                strand=2,
+                direction=1,
+                step=int(leading_bp_by_column[1]),
+            )
+            + self._subsequence_base_counts(
+                anchor=int(lagging_positions[0]),
+                strand=2,
+                direction=1,
+                step=int(lagging_bp_by_column[0]),
+            )
+            + self._subsequence_base_counts(
+                anchor=int(lagging_positions[1]),
+                strand=1,
+                direction=-1,
+                step=int(lagging_bp_by_column[1]),
+            )
+        )
+
+    def _demand_from_progression(
+        self,
+        *,
+        leading_positions: tuple[int, int],
+        lagging_positions: tuple[int, int],
+        leading_bp_by_column: tuple[int, int],
+        lagging_bp_by_column: tuple[int, int],
+    ) -> dict[str, int]:
+        total_unwound_bp = sum(max(0, int(bp)) for bp in leading_bp_by_column)
+        dntp_counts = self._exact_dntp_counts_from_progression(
+            leading_positions=leading_positions,
+            lagging_positions=lagging_positions,
+            leading_bp_by_column=leading_bp_by_column,
+            lagging_bp_by_column=lagging_bp_by_column,
+        )
+        demand = {wid: int(dntp_counts[idx]) for idx, wid in enumerate(self.dntp_wids)}
+        atp_demand = int(np.ceil(self.helicase_atp_per_bp * float(total_unwound_bp)))
+        demand[self.atp_wid] = atp_demand
+        demand[self.h2o_wid] = atp_demand
+        return demand
+
+    def _demand_from_strand_advances(
+        self,
+        *,
+        leading_bp_by_column: tuple[int, int],
+        lagging_bp_by_column: tuple[int, int],
+    ) -> dict[str, int]:
+        total_unwound_bp = sum(max(0, int(bp)) for bp in leading_bp_by_column)
+        total_polymerized_nt = total_unwound_bp + sum(
+            max(0, int(bp)) for bp in lagging_bp_by_column
+        )
         dntp_counts = self._partition_counts(total_polymerized_nt)
 
         demand = {wid: int(dntp_counts[idx]) for idx, wid in enumerate(self.dntp_wids)}
-        atp_demand = int(np.ceil(self.helicase_atp_per_bp * float(total_advanced_bp)))
+        atp_demand = int(np.ceil(self.helicase_atp_per_bp * float(total_unwound_bp)))
         demand[self.atp_wid] = atp_demand
         # Replication.m:944: `n = sum(unwindLimits(1,:))` is subtracted from
         # BOTH ATP and water identically (line ~925-930) -- water is not a
@@ -2874,12 +3065,34 @@ class KarrReplicationProcess(Process):
         demand[self.h2o_wid] = atp_demand
         return demand
 
+    def _demand_from_advances(self, advance_left_bp: int, advance_right_bp: int) -> dict[str, int]:
+        """Compatibility helper for the steady-state split case where each
+        fork column polymerizes the same lagging distance it unwinds on the
+        leading strand."""
+        return self._demand_from_strand_advances(
+            leading_bp_by_column=(advance_left_bp, advance_right_bp),
+            lagging_bp_by_column=(advance_left_bp, advance_right_bp),
+        )
+
     def _completion_update(self) -> dict[str, Any]:
         chrom_update: dict[str, Any] = {"replication_state": "complete"}
         if not self._completion_emitted:
             chrom_update["events"] = {"replication_complete": 1.0}
             self._completion_emitted = True
         return {"chromosome": chrom_update}
+
+    def _active_replisome_gate(
+        self,
+        complex_bound_sites: SparseTriplet,
+    ) -> tuple[bool, tuple[int, int], tuple[int, int]]:
+        helicase_pos = self._helicase_positions(complex_bound_sites)
+        leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
+        elongating_cols = self._leading_strand_elongating(helicase_pos, leading_pol_pos)
+        return (
+            self._is_any_helicase_bound(complex_bound_sites) and elongating_cols[0] and elongating_cols[1],
+            helicase_pos,
+            leading_pol_pos,
+        )
 
     @staticmethod
     def _triplet_equal(lhs: SparseTriplet, rhs: SparseTriplet) -> bool:
@@ -3135,10 +3348,16 @@ class KarrReplicationProcess(Process):
         if n_bindings <= 0:
             return SparseTriplet(positions=positions, strands=strands, values=values, shape=self.chromosome_shape)
 
-        if n_bindings < len(candidate_positions):
-            chosen_idx = np.sort(self._rng.choice(len(candidate_positions), size=n_bindings, replace=False))
-        else:
-            chosen_idx = np.arange(len(candidate_positions), dtype=np.int64)
+        # Replication.m:1016-1024 binds through `bindProteinToChromosome`,
+        # whose `setSiteProteinBound -> sampleAccessibleRegions` path still
+        # consumes a random site-selection draw even when every accessible
+        # candidate is ultimately chosen. The remaining MATLAB-shape detail
+        # is `sampleAccessibleRegions`' oversampled `nMoreSites` draw before
+        # truncating back to `nSites`.
+        chosen_idx = self._sample_accessible_site_indices(
+            total_sites=len(candidate_positions),
+            n_sites=n_bindings,
+        )
 
         chosen_positions = np.asarray([candidate_positions[int(i)] for i in chosen_idx], dtype=np.int64)
         chosen_strands = np.asarray([candidate_strands[int(i)] for i in chosen_idx], dtype=np.int8)
@@ -3189,6 +3408,91 @@ class KarrReplicationProcess(Process):
         update.setdefault("chromosome", {})
         update["chromosome"]["complexBoundSites"] = complex_bound_next.to_state()
 
+    def _initiate_replication_no_hint(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        allocated_state: dict[str, Any],
+        substrates_now: dict[str, Any],
+        substrates_next: dict[str, float],
+    ) -> str:
+        desired_initiation_cost = self._initiation_hydrolysis_cost()
+        available_atp = self._allocated_remaining(
+            allocated_state=allocated_state,
+            substrates_now=substrates_now,
+            substrates_next=substrates_next,
+            wid=self.atp_wid,
+        )
+        available_h2o = self._allocated_remaining(
+            allocated_state=allocated_state,
+            substrates_now=substrates_now,
+            substrates_next=substrates_next,
+            wid=self.h2o_wid,
+        )
+        actual_initiation_cost = min(desired_initiation_cost, available_atp, available_h2o)
+        if actual_initiation_cost > 0:
+            substrates_next[self.atp_wid] = float(
+                substrates_next.get(self.atp_wid, 0.0) - float(actual_initiation_cost)
+            )
+            substrates_next[self.h2o_wid] = float(
+                substrates_next.get(self.h2o_wid, 0.0) - float(actual_initiation_cost)
+            )
+            substrates_next[self.adp_wid] = float(
+                substrates_next.get(self.adp_wid, 0.0) + float(actual_initiation_cost)
+            )
+            substrates_next[self.pi_wid] = float(
+                substrates_next.get(self.pi_wid, 0.0) + float(actual_initiation_cost)
+            )
+            substrates_next[self.h_wid] = float(
+                substrates_next.get(self.h_wid, 0.0) + float(actual_initiation_cost)
+            )
+        chromosome_store.set_field("polymerizedRegions", self._seed_polymerized_regions())
+        return "elongating"
+
+    def _terminate_okazaki_fragments_no_hint(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        complex_bound_sites: SparseTriplet,
+        enzymes_next: dict[str, float],
+        bound_next: dict[str, float],
+    ) -> tuple[SparseTriplet, SparseTriplet]:
+        activity_true, _, _ = self._active_replisome_gate(complex_bound_sites)
+        if not activity_true:
+            return complex_bound_sites, chromosome_store.get_field("strandBreaks")
+        polymerized = chromosome_store.get_field("polymerizedRegions")
+        strand_breaks = chromosome_store.get_field("strandBreaks")
+        for column in (0, 1):
+            complex_bound_sites, strand_breaks, _ = self._terminate_okazaki_fragment_column(
+                column,
+                complex_bound_sites=complex_bound_sites,
+                polymerized=polymerized,
+                strand_breaks=strand_breaks,
+                enzymes_next=enzymes_next,
+                bound_next=bound_next,
+            )
+        return complex_bound_sites, strand_breaks
+
+    def _terminate_replication_no_hint(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        complex_bound_sites: SparseTriplet,
+        replication_state: str,
+    ) -> str:
+        if replication_state == "complete":
+            return replication_state
+        activity_true, helicase_pos, leading_pol_pos = self._active_replisome_gate(complex_bound_sites)
+        if not activity_true:
+            return replication_state
+        if any(pos != -1 for pos in self._lagging_polymerase_positions(complex_bound_sites)):
+            return replication_state
+        if not all(self._strand_polymerized(chromosome_store.get_field("polymerizedRegions"))):
+            return replication_state
+        if any(pos == -1 for pos in helicase_pos) or any(pos == -1 for pos in leading_pol_pos):
+            return replication_state
+        return "complete"
+
     def _stochastic_round(self, value: float) -> int:
         if value <= 0.0:
             return 0
@@ -3197,6 +3501,19 @@ class KarrReplicationProcess(Process):
         if frac <= 0.0:
             return base
         return base + int(self._rng.random() < frac)
+
+    def _sample_accessible_site_indices(self, *, total_sites: int, n_sites: int) -> np.ndarray:
+        """Mirror MATLAB `sampleAccessibleRegions`' oversampled site draw."""
+        total_sites_i = max(0, int(total_sites))
+        n_sites_i = min(total_sites_i, max(0, int(n_sites)))
+        if total_sites_i == 0 or n_sites_i == 0:
+            return np.zeros(0, dtype=np.int64)
+        n_more_sites = min(max(2 * n_sites_i, 10), total_sites_i)
+        sampled = np.asarray(
+            self._rng.choice(total_sites_i, size=n_more_sites, replace=False),
+            dtype=np.int64,
+        )
+        return np.sort(sampled[:n_sites_i])
 
     def _ligate_dna_no_hint(
         self,
@@ -3231,28 +3548,15 @@ class KarrReplicationProcess(Process):
         pipeline's own final `update["chromosome"]["strandBreaks"]`
         assignment would otherwise run.
 
-        Called from `next_update` BEFORE the SSB-cycle/fork-advance
-        pipeline, matching Karr's own fixed (pre-`randperm`) subfunction
-        list order (Replication.m:588-593: `ligateDNA` precedes
-        `unwindAndPolymerizeDNA`/`terminateOkazakiFragment`) -- so this
-        tick's ligation only ever sees nicks from a PRIOR tick's
-        termination, never one this same tick's own advance is about to
-        create; a deterministic ordering choice, not tied to any specific
-        tick number (the existing Finding-3 fixed-subfunction-order
-        deviation this reuses is itself an explicit, tested, OPEN
-        deviation from Karr's per-tick `randperm`).
-
-        Site-selection deviation (explicit, OPEN, tested): Karr's own
-        `bindProteinToChromosome` call chooses WHICH `numReactions` nicks
-        (of however many currently exist) get sealed via its own generic,
-        cross-process complex-binding site-choice machinery when nicks
-        outnumber the reaction budget -- porting that generic machinery
-        faithfully is out of this finding's narrow substrate/byproduct
-        scope. This port instead seals the lowest `(strand, position)`
-        sorted nicks first: a fixed, deterministic, non-tick-targeted
-        tie-break, analogous to the already-adjudicated fixed-
-        subfunction-order deviation (Finding 3). See
-        `test_karr_replication_ligate_dna_no_hint.py`.
+        Called from the no-hint `next_update` path's ligation slot.
+        Candidate nick sites are first put into MATLAB `find(...)` order
+        (column-major over the 4 strand columns, i.e. `(strand, position)`)
+        and the actual subset sealed is then chosen by the process's own
+        seeded RNG without replacement, mirroring
+        `find(c.singleStrandBreaks)` -> `bindProteinToChromosome(...)` ->
+        `sampleAccessibleRegions(...)` in Replication.m /
+        Chromosome.m while staying independent of the sparse-triplet
+        insertion order used to build `strandBreaks`.
         """
         strand_breaks = chromosome_store.get_field("strandBreaks")
         nick_count = int(strand_breaks.values.size)
@@ -3266,8 +3570,10 @@ class KarrReplicationProcess(Process):
         if num_reactions <= 0:
             return
 
-        order = np.lexsort((strand_breaks.positions, strand_breaks.strands))
-        sealed = order[:num_reactions]
+        matlab_find_order = np.lexsort((strand_breaks.positions, strand_breaks.strands))
+        sealed = matlab_find_order[
+            self._sample_accessible_site_indices(total_sites=nick_count, n_sites=num_reactions)
+        ]
         keep_mask = np.ones(nick_count, dtype=bool)
         keep_mask[sealed] = False
 
@@ -3579,9 +3885,15 @@ class KarrReplicationProcess(Process):
                 d_sub = _snap_integral(float(substrates_next[wid]) - float(substrates_now.get(wid, 0.0)))
                 if d_sub != 0:
                     substrate_delta[wid] = float(d_sub)
-            update_payload["enzymes"] = enzyme_delta
-            update_payload["boundEnzymes"] = bound_delta
-            update_payload["substrates"] = substrate_delta
+            if enzyme_delta:
+                update_payload["enzymes"] = enzyme_delta
+            if bound_delta:
+                update_payload["boundEnzymes"] = bound_delta
+            if substrate_delta:
+                update_payload["substrates"] = substrate_delta
+            for channel in ("enzymes", "boundEnzymes", "substrates"):
+                if channel in update_payload and not update_payload[channel]:
+                    update_payload.pop(channel, None)
             return update_payload
 
         chromosome_state = states.get("chromosome", {})
@@ -3641,291 +3953,316 @@ class KarrReplicationProcess(Process):
 
         if replication_state == "idle":
             return _finalize_no_hint_update(update)
-
-        if replication_state == "initiating":
-            update["chromosome"] = {
-                "replication_state": "elongating",
-                "polymerizedRegions": self._seed_polymerized_regions().to_state(),
-            }
-            return _finalize_no_hint_update(update)
-
         if replication_state == "complete":
             return _finalize_no_hint_update(update)
-
-        if replication_state != "elongating":
-            # Unknown state: keep requests at zero and do nothing.
+        if replication_state not in {"initiating", "elongating"}:
             return _finalize_no_hint_update(update)
 
-        # Finding 5 (Replication.m:588-593): `ligateDNA` is one of the
-        # BASE (pre-`randperm`) subfunctions -- unconditional on replisome
-        # activity, run before `unwindAndPolymerizeDNA`/
-        # `terminateOkazakiFragment`. It only ever operates on nicks that
-        # already existed BEFORE this tick (this tick's own termination,
-        # below, has not run yet), matching that fixed order. Mutates
-        # `chromosome_store`'s `strandBreaks` field directly, so
-        # `_advance_replication_forks`'s own `chromosome_store.get_field(
-        # "strandBreaks")` read (inside the fork-advance pipeline below)
-        # picks up the post-ligation nick count automatically.
-        self._ligate_dna_no_hint(
-            chromosome_store=chromosome_store,
-            dt=dt,
-            enzymes_next=enzymes_next,
-            substrates_next=substrates_next,
-            update=update,
-        )
-
-        self._apply_ssb_cycle(
-            dt=dt,
-            chromosome_store=chromosome_store,
-            enzymes_next=enzymes_next,
-            bound_next=bound_next,
-            update=update,
-        )
-
-        # `_apply_ssb_cycle` writes any SSB-cycle change directly into
-        # `update["chromosome"]["complexBoundSites"]` -- it does not mutate
-        # `chromosome_store` itself -- so the fork-advance pipeline below
-        # must read that post-SSB-cycle value when present, never the
-        # pre-cycle snapshot still sitting on `chromosome_store`.
-        if "complexBoundSites" in update.get("chromosome", {}):
-            complex_bound_sites = SparseTriplet.from_state(
-                update["chromosome"]["complexBoundSites"], shape=self.chromosome_shape
-            )
-        else:
-            complex_bound_sites = chromosome_store.get_field("complexBoundSites")
-
-        # Karr's own whole-function elongating gate (Replication.m:697-699,
-        # `isAnyHelicaseBound && all(leadingStrandElongating)`, identical to
-        # `unwindAndPolymerizeDNA`'s/`initiateOkazakiFragment`'s/
-        # `terminateOkazakiFragment`'s own early-return condition,
-        # Replication.m:1301,1314) -- evaluated here from LIVE, position-
-        # resolved `complexBoundSites`, never from the OC-only
-        # `chromosome.replication_state` coordination flag (which only
-        # gates the one-shot idle->elongating promotion above). If this is
-        # false, do nothing this tick: an honest no-op, not an error --
-        # Karr's real replisome legitimately sits in this state whenever a
-        # fork's helicase/leading polymerase is not (yet/still) bound (e.g.
-        # immediately after the "initiating"->"elongating" transition
-        # above, before `ReplicationInitiation` has placed anything real in
-        # `complexBoundSites`).
-        helicase_pos = self._helicase_positions(complex_bound_sites)
-        leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
-        elongating_cols = self._leading_strand_elongating(helicase_pos, leading_pol_pos)
-        activity_true = (
-            self._is_any_helicase_bound(complex_bound_sites) and elongating_cols[0] and elongating_cols[1]
-        )
-        if not activity_true:
-            return _finalize_no_hint_update(update)
-
-        # One-time first-fragment fork-split bootstrap (Replication.m:707-
-        # 727). `tfs = laggingPolPos==0 & laggingBackupBetaClampPosition==
-        # firstBetaClampPos & complexBoundSites(leadingPolPos)==leadPolGblIdx
-        # (1)`: when this is false for a column, MATLAB does NOT throw --
-        # `n=sum(tfs)` for that column is legitimately 0 and
-        # `unwindAndPolymerizeDNA` simply proceeds to the "maximum unwinding
-        # and polymerization extent" section (Replication.m:745-900), where
-        # the LEADING strand's limit is gated only by its own bound state
-        # (`limits(1,:) .* (leadingPos~=0)`, line ~773) -- never by
-        # `laggingPos`. This is a genuinely benign, self-resolving,
-        # multi-tick-persistent early-replication state (the backup
-        # beta-clamp has not reached the first Okazaki-fragment site yet),
-        # not an unsupported/inconsistent one: it must be a silent skip of
-        # this column's lagging-specific bookkeeping, not a raise. See
-        # `_advance_replication_forks`, which independently advances the
-        # leading strand (decoupled from `lagging_actual`) for exactly this
-        # not-yet-split case.
-        complex_bound_sites = self._bind_initial_lagging_polymerase(
-            complex_bound_sites, enzymes_next=enzymes_next, bound_next=bound_next
-        )
-        lagging_pol_pos = self._lagging_polymerase_positions(complex_bound_sites)
-        leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
-        for column in (0, 1):
-            if lagging_pol_pos[column] != -1:
-                continue
-            # Distinguish the benign `tfs`-false skip from a genuinely
-            # inconsistent state using MATLAB's own third `tfs` conjunct
-            # (Replication.m:707-709): `complexBoundSites(leadingPolPos)==
-            # leadPolGblIdx(1)`, i.e. the leading position must still hold
-            # the pre-split COMBINED replisome complex. If lagging is
-            # unbound while leading instead holds the POST-split
-            # leading-alone complex (or anything else), the atomic
-            # split invariant (`_bind_initial_lagging_polymerase` always
-            # binds both leading-alone and lagging together) has been
-            # violated -- an unsupported/corrupt state that must still
-            # raise, not be silently skipped.
-            leading_strand = int(self.leading_strand_indexs[column])
-            still_combined = bool(
-                np.any(
-                    (complex_bound_sites.strands == leading_strand)
-                    & (complex_bound_sites.positions == leading_pol_pos[column])
-                    & (
-                        complex_bound_sites.values
-                        == self.two_core_beta_clamp_gamma_complex_primase_global_index
-                    )
-                )
-            )
-            if still_combined:
-                self._bootstrap_not_ready_census[column] += 1
-                continue
-            raise ReplicationTopologyError(
-                f"Column {column} has an active helicase + leading polymerase "
-                "(isAnyHelicaseBound && leadingStrandElongating both true) with no "
-                "lagging polymerase bound, but the leading position does not hold "
-                "the pre-split combined replisome complex either (MATLAB's own "
-                "`tfs` third conjunct, Replication.m:707-709, "
-                "`complexBoundSites(leadingPolPos)==leadPolGblIdx(1)`, is false for "
-                "a reason other than the benign not-yet-split case). This violates "
-                "the atomic leading/lagging split invariant "
-                "(`_bind_initial_lagging_polymerase` always binds both together) "
-                "and is an unsupported/inconsistent replisome state for the "
-                "literal Okazaki-fragment topology port."
-            )
-
-        # Real, position-resolved remaining-distance-to-terC, replacing the
-        # old monolithic-scalar `_infer_fork_positions_from_polymerized`
-        # inference (which silently under-estimates progress once
-        # `polymerizedRegions` holds genuine discontinuous Okazaki
-        # fragments instead of 2 monolithic regions). Column 0 moves toward
-        # DECREASING position (starts near `sequence_len_bp`, ends at
-        # `terc_position_bp`); column 1 moves toward INCREASING position
-        # (starts near 0, ends at `terc_position_bp`). Uses whichever of
-        # leading/lagging is further from terC (lagging legitimately trails
-        # leading by up to one Okazaki-fragment length) so the budget is
-        # never zeroed out while the bottleneck (lagging) strand still has
-        # real distance left to cover.
-        leading_position = self._leading_position(leading_pol_pos)
-        lagging_position = self._lagging_position(lagging_pol_pos)
-        remaining_left_bp = max(0, leading_position[0] - self.terc_position_bp)
-        remaining_right_bp = max(0, self.terc_position_bp - leading_position[1])
-        if lagging_pol_pos[0] != -1:
-            remaining_left_bp = max(remaining_left_bp, lagging_position[0] - self.terc_position_bp)
-        if lagging_pol_pos[1] != -1:
-            remaining_right_bp = max(remaining_right_bp, self.terc_position_bp - lagging_position[1])
-
-        desired_step_bp = max(0, int(np.floor(self.fork_polymerization_rate_bp_per_s * dt)))
-        desired_left_bp = min(desired_step_bp, remaining_left_bp)
-        desired_right_bp = min(desired_step_bp, remaining_right_bp)
-
-        desired_demand = self._demand_from_advances(desired_left_bp, desired_right_bp)
-        update["requests"] = {
-            self.name: {wid: float(desired_demand.get(wid, 0)) for wid in zero_requests}
-        }
-
-        # Unlike `initiateOkazakiFragment`/`terminateOkazakiFragment` (which
-        # Karr's own `evolveState` subfunction list, Replication.m:599-602,
-        # always runs together with `unwindAndPolymerizeDNA` whenever the
-        # whole-function activity gate holds, REGARDLESS of whether there
-        # is any nucleotide-advance budget this tick), a genuinely-zero
-        # budget does not exempt initiate/terminate from running -- both
-        # are budget-independent (initiate consumes ATP/H2O/beta-clamp-
-        # monomer directly; terminate is gated purely on fragment
-        # progress/SSB/gap conditions). So no early return here: fall
-        # through and always call `_advance_replication_forks` (which is
-        # a safe no-op for movement when the budget is 0, but still retries
-        # any pending termination-gate stall) before `initiateOkazakiFragment`.
+        initial_polymerized = chromosome_store.get_field("polymerizedRegions")
+        initial_complex_bound_sites = chromosome_store.get_field("complexBoundSites")
+        initial_strand_breaks = chromosome_store.get_field("strandBreaks")
+        final_replication_state = raw_replication_state
+        replication_state_written = False
+        fork_position_update: dict[str, float] | None = None
+        completion_events: dict[str, float] | None = None
+        force_complex_bound_sites_emit = False
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        available = {
-            wid: self._allocated_or_state(allocated_state, wid)
-            for wid in zero_requests
-        }
 
-        actual_left_bp = 0
-        actual_right_bp = 0
-        if desired_left_bp > 0 or desired_right_bp > 0:
-            limiting_ratios: list[float] = []
-            for wid, req in desired_demand.items():
-                if req > 0:
-                    limiting_ratios.append(float(available.get(wid, 0)) / float(req))
-            scale = float(np.clip(min(limiting_ratios) if limiting_ratios else 1.0, a_min=0.0, a_max=1.0))
+        if replication_state == "initiating":
+            desired_initiation_cost = self._initiation_hydrolysis_cost()
+            update["requests"] = {
+                self.name: {
+                    **zero_requests,
+                    self.atp_wid: float(desired_initiation_cost),
+                    self.h2o_wid: float(desired_initiation_cost),
+                }
+            }
 
-            actual_left_bp = int(np.floor(desired_left_bp * scale))
-            actual_right_bp = int(np.floor(desired_right_bp * scale))
+        activity_scheduled, _, _ = self._active_replisome_gate(initial_complex_bound_sites)
+        scheduled_subfunctions = [
+            "initiateReplication",
+            "unwindAndPolymerizeDNA",
+            "freeAndBindSSBs",
+            "dissociateFreeSSBComplexes",
+            "initiateOkazakiFragment",
+            "terminateOkazakiFragment",
+            "terminateReplication",
+            "ligateDNA",
+        ]
 
-            while actual_left_bp > 0 or actual_right_bp > 0:
-                demand = self._demand_from_advances(actual_left_bp, actual_right_bp)
-                if all(demand[wid] <= available.get(wid, 0) for wid in demand):
-                    break
-                if actual_left_bp >= actual_right_bp and actual_left_bp > 0:
-                    actual_left_bp -= 1
-                elif actual_right_bp > 0:
-                    actual_right_bp -= 1
+        for subfunction_idx in self._rng.permutation(len(scheduled_subfunctions)):
+            subfunction = scheduled_subfunctions[int(subfunction_idx)]
 
-        # unwindAndPolymerizeDNA (Replication.m:599, 692-945): consume the
-        # ALREADY-SCALED, unchanged budget (possibly 0) via the literal
-        # per-fragment state machine, including any pending termination-
-        # gate-stall retry. `_advance_replication_forks` returns the ACTUAL
-        # bp achieved (which may be less than the requested budget on a
-        # fragment-termination-gate stall) -- substrate deduction below is
-        # reconciled against that real, achieved amount, not the request,
-        # per adjudication.
-        advance_result = self._advance_replication_forks(
-            chromosome_store=chromosome_store,
-            complex_bound_sites=complex_bound_sites,
-            budget_left_bp=actual_left_bp,
-            budget_right_bp=actual_right_bp,
-            enzymes_next=enzymes_next,
-            bound_next=bound_next,
-        )
-        real_left_bp = int(advance_result["actual_left_bp"])
-        real_right_bp = int(advance_result["actual_right_bp"])
-        real_demand = self._demand_from_advances(real_left_bp, real_right_bp)
-        for wid, amount in real_demand.items():
-            if int(amount) > 0:
-                substrates_next[wid] = float(substrates_next.get(wid, 0.0) - float(amount))
+            if subfunction == "initiateReplication":
+                if replication_state != "initiating":
+                    continue
+                replication_state = self._initiate_replication_no_hint(
+                    chromosome_store=chromosome_store,
+                    allocated_state=allocated_state,
+                    substrates_now=substrates_now,
+                    substrates_next=substrates_next,
+                )
+                final_replication_state = replication_state
+                replication_state_written = True
+                continue
 
-        # Finding 5 (Replication.m:925-946): the unconditional byproducts of
-        # the SAME reconciled `n = real_demand[atp_wid]` unwinding cost
-        # consumed just above -- ADP/phosphate/hydrogen, 1:1 with `n` -- and
-        # of the dNTPs just consumed -- diphosphate (PPi), 1:1 with the total
-        # nt actually polymerized. These are never resource-gated (Karr adds
-        # them unconditionally after computing the already-scarcity-limited
-        # `n`/`usedDNTPs`), so -- unlike ATP/water/dNTP above -- they are
-        # applied directly to `substrates_next`, not routed through the
-        # `requests`/`substrates_allocated` scarcity machinery.
-        unwound_bp = int(real_demand.get(self.atp_wid, 0))
-        if unwound_bp > 0:
-            substrates_next[self.adp_wid] = float(substrates_next.get(self.adp_wid, 0.0) + float(unwound_bp))
-            substrates_next[self.pi_wid] = float(substrates_next.get(self.pi_wid, 0.0) + float(unwound_bp))
-            substrates_next[self.h_wid] = float(substrates_next.get(self.h_wid, 0.0) + float(unwound_bp))
-        polymerized_nt = sum(int(real_demand.get(wid, 0)) for wid in self.dntp_wids)
-        if polymerized_nt > 0:
-            substrates_next[self.ppi_wid] = float(
-                substrates_next.get(self.ppi_wid, 0.0) + float(polymerized_nt)
-            )
+            if subfunction == "ligateDNA":
+                self._ligate_dna_no_hint(
+                    chromosome_store=chromosome_store,
+                    dt=dt,
+                    enzymes_next=enzymes_next,
+                    substrates_next=substrates_next,
+                    update=update,
+                )
+                continue
 
-        # initiateOkazakiFragment (Replication.m:600, 1030-1090): bind a new
-        # backup beta-clamp at the next not-yet-initiated fragment's start,
-        # if gated conditions are met. Deterministic, budget-independent --
-        # consumes ATP/H2O/beta-clamp-monomer directly from the real
-        # substrate/enzyme pools (not the partitioned dNTP/ATP fork-advance
-        # allocation above, which is a separate cost). Called with the
-        # POST-advance `complexBoundSites`/`polymerizedRegions`, matching
-        # Karr's own per-tick subfunction order (`unwindAndPolymerizeDNA`
-        # runs BEFORE `initiateOkazakiFragment`, Replication.m:599-600) --
-        # the helicase-clearance gate must see this tick's fork movement,
-        # not last tick's stale position, or a genuinely-satisfied gate
-        # can be missed for an entire tick.
-        complex_bound_sites = self._initiate_okazaki_fragments(
-            polymerized=advance_result["polymerized"],
-            complex_bound_sites=advance_result["complex_bound_sites"],
-            enzymes_next=enzymes_next,
-            bound_next=bound_next,
-            substrates_next=substrates_next,
-        )
+            if subfunction == "dissociateFreeSSBComplexes":
+                self.dissociate_free_ssb_complexes(enzymes_next=enzymes_next)
+                continue
 
-        update.setdefault("chromosome", {})
-        update["chromosome"]["polymerizedRegions"] = advance_result["polymerized"].to_state()
-        update["chromosome"]["complexBoundSites"] = complex_bound_sites.to_state()
-        update["chromosome"]["strandBreaks"] = advance_result["strand_breaks"].to_state()
-        update["chromosome"]["fork_position_bp"] = {
-            "left": float(real_left_bp),
-            "right": float(real_right_bp),
-        }
+            if subfunction == "freeAndBindSSBs":
+                next_complex_bound_sites = self.free_and_bind_ssbs(
+                    dt=dt,
+                    chromosome_store=chromosome_store,
+                    enzymes_next=enzymes_next,
+                    bound_next=bound_next,
+                )
+                chromosome_store.set_field("complexBoundSites", next_complex_bound_sites)
+                continue
 
-        strand_polymerized = self._strand_polymerized(advance_result["polymerized"])
-        if strand_polymerized[0] and strand_polymerized[1]:
-            update["chromosome"]["polymerizedRegions"] = self._completed_polymerized_regions().to_state()
-            update["chromosome"].update(self._completion_update()["chromosome"])
+            if subfunction == "unwindAndPolymerizeDNA":
+                if not activity_scheduled:
+                    continue
+                complex_bound_sites = chromosome_store.get_field("complexBoundSites")
+                complex_bound_sites = self._bind_initial_lagging_polymerase(
+                    complex_bound_sites, enzymes_next=enzymes_next, bound_next=bound_next
+                )
+                lagging_pol_pos = self._lagging_polymerase_positions(complex_bound_sites)
+                leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
+                benign_not_ready = False
+                for column in (0, 1):
+                    if lagging_pol_pos[column] != -1:
+                        continue
+                    leading_strand = int(self.leading_strand_indexs[column])
+                    still_combined = bool(
+                        np.any(
+                            (complex_bound_sites.strands == leading_strand)
+                            & (complex_bound_sites.positions == leading_pol_pos[column])
+                            & (
+                                complex_bound_sites.values
+                                == self.two_core_beta_clamp_gamma_complex_primase_global_index
+                            )
+                        )
+                    )
+                    if still_combined:
+                        self._bootstrap_not_ready_census[column] += 1
+                        benign_not_ready = True
+                        continue
+                    raise ReplicationTopologyError(
+                        f"Column {column} has an active helicase + leading polymerase "
+                        "(isAnyHelicaseBound && leadingStrandElongating both true) with no "
+                        "lagging polymerase bound, but the leading position does not hold "
+                        "the pre-split combined replisome complex either (MATLAB's own "
+                        "`tfs` third conjunct, Replication.m:707-709, "
+                        "`complexBoundSites(leadingPolPos)==leadPolGblIdx(1)`, is false for "
+                        "a reason other than the benign not-yet-split case). This violates "
+                        "the atomic leading/lagging split invariant "
+                        "(`_bind_initial_lagging_polymerase` always binds both together) "
+                        "and is an unsupported/inconsistent replisome state for the "
+                        "literal Okazaki-fragment topology port."
+                    )
+                if benign_not_ready:
+                    force_complex_bound_sites_emit = True
+                lagging_pol_pos = self._lagging_polymerase_positions(complex_bound_sites)
+                leading_pol_pos = self._leading_polymerase_positions(complex_bound_sites)
+                leading_position = self._leading_position(leading_pol_pos)
+                lagging_position = self._lagging_position(lagging_pol_pos)
+                remaining_left_bp = max(0, leading_position[0] - self.terc_position_bp)
+                remaining_right_bp = max(0, self.terc_position_bp - leading_position[1])
+                if lagging_pol_pos[0] != -1:
+                    remaining_left_bp = max(remaining_left_bp, lagging_position[0] - self.terc_position_bp)
+                if lagging_pol_pos[1] != -1:
+                    remaining_right_bp = max(remaining_right_bp, self.terc_position_bp - lagging_position[1])
+
+                desired_step_bp = max(0, int(np.floor(self.fork_polymerization_rate_bp_per_s * dt)))
+                desired_left_bp = min(desired_step_bp, remaining_left_bp)
+                desired_right_bp = min(desired_step_bp, remaining_right_bp)
+                desired_demand = self._demand_from_progression(
+                    leading_positions=leading_position,
+                    lagging_positions=lagging_position,
+                    leading_bp_by_column=(desired_left_bp, desired_right_bp),
+                    lagging_bp_by_column=(
+                        desired_left_bp if lagging_pol_pos[0] != -1 else 0,
+                        desired_right_bp if lagging_pol_pos[1] != -1 else 0,
+                    ),
+                )
+                update["requests"] = {
+                    self.name: {wid: float(desired_demand.get(wid, 0)) for wid in zero_requests}
+                }
+
+                actual_left_bp = 0
+                actual_right_bp = 0
+                if desired_left_bp > 0 or desired_right_bp > 0:
+                    available = {
+                        wid: self._allocated_remaining(
+                            allocated_state=allocated_state,
+                            substrates_now=substrates_now,
+                            substrates_next=substrates_next,
+                            wid=wid,
+                        )
+                        for wid in zero_requests
+                    }
+                    limiting_ratios: list[float] = []
+                    for wid, req in desired_demand.items():
+                        if req > 0:
+                            limiting_ratios.append(float(available.get(wid, 0)) / float(req))
+                    scale = float(
+                        np.clip(min(limiting_ratios) if limiting_ratios else 1.0, a_min=0.0, a_max=1.0)
+                    )
+
+                    actual_left_bp = int(np.floor(desired_left_bp * scale))
+                    actual_right_bp = int(np.floor(desired_right_bp * scale))
+
+                    while actual_left_bp > 0 or actual_right_bp > 0:
+                        demand = self._demand_from_progression(
+                            leading_positions=leading_position,
+                            lagging_positions=lagging_position,
+                            leading_bp_by_column=(actual_left_bp, actual_right_bp),
+                            lagging_bp_by_column=(
+                                actual_left_bp if lagging_pol_pos[0] != -1 else 0,
+                                actual_right_bp if lagging_pol_pos[1] != -1 else 0,
+                            ),
+                        )
+                        if all(demand[wid] <= available.get(wid, 0) for wid in demand):
+                            break
+                        if actual_left_bp >= actual_right_bp and actual_left_bp > 0:
+                            actual_left_bp -= 1
+                        elif actual_right_bp > 0:
+                            actual_right_bp -= 1
+
+                advance_result = self._advance_replication_forks(
+                    chromosome_store=chromosome_store,
+                    complex_bound_sites=complex_bound_sites,
+                    budget_left_bp=actual_left_bp,
+                    budget_right_bp=actual_right_bp,
+                    enzymes_next=enzymes_next,
+                    bound_next=bound_next,
+                )
+                real_left_bp = int(advance_result["actual_left_bp"])
+                real_right_bp = int(advance_result["actual_right_bp"])
+                real_demand = self._demand_from_progression(
+                    leading_positions=leading_position,
+                    lagging_positions=lagging_position,
+                    leading_bp_by_column=tuple(
+                        int(bp) for bp in advance_result["leading_advance_by_column"]
+                    ),
+                    lagging_bp_by_column=tuple(
+                        int(bp) for bp in advance_result["lagging_actual_by_column"]
+                    ),
+                )
+                for wid, amount in real_demand.items():
+                    if int(amount) > 0:
+                        substrates_next[wid] = float(substrates_next.get(wid, 0.0) - float(amount))
+
+                unwound_bp = int(real_demand.get(self.atp_wid, 0))
+                if unwound_bp > 0:
+                    substrates_next[self.adp_wid] = float(
+                        substrates_next.get(self.adp_wid, 0.0) + float(unwound_bp)
+                    )
+                    substrates_next[self.pi_wid] = float(
+                        substrates_next.get(self.pi_wid, 0.0) + float(unwound_bp)
+                    )
+                    substrates_next[self.h_wid] = float(
+                        substrates_next.get(self.h_wid, 0.0) + float(unwound_bp)
+                    )
+                polymerized_nt = sum(int(real_demand.get(wid, 0)) for wid in self.dntp_wids)
+                if polymerized_nt > 0:
+                    substrates_next[self.ppi_wid] = float(
+                        substrates_next.get(self.ppi_wid, 0.0) + float(polymerized_nt)
+                    )
+
+                chromosome_store.set_field("polymerizedRegions", advance_result["polymerized"])
+                chromosome_store.set_field("complexBoundSites", advance_result["complex_bound_sites"])
+                chromosome_store.set_field("strandBreaks", advance_result["strand_breaks"])
+                fork_position_update = {
+                    "left": float(real_left_bp),
+                    "right": float(real_right_bp),
+                }
+                continue
+
+            if subfunction == "initiateOkazakiFragment":
+                if not activity_scheduled:
+                    continue
+                next_complex_bound_sites = self._initiate_okazaki_fragments(
+                    polymerized=chromosome_store.get_field("polymerizedRegions"),
+                    complex_bound_sites=chromosome_store.get_field("complexBoundSites"),
+                    enzymes_next=enzymes_next,
+                    bound_next=bound_next,
+                    substrates_next=substrates_next,
+                )
+                chromosome_store.set_field("complexBoundSites", next_complex_bound_sites)
+                continue
+
+            if subfunction == "terminateOkazakiFragment":
+                if not activity_scheduled:
+                    continue
+                next_complex_bound_sites, next_strand_breaks = self._terminate_okazaki_fragments_no_hint(
+                    chromosome_store=chromosome_store,
+                    complex_bound_sites=chromosome_store.get_field("complexBoundSites"),
+                    enzymes_next=enzymes_next,
+                    bound_next=bound_next,
+                )
+                chromosome_store.set_field("complexBoundSites", next_complex_bound_sites)
+                chromosome_store.set_field("strandBreaks", next_strand_breaks)
+                continue
+
+            if subfunction == "terminateReplication":
+                if not activity_scheduled:
+                    continue
+                next_replication_state = self._terminate_replication_no_hint(
+                    chromosome_store=chromosome_store,
+                    complex_bound_sites=chromosome_store.get_field("complexBoundSites"),
+                    replication_state=replication_state,
+                )
+                if next_replication_state != replication_state:
+                    replication_state = next_replication_state
+                    completion_update = self._completion_update()["chromosome"]
+                    final_replication_state = str(completion_update["replication_state"])
+                    replication_state_written = True
+                    if final_replication_state == "complete":
+                        chromosome_store.set_field("polymerizedRegions", self._completed_polymerized_regions())
+                    if "events" in completion_update:
+                        completion_events = {
+                            str(event): float(count)
+                            for event, count in completion_update["events"].items()
+                        }
+                continue
+
+            raise AssertionError(f"Unexpected Replication subfunction: {subfunction}")
+
+        final_polymerized = chromosome_store.get_field("polymerizedRegions")
+        final_complex_bound_sites = chromosome_store.get_field("complexBoundSites")
+        final_strand_breaks = chromosome_store.get_field("strandBreaks")
+
+        chromosome_update: dict[str, Any] = {}
+        if not self._triplet_equal(initial_polymerized, final_polymerized):
+            chromosome_update["polymerizedRegions"] = final_polymerized.to_state()
+        if force_complex_bound_sites_emit or not self._triplet_equal(
+            initial_complex_bound_sites, final_complex_bound_sites
+        ):
+            chromosome_update["complexBoundSites"] = final_complex_bound_sites.to_state()
+        if not self._triplet_equal(initial_strand_breaks, final_strand_breaks):
+            chromosome_update["strandBreaks"] = final_strand_breaks.to_state()
+        if fork_position_update is not None:
+            chromosome_update["fork_position_bp"] = fork_position_update
+        if replication_state_written and final_replication_state != raw_replication_state:
+            chromosome_update["replication_state"] = final_replication_state
+        if completion_events is not None:
+            chromosome_update["events"] = completion_events
+        if chromosome_update:
+            update["chromosome"] = chromosome_update
+        else:
+            update.pop("chromosome", None)
 
         return _finalize_no_hint_update(update)
 

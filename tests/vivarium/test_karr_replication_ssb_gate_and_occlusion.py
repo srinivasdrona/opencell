@@ -53,10 +53,12 @@ def process() -> KarrReplicationProcess:
 class _StubPoissonRNG:
     """Deterministic stand-in for `self._rng`, isolating
     `_rna_polymerase_collision_stall`'s single `.poisson(...)` draw: returns
-    a fixed 4-cell dwelling pattern (0 == "dwelling", matching the
-    production `poisson(...) == 0` test; any nonzero == "not dwelling"),
-    regardless of the requested rate. `.random()` is intentionally absent
-    -- `_rna_polymerase_collision_stall` itself never calls it, so any
+    a fixed 2x2 `(leading/lagging, col0/col1)` dwelling pattern in the SAME
+    cell order Karr uses for `random('poisson', ..., [2 2])`, i.e.
+    `(leading0, lagging0, leading1, lagging1)`. `0 == "dwelling"` (matching
+    the production `poisson(...) == 0` test); any nonzero == "not
+    dwelling"`. `.random()` is intentionally absent --
+    `_rna_polymerase_collision_stall` itself never calls it, so any
     accidental call surfaces as an `AttributeError` rather than silently
     returning a plausible-looking value."""
 
@@ -64,7 +66,8 @@ class _StubPoissonRNG:
         self._dwelling = dwelling
 
     def poisson(self, *args: object, **kwargs: object) -> Any:
-        return np.array([0 if dwell else 1 for dwell in self._dwelling])
+        flat = np.array([0 if dwell else 1 for dwell in self._dwelling], dtype=np.int64)
+        return flat.reshape((2, 2), order="F")
 
 
 class _StubCoinRNG:
@@ -314,7 +317,7 @@ def test_rna_polymerase_collision_stall_zeros_leading1_when_dwelling_with_no_rna
     because its own dwell draw fired."""
     col0_strand = process.leading_strand_indexs[0]
     sites = _bound_sites(process, [(800, col0_strand, process.rna_polymerase_global_index)])
-    process._rng = _StubPoissonRNG(dwelling=(False, True, False, False))
+    process._rng = _StubPoissonRNG(dwelling=(False, False, True, False))
     advance0, advance1, cap0, cap1 = process._rna_polymerase_collision_stall(
         sites, helicase_pos=(1000, 5000), lagging_pol_pos=(-1, -1), leading_advance=(50, 60)
     )
@@ -337,7 +340,7 @@ def test_rna_polymerase_collision_stall_caps_lagging0_budget_when_dwelling(
     lagging_pol_pos0 = 2000
     rna_pol_pos = 2500
     sites = _bound_sites(process, [(rna_pol_pos, col1_strand, process.rna_polymerase_global_index)])
-    process._rng = _StubPoissonRNG(dwelling=(False, False, True, False))
+    process._rng = _StubPoissonRNG(dwelling=(False, True, False, False))
     advance0, advance1, cap0, cap1 = process._rna_polymerase_collision_stall(
         sites,
         helicase_pos=(1_000_000, 2_000_000),
@@ -396,6 +399,7 @@ def test_occlusion_advance_cap_noop_when_no_bound_sites(process: KarrReplication
         direction=-1,
         own_footprint_3prime=process.helicase_footprint_3prime_bp,
         requested_advance=200,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
     assert cap == 200
@@ -411,6 +415,7 @@ def test_occlusion_advance_cap_excludes_own_bindable_complex(process: KarrReplic
         direction=-1,
         own_footprint_3prime=process.helicase_footprint_3prime_bp,
         requested_advance=200,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
     assert cap == 200
@@ -430,6 +435,7 @@ def test_occlusion_advance_cap_excludes_rna_polymerase(process: KarrReplicationP
         direction=-1,
         own_footprint_3prime=process.helicase_footprint_3prime_bp,
         requested_advance=200,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
     assert cap == 200
@@ -450,6 +456,7 @@ def test_occlusion_advance_cap_excludes_obstacle_behind_own_edge(
         direction=-1,
         own_footprint_3prime=process.helicase_footprint_3prime_bp,
         requested_advance=200,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
     assert cap == 200
@@ -473,6 +480,7 @@ def test_occlusion_advance_cap_caps_at_nearest_foreign_complex_column0(
         direction=-1,
         own_footprint_3prime=own_ftpt3,
         requested_advance=200,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
     assert cap == 100 - 13 - own_ftpt3 - 1
@@ -495,6 +503,7 @@ def test_occlusion_advance_cap_caps_at_nearest_foreign_complex_column1(
         direction=1,
         own_footprint_3prime=own_ftpt3,
         requested_advance=200,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
     assert cap == 100 - 13 - own_ftpt3 - 1
@@ -522,6 +531,7 @@ def test_occlusion_advance_cap_nearest_of_multiple_foreign_complexes(
         direction=-1,
         own_footprint_3prime=own_ftpt3,
         requested_advance=10_000,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
     assert cap == 100 - 13 - own_ftpt3 - 1
@@ -546,6 +556,7 @@ def test_occlusion_advance_cap_zero_extent_benign_skip(process: KarrReplicationP
         direction=-1,
         own_footprint_3prime=own_ftpt3,
         requested_advance=200,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
     assert cap == 0
@@ -570,6 +581,7 @@ def test_occlusion_advance_cap_wrap_oric_edge_obstacle_behind_is_ignored(
         direction=1,
         own_footprint_3prime=own_ftpt3,
         requested_advance=200,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
     assert cap == 200
@@ -578,13 +590,10 @@ def test_occlusion_advance_cap_wrap_oric_edge_obstacle_behind_is_ignored(
 def test_occlusion_advance_cap_real_tick13_dnaa_atp_7mer_column0(
     process: KarrReplicationProcess,
 ) -> None:
-    # Real hash-pinned seed0/100-tick oracle replay data (tick 13, before
-    # this fix): helicase_pos[0]=578932, a bound MG_469_7MER_ATP
-    # (global-index 193, "DnaA-ATP 7mer", total footprint 11 -> (5, 5)) at
-    # position 578894 on strand leading_strand_indexs[0] -- the exact
-    # complex/position/strand that used to hard-fail
-    # `_assert_no_foreign_occlusion` and must now instead cap the helicase's
-    # own advance to exactly 23 (= 38 - 5 - 9 - 1).
+    # Real hash-pinned seed0 replay geometry: this bound DnaA-ATP 7mer sits
+    # 38 bp ahead of the left fork on the leading strand, but `Chromosome.
+    # getReleasableProteins` marks it releasable by helicase, so
+    # `isRegionAccessible` must ignore it rather than cap progress.
     dnaa_atp_7mer_global_index = 193
     assert process._foreign_dna_footprint_by_global_index[dnaa_atp_7mer_global_index] == 11
     strand = process.leading_strand_indexs[0]
@@ -597,16 +606,17 @@ def test_occlusion_advance_cap_real_tick13_dnaa_atp_7mer_column0(
         direction=-1,
         own_footprint_3prime=process.helicase_footprint_3prime_bp,
         requested_advance=92,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
-    assert cap == 23
+    assert cap == 92
 
 
 def test_occlusion_advance_cap_real_tick13_dnaa_atp_7mer_column1(
     process: KarrReplicationProcess,
 ) -> None:
-    # Direction-mirrored synthetic replay of the same real complex/offset
-    # (38bp ahead of the helicase in the direction of travel) for column 1.
+    # Direction-mirrored synthetic replay of the same releasable DnaA-ATP
+    # 7mer geometry for column 1.
     dnaa_atp_7mer_global_index = 193
     strand = process.leading_strand_indexs[1]
     helicase_pos1 = 300_000
@@ -618,9 +628,10 @@ def test_occlusion_advance_cap_real_tick13_dnaa_atp_7mer_column1(
         direction=1,
         own_footprint_3prime=process.helicase_footprint_3prime_bp,
         requested_advance=92,
+        binding_complex_global_indexs=(process.helicase_global_index,),
         context="test",
     )
-    assert cap == 23
+    assert cap == 92
 
 
 # ----------------------------------------------------------------------

@@ -440,6 +440,8 @@ def test_idle_state_no_progress_no_request() -> None:
     assert "polymerizedRegions" not in update.get("chromosome", {})
     assert all(v == 0.0 for v in update["requests"][p.name].values())
     assert "substrates" not in update
+    assert "enzymes" not in update
+    assert "boundEnzymes" not in update
 
 
 def test_genuinely_idle_state_still_no_ops_with_boundenzymes_present() -> None:
@@ -675,10 +677,44 @@ def test_initiating_transitions_to_elongating_and_seeds_polymerized_regions() ->
     assert update["chromosome"]["replication_state"] == "elongating"
     assert update.get("chromosome", {}).get("fork_position_bp", {}) == {}
     seeded = SparseTriplet.from_state(update["chromosome"]["polymerizedRegions"], shape=p.chromosome_shape)
-    assert seeded.positions.tolist() == [0, 22, 580054]
-    assert seeded.strands.tolist() == [0, 1, 3]
-    assert seeded.values.tolist() == [580076, 580032, 22]
-    assert all(v == 0.0 for v in update["requests"][p.name].values())
+    assert seeded.positions.tolist() == [0, 0, 22, 580054]
+    assert seeded.strands.tolist() == [0, 3, 1, 3]
+    assert seeded.values.tolist() == [580076, 22, 580032, 22]
+    expected_hydrolysis = float(p._initiation_hydrolysis_cost())
+    assert update["requests"][p.name][p.atp_wid] == expected_hydrolysis
+    assert update["requests"][p.name][p.h2o_wid] == expected_hydrolysis
+    assert update["substrates"][p.atp_wid] == -expected_hydrolysis
+    assert update["substrates"][p.h2o_wid] == -expected_hydrolysis
+    assert update["substrates"][p.adp_wid] == expected_hydrolysis
+    assert update["substrates"][p.pi_wid] == expected_hydrolysis
+    assert update["substrates"][p.h_wid] == expected_hydrolysis
+
+
+def test_initiating_hydrolysis_is_capped_by_allocated_atp_and_water() -> None:
+    p = KarrReplicationProcess({})
+    desired = float(p._initiation_hydrolysis_cost())
+    capped = desired - 5.0
+    state = _base_state(
+        p,
+        replication_state="initiating",
+        initial_substrate=1e6,
+        allocated_override={
+            **{wid: 1e6 for wid in p.dntp_wids},
+            p.atp_wid: desired,
+            p.h2o_wid: capped,
+        },
+    )
+
+    update = p.next_update(1.0, state)
+
+    assert update["chromosome"]["replication_state"] == "elongating"
+    assert update["requests"][p.name][p.atp_wid] == desired
+    assert update["requests"][p.name][p.h2o_wid] == desired
+    assert update["substrates"][p.atp_wid] == -capped
+    assert update["substrates"][p.h2o_wid] == -capped
+    assert update["substrates"][p.adp_wid] == capped
+    assert update["substrates"][p.pi_wid] == capped
+    assert update["substrates"][p.h_wid] == capped
 
 
 def test_elongation_advances_and_consumes_dntps() -> None:
@@ -705,19 +741,14 @@ def test_elongation_advances_and_consumes_dntps() -> None:
 
 
 def test_completion_sets_state_and_emits_event_once() -> None:
-    """The completion signal is now the real, position-resolved
-    `_strand_polymerized` check over ALL 4 strands (Replication.m:1324-
-    1356), not a scalar `fork_position_bp`-vs-`terc_position_bp`
-    comparison. Constructing "one real tick from total-genome
-    completion" for hand-built `polymerizedRegions` (see
-    `_completion_adjacent_chromosome_substate`): `polymerizedRegions`
-    already at `_completed_polymerized_regions()`, with real
-    `complexBoundSites` positioning both forks' helicase/leading/lagging
-    polymerase already at `terc_position_bp` (so the real remaining-
-    distance-to-terC budget is already 0 for both columns) -- this
-    exercises `next_update`'s real completion re-check on the existing
-    regions (the `desired_left_bp <= 0 and desired_right_bp <= 0` early
-    exit), not a scalar dial."""
+    """`terminateReplication` is now a separately scheduled no-hint
+    subfunction, matching executable `Replication.m:599-602,1253-1273`.
+    Same-tick completion therefore requires a state that already has no
+    lagging polymerases bound; merely placing lagging cores at terC is not
+    enough. This fixture seeds the real "leading machinery only, genome
+    fully polymerized" pre-state so `next_update`'s scheduled
+    `terminateReplication` branch can flip the state to `"complete"` and
+    emit the one-shot event exactly once."""
     p = KarrReplicationProcess({})
     alloc = {wid: 1e9 for wid in [*p.dntp_wids, p.atp_wid, p.h2o_wid]}
     state = _base_state(
@@ -727,6 +758,20 @@ def test_completion_sets_state_and_emits_event_once() -> None:
         allocated_override=alloc,
     )
     state["chromosome"].update(_completion_adjacent_chromosome_substate(p))
+    complete_cbs = SparseTriplet.from_state(state["chromosome"]["complexBoundSites"], shape=p.chromosome_shape)
+    normalized_values = complete_cbs.values.copy()
+    normalized_values[
+        normalized_values == p.core_beta_clamp_gamma_complex_global_index
+    ] = p.two_core_beta_clamp_gamma_complex_primase_global_index
+    keep = normalized_values != p.core_beta_clamp_primase_global_index
+    state["chromosome"]["complexBoundSites"] = SparseTriplet(
+        positions=complete_cbs.positions[keep],
+        strands=complete_cbs.strands[keep],
+        values=normalized_values[keep],
+        shape=complete_cbs.shape,
+    ).to_state()
+    state["boundEnzymes"] = {wid: 0.0 for wid in p.enzyme_wids}
+    _set_pre_split_polymerase_composition(state, p)
 
     update1 = p.next_update(1.0, state)
     _apply_update(state, update1, p)
@@ -740,21 +785,43 @@ def test_completion_sets_state_and_emits_event_once() -> None:
 
 def test_limited_allocation_scales_progress_proportionally() -> None:
     p = KarrReplicationProcess({})
-    desired = p._demand_from_advances(100, 100)
-    alloc = {wid: math.floor(val * 0.25) for wid, val in desired.items()}
     state = _active_replisome_base_state(
         p,
         replication_state="elongating",
         initial_substrate=1e9,
-        allocated_override={wid: float(alloc[wid]) for wid in alloc},
     )
+    store = p._resolve_chromosome_store(state["chromosome"], trust_regions=True)
+    complex_bound_sites = store.get_field("complexBoundSites")
+    leading_positions = p._leading_position(p._leading_polymerase_positions(complex_bound_sites))
+    lagging_positions = p._lagging_position(p._lagging_polymerase_positions(complex_bound_sites))
+    desired = p._demand_from_progression(
+        leading_positions=leading_positions,
+        lagging_positions=lagging_positions,
+        leading_bp_by_column=(100, 100),
+        lagging_bp_by_column=(100, 100),
+    )
+    alloc = {wid: math.floor(val * 0.25) for wid, val in desired.items()}
+    state["substrates_allocated"][p.name] = {wid: float(alloc[wid]) for wid in alloc}
 
     update = p.next_update(1.0, state)
     fork_delta = update["chromosome"]["fork_position_bp"]
-    scale = min(float(alloc[wid]) / float(desired[wid]) for wid in desired if desired[wid] > 0)
-    expected_per_fork = float(math.floor(100.0 * scale))
-    assert fork_delta["left"] == expected_per_fork
-    assert fork_delta["right"] == expected_per_fork
+    actual_step = int(fork_delta["left"])
+    assert actual_step == int(fork_delta["right"])
+    actual_demand = p._demand_from_progression(
+        leading_positions=leading_positions,
+        lagging_positions=lagging_positions,
+        leading_bp_by_column=(actual_step, actual_step),
+        lagging_bp_by_column=(actual_step, actual_step),
+    )
+    assert all(actual_demand[wid] <= alloc[wid] for wid in desired)
+    next_step = actual_step + 1
+    larger_demand = p._demand_from_progression(
+        leading_positions=leading_positions,
+        lagging_positions=lagging_positions,
+        leading_bp_by_column=(next_step, next_step),
+        lagging_bp_by_column=(next_step, next_step),
+    )
+    assert any(larger_demand[wid] > alloc[wid] for wid in desired)
     assert update["requests"][p.name][p.atp_wid] == float(desired[p.atp_wid])
 
 
@@ -813,6 +880,10 @@ def test_partial_run_monotonic_no_nan_mass_closes_within_fragment() -> None:
     consumed_dgtp = int(round(1e12 - state["substrates"]["DGTP"]))
     consumed_dttp = int(round(1e12 - state["substrates"]["DTTP"]))
     consumed_atp = int(round(1e12 - state["substrates"]["ATP"]))
+    produced_adp = int(round(state["substrates"]["ADP"] - 1e12))
+    produced_pi = int(round(state["substrates"]["PI"] - 1e12))
+    produced_h = int(round(state["substrates"]["H"] - 1e12))
+    produced_ppi = int(round(state["substrates"]["PPI"] - 1e12))
 
     assert consumed_datp >= 0
     assert consumed_dctp >= 0
@@ -820,9 +891,13 @@ def test_partial_run_monotonic_no_nan_mass_closes_within_fragment() -> None:
     assert consumed_dttp >= 0
     assert consumed_atp >= 0
 
-    # DNA synthesis consumes 2 nucleotides per bp advanced across both forks.
-    assert consumed_datp + consumed_dctp + consumed_dgtp + consumed_dttp == 2 * total_advance_bp
-    assert consumed_atp == total_advance_bp
+    # Sequence-exact dNTP demand is no longer a fixed `2 * total_advance_bp`
+    # identity on this synthetic fixture; assert the actual no-hint
+    # bookkeeping invariants instead.
+    assert consumed_datp + consumed_dctp + consumed_dgtp + consumed_dttp == produced_ppi
+    assert consumed_atp == produced_adp
+    assert consumed_atp == produced_pi
+    assert consumed_atp == produced_h
 
 
 # --- `_shrink_polymerized_region` / `_set_region_unwound` standalone

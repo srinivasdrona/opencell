@@ -473,13 +473,14 @@ def _advance_scenario_col0_fidx1(
     }
 
 
-def test_advance_multi_boundary_tick_crosses_fragment_completion(process: KarrReplicationProcess) -> None:
-    """Budget spans exactly 1 fragment completion: 3 bp finish fragment
-    index 1, then 2 leftover bp begin fragment index 2 -- both leading and
-    lagging must end up advanced by the SAME total (5), never double-
-    counted, and the two fragments' `polymerizedRegions` entries must stay
-    genuinely discontinuous (not merged) since real, unsynthesized DNA
-    separates them."""
+def test_advance_multi_boundary_tick_stops_at_current_fragment_and_defers_handoff(
+    process: KarrReplicationProcess,
+) -> None:
+    """Executable `Replication.m` schedules `unwindAndPolymerizeDNA`,
+    `terminateOkazakiFragment`, and `initiateOkazakiFragment` as separate
+    subfunctions. `_advance_replication_forks` therefore only advances the
+    current fragment to its boundary; handoff to the next fragment and nick
+    creation are deferred to the later scheduled subfunctions."""
     scenario = _advance_scenario_col0_fidx1(process, progress_before=1385 - 3, with_backup_clamp=True)
 
     result = process._advance_replication_forks(
@@ -491,7 +492,7 @@ def test_advance_multi_boundary_tick_crosses_fragment_completion(process: KarrRe
         bound_next={},
     )
 
-    assert result["actual_left_bp"] == 5
+    assert result["actual_left_bp"] == 3
     assert result["actual_right_bp"] == 0
     new_helicase = process._helicase_positions(result["complex_bound_sites"])
     new_leading = process._leading_polymerase_positions(result["complex_bound_sites"])
@@ -501,28 +502,15 @@ def test_advance_multi_boundary_tick_crosses_fragment_completion(process: KarrRe
         process._lagging_position(process._lagging_polymerase_positions(result["complex_bound_sites"])),
         result["polymerized"],
     )
-    assert new_fragment_index[0] == 2  # advanced into the NEXT fragment
+    assert new_fragment_index[0] == 1
     lag0 = process.lagging_strand_indexs[0]
     lag_regions = sorted(r for r in result["polymerized"].to_regions() if r[1] == lag0)
-    assert len(lag_regions) == 2  # genuinely discontinuous, not merged
-    (pos_a, _strand_a, len_a), (pos_b, _strand_b, len_b) = lag_regions
-    assert pos_a + len_a < pos_b  # a real gap remains between the 2 fragments
-    assert new_strand_break_recorded(process, result)
-
-
-def new_strand_break_recorded(process: KarrReplicationProcess, result: dict) -> bool:
-    return result["strand_breaks"].to_regions() == [(process.sequence_len_bp - 1, 2, 1)]
+    assert lag_regions == [(578691, int(lag0), 1385)]
+    assert result["strand_breaks"].to_regions() == []
 
 
 class _FixedCoin:
-    """Deterministic stand-in for `np.random.default_rng` exposing only the
-    single no-arg `.random()` call `_advance_replication_forks` draws for
-    Finding-3's per-tick advance-vs-terminate ordering coin. Direct calls to
-    `_advance_replication_forks` (as these tests make, bypassing
-    `_apply_ssb_cycle`/`next_update`) never reach any OTHER RNG-consuming
-    helper (`free_and_bind_ssbs`, `dissociate_free_ssb_complexes`,
-    `_stochastic_round`), so this narrow stub is sufficient and does not
-    risk masking an unexpected additional draw elsewhere."""
+    """Deterministic stand-in for `np.random.default_rng`."""
 
     def __init__(self, value: float) -> None:
         self._value = value
@@ -531,28 +519,15 @@ class _FixedCoin:
         return self._value
 
 
-def test_finding3_terminate_ordering_coin_same_tick_vs_deferred_no_hint_trajectory(
+def test_advance_helper_is_invariant_to_termination_order_coin_stub(
     process: KarrReplicationProcess,
 ) -> None:
-    """Finding 3 (Replication.m:604-607): Karr's `evolveState` draws a fresh
-    `randStream.randperm` every tick, so whether `terminateOkazakiFragment`
-    runs before or after `unwindAndPolymerizeDNA` in a tick where THIS
-    tick's own advance is what completes a fragment is genuinely a per-tick
-    coin flip (P=1/2 for any 2 elements of a uniform random permutation,
-    Replication.m:1097-1099's `this.okazakiFragmentProgress` read is live
-    mutable state). This is a CONTINUOUS 2-tick trajectory regression (not
-    the single-tick-isolated-oracle-probe style used by
-    `test_karr_replication_seed0_topology_diagnostic.py`, which structurally
-    cannot observe a deferred completion since it re-seeds a brand new
-    process from oracle-supplied per-tick state every tick with no
-    carry-over): it proves the SAME underlying scenario is handled
-    correctly under EITHER coin outcome, and that a deferred completion is
-    genuinely picked up the very next tick, not silently lost.
-    """
+    """`_advance_replication_forks` is now just the
+    `unwindAndPolymerizeDNA` subfunction. Any terminate-vs-advance
+    ordering randomness lives in `next_update`'s outer `randperm`, not
+    inside this helper, so patching a no-arg `.random()` coin stub must
+    not change the helper's direct output."""
     scenario_kwargs = dict(progress_before=1385 - 3, with_backup_clamp=True)
-
-    # --- coin lands "after" (>= 0.5): terminate observes this tick's own
-    # freshly-completed fragment and fires in the SAME tick's call.
     same_tick_process = KarrReplicationProcess({})
     same_tick_process._rng = _FixedCoin(0.9)
     scenario = _advance_scenario_col0_fidx1(same_tick_process, **scenario_kwargs)
@@ -564,21 +539,6 @@ def test_finding3_terminate_ordering_coin_same_tick_vs_deferred_no_hint_trajecto
         enzymes_next={},
         bound_next={},
     )
-    same_tick_fragment_index = same_tick_process._okazaki_fragment_index(
-        same_tick_process._lagging_position(
-            same_tick_process._lagging_polymerase_positions(result["complex_bound_sites"])
-        ),
-        result["polymerized"],
-    )
-    assert same_tick_fragment_index[0] == 2  # handed off to the NEXT fragment already
-    assert result["strand_breaks"].to_regions() != []  # nick recorded THIS tick
-
-    # --- coin lands "before" (< 0.5): terminate would have run BEFORE this
-    # tick's own advance and so cannot observe this tick's completion --
-    # deferred to the NEXT tick's unconditional stall-retry check instead
-    # of firing now. Position/polymerized-region bookkeeping for the
-    # completed step itself is UNCHANGED either way (only the termination
-    # side-effect -- handoff/nick -- is deferred).
     deferred_process = KarrReplicationProcess({})
     deferred_process._rng = _FixedCoin(0.1)
     scenario2 = _advance_scenario_col0_fidx1(deferred_process, **scenario_kwargs)
@@ -590,55 +550,21 @@ def test_finding3_terminate_ordering_coin_same_tick_vs_deferred_no_hint_trajecto
         enzymes_next={},
         bound_next={},
     )
-    # The fragment-boundary POSITION already moved this tick regardless of
-    # termination timing (movement is not coin-gated, only the
-    # `terminateOkazakiFragment` side effects are) -- `_okazaki_fragment_index`
-    # is a pure position/`primaseBindingLocations` geometry lookup, so it is
-    # NOT diagnostic of whether termination itself fired. The genuinely
-    # diagnostic side effects are the `strandBreaks` nick and the backup-
-    # beta-clamp release/rebind handoff, both performed only inside
-    # `_terminate_okazaki_fragment_column`.
-    assert tick1_result["strand_breaks"].to_regions() == []  # no nick yet: deferred
 
-    # NEXT tick: zero further budget, but the pending completed-and-
-    # unterminated fragment is retried unconditionally (the top-of-loop
-    # stall-retry branch, never coin-gated) and now DOES fire -- proving
-    # the deferral is genuinely a 1-tick delay, not data loss. A fresh coin
-    # draw this second tick (still 0.1, "before") is irrelevant here since
-    # this path is the unconditional retry, not the coin-gated branch.
-    tick2_store = ChromosomeStore(shape=deferred_process.chromosome_shape)
-    tick2_store.set_field("polymerizedRegions", tick1_result["polymerized"])
-    tick2_store.set_field("strandBreaks", tick1_result["strand_breaks"])
-    tick2_result = deferred_process._advance_replication_forks(
-        chromosome_store=tick2_store,
-        complex_bound_sites=tick1_result["complex_bound_sites"],
-        budget_left_bp=0,
-        budget_right_bp=0,
-        enzymes_next={},
-        bound_next={},
-    )
-    tick2_fragment_index = deferred_process._okazaki_fragment_index(
-        deferred_process._lagging_position(
-            deferred_process._lagging_polymerase_positions(tick2_result["complex_bound_sites"])
-        ),
-        tick2_result["polymerized"],
-    )
-    assert tick2_fragment_index[0] == 2  # handed off now, one tick later
-    assert tick2_result["strand_breaks"].to_regions() != []  # nick recorded on the retry
+    assert result["actual_left_bp"] == tick1_result["actual_left_bp"]
+    assert result["actual_right_bp"] == tick1_result["actual_right_bp"]
+    assert result["complex_bound_sites"].to_regions() == tick1_result["complex_bound_sites"].to_regions()
+    assert result["polymerized"].to_regions() == tick1_result["polymerized"].to_regions()
+    assert result["strand_breaks"].to_regions() == tick1_result["strand_breaks"].to_regions()
 
 
-def test_advance_zero_budget_still_terminates_pending_complete_fragment(
+def test_advance_zero_budget_leaves_pending_fragment_for_later_termination_subfunction(
     process: KarrReplicationProcess,
 ) -> None:
-    """Opus G1 item 2 regression test: a fragment that is ALREADY fully
-    polymerized (e.g. it completed on an earlier tick but was gated -- SSB
-    not yet satisfied, or a stalled backup-clamp mismatch -- and the gate
-    has since cleared) must still terminate on a tick where BOTH columns'
-    advance budget is genuinely zero. Karr's `terminateOkazakiFragment` is
-    re-evaluated fresh every tick regardless of whether
-    `unwindAndPolymerizeDNA` made any new progress that same tick
-    (Replication.m:599-602's fixed subfunction call order); only actual
-    MOVEMENT is gated on budget, never the termination retry itself."""
+    """Direct calls to `_advance_replication_forks` with zero budget must
+    remain a pure `unwindAndPolymerizeDNA` no-op. Any pending completed
+    fragment is handled later by the separately scheduled
+    `terminateOkazakiFragment` subfunction in `next_update`, not here."""
     scenario = _advance_scenario_col0_fidx1(process, progress_before=1385, with_backup_clamp=True)
 
     result = process._advance_replication_forks(
@@ -653,15 +579,12 @@ def test_advance_zero_budget_still_terminates_pending_complete_fragment(
     # No movement at all: both budgets were zero.
     assert result["actual_left_bp"] == 0
     assert result["actual_right_bp"] == 0
-    # But termination still fired: the lagging polymerase handed off to
-    # fragment index 2 (not left dangling at the completed fragment 1),
-    # and a strand break was recorded at the completed fragment's end.
     new_fragment_index = process._okazaki_fragment_index(
         process._lagging_position(process._lagging_polymerase_positions(result["complex_bound_sites"])),
         result["polymerized"],
     )
-    assert new_fragment_index[0] == 2
-    assert result["strand_breaks"].to_regions() != []
+    assert new_fragment_index[0] == 1
+    assert result["strand_breaks"].to_regions() == []
 
 
 def test_advance_stalls_leave_leftover_budget_unconsumed_no_double_count(
@@ -803,7 +726,7 @@ def test_advance_is_deterministic_no_rng(process: KarrReplicationProcess) -> Non
 # ----------------------------------------------------------------------
 
 
-def test_leading_strand_lead_gap_grows_stalls_and_recovers_no_hint_trajectory(
+def test_leading_strand_lead_gap_grows_and_stalls_under_unwind_only_trajectory(
     process: KarrReplicationProcess,
 ) -> None:
     """A genuinely CONTINUOUS (not per-tick-reset) trajectory: real state
@@ -831,15 +754,11 @@ def test_leading_strand_lead_gap_grows_stalls_and_recovers_no_hint_trajectory(
          helicase position becomes CONSTANT for several further ticks in
          a row -- proving the gate is a real, binding constraint, not a
          no-op.
-      3. RECOVERS: once the stalled lagging strand's blocking condition
-         is lifted (the backup beta-clamp finally binds -- a real,
-         already-admissible state transition per `with_backup_clamp=True`
-         elsewhere in this file, not fabricated to force an answer, and
-         not derived from any oracle read), lagging's termination
-         succeeds, the persistent gap is recomputed against the new
-         (closer) current fragment, and the helicase resumes moving on
-         later ticks -- proving the cap is genuinely recoverable, not a
-         permanent one-way collapse/deadlock.
+      3. STAYS STALLED under this helper alone: even after a backup clamp
+         is authored into the carried-forward state, lagging does not
+         resume because `_advance_replication_forks` still does not run the
+         separately scheduled `terminateOkazakiFragment` /
+         `initiateOkazakiFragment` handoff path.
     """
     lead0, lead1 = process.leading_strand_indexs
     lag0, _lag1 = process.lagging_strand_indexs
@@ -965,13 +884,11 @@ def test_leading_strand_lead_gap_grows_stalls_and_recovers_no_hint_trajectory(
         "not far past it (else the gate isn't actually being checked every tick)"
     )
 
-    # --- Phase 3: RECOVERS. After the backup clamp binds (tick 40),
-    # lagging's termination succeeds and the helicase resumes moving on
-    # a later tick -- the cap is a recoverable stall, never a permanent
-    # collapse/deadlock.
-    assert any(a > 0 for a in lagging_actual_history[40:]), "lagging must resume once unblocked"
-    assert helicase_history[-1] != plateau, "helicase must resume moving after lagging catches up"
-    assert helicase_history[-1] < plateau, "helicase's resumed movement must still be in the same (col0, -1) direction"
+    # --- Phase 3: direct unwind-only calls stay stalled even after the
+    # backup clamp appears, because the handoff subfunctions are not being
+    # run in this helper-only trajectory.
+    assert lagging_actual_history[40:] == [0] * (ticks - 40)
+    assert helicase_history[40:] == [plateau] * (ticks - 40)
 
 
 # ----------------------------------------------------------------------

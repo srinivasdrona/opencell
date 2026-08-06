@@ -67,47 +67,52 @@ def test_ligate_dna_no_hint_noop_when_no_nicks() -> None:
     assert "chromosome" not in update
 
 
-def test_ligate_dna_no_hint_nad_limited_seals_lowest_position_strand_first() -> None:
+def test_ligate_dna_no_hint_nad_limited_rng_selection_is_insertion_order_invariant() -> None:
     """3 existing nicks, abundant ligase capacity, NAD=1 -- Karr's own
     `numReactions = min(numStrandBreaks, ligaseCapacity, nadAvailable)`
-    (Replication.m:1227-1231) caps sealing at exactly 1. This port's
-    explicit, tested, OPEN site-selection deviation (see
-    `_ligate_dna_no_hint`'s docstring) seals the lowest `(strand,
-    position)`-sorted nick first -- verified here directly against 3
-    nicks placed in deliberately NON-sorted insertion order."""
-    p = KarrReplicationProcess({})
-    p.ligase_rate_per_s = 1000.0
-    nicks = [(5000, 1), (1000, 0), (3000, 1)]
-    store = ChromosomeStore.from_state_mapping(
-        {
-            "polymerizedRegions": SparseTriplet.from_regions([], shape=p.chromosome_shape).to_state(),
-            "complexBoundSites": SparseTriplet.from_regions([], shape=p.chromosome_shape).to_state(),
-            "strandBreaks": _strand_breaks_at(p, nicks).to_state(),
-        },
-        shape=p.chromosome_shape,
-    )
-    enzymes_next = {p.enzyme_wid_ligase: 1000.0}
-    substrates_next = {p.nad_wid: 1.0, p.nmn_wid: 0.0, p.amp_wid: 0.0, p.h_wid: 0.0}
-    update: dict[str, Any] = {}
-    p._ligate_dna_no_hint(
-        chromosome_store=store,
-        dt=1.0,
-        enzymes_next=enzymes_next,
-        substrates_next=substrates_next,
-        update=update,
-    )
-    assert substrates_next[p.nad_wid] == 0.0
-    assert substrates_next[p.nmn_wid] == 1.0
-    assert substrates_next[p.amp_wid] == 1.0
-    assert substrates_next[p.h_wid] == 1.0
+    (Replication.m:1227-1231) caps sealing at exactly 1. OC canonicalizes
+    the candidate nick identities by `(strand, position)` and then uses
+    the process RNG to choose which one to seal, so two sparse-triplet
+    insertion orders with the same seed must seal the SAME physical nick."""
+    nicks_a = [(5000, 1), (1000, 0), (3000, 1)]
+    nicks_b = list(reversed(nicks_a))
+    remaining_sets: list[list[tuple[int, int]]] = []
 
-    remaining = store.get_field("strandBreaks")
-    remaining_positions_strands = sorted(
-        zip(remaining.strands.tolist(), remaining.positions.tolist(), strict=True)
-    )
-    assert remaining_positions_strands == [(1, 3000), (1, 5000)]
-    assert update["chromosome"]["strandBreaks"]["positions"].tolist() == remaining.positions.tolist()
-    assert update["chromosome"]["strandBreaks"]["strands"].tolist() == remaining.strands.tolist()
+    for nicks in (nicks_a, nicks_b):
+        p = KarrReplicationProcess({"rng_seed": 7})
+        p.ligase_rate_per_s = 1000.0
+        store = ChromosomeStore.from_state_mapping(
+            {
+                "polymerizedRegions": SparseTriplet.from_regions([], shape=p.chromosome_shape).to_state(),
+                "complexBoundSites": SparseTriplet.from_regions([], shape=p.chromosome_shape).to_state(),
+                "strandBreaks": _strand_breaks_at(p, nicks).to_state(),
+            },
+            shape=p.chromosome_shape,
+        )
+        enzymes_next = {p.enzyme_wid_ligase: 1000.0}
+        substrates_next = {p.nad_wid: 1.0, p.nmn_wid: 0.0, p.amp_wid: 0.0, p.h_wid: 0.0}
+        update: dict[str, Any] = {}
+        p._ligate_dna_no_hint(
+            chromosome_store=store,
+            dt=1.0,
+            enzymes_next=enzymes_next,
+            substrates_next=substrates_next,
+            update=update,
+        )
+        assert substrates_next[p.nad_wid] == 0.0
+        assert substrates_next[p.nmn_wid] == 1.0
+        assert substrates_next[p.amp_wid] == 1.0
+        assert substrates_next[p.h_wid] == 1.0
+
+        remaining = store.get_field("strandBreaks")
+        remaining_positions_strands = sorted(
+            zip(remaining.strands.tolist(), remaining.positions.tolist(), strict=True)
+        )
+        remaining_sets.append(remaining_positions_strands)
+        assert update["chromosome"]["strandBreaks"]["positions"].tolist() == remaining.positions.tolist()
+        assert update["chromosome"]["strandBreaks"]["strands"].tolist() == remaining.strands.tolist()
+
+    assert remaining_sets[0] == remaining_sets[1]
 
 
 def test_ligate_dna_no_hint_ligase_capacity_limited() -> None:
