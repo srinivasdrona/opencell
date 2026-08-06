@@ -756,128 +756,70 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:calcResourceRequirements_Current:519
         status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:3855
         note: 'No Replication `RequestCalculator*` exists in `opencell/vivarium/karr_request_calculators.py`
 
-          (search for `Replication` / `karr_replication` returned no matches). The request surface is
-
-          folded into `next_update`: `desired_demand = self._demand_from_advances(desired_left_bp, desired_right_bp)`
-
-          and `update["requests"] = {self.name: {wid: float(desired_demand.get(wid, 0)) for wid in zero_requests}}`
-
-          (`opencell/vivarium/karr_replication.py:968-970`). OC''s request schema is limited to
-
-          `request_wids = [*self.dntp_wids, self.atp_wid]` (`opencell/vivarium/karr_replication.py:539`),
-          so this
-
-          is a simplified inlining of Karr''s ATP/H2O/dNTP/NAD requirement calculation.'
+          (search for `Replication` / `karr_replication` returned no matches). The allocator-facing request
+          surface is folded into `next_update`, which computes `desired_demand =
+          self._demand_from_progression(...)` and writes `update["requests"][self.name]` across dNTP + ATP
+          + H2O before applying the autonomous no-hint scheduler.'
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:evolveState:568
         status: confirmed
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
-        note: 'Direct runtime entrypoint. `next_update` is the Replication process update method, dispatching
-          to
-
-          `_next_update_from_trace_hint(...)` when trace hints are present
-
-          (`opencell/vivarium/karr_replication.py:890-894`) and otherwise executing the autonomous
-
-          replication-state branches below.'
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:3855
+        note: 'Direct runtime entrypoint. `next_update` dispatches to `_next_update_from_trace_hint(...)`
+          only when explicit hint surfaces are present and otherwise runs the autonomous no-hint replication
+          scheduler.'
       initiateReplication:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:initiateReplication:616
-        status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
-        note: 'Folded into the `"initiating"` branch of `next_update`: `if replication_state == "initiating":`
-
-          followed by `update["chromosome"] = {"replication_state": "elongating", "polymerizedRegions":
-          self._seed_polymerized_regions().to_state()}`
-
-          (`opencell/vivarium/karr_replication.py:943-947`). This is the OC runtime location that starts
-
-          replication, albeit as a simplified state flip/seed rather than Karr''s full DnaA/protein-gated
-
-          replisome assembly.'
+        status: confirmed
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._initiate_replication_no_hint:3411
+        note: 'Dedicated no-hint helper. `_initiate_replication_no_hint(...)` debits ATP/H2O, emits ADP/PI/H,
+          seeds `polymerizedRegions`, and returns the new replication-state flag.'
       unwindAndPolymerizeDNA:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:unwindAndPolymerizeDNA:692
-        status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
-        note: 'Folded into the `"elongating"` branch of `next_update`. OC computes
-
-          `desired_demand = self._demand_from_advances(desired_left_bp, desired_right_bp)`
-
-          (`opencell/vivarium/karr_replication.py:968`), debits `actual_demand` from substrates
-
-          (`opencell/vivarium/karr_replication.py:1006-1009`), and writes
-
-          `next_polymerized = self._build_polymerized_regions(...)`
-
-          (`opencell/vivarium/karr_replication.py:1015-1022`) to advance forks/polymerized DNA.'
+        status: confirmed
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._advance_replication_forks:2308
+        note: 'Dedicated no-hint helper. `_advance_replication_forks(...)` performs the literal fork advance,
+          terC/linking veto, RNAP collision stall, Okazaki progression, and chromosome-state mutation for
+          one scheduled MATLAB subfunction call.'
       dissociateFreeSSBComplexes:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:dissociateFreeSSBComplexes:950
         status: confirmed
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.dissociate_free_ssb_complexes:838
-        note: Dedicated OC method mirrors Karr Replication.m:950-955 by converting free SSB 8-mers into fixture-derived stoichiometric SSB 4-mers each tick.
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.dissociate_free_ssb_complexes:3209
+        note: Dedicated OC method mirrors Karr Replication.m:950-955 by converting free SSB 8-mers into
+          fixture-derived stoichiometric SSB 4-mers each tick.
       freeAndBindSSBs:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:freeAndBindSSBs:958
         status: confirmed
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.free_and_bind_ssbs:848
-        note: Dedicated OC method ports Karr Replication.m:958-1029 stochastic release/rebind cycle using process RNG and chromosome complexBoundSites/polymerizedRegions.
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.free_and_bind_ssbs:3219
+        note: Dedicated OC method ports Karr Replication.m:958-1029 stochastic release/rebind cycle using
+          the process RNG and live chromosome `complexBoundSites` / `polymerizedRegions`.
       initiateOkazakiFragment:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:initiateOkazakiFragment:1030
-        status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._next_update_from_trace_hint:1066
-        note: 'Folded into trace-hint replay rather than a standalone OC def. In `_next_update_from_trace_hint`,
-
-          `beta_binding_events = max(0, bound_next[self.enzyme_wid_beta_clamp] - bound_now[self.enzyme_wid_beta_clamp])`
-
-          (`opencell/vivarium/karr_replication.py:798-800`) and those events are charged into
-
-          `catalytic_atp_events` (`opencell/vivarium/karr_replication.py:802-805`), replaying Karr''s
-
-          beta-clamp-loading step when `boundEnzymes_next` is supplied.'
+        status: confirmed
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._initiate_okazaki_fragments:1544
+        note: 'Dedicated no-hint helper. `_initiate_okazaki_fragments(...)` binds beta clamps at the next
+          accessible lagging-fragment start and charges the matching ATP/H2O -> ADP/PI/H hydrolysis.'
       terminateOkazakiFragment:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:terminateOkazakiFragment:1095
-        status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._next_update_from_trace_hint:1066
-        note: 'Also folded into trace-hint replay. `_emit_hint_delta(...)` mirrors the hinted bound/free
-          enzyme
-
-          count changes (`opencell/vivarium/karr_replication.py:722-733`), and a negative beta-clamp delta
-
-          triggers `self._strand_break_budget += -int(beta_delta)`
-
-          (`opencell/vivarium/karr_replication.py:836-838`), which is OC''s inlined hook for Karr''s
-
-          Okazaki-fragment termination / strand-break handoff.'
+        status: confirmed
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._terminate_okazaki_fragments_no_hint:3452
+        note: 'Dedicated no-hint helper. `_terminate_okazaki_fragments_no_hint(...)` releases completed
+          lagging-fragment machinery and writes the corresponding nick into `strandBreaks`.'
       ligateDNA:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:ligateDNA:1220
-        status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._next_update_from_trace_hint:1066
-        note: 'Folded into `_next_update_from_trace_hint`: `ligase_capacity = self._stochastic_round(ligase_available
-          * dt * self.ligase_rate_per_s)`
-
-          and `ligations = min(max(0, ligase_capacity), nad_available, max(0, self._strand_break_budget))`
-
-          (`opencell/vivarium/karr_replication.py:848-849`), followed by NAD/NMN/AMP/H substrate deltas
-
-          (`opencell/vivarium/karr_replication.py:869-873`). There is no separate `ligateDNA` def.'
+        status: confirmed
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._ligate_dna_no_hint:3518
+        note: 'Dedicated no-hint helper. `_ligate_dna_no_hint(...)` samples candidate nicks in MATLAB
+          `find(...)` order, seals the selected subset with the process RNG, and emits NAD -> NMN + AMP + H.'
       terminateReplication:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Replication.m:terminateReplication:1253
-        status: inlined
-        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess.next_update:1253
-        note: 'Folded into the completion branch of `next_update`. When both forks reach terC,
-
-          `completion = self._completion_update()` and
-
-          `update["chromosome"]["polymerizedRegions"] = self._completed_polymerized_regions().to_state()`
-
-          (`opencell/vivarium/karr_replication.py:1025-1029`), with the earlier fast-path
-
-          `remaining_left_bp <= 0 and remaining_right_bp <= 0` also calling `_completion_update()`
-
-          (`opencell/vivarium/karr_replication.py:959-961`). OC marks completion here; MATLAB''s autonomous
-
-          replisome dissolution / terC strand-break writeback is not split into a separate OC method.'
+        status: confirmed
+        oc: opencell/vivarium/karr_replication.py:KarrReplicationProcess._terminate_replication_no_hint:3476
+        note: 'Dedicated no-hint helper. `_terminate_replication_no_hint(...)` recognizes the fully
+          polymerized / helicase-present / lagging-polymerase-cleared terminal state and returns
+          `"complete"` for `next_update` to materialize.'
   ReplicationInitiation:
     oc_files:
     - opencell/vivarium/karr_replication_initiation.py
