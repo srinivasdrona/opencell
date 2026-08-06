@@ -3531,6 +3531,51 @@ def _replication_process(seed: int) -> KarrReplicationProcess:
         return KarrReplicationProcess({"rng_seed": int(seed)})
 
 
+def _replication_triplet_equals(left: Any, right: Any) -> bool:
+    return (
+        np.array_equal(left.positions, right.positions)
+        and np.array_equal(left.strands, right.strands)
+        and np.array_equal(left.values, right.values)
+    )
+
+
+def _replication_requires_initiating_flag(
+    process: KarrReplicationProcess,
+    chrom_store_before: ChromosomeStore,
+) -> bool:
+    """Per-process Replication traces do not carry OC's coordination-only
+    `replication_state` flag. Recover the one missing pre-replisome phase
+    bit from Karr's own live chromosome snapshot alone: a chromosome that
+    still has the pristine mother-only polymerized topology and no
+    replisome complexes/strand breaks is the exact t=0 pre-initiation
+    state that Karr's first tick immediately runs through
+    `initiateReplication`. Ignore unrelated chromosome-bound proteins:
+    they are already present in the real seed-0 `complexBoundSites`
+    snapshot and are not part of the replisome gate."""
+    idle_store = process._resolve_chromosome_store(
+        process.build_default_chromosome_state(replication_state="idle"),
+        trust_regions=True,
+    )
+    if not _replication_triplet_equals(
+        chrom_store_before.get_field("polymerizedRegions"),
+        idle_store.get_field("polymerizedRegions"),
+    ):
+        return False
+    if not _replication_triplet_equals(
+        chrom_store_before.get_field("strandBreaks"),
+        idle_store.get_field("strandBreaks"),
+    ):
+        return False
+    complex_bound_sites = chrom_store_before.get_field("complexBoundSites")
+    leading_positions = np.asarray(process._leading_polymerase_positions(complex_bound_sites), dtype=np.int64)
+    lagging_positions = np.asarray(process._lagging_polymerase_positions(complex_bound_sites), dtype=np.int64)
+    return (
+        not process._is_any_helicase_bound(complex_bound_sites)
+        and np.all(leading_positions < 0)
+        and np.all(lagging_positions < 0)
+    )
+
+
 def _run_replication_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
     """Run one OpenCell Replication tick from a prepared state snapshot."""
     process = _replication_process(_sample_seed(seed, tick))
@@ -3564,6 +3609,8 @@ def _run_replication_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[s
     # Overlay Karr's chromosome state (NOT a fixture default).
     chrom_store_before: ChromosomeStore = state["oracle_before_chromosome_store"]
     _overlay_chromosome_into_state(runtime_state, chrom_store_before)
+    if _replication_requires_initiating_flag(process, chrom_store_before):
+        runtime_state["chromosome"]["replication_state"] = "initiating"
 
     refresh_allocator_views(process, runtime_state)
     with forbid_sut_oracle_file_io():

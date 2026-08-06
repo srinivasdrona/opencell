@@ -294,6 +294,98 @@ class SparseTriplet:
         ]
 
 
+def merge_adjacent_regions(triplet: SparseTriplet) -> SparseTriplet:
+    """Merge touching same-strand run-length regions into one entry.
+
+    Matches Karr's ``Chromosome.mergeAdjacentRegions`` /
+    ``mergeOwnAdjacentRegions`` invariant (``Chromosome.m:~2536-2567``),
+    applied to run-length ``polymerizedRegions``-style fields (each entry
+    is the half-open interval ``[position, position + value)`` on a given
+    strand):
+
+    - Two entries on the same strand whose intervals exactly touch
+      (``end_i == start_{i+1}``) are collapsed into a single entry
+      spanning both.
+    - Two entries on the same strand whose intervals actually overlap
+      (``end_i > start_{i+1}``) indicate corrupt state and raise
+      ``ValueError``, mirroring Karr's own fatal
+      ``'polymerizedRegions is corrupt'`` check -- overlap must never be
+      silently resolved.
+    - A region is never treated as wrapping past ``shape[0]``: Karr's own
+      ``CircularSparseMat`` representation always splits any region that
+      crosses the chromosome origin into two separate entries (confirmed
+      directly against the real seed-0 oracle trace, where an
+      origin-centered bubble on strand 4 is stored as two entries
+      straddling position 0, never as one entry whose length exceeds the
+      remaining distance to ``shape[0]``). A ``position + value`` that
+      exceeds ``shape[0]`` is therefore itself invalid input and is
+      rejected the same way as an overlap, not silently reinterpreted as
+      a wrap.
+
+    Not applicable to point-source fields such as ``complexBoundSites``
+    or ``strandBreaks``, whose ``value`` is not a run length.
+    """
+    row_count, col_count = triplet.shape
+    positions = triplet.positions
+    strands = triplet.strands
+    values = triplet.values
+
+    out_positions: list[int] = []
+    out_strands: list[int] = []
+    out_values: list[int] = []
+
+    for strand in range(col_count):
+        mask = strands == strand
+        if not np.any(mask):
+            continue
+        strand_positions = positions[mask]
+        strand_values = values[mask]
+
+        if np.any(strand_values <= 0):
+            raise ValueError(
+                "polymerizedRegions is corrupt: non-positive region length on strand "
+                f"{strand}: {strand_values.tolist()!r}"
+            )
+        overflow = strand_positions + strand_values > row_count
+        if np.any(overflow):
+            raise ValueError(
+                "polymerizedRegions is corrupt: region exceeds chromosome length on strand "
+                f"{strand} (shape[0]={row_count}): "
+                f"{list(zip(strand_positions[overflow].tolist(), strand_values[overflow].tolist(), strict=True))!r}"
+            )
+
+        order = np.argsort(strand_positions, kind="stable")
+        starts = strand_positions[order].tolist()
+        lengths = strand_values[order].tolist()
+
+        merged_starts: list[int] = []
+        merged_lengths: list[int] = []
+        for start, length in zip(starts, lengths, strict=True):
+            if merged_starts:
+                prior_end = merged_starts[-1] + merged_lengths[-1]
+                if start < prior_end:
+                    raise ValueError(
+                        "polymerizedRegions is corrupt: overlapping regions on strand "
+                        f"{strand} (prior end {prior_end}, next start {start})"
+                    )
+                if start == prior_end:
+                    merged_lengths[-1] += length
+                    continue
+            merged_starts.append(start)
+            merged_lengths.append(length)
+
+        out_positions.extend(merged_starts)
+        out_strands.extend([strand] * len(merged_starts))
+        out_values.extend(merged_lengths)
+
+    return SparseTriplet(
+        positions=np.asarray(out_positions, dtype=np.int64),
+        strands=np.asarray(out_strands, dtype=np.int64),
+        values=np.asarray(out_values, dtype=np.int64),
+        shape=triplet.shape,
+    )
+
+
 class ChromosomeStore:
     """Sparse-triple chromosome state for the 11 Karr chromosome fields.
 
@@ -394,5 +486,6 @@ __all__ = [
     "CHROMOSOME_FIELDS",
     "ChromosomeStore",
     "SparseTriplet",
+    "merge_adjacent_regions",
     "sparse_triplet_schema",
 ]
