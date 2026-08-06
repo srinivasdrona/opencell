@@ -24,7 +24,6 @@ from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, spar
 from opencell.vivarium.chromosome_views import current_damage_sites
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNADamage_flat.mat"
-_DEFAULT_TRACE_PATH = "data/m1_sources/karr_native/per_process_traces/DNADamage_100ticks.mat"
 _DAMAGE_KINDS = ("uv_like", "oxidative", "alkylation", "depurination")
 _DAMAGE_FIELDS = (
     "damagedBases",
@@ -115,8 +114,6 @@ class KarrDNADamageProcess(Process):
     name = "karr_dna_damage"
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
-        "trace_path": _DEFAULT_TRACE_PATH,
-        "use_trace_rates_if_available": True,
         "rng_seed": 0,
         "time_step": 1.0,
         "sequence_length_nt": None,
@@ -144,20 +141,16 @@ class KarrDNADamageProcess(Process):
         self.reaction_vulnerable_motif_types: list[str] = []
         self._load_schema_observables(self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH))
 
+        # Rule 8: production never reads a per-tick oracle trace to derive
+        # rates. kind_rates_per_s is always exactly the canonical
+        # _DEFAULT_KIND_RATES_PER_S baseline or an explicit caller-supplied
+        # override via the `kind_rates_per_s` parameter -- never anything
+        # loaded from a per-tick Karr trace file.
         configured_rates = self.parameters.get("kind_rates_per_s") or {}
         self.kind_rates_per_s = {
             kind: max(0.0, float(configured_rates.get(kind, _DEFAULT_KIND_RATES_PER_S[kind])))
             for kind in self.damage_kinds
         }
-        self.trace_kind_rates_per_s = self._load_trace_kind_rates(
-            self.parameters.get("trace_path", _DEFAULT_TRACE_PATH)
-        )
-        self.used_trace_rates = False
-        if bool(self.parameters.get("use_trace_rates_if_available", True)) and self.trace_kind_rates_per_s:
-            for kind in self.damage_kinds:
-                if kind in self.trace_kind_rates_per_s:
-                    self.kind_rates_per_s[kind] = max(0.0, float(self.trace_kind_rates_per_s[kind]))
-            self.used_trace_rates = True
 
         sequence_length_param = self.parameters.get("sequence_length_nt")
         if sequence_length_param is not None and _is_finite_number(sequence_length_param):
@@ -670,40 +663,6 @@ class KarrDNADamageProcess(Process):
             return _DEFAULT_SEQUENCE_LENGTH_NT
 
         return _DEFAULT_SEQUENCE_LENGTH_NT
-
-    def _load_trace_kind_rates(self, trace_path: str | Path) -> dict[str, float]:
-        resolved = _resolve_path(trace_path)
-        if not resolved.exists():
-            return {}
-
-        try:
-            trace = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
-        except Exception:
-            return {}
-
-        out: dict[str, float] = {}
-        for kind in self.damage_kinds:
-            candidates = (
-                kind,
-                f"{kind}_events",
-                f"{kind}_count",
-                f"{kind}_counts",
-                f"damage_{kind}",
-            )
-            for key in candidates:
-                if key not in trace:
-                    continue
-                arr = np.asarray(trace[key], dtype=np.float64).reshape(-1)
-                if arr.size <= 0:
-                    continue
-                if arr.size == 1:
-                    rate = max(0.0, float(arr[0]))
-                else:
-                    deltas = np.diff(arr)
-                    rate = max(0.0, float(np.mean(np.maximum(deltas, 0.0))))
-                out[kind] = rate
-                break
-        return out
 
 
 __all__ = ["KarrDNADamageProcess"]

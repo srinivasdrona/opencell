@@ -1,101 +1,22 @@
 from __future__ import annotations
 
-import hashlib
-import json
 import os
+import sys
 from pathlib import Path
 
 import numpy as np
 import pytest
-from scipy.io import loadmat
+
+_HELPER_DIR = Path(__file__).resolve().parent
+if str(_HELPER_DIR) not in sys.path:
+    sys.path.insert(0, str(_HELPER_DIR))
+
+from _dna_damage_stress_common import FIXTURE_PATH  # noqa: E402
+from _dna_damage_stress_common import fixture_details as _fixture_details  # noqa: E402
+from _dna_damage_stress_common import load_spec as _load_spec  # noqa: E402
+from _dna_damage_stress_common import sha256_of as _sha256  # noqa: E402
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
-SPEC_PATH = (
-    REPO_ROOT
-    / "docs"
-    / "phase_f"
-    / "l2_2_design_a"
-    / "stress"
-    / "DNADAMAGE_SYNTHETIC_MECHANISM_SPEC.json"
-)
-FIXTURE_PATH = REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "DNADamage_flat.mat"
-
-
-def _scalar(value: object) -> object:
-    out = value
-    while isinstance(out, np.ndarray):
-        if out.size == 0:
-            return ""
-        out = out.flat[0]
-    return out
-
-
-def _sha256(path: Path) -> str:
-    return hashlib.sha256(path.read_bytes()).hexdigest()
-
-
-def _load_spec() -> dict:
-    return json.loads(SPEC_PATH.read_text(encoding="utf-8"))
-
-
-def _fixture_details() -> dict:
-    fixture = loadmat(FIXTURE_PATH, squeeze_me=True, struct_as_record=False)["data"].fixture
-    substrate_wids = [
-        str(_scalar(value))
-        for value in np.asarray(fixture.substrateWholeCellModelIDs, dtype=object).ravel()
-    ]
-    bounds = np.asarray(fixture.reactionBounds, dtype=np.float64)
-    radiation = np.asarray(fixture.reactionRadiation, dtype=np.int64).reshape(-1)
-    motifs = np.asarray(fixture.reactionVulnerableMotifs, dtype=object).ravel()
-    reaction_ids = [
-        str(_scalar(value))
-        for value in np.asarray(fixture.reactionWholeCellModelIDs, dtype=object).ravel()
-    ]
-    damage_types = [
-        str(_scalar(value))
-        for value in np.asarray(fixture.reactionDamageTypes, dtype=object).ravel()
-    ]
-
-    sequence_len = None
-    gc_content = None
-    ploidy = None
-    for state in np.asarray(fixture.states, dtype=object).ravel():
-        if str(getattr(state, "x_class_", "")).endswith("Chromosome"):
-            sequence_len = int(state.sequenceLen)
-            gc_content = float(state.sequenceGCContent)
-            ploidy = float(state.ploidy)
-            break
-    assert sequence_len is not None and gc_content is not None and ploidy is not None
-    assert ploidy == 1.0
-
-    polymerized_nt = 2.0 * sequence_len * ploidy
-    composition = {
-        "A": (1.0 - gc_content) / 2.0,
-        "C": gc_content / 2.0,
-        "G": gc_content / 2.0,
-        "T": (1.0 - gc_content) / 2.0,
-    }
-    vulnerable = np.zeros(bounds.shape[0], dtype=np.float64)
-    for index, motif in enumerate(motifs):
-        motif = _scalar(motif)
-        if not isinstance(motif, str) or not motif:
-            continue
-        vulnerable[index] = polymerized_nt * float(np.prod([composition[base] for base in motif]))
-    per_unit_rates = vulnerable * bounds[:, 1]
-
-    result: dict[str, dict] = {}
-    for wid in ("UVB_radiation", "gamma_radiation"):
-        local_index_1b = substrate_wids.index(wid) + 1
-        mask = radiation == local_index_1b
-        indices = np.flatnonzero(mask)
-        result[wid] = {
-            "count": int(mask.sum()),
-            "sum_rate": float(per_unit_rates[mask].sum()),
-            "per_unit_rates": per_unit_rates[mask],
-            "reaction_ids": [reaction_ids[index] for index in indices],
-            "damage_types": [damage_types[index] for index in indices],
-        }
-    return {"ploidy": ploidy, "radiation": result}
 
 
 def test_spec_is_explicitly_non_biological_and_non_gating():
@@ -106,6 +27,24 @@ def test_spec_is_explicitly_non_biological_and_non_gating():
     assert spec["gating"] == "NON_GATING"
     assert spec["unblocks_l2_5"] is False
     assert spec["execution_status"] == "PREREGISTERED_NOT_EXECUTED"
+
+
+def test_mechanism_canary_status_is_reconciled_and_scoped_separately_from_execution_status():
+    """Fix #5 (Day-32/33 remediation): execution_status describes only Karr/
+    MATLAB execution (still, correctly, PREREGISTERED_NOT_EXECUTED) and must
+    not be overloaded to also mean "the OC-side mechanism canary has never
+    run" -- it has, repeatedly. mechanism_canary_status is a distinct,
+    additive field (no frozen prediction value above it was changed) that
+    reconciles this without ever claiming biological L2.2 evidence."""
+    spec = _load_spec()
+    assert spec["execution_status"] == "PREREGISTERED_NOT_EXECUTED"
+    status = spec["mechanism_canary_status"]
+    assert status["status"] == "EXECUTED"
+    assert status["is_biological_l2_2_evidence"] is False
+    assert status["is_karr_matlab_execution"] is False
+    assert status["executor"] == "scripts/dna_damage_mechanism_canary.py"
+    assert "execution_status_scope_note" in spec
+
 
 
 def test_fixture_hash_and_mechanical_doses_rederive_exactly():

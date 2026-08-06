@@ -96,11 +96,22 @@ def _apply_update(state: dict[str, Any], update: dict[str, Any], process: KarrDN
         )
 
 
+def _trace_path_candidates() -> list[Path]:
+    """Test-side-only oracle trace lookup (Rule 8 permits tests reading
+    oracle data for cross-checks; production code must never do this --
+    see karr_dna_damage.py's removal of the former trace_path parameter).
+    """
+    rel = Path("data") / "m1_sources" / "karr_native" / "per_process_traces" / "DNADamage_100ticks.mat"
+    return [
+        _REPO_ROOT / rel,
+        Path("E:/opencell") / rel,
+        Path("/mnt/e/opencell") / rel,
+    ]
+
+
 def _trace_total_if_available(process: KarrDNADamageProcess) -> float | None:
-    trace_path = Path(process.parameters["trace_path"])
-    if not trace_path.exists():
-        trace_path = _REPO_ROOT / trace_path
-    if not trace_path.exists():
+    trace_path = next((p for p in _trace_path_candidates() if p.exists()), None)
+    if trace_path is None:
         return None
 
     try:
@@ -317,3 +328,48 @@ def test_no_nan_no_negative_regression() -> None:
 
     assert np.isfinite(float(state["chromosome"]["replication_stall_flag"]))
     assert float(state["chromosome"]["replication_stall_flag"]) >= 0.0
+
+
+def test_no_production_oracle_trace_read_rule_8_regression() -> None:
+    """Regression for the Rule 8 violation flagged in review: production
+    must never read a per-tick Karr oracle trace (DNADamage_100ticks.mat
+    or any other trace) to derive kind_rates_per_s. The prior
+    `_load_trace_kind_rates`/`trace_path`/`use_trace_rates_if_available`
+    mechanism was silently inert only because scipy.io.loadmat cannot
+    parse the v7.3/HDF5 trace format -- a latent violation, not an
+    absent one. This test asserts the mechanism has been removed
+    entirely, not merely left dormant.
+    """
+    import inspect
+
+    from opencell.vivarium import karr_dna_damage as module
+
+    process = KarrDNADamageProcess({})
+
+    # No trace-derived parameters/attributes remain on the process.
+    assert "trace_path" not in KarrDNADamageProcess.defaults
+    assert "use_trace_rates_if_available" not in KarrDNADamageProcess.defaults
+    assert not hasattr(process, "trace_kind_rates_per_s")
+    assert not hasattr(process, "used_trace_rates")
+    assert not hasattr(process, "_load_trace_kind_rates")
+    assert not hasattr(module, "_DEFAULT_TRACE_PATH")
+
+    # Source-text scan: no oracle per-tick trace path/filename string
+    # remains reachable from production code.
+    source = inspect.getsource(module)
+    assert "_100ticks" not in source
+    assert "per_process_traces" not in source
+    assert "DNADamage_100ticks.mat" not in source
+
+    # kind_rates_per_s is always exactly the canonical default, or an
+    # explicit caller-supplied override -- passing an unrelated `trace_path`
+    # kwarg (e.g. a caller still on old code) must be silently ignored by
+    # Process's parameter merging, never trigger a trace read.
+    default_process = KarrDNADamageProcess({})
+    from opencell.vivarium.karr_dna_damage import _DEFAULT_KIND_RATES_PER_S
+
+    assert default_process.kind_rates_per_s == _DEFAULT_KIND_RATES_PER_S
+
+    override_process = KarrDNADamageProcess({"kind_rates_per_s": {"uv_like": 3.0}})
+    assert override_process.kind_rates_per_s["uv_like"] == 3.0
+    assert override_process.kind_rates_per_s["oxidative"] == _DEFAULT_KIND_RATES_PER_S["oxidative"]

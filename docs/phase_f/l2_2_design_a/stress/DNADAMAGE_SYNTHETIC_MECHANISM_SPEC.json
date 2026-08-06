@@ -8,6 +8,16 @@
   "phenotype_claim": false,
   "unblocks_l2_5": false,
   "execution_status": "PREREGISTERED_NOT_EXECUTED",
+  "execution_status_scope_note": "execution_status above describes only whether a real Karr/MATLAB stimulus-conditioned run has ever been executed for this profile (it has not). It does NOT describe whether the OC-side mechanism canary (scripts/dna_damage_mechanism_canary.py) has executed against these frozen doses -- see mechanism_canary_status for that, appended non-destructively during Day-32/Day-33 remediation without altering any frozen prediction value above.",
+  "mechanism_canary_status": {
+    "status": "EXECUTED",
+    "executor": "scripts/dna_damage_mechanism_canary.py",
+    "result_path": "docs/phase_f/l2_2_design_a/stress/DNADAMAGE_MECHANISM_CANARY_RESULT.json",
+    "first_executed_at": "2026-08-05",
+    "is_biological_l2_2_evidence": false,
+    "is_karr_matlab_execution": false,
+    "note": "This status tracks OC-side execution of the mechanism-fidelity canary only. It is explicitly non-biological, non-gating, non-L2.2-evidence (see condition_type/biological_dose_claim/phenotype_claim/gating above, all unchanged). It does not supersede or contradict execution_status, which remains PREREGISTERED_NOT_EXECUTED because no Karr/MATLAB stimulus-conditioned run has occurred."
+  },
   "primary_source": {
     "path": "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m",
     "sha256": "b5441dc0840b05f4e6f4d38710c80b9eb03ac799435f99e7a2a95699ee48b7ec",
