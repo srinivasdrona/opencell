@@ -65,8 +65,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - No built-in background agents are running. Future delegated work runs as detached Codex subprocesses with logs/status files outside the main conversation; the main context continues integration work.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green).
 - Ready for direct integration after local verification:
-  - RibosomeAssembly branch `cc7b4fa`: 50-seed conditioned event PASS; shared event index must be regenerated during integration.
   - DNADamage branch `b2aa0be`: Rule-8 production trace read removed; biological gate remains blocked on nontrivial Karr stimulus traces.
+- RibosomeAssembly integrated at `ab4126c`; shared event index regenerated and audits clean with one `mode=gate`, `verdict=PASS` row. Scope remains Karr-conditioned per-tick parity, not free-running fidelity.
 - Detached review/fix lanes to launch:
   - clean Replication review from commit `fa126e9` (ignore contaminated original worktree);
   - DNASupercoiling N=200 evidence review at `6a6fbd0`;

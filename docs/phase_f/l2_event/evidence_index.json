@@ -1,22 +1,22 @@
 {
-  "content_hash": "591af101d511faf7e7571b1a9af8425c026e5c24d42172fd077fb8451408e908",
+  "content_hash": "2f168262839c9cec700a4142a840e524145b324d15def1bfe89d064529dafd05",
   "evidence_root": "docs/phase_f/l2_event/evidence_bundle",
-  "generated_at": "2026-08-03T11:30:59.057509+00:00",
-  "git_sha": "a2eac5590bc2ba684ec1d1319ccf8d13f3598581",
+  "generated_at": "2026-08-06T04:13:31.565988+00:00",
+  "git_sha": "ab4126c39b98cb70fc18f7924e48f8fa8e1f4610",
   "n_rows": 1,
   "rows": [
     {
       "artifact_hashes": {
-        "SUMMARY.json": "32cf4499c729bce859bbd10d6ea5bb20b479b6c66e08b0707a9ab8379d77a7f9",
-        "input_manifest.json": "07266abc5bf26441b0d7ad9e8f6143be8cee7e19700a933a1734ad81531ef346",
-        "null_calibration.json": "5ad7371957835afe89a5dc4b3bb207f58479f8d86d92697827628919472d1e47",
-        "provenance.json": "866cb834dfdae4992d0486e7c6c61ade133960766af6119802440a0d32f838cf",
-        "result.json": "df29d6815741ab3841dd89c985a8ee3992253101bb173d04fe76322abd76beef"
+        "SUMMARY.json": "64c28875bb0ea519f5b0cce76d2be3889217f1fa889b6d4a845b1e60e51083aa",
+        "input_manifest.json": "072088b34de26bc51eb126e6a24f61fb130ccb7a27513630fe77840eb282b062",
+        "null_calibration.json": "9df0faa1cc62b4e42289dd8cca273cb4370b1213d40bb2384c856cdf456b4ad5",
+        "provenance.json": "1b108d7bfa12dfdeafe77dbdaa1e342bae8f25835192bcda296e296b792235fd",
+        "result.json": "1ab7f6b8c8d96208ec2b1ef978d7c54569b692a54f157c00de9d48d3b99aed3b"
       },
       "evidence_dir": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly",
-      "mode": "structural_smoke",
+      "mode": "gate",
       "process": "RibosomeAssembly",
-      "verdict": "NOT_APPLICABLE"
+      "verdict": "PASS"
     }
   ],
   "schema_version": 1
