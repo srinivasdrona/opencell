@@ -1,18 +1,104 @@
 {
-  "adapter_id": "ribosome_assembly.smoke.v1",
-  "channels": [],
+  "adapter_id": "ribosome_assembly.gate.v1",
+  "channels": [
+    {
+      "channel": "count",
+      "extra": {
+        "guard_ceiling": 166,
+        "guard_floor": 41,
+        "t_karr": 83,
+        "t_oc": 83
+      },
+      "k_eng": 3.0,
+      "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
+      "n_nonzero_karr": 44,
+      "n_nonzero_oc": 44,
+      "per_component": [],
+      "q95_null": 0.36000000000000004,
+      "reasons": [],
+      "standardized_ratio": null,
+      "statistic_name": "w1_per_seed_count",
+      "statistic_value": 0.0,
+      "threshold": 1.08,
+      "verdict": "SEED_NOISE"
+    },
+    {
+      "channel": "timing",
+      "extra": {
+        "n_karr_fire_ticks": 83,
+        "n_oc_fire_ticks": 83
+      },
+      "k_eng": 3.0,
+      "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
+      "n_nonzero_karr": 44,
+      "n_nonzero_oc": 44,
+      "per_component": [],
+      "q95_null": 9.712856934731933,
+      "reasons": [],
+      "standardized_ratio": null,
+      "statistic_name": "w1_pooled_fire_tick_bag",
+      "statistic_value": 0.0,
+      "threshold": 29.1385708041958,
+      "verdict": "SEED_NOISE"
+    },
+    {
+      "channel": "payload",
+      "extra": {
+        "component_union": [
+          "RIBOSOME_30S",
+          "RIBOSOME_50S"
+        ],
+        "karr_components": [
+          "RIBOSOME_30S",
+          "RIBOSOME_50S"
+        ],
+        "oc_components": [
+          "RIBOSOME_30S",
+          "RIBOSOME_50S"
+        ],
+        "representative_component": "RIBOSOME_30S"
+      },
+      "k_eng": 3.0,
+      "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
+      "n_nonzero_karr": 83,
+      "n_nonzero_oc": 83,
+      "per_component": [
+        {
+          "component": "RIBOSOME_30S",
+          "q95_null": 0.09463625805089217,
+          "reasons": [],
+          "standardized_ratio": 0.0,
+          "statistic_value": 0.0,
+          "threshold": 0.2839087741526765,
+          "verdict": "SEED_NOISE"
+        },
+        {
+          "component": "RIBOSOME_50S",
+          "q95_null": 0.09217580272585937,
+          "reasons": [],
+          "standardized_ratio": 0.0,
+          "statistic_value": 0.0,
+          "threshold": 0.27652740817757815,
+          "verdict": "SEED_NOISE"
+        }
+      ],
+      "q95_null": 0.09463625805089217,
+      "reasons": [],
+      "standardized_ratio": 0.0,
+      "statistic_name": "w1_per_component_at_matched_firings",
+      "statistic_value": 0.0,
+      "threshold": 0.2839087741526765,
+      "verdict": "SEED_NOISE"
+    }
+  ],
   "event_timing_model": "repeated_firing",
-  "mode": "structural_smoke",
-  "n_seeds_karr": 1,
-  "n_seeds_oc": 1,
+  "mode": "gate",
+  "n_seeds_karr": 50,
+  "n_seeds_oc": 50,
   "oc_only_fire_ticks": {},
   "process": "RibosomeAssembly",
-  "reasons": [
-    "structural_smoke_only: proves the loader/adapter/OC-port round-trip works on one real seed; this is NOT a calibrated ensemble gate verdict.",
-    "karr_total_fires=2 oc_total_fires=2",
-    "stride_contract_ok=True: window carries a complete stride/tick_start/tick_end(or window_anchor) contract."
-  ],
+  "reasons": [],
   "schema_version": 1,
-  "verdict": "NOT_APPLICABLE",
+  "verdict": "PASS",
   "warnings": []
 }

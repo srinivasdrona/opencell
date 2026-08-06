@@ -403,17 +403,38 @@ def test_main_gate_mode_always_refuses_for_ribosome_assembly_single_seed():
     assert main(["--process", "RibosomeAssembly", "--mode", "gate", "--seeds", "0"]) == EXIT_REFUSED
 
 
-def test_main_gate_mode_refuses_for_ribosome_assembly_full_ensemble_not_gating_ready():
+def test_main_gate_mode_refuses_for_ribosome_assembly_full_ensemble_no_cli_wiring():
+    """As of the 2026-08-05 promotion, RibosomeAssembly IS
+    ``adapter_status: gating_ready`` in the live registry, so
+    ``check_ensemble_size``/``check_adapter`` no longer raise for this
+    call. This still refuses because `main`'s own ``--mode gate`` CLI
+    dispatch has no per-process wiring to actually build timelines and
+    call `evaluate_gate` for ANY process in this foundation build -- real
+    N=50 gate evidence for RibosomeAssembly is produced by the dedicated
+    ``scripts/l2_event/ribosome_assembly_n50_gate.py`` driver instead (see
+    ``docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/``), not via
+    this CLI's ``--mode gate`` path."""
     seeds = ",".join(str(i) for i in range(50))
     assert main(["--process", "RibosomeAssembly", "--mode", "gate", "--seeds", seeds]) == EXIT_REFUSED
 
 
 @pytest.mark.skipif(not _RA_TRACE.exists(), reason="Real RibosomeAssembly seed-000 event-window MAT not present locally")
-def test_main_smoke_mode_succeeds_for_ribosome_assembly_seed0_and_writes_evidence(tmp_path, monkeypatch):
-    """End-to-end CLI smoke run against real data: exit 0, and a full
-    evidence artifact set (result/input_manifest/null_calibration/
-    provenance/SUMMARY) is written + bundled + indexed, with
-    verdict=NOT_APPLICABLE (never a gate PASS/FAIL)."""
+def test_main_smoke_mode_refuses_for_ribosome_assembly_now_that_it_is_gating_ready(tmp_path, monkeypatch):
+    """Historical note: before the 2026-08-05 promotion (see
+    ``docs/phase_f/l2_event/event_registry.yaml`` and
+    ``tests/scripts/test_l2_event_ribosome_assembly_n50.py`` for the real
+    50-seed gate this promotion is based on), this exact CLI invocation
+    (``--process RibosomeAssembly --mode smoke``) was the only way to get
+    ANY evidence for this process, and succeeded with a
+    ``structural_smoke`` / ``NOT_APPLICABLE`` verdict. Now that the
+    registry declares ``ribosome_assembly.gate.v1`` / ``gating_ready`` for
+    this process, `main`'s smoke-mode dispatch (which only ever recognizes
+    ``adapter_status == 'structural_smoke_only'``) correctly refuses
+    instead -- this CLI has no path left to the RETIRED smoke adapter for
+    an already-promoted process, and must never silently fall back to it.
+    Real gate evidence for this process is produced by
+    ``scripts/l2_event/ribosome_assembly_n50_gate.py`` instead (see
+    ``docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/``)."""
     from scripts.l2_event import evidence as evidence_mod
 
     live_root = tmp_path / "artifacts"
@@ -424,11 +445,65 @@ def test_main_smoke_mode_succeeds_for_ribosome_assembly_seed0_and_writes_evidenc
     monkeypatch.setattr(evidence_mod, "TRACKED_INDEX_PATH", index_path)
 
     rc = main(["--process", "RibosomeAssembly", "--mode", "smoke", "--seeds", "0"])
+    assert rc == EXIT_REFUSED
+    assert not bundle_root.exists()
+
+
+@pytest.mark.skipif(not _RA_TRACE.exists(), reason="Real RibosomeAssembly seed-000 event-window MAT not present locally")
+def test_main_smoke_mode_succeeds_against_a_stale_pre_promotion_registry_copy(tmp_path, monkeypatch):
+    """Regression coverage for the CLI's smoke-mode success path itself
+    (exit 0, full evidence artifact set written+bundled+indexed,
+    verdict=NOT_APPLICABLE) now that the live registry has no process left
+    with ``adapter_status: structural_smoke_only`` (RibosomeAssembly was
+    the only one, and it has graduated -- see
+    ``test_main_smoke_mode_refuses_for_ribosome_assembly_now_that_it_is_gating_ready``
+    above). We exercise this path against an explicit, in-memory-authored
+    stale registry copy (only ``adapter_status`` reverted back to
+    ``structural_smoke_only``, matching the exact pre-promotion state) via
+    ``--registry-path``, never against the live registry file."""
+    import yaml
+
+    from scripts.l2_event import evidence as evidence_mod
+    from scripts.l2_event.registry import REGISTRY_PATH
+
+    stale_registry = yaml.safe_load(REGISTRY_PATH.read_text(encoding="utf-8"))
+    for row in stale_registry["processes"]:
+        if row["process"] == "RibosomeAssembly":
+            row["adapter_status"] = "structural_smoke_only"
+            row["adapter_id"] = "ribosome_assembly.smoke.v1"
+    stale_registry_path = tmp_path / "stale_event_registry.yaml"
+    stale_registry_path.write_text(yaml.safe_dump(stale_registry), encoding="utf-8")
+
+    live_root = tmp_path / "artifacts"
+    bundle_root = tmp_path / "bundle"
+    index_path = tmp_path / "index.json"
+    monkeypatch.setattr(evidence_mod, "LIVE_EVIDENCE_ROOT", live_root)
+    monkeypatch.setattr(evidence_mod, "TRACKED_BUNDLE_ROOT", bundle_root)
+    monkeypatch.setattr(evidence_mod, "TRACKED_INDEX_PATH", index_path)
+
+    rc = main(
+        [
+            "--process",
+            "RibosomeAssembly",
+            "--mode",
+            "smoke",
+            "--seeds",
+            "0",
+            "--registry-path",
+            str(stale_registry_path),
+        ]
+    )
     assert rc == EXIT_OK
 
     bundled_result = evidence_mod.read_json(bundle_root / "RibosomeAssembly" / "result.json")
     assert bundled_result["verdict"] == "NOT_APPLICABLE"
     assert bundled_result["mode"] == "structural_smoke"
 
-    problems = evidence_mod.audit_index(index_path)
-    assert problems == []
+    # Note: unlike the (now-retired) live-registry version of this test, we
+    # deliberately do NOT assert `audit_index(...) == []` here.
+    # `audit_index`'s registry_sha256 check always recomputes against the
+    # real, LIVE `event_registry.yaml` (there is no override hook for it),
+    # so provenance recorded against our intentionally-stale
+    # `--registry-path` copy will always disagree with the live file's
+    # current hash -- that is the correct, expected consequence of using a
+    # non-live registry snapshot here, not a genuine evidence-integrity bug.

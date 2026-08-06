@@ -1,9 +1,35 @@
 {
-  "b_resamples": 0,
-  "channel": "n/a",
+  "b_resamples": 1000,
+  "channels": [
+    {
+      "channel": "count",
+      "k_eng": 3.0,
+      "q95_null": 0.36000000000000004,
+      "statistic_name": "w1_per_seed_count",
+      "statistic_value": 0.0,
+      "threshold": 1.08,
+      "verdict": "SEED_NOISE"
+    },
+    {
+      "channel": "timing",
+      "k_eng": 3.0,
+      "q95_null": 9.712856934731933,
+      "statistic_name": "w1_pooled_fire_tick_bag",
+      "statistic_value": 0.0,
+      "threshold": 29.1385708041958,
+      "verdict": "SEED_NOISE"
+    },
+    {
+      "channel": "payload",
+      "k_eng": 3.0,
+      "q95_null": 0.09463625805089217,
+      "statistic_name": "w1_per_component_at_matched_firings",
+      "statistic_value": 0.0,
+      "threshold": 0.2839087741526765,
+      "verdict": "SEED_NOISE"
+    }
+  ],
   "cluster_unit": "seed",
   "process": "RibosomeAssembly",
-  "q95_null": 0.0,
-  "schema_version": 1,
-  "statistic_name": "n/a"
+  "schema_version": 1
 }

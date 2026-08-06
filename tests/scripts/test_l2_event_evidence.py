@@ -576,3 +576,57 @@ def test_tracked_ra_input_manifest_binds_canary_a_hash_not_the_stale_pre_m4_hash
     assert recorded == _CANARY_A_SHA256
     assert recorded != _PRE_SHIM_CANARY_A_SHA256
     assert recorded != _PRE_CANARY_A_SHA256
+
+
+# ---------------------------------------------------------------------------
+# Fix 5 (2026-08-05, Opus pre-merge review round on the N=50 promotion): the
+# SHARED, cross-process ``docs/phase_f/l2_event/evidence_index.json`` is
+# explicitly NOT edited by this branch -- event integration owns its
+# regeneration (hard rule from the task brief). That means it is now
+# stale: it still records RibosomeAssembly's PRE-promotion
+# structural-smoke bundle (mode="structural_smoke",
+# verdict="NOT_APPLICABLE", per-file sha256 hashes for the OLD
+# SUMMARY.json/result.json/... content) even though the tracked
+# ``evidence_bundle/RibosomeAssembly/*.json`` files on disk were just
+# regenerated for the real N=50 gate (mode="gate", verdict="PASS"). This
+# test makes that staleness a first-class, mechanically-detected fact --
+# not a silent gap -- by running the REAL `audit_index()` against the
+# REAL tracked index and REAL tracked bundle (no monkeypatching, no
+# fakes) and asserting it reports the expected per-file hash mismatch(es)
+# for RibosomeAssembly specifically.
+#
+# HANDOFF NOTE for the event-integration branch: once
+# ``docs/phase_f/l2_event/evidence_index.json`` is regenerated (e.g. via
+# ``evidence.write_index([...])``) to reflect the real N=50 gate bundle,
+# THIS test will start failing (`audit_index` will report zero problems
+# for RibosomeAssembly) -- that is the expected, correct outcome once the
+# shared index is refreshed, and this test should be deleted at that
+# point (or narrowed to whichever process is still stale, if any), not
+# "fixed" by re-adding a staleness assertion.
+# ---------------------------------------------------------------------------
+
+
+def test_shared_evidence_index_is_known_stale_for_ribosome_assembly_after_this_promotion():
+    """Documents (and mechanically verifies) that the SHARED, tracked
+    ``docs/phase_f/l2_event/evidence_index.json`` -- which this branch
+    deliberately does not edit, since event integration owns regeneration
+    -- is now stale for RibosomeAssembly following this branch's real
+    N=50 gate promotion. Runs the real ``audit_index()`` against the real
+    tracked index and real tracked bundle; a clean audit here would mean
+    the staleness this test exists to flag has already been resolved
+    (e.g. by a later regeneration), at which point this test itself
+    should be removed rather than "re-broken" to keep passing."""
+    if not evidence.TRACKED_INDEX_PATH.is_file():
+        pytest.skip(f"shared tracked index not present at {evidence.TRACKED_INDEX_PATH}")
+
+    problems = evidence.audit_index(evidence.TRACKED_INDEX_PATH)
+
+    ra_problems = [p for p in problems if p.startswith("RibosomeAssembly")]
+    assert ra_problems, (
+        "expected the shared evidence_index.json to be stale for RibosomeAssembly "
+        "after this branch's real N=50 promotion (mode/verdict/hashes changed), but "
+        "audit_index() reported no RibosomeAssembly problems. If the shared index "
+        "has since been regenerated to reflect the real bundle, this test is "
+        "obsolete and should be deleted, not fixed."
+    )
+    assert any("sha256 mismatch" in p for p in ra_problems), ra_problems

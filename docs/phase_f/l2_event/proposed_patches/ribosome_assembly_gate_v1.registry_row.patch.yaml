@@ -1,6 +1,26 @@
 # Proposed `event_registry.yaml` row patch — RibosomeAssembly gate adapter
 #
-# STATUS: PROPOSAL ONLY. NOT APPLIED. Do not merge into
+# STATUS (2026-08-05, worktree
+# E:\opencell-worktrees\l2-event-ribosome-20260805, branch
+# agent/l2-event-ribosome-20260805): APPLIED FOR REAL. The "proposed future
+# row" below is retained verbatim as a historical record of what was
+# proposed and why, but it is no longer a proposal: the 49 additional
+# event-window seeds it names as the sole remaining prerequisite now exist
+# (all 50/50, individually validated and non-aliased), and the equivalent
+# row has been merged into the live docs/phase_f/l2_event/event_registry.yaml
+# with adapter_status: gating_ready and a computed PASS verdict. The live
+# row's `notes:` text differs slightly from the "Proposed future row" below
+# (it documents the actual promotion event, the DIVERGENT_BUG fix, and
+# points at the real evidence bundle) — treat event_registry.yaml as
+# authoritative for current status; treat this file as a historical
+# proposal record only. See
+# docs/phase_f/l2_event/RIBOSOME_ASSEMBLY_GATE_ADAPTER_REPORT.md's own
+# "STATUS UPDATE (2026-08-05)" banner and
+# docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/ for the evidence
+# this promotion is backed by.
+#
+# Original status note below (superseded, kept for context):
+# PROPOSAL ONLY. NOT APPLIED. Do not merge into
 # docs/phase_f/l2_event/event_registry.yaml as part of this change.
 #
 # This fragment shows the row that would replace the current RibosomeAssembly

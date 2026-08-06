@@ -1,9 +1,15 @@
 {
-  "generated_at": "2026-08-03T11:30:58.616366+00:00",
-  "karr_total_fires": 2,
-  "mode": "structural_smoke",
-  "oc_total_fires": 2,
+  "channels": {
+    "count": "SEED_NOISE",
+    "payload": "SEED_NOISE",
+    "timing": "SEED_NOISE"
+  },
+  "generated_at": "2026-08-05T15:44:44.984239+00:00",
+  "mode": "gate",
+  "n_seeds_karr": 50,
+  "n_seeds_oc": 50,
   "process": "RibosomeAssembly",
-  "seed": 0,
-  "verdict": "NOT_APPLICABLE"
+  "reasons": [],
+  "scope_caveat": "This PASS reflects OC's real per-tick port CONDITIONED on Karr's own recorded states_before at every tick (the established test-harness design used by this adapter and its seed-0 structural-smoke predecessor alike) -- it is not an independent free-running forward simulation. It demonstrates per-tick behavioral parity given Karr's own trajectory, not agreement between two independently-evolved trajectories. Do not read this PASS as free-running fidelity.",
+  "verdict": "PASS"
 }

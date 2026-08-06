@@ -60,21 +60,38 @@ processes:
 
   - process: RibosomeAssembly
     in_scope_v4: true
-    adapter_id: ribosome_assembly.smoke.v1
-    adapter_status: structural_smoke_only
+    adapter_id: ribosome_assembly.gate.v1
+    adapter_status: gating_ready
     event_timing_model: repeated_firing
     magnitude_gateable: true
     required_n_seeds: 50
     deferred_reason: null
     notes: >
-      In v4 scope (spec §8, D2). Exactly 1 of 50 required event-window
-      seeds exists on disk (seed 000 under
-      data/m1_sources/karr_native/per_process_traces_v2_event_s000/). The
-      registered adapter is a read-only structural smoke adapter only
-      (scripts/l2_event/adapters/ribosome_assembly_smoke.py); the runner
-      refuses to compute a gate verdict from it (single-seed ensemble
-      refusal, requirement 4) and this task does not implement a
-      gating-ready adapter.
+      In v4 scope (spec §8, D2). PROMOTED to gating_ready (2026-08-05):
+      all 50/50 required event-window seeds now exist on disk
+      (data/m1_sources/karr_native/per_process_traces_v2_event_s{000..049}/
+      RibosomeAssembly_100ticks.mat), each individually validated by
+      scripts/l2_event/ribosome_assembly_seed_audit.py against the current
+      scripts/matlab/mnrnd.m shim hash and the M4 stride/tick_start/
+      tick_end contract, and confirmed non-aliased (no two seeds share
+      file content -- see the "Critical anti-laundering finding"
+      resolved: 3 of 4 stale seed-000 candidates found across sibling
+      worktrees failed this validation and were discarded, never reused).
+      ribosome_assembly.gate.v1 (scripts/l2_event/adapters/
+      ribosome_assembly_gate.py) was applied via
+      scripts/l2_event/ribosome_assembly_n50_gate.py, which builds real
+      Karr + OC EventTimelines for all 50 seeds (never synthetic) and
+      calls scripts.l2_event.runner.evaluate_gate directly. Computed
+      verdict: PASS (count/timing/payload channels all SEED_NOISE,
+      w1 statistic 0.0 on all three channels -- OC's real per-tick port,
+      conditioned on Karr's own states_before, exactly reproduces Karr's
+      fire ticks/payloads once the enzyme-gate DIVERGENT_BUG noted in
+      PROCESS_CATALOG.yaml was fixed). See
+      docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/ for the full
+      result.json/input_manifest.json/provenance.json evidence. The prior
+      read-only structural smoke adapter (ribosome_assembly.smoke.v1)
+      remains in the repo for its own seed-0-only round-trip tests but is
+      no longer this row's registered adapter.
 
   - process: DNADamage
     in_scope_v4: false

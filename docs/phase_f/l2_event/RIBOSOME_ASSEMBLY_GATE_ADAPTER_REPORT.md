@@ -1,5 +1,38 @@
 # RibosomeAssembly gating-ready adapter — process report
 
+> **STATUS UPDATE (2026-08-05, worktree
+> `E:\opencell-worktrees\l2-event-ribosome-20260805`, branch
+> `agent/l2-event-ribosome-20260805`): SUPERSEDED.** Everything below this
+> banner is a historical, point-in-time investigation record (this report's
+> original branch/base) and describes a state that no longer holds. As of
+> 2026-08-05:
+> * `ribosome_assembly.gate.v1` IS registered in the live
+>   `docs/phase_f/l2_event/event_registry.yaml` (`adapter_status:
+>   gating_ready`), not unregistered/`not gating_ready` as stated below.
+> * All 50/50 required seeds
+>   (`data/m1_sources/karr_native/per_process_traces_v2_event_s{000..049}/
+>   RibosomeAssembly_100ticks.mat`) exist, individually validated (hash-bound
+>   to the current `scripts/matlab/mnrnd.m` shim + the M4 contract) and
+>   cross-checked non-aliased by
+>   `scripts/l2_event/ribosome_assembly_seed_audit.py` — the "49 additional
+>   seeds" gap this report describes as outstanding is closed.
+> * A real, computed gate verdict has been produced (never a smoke/
+>   `NOT_APPLICABLE` placeholder) by
+>   `scripts/l2_event/ribosome_assembly_n50_gate.py`: **PASS**, all 3
+>   channels (count/timing/payload) `SEED_NOISE`. SCOPE CAVEAT: this PASS
+>   reflects OC's per-tick port conditioned on Karr's own recorded
+>   `states_before` at every tick (the same harness design this report's own
+>   `run_structural_smoke`/Canary-A sections already used) — not an
+>   independent free-running forward simulation. See
+>   `docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/SUMMARY.json`'s
+>   `scope_caveat` field for the same statement machine-attached to the
+>   evidence itself.
+> * See `tests/scripts/test_l2_event_ribosome_assembly_n50.py`,
+>   `tests/scripts/test_l2_event_registry.py::
+>   test_ribosome_assembly_gating_ready_claim_is_backed_by_a_complete_hash_bound_n50_bundle`,
+>   and `docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`'s RibosomeAssembly
+>   `notes:` for the current, authoritative status.
+
 Branch: `agent/l2-event-ribosome` (worktree `E:\opencell-worktrees\l2-event-ribosome`)
 Base: `d92f8ad` ("provenance: map integrated L2.event foundation")
 Scope: SLOT 3 case directive — build a second, gating-capable RibosomeAssembly
