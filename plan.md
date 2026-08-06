@@ -64,14 +64,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `e0d1804`, synchronized with `origin/main`.
 - No built-in background agents are running. Future delegated work runs as detached Codex subprocesses with logs/status files outside the main conversation; the main context continues integration work.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green).
-- Ready for direct integration after local verification:
-  - DNADamage branch `b2aa0be`: Rule-8 production trace read removed; biological gate remains blocked on nontrivial Karr stimulus traces.
+- DNADamage integrated at `dde2510`: production per-tick trace-oracle path removed; 37 focused tests pass. Biological L2.2 remains blocked on a nontrivial Karr stimulus trace and the missing `hollidayJunctions` OC channel.
 - RibosomeAssembly integrated at `ab4126c`; shared event index regenerated and audits clean with one `mode=gate`, `verdict=PASS` row. Scope remains Karr-conditioned per-tick parity, not free-running fidelity.
-- Detached review/fix lanes to launch:
-  - clean Replication review from commit `fa126e9` (ignore contaminated original worktree);
-  - DNASupercoiling N=200 evidence review at `6a6fbd0`;
-  - allocator correction from clean detached commit `3e41ab1`;
-  - MacromolecularComplexation validator hardening from `023495d`.
+- Detached subprocess state:
+  - Replication review PID `16860`, clean worktree `replication-review-clean`, waiting via shell `wait-replication-codex`;
+  - allocator correction PID `20456`, clean branch `agent/l25-allocator-global-fix-20260806`, waiting via shell `wait-allocator-codex`;
+  - DNAS N=200 review completed: `APPROVE_SUPPLEMENTAL_ONLY`; do not canonicalize because the 0.10 occurrence-rate threshold passes zero activity and OC distinct-seed support is only 31/200;
+  - MacromolecularComplexation hardening completed at `750ba99`; direct integration verification pending.
 - Cytokinesis worktree contains uncommitted final catalog/heuristic corrections; inspect and finish directly before integration.
 - L2.2 fresh status is **14 stale-only rows, 4 stale plus substantive blockers, 4 missing event rows**. Staleness is caused by shared runner/helper/projection hash changes, not a scientific collapse of the former 14 PASS metrics.
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
