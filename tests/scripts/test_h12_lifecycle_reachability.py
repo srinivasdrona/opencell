@@ -244,6 +244,13 @@ def test_build_rejects_summary_n_net2_events_by_complex_mismatch(tmp_path, monke
         hlr.build_lifecycle_reachability_artifact(csv_path=csv_path, summary_path=summary_path)
 
 
+def test_matlab_probe_source_fail_closed_on_duplicate_net2_resolution():
+    source = (REPO_ROOT / "scripts" / "matlab" / "full_cycle_event_scan_macromol.m").read_text(encoding="utf-8")
+    assert "numel(unique(net2_complex_idx)) ~= numel(net2_complex_names)" in source
+    assert "expected exactly two distinct network-2 complex indices" in source
+    assert "min(2, n_net2_complexes)" not in source
+
+
 def test_build_rejects_structurally_impossible_network2_without_e1(tmp_path, monkeypatch):
     monkeypatch.setattr(hlr, "N_TICKS_MAX", 200)
     # Self-inconsistent raw data: a net2 complex delta is logged at tick 150
@@ -479,6 +486,18 @@ def test_rejects_natural_pinch_at_or_after_max_ticks(synthetic_artifact):
     assert err is not None and "natural pinch" in err
 
 
+def test_rejects_n_ticks_ran_drift_from_csv_rederivation(synthetic_artifact):
+    payload = _mutate(synthetic_artifact, **{"probe.n_ticks_ran": 149})
+    err = hlr.validate_lifecycle_reachability_artifact(payload)
+    assert err is not None and "probe.n_ticks_ran" in err
+
+
+def test_rejects_last_logged_tick_drift_from_csv_rederivation(synthetic_artifact):
+    payload = _mutate(synthetic_artifact, **{"probe.last_logged_tick": 149})
+    err = hlr.validate_lifecycle_reachability_artifact(payload)
+    assert err is not None and "probe.last_logged_tick" in err
+
+
 def test_rejects_formation_count_exceeding_event_count(synthetic_artifact):
     payload = _mutate(synthetic_artifact, **{"probe.n_net2_formation_events_by_complex": [1, 0]})
     err = hlr.validate_lifecycle_reachability_artifact(payload)
@@ -495,6 +514,30 @@ def test_rejects_competition_status_mismatch(tmp_path, monkeypatch):
     payload = _mutate(artifact, network2_competition_status="neither_fired")
     err = hlr.validate_lifecycle_reachability_artifact(payload)
     assert err is not None and "network2_competition_status" in err
+
+
+def test_rejects_first_e1_nonzero_tick_drift_from_csv_rederivation(tmp_path, monkeypatch):
+    monkeypatch.setattr(hlr, "N_TICKS_MAX", 200)
+    rows = [(t, 0, 0, 0, False) for t in range(1, 100)] + [(100, 5, 1, 0, False)] + [
+        (t, 5, 0, 0, False) for t in range(101, 150)
+    ] + [(150, 5, 0, 0, True)]
+    csv_path, summary_path = _write_raw(tmp_path, rows)
+    artifact = hlr.build_lifecycle_reachability_artifact(csv_path=csv_path, summary_path=summary_path)
+    payload = _mutate(artifact, **{"probe.first_e1_nonzero_tick": 101})
+    err = hlr.validate_lifecycle_reachability_artifact(payload)
+    assert err is not None and "probe.first_e1_nonzero_tick" in err
+
+
+def test_rejects_first_formation_tick_drift_from_csv_rederivation(tmp_path, monkeypatch):
+    monkeypatch.setattr(hlr, "N_TICKS_MAX", 200)
+    rows = [(t, 0, 0, 0, False) for t in range(1, 100)] + [(100, 5, 1, 0, False)] + [
+        (110, 5, 0, 1, False)
+    ] + [(t, 5, 0, 0, False) for t in range(111, 150)] + [(150, 5, 0, 0, True)]
+    csv_path, summary_path = _write_raw(tmp_path, rows)
+    artifact = hlr.build_lifecycle_reachability_artifact(csv_path=csv_path, summary_path=summary_path)
+    payload = _mutate(artifact, **{"probe.first_net2_formation_tick_by_complex": [101, 111]})
+    err = hlr.validate_lifecycle_reachability_artifact(payload)
+    assert err is not None and "probe.first_net2_formation_tick_by_complex" in err
 
 
 def test_rejects_csv_recompute_mismatch_on_formation_counts(tmp_path, monkeypatch):
@@ -523,7 +566,7 @@ def test_rejects_csv_recompute_mismatch_on_formation_counts(tmp_path, monkeypatc
         },
     )
     err = hlr.validate_lifecycle_reachability_artifact(payload)
-    assert err is not None and "CSV-recomputed n_net2_formation_events_by_complex" in err
+    assert err is not None and "probe.n_net2_formation_events_by_complex" in err
 
 
 def test_rejects_network2_fired_without_e1_nonzero(synthetic_artifact):

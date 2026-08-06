@@ -336,6 +336,16 @@ def _competition_status(n_net2_formation_events_by_complex: list[int]) -> str:
     return "neither_fired"
 
 
+def _expected_n_ticks_ran_from_csv(recomputed: dict, stop_reason: str, n_ticks_max: int) -> int:
+    if stop_reason == STOP_REASON_NATURAL_PINCH:
+        return recomputed["pinched_at_tick"]
+    if stop_reason == STOP_REASON_OPERATOR_STOPPED:
+        return recomputed["last_logged_tick"]
+    if stop_reason == STOP_REASON_MAX_TICKS:
+        return n_ticks_max
+    raise ValueError(f"unrecognized stop_reason {stop_reason!r}")
+
+
 def build_lifecycle_reachability_artifact(
     seed: int = SEED,
     csv_path: Path = RAW_CSV_PATH,
@@ -353,24 +363,21 @@ def build_lifecycle_reachability_artifact(
         # or max-ticks ceiling) and wrote its own summary JSON. Cross-check
         # every headline number against an independent CSV recomputation.
         summary = _load_json(summary_path)
-
-        if recomputed["max_e1_value"] != summary.get("max_e1_value"):
-            raise ValueError(
-                "CSV-recomputed max_e1_value does not match summary JSON's max_e1_value -- "
-                f"recomputed={recomputed['max_e1_value']!r} summary={summary.get('max_e1_value')!r}"
-            )
-        if recomputed["n_net2_events_by_complex"] != summary.get("n_net2_events_by_complex"):
-            raise ValueError(
-                "CSV-recomputed n_net2_events_by_complex does not match summary JSON's "
-                f"n_net2_events_by_complex -- recomputed={recomputed['n_net2_events_by_complex']!r} "
-                f"summary={summary.get('n_net2_events_by_complex')!r}"
-            )
-        if recomputed["n_any_complex_events"] != summary.get("n_any_complex_events"):
-            raise ValueError(
-                "CSV-recomputed n_any_complex_events does not match summary JSON's n_any_complex_events -- "
-                f"recomputed={recomputed['n_any_complex_events']!r} "
-                f"summary={summary.get('n_any_complex_events')!r}"
-            )
+        summary_checks = {
+            "max_e1_value": recomputed["max_e1_value"],
+            "first_e1_nonzero_tick": recomputed["first_e1_nonzero_tick"],
+            "n_any_complex_events": recomputed["n_any_complex_events"],
+            "n_net2_events_by_complex": recomputed["n_net2_events_by_complex"],
+            "first_net2_event_tick_by_complex": recomputed["first_net2_event_tick_by_complex"],
+            "max_net2_delta_by_complex": recomputed["max_net2_delta_by_complex"],
+        }
+        for field, expected in summary_checks.items():
+            actual = summary.get(field)
+            if actual != expected:
+                raise ValueError(
+                    f"CSV-recomputed {field} does not match summary JSON's {field} -- "
+                    f"recomputed={expected!r} summary={actual!r}"
+                )
 
         n_ticks_ran = int(summary["n_ticks_ran"])
         if recomputed["pinched_at_tick"] > 0:
@@ -441,6 +448,7 @@ def build_lifecycle_reachability_artifact(
         max_net2_delta_by_complex = recomputed["max_net2_delta_by_complex"]
         raw_log_used = True
 
+    last_logged_tick = recomputed["last_logged_tick"]
     # Formation-only (delta > 0) counts are ALWAYS sourced from the CSV
     # recomputation directly, in both Path A and Path B -- the MATLAB
     # summary JSON does not carry this sign-restricted breakdown, so there
@@ -502,6 +510,7 @@ def build_lifecycle_reachability_artifact(
             "seed": seed,
             "n_ticks_max": N_TICKS_MAX,
             "n_ticks_ran": n_ticks_ran,
+            "last_logged_tick": last_logged_tick,
             "stop_reason": stop_reason,
             "e1_whole_cell_model_id": E1_WHOLE_CELL_MODEL_ID,
             "e1_field_name": E1_FIELD_NAME,
@@ -636,11 +645,19 @@ def validate_lifecycle_reachability_artifact(payload: dict) -> str | None:
     if probe.get("stop_reason") not in VALID_STOP_REASONS:
         return f"probe.stop_reason must be one of {sorted(VALID_STOP_REASONS)!r} (got {probe.get('stop_reason')!r})"
     n_ticks_ran = probe.get("n_ticks_ran")
+    last_logged_tick = probe.get("last_logged_tick")
     n_ticks_max = probe.get("n_ticks_max")
     if n_ticks_max != N_TICKS_MAX:
         return f"probe.n_ticks_max must be exactly {N_TICKS_MAX} (got {n_ticks_max!r})"
     if not isinstance(n_ticks_ran, int) or n_ticks_ran <= 0:
         return f"probe.n_ticks_ran must be a positive int (got {n_ticks_ran!r})"
+    if not isinstance(last_logged_tick, int) or last_logged_tick <= 0:
+        return f"probe.last_logged_tick must be a positive int (got {last_logged_tick!r})"
+    if last_logged_tick > n_ticks_ran:
+        return (
+            f"probe.last_logged_tick ({last_logged_tick!r}) cannot exceed probe.n_ticks_ran "
+            f"({n_ticks_ran!r})"
+        )
     if probe.get("stop_reason") == STOP_REASON_NATURAL_PINCH and n_ticks_ran >= n_ticks_max:
         return (
             "stop_reason claims natural pinch but n_ticks_ran >= n_ticks_max -- a natural stop must occur "
@@ -779,24 +796,38 @@ def validate_lifecycle_reachability_artifact(payload: dict) -> str | None:
     # --- Independent re-derivation directly from the raw CSV: never trust
     # the payload's own headline numbers without recomputing them.
     recomputed = _recompute_from_csv(raw_csv_path)
-    if recomputed["max_e1_value"] != max_e1_value:
-        return (
-            f"CSV-recomputed max_e1_value ({recomputed['max_e1_value']!r}) does not match payload's "
-            f"probe.max_e1_value ({max_e1_value!r})"
-        )
-    if recomputed["n_net2_events_by_complex"] != n_net2_events_by_complex:
-        return (
-            f"CSV-recomputed n_net2_events_by_complex ({recomputed['n_net2_events_by_complex']!r}) does "
-            f"not match payload's probe.n_net2_events_by_complex ({n_net2_events_by_complex!r})"
-        )
-    if recomputed["n_net2_formation_events_by_complex"] != n_net2_formation_events_by_complex:
-        return (
-            "CSV-recomputed n_net2_formation_events_by_complex "
-            f"({recomputed['n_net2_formation_events_by_complex']!r}) does not match payload's "
-            f"probe.n_net2_formation_events_by_complex ({n_net2_formation_events_by_complex!r})"
-        )
-    if recomputed["n_any_complex_events"] != probe.get("n_any_complex_events"):
-        return "CSV-recomputed n_any_complex_events does not match payload's probe.n_any_complex_events"
+    expected_n_ticks_ran = _expected_n_ticks_ran_from_csv(recomputed, probe["stop_reason"], n_ticks_max)
+    csv_headline_checks = {
+        "probe.last_logged_tick": recomputed["last_logged_tick"],
+        "probe.n_ticks_ran": expected_n_ticks_ran,
+        "probe.max_e1_value": recomputed["max_e1_value"],
+        "probe.first_e1_nonzero_tick": recomputed["first_e1_nonzero_tick"],
+        "probe.n_any_complex_events": recomputed["n_any_complex_events"],
+        "probe.n_net2_events_by_complex": recomputed["n_net2_events_by_complex"],
+        "probe.first_net2_event_tick_by_complex": recomputed["first_net2_event_tick_by_complex"],
+        "probe.n_net2_formation_events_by_complex": recomputed["n_net2_formation_events_by_complex"],
+        "probe.first_net2_formation_tick_by_complex": recomputed["first_net2_formation_tick_by_complex"],
+        "probe.max_net2_delta_by_complex": recomputed["max_net2_delta_by_complex"],
+    }
+    actual_csv_headlines = {
+        "probe.last_logged_tick": last_logged_tick,
+        "probe.n_ticks_ran": n_ticks_ran,
+        "probe.max_e1_value": max_e1_value,
+        "probe.first_e1_nonzero_tick": probe.get("first_e1_nonzero_tick"),
+        "probe.n_any_complex_events": probe.get("n_any_complex_events"),
+        "probe.n_net2_events_by_complex": n_net2_events_by_complex,
+        "probe.first_net2_event_tick_by_complex": probe.get("first_net2_event_tick_by_complex"),
+        "probe.n_net2_formation_events_by_complex": n_net2_formation_events_by_complex,
+        "probe.first_net2_formation_tick_by_complex": probe.get("first_net2_formation_tick_by_complex"),
+        "probe.max_net2_delta_by_complex": probe.get("max_net2_delta_by_complex"),
+    }
+    for field, expected in csv_headline_checks.items():
+        actual = actual_csv_headlines[field]
+        if actual != expected:
+            return (
+                f"CSV-recomputed {field} ({expected!r}) does not match payload's {field} "
+                f"({actual!r})"
+            )
 
     generator_path = REPO_ROOT / payload.get("generator_source_path", "")
     if not generator_path.is_file():

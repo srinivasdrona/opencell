@@ -116,12 +116,23 @@ if isempty(e1_idx)
     error('[macromol-scan] MG_429_MONOMER not found in substrateWholeCellModelIDs');
 end
 net2_complex_names = {'MG_041_062_429_PENTAMER', 'MG_041_069_429_PENTAMER'};
-net2_complex_idx = [];
+net2_complex_idx = zeros(1, numel(net2_complex_names));
 for c = 1:numel(net2_complex_names)
     idx = find(strcmp(target_proc.complexWholeCellModelIDs, net2_complex_names{c}), 1);
-    if ~isempty(idx)
-        net2_complex_idx(end+1) = idx; %#ok<AGROW>
+    if isempty(idx)
+        error('[macromol-scan] expected network-2 complex %s not found in complexWholeCellModelIDs', ...
+            net2_complex_names{c});
     end
+    net2_complex_idx(c) = idx;
+end
+if numel(unique(net2_complex_idx)) ~= numel(net2_complex_names)
+    error(['[macromol-scan] expected exactly two distinct network-2 complex indices for ', ...
+        '%s, got %s'], strjoin(net2_complex_names, ', '), mat2str(net2_complex_idx));
+end
+n_net2_complexes = numel(net2_complex_idx);
+if n_net2_complexes ~= numel(net2_complex_names)
+    error('[macromol-scan] expected exactly %d network-2 complexes, got %d', ...
+        numel(net2_complex_names), n_net2_complexes);
 end
 fprintf('[macromol-scan] E1 local substrate index = %d; network-2 complex indices = %s\n', ...
     e1_idx, mat2str(net2_complex_idx));
@@ -140,14 +151,13 @@ fprintf(fid, ['tick,e1_monomer_count_direct_state_read,' ...
     'any_complex_delta_total,any_complex_changed,pinched\n']);
 
 geom = sim.state('Geometry');
-n_net2_complexes = numel(net2_complex_idx);
 
 first_e1_nonzero_tick = -1;
-first_net2_event_tick_by_complex = -ones(1, max(n_net2_complexes, 1));
+first_net2_event_tick_by_complex = -ones(1, n_net2_complexes);
 max_e1_value = 0;
 n_any_complex_events = 0;
-n_net2_events_by_complex = zeros(1, max(n_net2_complexes, 1));
-max_net2_delta_by_complex = zeros(1, max(n_net2_complexes, 1));
+n_net2_events_by_complex = zeros(1, n_net2_complexes);
+max_net2_delta_by_complex = zeros(1, n_net2_complexes);
 
 % Prime the pre-tick snapshot from the real, current authoritative state
 % (copyFromState is a pure read; see mechanism note above).
@@ -188,10 +198,7 @@ for tick = 1:n_ticks_max
     % used below.
     any_complex_delta_total = sum(d(:));
     any_complex_changed = any(d(:) ~= 0);
-    net2_deltas = zeros(1, max(n_net2_complexes, 1));
-    if n_net2_complexes > 0
-        net2_deltas(1:n_net2_complexes) = d(net2_complex_idx);
-    end
+    net2_deltas = d(net2_complex_idx);
     complexs_prev = complexs_now;
 
     if e1_value_this_tick > max_e1_value
@@ -223,7 +230,7 @@ for tick = 1:n_ticks_max
 
     if mod(tick, 25) == 0 || any_complex_changed || e1_value_this_tick > 0 || is_pinched
         fprintf(fid, '%d,%g,%g,%g,%g,%d,%d\n', tick, e1_value_this_tick, ...
-            net2_deltas(1), net2_deltas(min(2, n_net2_complexes)), any_complex_delta_total, ...
+            net2_deltas(1), net2_deltas(2), any_complex_delta_total, ...
             any_complex_changed, is_pinched);
     end
 
@@ -272,7 +279,7 @@ summary = struct( ...
         'process; calcResourceRequirements_Current() unconditionally returns ', ...
         'zeros, confirmed live and idempotent across repeated calls)'], ...
     'e1_local_substrate_index_1based', e1_idx, ...
-    'net2_complex_names', {net2_complex_names(1:n_net2_complexes)}, ...
+    'net2_complex_names', net2_complex_names, ...
     'net2_complex_indices_1based', net2_complex_idx, ...
     'max_e1_value', max_e1_value, ...
     'first_e1_nonzero_tick', first_e1_nonzero_tick, ...
