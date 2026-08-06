@@ -2918,14 +2918,12 @@ class KarrReplicationProcess(Process):
         substrates_next: dict[str, float],
         wid: str,
     ) -> int:
+        del substrates_now
         if wid not in allocated_state:
             return _read_nonnegative_int(substrates_next.get(wid, 0.0))
-        remaining = (
-            float(allocated_state.get(wid, 0.0))
-            + float(substrates_next.get(wid, 0.0))
-            - float(substrates_now.get(wid, 0.0))
-        )
-        return max(0, _snap_integral(remaining))
+        # Allocator-controlled substrates start from their process-specific
+        # grant, so substrates_next directly represents the remaining grant.
+        return _read_nonnegative_int(substrates_next.get(wid, 0.0))
 
     def _available_replay_count(
         self,
@@ -3866,9 +3864,20 @@ class KarrReplicationProcess(Process):
         bound_now = bound_now_raw if isinstance(bound_now_raw, dict) else {}
         substrates_now_raw = states.get("substrates", {})
         substrates_now = substrates_now_raw if isinstance(substrates_now_raw, dict) else {}
+        allocated_state_raw = states.get("substrates_allocated", {}).get(self.name, {})
+        allocated_state = allocated_state_raw if isinstance(allocated_state_raw, dict) else {}
+        zero_requests = self._zero_requests()
         enzymes_next = {wid: float(enzymes_now.get(wid, 0.0)) for wid in self.enzyme_wids}
         bound_next = {wid: float(bound_now.get(wid, 0.0)) for wid in self.enzyme_wids}
-        substrates_next = {wid: float(substrates_now.get(wid, 0.0)) for wid in self.substrate_wids}
+        substrates_before = {
+            wid: (
+                float(self._allocated_or_state(allocated_state, wid))
+                if wid in zero_requests
+                else float(substrates_now.get(wid, 0.0))
+            )
+            for wid in self.substrate_wids
+        }
+        substrates_next = dict(substrates_before)
 
         def _finalize_no_hint_update(update_payload: dict[str, Any]) -> dict[str, Any]:
             enzyme_delta: dict[str, float] = {}
@@ -3882,7 +3891,7 @@ class KarrReplicationProcess(Process):
                 if d_bound != 0:
                     bound_delta[wid] = float(d_bound)
             for wid in self.substrate_wids:
-                d_sub = _snap_integral(float(substrates_next[wid]) - float(substrates_now.get(wid, 0.0)))
+                d_sub = _snap_integral(float(substrates_next[wid]) - float(substrates_before[wid]))
                 if d_sub != 0:
                     substrate_delta[wid] = float(d_sub)
             if enzyme_delta:
@@ -3948,7 +3957,6 @@ class KarrReplicationProcess(Process):
         ):
             replication_state = "elongating"
 
-        zero_requests = self._zero_requests()
         update: dict[str, Any] = {"requests": {self.name: zero_requests}}
 
         if replication_state == "idle":
@@ -3966,8 +3974,6 @@ class KarrReplicationProcess(Process):
         fork_position_update: dict[str, float] | None = None
         completion_events: dict[str, float] | None = None
         force_complex_bound_sites_emit = False
-        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-
         if replication_state == "initiating":
             desired_initiation_cost = self._initiation_hydrolysis_cost()
             update["requests"] = {
