@@ -61,19 +61,19 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Live state (2026-08-06) — detached closure/integration:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
-- Active integration worktree: `E:\opencell-worktrees\main-integrate`; clean revalidation base is `5795ccf` after the Cytokinesis merge.
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`; final shared-hash revalidation base is `09823a0` after Cytokinesis and Replication integration.
 - No built-in background agents are running. Future delegated work runs as detached Codex subprocesses with logs/status files outside the main conversation; the main context continues integration work.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green), RibosomeAssembly N=50 event PASS (`ab4126c` + index `d179b63`), DNADamage blocker evidence (`dde2510`), MacromolecularComplexation lifecycle correction (`f627b34`), and exact tick-0 allocator infrastructure (`d5298a1`).
 - DNADamage integrated at `dde2510`: production per-tick trace-oracle path removed; 37 focused tests pass. Biological L2.2 remains blocked on a nontrivial Karr stimulus trace and the missing `hollidayJunctions` OC channel.
 - RibosomeAssembly integrated at `ab4126c`; shared event index regenerated and audits clean with one `mode=gate`, `verdict=PASS` row. Scope remains Karr-conditioned per-tick parity, not free-running fidelity.
 - Cytokinesis seed-0 structural canary integrated at `5795ccf`; catalog now records `M_ticks=4000`/`[-3999,0]` as a seed-0 lower bound and a separate 1/50 event-sweep blocker.
+- Replication no-hint source closure integrated at `09823a0`; direct verification: Ruff clean, L1b 115/115 + Replication wiring PASS, 158 focused tests PASS. L2.1 strict classification remains COINCIDENTAL on the legacy single-trace rubric; L2.2 recertification is separate.
 - Detached subprocess state:
   - Replication clean review returned blockers; detached final-fix branch `agent/l22-replication-final-fix-20260806` completed and requires direct verification before integration.
   - DNAS N=200 review completed: `APPROVE_SUPPLEMENTAL_ONLY`; do not canonicalize because the 0.10 occurrence-rate threshold passes zero activity and OC distinct-seed support is only 31/200.
   - Allocator and MacromolecularComplexation detached fixes were verified and integrated.
-- After the Cytokinesis merge commits cleanly, create a dedicated frozen revalidation worktree: run the fresh L2.1 strict audit first, then detached revalidation of the 14 L2.2 stale-only rows. Do not wait for Replication/event scientific blockers for that 14-row recertification.
-- Fresh L2.1 strict audit on `5795ccf`: 16 GENUINE / 5 COINCIDENTAL / 6 UNINFORMATIVE / 1 FAIL (`ChromosomeCondensation`).
-- Next detached action: branch `agent/l22-stale14-revalidate-20260806` from this frozen base and recertify the 14 stale-only Design-A rows without changing code or thresholds.
+- Fresh L2.1 strict audit on `09823a0`: 16 GENUINE / 5 COINCIDENTAL / 6 UNINFORMATIVE / 1 FAIL (`ChromosomeCondensation`).
+- The first detached L2.2 recertification was stopped during preflight before any sweep because Replication changed the shared helper hash. Relaunch from `09823a0` in a new frozen worktree; recertify the 14 stale-only Design-A rows without changing code or thresholds.
 - L2.2 fresh status is **14 stale-only rows, 4 stale plus substantive blockers, 4 missing event rows**. Staleness is caused by shared runner/helper/projection hash changes, not a scientific collapse of the former 14 PASS metrics.
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
 
