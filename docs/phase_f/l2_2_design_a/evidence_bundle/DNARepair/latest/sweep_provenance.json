@@ -2,7 +2,7 @@
   "completion_status": "COMPLETE",
   "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+  "git_sha": "00730d8ef85bb01249cbd71f3467ed2555626e5d",
   "inputs_verified": true,
   "m_ticks": 200,
   "n_seeds": 50,
@@ -10,26 +10,26 @@
   "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "f216a616f1b59f575bf9629671c75565162cc5d264cb4be2f96dc38e3c415741",
+    "SUMMARY.json": "57f8d204ddf255fd6c7458521186a663b7680e8f4e5411ecdb0978f0337ac535",
     "analytical_check.json": "c37ae0ef71b6663479d1f59b5ee26f798f0eb7846541192f35b7b0f52ea5264c",
-    "input_manifest.json": "8677ecd51aeb47d5b4a9864b15ba3a9cdd397679a710de740e5fd879f8dc5403",
-    "null_calibration.json": "ed4af3833ba184d9ae117b7b9d42ea9517be60bf32208bc2b2835b3584c70861",
-    "provenance.json": "33525ba965ce111dff452843deebee00fd7e0aaeef381cc6285831d418ba141a",
-    "result.json": "79f8e7d322f36a092e0f919fc0c08161339f4dc3e5419214671aaa7542e49a39",
+    "input_manifest.json": "d95ab43542fdb366cc98354d6df2e022703421dc158aa4d603da2261448a2fd3",
+    "null_calibration.json": "b74a141cc0663497bc067de3a644ef01c199ec8055c1edacc1e613fb9edcdd6a",
+    "provenance.json": "481a29ee0fe3c029245d6b0350397572aca961031f5eedac36ab3c9c87c2632a",
+    "result.json": "15dbac320d42c829ce90766d964bebbfc92bf8214f2ea3e7c243fca0fa2cbced",
     "thresholds.json": "beeba9da08cbc55b29ef3e231904f67e3a4ec6f9e741d00aa4c58b188238051b"
   },
   "source_hashes": {
-    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "chromosome_store_module": "7066d68f8b3a3dfd0a1be6d446800445583f17381779adbb03562510ffdae22a",
+    "catalog": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
+    "chromosome_store_module": "7e4a5f758e64c7b28a5029a451219ea041952701527b40643cc6f6aa83a7744f",
     "chromosome_views_module": "ddc90389b287206a25c53e43a7f68e5484e1f2ecd08bbe2eaa982a1cef95bfc5",
-    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
-    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+    "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
     "m_gen_constants_module": "bbfea3ac477e4a3eb93edcfae355350c9d5b8c1501ea574ef9b83acfaebce8ae",
     "oc_module": "10919482d7ed89436739ba53b4d7c36681e2ea67f2b4b785cfe77b1f739293c0",
-    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
-    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+    "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
     "state_init_module": "6f1ff7401f505cfcc68d89d912d2af35776adb08643069e176e922ac912b50ec",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-31T13:41:06.318581+00:00"
+  "written_at": "2026-08-06T10:08:26.748859+00:00"
 }

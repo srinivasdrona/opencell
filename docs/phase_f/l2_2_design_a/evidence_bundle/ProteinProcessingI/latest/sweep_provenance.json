@@ -2,7 +2,7 @@
   "completion_status": "COMPLETE",
   "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+  "git_sha": "00730d8ef85bb01249cbd71f3467ed2555626e5d",
   "inputs_verified": true,
   "m_ticks": 20,
   "n_seeds": 50,
@@ -10,23 +10,23 @@
   "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "f5f6f80e8f83e8e6fa048cf5775ba3367f6ac669ddab4e4cd57be0259c90f660",
+    "SUMMARY.json": "310f03c5300e93ce791c2c80cfc5facb9a2651e97fecb149d57f16e755a44657",
     "analytical_check.json": "3141f86a582c7d209a199137ca1795b7d7e9cc0cad1a673eda28079ee33b1c4b",
-    "input_manifest.json": "5ba98ea24a02d4ec78bb7b6840416f34879f484855ddee3bfe1617073400dd9f",
-    "null_calibration.json": "e0bfa622476ee35c8e6dcbf99ef7325ac63c5aa176590bcf6c67d4168099f219",
-    "provenance.json": "40423507ed870977475088f7f3721ea2821bedd77f90700f632c4dd6a13b16b0",
-    "result.json": "1f88141fa36b32f0eeac11903dfa67fae10680f03067fa63ba6adee132610857",
+    "input_manifest.json": "b5a513bbb713ed0991fd0c9b160b7d130686a8c1b56d30c9b3313384e5c4c9c5",
+    "null_calibration.json": "6385b3cc1294aed0469612340f220158f9162af79f5a98378dc2e1fe4f7785e6",
+    "provenance.json": "04a08ade7c81dc9c1842cfad468880e05674df0f3af35a8fd1506977c2c954cf",
+    "result.json": "a08d49851349d90d09a8e6d4e2e4171dff4801835a4a191586bb0a07da9eb67d",
     "thresholds.json": "9a7d816fb435dfa8ca266fb56ae9a85f02c2cbb75c48d6b91e2697bf007fe37b"
   },
   "source_hashes": {
-    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
-    "karr_trna_aminoacylation_module": "075c47e59397bc21ac76943be1e63abf351bec68df559ca61b1564c58eaa8787",
-    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "catalog": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
+    "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+    "karr_trna_aminoacylation_module": "d200500fa920a176e06af094b8575bc9cd5b2e5964cf05d780eb39d16bae1a14",
+    "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
     "oc_module": "9b4f9eebdf010369d5f73c936498a0ce23d1fb0951be20e91b8087b9c6d3a586",
-    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
-    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+    "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-31T14:17:35.830861+00:00"
+  "written_at": "2026-08-06T11:31:40.253471+00:00"
 }

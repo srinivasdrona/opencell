@@ -146,7 +146,7 @@
     49
   ],
   "ticks": 50,
-  "timestamp": "2026-07-31T16:14:19.140990+00:00",
+  "timestamp": "2026-08-06T14:02:24.333832+00:00",
   "verdict": "PASS",
   "warnings": [
     "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=RNAs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."

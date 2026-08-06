@@ -1,17 +1,17 @@
 {
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
-  "catalog_sha256": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-  "content_hash": "6c99381519abe65fc5cd22f39482a133ac5d8e5fb811f0acecb77b22ddd241f1",
+  "catalog_sha256": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
+  "content_hash": "1c9717298728a0470403e87610ac4c2f45a62537cd9f0b1f0ee884158ec2c0be",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-07-31T18:57:04.331307+00:00",
+  "generated_at": "2026-08-06T14:07:15.316688+00:00",
   "n_in_scope": 22,
   "rows": [
     {
       "artifact_hashes": {},
       "bucket": "EVENT_CLASS",
       "catalog_soft_flags": {
-        "M_ticks": 100,
+        "M_ticks": 4000,
         "N_seeds": 50,
         "closed_form_dominant": "false",
         "harness_type": "event_class",
@@ -51,12 +51,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "f216a616f1b59f575bf9629671c75565162cc5d264cb4be2f96dc38e3c415741",
+        "SUMMARY.json": "57f8d204ddf255fd6c7458521186a663b7680e8f4e5411ecdb0978f0337ac535",
         "analytical_check.json": "c37ae0ef71b6663479d1f59b5ee26f798f0eb7846541192f35b7b0f52ea5264c",
-        "null_calibration.json": "ed4af3833ba184d9ae117b7b9d42ea9517be60bf32208bc2b2835b3584c70861",
-        "provenance.json": "33525ba965ce111dff452843deebee00fd7e0aaeef381cc6285831d418ba141a",
-        "result.json": "79f8e7d322f36a092e0f919fc0c08161339f4dc3e5419214671aaa7542e49a39",
-        "sweep_provenance.json": "8b32a34cb063346c9d18668654133ba8e8d96a13fd3508034b37733ec5feabab",
+        "null_calibration.json": "b74a141cc0663497bc067de3a644ef01c199ec8055c1edacc1e613fb9edcdd6a",
+        "provenance.json": "481a29ee0fe3c029245d6b0350397572aca961031f5eedac36ab3c9c87c2632a",
+        "result.json": "15dbac320d42c829ce90766d964bebbfc92bf8214f2ea3e7c243fca0fa2cbced",
+        "sweep_provenance.json": "695898703ef3b3c86f029006f158c6a0afee60f90449aae6870e961ab43ad74d",
         "thresholds.json": "beeba9da08cbc55b29ef3e231904f67e3a4ec6f9e741d00aa4c58b188238051b"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -84,7 +84,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "00730d8ef85bb01249cbd71f3467ed2555626e5d",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -121,6 +121,16 @@
       "process": "DNASupercoiling",
       "provenance_git_sha": "unknown",
       "reasons": [
+        "STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/DNASupercoiling_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)",
+        "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
+        "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
+        "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
+        "STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
+        "STALE_SWEEP_PROVENANCE: projections source changed since evidence was generated (recorded=ff2154045ffa.., current=2de64997bc27..)",
+        "STALE_SWEEP_PROVENANCE: catalog source changed since evidence was generated (recorded=d7e205d08fa4.., current=f200c8d64190..)",
+        "STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=9e89aea71159.., current=07a37b9034b6..)",
+        "STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=7066d68f8b3a.., current=7e4a5f758e64..)",
+        "STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=dbc43d5d0850.., current=1a534b3fadc5..)",
         "PRIMARY_INSUFFICIENT_SAMPLES: channel 'chromosome' component 'linkingNumbers.delta_nnz' has n_oc=17, n_karr=24; below MIN_NONZERO_EVENTS=30 on at least one side (primary component comparison not validated at adequate sample size)"
       ],
       "sweep_provenance": {
@@ -168,7 +178,7 @@
       "catalog_soft_flags": {
         "M_ticks": 100,
         "N_seeds": 50,
-        "closed_form_dominant": "confirmed_biology_validated",
+        "closed_form_dominant": "candidate",
         "harness_type": "design_a_per_tick",
         "in_scope_L2_2": true,
         "primary_channel": "complexs",
@@ -186,6 +196,14 @@
       "process": "MacromolecularComplexation",
       "provenance_git_sha": "unknown",
       "reasons": [
+        "STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/MacromolecularComplexation_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)",
+        "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
+        "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
+        "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
+        "STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
+        "STALE_SWEEP_PROVENANCE: projections source changed since evidence was generated (recorded=ff2154045ffa.., current=2de64997bc27..)",
+        "STALE_SWEEP_PROVENANCE: catalog source changed since evidence was generated (recorded=d7e205d08fa4.., current=f200c8d64190..)",
+        "STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=dbc43d5d0850.., current=1a534b3fadc5..)",
         "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without valid machine-checked h12_evidence_ref (h12 artifact verdict != H12_CONFIRMED (got 'H12_OBSERVED_REGIME')); treated as non-green"
       ],
       "sweep_provenance": {
@@ -202,12 +220,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "b08ed206539bbdf74774f372e079dd97f0db918750e8d27c4404f8a5e07eff56",
+        "SUMMARY.json": "90adfb4d9929be165db8e09b93865fbab39c26ab73751e79e1845e92950d84a0",
         "analytical_check.json": "64e9f45a7d21897111c42017dd901c9baf696c13fce7cdd86d8831788d689fc5",
-        "null_calibration.json": "29d8f82acab79c05b4f6a9700782cd26ba259eb2635ca9551d187b206d920d87",
-        "provenance.json": "1bcd8dbb90b078121e0b70d4defa04fc7410087ee538f78fa6abe9e41e31e910",
-        "result.json": "0f8e867970b569b2334c55e6bd90b63e4337f97c7d07665ec6af2b564e581fd4",
-        "sweep_provenance.json": "6f4d54652994c6deeb248888840e8f57db2cc65422ed32faa007239dc0456a85",
+        "null_calibration.json": "4434c3eb822d4f45b89b4267726e7015cd6952a1b07863e08e80e283078dc750",
+        "provenance.json": "5fb09679fc5e4d46fad4122322c68490e708ea63d25ab7fa338aca28927ce35d",
+        "result.json": "985845448128f7b99895a756d9c51de8f231d7358bae053342b2f5661c55598f",
+        "sweep_provenance.json": "9ddec5ded0afadcde0ee5f1069d24f6a7afc3b8c11927a961fda64238fe1e81b",
         "thresholds.json": "ef387d2d1ccc0d1aa2e6ba8b251dd3385f465b309be6842a2327649073290751"
       },
       "bucket": "TRIVIAL_RNG",
@@ -234,7 +252,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "00730d8ef85bb01249cbd71f3467ed2555626e5d",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -242,12 +260,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "769d23b17160b16586522d219f601181e3dc7efeda2da7f0d24f95faae971be2",
+        "SUMMARY.json": "c893a5c1176421c3f5b1c1f5775b55a18052edc3423c70bcd436308e65d20900",
         "analytical_check.json": "2654dd797b75612697b074688d1708a61fd3c46cf50b15cf24ef13918061446b",
-        "null_calibration.json": "780098d7e63f0d671aa8bd78bcb7ab46d0206f0e20af41b674db6cc84401abcc",
-        "provenance.json": "c8b44016abbe8a8f3ee024cba479e17558c333c3a3ddb63ee63053067d8d8f6d",
-        "result.json": "7f728fc8f817682d36fa4b7275816d92d683fcea022b5cc10931c1975a117118",
-        "sweep_provenance.json": "189159ebf34b8539fadd3d191fcd3fbdc9d9fdd7ab5307dda524db1aebf6a6e8",
+        "null_calibration.json": "2c67cb8b57f6a50f75ec653ec30ce2fa2ac4dc3ac93afb9b531812346adbe239",
+        "provenance.json": "664f8b1b54b99508d49bd463017c80dde735a0e9a36792aec62d6d43df81b86e",
+        "result.json": "9152c07e2c993ed52206b2e16fc5aef3d7dfc031441f108e1424977fc214fc33",
+        "sweep_provenance.json": "ac2b947ee8a2d9520d701382b785589d565d92e488b4d429db97ca95004866c6",
         "thresholds.json": "d3f39cdbc83c5bd6e95713c30bd263c71761bb46e1477e95bee0158dbe85e322"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -276,7 +294,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "00730d8ef85bb01249cbd71f3467ed2555626e5d",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -284,12 +302,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "ecb834b52f872385a93b78ef3f615991d912eddb2fc3243b70c93d031b981340",
+        "SUMMARY.json": "98c9b9bd6ef2706b25b4260b47e123051738d9adc8beaeaee7fd7d9f5b3b5e89",
         "analytical_check.json": "030974782242b9c2037a6286ef5fbb72009f65fa3189ddfa836f54bd0dcbdeb5",
-        "null_calibration.json": "ef1b0df25ea1f9a014576cd3febcf6c7e2b39a5a4c592f907a0ed947a10e35e4",
-        "provenance.json": "8ff4aa231d9cf7d22a8c6ddacbdc27341c1fe1308b14f695acac8386df1b05e7",
-        "result.json": "a25a8fa236f89755c6b2fa3752402cef6f88a65c8142986f7a154b19da38a120",
-        "sweep_provenance.json": "30cce9651688a1eb788f6186063fb869ca1a480d1cc43bca38bb012656ac5ea7",
+        "null_calibration.json": "d8d668ad3aedb602c51118e2c6568202830d9bd3c1a6705868506012324b3629",
+        "provenance.json": "b62a3c183f1d92879c098270e26443fec15fa67f5832b60584ebdd943f3955c3",
+        "result.json": "c6bd35c4361d109abc998f77e5f2578377f80de1b14001f5df241d251cf556ca",
+        "sweep_provenance.json": "caf5260ab689e61b1874c977552c14fc4b85ca2a2afad26f6e02145e6cccb4cf",
         "thresholds.json": "67ad0137cbe88e6927828160e3882c366311cd8ab2f9c58cb47940de500adbf9"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -317,7 +335,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "00730d8ef85bb01249cbd71f3467ed2555626e5d",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -327,12 +345,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "79581fd249e44bb7d7a7ca0a6183a1b63ff2a85a4fa5917d302522e2d33f0ab8",
+        "SUMMARY.json": "69d213d0d9a4495da1e9ab96760de4267c044db9fd8e0fb70da3845da5581412",
         "analytical_check.json": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
-        "null_calibration.json": "47b62f22bf93f7455540566575a0c321c1872c3f124f37fac68fe599daed6ff3",
-        "provenance.json": "411c8486a4887eb63bb7291db455e214551781e03b2337c8e3d8a2ba585cb7e5",
-        "result.json": "ae0ab997c899b3a0464569d7e5446b4956983a92eb438b98c68026141e423380",
-        "sweep_provenance.json": "4e4ca2aee643b76873bcbce2ed0508040e06b0b3c332fe7b1ecb4fd02e364e4b",
+        "null_calibration.json": "ef29162aa0725499d40cbd6c6c863b95c020f02e3fda452f7791629535604aca",
+        "provenance.json": "afaefec0e9e4c1b80242f52711bf9cfa43027e9671162a977fc031e05f8157db",
+        "result.json": "a0847a7e08069eb84df0222ed21aff35bbf4957afd8cb70931a4048960701984",
+        "sweep_provenance.json": "c6b0b14b22db45a213ed60726ea86d33ea0317b1e09d80ed3c94e91878be7386",
         "thresholds.json": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -360,7 +378,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "00730d8ef85bb01249cbd71f3467ed2555626e5d",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -368,12 +386,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "f5f6f80e8f83e8e6fa048cf5775ba3367f6ac669ddab4e4cd57be0259c90f660",
+        "SUMMARY.json": "310f03c5300e93ce791c2c80cfc5facb9a2651e97fecb149d57f16e755a44657",
         "analytical_check.json": "3141f86a582c7d209a199137ca1795b7d7e9cc0cad1a673eda28079ee33b1c4b",
-        "null_calibration.json": "e0bfa622476ee35c8e6dcbf99ef7325ac63c5aa176590bcf6c67d4168099f219",
-        "provenance.json": "40423507ed870977475088f7f3721ea2821bedd77f90700f632c4dd6a13b16b0",
-        "result.json": "1f88141fa36b32f0eeac11903dfa67fae10680f03067fa63ba6adee132610857",
-        "sweep_provenance.json": "b935012f4319a346960a7733d4ac4829ef0d9dc8282455468be32d6b3fd38b3e",
+        "null_calibration.json": "6385b3cc1294aed0469612340f220158f9162af79f5a98378dc2e1fe4f7785e6",
+        "provenance.json": "04a08ade7c81dc9c1842cfad468880e05674df0f3af35a8fd1506977c2c954cf",
+        "result.json": "a08d49851349d90d09a8e6d4e2e4171dff4801835a4a191586bb0a07da9eb67d",
+        "sweep_provenance.json": "c83d777b50680c88b21a40dc1762da8a57bf35bd3a49db06d876618acc3b288a",
         "thresholds.json": "9a7d816fb435dfa8ca266fb56ae9a85f02c2cbb75c48d6b91e2697bf007fe37b"
       },
       "bucket": "TRIVIAL_RNG",
@@ -401,7 +419,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "00730d8ef85bb01249cbd71f3467ed2555626e5d",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -440,6 +458,14 @@
       "process": "ProteinProcessingII",
       "provenance_git_sha": "unknown",
       "reasons": [
+        "STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/ProteinProcessingII_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)",
+        "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
+        "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
+        "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
+        "STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
+        "STALE_SWEEP_PROVENANCE: projections source changed since evidence was generated (recorded=ff2154045ffa.., current=2de64997bc27..)",
+        "STALE_SWEEP_PROVENANCE: catalog source changed since evidence was generated (recorded=d7e205d08fa4.., current=f200c8d64190..)",
+        "STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=dbc43d5d0850.., current=1a534b3fadc5..)",
         "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without valid machine-checked h12_evidence_ref (h12 artifact verdict != H12_CONFIRMED (got 'H12_OBSERVED_REGIME')); treated as non-green"
       ],
       "sweep_provenance": {
@@ -456,12 +482,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "9b9fed43d6967d6ca0ad0dccc54c03387d5a7783c40dce811d248537a2a6c325",
+        "SUMMARY.json": "ebe88ff3ee383678b45d91a64a13099d6003bc754dde87639e0190f0a565c12c",
         "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
-        "null_calibration.json": "fbf90a1ce925e1e2f7e855c6f46f760fef372e20f88890b60d339053f70f99a2",
-        "provenance.json": "f21fe79f7ef5a22678a9747f54074f31bcd30abc21bd263c292076397ea8797f",
-        "result.json": "164d620560c09fd1ae5b891f5dd298dc014a356184541fddfdb675f266429f56",
-        "sweep_provenance.json": "3f914a4ce627181dab7dadaf30e0c6daaab17c1a6ac00818db50780bb5db3464",
+        "null_calibration.json": "fba67362a73fd58bb7199d0a77c1f8172be2a438606c829185fdf990d3ccffc1",
+        "provenance.json": "08f3af0710d1111bf51c240bc46a0926230579d04969c48760e2910b847a9586",
+        "result.json": "27f08831eb22ee61c8b2594721efb46ae6ed6a6217bedc649feb10c5cd54e758",
+        "sweep_provenance.json": "1eee58b7217841b155578406f30eea189dc184dd59021de51176e1b68fe17001",
         "thresholds.json": "3848dfed718368ea5355509c548b2151c4f4881030bee4a28ebf8c809835d87f"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -489,7 +515,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "00730d8ef85bb01249cbd71f3467ed2555626e5d",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -497,12 +523,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "f2d8a89b7e168cc56c5b7dff1839eb0c0a0d49dede397f660c215499f903ac0f",
+        "SUMMARY.json": "9a6c1caaa1328e6db68b984ae08786b8e33097eb643627c113332ccd8eca97ce",
         "analytical_check.json": "7f609509cd697e8cb411798205cea7f7d07a5a12444d9e18e9daf6d10a38f7be",
-        "null_calibration.json": "09dc5feee1c0dc278cee48851edc79a9bd2c8ce654f229049997fd71feedff5c",
-        "provenance.json": "a533540c41849da48bdfa169fce1dd611598b2fece73b1b1939c8e42482bb05f",
-        "result.json": "2a0830a0b3b863745d287dd7e84d656707344e68c1987e7f73fa38c55f809175",
-        "sweep_provenance.json": "d0fba3e2ad33694428f19a1bcc2e64809357802d07a2bbde91545ae6937b0478",
+        "null_calibration.json": "7c7ee69644053ed68bb1214ee658927eba90c2720862d59c65a44e2c6ab6ed4a",
+        "provenance.json": "e1980b18be88c1a660922814eca877a963021a55e1a63791c009807300ddcdd8",
+        "result.json": "63caf03282cd965704afc2132e2716ed5f803f6f46825d843866255c9d1e4953",
+        "sweep_provenance.json": "901b884b7bb446dd8e5b9baebe7090f98a0e1c8d791cfe31f91d37533ce81115",
         "thresholds.json": "10ae0c5de9bc6e7643d0b762c9938ba4d0b0c19779969228f812cf4e84953c83"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -530,7 +556,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -538,12 +564,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "58d2adb6ede479432fa186abb39376de932d5e93563a3fd89e4730d4c20b97fd",
+        "SUMMARY.json": "88f841477ece883b513ab844e537b92bea7d258f9ee5d57bbcf68643f80beaab",
         "analytical_check.json": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
-        "null_calibration.json": "e6dc6a7f4aa9cb95a885c54cb39355cd22c9c9dfbcd318d3a2cf62035bd67e89",
-        "provenance.json": "fb564a8979b41a2bb4bb4f03ebca4bdc27c89e03cbf34e503a1929878556ebdc",
-        "result.json": "2380822049a385b7dffc006c522449c9e1c61f3e1e390c610df12d59f4501c23",
-        "sweep_provenance.json": "917fa0694d9a165b76b63d16e54c3742c4bfffa890901e125a2ef55cffa65a73",
+        "null_calibration.json": "1ce8ce2c0d274730a86b48cdf3ed3fbe67b2b94afa234e604fd910eb45ea8c21",
+        "provenance.json": "28ea6f7c7acba9dfdf00648f312152f220ca87c320c5004125417fd954382286",
+        "result.json": "8a2883468f7ae124436be18f0fa8da73b14ab6098b71b640e501554de68d4dfb",
+        "sweep_provenance.json": "1e10173c546578ff7b839167179a030709fde2777f9603fed9dc7698927d7cec",
         "thresholds.json": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -571,7 +597,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -579,12 +605,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "7257d810823d50fed43042ef938c17e9e880e3359c68ac5d83b2c624655ad466",
+        "SUMMARY.json": "9e79c245cbe3a9370bef4f494eb0636ebd9e2b7885266344d4bf380d79611f59",
         "analytical_check.json": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
-        "null_calibration.json": "9cfae7e843172da60b49036b52cbad8598d9b8dcf71f82bb9a3a661ff091c611",
-        "provenance.json": "84b1ef2188cbb10d1dfa3dda494c34b8ca160323d927cec6a8d3a159b84315b0",
-        "result.json": "6302cd51b8b5ce4c3e45dfed0c5a841cf135b5415b88182879a93458b34faa15",
-        "sweep_provenance.json": "369e45763b92a0550ffa615f5aaa42f6ee7524eed98117b3090f7813c5ae2c0e",
+        "null_calibration.json": "7d9f447f0b56425c3c2f55c69012486a0c0930696a7f63b5f0484164c609da3e",
+        "provenance.json": "84ebba91993d5d7b4834cdd5d6022b5b1c4ee7da0f3410846bcae85c01cec3dd",
+        "result.json": "942ab28abcdd166ac7d0daf9dd85633a3aca2aa93b600a679f7bbd5ce053aee1",
+        "sweep_provenance.json": "5329db18544c5e50fe48c2fb94f4a30be1df0dfd9f53e913f2409d0534c72dbf",
         "thresholds.json": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -612,7 +638,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -650,9 +676,16 @@
       "process": "Replication",
       "provenance_git_sha": "unknown",
       "reasons": [
-        "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a60a3de8c440.., current=d0657a1e2a55..)",
-        "STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=a60a3de8c440.., current=d0657a1e2a55..)",
-        "STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=e250d519ec35.., current=8becff08ec37..)",
+        "STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/Replication_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)",
+        "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
+        "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a60a3de8c440.., current=0bf545d5bf3f..)",
+        "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
+        "STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=a60a3de8c440.., current=0bf545d5bf3f..)",
+        "STALE_SWEEP_PROVENANCE: projections source changed since evidence was generated (recorded=ff2154045ffa.., current=2de64997bc27..)",
+        "STALE_SWEEP_PROVENANCE: catalog source changed since evidence was generated (recorded=d7e205d08fa4.., current=f200c8d64190..)",
+        "STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=e250d519ec35.., current=58fb13ac331c..)",
+        "STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=7066d68f8b3a.., current=7e4a5f758e64..)",
+        "STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=dbc43d5d0850.., current=1a534b3fadc5..)",
         "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_nnz' has zero nonzero observations on OC while Karr has 420 (OC never exhibited this primary component's activity at all)",
         "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_1' has zero nonzero observations on OC while Karr has 3118 (OC never exhibited this primary component's activity at all)",
         "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_2' has zero nonzero observations on OC while Karr has 4155 (OC never exhibited this primary component's activity at all)",
@@ -670,12 +703,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "7157aec44e734bc205346c9bb52e94a208faeb6d1057a2fc30d77c4c1e62fa89",
+        "SUMMARY.json": "777059a6ef6c1b9338ac522c49e6d9bbd760bac69d5e14858fbd6ac4b663c3be",
         "analytical_check.json": "d40b24b7383e02c3833fabb799ed0d2e28709559cf7c34245fa9331fefeda6f7",
-        "null_calibration.json": "f8d54c8c1a70910763301edd91cbbc34a82e13075f7d6bd3b0597699b534ec5d",
-        "provenance.json": "d3290c7b69a75d2977249702ddcc897da09bd3a7509d25ac759c852636ca2f7a",
-        "result.json": "8a2e7a2ed89af8e1a2681e4818a86977a99ad6e9a0cce900328b0ec2c89439eb",
-        "sweep_provenance.json": "5a6aded6ef825994fcf11626948c59aac3299a0cf9ed2af968d38ab4820bd84a",
+        "null_calibration.json": "2aca0217ad429edace31f95967fb806fc8b3f7eb3db9355a710f427e076fe05c",
+        "provenance.json": "aa7a8a3c2f747893d4dd153d6f797bcf43eb05e107cfe763c2d950d69a7495f8",
+        "result.json": "432459b5c95282c072350cf0b8806364640e6cd2a92dd1f26e2999ccfd6d1d2f",
+        "sweep_provenance.json": "dfc3499f20dc3be0b0c2e37ed153010d97192d55aa47e196e687217a52504628",
         "thresholds.json": "f371d2d65e25e1cf7d577adb812aeb79fa5f5824ede2d7d73628b3e37d33dd6c"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -703,7 +736,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -732,12 +765,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "3cf0070e0808c6ae3e29e2868988a8a0ebb3385c4150bd10138fc307f9b14800",
+        "SUMMARY.json": "d393f7c90140f98c2a0e7bab8a52a0cb03b2f8556b249e770cc5cd395eccc029",
         "analytical_check.json": "8a74b208cdfd2fa3a50ce1a6ea99471bfd657ba3aa918e1c4de159105a114a12",
-        "null_calibration.json": "3717f42bb0c48914b4a98acd0e86087cb97880de4311bc6860e38c65080ad9f3",
-        "provenance.json": "564613787e33fe3d5eef3e107a0975517d3b6b585f007c256b367708da26054d",
-        "result.json": "cedba05b3c40398959f3cbf008023d32e944ba2308478ff4556d00d2e71e6d8d",
-        "sweep_provenance.json": "7d676cdaf3eab15f333665a447c82ae0ee2bf3ee4bfa1a353a9d163da2df7cf2",
+        "null_calibration.json": "c7d20bd46c34d7cefdc2523c9970be8e46dc0f3564145e3f5a47804475838236",
+        "provenance.json": "9adaf4729d3b7a7e82c69a0f2ef2fade7dc9fb2886293ba49c67e61bd9ea8f8d",
+        "result.json": "415c1c4da602d7c984c71fe63ed56a8634274b68b955e69d5d6d525857a1a163",
+        "sweep_provenance.json": "f22d2e8c161c5137396f5b030913dd8f4636120427bea01886650422ec14bbf0",
         "thresholds.json": "7e0139c961df6278c1a2b951bd86ad360fe1a88f4cad12d5c4b0dbd94021eaa2"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -766,7 +799,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -774,12 +807,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "9fc332466041cf2dc3a2cb1c3e611d4185ff729ea62cdb4a5dee103c4269e538",
+        "SUMMARY.json": "1bb921fc8754c80481e67e2b1e27f8a63c635d9a849df7aa8089b0c6bd9d4bf1",
         "analytical_check.json": "a26c6baaedf445667a47cb0063e3fdf9567a7995e4b960688339f2680d34f770",
-        "null_calibration.json": "cacd95b97f88987b0813252a52d54520f1926cdff9bb59205d850e442018ae77",
-        "provenance.json": "c095e0cc7a3be2ae6d339779e46e5dac388bbf0adb504b2e393cd09c5e00eaa4",
-        "result.json": "53db3ba60c62f01148e03d9598070962c49ea4216e3445c95bae8845de4d7943",
-        "sweep_provenance.json": "1cd84fed67ae858b50ffa75aa9e3b786e7698d0ffc311530199d818dac30347a",
+        "null_calibration.json": "a5f983471e0a9665bd0adbc041fc49156cfdb336c2c08d96be4c418863194c13",
+        "provenance.json": "842fa6556fbf251a2b1d7b04c58d482f412369482144ef27e8edb6295356e0fd",
+        "result.json": "35fc85bacafdbbaf673ae761565b70a6e80da7fbbaf7bee1783f960d45ffdc3c",
+        "sweep_provenance.json": "63079b2fc6237a367e4ce2d43c0d84438feb75f31517ec389a12bfca4be8f954",
         "thresholds.json": "336ed5353c949d53ada1ca567556de7c9f987edaee54eb647a139ae1112ddcbe"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -808,7 +841,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -818,12 +851,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "e0b9a2aed56305d4e06be02f205aa67a9fcc02a4fcf76aa790ebcd5fe5e2917f",
+        "SUMMARY.json": "4132bee666d42fa0ae41048bfa9af2d7df00d1e2dcbaf1e6ed7272a7bc4e1bc3",
         "analytical_check.json": "9a8a426330b338e822497eabc298181dc0518c457c35037365935f7b59f84647",
-        "null_calibration.json": "76a26db868273a280bde367aa609754cd58d8c797a106628c29fc39952de92b8",
-        "provenance.json": "7d52bacc101d088d734035cbcb2c421ef66bd8d57d6f57ba2aa50540206c9d4f",
-        "result.json": "704c8b7af4bac6ec38b40ee3ed296145e265b4b0ad9199d8c3b8cf6f8a2f5001",
-        "sweep_provenance.json": "35a613558c23ead8e40732c1779655328e55c6abe5ba40e22e856983bfcdef3a",
+        "null_calibration.json": "1edfd462a15e8339189458be04ebca9ed190a9cb7044e12308cd3b35b0aaa5ea",
+        "provenance.json": "6fc14a8babb7fde83192a95dd32f6403555856649d8072f10bf067fded04ac5c",
+        "result.json": "25f45c1bbb56f6d2994db79bd81ac7681ea9c81df9328a53f5e7e8f3244ba949",
+        "sweep_provenance.json": "45f6aa766eeeb91d95d9de02b78d80b6d83410e83387e8a29c4021bd9fc378a3",
         "thresholds.json": "f07ff6164266532d8986ad48c8fb9c50700f7503d7f6955e664b2fff51d90f97"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -851,7 +884,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
         "inputs_verified": true,
         "result_schema_version": 1
       },

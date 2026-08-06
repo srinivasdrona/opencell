@@ -185,7 +185,7 @@
     49
   ],
   "ticks": 100,
-  "timestamp": "2026-07-31T16:10:00.685749+00:00",
+  "timestamp": "2026-08-06T13:54:39.352315+00:00",
   "verdict": "PASS",
   "warnings": [
     "SEED_ALIGNMENT_DIAGNOSTIC: OC outputs align better to a shifted Karr seed index on channel=monomers (shift=+47, observed_w1=0.006671, shifted_w1=0.006165)."

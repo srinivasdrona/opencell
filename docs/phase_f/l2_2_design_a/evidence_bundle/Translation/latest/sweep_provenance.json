@@ -2,7 +2,7 @@
   "completion_status": "COMPLETE",
   "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+  "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
   "inputs_verified": true,
   "m_ticks": 100,
   "n_seeds": 50,
@@ -10,25 +10,25 @@
   "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "9fc332466041cf2dc3a2cb1c3e611d4185ff729ea62cdb4a5dee103c4269e538",
+    "SUMMARY.json": "1bb921fc8754c80481e67e2b1e27f8a63c635d9a849df7aa8089b0c6bd9d4bf1",
     "analytical_check.json": "a26c6baaedf445667a47cb0063e3fdf9567a7995e4b960688339f2680d34f770",
-    "input_manifest.json": "8debf2e19100c47cb928449dc966947a1fa3f295242edc43d24c70f07a354737",
-    "null_calibration.json": "cacd95b97f88987b0813252a52d54520f1926cdff9bb59205d850e442018ae77",
-    "provenance.json": "c095e0cc7a3be2ae6d339779e46e5dac388bbf0adb504b2e393cd09c5e00eaa4",
-    "result.json": "53db3ba60c62f01148e03d9598070962c49ea4216e3445c95bae8845de4d7943",
+    "input_manifest.json": "47713edf9e0be3e8e3f016e1c0d5dd16062033688298908fbfc421a3c1dffbc2",
+    "null_calibration.json": "a5f983471e0a9665bd0adbc041fc49156cfdb336c2c08d96be4c418863194c13",
+    "provenance.json": "842fa6556fbf251a2b1d7b04c58d482f412369482144ef27e8edb6295356e0fd",
+    "result.json": "35fc85bacafdbbaf673ae761565b70a6e80da7fbbaf7bee1783f960d45ffdc3c",
     "thresholds.json": "336ed5353c949d53ada1ca567556de7c9f987edaee54eb647a139ae1112ddcbe"
   },
   "source_hashes": {
-    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
+    "catalog": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
+    "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
     "karr_translation_v3_module": "bd4e07e45eea74cbf3f5afe08c4e7cfcf002e53045fb45006edbe1c5c40d1ac8",
-    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
     "m3_init_module": "44b0421d576777eece614aca2280d919a4f3df82a5baacecdb6509e4480aa88f",
     "m3_translation_module": "e360d220e7c920f6c7e2c913187899867a042888d57804ee96d8e29b17b5c122",
     "oc_module": "7abf954574ea8f7ded09f2ebffa2585a568069a5ad84980612f45533c06b9e70",
-    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
-    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+    "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-31T16:10:11.669112+00:00"
+  "written_at": "2026-08-06T13:54:50.209622+00:00"
 }
