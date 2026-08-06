@@ -15,10 +15,8 @@ allocator input is now the TRUE Karr oracle (`pool_before`/`requirements`,
 `evolveState.m:24-37`), loaded via `load_composition_allocator_oracle` and
 NEVER derived from `states_before`/`state['substrates']`
 (docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md A05/D1). If that oracle is
-absent from a trace fixture (currently true for every fixture -- build-
-step-0 requires MATLAB, unavailable in this environment), every composition
-path fails CLOSED with a `MISSING_ALLOCATOR_ORACLE` skip rather than
-fabricating a pool.
+absent everywhere the harness knows to look, every composition path fails
+CLOSED with a `MISSING_ALLOCATOR_ORACLE` skip rather than fabricating a pool.
 
 These tests exercise the shared helper directly (adversarial contention,
 oversupply, zero-demand, process-key normalization, fairness/order-
@@ -32,7 +30,9 @@ inside their tick/composition logic.
 
 from __future__ import annotations
 
+import ast
 import sys
+from functools import lru_cache
 from pathlib import Path
 from types import SimpleNamespace
 
@@ -55,6 +55,7 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 from l2_replay_common import (  # noqa: E402
+    CompositionAllocatorOracle,
     MissingAllocatorOracleError,
     apply_composition_allocations,
     composition_allocator_oracle_status,
@@ -64,6 +65,84 @@ from l2_replay_common import (  # noqa: E402
 )
 
 from opencell.vivarium.karr_allocation_step import KEY_ALIASES  # noqa: E402
+from opencell.vivarium.karr_transcription import KarrTranscriptionProcess  # noqa: E402
+from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process  # noqa: E402
+from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess  # noqa: E402
+from scripts.probe_l2_0a_allocator_input import (  # noqa: E402
+    evaluate_allocator_gate,
+    load_process_substrate_wids,
+)
+
+
+def _simple_allocator_oracle(
+    pool_before: dict[str, float],
+    requirements_by_process: dict[str, dict[str, float]],
+) -> CompositionAllocatorOracle:
+    return CompositionAllocatorOracle(
+        pool_before=pool_before,
+        requirements_by_process=requirements_by_process,
+        projection_by_process={
+            proc_name: {wid: wid for wid in reqs}
+            for proc_name, reqs in requirements_by_process.items()
+        },
+    )
+
+
+def _runtime_allocator_wids(process: object) -> list[str]:
+    allocation_wids = getattr(process, "allocation_substrate_wids", None)
+    if allocation_wids is not None:
+        return [str(wid) for wid in allocation_wids]
+    return [str(wid) for wid in process.substrate_wids]
+
+
+def _allocator_state_for_processes(*processes: object) -> dict[str, dict[str, dict[str, float]]]:
+    return {
+        "substrates_allocated": {
+            str(process.name): {
+                wid: 0.0 for wid in _runtime_allocator_wids(process)
+            }
+            for process in processes
+        }
+    }
+
+
+@lru_cache(maxsize=1)
+def _real_allocator_gate_result():
+    import l2_replay_common as helper
+
+    oracle = helper._global_allocator_oracle()
+    if oracle is None:
+        return None
+    return evaluate_allocator_gate(oracle, load_process_substrate_wids())
+
+
+class _CallCollector(ast.NodeVisitor):
+    def __init__(self) -> None:
+        self._function_stack: list[str] = []
+        self.calls: list[tuple[str | None, ast.Call]] = []
+
+    def visit_FunctionDef(self, node: ast.FunctionDef) -> None:
+        self._function_stack.append(node.name)
+        self.generic_visit(node)
+        self._function_stack.pop()
+
+    def visit_AsyncFunctionDef(self, node: ast.AsyncFunctionDef) -> None:
+        self._function_stack.append(node.name)
+        self.generic_visit(node)
+        self._function_stack.pop()
+
+    def visit_Call(self, node: ast.Call) -> None:
+        owner = self._function_stack[-1] if self._function_stack else None
+        self.calls.append((owner, node))
+        self.generic_visit(node)
+
+
+def _call_name(node: ast.Call) -> str | None:
+    if isinstance(node.func, ast.Name):
+        return node.func.id
+    if isinstance(node.func, ast.Attribute):
+        return node.func.attr
+    return None
 
 # --- Beat-3 predicted-outcome arithmetic -----------------------------------
 
@@ -272,11 +351,13 @@ def test_refresh_allocator_views_composition_contends_instead_of_granting_full_p
         },
     }
     refresh_allocator_views_composition(
-        pool_before={"ATP": 10.0},
-        requirements_by_process={
-            "proc_a": {"ATP": 6.0},
-            "proc_b": {"ATP": 6.0},
-        },
+        allocator_oracle=_simple_allocator_oracle(
+            {"ATP": 10.0},
+            {
+                "proc_a": {"ATP": 6.0},
+                "proc_b": {"ATP": 6.0},
+            },
+        ),
         state=state,
     )
     alloc_a = state["substrates_allocated"]["proc_a"]["ATP"]
@@ -294,7 +375,8 @@ def test_refresh_allocator_views_composition_empty_requests_is_a_noop() -> None:
         "substrates_allocated": {"proc_a": {"ATP": 7.0}},
     }
     refresh_allocator_views_composition(
-        pool_before={"ATP": 10.0}, requirements_by_process={}, state=state
+        allocator_oracle=_simple_allocator_oracle({"ATP": 10.0}, {}),
+        state=state,
     )
     assert state["substrates_allocated"]["proc_a"]["ATP"] == 7.0
 
@@ -312,11 +394,13 @@ def test_refresh_allocator_views_composition_sole_demander_not_starved_by_zero_r
         },
     }
     refresh_allocator_views_composition(
-        pool_before={"ATP": 40.0},
-        requirements_by_process={
-            "proc_a": {"ATP": 0.0},
-            "proc_b": {"ATP": 25.0},
-        },
+        allocator_oracle=_simple_allocator_oracle(
+            {"ATP": 40.0},
+            {
+                "proc_a": {"ATP": 0.0},
+                "proc_b": {"ATP": 25.0},
+            },
+        ),
         state=state,
     )
     assert state["substrates_allocated"]["proc_a"]["ATP"] == 0.0
@@ -340,12 +424,14 @@ def test_refresh_allocator_views_composition_process_order_cannot_overwrite_pool
         },
     }
     refresh_allocator_views_composition(
-        pool_before={"ATP": 10.0},
-        requirements_by_process={
-            "proc_a": {"ATP": 6.0},
-            "proc_b": {"ATP": 6.0},
-            "proc_c": {"ATP": 3.0},
-        },
+        allocator_oracle=_simple_allocator_oracle(
+            {"ATP": 10.0},
+            {
+                "proc_a": {"ATP": 6.0},
+                "proc_b": {"ATP": 6.0},
+                "proc_c": {"ATP": 3.0},
+            },
+        ),
         state=forward_state,
     )
     reversed_state = {
@@ -356,12 +442,14 @@ def test_refresh_allocator_views_composition_process_order_cannot_overwrite_pool
         },
     }
     refresh_allocator_views_composition(
-        pool_before={"ATP": 10.0},
-        requirements_by_process={
-            "proc_c": {"ATP": 3.0},
-            "proc_b": {"ATP": 6.0},
-            "proc_a": {"ATP": 6.0},
-        },
+        allocator_oracle=_simple_allocator_oracle(
+            {"ATP": 10.0},
+            {
+                "proc_c": {"ATP": 3.0},
+                "proc_b": {"ATP": 6.0},
+                "proc_a": {"ATP": 6.0},
+            },
+        ),
         state=reversed_state,
     )
     for name in ("proc_a", "proc_b", "proc_c"):
@@ -384,12 +472,14 @@ def test_refresh_allocator_views_composition_populates_every_composed_process_ro
         },
     }
     refresh_allocator_views_composition(
-        pool_before={"ATP": 8.0, "GTP": 8.0},
-        requirements_by_process={
-            "proc_a": {"ATP": 4.0, "GTP": 4.0},
-            "proc_b": {"ATP": 4.0},
-            "proc_c": {"GTP": 4.0},
-        },
+        allocator_oracle=_simple_allocator_oracle(
+            {"ATP": 8.0, "GTP": 8.0},
+            {
+                "proc_a": {"ATP": 4.0, "GTP": 4.0},
+                "proc_b": {"ATP": 4.0},
+                "proc_c": {"GTP": 4.0},
+            },
+        ),
         state=state,
     )
     assert state["substrates_allocated"]["proc_a"]["ATP"] == 4.0
@@ -478,13 +568,11 @@ def test_load_composition_allocator_oracle_raises_on_unmappable_runtime_name(
         )
 
 
-def test_load_composition_allocator_oracle_non_metabolite_wid_is_skipped_not_an_error(
+def test_load_composition_allocator_oracle_non_metabolite_wid_fails_closed(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    """point 2: a declared substrate WID that is not part of the
-    allocator-metabolite universe at all (e.g. a non-metabolite local
-    substrate observable) must be silently excluded, never raise or
-    trigger a shape error."""
+    """point 4: an unmatched selected WID must fail CLOSED with the exact
+    L2.0a unmapped reason, never silently continue."""
     import l2_replay_common as helper
 
     fake_oracle = SimpleNamespace(
@@ -498,13 +586,14 @@ def test_load_composition_allocator_oracle_non_metabolite_wid_is_skipped_not_an_
     )
     monkeypatch.setattr(helper, "_global_allocator_oracle", lambda: fake_oracle)
     monkeypatch.setattr(helper, "composition_allocator_oracle_status", lambda *a, **k: None)
-    pool, reqs = load_composition_allocator_oracle(
-        wids_by_process={"karr_metabolism": ["ATP", "NOT_A_METABOLITE_WID"]},
-        tick=0,
-    )
-    assert pool == {"ATP": 5.0}
-    assert reqs == {"karr_metabolism": {"ATP": 3.0}}
-    assert "NOT_A_METABOLITE_WID" not in reqs["karr_metabolism"]
+    with pytest.raises(
+        MissingAllocatorOracleError,
+        match="NOT_A_METABOLITE_WID.*wid_missing_from_oracle_metabolite_list",
+    ):
+        load_composition_allocator_oracle(
+            wids_by_process={"karr_metabolism": ["ATP", "NOT_A_METABOLITE_WID"]},
+            tick=0,
+        )
 
 
 def test_global_allocator_oracle_covers_all_28_processes_when_present() -> None:
@@ -532,18 +621,24 @@ def test_composition_boundary_computed_matches_extracted_allocations_exactly() -
     oracle has not been extracted locally."""
     import l2_replay_common as helper
 
-    from scripts.probe_l2_0a_allocator_input import (
-        build_wid_mappings,
-        load_process_substrate_wids,
-        run_allocator_full_matrix,
-    )
+    from scripts.probe_l2_0a_allocator_input import build_wid_mappings, run_allocator_full_matrix
 
     oracle = helper._global_allocator_oracle()
     if oracle is None:
         pytest.skip("MISSING_ALLOCATOR_ORACLE: local oracle artifact not extracted")
     process_substrate_wids = load_process_substrate_wids()
-    mappings, _unmapped = build_wid_mappings(oracle, process_substrate_wids)
-    assert mappings, "expected at least one resolvable (process, wid) cell"
+    mappings, unmapped = build_wid_mappings(oracle, process_substrate_wids)
+    assert len(mappings) == 403
+    assert len(unmapped) == 1022
+    reason_counts: dict[str, int] = {}
+    for item in unmapped:
+        reason_counts[item.reason] = reason_counts.get(item.reason, 0) + 1
+    assert reason_counts == {
+        "multiple_active_compartment_candidates": 123,
+        "multiple_local_nonzero_candidates": 11,
+        "no_active_compartment_candidate": 640,
+        "wid_missing_from_oracle_metabolite_list": 248,
+    }
     allocations_by_process = run_allocator_full_matrix(oracle)
     checked = 0
     for (process_name, wid), mapping in mappings.items():
@@ -554,7 +649,72 @@ def test_composition_boundary_computed_matches_extracted_allocations_exactly() -
             f"{process_name}/{wid}->{mapping.mc_key}: expected={expected} observed={observed}"
         )
         checked += 1
-    assert checked > 0
+    assert checked == 403
+
+
+def test_tick0_canary_transcription_translation_receives_exact_runtime_grants() -> None:
+    transcription = KarrTranscriptionProcess({"rng_seed": 0})
+    translation = KarrTranslationV3Process({"rng_seed": 0})
+    wids_by_process = {
+        transcription.name: ["GTP", "H2O"],
+        translation.name: ["GTP", "H2O"],
+    }
+    status = composition_allocator_oracle_status(wids_by_process, tick=0)
+    if status is not None:
+        pytest.skip(status)
+
+    allocator_oracle = load_composition_allocator_oracle(
+        wids_by_process=wids_by_process,
+        tick=0,
+    )
+    assert len(allocator_oracle.requirements_by_process) == 28
+    assert allocator_oracle.projection_by_process[transcription.name]["H2O"] == "H2O[c]"
+    assert allocator_oracle.projection_by_process[translation.name]["H2O"] == "H2O[c]"
+    assert "H2O" not in allocator_oracle.pool_before
+
+    state = _allocator_state_for_processes(transcription, translation)
+    refresh_allocator_views_composition(
+        allocator_oracle=allocator_oracle,
+        state=state,
+    )
+
+    assert state["substrates_allocated"][transcription.name]["GTP"] == 7760.0
+    assert state["substrates_allocated"][translation.name]["GTP"] == 28346.0
+    assert state["substrates_allocated"][transcription.name]["H2O"] == 5297030.0
+    assert state["substrates_allocated"][translation.name]["H2O"] == 164661990.0
+
+
+def test_tick0_canary_transcription_trna_aminoacylation_receives_exact_runtime_grants() -> None:
+    transcription = KarrTranscriptionProcess({"rng_seed": 0})
+    trna = KarrTRNAAminoacylationProcess({"rng_seed": 0})
+    wids_by_process = {
+        transcription.name: ["ATP", "H2O"],
+        trna.name: ["ATP", "H2O"],
+    }
+    status = composition_allocator_oracle_status(wids_by_process, tick=0)
+    if status is not None:
+        pytest.skip(status)
+
+    allocator_oracle = load_composition_allocator_oracle(
+        wids_by_process=wids_by_process,
+        tick=0,
+    )
+    assert len(allocator_oracle.requirements_by_process) == 28
+    assert allocator_oracle.projection_by_process[transcription.name]["ATP"] == "ATP[c]"
+    assert allocator_oracle.projection_by_process[trna.name]["ATP"] == "ATP[c]"
+    assert allocator_oracle.projection_by_process[transcription.name]["H2O"] == "H2O[c]"
+    assert allocator_oracle.projection_by_process[trna.name]["H2O"] == "H2O[c]"
+
+    state = _allocator_state_for_processes(transcription, trna)
+    refresh_allocator_views_composition(
+        allocator_oracle=allocator_oracle,
+        state=state,
+    )
+
+    assert state["substrates_allocated"][transcription.name]["ATP"] == 13933.0
+    assert state["substrates_allocated"][trna.name]["ATP"] == 20445.0
+    assert state["substrates_allocated"][transcription.name]["H2O"] == 5297030.0
+    assert state["substrates_allocated"][trna.name]["H2O"] == 17101842.0
 
 
 def test_apply_composition_allocations_raises_on_runtime_canonical_key_mismatch() -> None:
@@ -595,34 +755,54 @@ def test_composition_harnesses_do_not_call_idealized_grant_in_tick_loop() -> Non
     (`_build_counterfactual_step_vector`), which this test explicitly
     allows.
 
-    Also guards against the exact fabrication anti-pattern the blocking
-    review found: no composition path may call
-    `refresh_allocator_views_composition` with the retired
-    `request_vectors=` kwarg (which read `state['substrates']` as the
-    allocator pool), and no composition path may pass `state['substrates']`/
-    `state.get('substrates'` as a would-be pool/request source.
+    Also guards the documented API-level property rather than local
+    variable spellings: composition paths must reach the contention-aware
+    helper through the `allocator_oracle=` contract and must not use the
+    retired raw-input kwargs (`pool_before=`, `requirements_by_process=`,
+    `request_vectors=`).
     """
-    for relative_path, allowed_call_count in (
+    for relative_path, expected_counterfactual_calls in (
         ("tests/vivarium/l2_2_replay_common.py", 1),
         ("tests/vivarium/l2_2_replay_common_v2.py", 1),
         ("tests/vivarium/test_l2_5_ppi_ppii_v2.py", 0),
     ):
         source = (_REPO_ROOT / relative_path).read_text(encoding="utf-8")
-        call_count = source.count("refresh_allocator_views(ctx.process") + source.count(
-            "refresh_allocator_views(ppi"
+        tree = ast.parse(source, filename=relative_path)
+        collector = _CallCollector()
+        collector.visit(tree)
+
+        idealized_calls = [
+            (owner, node)
+            for owner, node in collector.calls
+            if _call_name(node) == "refresh_allocator_views"
+        ]
+        composition_calls = [
+            (owner, node)
+            for owner, node in collector.calls
+            if _call_name(node) == "refresh_allocator_views_composition"
+        ]
+
+        assert len(idealized_calls) == expected_counterfactual_calls, (
+            f"{relative_path}: expected exactly {expected_counterfactual_calls} "
+            f"idealized-grant call site(s) (isolated counterfactual replay only), "
+            f"found {len(idealized_calls)}"
         )
-        assert call_count == allowed_call_count, (
-            f"{relative_path}: expected exactly {allowed_call_count} "
-            f"idealized-grant call site(s) (isolated counterfactual replay "
-            f"only), found {call_count}"
+        assert all(owner == "_build_counterfactual_step_vector" for owner, _ in idealized_calls), (
+            f"{relative_path}: idealized grant is only allowed inside "
+            "`_build_counterfactual_step_vector`"
         )
-        assert "refresh_allocator_views_composition(" in source, (
+        assert composition_calls, (
             f"{relative_path}: composition path must call the real "
             "contention-aware allocator helper"
         )
-        assert "request_vectors=" not in source, (
-            f"{relative_path}: retired `request_vectors=` kwarg found -- "
-            "composition allocation must use the oracle-based "
-            "`pool_before=`/`requirements_by_process=` signature, never "
-            "state['substrates']-derived requests"
-        )
+        for _owner, node in composition_calls:
+            keyword_names = {kw.arg for kw in node.keywords if kw.arg is not None}
+            assert "allocator_oracle" in keyword_names, (
+                f"{relative_path}: refresh_allocator_views_composition must be "
+                "called through the allocator_oracle contract"
+            )
+            forbidden = {"pool_before", "requirements_by_process", "request_vectors"} & keyword_names
+            assert not forbidden, (
+                f"{relative_path}: retired raw allocator-input kwargs found at "
+                f"composition boundary: {sorted(forbidden)}"
+            )

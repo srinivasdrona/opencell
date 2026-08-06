@@ -18,7 +18,6 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 from scripts.probe_l2_0a_allocator_input import (
-    ORACLE_PATH,
     AllocatorOracle,
     evaluate_allocator_gate,
     load_allocator_oracle,

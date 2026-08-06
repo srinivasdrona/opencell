@@ -1393,19 +1393,14 @@ def run_integrated_replay_v2(
             )
             for name in ordered
         }
-        oracle_status = composition_allocator_oracle_status(composition_wids_by_process)
-        if oracle_status is not None:
-            pytest.skip(f"L2.2.v2 SKIP: {oracle_status}")
-        # The upfront status check only probes tick 0 (its default); this
-        # replay drives every tick in range(n_ticks), so also check the
-        # LAST tick it will request. If n_ticks exceeds the global oracle's
-        # single-tick coverage, skip closed here -- before any tick runs --
-        # rather than succeed at tick 0 and raise mid-loop at tick 1.
         max_tick_status = composition_allocator_oracle_status(
             composition_wids_by_process, tick=n_ticks - 1
         )
         if max_tick_status is not None:
             pytest.skip(f"L2.2.v2 SKIP: {max_tick_status}")
+        oracle_status = composition_allocator_oracle_status(composition_wids_by_process)
+        if oracle_status is not None:
+            pytest.skip(f"L2.2.v2 SKIP: {oracle_status}")
 
         for tick in range(n_ticks):
             shared_state = _build_shared_state_template(
@@ -1449,13 +1444,12 @@ def run_integrated_replay_v2(
             # `composition_allocator_oracle_status` skip above; any
             # per-tick failure here is a genuine data problem, not an
             # expected skip path, so it is intentionally NOT re-caught.
-            pool_before, requirements_by_process = load_composition_allocator_oracle(
+            allocator_oracle = load_composition_allocator_oracle(
                 wids_by_process=composition_wids_by_process,
                 tick=tick,
             )
             refresh_allocator_views_composition(
-                pool_before=pool_before,
-                requirements_by_process=requirements_by_process,
+                allocator_oracle=allocator_oracle,
                 state=shared_state,
             )
 

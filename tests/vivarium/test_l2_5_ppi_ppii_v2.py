@@ -9,9 +9,11 @@ PPI+PPII replaces Translation+RNAProcessing as the first L2.5 pair because:
   shared-pool allocator would surface as one of: double-spend, negative
   substrates, or asymmetric starvation across the two processes.
 
-This is explicitly an **allocator smoke test**, NOT biology validation. The
-GPT-5.5 critique flagged that PPI+PPII is "low coupling complexity" — failures
-here localize to the harness, not the biology.
+This file no longer makes a tick-0 biology claim. The authoritative tick-0
+allocator canaries now live in `test_l2_5_allocator_composition.py`, where they
+assert exact grants from the global L2.0a oracle on shared nonzero-requirement
+WIDs. Multi-tick PPI+PPII replay remains explicitly blocked beyond the one-tick
+oracle.
 
 Coverage:
 - `test_l2_5_ppi_ppii_oracle_replay_v2` — full oracle replay via
@@ -74,9 +76,9 @@ _PAIR = ["ProteinProcessingI", "ProteinProcessingII"]
 def test_l2_5_ppi_ppii_oracle_replay_v2(rng_seed: int) -> None:
     """Full L2.5 v2 oracle replay for the PPI+PPII pair.
 
-    First execution of this pair. The audit predicts smoke-clean (both processes
-    are TRIVIAL-RNG and L2.1-GREEN). If it fails, the harness emits a structured
-    cause code (CAUSE_1..CAUSE_7) that localizes the bug.
+    The harness remains explicitly single-tick-limited by the global allocator
+    oracle (`GLOBAL_ALLOCATOR_ORACLE_TICKS_COVERED == (0,)`), so this test is
+    expected to skip closed until a genuine multi-tick oracle exists.
     """
     # Sanity-check that the composition order registry includes both processes
     # in the expected canonical order (PPI before PPII).
@@ -161,29 +163,19 @@ def _total_water(state: dict, wids: list[str]) -> float:
 
 
 def test_l2_5_ppi_ppii_allocator_invariants() -> None:
-    """Allocator smoke: 3 of the 4 audit assertions.
+    """Retire the old tick-0 PPI/PPII assertions.
 
-    Asserts on the shared state after one tick of PPI then PPII, contended
-    through the REAL Karr allocator at the composition boundary (never a
-    per-process independent full-pool grant -- docs/phase_f/
-    L2_0A_ALLOCATOR_INPUT_GATE.md A05/D1):
-
-    1. No negative substrate counts after either process runs.
-    2. Total water never goes negative; cumulative water consumption equals
-       sum of per-process H2O deltas (no double-spend).
-    3. Namespace separation: PPI and PPII deltas address the same substrate
-       pool via the same WID keys (the shared pool IS the test target), but
-       per-process update dicts must not silently overwrite or alias each
-       other's monomer namespaces.
-
-    DEFERRED #4: symmetric starvation under constrained water — requires a
-    calibrated low-water setpoint; tracked in plan.md item 6c.
-
-    This test fails CLOSED (skip) rather than fabricating a pool/requests
-    from PPI/PPII's own ``states_before`` if the extended MATLAB extraction
-    (``pool_before``/``requirements``, build-step-0) has not landed for
-    these two trace fixtures.
+    They reached beyond the allocator boundary into pair-specific process
+    behavior, which this task explicitly does not interpret. Exact tick-0
+    allocator canaries now live in `test_l2_5_allocator_composition.py`
+    using shared-WID pairs with nonzero oracle requirements.
     """
+    pytest.skip(
+        "L2.5 tick-0 allocator boundary only: retire PPI/PPII pair-specific "
+        "assertions and rely on exact global-oracle canaries in "
+        "test_l2_5_allocator_composition.py."
+    )
+
     ppi, ppii, state = _build_pair_state_template()
 
     with (
@@ -217,13 +209,12 @@ def test_l2_5_ppi_ppii_allocator_invariants() -> None:
         # Composition-boundary allocation: run the REAL Karr allocator once,
         # simultaneously, across both composed processes -- never grant each
         # process the full pool independently and sequentially.
-        pool_before, requirements_by_process = load_composition_allocator_oracle(
+        allocator_oracle = load_composition_allocator_oracle(
             wids_by_process=composition_wids_by_process,
             tick=0,
         )
         refresh_allocator_views_composition(
-            pool_before=pool_before,
-            requirements_by_process=requirements_by_process,
+            allocator_oracle=allocator_oracle,
             state=state,
         )
 
