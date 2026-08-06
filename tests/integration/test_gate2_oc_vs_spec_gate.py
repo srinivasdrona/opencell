@@ -6,6 +6,8 @@ import importlib.util
 import sys
 from pathlib import Path
 
+import numpy as np
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 _SCRIPT = _REPO_ROOT / "scripts" / "gate2_verify_oc_vs_spec.py"
 
@@ -71,3 +73,9 @@ def test_compare_vocab_sets_reports_missing_and_extra_members() -> None:
 
     assert missing == ["CTP"]
     assert extra == ["UTP"]
+
+
+def test_shape_comparison_treats_ragged_values_as_not_comparable() -> None:
+    ragged = (np.array([1.0]), np.array([2.0, 3.0]))
+
+    assert gate._values_match({"shape": [2]}, ragged) is None

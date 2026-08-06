@@ -898,7 +898,10 @@ def _values_match(spec_val: object, oc_val: object) -> bool | None:
     if shape is not None:
         arr = _coerce_matrix(oc_val)
         if arr is None:
-            oc_arr = np.asarray(oc_val)
+            try:
+                oc_arr = np.asarray(oc_val)
+            except (TypeError, ValueError):
+                return None
             if oc_arr.dtype == object:
                 return None
             arr = oc_arr
