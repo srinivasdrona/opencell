@@ -2,7 +2,7 @@
   "completion_status": "COMPLETE",
   "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+  "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
   "inputs_verified": true,
   "m_ticks": 100,
   "n_seeds": 50,
@@ -10,22 +10,22 @@
   "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "f2d8a89b7e168cc56c5b7dff1839eb0c0a0d49dede397f660c215499f903ac0f",
+    "SUMMARY.json": "9a6c1caaa1328e6db68b984ae08786b8e33097eb643627c113332ccd8eca97ce",
     "analytical_check.json": "7f609509cd697e8cb411798205cea7f7d07a5a12444d9e18e9daf6d10a38f7be",
-    "input_manifest.json": "e0cc6252dae9699d4029c013d74c66dd3dd266e3f8062875f74d6dacf5fd8e94",
-    "null_calibration.json": "09dc5feee1c0dc278cee48851edc79a9bd2c8ce654f229049997fd71feedff5c",
-    "provenance.json": "a533540c41849da48bdfa169fce1dd611598b2fece73b1b1939c8e42482bb05f",
-    "result.json": "2a0830a0b3b863745d287dd7e84d656707344e68c1987e7f73fa38c55f809175",
+    "input_manifest.json": "b531b084e173cb904a0723b9749273fe521e0db11e6d816f94398e29e018a1d4",
+    "null_calibration.json": "7c7ee69644053ed68bb1214ee658927eba90c2720862d59c65a44e2c6ab6ed4a",
+    "provenance.json": "e1980b18be88c1a660922814eca877a963021a55e1a63791c009807300ddcdd8",
+    "result.json": "63caf03282cd965704afc2132e2716ed5f803f6f46825d843866255c9d1e4953",
     "thresholds.json": "10ae0c5de9bc6e7643d0b762c9938ba4d0b0c19779969228f812cf4e84953c83"
   },
   "source_hashes": {
-    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
-    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
-    "oc_module": "6bbb031a90732713caf7c2978e47f869f8aec77e107640f069293ae566955ca5",
-    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
-    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "catalog": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
+    "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+    "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
+    "oc_module": "1af477352ea4c3b4e4c38aad58738fb4ed4fa0ea7dcfaf62f59817d7399b1476",
+    "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+    "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-31T15:51:06.261483+00:00"
+  "written_at": "2026-08-06T12:57:48.816654+00:00"
 }

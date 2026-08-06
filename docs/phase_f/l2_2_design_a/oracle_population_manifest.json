@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-29T22:27:00.205358+00:00",
+  "generated_at": "2026-08-06T14:15:52.480311+00:00",
   "processes": {
     "DNARepair": {
       "files": [
@@ -4677,14 +4677,14 @@
   "schema_version": 1,
   "sources": [
     {
-      "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+      "git_sha": "e2ae6607411ebed3a61956fca608877a34cc6bc1",
       "name": "current",
-      "path": "E:\\opencell-worktrees\\l22-final-sweep"
+      "path": "/mnt/e/opencell-worktrees/l22-stale14-revalidate-v2-20260806"
     },
     {
       "git_sha": "49bf67db8384fa2b8b2dae68a9c7081d16b13b63",
       "name": "evidence_gate",
-      "path": "E:\\opencell-worktrees\\l22-evidence-gate"
+      "path": "/mnt/e/opencell-worktrees/l22-evidence-gate"
     }
   ]
 }

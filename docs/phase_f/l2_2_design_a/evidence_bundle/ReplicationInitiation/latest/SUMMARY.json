@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-31T16:42:55.779318+00:00",
+  "generated_at": "2026-08-06T13:10:07.239806+00:00",
   "schema_version": "1.4",
   "harness_version": "design_a_v1_3",
   "k_eng": {
@@ -10,7 +10,7 @@
   "processes": {
     "ReplicationInitiation": {
       "verdict": "PASS",
-      "latest_run": "2026-07-31T16:42:55.779318+00:00",
+      "latest_run": "2026-08-06T13:10:07.239806+00:00",
       "bucket": "ALGORITHMIC_DEEP",
       "failed_channels": [],
       "n_channels_gated": 2,

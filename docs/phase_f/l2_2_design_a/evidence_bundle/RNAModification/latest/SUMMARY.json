@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-31T15:27:49.535612+00:00",
+  "generated_at": "2026-08-06T13:23:14.421296+00:00",
   "schema_version": "1.4",
   "harness_version": "design_a_v1_3",
   "k_eng": {
@@ -10,7 +10,7 @@
   "processes": {
     "RNAModification": {
       "verdict": "PASS",
-      "latest_run": "2026-07-31T15:27:49.535612+00:00",
+      "latest_run": "2026-08-06T13:23:14.421296+00:00",
       "bucket": "ALGORITHMIC_SHALLOW",
       "failed_channels": [],
       "n_channels_gated": 2,
