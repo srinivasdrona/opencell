@@ -31,6 +31,7 @@ from scripts.probe_l2_0a_allocator_input import (  # noqa: E402
     AllocatorOracle,
     flat_index_candidates,
     load_allocator_oracle,
+    resolve_allocator_oracle_path,
 )
 
 _TRACE_BASE_REL = Path("data/m1_sources/karr_native/per_process_traces_v2")
@@ -1006,16 +1007,15 @@ _RUNTIME_VARIANT_SUFFIX_RE = re.compile(r"_v\d+$")
 @cache
 def _global_allocator_oracle() -> AllocatorOracle | None:
     """Load (and cache) the L2.0a global allocator oracle, or ``None`` if
-    the gitignored local artifact has not been extracted in this worktree.
+    no extracted oracle artifact can be found in any repo worktree.
 
     Thin wrapper around ``scripts/probe_l2_0a_allocator_input.py::
     load_allocator_oracle`` -- never re-implements oracle parsing here.
     """
-    from scripts.probe_l2_0a_allocator_input import ORACLE_PATH
-
-    if not ORACLE_PATH.exists():
+    resolved = resolve_allocator_oracle_path()
+    if resolved is None:
         return None
-    return load_allocator_oracle(ORACLE_PATH)
+    return load_allocator_oracle(resolved)
 
 
 def _canonical_process_name_for_runtime(runtime_name: str) -> str | None:
@@ -1049,6 +1049,9 @@ def composition_allocator_oracle_status(
     string identifying exactly what is missing, safe to call once before a
     tick loop to skip closed immediately rather than run any tick.
     """
+    if not any(wids_by_process.values()):
+        return None
+
     if tick not in GLOBAL_ALLOCATOR_ORACLE_TICKS_COVERED:
         return (
             "ALLOCATOR_ORACLE_TICK_COVERAGE_EXCEEDED: the L2.0a global "

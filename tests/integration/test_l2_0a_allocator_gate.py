@@ -24,6 +24,7 @@ from scripts.probe_l2_0a_allocator_input import (
     load_allocator_oracle,
     load_process_substrate_wids,
     main,
+    resolve_allocator_oracle_path,
 )
 
 
@@ -136,12 +137,12 @@ def test_main_skips_cleanly_when_oracle_absent(tmp_path: Path, capsys: pytest.Ca
 
 @lru_cache(maxsize=1)
 def _real_oracle_result():
-    oracle = load_allocator_oracle(ORACLE_PATH)
+    oracle = load_allocator_oracle(resolve_allocator_oracle_path())
     process_wids = load_process_substrate_wids()
     return evaluate_allocator_gate(oracle, process_wids)
 
 
-@pytest.mark.skipif(not ORACLE_PATH.exists(), reason="local allocator oracle absent")
+@pytest.mark.skipif(resolve_allocator_oracle_path() is None, reason="allocator oracle absent")
 def test_real_oracle_baseline_is_green_after_uncap() -> None:
     """OC's allocator is bit-identical to Karr's evolveState.m after removing the
     `min(1.0)` oversupply cap (karr_allocation_step.py). Previously this baseline
