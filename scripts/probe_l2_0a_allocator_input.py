@@ -14,6 +14,9 @@ from __future__ import annotations
 
 import argparse
 import math
+import os
+import re
+import subprocess
 import tomllib
 from dataclasses import dataclass
 from pathlib import Path
@@ -27,6 +30,7 @@ REPO = Path(__file__).resolve().parents[1]
 ORACLE_PATH = REPO / "data" / "m1_sources" / "karr_native" / "l2_0a_allocator_oracle_s000.mat"
 SCHEMA_DIR = REPO / "data" / "schemas" / "per_process"
 INTEGRAL_TOL = 1e-9
+_WINDOWS_ABS_PATH_RE = re.compile(r"^(?P<drive>[A-Za-z]):[\\/](?P<rest>.*)$")
 
 
 @dataclass(frozen=True)
@@ -99,6 +103,61 @@ class GateResult:
     failure_examples: tuple[str, ...]
 
 
+def allocator_oracle_search_paths() -> tuple[Path, ...]:
+    candidates: list[Path] = [ORACLE_PATH]
+    if len(REPO.parents) >= 2:
+        candidates.append(
+            REPO.parents[1] / "opencell" / "data" / "m1_sources" / "karr_native" / ORACLE_PATH.name
+        )
+    try:
+        proc = subprocess.run(
+            ["git", "worktree", "list", "--porcelain"],
+            cwd=REPO,
+            check=True,
+            capture_output=True,
+            text=True,
+        )
+    except Exception:
+        proc = None
+    if proc is not None:
+        for line in proc.stdout.splitlines():
+            if not line.startswith("worktree "):
+                continue
+            worktree_root = _coerce_worktree_path(line.removeprefix("worktree ").strip())
+            candidates.append(
+                worktree_root / "data" / "m1_sources" / "karr_native" / ORACLE_PATH.name
+            )
+
+    unique: list[Path] = []
+    seen: set[Path] = set()
+    for candidate in candidates:
+        if candidate in seen:
+            continue
+        seen.add(candidate)
+        unique.append(candidate)
+    return tuple(unique)
+
+
+def resolve_allocator_oracle_path(path: Path | None = None) -> Path | None:
+    if path is not None:
+        candidate = _coerce_worktree_path(path)
+        return candidate if candidate.exists() else None
+    for candidate in allocator_oracle_search_paths():
+        if candidate.exists():
+            return candidate
+    return None
+
+
+def _coerce_worktree_path(path: str | Path) -> Path:
+    path_str = str(path).strip()
+    match = _WINDOWS_ABS_PATH_RE.match(path_str)
+    if match and os.name != "nt":
+        drive = match.group("drive").lower()
+        rest = match.group("rest").replace("\\", "/")
+        return Path("/mnt") / drive / rest
+    return Path(path_str)
+
+
 def _decode_cellstrs(handle: h5py.File, dataset_name: str) -> tuple[str, ...]:
     refs = handle[dataset_name][()]
     out: list[str] = []
@@ -117,8 +176,18 @@ def _read_singleton_cell(handle: h5py.File, dataset_name: str) -> np.ndarray:
     return np.asarray(handle[ref][()], dtype=np.float64)
 
 
-def load_allocator_oracle(path: Path = ORACLE_PATH) -> AllocatorOracle:
-    with h5py.File(path, "r") as handle:
+def load_allocator_oracle(path: Path | None = None) -> AllocatorOracle:
+    resolved = resolve_allocator_oracle_path(path)
+    if resolved is None:
+        if path is None:
+            searched = ", ".join(str(item) for item in allocator_oracle_search_paths())
+            raise FileNotFoundError(
+                "allocator oracle not found in any known worktree path; searched: "
+                f"{searched}"
+            )
+        raise FileNotFoundError(f"allocator oracle not found: {path}")
+
+    with h5py.File(resolved, "r") as handle:
         process_names = _decode_cellstrs(handle, "process_names")
         metabolite_wids = _decode_cellstrs(handle, "metabolite_wids")
         compartment_wids = _decode_cellstrs(handle, "compartment_wids")
@@ -472,22 +541,20 @@ def format_gate_report(result: GateResult) -> str:
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser()
-    parser.add_argument("--oracle", type=Path, default=ORACLE_PATH)
+    parser.add_argument("--oracle", type=Path, default=None)
     args = parser.parse_args(argv)
 
-    if not args.oracle.exists():
-        try:
-            shown = args.oracle.relative_to(REPO)
-        except ValueError:
-            shown = args.oracle
+    resolved = resolve_allocator_oracle_path(args.oracle)
+    if resolved is None:
+        requested = args.oracle if args.oracle is not None else ORACLE_PATH
         print(
             "L2.0a ALLOCATOR INPUT GATE: SKIPPED — oracle absent at "
-            f"{shown} (gitignored local artifact)."
+            f"{requested}."
         )
         return 0
 
     process_substrate_wids = load_process_substrate_wids()
-    oracle = load_allocator_oracle(args.oracle)
+    oracle = load_allocator_oracle(resolved)
     result = evaluate_allocator_gate(oracle, process_substrate_wids)
     print(format_gate_report(result))
     return result.returncode

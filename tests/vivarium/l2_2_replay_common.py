@@ -32,12 +32,16 @@ from l2_replay_common import (
     build_state_template,
     cell_vector,
     collect_count_delta_dicts,
+    composition_allocator_oracle_status,
     infer_wids_for_observable,
+    load_composition_allocator_oracle,
+    merge_process_state_templates,
     overlay_observable_into_state,
     overlay_trace_after_hint,
     project_karr_vector,
     project_observable_from_state,
     refresh_allocator_views,
+    refresh_allocator_views_composition,
     resolve_trace_path,
 )
 from l2_replay_common import (
@@ -269,6 +273,33 @@ def run_integrated_replay(*, under_test_processes: list[str], rng_seed: int) -> 
         if no_op_messages:
             pytest.skip("L2.2 N/A: no-op trace for at least one under-test process. " + " | ".join(no_op_messages))
 
+        # Composition-boundary allocation requires the TRUE Karr allocator
+        # oracle (the L2.0a global oracle: pool_before + requirements across
+        # all 28 processes, evolveState.m:24-37) -- see
+        # docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md A05/D1.
+        # `states_before` is each process's OWN post-allocation substrate
+        # state and must NEVER be reused (via overlay, sum, or as a
+        # request proxy) to fabricate a pool. If the global oracle artifact
+        # has not been extracted locally in this worktree (gitignored;
+        # scripts/matlab/extract_l2_0a_allocator_oracle.m), fail CLOSED
+        # here, before any tick runs, rather than approximate.
+        composition_wids_by_process = {
+            contexts[name].process.name: (
+                contexts[name].wids_by_observable["substrates"]
+                if "substrates" in contexts[name].spec.observables
+                else []
+            )
+            for name in ordered
+        }
+        max_tick_status = composition_allocator_oracle_status(
+            composition_wids_by_process, tick=n_ticks - 1
+        )
+        if max_tick_status is not None:
+            pytest.skip(f"L2.2 SKIP: {max_tick_status}")
+        oracle_status = composition_allocator_oracle_status(composition_wids_by_process)
+        if oracle_status is not None:
+            pytest.skip(f"L2.2 SKIP: {oracle_status}")
+
         all_observables: list[str] = []
         for name in ordered:
             for obs in contexts[name].spec.observables:
@@ -283,7 +314,7 @@ def run_integrated_replay(*, under_test_processes: list[str], rng_seed: int) -> 
                     break
 
         for tick in range(n_ticks):
-            shared_state = build_state_template(contexts[ordered[0]].process)
+            shared_state = merge_process_state_templates([contexts[name].process for name in ordered])
             before_vectors: dict[str, dict[str, np.ndarray]] = {}
             after_vectors: dict[str, dict[str, np.ndarray]] = {}
             step_vectors: dict[tuple[str, str], np.ndarray] = {}
@@ -309,6 +340,30 @@ def run_integrated_replay(*, under_test_processes: list[str], rng_seed: int) -> 
                     wids=src.wids_by_observable[obs],
                 )
 
+            # Composition-boundary allocation (process closure before pair
+            # execution): the TRUE Karr allocator oracle (the L2.0a global
+            # oracle: pool_before + requirements across all 28 processes,
+            # evolveState.m:24-37), never derived from states_before/
+            # state['substrates'] (docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md
+            # A05 -- states_before is each process's OWN post-allocation
+            # substrate state; reusing it as a pool or request is exactly
+            # the fabrication A05 forbids and was Finding #20's
+            # remediation's own initial bug). Run the real allocator
+            # arithmetic once, simultaneously, before any process in the
+            # composition executes. Oracle availability was already
+            # verified once for all ticks by the upfront
+            # `composition_allocator_oracle_status` skip above; any
+            # per-tick failure here is a genuine data problem, not an
+            # expected skip path, so it is intentionally NOT re-caught.
+            allocator_oracle = load_composition_allocator_oracle(
+                wids_by_process=composition_wids_by_process,
+                tick=tick,
+            )
+            refresh_allocator_views_composition(
+                allocator_oracle=allocator_oracle,
+                state=shared_state,
+            )
+
             for name in ordered:
                 ctx = contexts[name]
                 for obs in ctx.spec.trace_after_hint_observables:
@@ -319,7 +374,6 @@ def run_integrated_replay(*, under_test_processes: list[str], rng_seed: int) -> 
                         wids=ctx.wids_by_observable[obs],
                     )
 
-                refresh_allocator_views(ctx.process, shared_state)
                 update = ctx.process.next_update(1.0, shared_state)
                 _apply_update(shared_state, update)
                 upstream = [p for p in ordered if ordered.index(p) < ordered.index(name)]

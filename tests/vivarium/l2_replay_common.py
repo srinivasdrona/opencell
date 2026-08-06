@@ -4,6 +4,8 @@ import copy
 import inspect
 import os
 import re
+import sys
+from collections.abc import Sequence
 from dataclasses import dataclass
 from functools import cache, lru_cache
 from numbers import Number
@@ -15,6 +17,26 @@ import numpy as np
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+
+# `scripts` is not an installed package -- it is only importable with the
+# repo root on sys.path. This mirrors the bootstrap already used by
+# tests/integration/test_l2_0a_allocator_gate.py, which is the module this
+# file's global-oracle composition loader reuses (never duplicates).
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from opencell.vivarium.karr_allocation_step import KEY_ALIASES, KarrAllocationStep  # noqa: E402
+from scripts.l2_inventory_probe import FIXTURE_NAME  # noqa: E402
+from scripts.probe_l2_0a_allocator_input import (  # noqa: E402
+    AllocatorOracle,
+    allocator_oracle_search_paths,
+    build_wid_mappings,
+    load_allocator_oracle,
+    load_process_substrate_wids,
+    mc_key_for_flat_index,
+    resolve_allocator_oracle_path,
+)
+
 _TRACE_BASE_REL = Path("data/m1_sources/karr_native/per_process_traces_v2")
 _FIXTURE_BASE_REL = Path("data/karr_fixtures/per_process")
 _L2_TOLERANCE_TABLE_REL = Path("docs/phase_e/L2_TOLERANCE_TABLE.md")
@@ -325,6 +347,51 @@ def schema_defaults(node: Any) -> Any:
 def build_state_template(process: Any) -> dict[str, Any]:
     schema = process.ports_schema()
     return {k: schema_defaults(v) for k, v in schema.items()}
+
+
+def merge_process_state_templates(processes: Sequence[Any]) -> dict[str, Any]:
+    """Merge every composed process's own :func:`build_state_template`
+    port-by-port, so the returned state carries EVERY composed process's
+    own port declarations -- not just the first process's.
+
+    This matters specifically for ``substrates_allocated``: each process
+    declares its own sub-dict keyed by its own ``self.name``
+    (e.g. ``{"substrates_allocated": {"karr_protein_folding": {...}}}``),
+    so building the shared template from only ONE process's schema (as a
+    prior version of the v1 composition harness did via
+    ``build_state_template(contexts[ordered[0]].process)``) silently drops
+    every OTHER composed process's ``substrates_allocated`` row entirely --
+    any allocator output written via :func:`apply_composition_allocations`
+    for those other processes has nowhere to land (``apply_composition_
+    allocations`` only writes into pre-existing keys, by design, so it
+    would silently no-op for them rather than corrupt anything -- but the
+    allocation is still lost, which is just as wrong for a downstream
+    consumer expecting it).
+
+    Uses ``setdefault`` per leaf key, so processes that declare disjoint
+    keys under the same port (the normal case for ``substrates_allocated``,
+    ``requests``: each process's own name is a distinct top-level key) are
+    additive and never clobber each other. Ports that are genuinely
+    process-agnostic shared state (e.g. ``substrates`` itself, the real
+    pool) are UNCHANGED by this merge beyond taking the union of declared
+    WID keys at their default value -- the actual pool values are written
+    later via the harness's existing overlay passes, never by this
+    function.
+    """
+    if not processes:
+        return {}
+    state = build_state_template(processes[0])
+    for process in processes[1:]:
+        template = build_state_template(process)
+        for port, port_state in template.items():
+            if port not in state:
+                state[port] = port_state
+                continue
+            existing = state[port]
+            if isinstance(existing, dict) and isinstance(port_state, dict):
+                for key, value in port_state.items():
+                    existing.setdefault(key, value)
+    return state
 
 
 def _get_nested_mapping(state: dict[str, Any], path: tuple[str, ...]) -> dict[str, Any] | None:
@@ -776,6 +843,422 @@ def refresh_allocator_views(process: Any, state: dict[str, Any]) -> None:
             for wid in list(proc_alloc.keys()):
                 if wid in substrates:
                     proc_alloc[wid] = float(max(0.0, float(substrates[wid])))
+
+
+def compute_composition_allocations(
+    *,
+    requests_by_process: dict[str, dict[str, float]],
+    pool: dict[str, float],
+    projection_by_process: dict[str, dict[str, str]] | None = None,
+) -> dict[str, dict[str, float]]:
+    """Run Karr's real proportional-allocation arithmetic across every
+    process contending for a shared substrate pool at the composition
+    boundary.
+
+    Wraps ``KarrAllocationStep.next_update`` (Karr's uncapped proportional
+    fair share, floored --
+    ``@Simulation/evolveState.m:24-37``) so simultaneous requests genuinely
+    contend, instead of each process independently receiving the full
+    observed pool. That independent-grant behavior is what
+    ``refresh_allocator_views`` performs above, which is CORRECT ONLY for
+    isolated single-process replay (Karr's ``states_before`` there is
+    already that one process's post-allocation share -- see
+    docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md, A05/D1) and WRONG at a
+    multi-process composition boundary, where it grants every composed
+    process the same shared pool value independently
+    (docs/phase_f/INTEGRITY_AUDIT_PRE_L25.md Finding #20).
+
+    ``requests_by_process`` and ``pool`` are keyed in the allocator's true
+    metabolite-compartment identity space (`mc_key`, e.g. ``"H2O[c]"``).
+    If ``projection_by_process`` is provided, the helper computes the full
+    allocation in that `mc_key` space and only THEN projects the selected
+    runtime rows back down to each process's local substrate WIDs. That
+    preserves compartment identity through pool/requirements/allocation and
+    prevents the exact H2O[c]/H2O[e] collapse the design forbids.
+
+    A process with an all-zero (or empty) request dict is still enrolled as
+    a consumer so it is reported with an explicit 0.0 allocation rather than
+    silently dropped (mirrors the zero-demand-row guard in D3 of
+    L2_0A_ALLOCATOR_INPUT_GATE.md).
+    """
+    if not isinstance(pool, dict) or not requests_by_process:
+        return {}
+    consumer_processes = [
+        (proc_name, sorted(reqs.keys())) for proc_name, reqs in requests_by_process.items()
+    ]
+    all_wids = sorted({wid for reqs in requests_by_process.values() for wid in reqs} | set(pool))
+    if not all_wids:
+        return {}
+    step = KarrAllocationStep({"consumer_processes": consumer_processes, "substrate_wids": all_wids})
+    update = step.next_update(1.0, {"substrates": dict(pool), "requests": requests_by_process})
+    raw_allocations = update.get("substrates_allocated", {})
+
+    if projection_by_process is not None:
+        projected: dict[str, dict[str, float]] = {}
+        for proc_name, wid_to_mc_key in projection_by_process.items():
+            row_key = KEY_ALIASES.get(proc_name, proc_name)
+            row = raw_allocations.get(row_key)
+            if not isinstance(row, dict):
+                raise MissingAllocatorOracleError(
+                    "composition allocation computed no row for "
+                    f"process.name={proc_name!r} (normalized={row_key!r})."
+                )
+            projected[proc_name] = {}
+            for wid, mc_key in wid_to_mc_key.items():
+                if mc_key not in row:
+                    raise MissingAllocatorOracleError(
+                        "composition allocation row missing resolved "
+                        f"mc_key={mc_key!r} for process.name={proc_name!r} wid={wid!r}."
+                    )
+                projected[proc_name][wid] = float(row[mc_key])
+        return projected
+
+    # KarrAllocationStep's own output rows are a UNION of every composed
+    # process's WIDs (see ports_schema/next_update in karr_allocation_step.py
+    # -- molecule_names is the union across ALL consumer_processes), so an
+    # un-projected row would carry WIDs this particular process never itself
+    # requested. Project each row back down to only the WIDs that process
+    # declared, so apply_composition_allocations' raise-on-mismatch guard
+    # never sees a spuriously "unexpected" WID that is really just another
+    # process's request key.
+    canonical_wids: dict[str, set[str]] = {}
+    for proc_name, reqs in requests_by_process.items():
+        canonical_wids.setdefault(KEY_ALIASES.get(proc_name, proc_name), set()).update(reqs)
+    return {
+        proc_name: {wid: float(raw_allocations.get(proc_name, {}).get(wid, 0.0)) for wid in wids}
+        for proc_name, wids in canonical_wids.items()
+    }
+
+
+def apply_composition_allocations(
+    state: dict[str, Any],
+    allocations: dict[str, dict[str, float]],
+) -> None:
+    """Write ``compute_composition_allocations`` output into
+    ``state['substrates_allocated'][<process.name>]``.
+
+    ``compute_composition_allocations`` already projects each process's row
+    down to only the WIDs that process itself declared as a request (see its
+    docstring), so every ``(proc_name, wid)`` pair reaching this function is
+    an EXPECTED write target, never a spurious union artifact. Per the
+    second blocking re-review (point 3): a process/WID pair with no matching
+    destination in ``state['substrates_allocated']`` is therefore always a
+    genuine bug -- a runtime/canonical process-name keying mismatch (the
+    root cause of the standalone PPI/PPII anti-pattern this guard was added
+    for) or a missing ``ports_schema`` declaration -- and MUST raise, never
+    silently no-op past it.
+    """
+    allocated_root = state.get("substrates_allocated", {})
+    if not isinstance(allocated_root, dict):
+        raise MissingAllocatorOracleError(
+            "state['substrates_allocated'] is missing or not a dict; cannot apply "
+            "composition allocations without a declared target for any process."
+        )
+    for proc_name, proc_alloc in allocations.items():
+        target = allocated_root.get(proc_name)
+        if not isinstance(target, dict):
+            raise MissingAllocatorOracleError(
+                f"composition allocation computed a row for process.name={proc_name!r} "
+                "but state['substrates_allocated'] has no matching key. Composition "
+                "callers must key requests/allocations by the RUNTIME process.name "
+                "(e.g. 'karr_protein_processing_i'), never a MATLAB-canonical display "
+                "name (e.g. 'ProteinProcessingI') -- that mismatch is exactly what "
+                "silently no-op'd the standalone PPI/PPII allocator path before this "
+                "guard existed."
+            )
+        for wid, value in proc_alloc.items():
+            if wid not in target:
+                raise MissingAllocatorOracleError(
+                    f"composition allocation computed wid={wid!r} for "
+                    f"process.name={proc_name!r} but that process's own "
+                    "substrates_allocated schema (ports_schema) does not declare "
+                    "this WID."
+                )
+            target[wid] = float(value)
+
+
+class MissingAllocatorOracleError(RuntimeError):
+    """The true pre-allocation allocator oracle is not available for a
+    composition-boundary tick.
+
+    Per ``docs/phase_f/L2_0A_ALLOCATOR_INPUT_GATE.md`` A05/D1:
+    ``states_before`` is each process's OWN post-allocation substrate
+    state, NOT the global pre-allocation pool -- it must never be reused
+    (via overlay, sum, max, or as a "request" proxy) to construct a
+    fabricated composition-boundary allocator input. That is exactly how
+    the original composition-contention fix (Finding #20 remediation,
+    pre-correction) was itself wrong: it built a "pool" by overlaying every
+    composed process's own post-allocation ``states_before`` value, and fed
+    those same post-allocation values back in as "requests" -- re-running
+    already-decided allocations through the allocator a second time, which
+    reproduces nothing Karr actually computed.
+
+    The only sanctioned oracle is the L2.0a GLOBAL allocator oracle
+    (``data/m1_sources/karr_native/l2_0a_allocator_oracle_s000.mat``,
+    produced by ``scripts/matlab/extract_l2_0a_allocator_oracle.m`` and
+    loaded via ``scripts/probe_l2_0a_allocator_input.py``): Karr's own
+    ``pool_before`` (global ``mets.counts`` pre-allocation,
+    ``evolveState.m:24``) and per-process ``requirements``
+    (``evolveState.m:31-35``) captured across ALL 28 processes for one
+    real, seeded, fitted simulation. A second blocking review superseded
+    the earlier per-process-trace-group design (the ``*_100ticks.mat``
+    fixtures were never extended with these groups; see
+    ``80f6465``/provenance retraction) in favor of this single canonical
+    artifact, which already exists on ``main`` and does not need to be
+    rebuilt. Callers MUST catch this exception and skip closed
+    (``pytest.skip("... MISSING_ALLOCATOR_ORACLE ...")`` or
+    ``... ALLOCATOR_ORACLE_TICK_COVERAGE_EXCEEDED ...``); they must never
+    substitute an approximation to force a pass.
+    """
+
+
+@dataclass(frozen=True)
+class CompositionAllocatorOracle:
+    pool_before: dict[str, float]
+    requirements_by_process: dict[str, dict[str, float]]
+    projection_by_process: dict[str, dict[str, str]]
+
+
+# The extraction script hardcodes single-tick capture (a full multi-tick
+# ``evolveState`` advance hits a pre-existing, out-of-scope MATLAB bug in
+# Transcription/releaseProteinFromSites -- see
+# scripts/matlab/extract_l2_0a_allocator_oracle.m's own header comment).
+# This is a genuine, currently-unresolved tick-coverage limitation, not a
+# harness bug: fixing it would require editing process biology code, which
+# is out of scope here. Composition callers requesting any tick outside
+# this tuple must fail closed with ALLOCATOR_ORACLE_TICK_COVERAGE_EXCEEDED
+# rather than silently reusing tick-0 data for a later tick.
+GLOBAL_ALLOCATOR_ORACLE_TICKS_COVERED: tuple[int, ...] = (0,)
+
+_RUNTIME_VARIANT_SUFFIX_RE = re.compile(r"_v\d+$")
+
+
+@cache
+def _global_allocator_oracle() -> AllocatorOracle | None:
+    """Load (and cache) the L2.0a global allocator oracle, or ``None`` if
+    no extracted oracle artifact can be found in any repo worktree.
+
+    Thin wrapper around ``scripts/probe_l2_0a_allocator_input.py::
+    load_allocator_oracle`` -- never re-implements oracle parsing here.
+    """
+    resolved = resolve_allocator_oracle_path()
+    if resolved is None:
+        return None
+    return load_allocator_oracle(resolved)
+
+
+def _canonical_process_name_for_runtime(runtime_name: str) -> str | None:
+    """Map a runtime ``process.name`` (e.g. ``"karr_protein_processing_i"``)
+    to the MATLAB-canonical process name the global oracle indexes by (e.g.
+    ``"ProteinProcessingI"``), reusing the single source of truth for this
+    mapping (``scripts/l2_inventory_probe.py::FIXTURE_NAME``).
+
+    Runtime variant names such as ``"karr_translation_v3"`` or
+    ``"karr_transcription_v2"`` are not themselves present in
+    ``FIXTURE_NAME`` (only their unsuffixed base names are), so a trailing
+    ``_v<digits>`` suffix is stripped before lookup. Returns ``None`` if no
+    mapping exists even after stripping.
+    """
+    canonical = FIXTURE_NAME.get(runtime_name)
+    if canonical is not None:
+        return canonical
+    stripped = _RUNTIME_VARIANT_SUFFIX_RE.sub("", runtime_name)
+    return FIXTURE_NAME.get(stripped)
+
+
+def _build_composition_projection_by_process(
+    oracle: AllocatorOracle,
+    wids_by_process: dict[str, list[str]],
+) -> tuple[dict[str, str], dict[str, dict[str, str]]]:
+    runtime_name_by_canonical: dict[str, str] = {}
+    schema_process_wids = load_process_substrate_wids()
+    for runtime_name, wids in wids_by_process.items():
+        canonical = _canonical_process_name_for_runtime(runtime_name)
+        if canonical is None or canonical not in oracle.process_names:
+            raise MissingAllocatorOracleError(
+                "MISSING_ALLOCATOR_ORACLE: unresolved runtime process name(s) "
+                f"against the global oracle's canonical process list: {runtime_name!r}."
+            )
+        prior_runtime = runtime_name_by_canonical.get(canonical)
+        if prior_runtime is not None and prior_runtime != runtime_name:
+            raise MissingAllocatorOracleError(
+                "MISSING_ALLOCATOR_ORACLE: two runtime names map to the same "
+                f"canonical oracle row {canonical!r}: {prior_runtime!r} and {runtime_name!r}."
+            )
+        runtime_name_by_canonical[canonical] = runtime_name
+        schema_process_wids[canonical] = tuple(str(wid) for wid in wids)
+
+    mappings, unmapped = build_wid_mappings(oracle, schema_process_wids)
+    unmapped_lookup = {(item.process_name, item.wid): item for item in unmapped}
+    projection_by_process: dict[str, dict[str, str]] = {}
+    for runtime_name, wids in wids_by_process.items():
+        canonical = _canonical_process_name_for_runtime(runtime_name)
+        assert canonical is not None
+        projection_by_process[runtime_name] = {}
+        for wid in wids:
+            mapping = mappings.get((canonical, wid))
+            if mapping is None:
+                unmapped_item = unmapped_lookup.get((canonical, wid))
+                if unmapped_item is None:
+                    reason = "missing_from_build_wid_mappings"
+                    candidates = "none"
+                else:
+                    reason = unmapped_item.reason
+                    candidates = (
+                        ", ".join(unmapped_item.candidate_mc_keys)
+                        if unmapped_item.candidate_mc_keys
+                        else "none"
+                    )
+                raise MissingAllocatorOracleError(
+                    "MISSING_ALLOCATOR_ORACLE: unresolved allocator WID mapping "
+                    f"for runtime process.name={runtime_name!r} canonical={canonical!r} "
+                    f"wid={wid!r}: reason={reason}; candidates={candidates}."
+                )
+            projection_by_process[runtime_name][wid] = mapping.mc_key
+    return runtime_name_by_canonical, projection_by_process
+
+
+def composition_allocator_oracle_status(
+    wids_by_process: dict[str, list[str]],
+    *,
+    tick: int = 0,
+) -> str | None:
+    """Return ``None`` iff the L2.0a global allocator oracle is present,
+    covers ``tick``, and every named runtime process resolves both a
+    canonical name and an unambiguous flat allocator-metabolite index for
+    each of its declared WIDs. Otherwise return a human-readable status
+    string identifying exactly what is missing, safe to call once before a
+    tick loop to skip closed immediately rather than run any tick.
+    """
+    if not any(wids_by_process.values()):
+        return None
+
+    if tick not in GLOBAL_ALLOCATOR_ORACLE_TICKS_COVERED:
+        return (
+            "ALLOCATOR_ORACLE_TICK_COVERAGE_EXCEEDED: the L2.0a global "
+            f"allocator oracle covers tick(s) {GLOBAL_ALLOCATOR_ORACLE_TICKS_COVERED} "
+            f"only, but tick={tick} was requested. The extraction script "
+            "(scripts/matlab/extract_l2_0a_allocator_oracle.m) hardcodes "
+            "single-tick capture because a full multi-tick evolveState "
+            "advance hits a pre-existing, out-of-scope MATLAB bug in "
+            "Transcription/releaseProteinFromSites (see that script's "
+            "header comment) -- this is a genuine unresolved tick-coverage "
+            "blocker, not something this harness change may fix."
+        )
+
+    oracle = _global_allocator_oracle()
+    if oracle is None:
+        searched = ", ".join(str(path) for path in allocator_oracle_search_paths())
+
+        return (
+            "MISSING_ALLOCATOR_ORACLE: the L2.0a global allocator oracle "
+            "is absent from every known worktree search path. Searched: "
+            f"{searched}. This is NOT a claim that MATLAB itself is "
+            "unavailable; it means no extracted oracle artifact is present "
+            "at those paths. Composition allocation is skipped closed, not "
+            "fabricated."
+        )
+
+    try:
+        _build_composition_projection_by_process(oracle, wids_by_process)
+    except MissingAllocatorOracleError as exc:
+        return str(exc)
+    return None
+
+
+def load_composition_allocator_oracle(
+    *,
+    wids_by_process: dict[str, list[str]],
+    tick: int = 0,
+) -> CompositionAllocatorOracle:
+    """Load the TRUE composition-boundary allocator oracle for ``tick``:
+    the global pre-allocation substrate pool (``pool_before``) and each
+    named runtime process's own ``requirements`` row, both resolved
+    directly from the L2.0a global allocator oracle (never derived from
+    ``states_before`` or any other process-output proxy -- see
+    ``MissingAllocatorOracleError``).
+
+    Each runtime process's declared WIDs are resolved with the EXACT
+    ``build_wid_mappings`` logic from the L2.0a probe, including
+    ``single_active_candidate`` fallback and explicit metabolite-compartment
+    identity (`mc_key`). Any unmatched runtime row or WID fails CLOSED
+    with :class:`MissingAllocatorOracleError`; nothing is silently skipped.
+
+    Raises :class:`MissingAllocatorOracleError` if the oracle is absent,
+    the requested tick exceeds coverage, a runtime process cannot be
+    mapped to its canonical oracle name, or any selected runtime WID
+    cannot be resolved into the allocator's metabolite-compartment space.
+    """
+    status = composition_allocator_oracle_status(wids_by_process, tick=tick)
+    if status is not None:
+        raise MissingAllocatorOracleError(status)
+
+    oracle = _global_allocator_oracle()
+    assert oracle is not None  # status would have raised above otherwise
+
+    runtime_name_by_canonical, projection_by_process = _build_composition_projection_by_process(
+        oracle, wids_by_process
+    )
+    mc_keys = tuple(
+        mc_key_for_flat_index(oracle, flat_index)
+        for flat_index in range(oracle.pool_before.size)
+    )
+    pool_before = {
+        mc_key: float(oracle.pool_before[flat_index])
+        for flat_index, mc_key in enumerate(mc_keys)
+    }
+    requirements_by_process: dict[str, dict[str, float]] = {}
+    for proc_idx, canonical_name in enumerate(oracle.process_names):
+        row_key = runtime_name_by_canonical.get(canonical_name, canonical_name)
+        requirements_by_process[row_key] = {
+            mc_key: float(oracle.requirements[proc_idx, flat_index])
+            for flat_index, mc_key in enumerate(mc_keys)
+            if float(oracle.requirements[proc_idx, flat_index]) != 0.0
+        }
+
+    return CompositionAllocatorOracle(
+        pool_before=pool_before,
+        requirements_by_process=requirements_by_process,
+        projection_by_process=projection_by_process,
+    )
+
+
+def refresh_allocator_views_composition(
+    *,
+    allocator_oracle: CompositionAllocatorOracle,
+    state: dict[str, Any],
+) -> None:
+    """Composition-boundary allocator refresh: real contention against the
+    TRUE Karr oracle, not a grant, and not a fabricated pool.
+
+    ``allocator_oracle`` MUST come from
+    :func:`load_composition_allocator_oracle` (Karr's own pre-allocation
+    ``mets.counts``/``requirements``, ``evolveState.m:24-35``) -- NEVER
+    derived from ``state['substrates']``, ``states_before``, or any other
+    process-output proxy. See :class:`MissingAllocatorOracleError` for why
+    that substitution is forbidden (it was the root cause of a real bug in
+    an earlier version of this function).
+
+    Call this exactly ONCE per tick, for every process in the composition
+    SIMULTANEOUSLY, before ANY of those processes' ``next_update`` has run
+    this tick -- matching Karr's real per-tick semantics documented in
+    ``docs/phase_f/L2_5_HARNESS_DESIGN.md`` Baseline fact 5
+    (``@Simulation/evolveState.m``: allocation is precomputed for all
+    processes, then each process executes with its fixed allocation).
+    Calling this per-process, interleaved with execution, would
+    reintroduce the idealized-grant bug one level down: processes later in
+    composition order would see an already-partially-consumed pool
+    credited to them in full, rather than contending for the tick-start
+    pool alongside every other composed process.
+    """
+    if not allocator_oracle.projection_by_process:
+        return
+    allocations = compute_composition_allocations(
+        requests_by_process=allocator_oracle.requirements_by_process,
+        pool=allocator_oracle.pool_before,
+        projection_by_process=allocator_oracle.projection_by_process,
+    )
+    apply_composition_allocations(state, allocations)
 
 
 def _iter_numeric_leaf_dicts(node: Any, prefix: str = "") -> list[tuple[str, dict[str, float]]]:
