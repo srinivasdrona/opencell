@@ -66,7 +66,10 @@ processes:
       extractor's fail-closed capture buffer to hold the whole interval.
       Catalog reconciled 2026-08-05 to `M_ticks: 4000` / seed_window
       [-3999,0] (the validated seed-0 LOWER BOUND, not yet a confirmed
-      cohort-wide maximum) -- see PROCESS_CATALOG.yaml's `blocked_on` note.
+      cohort-wide maximum) -- see PROCESS_CATALOG.yaml's
+      `event_sweep_blocked_on` note (2026-08-06: renamed from `blocked_on`,
+      which collided with derive_l25_pair_matrix.py's generic L2.2
+      pass/fail fallback).
       `adapter_id` here is `CytokinesisEventAdapter.adapter_id` (the real,
       registered adapter for this process -- see
       scripts/l2_event/adapters/cytokinesis.py), but `adapter_status` stays

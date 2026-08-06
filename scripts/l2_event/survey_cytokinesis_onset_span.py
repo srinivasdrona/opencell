@@ -8,8 +8,8 @@ COHORT-WIDE MAXIMUM onset-to-completion span before authorizing an
 N=50 sweep -- see ``docs/phase_f/l2_event/event_registry.yaml``'s
 Cytokinesis notes and ``docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml``'s
 Cytokinesis ``M_ticks``/``seed_window`` fields (reconciled 2026-08-05 to
-the seed-0 LOWER BOUND, `blocked_on` this survey for the real
-cohort-wide maximum).
+the seed-0 LOWER BOUND, `event_sweep_blocked_on` (formerly `blocked_on`)
+pending this survey for the real cohort-wide maximum).
 
 Hard rule: this script NEVER launches a MATLAB extraction itself. It
 only reads whatever traces already exist. If fewer than 50 seeds are
@@ -109,7 +109,9 @@ def main(argv: list[str] | None = None) -> int:
     for seed, path in sorted(traces.items()):
         onset_abs, completion_abs, span = onset_span_for_trace(path)
         spans[seed] = span
-        print(f"seed={seed:03d} onset_tick={onset_abs} completion_tick={completion_abs} span={span}")
+        print(
+            f"seed={seed:03d} onset_tick={onset_abs} completion_tick={completion_abs} span={span}"
+        )
 
     n_present = len(spans)
     max_span = max(spans.values())

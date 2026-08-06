@@ -231,3 +231,25 @@ rule-by-rule detail. Summary:
 - **Status unchanged**: Cytokinesis Canary D remains closed/successful;
   N=50 remains **not authorized**.
 
+## Addendum (2026-08-06): field-name collision fix + plan sync
+
+Opus flagged two final blockers on the round-2 fixes above:
+
+- The `blocked_on` field added to Cytokinesis's catalog row above
+  collided with a pre-existing, reserved `blocked_on` key that
+  `scripts/derive_l25_pair_matrix.py::_infer_l2_2_status()` reads as a
+  generic L2.2 pass/fail signal -- it was incorrectly flipping
+  Cytokinesis's inferred `l2_2_passed` to `False` in the pairwise
+  matrix. Renamed to `event_sweep_blocked_on` everywhere; confirmed via
+  `python scripts/derive_l25_pair_matrix.py --check` that the
+  pair-matrix/list artifacts' pre-existing staleness predates this
+  branch and is unrelated to this field (reproduced identically against
+  the pre-round-2 catalog), so no artifact regeneration was performed.
+  See `CYTOKINESIS_ADAPTER_REPORT.md` §11 for full detail.
+- `plan.md`'s operational handoff refreshed to the real, current
+  adapter_id and reconciled catalog values (was still citing the
+  earlier invented adapter_id as if current).
+- **Status unchanged**: Cytokinesis Canary D remains closed/successful;
+  N=50 remains **not authorized** (now backed by
+  `event_sweep_blocked_on`, not `blocked_on`).
+

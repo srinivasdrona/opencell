@@ -563,3 +563,39 @@ own append-only convention).
    row in the "exact missing-data matrix" table is likewise refreshed
    from `0 / 50` / `not_implemented` to `1 / 50` /
    `structural_smoke_only`, with a note pointing at this section.
+
+## 11. Addendum (2026-08-06, Opus round 3): field-name collision + plan sync
+
+Opus flagged two final blockers on §10's fixes before merge:
+
+1. **`blocked_on` renamed to `event_sweep_blocked_on`.** §10 item 4
+   added a Cytokinesis `blocked_on` field to `PROCESS_CATALOG.yaml`.
+   `blocked_on` turned out to be a pre-existing, reserved key already
+   used by three other catalog entries (e.g. ChromosomeCondensation,
+   ChromosomeSegregation: `blocked_on: []`) and read directly by
+   `scripts/derive_l25_pair_matrix.py::_infer_l2_2_status()` as a
+   generic L2.2 pass/fail signal (any truthy value there flips
+   `l2_2_passed` to `False` for that process in the pairwise matrix).
+   Cytokinesis's non-empty string value collided with this and
+   incorrectly flipped its inferred `l2_2_passed` to `False`, even
+   though Cytokinesis's actual L2.2 in-scope status
+   (`in_scope_L2_2: true`) is unaffected by the narrower N=50
+   event-window-sweep authorization gate this field actually describes.
+   Renamed to `event_sweep_blocked_on` everywhere (catalog, registry
+   notes, survey script docstring); confirmed via direct probe that
+   `_infer_l2_2_status()` now falls back to `in_scope_L2_2` (`True`,
+   `fallback:in_scope_L2_2`) instead of the generic
+   `fallback:blocked_on` (`False`) path. Confirmed via
+   `python scripts/derive_l25_pair_matrix.py --check` that this
+   specific field was never the cause of the pair-matrix/list artifacts'
+   pre-existing staleness (that staleness predates this branch --
+   reproduced identically against the pre-round-2 catalog) so no
+   artifact regeneration was needed or performed for this fix. New
+   regression:
+   `tests/scripts/test_derive_l25_pair_matrix.py::test_cytokinesis_event_sweep_blocked_on_does_not_flip_l2_2_passed`.
+2. **`plan.md` operational handoff refreshed** to state the real,
+   current adapter_id (`cytokinesis.pinched_diameter_completion.v1`),
+   the reconciled `M_ticks=4000`/`seed_window=[-3999,0]` seed-0 lower
+   bound, and the surviving `1/50` span-survey blocker -- replacing a
+   stale mention of the earlier invented adapter_id as if it were still
+   current fact.
