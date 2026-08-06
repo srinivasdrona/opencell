@@ -59,55 +59,22 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live state (2026-08-05) — parallel L2.5 prerequisite closure:**
-- Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."** Fix and verify every applicable gap before L2.5 eligibility (`DECISIONS.md`: `no-known-gap-waivers`).
-- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `07270cd`, 154 commits ahead / 0 behind `origin/main` @ `01d54ae`.
-- Baseline integration is complete: `0e8ec4c` merged origin's green CI/README history; `3ad6a21` repaired 29 merged-branch Ruff findings and rebound stale Replication/Transcription L1b anchors.
-- Merged blocking surfaces are green: Ruff, naked-number lint, 402 unit tests, L1b 115/115 methods + 28/28 wiring rows, L2.0, Gate 1, Gate 2 and schema validation. The 553-test repair cohort passed; its 11 skips are the explicitly local-only bounded multi-seed pilot tests and were audited with `-rs`.
-- Twelve worktrees now branch from the green `3ad6a21` baseline:
-  1. `E:\opencell-worktrees\l25-scope-ratification-20260805` (`agent/l25-scope-ratification-20260805`);
-  2. `E:\opencell-worktrees\l22-replication-closure-20260805` (`agent/l22-replication-closure-20260805`);
-  3. `E:\opencell-worktrees\l22-dnas-closure-20260805` (`agent/l22-dnas-closure-20260805`);
-  4. `E:\opencell-worktrees\l2-event-ribosome-20260805` (`agent/l2-event-ribosome-20260805`);
-  5. `E:\opencell-worktrees\l2-event-cytokinesis-20260805` (`agent/l2-event-cytokinesis-20260805`);
-  6. `E:\opencell-worktrees\l2-event-ftsz-20260805` (`agent/l2-event-ftsz-20260805`);
-  7. `E:\opencell-worktrees\l2-event-dnadamage-20260805` (`agent/l2-event-dnadamage-20260805`);
-  8. `E:\opencell-worktrees\l22-procii-closure-20260805` (`agent/l22-procii-closure-20260805`);
-  9. `E:\opencell-worktrees\l22-macromol-closure-20260805` (`agent/l22-macromol-closure-20260805`);
-  10. `E:\opencell-worktrees\l2-event-closure-20260805` (`agent/l2-event-closure-20260805`) — reserved for integrating the four event-process branches and regenerating the shared event index;
-  11. `E:\opencell-worktrees\l22-natural-gap-closure-20260805` (`agent/l22-natural-gap-closure-20260805`) — reserved for integrating ProteinProcessingII + MacromolecularComplexation and regenerating the shared L2.2 index.
-  12. `E:\opencell-worktrees\l25-allocator-harness-20260805` (`agent/l25-allocator-harness-20260805`) — replace idealized replay grants with the real `KarrAllocationStep` and prove contention/fairness before pair execution.
-- Live Sonnet implementers (all dispatched with the mandatory three-slot prompt architecture and isolated worktree ownership):
-  - `l25-scope-ratifier` — L2.5 denominator and covering-set ratification;
-  - `replication-closer` — real no-hint Replication source/event closure;
-  - `dnas-closer` — DNASupercoiling canonical sample/evidence closure;
-  - `ribosome-event-closer` — RibosomeAssembly N=50 event evidence;
-  - `cytokinesis-event-closer` — fixed-shim Canary D retry and event evidence;
-  - `ftsz-event-closer` — no-hint pre-division FtsZ event evidence;
-  - `dnadamage-event-closer` — source-backed non-zero DNADamage evidence;
-  - `procii-closer` — ProteinProcessingII H12/sentinel closure;
-  - `macromol-closer` — MacromolecularComplexation lifecycle/H12 closure.
-  - `allocator-harness-closer` — replace idealized composition grants with real `KarrAllocationStep` contention semantics.
-- Live review/follow-up state:
-  - `replication-closer` — follow-up requested for five Opus-confirmed gaps: Karr lead/limits semantics, randomized ordering, stall-vs-raise behavior, no-hint byproducts and ligation;
-  - `allocator-opus-rereview` — reviewing the new explicit `pool_before`/requirements fail-closed contract at `ec9e649`; Windows MATLAB availability means extraction remains actionable, not terminally blocked;
-  - L2.5 scope ratification integrated to local `main` at `d90e5cb`: 28 processes, 378/256/122 pair split, 2 eligible, 1 gap-free, 0 selected pairs and 11 uncovered classes. Pair execution remains closed.
-  - ProteinProcessingII determination integrated to local `main` at `eb37fe3`; 204 focused tests pass. `SENTINEL_FAIL` remains correctly non-green because natural transferase branch coverage is absent.
-  - `dnadamage-opus-final` — final review of Rule-8 removal and broadened vacuous-trace classification at `a1df739`;
-  - `procii-opus-rereview` — reviewing the structural shim-path and semantic-equivalence guard fixes at `0613d84`;
-  - `ribosome-opus-final` — final review of registry truthfulness, atomic extraction and scope caveats at `abb5697`;
-  - `cytokinesis-event-closer` — follow-up requested to bind a real adapter id, enforce trace seed/process metadata, regenerate reproducible provenance and replace the false 100-tick catalog contract with a 4,000-tick seed-0 lower bound plus N=50 span-survey blocker;
-  - `dnas-closer` — N=100 retained as supplemental only; fixed N=200 preregistration/extraction requested with distinct-seed support and an occurrence-rate guard because N=100 cleared by one OC event and W1 is insensitive.
-  - `macromol-closer` — rework requested after Opus found stale artifact hashes, approximate scheduler ordering and collapsed complex identity; rerun must use real scheduler semantics and withdraw the falsified closed-form demotion rather than defer it;
-  - `ribosome-event-closer` completed all requested fixes; 50-seed PASS remains unchanged and shared-index staleness is now mechanically detected.
-  - `ftsz-event-closer` completed the requested tooling fixes; scientific status remains `INSUFFICIENT_ENSEMBLE` with 0/50 real anchored traces.
-  - `dnadamage-opus-review` completed with `APPROVE_AS_BLOCKER_DOC`; blocker conclusion reproduced, merge waits for the Rule-8 and audit-strength follow-up.
-  - `replication-opus-review` completed with `APPROVE_AS_PARTIAL`; chromosome improvement reproduced, but no merge until the five applicable gaps above are fixed.
-  - `allocator-opus-review` completed `BLOCKING`; the 58F/34P/42S sweep is invalid and must be superseded, not interpreted as real contention.
-  - FtsZ tooling integrated to local `main` at `52c0eb0`; final Opus review approved, merged audit remains fail-closed at `INSUFFICIENT_ENSEMBLE` (0/50).
-  - `ribosome-opus-review` completed: scientific evidence chain verified; merge waits for the registry/extractor/documentation follow-up and then event-index regeneration.
-  - `macromol-opus-review` completed `BLOCKING`; the reachability finding is real, but current branch verification/provenance is false at HEAD and cannot support the H12 taxonomy conclusion.
-- L2.5 pair execution remains blocked until process closure and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted. Scope ratification may proceed in parallel.
+**Live state (2026-08-06) — detached closure/integration:**
+- Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `e0d1804`, synchronized with `origin/main`.
+- No built-in background agents are running. Future delegated work runs as detached Codex subprocesses with logs/status files outside the main conversation; the main context continues integration work.
+- Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green).
+- Ready for direct integration after local verification:
+  - RibosomeAssembly branch `cc7b4fa`: 50-seed conditioned event PASS; shared event index must be regenerated during integration.
+  - DNADamage branch `b2aa0be`: Rule-8 production trace read removed; biological gate remains blocked on nontrivial Karr stimulus traces.
+- Detached review/fix lanes to launch:
+  - clean Replication review from commit `fa126e9` (ignore contaminated original worktree);
+  - DNASupercoiling N=200 evidence review at `6a6fbd0`;
+  - allocator correction from clean detached commit `3e41ab1`;
+  - MacromolecularComplexation validator hardening from `023495d`.
+- Cytokinesis worktree contains uncommitted final catalog/heuristic corrections; inspect and finish directly before integration.
+- L2.2 fresh status is **14 stale-only rows, 4 stale plus substantive blockers, 4 missing event rows**. Staleness is caused by shared runner/helper/projection hash changes, not a scientific collapse of the former 14 PASS metrics.
+- L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
 
 **Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
 
