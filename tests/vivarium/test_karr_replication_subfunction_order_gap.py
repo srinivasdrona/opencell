@@ -10,20 +10,17 @@ surface; production code never reads oracle-after data.
 
 from __future__ import annotations
 
-from pathlib import Path
-
+import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 import h5py
 import numpy as np
-
 from l2_replay_common import (  # noqa: E402
     assert_identity_or_tolerance,
     cell_vector,
     resolve_trace_path,
 )
-from opencell.state.chromosome_store import ChromosomeStore  # noqa: E402
 from test_karr_replication_runner_no_hint import _triplet_signature  # noqa: E402
 
-import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
+from opencell.state.chromosome_store import ChromosomeStore  # noqa: E402
 
 
 def _filtered_complex_bound_signature(store: ChromosomeStore, *, include_values: set[int]) -> tuple[

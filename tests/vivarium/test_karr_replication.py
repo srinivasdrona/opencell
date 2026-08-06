@@ -872,9 +872,6 @@ def test_partial_run_monotonic_no_nan_mass_closes_within_fragment() -> None:
     assert state["chromosome"]["fork_position_bp"]["left"] == float(ticks * 100)
     assert state["chromosome"]["fork_position_bp"]["right"] == float(ticks * 100)
 
-    total_advance_bp = int(
-        state["chromosome"]["fork_position_bp"]["left"] + state["chromosome"]["fork_position_bp"]["right"]
-    )
     consumed_datp = int(round(1e12 - state["substrates"]["DATP"]))
     consumed_dctp = int(round(1e12 - state["substrates"]["DCTP"]))
     consumed_dgtp = int(round(1e12 - state["substrates"]["DGTP"]))

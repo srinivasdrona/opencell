@@ -22,6 +22,7 @@ from l2_replay_common import (  # noqa: E402
     cell_vector,
     resolve_trace_path,
 )
+
 from opencell.state.chromosome_store import ChromosomeStore  # noqa: E402
 
 
