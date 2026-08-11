@@ -61,10 +61,10 @@ from _dna_damage_stress_common import (  # noqa: E402
     per_field_expected_counts,
 )
 from l2_replay_common import build_state_template, cell_vector  # noqa: E402
-from scripts.l2_event import dna_damage_stimulus_cohort as cohort  # noqa: E402
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess  # noqa: E402
+from scripts.l2_event import dna_damage_stimulus_cohort as cohort  # noqa: E402
 
 # Catalog authoritative spec (PROCESS_CATALOG.yaml DNADamage row):
 #   primary_channel: chromosome
