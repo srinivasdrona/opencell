@@ -191,6 +191,11 @@ def test_biological_gate_blocker_is_precise_and_not_a_pass(small_run: dict) -> N
     contract = gate["required_extraction_contract"]
     assert contract["required_seed_count"] == spec["support_design"]["n_seeds"]
     assert contract["required_m_ticks"] == spec["support_design"]["m_ticks"]
+    assert contract["preflight_status"] == "READY_FOR_MATLAB"
+    assert contract["planned_seed_ids"] == list(range(2000, 2050))
+    assert contract["required_observables"] == ["chromosome", "substrates"]
+    assert contract["condition_root_dirname"] == "dnadamage_stimulus_cohort"
+    assert contract["planner"] == "scripts/l2_event/dna_damage_stimulus_cohort.py"
     assert (
         contract["required_conditions"]["uvb_mechanism"]["injected_radiation_value"]
         == spec["conditions"]["uvb_mechanism"]["injected_radiation_value"]
@@ -199,7 +204,23 @@ def test_biological_gate_blocker_is_precise_and_not_a_pass(small_run: dict) -> N
         contract["required_conditions"]["gamma_mechanism"]["injected_radiation_value"]
         == spec["conditions"]["gamma_mechanism"]["injected_radiation_value"]
     )
+    assert contract["required_conditions"]["uvb_mechanism"]["output_path_pattern"].endswith(
+        "dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s{seed}/DNADamage_20ticks.mat"
+    )
+    assert contract["required_conditions"]["gamma_mechanism"]["output_path_pattern"].endswith(
+        "dnadamage_stimulus_cohort/gamma_mechanism/per_process_traces_v2_event_s{seed}/DNADamage_20ticks.mat"
+    )
+    assert (
+        json.loads(contract["required_conditions"]["uvb_mechanism"]["extraction_identity_json"])["condition"]
+        == "uvb_mechanism"
+    )
+    assert (
+        json.loads(contract["required_conditions"]["gamma_mechanism"]["extraction_identity_json"])["condition"]
+        == "gamma_mechanism"
+    )
     assert contract["rng_schedule"] == spec["rng_schedule"]
+    assert contract["stimulus_cohort_preflight"]["preflight_status"] == "READY_FOR_MATLAB"
+    assert "shared-lock MATLAB execution" in contract["matlab_execution_blocker"]
     assert "wired through" in contract["oc_port_gap"]
 
 
