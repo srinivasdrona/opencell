@@ -1,0 +1,35 @@
+{
+  "b_resamples": 1000,
+  "channels": [
+    {
+      "channel": "complexs",
+      "k_eng": 3.0,
+      "q95_null": 0.36000000000000004,
+      "source_event_channel": "count",
+      "statistic_name": "w1_per_seed_count",
+      "statistic_value": 0.0,
+      "threshold": 1.08
+    },
+    {
+      "channel": "timing",
+      "k_eng": 3.0,
+      "q95_null": 9.712856934731933,
+      "source_event_channel": "timing",
+      "statistic_name": "w1_pooled_fire_tick_bag",
+      "statistic_value": 0.0,
+      "threshold": 29.1385708041958
+    },
+    {
+      "channel": "payload",
+      "k_eng": 3.0,
+      "q95_null": 0.09463625805089217,
+      "source_event_channel": "payload",
+      "statistic_name": "w1_per_component_at_matched_firings",
+      "statistic_value": 0.0,
+      "threshold": 0.2839087741526765
+    }
+  ],
+  "cluster_unit": "seed",
+  "process": "RibosomeAssembly",
+  "schema_version": 1
+}

@@ -1,0 +1,15 @@
+{
+  "expected_generator_primary_channel": "complexs",
+  "generated_at": "2026-08-11T21:39:50.173854+00:00",
+  "mode": "l22_event_bridge",
+  "process": "RibosomeAssembly",
+  "scope_caveat": "This PASS reflects OC's real per-tick port CONDITIONED on Karr's own recorded states_before at every tick (the established test-harness design used by this adapter and its seed-0 structural-smoke predecessor alike) -- it is not an independent free-running forward simulation. It demonstrates per-tick behavioral parity given Karr's own trajectory, not agreement between two independently-evolved trajectories. Do not read this PASS as free-running fidelity.",
+  "source_bundle_dir": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly",
+  "source_summary_channels": {
+    "count": "SEED_NOISE",
+    "payload": "SEED_NOISE",
+    "timing": "SEED_NOISE"
+  },
+  "source_summary_mode": "gate",
+  "source_summary_reasons": []
+}

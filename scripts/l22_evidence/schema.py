@@ -185,6 +185,11 @@ RESULT_SCHEMA_VERSION = 1
 RUNNER_SCRIPT = REPO_ROOT / "tests" / "vivarium" / "l2_2_design_a_runner.py"
 RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_runner_helpers.py"
 RUNNER_PROJECTIONS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_projections.py"
+EVENT_BRIDGE_MODULE = REPO_ROOT / "scripts" / "l22_evidence" / "event_bridge.py"
+L2_EVENT_RUNNER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "runner.py"
+L2_EVENT_METRICS_MODULE = REPO_ROOT / "scripts" / "l2_event" / "metrics.py"
+L2_EVENT_EVIDENCE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "evidence.py"
+L2_EVENT_REGISTRY_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_event" / "event_registry.yaml"
 # "Final zero-cost delta" (Opus5 ACCEPT bbc6aa6 conditional follow-up):
 # every in-scope process's `oc_module` lives under `opencell/vivarium/`
 # (`opencell/vivarium/karr_<process>.py` -- verified against every
@@ -226,6 +231,21 @@ SWEEP_PROVENANCE_SOURCE_FILES = {
     "runner": RUNNER_SCRIPT,
     "helpers": RUNNER_HELPERS_MODULE,
     "projections": RUNNER_PROJECTIONS_MODULE,
+    "catalog": CATALOG_PATH,
+    "vivarium_init": VIVARIUM_INIT_MODULE,
+}
+
+# Event-class bridge rows must stale on the EVENT path that actually
+# produced/translated their authority, not on Design-A runner files they
+# never touch. Keep the design_a_per_tick set above untouched for the 18
+# existing sweep rows; event_class rows switch to this narrower shared set
+# plus their process-specific dependencies below.
+EVENT_CLASS_SOURCE_FILES = {
+    "event_bridge": EVENT_BRIDGE_MODULE,
+    "l2_event_runner": L2_EVENT_RUNNER_MODULE,
+    "l2_event_metrics": L2_EVENT_METRICS_MODULE,
+    "l2_event_evidence": L2_EVENT_EVIDENCE_MODULE,
+    "l2_event_registry": L2_EVENT_REGISTRY_PATH,
     "catalog": CATALOG_PATH,
     "vivarium_init": VIVARIUM_INIT_MODULE,
 }
@@ -400,6 +420,10 @@ M1_INIT_MODULE = REPO_ROOT / "opencell" / "m1" / "__init__.py"
 M2_INIT_MODULE = REPO_ROOT / "opencell" / "m2" / "__init__.py"
 M3_INIT_MODULE = REPO_ROOT / "opencell" / "m3" / "__init__.py"
 STATE_INIT_MODULE = REPO_ROOT / "opencell" / "state" / "__init__.py"
+L2_EVENT_RIBOSOME_GATE_ADAPTER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "adapters" / "ribosome_assembly_gate.py"
+L2_EVENT_RIBOSOME_SMOKE_ADAPTER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "adapters" / "ribosome_assembly_smoke.py"
+L2_EVENT_RIBOSOME_N50_GATE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ribosome_assembly_n50_gate.py"
+L2_EVENT_RIBOSOME_SEED_AUDIT_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ribosome_assembly_seed_audit.py"
 
 # --- Explicit per-process runtime dependency registry (F1, corrected F5) ----
 #
@@ -505,6 +529,12 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
         "state_init_module": STATE_INIT_MODULE,
     },
+    "RibosomeAssembly": {
+        "l2_event_ribosome_gate_adapter_module": L2_EVENT_RIBOSOME_GATE_ADAPTER_MODULE,
+        "l2_event_ribosome_smoke_adapter_module": L2_EVENT_RIBOSOME_SMOKE_ADAPTER_MODULE,
+        "l2_event_ribosome_n50_gate_module": L2_EVENT_RIBOSOME_N50_GATE_MODULE,
+        "l2_event_ribosome_seed_audit_module": L2_EVENT_RIBOSOME_SEED_AUDIT_MODULE,
+    },
 }
 
 # --- Harness-level shared dependency (F1: `l2_replay_common.py`) ------------
@@ -532,6 +562,21 @@ def harness_dependency_hashes(harness_type: str | None) -> dict[str, str | None]
     harness_type (e.g. `event_class`, which is intentionally unregistered:
     that harness does not exist yet and does not go through this runner)."""
     return {name: _sha256_module_file(path) for name, path in HARNESS_DEPENDENCY_FILES.get(harness_type or "", {}).items()}
+
+
+def shared_source_files_for_harness(harness_type: str | None) -> dict[str, Path]:
+    """Named source files that every row of `harness_type` should bind.
+
+    `design_a_per_tick` preserves the historical runner/helpers/projections
+    set. `event_class` rows bind to the event bridge + L2.event shared
+    machinery instead, so a Design-A helper edit does not stale an
+    event-class authority row while an event-bridge/adapter edit does.
+    Unknown/None falls back to the design_a/default set for backward
+    compatibility with existing call sites.
+    """
+    if harness_type == "event_class":
+        return EVENT_CLASS_SOURCE_FILES
+    return SWEEP_PROVENANCE_SOURCE_FILES
 
 
 def _sha256_module_file(path: Path) -> str | None:
@@ -692,4 +737,5 @@ __all__ = [name for name in globals() if name.isupper()] + [
     "CATALOG_PATH",
     "default_evidence_root",
     "harness_dependency_hashes",
+    "shared_source_files_for_harness",
 ]

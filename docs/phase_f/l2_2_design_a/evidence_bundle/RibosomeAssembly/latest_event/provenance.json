@@ -1,0 +1,22 @@
+{
+  "bridge_kind": "l2_event_to_l22_latest_event",
+  "generated_at": "2026-08-11T21:39:39.239316+00:00",
+  "git_dirty": null,
+  "git_sha": "0f2e0397f5adbb2b3409b901a1368ebf5a3acbc6",
+  "process": "RibosomeAssembly",
+  "source_bundle_dir": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly",
+  "source_bundle_hashes": {
+    "SUMMARY.json": "64c28875bb0ea519f5b0cce76d2be3889217f1fa889b6d4a845b1e60e51083aa",
+    "input_manifest.json": "072088b34de26bc51eb126e6a24f61fb130ccb7a27513630fe77840eb282b062",
+    "null_calibration.json": "9df0faa1cc62b4e42289dd8cca273cb4370b1213d40bb2384c856cdf456b4ad5",
+    "provenance.json": "1b108d7bfa12dfdeafe77dbdaa1e342bae8f25835192bcda296e296b792235fd",
+    "result.json": "1ab7f6b8c8d96208ec2b1ef978d7c54569b692a54f157c00de9d48d3b99aed3b"
+  },
+  "source_event_provenance": {
+    "adapter_id": "ribosome_assembly.gate.v1",
+    "adapter_module": "scripts.l2_event.adapters.ribosome_assembly_gate",
+    "git_sha": "abb569705603c26e0d5496b46e8c6726caef51dd",
+    "karr_source": "data/m1_sources/karr_native",
+    "registry_sha256": "87692c4a4ec39f63db7a3cebc802dcbf1e2564df1629bacd271c3c883eb2459e"
+  }
+}

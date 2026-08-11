@@ -1,0 +1,539 @@
+{
+  "inputs": [
+    {
+      "kind": "source_event_bundle",
+      "path": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/result.json",
+      "sha256": "1ab7f6b8c8d96208ec2b1ef978d7c54569b692a54f157c00de9d48d3b99aed3b"
+    },
+    {
+      "kind": "source_event_bundle",
+      "path": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/input_manifest.json",
+      "sha256": "072088b34de26bc51eb126e6a24f61fb130ccb7a27513630fe77840eb282b062"
+    },
+    {
+      "kind": "source_event_bundle",
+      "path": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/provenance.json",
+      "sha256": "1b108d7bfa12dfdeafe77dbdaa1e342bae8f25835192bcda296e296b792235fd"
+    },
+    {
+      "kind": "source_event_bundle",
+      "path": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/null_calibration.json",
+      "sha256": "9df0faa1cc62b4e42289dd8cca273cb4370b1213d40bb2384c856cdf456b4ad5"
+    },
+    {
+      "kind": "source_event_bundle",
+      "path": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/SUMMARY.json",
+      "sha256": "64c28875bb0ea519f5b0cce76d2be3889217f1fa889b6d4a845b1e60e51083aa"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat",
+      "seed": 0,
+      "sha256": "834b0a79797c2c1a3a4c64318c8e5e99197545461c489c70add4bc29bc3d4ca1",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s001/RibosomeAssembly_100ticks.mat",
+      "seed": 1,
+      "sha256": "79fc84fc749ced58187d01fc1134802f5d1aaed406c6a04fbcdac59dd77c1b89",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s002/RibosomeAssembly_100ticks.mat",
+      "seed": 2,
+      "sha256": "8ee71dd251024c006f2935cae7b3314b8e85ca1a6c3012a321974eaf23472b75",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s003/RibosomeAssembly_100ticks.mat",
+      "seed": 3,
+      "sha256": "9dad1ff7f4600912ff3321cea0cfdf76201e1680569d594a33d10d5cf7083336",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s004/RibosomeAssembly_100ticks.mat",
+      "seed": 4,
+      "sha256": "c7eadf8e3424a6511013d83e91fe23c44cecaa8e227b19dd191cd7a116a3d818",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s005/RibosomeAssembly_100ticks.mat",
+      "seed": 5,
+      "sha256": "31ad514b3bcfa12e5b79a6a75b63f4cb4e0cc93322fde597c7e9b24b71a236fc",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s006/RibosomeAssembly_100ticks.mat",
+      "seed": 6,
+      "sha256": "586a889f7d7e928ad0bfd4ea78cbaccf328952221325337bb948d4bf60f7cfa2",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s007/RibosomeAssembly_100ticks.mat",
+      "seed": 7,
+      "sha256": "ee3023a42529d0f9a9907994b33f23b2242c04ba9c7f7c1e2ad4f11ccbef5dc9",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s008/RibosomeAssembly_100ticks.mat",
+      "seed": 8,
+      "sha256": "e219643f0084e82a2b51f71b3721bf50256f61db483d11223f54a39108fdd0ea",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s009/RibosomeAssembly_100ticks.mat",
+      "seed": 9,
+      "sha256": "8fa98f47ca33d8930795393e1ebaa9a42420af471abedf66a0f2e0f1ace60eca",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s010/RibosomeAssembly_100ticks.mat",
+      "seed": 10,
+      "sha256": "8963830c66f442b37dfe469f97a6fb7a984c063b172cfd041ee2949cd7d384ad",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s011/RibosomeAssembly_100ticks.mat",
+      "seed": 11,
+      "sha256": "59a0a243b70064969af0c3a0e7b2b56c157b65e79c1a02dca38cc5e72ca8574c",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s012/RibosomeAssembly_100ticks.mat",
+      "seed": 12,
+      "sha256": "7e01e34df9de8e01ec4e1e0f587acd519993360ea08bd6d214c979f922eed190",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s013/RibosomeAssembly_100ticks.mat",
+      "seed": 13,
+      "sha256": "cc2d36911fb3319e060294321973d801bc4fefff2ee003bd0e183965470b079d",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s014/RibosomeAssembly_100ticks.mat",
+      "seed": 14,
+      "sha256": "d23b5f1a9f23de7a5335e81efdf122bdd53e046c5071593383ed9ea709bdddd5",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s015/RibosomeAssembly_100ticks.mat",
+      "seed": 15,
+      "sha256": "4ed2a92e36a32de1874a891b29595a0db828165422f98953b46de69762ecf6e6",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s016/RibosomeAssembly_100ticks.mat",
+      "seed": 16,
+      "sha256": "04bf76b64e6ba442940fc4c72984c924ea33a623e8b4e68d075dadb0da0d4516",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s017/RibosomeAssembly_100ticks.mat",
+      "seed": 17,
+      "sha256": "f49fc081adce63701456c07d54187e1cdc75d7c78b5c48893a6179bcc6d45112",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s018/RibosomeAssembly_100ticks.mat",
+      "seed": 18,
+      "sha256": "1a9fc0ef887b64e5cca581cd7a523c32141133565ee3c7b5205a88f134f8b27a",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s019/RibosomeAssembly_100ticks.mat",
+      "seed": 19,
+      "sha256": "d2813075198ccbfe179e9673e924a059312983037bbe4bd05086248da410119a",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s020/RibosomeAssembly_100ticks.mat",
+      "seed": 20,
+      "sha256": "28b90de3440b984fc3c1814e285d7ee061bfed1d73de7ba106fb093646a8941e",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s021/RibosomeAssembly_100ticks.mat",
+      "seed": 21,
+      "sha256": "c0bc40ea450c162718e516d6bb055713ccddf63c387369b264a0a93ab2e39513",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s022/RibosomeAssembly_100ticks.mat",
+      "seed": 22,
+      "sha256": "6568cc2e0c267e4aaa7837de7c2c32668fba3ec16d417b5fe81c6c988d8feb15",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s023/RibosomeAssembly_100ticks.mat",
+      "seed": 23,
+      "sha256": "1683945445324bc638b7f3dad25fd38bb1f2c9d2a07c961f1e31f3971cce84f6",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s024/RibosomeAssembly_100ticks.mat",
+      "seed": 24,
+      "sha256": "7bcae0281f218dc868dc2ff8748768eb5963edf400160bae00fc235628b402f5",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s025/RibosomeAssembly_100ticks.mat",
+      "seed": 25,
+      "sha256": "de29ba23ef05ea76e8925017e7f1568c0de4d0fc7e6824537dab7a82d99bb773",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s026/RibosomeAssembly_100ticks.mat",
+      "seed": 26,
+      "sha256": "e65d5a4b6d9927ad27b692818919da20ac3a3c4c592dbb0d946c71e8ed53dd45",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s027/RibosomeAssembly_100ticks.mat",
+      "seed": 27,
+      "sha256": "90b0a89addaa9bd9fd3a118a642b47e07641462d3f65c78758344308ce6644d1",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s028/RibosomeAssembly_100ticks.mat",
+      "seed": 28,
+      "sha256": "4e18dafc118f7ccaf0e3f04744aefff71b1557d553723307cb6dd8fb059ccf06",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s029/RibosomeAssembly_100ticks.mat",
+      "seed": 29,
+      "sha256": "98c9c20543b647bf3eba2ac17de22a03e070dbda54d2e69215c459c16a9d4094",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s030/RibosomeAssembly_100ticks.mat",
+      "seed": 30,
+      "sha256": "61192b6fac9fbbc9a569aad3dc813d762d64a533829edfbb828100cb7540726c",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s031/RibosomeAssembly_100ticks.mat",
+      "seed": 31,
+      "sha256": "856325f9d786430f56be985c026b102115ca318cba18a5074da5620000879db3",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s032/RibosomeAssembly_100ticks.mat",
+      "seed": 32,
+      "sha256": "cff47ff77e4f3115da6e1d5562152f69e12972feb50c8c9753cc38f6981eac4f",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s033/RibosomeAssembly_100ticks.mat",
+      "seed": 33,
+      "sha256": "ea0caf9c310ccef6b76aaeb946f914c312792d8a3e9dc9221059240dfda1d3fd",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s034/RibosomeAssembly_100ticks.mat",
+      "seed": 34,
+      "sha256": "08fd35588b12c382c4d4e4782861b0ab1574302c5bf1d089ee3e3929f863343c",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s035/RibosomeAssembly_100ticks.mat",
+      "seed": 35,
+      "sha256": "ac9c4fdcba722b2479aa812e5588a54a050c84cc76122f4af0d01f00d9c4af5d",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s036/RibosomeAssembly_100ticks.mat",
+      "seed": 36,
+      "sha256": "b0dc6b14af65a86bb41b734e4afef2dbf9571df6b54e05b4de7e006b2d277e7c",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s037/RibosomeAssembly_100ticks.mat",
+      "seed": 37,
+      "sha256": "3bdbcf2fe74b9f34cae9e9b84a3c48c40ffb30a043dc1940e12ce711e58e197f",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s038/RibosomeAssembly_100ticks.mat",
+      "seed": 38,
+      "sha256": "3f4b756d8cd7dcc5881fee4ba722f82002ac19a0aeb300682936b5f17252a518",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s039/RibosomeAssembly_100ticks.mat",
+      "seed": 39,
+      "sha256": "ab003b17cef60d8c56d593826459a79caf88140f21e1128a8f11ef41ad0cf200",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s040/RibosomeAssembly_100ticks.mat",
+      "seed": 40,
+      "sha256": "3db98ccc4104463390a65338b29f5a68fdeeb06040d8e52cb1382e491ec1990c",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s041/RibosomeAssembly_100ticks.mat",
+      "seed": 41,
+      "sha256": "3f7c3e5e30cbef5741c2e6aa1fc9e6a4b6ad973309122fe8d0d3dfa62e821e65",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s042/RibosomeAssembly_100ticks.mat",
+      "seed": 42,
+      "sha256": "11429f41cbf70859832d8608fb170b15c2ae133981b0f317e4d328429060689b",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s043/RibosomeAssembly_100ticks.mat",
+      "seed": 43,
+      "sha256": "2799e6201dbc34fe31aab6742fd00979eebb3af3dcd7d376e26e533faba9a67b",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s044/RibosomeAssembly_100ticks.mat",
+      "seed": 44,
+      "sha256": "8036bf00e2dd785ae91b8e1196de2829eb45c4c1156cc67e10313cb4f9b5a0c6",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s045/RibosomeAssembly_100ticks.mat",
+      "seed": 45,
+      "sha256": "325f2eaa43244b663a657f0af98af2796b3160d6c0f7c76a1ea2d0fb6e7e0916",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s046/RibosomeAssembly_100ticks.mat",
+      "seed": 46,
+      "sha256": "343aa8b0f36e0d3b350fa5dac73c84324ee39d3793fa861728d73cbb20a30b62",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s047/RibosomeAssembly_100ticks.mat",
+      "seed": 47,
+      "sha256": "06a31a21d0d938e8149f47df49309e5666b62c34d6151ba74bea12ae41a2842d",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s048/RibosomeAssembly_100ticks.mat",
+      "seed": 48,
+      "sha256": "9d17f5b0332834cffc8feee0db7feaca1585f4fe1da42d0b706250d65e7fb409",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 100,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s049/RibosomeAssembly_100ticks.mat",
+      "seed": 49,
+      "sha256": "b0c57fbf4d50bbe1ed3e9af357076bf883cdb3b9ce9918f745cd66d7eb43eaf7",
+      "tick_offset": 200.0,
+      "trace_kind": "event_window"
+    }
+  ],
+  "m_ticks": 200,
+  "process": "RibosomeAssembly",
+  "resolved_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "source_event_tick_offsets": [
+    200.0
+  ],
+  "source_event_window_n_ticks": [
+    100
+  ]
+}

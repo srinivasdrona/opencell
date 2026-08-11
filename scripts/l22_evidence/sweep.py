@@ -238,7 +238,10 @@ def current_source_hashes(
     hashes that harness's shared dependency modules -- scoped by harness,
     not by process name, since every `design_a_per_tick` process (never
     `event_class`) runs through the same `l2_replay_common.py` helpers."""
-    hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
+    hashes = {
+        name: _sha256_file(path)
+        for name, path in schema.shared_source_files_for_harness(harness_type).items()
+    }
     if oc_module:
         hashes["oc_module"] = _sha256_file(REPO_ROOT / oc_module)
     if process:

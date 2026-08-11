@@ -248,7 +248,7 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
     (`schema.HARNESS_DEPENDENCY_FILES`, e.g. every `design_a_per_tick`
     process's `l2_replay_common` -- never for `event_class`), mirroring
     `sweep.current_source_hashes(process=..., harness_type=...)`."""
-    hashes = {name: _sha256_file(path) for name, path in schema.SWEEP_PROVENANCE_SOURCE_FILES.items()}
+    hashes = {name: _sha256_file(path) for name, path in schema.shared_source_files_for_harness(entry.harness_type if entry else None).items()}
     if entry is not None and entry.oc_module:
         hashes["oc_module"] = _sha256_file(cat.REPO_ROOT / entry.oc_module)
     if entry is not None:
