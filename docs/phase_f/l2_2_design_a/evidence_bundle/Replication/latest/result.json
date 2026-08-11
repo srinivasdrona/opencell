@@ -9,13 +9,13 @@
       "aggregation": "per_tick_vector_w1_mean",
       "is_event_channel": false,
       "is_primary": false,
-      "ks_pvalue": 0.7791382327862446,
-      "ks_stat": 0.0036461538461538545,
+      "ks_pvalue": 0.03873191273102694,
+      "ks_stat": 0.00778461538461539,
       "n_nonzero_karr": 22213,
-      "n_nonzero_oc": 21976,
+      "n_nonzero_oc": 22047,
       "per_sample_w1_summary": {
-        "max": 0.6153846153846152,
-        "mean": 0.10438461538461534,
+        "max": 0.9230769230769227,
+        "mean": 0.1284923076923076,
         "min": 0.0
       },
       "q95_null": 0.1519084615384614,
@@ -28,19 +28,19 @@
         "stddev": 7.0183813192056705
       },
       "samples_oc": {
-        "kurtosis": 11.31294921885098,
+        "kurtosis": 11.704761525714755,
         "max": 33.0,
-        "mean": 2.361676923076923,
+        "mean": 2.346276923076923,
         "min": 0.0,
-        "skew": 3.5718076464084816,
-        "stddev": 6.975813530958107
+        "skew": 3.613202583712219,
+        "stddev": 6.929670875762466
       },
       "threshold": 1.0,
       "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.10438461538461534,
+      "w1_oc_vs_karr": 0.1284923076923076,
       "w1_oc_vs_karr_ci95": [
-        0.1492615384615384,
-        0.16446307692307682
+        0.1682453846153845,
+        0.18458461538461526
       ]
     },
     "chromosome": {
@@ -50,31 +50,31 @@
       "per_component": {
         "component_n_nonzero_karr": {
           "polymerizedRegions.delta_nnz": 420,
-          "polymerizedRegions.delta_value_sum_strand_1": 3118,
-          "polymerizedRegions.delta_value_sum_strand_2": 4155,
-          "polymerizedRegions.delta_value_sum_strand_3": 4265,
-          "polymerizedRegions.delta_value_sum_strand_4": 0
+          "polymerizedRegions.delta_value_sum_strand_1": 0,
+          "polymerizedRegions.delta_value_sum_strand_2": 3118,
+          "polymerizedRegions.delta_value_sum_strand_3": 4155,
+          "polymerizedRegions.delta_value_sum_strand_4": 4265
         },
         "component_n_nonzero_oc": {
-          "polymerizedRegions.delta_nnz": 0,
+          "polymerizedRegions.delta_nnz": 446,
           "polymerizedRegions.delta_value_sum_strand_1": 0,
-          "polymerizedRegions.delta_value_sum_strand_2": 0,
-          "polymerizedRegions.delta_value_sum_strand_3": 0,
-          "polymerizedRegions.delta_value_sum_strand_4": 0
+          "polymerizedRegions.delta_value_sum_strand_2": 3207,
+          "polymerizedRegions.delta_value_sum_strand_3": 4278,
+          "polymerizedRegions.delta_value_sum_strand_4": 4457
         },
         "component_raw_w1": {
-          "polymerizedRegions.delta_nnz": 0.10479999999999999,
-          "polymerizedRegions.delta_value_sum_strand_1": 59.9234,
-          "polymerizedRegions.delta_value_sum_strand_2": 102.5856,
-          "polymerizedRegions.delta_value_sum_strand_3": 135.89999999999998,
-          "polymerizedRegions.delta_value_sum_strand_4": 0.0
+          "polymerizedRegions.delta_nnz": 0.005600000000000072,
+          "polymerizedRegions.delta_value_sum_strand_1": 0.0,
+          "polymerizedRegions.delta_value_sum_strand_2": 2.2816,
+          "polymerizedRegions.delta_value_sum_strand_3": 3.7231999999999985,
+          "polymerizedRegions.delta_value_sum_strand_4": 8.050200000000004
         },
         "component_scales": {
           "polymerizedRegions.delta_nnz": 2.0,
-          "polymerizedRegions.delta_value_sum_strand_1": 100.0,
-          "polymerizedRegions.delta_value_sum_strand_2": 200.0,
+          "polymerizedRegions.delta_value_sum_strand_1": 1.0,
+          "polymerizedRegions.delta_value_sum_strand_2": 100.0,
           "polymerizedRegions.delta_value_sum_strand_3": 200.0,
-          "polymerizedRegions.delta_value_sum_strand_4": 1.0
+          "polymerizedRegions.delta_value_sum_strand_4": 200.0
         },
         "component_verdicts": {
           "polymerizedRegions.delta_nnz": "PASS",
@@ -84,11 +84,11 @@
           "polymerizedRegions.delta_value_sum_strand_4": "PASS"
         },
         "joint_verdict": "PASS",
-        "polymerizedRegions.delta_nnz": 0.052399999999999995,
-        "polymerizedRegions.delta_value_sum_strand_1": 0.599234,
-        "polymerizedRegions.delta_value_sum_strand_2": 0.512928,
-        "polymerizedRegions.delta_value_sum_strand_3": 0.6794999999999999,
-        "polymerizedRegions.delta_value_sum_strand_4": 0.0,
+        "polymerizedRegions.delta_nnz": 0.002800000000000036,
+        "polymerizedRegions.delta_value_sum_strand_1": 0.0,
+        "polymerizedRegions.delta_value_sum_strand_2": 0.022816,
+        "polymerizedRegions.delta_value_sum_strand_3": 0.018615999999999994,
+        "polymerizedRegions.delta_value_sum_strand_4": 0.040251000000000016,
         "scaled_distance_threshold": 1.0
       },
       "verdict": "PASS",
@@ -99,13 +99,13 @@
       "aggregation": "per_tick_vector_w1_mean",
       "is_event_channel": false,
       "is_primary": false,
-      "ks_pvalue": 0.0,
-      "ks_stat": 0.2241125,
+      "ks_pvalue": 0.0005789297697380548,
+      "ks_stat": 0.010087499999999971,
       "n_nonzero_karr": 47918,
-      "n_nonzero_oc": 29989,
+      "n_nonzero_oc": 48546,
       "per_sample_w1_summary": {
-        "max": 113.125,
-        "mean": 67.938,
+        "max": 112.5,
+        "mean": 13.0535625,
         "min": 0.0
       },
       "q95_null": 169082.0404275,
@@ -118,19 +118,19 @@
         "stddev": 6418144.368154613
       },
       "samples_oc": {
-        "kurtosis": 11.992536323478015,
-        "max": 29122110.0,
-        "mean": 1640190.3353375,
+        "kurtosis": 11.992542249572056,
+        "max": 29121910.0,
+        "mean": 1640199.341225,
         "min": 0.0,
-        "skew": 3.724466327543393,
-        "stddev": 6418181.435038287
+        "skew": 3.7244671966923484,
+        "stddev": 6418142.16748739
       },
       "threshold": 338164.080855,
       "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 67.938,
+      "w1_oc_vs_karr": 13.0535625,
       "w1_oc_vs_karr_ci95": [
-        139052.215206875,
-        171460.0865396875
+        139020.3175953125,
+        171429.2478534375
       ]
     }
   },
@@ -197,7 +197,7 @@
     49
   ],
   "ticks": 100,
-  "timestamp": "2026-07-30T02:09:31.262405+00:00",
+  "timestamp": "2026-08-11T22:28:45.576813+00:00",
   "verdict": "PASS",
   "warnings": []
 }
