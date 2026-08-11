@@ -69,6 +69,18 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Cytokinesis seed-0 structural canary integrated at `5795ccf`; catalog now records `M_ticks=4000`/`[-3999,0]` as a seed-0 lower bound and a separate 1/50 event-sweep blocker.
 - Replication no-hint source closure integrated at `09823a0`, with strict-zero follow-up `4789c1f`; direct verification: Ruff clean, L1b 115/115 + 28/28 wiring PASS, focused Replication tests PASS. L2.1 strict classification remains COINCIDENTAL on the legacy single-trace rubric.
 - Operator go-ahead received 2026-08-12. Ten isolated detached tracks launch from checkpoint `ff16766`; none may edit shared catalogs or evidence indexes directly.
+- Live detached tracks (PID / worktree):
+  - `L21-CHROMCOND` 23588 / `wave-l21-chromcond`
+  - `L21-ACTIVE-WINDOWS` 27656 / `wave-l21-active-windows`
+  - `L22-REPLICATION` 26220 / `wave-l22-replication`
+  - `L22-MACROMOL` 23048 / `wave-l22-macromol`
+  - `L22-PPII` 19292 / `wave-l22-procii`
+  - `L22-DNAS` 7052 / `wave-l22-dnas`
+  - `L22-RIBOSOME-BRIDGE` 12640 / `wave-l22-ribosome-bridge`
+  - `L22-CYTOKINESIS` 22984 / `wave-l22-cytokinesis`
+  - `L22-FTSZ` 28156 / `wave-l22-ftsz`
+  - `L22-DNADAMAGE` 11048 / `wave-l22-dnadamage`
+- Wait shells: `wait-l21-chromcond`, `wait-l21-active-windows`, `wait-l22-replication`, `wait-l22-macromol`, `wait-l22-procii`, `wait-l22-dnas`, `wait-l22-ribosome-bridge`, `wait-l22-cytokinesis`, `wait-l22-ftsz`, `wait-l22-dnadamage`.
 - Formal checkpoint: `docs/phase_f/CHECKPOINT_2026-08-11.md`.
 - Ten planned tracks: 2 L2.1 (`ChromosomeCondensation`, active-window recertification) and 8 L2.2 (Replication, MacromolecularComplexation, ProteinProcessingII, DNASupercoiling, RibosomeAssembly bridge, Cytokinesis, FtsZPolymerization, DNADamage).
 - Tracking policy: one main coordinator owns `plan.md`, SQL `tracks`, catalogs and evidence indexes; detached workers write one `STATUS_<track>.md` each. No progress-manager sub-agents.
