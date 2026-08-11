@@ -226,6 +226,32 @@ def _matlab_quote(value: str) -> str:
     return "'" + value.replace("'", "''") + "'"
 
 
+def _matlab_literal(value: Any) -> str:
+    """Render a small Python scalar/dict tree as a MATLAB literal."""
+    if isinstance(value, dict):
+        if not value:
+            return "struct()"
+        parts: list[str] = []
+        for key, inner in value.items():
+            if not isinstance(key, str) or not key:
+                raise WindowContractConfigError(
+                    f"MATLAB struct literal keys must be non-empty strings, got {key!r}"
+                )
+            parts.append(f"{_matlab_quote(key)}, {_matlab_literal(inner)}")
+        return "struct(" + ", ".join(parts) + ")"
+    if isinstance(value, str):
+        return _matlab_quote(value)
+    if isinstance(value, bool):
+        return "true" if value else "false"
+    if value is None:
+        return "[]"
+    if isinstance(value, (int, float)):
+        return repr(value)
+    raise WindowContractConfigError(
+        f"Unsupported MATLAB literal payload {value!r} ({type(value).__name__}) in matlab_extraction_opts"
+    )
+
+
 class WindowContractConfigError(ValueError):
     """Raised for any launcher-side request that would violate the D1/M4
     stride-1 event-window contract before MATLAB is ever invoked.
@@ -266,6 +292,8 @@ class FixedWindowSpec:
     tick_offset: int
     required_observables: tuple[str, ...]
     n_ticks: int = DEFAULT_N_TICKS
+    extraction_identity_json: str | None = None
+    matlab_extraction_opts: dict[str, Any] = field(default_factory=dict)
     window_contract: str = field(default="fixed", init=False)
 
     def __post_init__(self) -> None:
@@ -280,6 +308,15 @@ class FixedWindowSpec:
                 "can silently omit (Opus 5 rejection finding)."
             )
         _require_safe_identifier("process", self.process)
+        if self.extraction_identity_json is not None and not isinstance(self.extraction_identity_json, str):
+            raise WindowContractConfigError(
+                "extraction_identity_json must be a string when provided "
+                f"(got {type(self.extraction_identity_json).__name__})"
+            )
+        if not isinstance(self.matlab_extraction_opts, dict):
+            raise WindowContractConfigError(
+                f"matlab_extraction_opts must be a dict, got {type(self.matlab_extraction_opts).__name__}"
+            )
 
 
 @dataclass(frozen=True)
@@ -568,10 +605,17 @@ def build_matlab_command(
     output_subdir_lit = _matlab_quote(resolved_output_subdir)
 
     if isinstance(spec, FixedWindowSpec):
-        call = (
-            f"extract_per_process_traces_v2({proc_arg}, {output_subdir_lit}, {int(spec.n_ticks)}, "
-            f"uint32({int(spec.seed)}), {int(spec.tick_offset)}, 'fixed');"
-        )
+        if spec.matlab_extraction_opts:
+            extraction_opts = _matlab_literal(spec.matlab_extraction_opts)
+            call = (
+                f"extract_per_process_traces_v2({proc_arg}, {output_subdir_lit}, {int(spec.n_ticks)}, "
+                f"uint32({int(spec.seed)}), {int(spec.tick_offset)}, 'fixed', [], {extraction_opts});"
+            )
+        else:
+            call = (
+                f"extract_per_process_traces_v2({proc_arg}, {output_subdir_lit}, {int(spec.n_ticks)}, "
+                f"uint32({int(spec.seed)}), {int(spec.tick_offset)}, 'fixed');"
+            )
     elif isinstance(spec, AnchorWindowSpec):
         anchor_opts = (
             "struct("
@@ -680,6 +724,17 @@ def _read_mnrnd_shim_metadata(path: Path) -> dict[str, Any]:
         if "mnrnd_shim_sha256" in metadata:
             result["mnrnd_shim_sha256"] = _decode_char_metadata(metadata["mnrnd_shim_sha256"][()])
     return result
+
+
+def _read_optional_text_metadata(path: Path, key: str) -> str | None:
+    """Read one optional MATLAB char-array metadata field from ``path``."""
+    import h5py
+
+    with h5py.File(path, "r") as handle:
+        metadata = handle.get("metadata")
+        if metadata is None or key not in metadata:
+            return None
+        return _decode_char_metadata(metadata[key][()])
 
 
 def _read_anchor_signal_metadata(path: Path) -> dict[str, Any]:
@@ -865,6 +920,22 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
             f"on-disk window kind={on_disk_kind!r} != requested window_contract={spec.window_contract!r} "
             "(a trace produced under a different window_contract must never be silently reused)"
         )
+
+    expected_extraction_identity = getattr(spec, "extraction_identity_json", None)
+    if expected_extraction_identity is not None:
+        try:
+            on_disk_extraction_identity = _read_optional_text_metadata(path, "extraction_identity_json")
+        except (OSError, ValueError, KeyError) as exc:
+            return False, (
+                f"{path}: failed to inspect extraction_identity_json metadata "
+                f"({type(exc).__name__}: {exc})"
+            )
+        if on_disk_extraction_identity != expected_extraction_identity:
+            return False, (
+                f"metadata.extraction_identity_json={on_disk_extraction_identity!r} != expected "
+                f"{expected_extraction_identity!r} (stimulus-conditioned traces must never be silently "
+                "reused across different extractor identity payloads)"
+            )
 
     # mnrnd-shim identity binding (legacy-mnrnd defect fix): applies to
     # BOTH 'fixed' and 'anchor' specs -- build_matlab_command's
@@ -1085,6 +1156,8 @@ def _spec_from_dict(row: dict[str, Any]) -> WindowSpec:
             tick_offset=int(row["tick_offset"]),
             required_observables=required_observables,
             n_ticks=int(row.get("n_ticks", DEFAULT_N_TICKS)),
+            extraction_identity_json=row.get("extraction_identity_json"),
+            matlab_extraction_opts=dict(row.get("matlab_extraction_opts", {})),
         )
     if window_contract == "anchor":
         return AnchorWindowSpec(
@@ -1159,4 +1232,3 @@ def main(argv: list[str] | None = None) -> int:
 
 if __name__ == "__main__":
     sys.exit(main())
-

@@ -29,6 +29,7 @@ _SPARSE_FIELDS = (
     "abasicSites",
     "damagedSugarPhosphates",
     "intrastrandCrossLinks",
+    "hollidayJunctions",
 )
 
 

@@ -77,6 +77,7 @@ def _write_event_window_fixture(
     signal_field: str | None = None,
     max_search_ticks: int | None = None,
     event_observable_projection_version: int | None = None,
+    extraction_identity_json: str | None = None,
     # mnrnd-shim identity-binding metadata (legacy-mnrnd defect fix):
     # _MNRND_SHIM_DEFAULT (the default) embeds today's real, valid
     # version/hash so every pre-existing call site stays a valid fixture;
@@ -128,6 +129,8 @@ def _write_event_window_fixture(
             metadata.create_dataset(
                 "event_observable_projection_version", data=np.array([event_observable_projection_version])
             )
+        if extraction_identity_json is not None:
+            metadata.create_dataset("extraction_identity_json", data=_encode_char_metadata(extraction_identity_json))
         if mnrnd_shim_version is not None:
             metadata.create_dataset("mnrnd_shim_version", data=np.array([mnrnd_shim_version]))
         if mnrnd_shim_sha256 is not None:
@@ -161,6 +164,17 @@ def test_fixed_window_spec_rejects_zero_n_ticks():
 def test_fixed_window_spec_rejects_empty_required_observables():
     with pytest.raises(launcher.WindowContractConfigError):
         launcher.FixedWindowSpec(process="RibosomeAssembly", seed=1, tick_offset=200, required_observables=())
+
+
+def test_fixed_window_spec_rejects_non_dict_matlab_extraction_opts():
+    with pytest.raises(launcher.WindowContractConfigError):
+        launcher.FixedWindowSpec(
+            process="DNADamage",
+            seed=2000,
+            tick_offset=0,
+            required_observables=("chromosome", "substrates"),
+            matlab_extraction_opts="not-a-dict",  # type: ignore[arg-type]
+        )
 
 
 @pytest.mark.parametrize(
@@ -339,6 +353,33 @@ def test_build_matlab_command_fixed_window_writes_stride1_contract_call():
     assert "'anchor'" not in command
 
 
+def test_build_matlab_command_fixed_window_can_carry_extraction_opts():
+    spec = launcher.FixedWindowSpec(
+        process="DNADamage",
+        seed=2000,
+        tick_offset=0,
+        n_ticks=20,
+        required_observables=("chromosome", "substrates"),
+        extraction_identity_json='{"condition":"uvb_mechanism"}',
+        matlab_extraction_opts={
+            "condition_label": "uvb_mechanism",
+            "metadata_identity_json": '{"condition":"uvb_mechanism"}',
+            "per_process_substrate_overrides": {
+                "DNADamage": {
+                    "UVB_radiation": 7.474096569667582,
+                }
+            },
+        },
+    )
+    command = launcher.build_matlab_command(spec)
+    assert "uint32(2000), 0, 'fixed', [], struct(" in command
+    assert "'condition_label', 'uvb_mechanism'" in command
+    assert "'metadata_identity_json', '{\"condition\":\"uvb_mechanism\"}'" in command
+    assert "'per_process_substrate_overrides'" in command
+    assert "'DNADamage'" in command
+    assert "'UVB_radiation', 7.474096569667582" in command
+
+
 def test_build_matlab_command_unconditionally_shadows_mnrnd_for_fixed_and_anchor():
     """Documents/tests, rather than leaves implicit, the exact mechanism
     that makes scripts/matlab/mnrnd.m identity-binding necessary: every
@@ -475,6 +516,62 @@ def test_plan_skip_valid_for_contract_complete_fixed_fixture(tmp_path):
     assert plan.decisions[0].action == "skip_valid"
     assert plan.decisions[0].reason is None
     assert len(plan.jobs) == 0
+
+
+def test_plan_skip_valid_for_contract_complete_fixed_fixture_with_extraction_identity(tmp_path):
+    identity_json = '{"condition":"uvb_mechanism","process":"DNADamage"}'
+    spec = launcher.FixedWindowSpec(
+        process="DNADamage",
+        seed=2000,
+        tick_offset=0,
+        n_ticks=20,
+        required_observables=("chromosome", "substrates"),
+        extraction_identity_json=identity_json,
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="DNADamage",
+        seed=2000,
+        n_ticks=20,
+        tick_offset=0.0,
+        stride=1,
+        tick_start=1,
+        tick_end=20,
+        observables=("chromosome", "substrates"),
+        extraction_identity_json=identity_json,
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "skip_valid"
+    assert len(plan.jobs) == 0
+
+
+def test_plan_regenerate_invalid_for_fixed_fixture_missing_extraction_identity(tmp_path):
+    identity_json = '{"condition":"uvb_mechanism","process":"DNADamage"}'
+    spec = launcher.FixedWindowSpec(
+        process="DNADamage",
+        seed=2000,
+        tick_offset=0,
+        n_ticks=20,
+        required_observables=("chromosome", "substrates"),
+        extraction_identity_json=identity_json,
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="DNADamage",
+        seed=2000,
+        n_ticks=20,
+        tick_offset=0.0,
+        stride=1,
+        tick_start=1,
+        tick_end=20,
+        observables=("chromosome", "substrates"),
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "extraction_identity_json" in (plan.decisions[0].reason or "")
+    assert len(plan.jobs) == 1
 
 
 def test_plan_skip_valid_for_contract_complete_anchor_fixture(tmp_path):

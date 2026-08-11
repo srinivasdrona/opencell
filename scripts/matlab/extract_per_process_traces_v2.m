@@ -1,4 +1,4 @@
-function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, seed, tick_offset, window_contract, anchor_opts)
+function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, seed, tick_offset, window_contract, anchor_opts, extraction_opts)
 % extract_per_process_traces_v2
 % Allocator-correct per-process trace extraction with per-tick tap points.
 %
@@ -58,6 +58,25 @@ function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, se
 %   The discovered anchor tick(s) are always the simulation's own observed
 %   values, never externally supplied or fabricated.
 %
+% extraction_opts (optional, default struct()): fixed-window or anchor-window
+%   extraction identity/override surface. Supported fields:
+%     condition_label                -- char/string label persisted into
+%                                       metadata.condition_label (human-
+%                                       readable identity only).
+%     metadata_identity_json         -- char/string exact identity payload
+%                                       persisted into
+%                                       metadata.extraction_identity_json so
+%                                       validation can refuse a wrong-
+%                                       condition trace by metadata mismatch
+%                                       instead of by path/name heuristics.
+%     per_process_substrate_overrides -- struct keyed by process name, then
+%                                       substrate WID, each leaf a numeric
+%                                       scalar override applied on the REAL
+%                                       process-local substrate vector before
+%                                       calcResourceRequirements_Current() and
+%                                       again after allocation injection but
+%                                       before evolveState().
+%
 % Output file:
 %   data/m1_sources/karr_native/<output_subdir>/<Process>_<n_ticks>ticks.mat
 % containing states_before, states_after, metadata (-v7.3).
@@ -97,7 +116,11 @@ end
 if nargin < 7 || isempty(anchor_opts)
     anchor_opts = struct();
 end
+if nargin < 8 || isempty(extraction_opts)
+    extraction_opts = struct();
+end
 anchor_opts = default_anchor_opts(anchor_opts);
+extraction_opts = default_extraction_opts(extraction_opts);
 
 this_file = mfilename('fullpath');
 matlab_dir = fileparts(this_file);
@@ -167,7 +190,7 @@ for i = 1:numel(process_names)
         % discovered from the real Cytokinesis/CellGeometry completion
         % signal (see capture_anchor_window), never fabricated or supplied.
         [states_before, states_after, effective_tick_start, window_anchor_tick, onset_tick, ok, error_message] = ...
-            capture_anchor_window(sim, target_idx, snapshot_props, n_ticks, anchor_opts);
+            capture_anchor_window(sim, target_idx, snapshot_props, n_ticks, anchor_opts, extraction_opts);
     else
         states_before = struct();
         states_after = struct();
@@ -180,12 +203,12 @@ for i = 1:numel(process_names)
         % ticks without snapshotting, so the subsequent n_ticks capture a window
         % where an otherwise-quiescent-at-birth process is active.
         for bt = 1:tick_offset
-            [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props);
+            [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props, [], extraction_opts);
         end
 
         for t = 1:n_ticks
             try
-                [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props);
+                [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, [], extraction_opts);
                 for p = 1:numel(snapshot_props)
                     prop = snapshot_props{p};
                     states_before.(prop){t, 1} = before_tick.(prop);
@@ -236,6 +259,13 @@ for i = 1:numel(process_names)
         % left untouched to preserve its exact pre-M4 metadata shape.
         metadata.mnrnd_shim_version = int32(1);
         metadata.mnrnd_shim_sha256 = mnrnd_shim_sha256_hex(matlab_dir);
+    end
+
+    if ~isempty(extraction_opts.condition_label)
+        metadata.condition_label = extraction_opts.condition_label;
+    end
+    if ~isempty(extraction_opts.metadata_identity_json)
+        metadata.extraction_identity_json = extraction_opts.metadata_identity_json;
     end
 
     % M4 stride/window-boundary metadata contract (docs/phase_f/l2_event/
@@ -354,7 +384,7 @@ if strcmp(window_contract, 'anchor') && strcmp(anchor_opts.signal_kind, 'diamete
 end
 end
 
-function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts)
+function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts, extraction_opts)
 % evolve_state_with_tap  One tick of the allocator-correct scheduler loop,
 % tapping the target process's properties immediately before/after its own
 % evolveState() call.
@@ -365,8 +395,17 @@ function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx,
 % passed) so before_tick/after_tick carry the real per-tick numeric event-
 % observable projection (see merge_event_observables) that
 % capture_anchor_window uses to detect onset/completion.
+%
+% extraction_opts (optional, default struct()): when per-process substrate
+% overrides are present, apply them on the REAL process-local substrate
+% vector before calcResourceRequirements_Current() and again after
+% allocator injection but before evolveState() so fixed-window stimulus
+% cohorts exercise the same scheduler/allocation path as an ordinary run.
 if nargin < 4
     anchor_opts = [];
+end
+if nargin < 5
+    extraction_opts = struct();
 end
 before_tick = empty_snapshot_struct(snapshot_props);
 after_tick = empty_snapshot_struct(snapshot_props);
@@ -386,6 +425,7 @@ requirements = zeros([numel(mets.counts) nProcesses]);
 for i = 1:nProcesses
     mod = processes{i};
     mod.copyFromState();
+    mod = apply_process_substrate_overrides(mod, extraction_opts);
     r = mod.calcResourceRequirements_Current();
     gidx = mod.substrateMetaboliteGlobalCompartmentIndexs;
     lidx = mod.substrateMetaboliteLocalIndexs;
@@ -431,6 +471,7 @@ for i = 1:nProcesses
     mod.simulationStateSideEffects = [];
     mod.copyFromState();
     mod.substrates(lidx, :) = allocation;
+    mod = apply_process_substrate_overrides(mod, extraction_opts);
     if proc_idx == rna_decay_idx && isprop(mod, 'RNAs')
         % Guard against negative RNA counts propagating into weighted sampling.
         mod.RNAs = max(0, mod.RNAs);
@@ -500,6 +541,96 @@ if ~isfield(opts, 'signal_field') || isempty(opts.signal_field)
     else
         opts.signal_field = 'pinched';
     end
+end
+end
+
+function opts = default_extraction_opts(opts)
+% default_extraction_opts  Fill in defaults for optional extraction identity
+% / override payloads. All fields are optional and backward-compatible:
+% empty values mean "no extra metadata, no overrides".
+if ~isfield(opts, 'condition_label') || isempty(opts.condition_label)
+    opts.condition_label = '';
+end
+if ~isfield(opts, 'metadata_identity_json') || isempty(opts.metadata_identity_json)
+    opts.metadata_identity_json = '';
+end
+if ~isfield(opts, 'per_process_substrate_overrides') || isempty(opts.per_process_substrate_overrides)
+    opts.per_process_substrate_overrides = struct();
+end
+end
+
+function mod = apply_process_substrate_overrides(mod, extraction_opts)
+% apply_process_substrate_overrides  Apply any requested per-process
+% substrate overrides to the REAL process-local substrate vector.
+%
+% The override map is keyed by process name, then by substrate WID. Matching
+% is name-normalized (same helper as find_process_index) so the caller may
+% use "DNADamage", "Process_DNADamage", or a punctuation variant without
+% changing semantics.
+if ~isfield(extraction_opts, 'per_process_substrate_overrides') || isempty(fieldnames(extraction_opts.per_process_substrate_overrides))
+    return;
+end
+override_values = select_process_substrate_overrides(extraction_opts.per_process_substrate_overrides, mod);
+if isempty(override_values)
+    return;
+end
+if ~isprop(mod, 'substrates') || ~isprop(mod, 'substrateWholeCellModelIDs')
+    error('extract_per_process_traces_v2:missing_substrate_override_surface', ...
+        'process %s has no substrates/substrateWholeCellModelIDs surface required for per-process substrate overrides', ...
+        process_short_name(mod));
+end
+
+substrate_wids = matlab_cellstr(mod.substrateWholeCellModelIDs);
+override_fields = fieldnames(override_values);
+for i = 1:numel(override_fields)
+    wid = override_fields{i};
+    idx = find(strcmp(substrate_wids, wid), 1);
+    if isempty(idx)
+        error('extract_per_process_traces_v2:unknown_override_substrate', ...
+            'process %s does not expose override substrate WID ''%s'' on its local substrate vector', ...
+            process_short_name(mod), wid);
+    end
+    mod.substrates(idx, :) = double(override_values.(wid));
+end
+end
+
+function override_values = select_process_substrate_overrides(per_process_overrides, mod)
+override_values = [];
+process_tokens = { ...
+    normalize_name_token(process_short_name(mod)), ...
+    normalize_name_token(mod.wholeCellModelID) ...
+};
+if isprop(mod, 'name')
+    process_tokens{end + 1} = normalize_name_token(mod.name); %#ok<AGROW>
+end
+override_names = fieldnames(per_process_overrides);
+for i = 1:numel(override_names)
+    name = override_names{i};
+    if any(strcmp(process_tokens, normalize_name_token(name)))
+        override_values = per_process_overrides.(name);
+        return;
+    end
+end
+end
+
+function out = matlab_cellstr(values)
+if ischar(values)
+    out = cellstr(values);
+    return;
+end
+if isstring(values)
+    out = cellstr(values);
+    return;
+end
+
+raw = values(:);
+out = cell(numel(raw), 1);
+for i = 1:numel(raw)
+    item = raw{i};
+    if isstring(item)
+        item = char(item);
+    end
+    out{i} = char(item);
 end
 end
 
@@ -593,7 +724,7 @@ end
 end
 
 function [states_before, states_after, tick_start, window_anchor_tick, onset_tick, ok, error_message] = ...
-    capture_anchor_window(sim, target_idx, snapshot_props, n_ticks, anchor_opts)
+    capture_anchor_window(sim, target_idx, snapshot_props, n_ticks, anchor_opts, extraction_opts)
 % capture_anchor_window  Division/event-anchored window capture (M4,
 % ratified Cytokinesis timing decision 2026-08-02).
 %
@@ -644,7 +775,7 @@ t = 0;
 while t < anchor_opts.max_search_ticks
     t = t + 1;
     try
-        [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts);
+        [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts, extraction_opts);
     catch err
         ok = false;
         error_message = sprintf('anchor search tick %d failed:\n%s', t, getReport(err, 'extended', 'hyperlinks', 'off'));

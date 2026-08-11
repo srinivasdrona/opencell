@@ -55,6 +55,7 @@ _SPARSE_FIELDS = (
     "abasicSites",
     "damagedSugarPhosphates",
     "intrastrandCrossLinks",
+    "hollidayJunctions",
 )
 _MAPPED_FIELDS = ("intrastrandCrossLinks", "damagedBases", "abasicSites")
 
@@ -294,4 +295,3 @@ def test_karr_dna_damage_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     assert (
                         oc_delta_totals[field] > 0
                     ), f"no OC sparse mutations recorded for mapped field {field}"
-

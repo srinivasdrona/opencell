@@ -239,6 +239,38 @@ def test_mnrnd_shim_identity_metadata_written_for_fixed_and_anchor_not_legacy():
     assert "metadata.mnrnd_shim_sha256" in guard_body
 
 
+def test_extraction_opts_override_surface_is_wired_into_real_scheduler_path():
+    """DNADamage stimulus cohorts rely on a real extractor-side override
+    surface, not a filename-only relabel. Statically prove that
+    `extract_per_process_traces_v2` now accepts `extraction_opts`,
+    persists the identity metadata, and applies per-process substrate
+    overrides both before `calcResourceRequirements_Current()` and again
+    after allocation injection but before `evolveState()`."""
+    source = _read_source()
+
+    assert (
+        "function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, seed, tick_offset, window_contract, anchor_opts, extraction_opts)"
+        in source
+    )
+    assert "extraction_opts = default_extraction_opts(extraction_opts);" in source
+    assert "metadata.condition_label = extraction_opts.condition_label;" in source
+    assert "metadata.extraction_identity_json = extraction_opts.metadata_identity_json;" in source
+    assert "function opts = default_extraction_opts(opts)" in source
+    assert "function mod = apply_process_substrate_overrides(mod, extraction_opts)" in source
+
+    # The override must influence both the request calculation pass and the
+    # actual evolveState pass; a single application site would still leave
+    # one of the two MATLAB paths seeing the old quiescent state.
+    assert source.count("mod = apply_process_substrate_overrides(mod, extraction_opts);") == 2
+    assert "r = mod.calcResourceRequirements_Current();" in source
+    assert "mod.substrates(lidx, :) = allocation;" in source
+    assert "[sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, [], extraction_opts);" in source
+    assert (
+        "[sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts, extraction_opts);"
+        in source
+    )
+
+
 def _octave_executable() -> str | None:
     """Locate an Octave CLI binary on PATH, or return None if unavailable.
 

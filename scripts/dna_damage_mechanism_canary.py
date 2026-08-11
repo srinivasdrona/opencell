@@ -64,6 +64,7 @@ from l2_replay_common import build_state_template, cell_vector  # noqa: E402
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess  # noqa: E402
+from scripts.l2_event import dna_damage_stimulus_cohort as cohort  # noqa: E402
 
 # Catalog authoritative spec (PROCESS_CATALOG.yaml DNADamage row):
 #   primary_channel: chromosome
@@ -318,18 +319,18 @@ def evaluate_mechanism_distance(result: dict[str, Any], *, n_seeds: int, m_ticks
 
 # Karr per-process trace subdirectory names/patterns to scan for a DNADamage
 # trace. `per_process_traces`/`per_process_traces_v2` each hold a single
-# quiescent 100-tick trace; `per_process_traces_v2_event_s*` would hold
-# per-seed stimulus-conditioned traces IF the extractor supported injecting
-# a radiation override (it does not, at time of writing -- see
-# `extractor_gap` below); `dnadamage_fullcycle` holds one long (32400-tick)
-# full-cell-cycle trace. All three known, non-glob directories DO exist on
-# disk; each must be individually classified (never treated as absent
-# merely because it is not "found", and never treated as sufficient merely
-# because it exists -- see `_classify_trace`).
+# quiescent 100-tick trace; `dnadamage_stimulus_cohort/<condition>/per_process_
+# traces_v2_event_s*` is the canonical condition-rooted 50-seed stimulus
+# cohort leaf pattern planned by scripts/l2_event/dna_damage_stimulus_cohort.py;
+# `dnadamage_fullcycle` holds one long (32400-tick) full-cell-cycle trace.
+# Every known path family is individually classified (never treated as absent
+# merely because it is nested, and never treated as sufficient merely because
+# it exists -- see `_classify_trace`).
 _TRACE_DIR_PATTERNS: tuple[str, ...] = (
     "per_process_traces",
     "per_process_traces_v2",
     "per_process_traces_v2_event_s*",
+    "dnadamage_stimulus_cohort/*/per_process_traces_v2_event_s*",
     "dnadamage_fullcycle",
 )
 
@@ -437,36 +438,49 @@ def probe_biological_gate_blocker() -> dict[str, Any]:
     nontrivial_traces = [c for c in classified_traces if c.get("classification") == "stimulus_conditioned"]
     vacuous_traces = [c for c in classified_traces if c.get("classification") == "vacuous_no_stimulus"]
 
+    stimulus_preflight = cohort.build_cohort_plan(validate_existing=True)
     uvb = spec["conditions"]["uvb_mechanism"]
     gamma = spec["conditions"]["gamma_mechanism"]
     required_extraction_contract = {
         "process": "DNADamage",
         "required_seed_count": spec["support_design"]["n_seeds"],
         "required_m_ticks": spec["support_design"]["m_ticks"],
+        "preflight_status": stimulus_preflight["preflight_status"],
+        "planned_seed_ids": stimulus_preflight["planned_seed_ids"],
+        "condition_root_dirname": stimulus_preflight["condition_root_dirname"],
+        "required_observables": stimulus_preflight["required_observables"],
+        "planner": "scripts/l2_event/dna_damage_stimulus_cohort.py",
         "required_conditions": {
             "uvb_mechanism": {
                 "radiation_wid": uvb["radiation_wid"],
                 "injected_radiation_value": uvb["injected_radiation_value"],
+                "output_path_pattern": cohort.condition_output_path_pattern("uvb_mechanism"),
+                "extraction_identity_json": cohort.condition_identity_json(spec, "uvb_mechanism"),
             },
             "gamma_mechanism": {
                 "radiation_wid": gamma["radiation_wid"],
                 "injected_radiation_value": gamma["injected_radiation_value"],
+                "output_path_pattern": cohort.condition_output_path_pattern("gamma_mechanism"),
+                "extraction_identity_json": cohort.condition_identity_json(spec, "gamma_mechanism"),
             },
         },
         "rng_schedule": spec["rng_schedule"],
-        "expected_output_path_pattern": (
-            "data/m1_sources/karr_native/per_process_traces_v2_event_s{seed:03d}/DNADamage_20ticks.mat"
-        ),
-        "extractor_gap": (
-            "extract_per_process_traces_v2*.m has no per-condition substrate-override "
-            "argument today; it would need to accept an injected UVB_radiation/"
-            "gamma_radiation override before a stimulus-conditioned MATLAB run could "
-            "be launched at all."
+        "stimulus_cohort_preflight": stimulus_preflight,
+        "matlab_execution_blocker": (
+            "No REAL stimulus-conditioned DNADamage MATLAB traces were found on disk. "
+            "The extractor/launcher preflight is READY_FOR_MATLAB, but a shared-lock "
+            "MATLAB execution must still produce the planned UVB/gamma cohort before "
+            "the biological L2.2 event-class verdict can be evaluated."
         ),
         "oc_port_gap": (
-            "Independently of any extraction, KarrDNADamageProcess.ports_schema() does "
-            f"not wire {sorted(_structurally_absent_oc_fields())!r} -- no delta on that "
-            "field can ever be observed on the OC side until that port is extended."
+            "All primary_projection chromosome fields are wired through "
+            "KarrDNADamageProcess.ports_schema()."
+            if not _structurally_absent_oc_fields()
+            else (
+                "Independently of any extraction, KarrDNADamageProcess.ports_schema() does "
+                f"not wire {sorted(_structurally_absent_oc_fields())!r} -- no delta on that "
+                "field can ever be observed on the OC side until that port is extended."
+            )
         ),
     }
 
