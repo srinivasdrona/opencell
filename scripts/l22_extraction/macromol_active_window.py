@@ -28,7 +28,7 @@ from __future__ import annotations
 import argparse
 import json
 import sys
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -163,7 +163,7 @@ def _metadata_dict(handle: h5py.File) -> dict[str, Any]:
         raise MacromolActiveWindowError("missing metadata group")
     group = handle["metadata"]
     metadata: dict[str, Any] = {}
-    for key in group.keys():
+    for key in group:
         value = np.asarray(group[key][()]).reshape(-1)
         if key in _STRING_METADATA_KEYS and np.issubdtype(value.dtype, np.integer):
             metadata[key] = "".join(chr(int(code)) for code in value.tolist())
@@ -183,10 +183,7 @@ def _cell_tick_vector(handle: h5py.File, section: str, channel: str, tick: int) 
         raise MacromolActiveWindowError(
             f"{section}/{channel} must be a MATLAB cell-array dataset with one singleton axis"
         )
-    if dataset.shape[0] == 1:
-        ref = dataset[0, tick]
-    else:
-        ref = dataset[tick, 0]
+    ref = dataset[0, tick] if dataset.shape[0] == 1 else dataset[tick, 0]
     return _matlab_ref_to_vector(handle, ref)
 
 
