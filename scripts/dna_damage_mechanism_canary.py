@@ -464,9 +464,14 @@ def probe_biological_gate_blocker() -> dict[str, Any]:
             "be launched at all."
         ),
         "oc_port_gap": (
-            "Independently of any extraction, KarrDNADamageProcess.ports_schema() does "
-            f"not wire {sorted(_structurally_absent_oc_fields())!r} -- no delta on that "
-            "field can ever be observed on the OC side until that port is extended."
+            "All primary_projection chromosome fields are wired through "
+            "KarrDNADamageProcess.ports_schema()."
+            if not _structurally_absent_oc_fields()
+            else (
+                "Independently of any extraction, KarrDNADamageProcess.ports_schema() does "
+                f"not wire {sorted(_structurally_absent_oc_fields())!r} -- no delta on that "
+                "field can ever be observed on the OC side until that port is extended."
+            )
         ),
     }
 

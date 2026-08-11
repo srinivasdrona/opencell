@@ -43,7 +43,7 @@ _RADIATION_GATE: dict[str, str] = {
     "uv_like": "UVB_radiation",
     "oxidative": "gamma_radiation",
 }
-_SPARSE_DAMAGE_FIELDS = (*_DAMAGE_FIELDS, "intrastrandCrossLinks")
+_SPARSE_DAMAGE_FIELDS = (*_DAMAGE_FIELDS, "intrastrandCrossLinks", "hollidayJunctions")
 _DAMAGE_KIND_TO_CHROMOSOME_FIELD = {
     "uv_like": "intrastrandCrossLinks",
     "oxidative": "damagedBases",

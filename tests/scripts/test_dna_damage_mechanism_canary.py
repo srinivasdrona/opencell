@@ -94,12 +94,13 @@ def test_catalog_primary_projection_is_fully_covered_by_the_harness(small_run: d
             )
 
 
-def test_holliday_junctions_is_an_explicit_structural_blocker_not_a_silent_zero(small_run: dict) -> None:
+def test_holliday_junctions_is_measured_once_the_port_is_wired(small_run: dict) -> None:
     for condition_name in ("uvb_mechanism", "gamma_mechanism"):
         entry = small_run["mechanism_distance"][condition_name]["payload_component"]["hollidayJunctions"]
-        assert entry["oc_observed_delta_nnz"] is None
+        assert entry["oc_observed_delta_nnz"] == 0
+        assert entry["karr_analytical_expected_count"] == 0.0
         assert entry["applicable"] is False
-        assert "NOT_GATEABLE_MISSING_OC_CHANNEL" in entry["blocker"]
+        assert "blocker" not in entry
 
 
 def test_no_stimulus_condition_is_never_a_certifying_pass(small_run: dict) -> None:
@@ -199,7 +200,7 @@ def test_biological_gate_blocker_is_precise_and_not_a_pass(small_run: dict) -> N
         == spec["conditions"]["gamma_mechanism"]["injected_radiation_value"]
     )
     assert contract["rng_schedule"] == spec["rng_schedule"]
-    assert "hollidayJunctions" in contract["oc_port_gap"]
+    assert "wired through" in contract["oc_port_gap"]
 
 
 def test_result_is_explicitly_labeled_non_biological_and_non_gating(small_run: dict) -> None:
@@ -277,8 +278,7 @@ def test_structurally_absent_fields_are_schema_derived_not_hardcoded() -> None:
     canary._structurally_absent_oc_fields.cache_clear()
     computed_absent = canary._structurally_absent_oc_fields()
     assert computed_absent == expected_absent
-    # Ground-truth sanity: today this is exactly hollidayJunctions.
-    assert computed_absent == frozenset({"hollidayJunctions"})
+    assert computed_absent == frozenset()
     assert "_STRUCTURALLY_ABSENT_OC_FIELDS" not in dir(canary)
 
 
