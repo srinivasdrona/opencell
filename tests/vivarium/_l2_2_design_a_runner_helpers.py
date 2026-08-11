@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import filecmp
 import json
+import os
 import sys
 from functools import cache, lru_cache
 from pathlib import Path
@@ -204,6 +205,19 @@ _EXTERNAL_V2_PROCESS_ROOT_FALLBACK = frozenset(
         "RibosomeAssembly",
     }
 )
+_PROCESS_ORACLE_ROOT_ENV_PREFIX = "OPENCELL_L22_PROCESS_ORACLE_ROOT__"
+
+
+def _process_oracle_root_env_var(process_name: str) -> str:
+    token = "".join(ch if ch.isalnum() else "_" for ch in str(process_name).upper())
+    return f"{_PROCESS_ORACLE_ROOT_ENV_PREFIX}{token}"
+
+
+def _process_oracle_root_override(process_name: str) -> Path | None:
+    raw = os.environ.get(_process_oracle_root_env_var(process_name))
+    if not raw:
+        return None
+    return Path(raw)
 
 
 def _karr_native_root() -> Path:
@@ -211,6 +225,14 @@ def _karr_native_root() -> Path:
 
 
 def _karr_native_candidate_roots(process_name: str) -> tuple[Path, ...]:
+    override_root = _process_oracle_root_override(process_name)
+    if override_root is not None:
+        # Process-scoped overrides are authoritative, not advisory. If a
+        # caller opted into an alternate oracle root for this process
+        # (e.g. MacromolecularComplexation's preregistered active-window
+        # cohort), falling back to the default early-window root would
+        # silently relabel stale evidence as the requested cohort.
+        return (override_root,)
     candidates = [_karr_native_root()]
     if (
         process_name in _EXTERNAL_V2_PROCESS_ROOT_FALLBACK
@@ -242,11 +264,12 @@ def _v2_canonical_seed0_mat_path(process_name: str) -> Path:
     subdirectory. This is the canonical, first-class location for seed 0.
     """
     rel = Path("per_process_traces_v2") / f"{process_name}_100ticks.mat"
-    for root in _karr_native_candidate_roots(process_name):
+    roots = _karr_native_candidate_roots(process_name)
+    for root in roots:
         candidate = root / rel
         if candidate.exists():
             return candidate
-    return _karr_native_root() / rel
+    return roots[0] / rel if roots else _karr_native_root() / rel
 
 
 def _v2_suffixed_seed_mat_path(process_name: str, seed: int) -> Path | None:
@@ -294,11 +317,12 @@ def _v2_seed_mat_path(process_name: str, seed: int) -> Path:
             return suffixed
         return canonical
     rel = Path(f"per_process_traces_v2_s{int(seed):03d}") / f"{process_name}_100ticks.mat"
-    for root in _karr_native_candidate_roots(process_name):
+    roots = _karr_native_candidate_roots(process_name)
+    for root in roots:
         candidate = root / rel
         if candidate.exists():
             return candidate
-    return _karr_native_root() / rel
+    return roots[0] / rel if roots else _karr_native_root() / rel
 
 
 def _ensembles_seed_mat_path(process_name: str, seed: int) -> Path:
