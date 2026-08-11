@@ -2,13 +2,14 @@
 the REAL PROCESS_CATALOG.yaml and the real evidence tree.
 
 As of this commit the real, mechanically re-derived tally is
-PASS=14 / FAIL=4 / MISSING_EVIDENCE=4 (see
+PASS=15 / FAIL=4 / MISSING_EVIDENCE=3: RibosomeAssembly now bridges its
+existing tracked L2.event N=50 PASS bundle into a valid `latest_event/`
+L2.2 authority row, while Cytokinesis/DNADamage/FtsZ remain honest
+MISSING_EVIDENCE. See
 `test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation` below
-for the full row-by-row provenance of every non-PASS row, including the
-H12 machine-evidence delivery that moved 3 of the 5 original
-PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE SENTINEL_FAIL rows to real PASS)
--- see docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md and
-docs/phase_f/l2_2_design_a/h12/H12_REPORT.md.
+for the row-level provenance, plus
+docs/phase_f/l2_2_design_a/h12/H12_REPORT.md for the earlier H12
+machine-evidence changes that produced the other PASS rows.
 
 Run via `bin\\oc-pytest tests/scripts/test_l22_evidence_generator.py -v`.
 """
@@ -139,12 +140,21 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     rejected -- they remain FAIL, non-green, pending either a broader
     sample population or a maintainer-reviewed catalog demotion.
 
-    The 2 unrelated FAIL rows (Replication, DNASupercoiling) and the 4
-    MISSING_EVIDENCE rows (Cytokinesis, DNADamage, FtsZPolymerization,
-    RibosomeAssembly) are untouched by the H12 delivery. If this test ever
-    needs to change again, that change must be driven by real evidence (a
-    sweep rerun populating/changing rows under the evidence tree, a new/
-    broader H12 artifact regeneration, or a further cited evaluator
+    The 2 unrelated FAIL rows (Replication, DNASupercoiling) were untouched
+    by that H12 delivery. This commit makes one further evidence-driven move:
+
+    - RibosomeAssembly moves MISSING_EVIDENCE -> PASS, not by touching the
+      shared tracked `evidence_index.json`, but by materializing a valid
+      `docs/phase_f/l2_2_design_a/evidence_bundle/RibosomeAssembly/
+      latest_event/` authority bundle from the already-hash-bound
+      `docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly/` source
+      bundle. The generator still re-derives the verdict mechanically from
+      raw metric fields only; the source bundle's stored PASS strings are
+      never trusted.
+
+    If this test ever needs to change again, that change must be driven by
+    real evidence (a sweep rerun populating/changing rows under the evidence
+    tree, a broader H12 artifact regeneration, or a further cited evaluator
     correctness fix), not by editing this assertion to make it pass."""
     payload = gen.build_evidence_index()
     assert payload["aggregate_verdict"] == "NON_GREEN"
@@ -154,9 +164,9 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 14,
+        schema.STATUS_PASS: 15,
         schema.STATUS_FAIL: 4,
-        schema.STATUS_MISSING_EVIDENCE: 4,
+        schema.STATUS_MISSING_EVIDENCE: 3,
     }
     fail_rows = {
         row["process"]: row["reasons"]
@@ -189,6 +199,7 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     pass_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_PASS}
     for process in ("ProteinFolding", "ProteinProcessingI", "tRNAAminoacylation"):
         assert process in pass_rows, f"{process} expected real H12_CONFIRMED PASS"
+    assert "RibosomeAssembly" in pass_rows, "RibosomeAssembly expected bridged event-class PASS"
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -236,9 +247,9 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 14,
+        schema.STATUS_PASS: 15,
         schema.STATUS_FAIL: 4,
-        schema.STATUS_MISSING_EVIDENCE: 4,
+        schema.STATUS_MISSING_EVIDENCE: 3,
     }
 
 

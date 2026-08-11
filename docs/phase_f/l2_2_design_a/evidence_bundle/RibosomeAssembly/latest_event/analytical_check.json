@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "event_class bridge carries no L2.2 analytical evaluator; authority is the bridged event-class raw metric set"
+}

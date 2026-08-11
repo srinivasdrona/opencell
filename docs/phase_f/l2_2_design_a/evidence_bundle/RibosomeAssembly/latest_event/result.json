@@ -1,0 +1,164 @@
+{
+  "channels": {
+    "complexs": {
+      "aggregation": "per_tick_vector_w1_mean",
+      "extra": {
+        "guard_ceiling": 166,
+        "guard_floor": 41,
+        "t_karr": 83,
+        "t_oc": 83
+      },
+      "is_event_channel": false,
+      "is_primary": true,
+      "k_eng": 3.0,
+      "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
+      "n_nonzero_karr": 44,
+      "n_nonzero_oc": 44,
+      "per_component": [],
+      "q95_null": 0.36000000000000004,
+      "source_event_channel": "count",
+      "source_statistic_name": "w1_per_seed_count",
+      "standardized_ratio": null,
+      "threshold": 1.08,
+      "w1_oc_vs_karr": 0.0
+    },
+    "payload": {
+      "aggregation": "per_tick_vector_w1_mean",
+      "extra": {
+        "component_union": [
+          "RIBOSOME_30S",
+          "RIBOSOME_50S"
+        ],
+        "karr_components": [
+          "RIBOSOME_30S",
+          "RIBOSOME_50S"
+        ],
+        "oc_components": [
+          "RIBOSOME_30S",
+          "RIBOSOME_50S"
+        ],
+        "representative_component": "RIBOSOME_30S"
+      },
+      "is_event_channel": false,
+      "is_primary": false,
+      "k_eng": 3.0,
+      "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
+      "n_nonzero_karr": 83,
+      "n_nonzero_oc": 83,
+      "per_component": [
+        {
+          "component": "RIBOSOME_30S",
+          "q95_null": 0.09463625805089217,
+          "reasons": [],
+          "standardized_ratio": 0.0,
+          "statistic_value": 0.0,
+          "threshold": 0.2839087741526765,
+          "verdict": "SEED_NOISE"
+        },
+        {
+          "component": "RIBOSOME_50S",
+          "q95_null": 0.09217580272585937,
+          "reasons": [],
+          "standardized_ratio": 0.0,
+          "statistic_value": 0.0,
+          "threshold": 0.27652740817757815,
+          "verdict": "SEED_NOISE"
+        }
+      ],
+      "q95_null": 0.09463625805089217,
+      "source_event_channel": "payload",
+      "source_statistic_name": "w1_per_component_at_matched_firings",
+      "standardized_ratio": 0.0,
+      "threshold": 0.2839087741526765,
+      "w1_oc_vs_karr": 0.0
+    },
+    "timing": {
+      "aggregation": "per_tick_vector_w1_mean",
+      "extra": {
+        "n_karr_fire_ticks": 83,
+        "n_oc_fire_ticks": 83
+      },
+      "is_event_channel": false,
+      "is_primary": false,
+      "k_eng": 3.0,
+      "k_eng_provenance": "DEFAULT_K_ENG=3.0 is a provisional engineering placeholder pending statistical ratification (Opus5 review, M-metric-correctness item); it is not derived from any calibration/power study and must not be cited as a ratified statistical threshold.",
+      "n_nonzero_karr": 44,
+      "n_nonzero_oc": 44,
+      "per_component": [],
+      "q95_null": 9.712856934731933,
+      "source_event_channel": "timing",
+      "source_statistic_name": "w1_pooled_fire_tick_bag",
+      "standardized_ratio": null,
+      "threshold": 29.1385708041958,
+      "w1_oc_vs_karr": 0.0
+    }
+  },
+  "event_bridge": {
+    "source_adapter_id": "ribosome_assembly.gate.v1",
+    "source_bundle_dir": "docs/phase_f/l2_event/evidence_bundle/RibosomeAssembly",
+    "source_event_timing_model": "repeated_firing",
+    "source_git_sha": "abb569705603c26e0d5496b46e8c6726caef51dd",
+    "source_scope_caveat": "This PASS reflects OC's real per-tick port CONDITIONED on Karr's own recorded states_before at every tick (the established test-harness design used by this adapter and its seed-0 structural-smoke predecessor alike) -- it is not an independent free-running forward simulation. It demonstrates per-tick behavioral parity given Karr's own trajectory, not agreement between two independently-evolved trajectories. Do not read this PASS as free-running fidelity.",
+    "source_tick_offsets": [
+      200.0
+    ],
+    "source_window_n_ticks": [
+      100
+    ]
+  },
+  "process": "RibosomeAssembly",
+  "seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    6,
+    7,
+    8,
+    9,
+    10,
+    11,
+    12,
+    13,
+    14,
+    15,
+    16,
+    17,
+    18,
+    19,
+    20,
+    21,
+    22,
+    23,
+    24,
+    25,
+    26,
+    27,
+    28,
+    29,
+    30,
+    31,
+    32,
+    33,
+    34,
+    35,
+    36,
+    37,
+    38,
+    39,
+    40,
+    41,
+    42,
+    43,
+    44,
+    45,
+    46,
+    47,
+    48,
+    49
+  ],
+  "ticks": 200,
+  "warnings": []
+}
