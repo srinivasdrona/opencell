@@ -59,9 +59,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live state (2026-08-12) — ten-track L2.1/L2.2 closure wave launching:**
+**Live state (2026-08-12) — ten-track L2.1/L2.2 closure wave active:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
-- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `045edd9`, synchronized with `origin/main`.
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `9c6b799`, synchronized with `origin/main`.
 - No built-in background agents are running. Future delegated work runs as detached Codex subprocesses with logs/status files outside the main conversation; the main context continues integration work.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green), RibosomeAssembly N=50 event PASS (`ab4126c` + index `d179b63`), DNADamage blocker evidence (`dde2510`), MacromolecularComplexation lifecycle correction (`f627b34`), and exact tick-0 allocator infrastructure (`d5298a1`).
 - DNADamage integrated at `dde2510`: production per-tick trace-oracle path removed; 37 focused tests pass. Biological L2.2 remains blocked on a nontrivial Karr stimulus trace and the missing `hollidayJunctions` OC channel.
@@ -73,14 +73,18 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `L21-CHROMCOND` 23588 / `wave-l21-chromcond`
   - `L21-ACTIVE-WINDOWS` 27656 / `wave-l21-active-windows`
   - `L22-REPLICATION` 26220 / `wave-l22-replication`
-  - `L22-MACROMOL` 23048 / `wave-l22-macromol`
-  - `L22-PPII` 19292 / `wave-l22-procii`
-  - `L22-DNAS` 7052 / `wave-l22-dnas`
+  - `L22-PPII-FOLLOWUP` 3420 / `wave-l22-procii`
+  - `L22-DNAS-FOLLOWUP` 15016 / `wave-l22-dnas`
   - `L22-RIBOSOME-BRIDGE` 12640 / `wave-l22-ribosome-bridge`
-  - `L22-CYTOKINESIS` 22984 / `wave-l22-cytokinesis`
   - `L22-FTSZ` 28156 / `wave-l22-ftsz`
   - `L22-DNADAMAGE` 11048 / `wave-l22-dnadamage`
-- Wait shells: `wait-l21-chromcond`, `wait-l21-active-windows`, `wait-l22-replication`, `wait-l22-macromol`, `wait-l22-procii`, `wait-l22-dnas`, `wait-l22-ribosome-bridge`, `wait-l22-cytokinesis`, `wait-l22-ftsz`, `wait-l22-dnadamage`.
+- Completed first phases:
+  - `L22-DNAS`: preregistered sparse gate returns `PRIMARY_UNDERACTIVE` (31/200 active OC seeds vs 58/200 Karr); source-divergence follow-up is running.
+  - `L22-PPII`: existing 100-tick traces already contain natural transferase-valid windows for 28/50 seeds; loader-manifest + remaining-22 follow-up is running.
+  - `L22-MACROMOL`: extraction tooling ready at `7e27caa`, blocked by MATLAB Licensing Error 10.
+  - `L22-CYTOKINESIS`: cohort plan ready at `65332e0`, one valid seed / 49 missing; blocked by the same MATLAB license.
+- Global MATLAB blocker: the only installed `E:\MATLAB\bin\matlab.exe` uses expired R2026a trial licenses (`License Manager Error -10.2`). No long extraction can start until licensing is restored.
+- Wait shells still active: `wait-l21-chromcond`, `wait-l21-active-windows`, `wait-l22-replication`, `wait-l22-dnas-followup`, `wait-l22-procii-followup`, `wait-l22-ribosome-bridge`, `wait-l22-ftsz`, `wait-l22-dnadamage`.
 - Formal checkpoint: `docs/phase_f/CHECKPOINT_2026-08-11.md`.
 - Ten planned tracks: 2 L2.1 (`ChromosomeCondensation`, active-window recertification) and 8 L2.2 (Replication, MacromolecularComplexation, ProteinProcessingII, DNASupercoiling, RibosomeAssembly bridge, Cytokinesis, FtsZPolymerization, DNADamage).
 - Tracking policy: one main coordinator owns `plan.md`, SQL `tracks`, catalogs and evidence indexes; detached workers write one `STATUS_<track>.md` each. No progress-manager sub-agents.
@@ -89,7 +93,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Final blocking checks on the combined tree: Ruff + naked-number lint PASS; unit suite 415 PASS / 11 audited skips; L1b 115/115 + 28/28 PASS; Gate 1 PASS; Gate 2 PASS (`diverge_cells=0`, 5 self-tests); L2.2 evidence audit PASS.
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
 
-**Live processes / agents (2026-07-11 ~01:30 IST):** none running. MATLAB **UNLOCKED**. WSL up (`.venv-wsl`).
+**Runtime:** detached workers listed above; MATLAB **LICENSE EXPIRED**; WSL up (`.venv-wsl`).
 
 **🛑 GATE 2 STATUS (post GPT-5.4 rubber-duck) — honest scope: per-process INPUT FIDELITY (vocab + reaction stoichiometry) vs the frozen spec. NOT cross-process wiring (that is L1b Half B + L3).** `scripts/gate2_verify_oc_vs_spec.py` compares each OC `Karr<X>Process` to the frozen spec. After the rubber-duck (logged: `sha256:ab399ac…`), strengthened + correctly scoped:
 - **Vocab (substrates/enzymes/stimuli): STRENGTHENED to ORDERED comparison** (index alignment, not sets) + surfaces `@compartment` representation (TOA) instead of stripping it. 27 CONFORM, **1 DIVERGE = Translation** (loads 20 AAs via `aa_ids`, omits GTP/H2O reads + write-products GDP/PI/H/FMET). This is the ONE reliable red. Metabolism 585 now validated via `model.raw['ids']['substrate_wcm_585']`.
