@@ -59,7 +59,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live state (2026-08-11) — ten-track closure checkpoint, awaiting operator go-ahead:**
+**Live state (2026-08-12) — ten-track L2.1/L2.2 closure wave launching:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `045edd9`, synchronized with `origin/main`.
 - No built-in background agents are running. Future delegated work runs as detached Codex subprocesses with logs/status files outside the main conversation; the main context continues integration work.
@@ -68,7 +68,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - RibosomeAssembly integrated at `ab4126c`; shared event index regenerated and audits clean with one `mode=gate`, `verdict=PASS` row. Scope remains Karr-conditioned per-tick parity, not free-running fidelity.
 - Cytokinesis seed-0 structural canary integrated at `5795ccf`; catalog now records `M_ticks=4000`/`[-3999,0]` as a seed-0 lower bound and a separate 1/50 event-sweep blocker.
 - Replication no-hint source closure integrated at `09823a0`, with strict-zero follow-up `4789c1f`; direct verification: Ruff clean, L1b 115/115 + 28/28 wiring PASS, focused Replication tests PASS. L2.1 strict classification remains COINCIDENTAL on the legacy single-trace rubric.
-- Detached subprocesses are currently idle. No closure track starts before the operator's explicit go-ahead.
+- Operator go-ahead received 2026-08-12. Ten isolated detached tracks launch from checkpoint `ff16766`; none may edit shared catalogs or evidence indexes directly.
 - Formal checkpoint: `docs/phase_f/CHECKPOINT_2026-08-11.md`.
 - Ten planned tracks: 2 L2.1 (`ChromosomeCondensation`, active-window recertification) and 8 L2.2 (Replication, MacromolecularComplexation, ProteinProcessingII, DNASupercoiling, RibosomeAssembly bridge, Cytokinesis, FtsZPolymerization, DNADamage).
 - Tracking policy: one main coordinator owns `plan.md`, SQL `tracks`, catalogs and evidence indexes; detached workers write one `STATUS_<track>.md` each. No progress-manager sub-agents.
