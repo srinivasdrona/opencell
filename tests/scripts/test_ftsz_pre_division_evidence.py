@@ -23,6 +23,7 @@ Covers, per the task's Beat-3 predicted outcome and pre-mortem:
 
 from __future__ import annotations
 
+import subprocess
 import sys
 from pathlib import Path
 
@@ -418,6 +419,26 @@ def test_audit_against_real_data_roots_reports_insufficient_ensemble_with_exact_
     assert report.deficit > 0
     if not report.found_seeds:
         assert report.deficit == REQUIRED_N_SEEDS
+
+
+def test_direct_script_entrypoint_runs_from_repo_root_without_import_error():
+    script_path = _REPO_ROOT / "scripts" / "l2_event" / "ftsz_pre_division_evidence.py"
+    result = subprocess.run(
+        [sys.executable, str(script_path)],
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+        timeout=60,
+    )
+
+    assert result.returncode in (0, 2), (
+        "direct script execution must reach main() and return its documented "
+        f"status code, not crash during imports (rc={result.returncode}, stderr={result.stderr!r})"
+    )
+    assert '"process": "FtsZPolymerization"' in result.stdout
+    assert "status=" in result.stdout
+    assert "ModuleNotFoundError" not in result.stderr
 
 
 def test_resumable_extraction_command_is_well_formed_and_driver_exists():

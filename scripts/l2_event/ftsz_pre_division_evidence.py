@@ -82,9 +82,16 @@ from typing import Any
 
 import numpy as np
 
-from scripts.l2_event.window_loader import EventWindowRefused, WindowGrid, load_event_window
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from scripts.l2_event.window_loader import (  # noqa: E402
+    EventWindowRefused,
+    WindowGrid,
+    load_event_window,
+)
+
 _VIVARIUM_TEST_DIR = _REPO_ROOT / "tests" / "vivarium"
 
 # ---------------------------------------------------------------------------
