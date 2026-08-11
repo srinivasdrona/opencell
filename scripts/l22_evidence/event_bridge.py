@@ -21,6 +21,8 @@ The bridge keeps the L2.2 authority contract intact:
   not to the Design-A harness.
 """
 
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import argparse
@@ -35,8 +37,10 @@ if str(_REPO_ROOT_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT_BOOTSTRAP))
 
 from scripts.l22_evidence import catalog as cat  # noqa: E402
-from scripts.l22_evidence import schema  # noqa: E402
-from scripts.l22_evidence import sweep  # noqa: E402
+from scripts.l22_evidence import (
+    schema,  # noqa: E402
+    sweep,  # noqa: E402
+)
 from scripts.l22_evidence import verdict as vd  # noqa: E402
 from scripts.l22_evidence.populate import _git_dirty, _git_sha  # noqa: E402
 

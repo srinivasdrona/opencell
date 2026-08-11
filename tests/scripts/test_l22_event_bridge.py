@@ -1,5 +1,7 @@
 """End-to-end tests for the RibosomeAssembly L2.event -> L2.2 bridge."""
 
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import json
@@ -12,9 +14,11 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.l22_evidence import catalog as cat  # noqa: E402
-from scripts.l22_evidence import event_bridge  # noqa: E402
+from scripts.l22_evidence import (
+    event_bridge,  # noqa: E402
+    schema,  # noqa: E402
+)
 from scripts.l22_evidence import generator as gen  # noqa: E402
-from scripts.l22_evidence import schema  # noqa: E402
 
 
 def _entry() -> cat.ProcessEntry:

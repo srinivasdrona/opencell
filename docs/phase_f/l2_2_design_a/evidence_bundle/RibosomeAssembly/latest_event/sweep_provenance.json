@@ -2,7 +2,7 @@
   "completion_status": "COMPLETE",
   "evaluator_schema_version": 4,
   "git_dirty": null,
-  "git_sha": "0f2e0397f5adbb2b3409b901a1368ebf5a3acbc6",
+  "git_sha": "da5ac655401918210045c588b4592acd0e0521d2",
   "inputs_verified": true,
   "m_ticks": 200,
   "n_seeds": 50,
@@ -10,17 +10,17 @@
   "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "5f732213081eeb6bffc5fba18cb6a42c777db66f685c458bc70dc94cfc85ce76",
+    "SUMMARY.json": "877430142fc0fcd7e4e8b6263344284430b4e150f85668e30d4bb69dfed64b77",
     "analytical_check.json": "310f054af627f2627d114295ccff6d6a5946c4c7a7130cf31949c67851d14c73",
     "input_manifest.json": "a0a11c92575e67693a6c3f9d68448e546cc0712b8de536537489ec8d25273e95",
     "null_calibration.json": "57a4d63a90c681e36822a98818eccaded7f716415b6fb88d7813d045d9ff090f",
-    "provenance.json": "5a779a87a6d93ed931771a87cbb13c414d8c8d2f35253bd57d763b42c2494830",
+    "provenance.json": "ff1d7e11dca7d05837f81507b4fc9f16592d70feceed88bb5a2c471104fa7533",
     "result.json": "1cac37064843d4aae7d9c1eb5534fe87aee4d4218d40b4414eb782c061dae341",
     "thresholds.json": "514cef6aab5d2b50200518af35c7b15cbad9a1fc15b51681879d4d1c15da3d81"
   },
   "source_hashes": {
     "catalog": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
-    "event_bridge": "90f9538e043402e202442910c3d05a3f22637f6a4d102daa736b4eea2335087f",
+    "event_bridge": "421595e16c855b0dea6331781927c8ed573c5a93bc37df7e4720d49e18464145",
     "l2_event_evidence": "731fbf819fd2314e61bee8e63117889769c4e84941ea6f9e9f1969e89c42691c",
     "l2_event_metrics": "2b194475b53121efd3bb34e865b4ee4053704393d33974cfd4ead31147278eda",
     "l2_event_registry": "7f57d616221569ad9ce51d84a1723ecf6ccb2dc46bf1346e60fb47f916b43f9d",
@@ -32,5 +32,5 @@
     "oc_module": "9e11c07d7d847fa818601b33f5d23d2771c746cb96a908f1b454221a7456f56a",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-08-11T21:40:02.086708+00:00"
+  "written_at": "2026-08-11T23:12:06.913815+00:00"
 }
