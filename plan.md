@@ -75,21 +75,21 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `L22-REPLICATION` 26220 / `wave-l22-replication`
   - `L22-PPII-FOLLOWUP` 3420 / `wave-l22-procii`
   - `L22-DNAS-FOLLOWUP` 15016 / `wave-l22-dnas`
-  - `L22-RIBOSOME-BRIDGE` 12640 / `wave-l22-ribosome-bridge`
-  - `L22-FTSZ` 28156 / `wave-l22-ftsz`
-  - `L22-DNADAMAGE` 11048 / `wave-l22-dnadamage`
 - Completed first phases:
   - `L22-DNAS`: preregistered sparse gate returns `PRIMARY_UNDERACTIVE` (31/200 active OC seeds vs 58/200 Karr); source-divergence follow-up is running.
   - `L22-PPII`: existing 100-tick traces already contain natural transferase-valid windows for 28/50 seeds; loader-manifest + remaining-22 follow-up is running.
   - `L22-MACROMOL`: extraction tooling ready at `7e27caa`, blocked by MATLAB Licensing Error 10.
   - `L22-CYTOKINESIS`: cohort plan ready at `65332e0`, one valid seed / 49 missing; blocked by the same MATLAB license.
+  - `L22-DNADAMAGE`: holliday-junction port and stimulus cohort preflight merged at `7779dc4`; real extraction blocked by MATLAB licensing.
+  - `L22-FTSZ`: direct fail-closed entrypoint merged at `cdb9a08`; 0/50 cohort blocked by MATLAB licensing.
+  - `L22-RIBOSOME-BRIDGE`: integrated at `fa56fb0`; event-specific authority now moves RibosomeAssembly to L2.2 PASS.
 - Global MATLAB blocker: the only installed `E:\MATLAB\bin\matlab.exe` uses expired R2026a trial licenses (`License Manager Error -10.2`). No long extraction can start until licensing is restored.
-- Wait shells still active: `wait-l21-chromcond`, `wait-l21-active-windows`, `wait-l22-replication`, `wait-l22-dnas-followup`, `wait-l22-procii-followup`, `wait-l22-ribosome-bridge`, `wait-l22-ftsz`, `wait-l22-dnadamage`.
+- Wait shells still active: `wait-l21-chromcond`, `wait-l21-active-windows`, `wait-l22-replication`, `wait-l22-dnas-followup`, `wait-l22-procii-followup`.
 - Formal checkpoint: `docs/phase_f/CHECKPOINT_2026-08-11.md`.
 - Ten planned tracks: 2 L2.1 (`ChromosomeCondensation`, active-window recertification) and 8 L2.2 (Replication, MacromolecularComplexation, ProteinProcessingII, DNASupercoiling, RibosomeAssembly bridge, Cytokinesis, FtsZPolymerization, DNADamage).
 - Tracking policy: one main coordinator owns `plan.md`, SQL `tracks`, catalogs and evidence indexes; detached workers write one `STATUS_<track>.md` each. No progress-manager sub-agents.
 - Fresh L2.1 strict audit on the final merged base: 16 GENUINE / 5 COINCIDENTAL / 6 UNINFORMATIVE / 1 FAIL (`ChromosomeCondensation`).
-- L2.2 stale-only recertification integrated at `47ec14b` with final Replication hash refresh `87d7dca`: authoritative index audits `integrity: OK` at **14 PASS / 4 FAIL / 4 MISSING_EVIDENCE**. All 18 Design-A raw-oracle manifest rows resolve 50/50.
+- L2.2 index now audits `integrity: OK` at **15 PASS / 4 FAIL / 3 MISSING_EVIDENCE** after the RibosomeAssembly event bridge. All 18 Design-A raw-oracle manifest rows resolve 50/50.
 - Final blocking checks on the combined tree: Ruff + naked-number lint PASS; unit suite 415 PASS / 11 audited skips; L1b 115/115 + 28/28 PASS; Gate 1 PASS; Gate 2 PASS (`diverge_cells=0`, 5 self-tests); L2.2 evidence audit PASS.
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
 

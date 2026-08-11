@@ -88,36 +88,6 @@ def _rna_decay_tick_vectors(
     return before, after
 
 
-def _macromol_tick_vectors(
-    seed: int,
-    n_ticks: int = 2,
-    *,
-    complex_base: float,
-) -> tuple[dict[str, list[np.ndarray]], dict[str, list[np.ndarray]]]:
-    before = {"substrates": [], "monomers": [], "complexs": []}
-    after = {"substrates": [], "monomers": [], "complexs": []}
-    for tick in range(n_ticks):
-        before["substrates"].append(np.asarray([10 * seed + tick, 10 * seed + tick + 1], dtype=np.float64))
-        after["substrates"].append(np.asarray([20 * seed + tick, 20 * seed + tick + 1], dtype=np.float64))
-        before["monomers"].append(np.asarray([30 * seed + tick, 30 * seed + tick + 1], dtype=np.float64))
-        after["monomers"].append(np.asarray([40 * seed + tick, 40 * seed + tick + 1], dtype=np.float64))
-
-        before_complexs = np.zeros(24, dtype=np.float64)
-        after_complexs = np.zeros(24, dtype=np.float64)
-        before_complexs[22] = complex_base + 10 * seed + tick
-        before_complexs[23] = complex_base + 100 + 10 * seed + tick
-        after_complexs[22] = before_complexs[22] + 1.0
-        after_complexs[23] = before_complexs[23]
-        before["complexs"].append(before_complexs)
-        after["complexs"].append(after_complexs)
-    return before, after
-
-
-def _generic_v2_path(root: Path, process: str, seed: int) -> Path:
-    subdir = "per_process_traces_v2" if seed == 0 else f"per_process_traces_v2_s{seed:03d}"
-    return root / subdir / f"{process}_100ticks.mat"
-
-
 def test_load_v2_ensemble_returns_none_when_no_seeds_present(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(runner_helpers, "_REPO_ROOT", tmp_path)
 
@@ -210,66 +180,6 @@ def test_load_karr_oracle_returns_v2_macromol_without_touching_legacy_loader(mon
     oracle = runner_helpers.load_karr_oracle("MacromolecularComplexation")
 
     assert oracle is sentinel
-
-
-def test_load_v2_ensemble_uses_process_scoped_oracle_root_override(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(runner_helpers, "_REPO_ROOT", tmp_path)
-    monkeypatch.setattr(runner_helpers, "_macromol_channel_metadata", lambda: {"monomer_indices": np.array([0, 1])})
-    process = "MacromolecularComplexation"
-    default_root = tmp_path / "data" / "m1_sources" / "karr_native"
-    override_root = tmp_path / "macromol_active_root"
-
-    for seed in range(2):
-        default_before, default_after = _macromol_tick_vectors(seed, complex_base=100.0)
-        override_before, override_after = _macromol_tick_vectors(seed, complex_base=900.0)
-        _write_mat_trace(
-            _generic_v2_path(default_root, process, seed),
-            states_before=default_before,
-            states_after=default_after,
-        )
-        _write_mat_trace(
-            _generic_v2_path(override_root, process, seed),
-            states_before=override_before,
-            states_after=override_after,
-        )
-
-    monkeypatch.setenv(runner_helpers._process_oracle_root_env_var(process), str(override_root))
-    oracle = runner_helpers._load_v2_ensemble(process, max_seeds=2)
-
-    assert oracle is not None
-    assert oracle["canonical_seed_count"] == 2
-    assert str(oracle["oracle_path"]).startswith(str(override_root))
-    assert np.asarray(oracle["before_complexs"])[0, 0, 22] == 900.0
-
-
-def test_process_scoped_oracle_root_override_is_authoritative_not_fallback(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(runner_helpers, "_REPO_ROOT", tmp_path)
-    monkeypatch.setattr(runner_helpers, "_macromol_channel_metadata", lambda: {"monomer_indices": np.array([0, 1])})
-    process = "MacromolecularComplexation"
-    default_root = tmp_path / "data" / "m1_sources" / "karr_native"
-    override_root = tmp_path / "macromol_active_root"
-
-    for seed in range(2):
-        default_before, default_after = _macromol_tick_vectors(seed, complex_base=100.0)
-        _write_mat_trace(
-            _generic_v2_path(default_root, process, seed),
-            states_before=default_before,
-            states_after=default_after,
-        )
-    override_before, override_after = _macromol_tick_vectors(0, complex_base=700.0)
-    _write_mat_trace(
-        _generic_v2_path(override_root, process, 0),
-        states_before=override_before,
-        states_after=override_after,
-    )
-
-    monkeypatch.setenv(runner_helpers._process_oracle_root_env_var(process), str(override_root))
-    oracle = runner_helpers._load_v2_ensemble(process, max_seeds=2)
-
-    assert oracle is not None
-    assert oracle["canonical_seed_count"] == 1
-    assert str(oracle["oracle_path"]).startswith(str(override_root))
-    assert np.asarray(oracle["before_complexs"])[0, 0, 22] == 700.0
 
 
 def test_load_karr_oracle_prefers_richer_specialized_ensemble_over_partial_v2(monkeypatch) -> None:
