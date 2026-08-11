@@ -65,7 +65,7 @@ rows", "n of 22 L2.2 in-scope processes", or "n of 28 processes at rung X".
 | L1b | the wiring record matches the code | 28/28 method/wiring conformance |
 | L2.0 | declared channels are the oracle's channels | 28/28 static schema |
 | L2.0a | the allocator hands each process the right inputs | 403/403 cases |
-| L2.1 | same-seed replay reproduces one Karr trace | 19 GENUINE / 2 COINCIDENTAL / 6 UNINFORMATIVE / 1 FAIL |
+| L2.1 | same-seed replay reproduces one Karr trace | 16 GENUINE / 5 COINCIDENTAL / 6 UNINFORMATIVE / 1 FAIL |
 | L2.2 | the *distribution* is right across seeds | **14 PASS / 4 FAIL / 4 MISSING_EVIDENCE of 22 in scope — aggregate `NON_GREEN`** |
 | L2.4 | the free-running chassis conserves mass | PASS, 100 ticks × 4 seeds |
 | L2.5 | processes compose through the shared pool | **no currently certified pair set** — not started under the honest rebuild |

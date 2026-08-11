@@ -59,16 +59,19 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live state (2026-08-06) — detached closure/integration:**
+**Live state (2026-08-11) — ten-track closure checkpoint, awaiting operator go-ahead:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
-- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `e767a8d`; all current merges and lower-gate recertification are integrated locally.
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`, local `main` @ `045edd9`, synchronized with `origin/main`.
 - No built-in background agents are running. Future delegated work runs as detached Codex subprocesses with logs/status files outside the main conversation; the main context continues integration work.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green), RibosomeAssembly N=50 event PASS (`ab4126c` + index `d179b63`), DNADamage blocker evidence (`dde2510`), MacromolecularComplexation lifecycle correction (`f627b34`), and exact tick-0 allocator infrastructure (`d5298a1`).
 - DNADamage integrated at `dde2510`: production per-tick trace-oracle path removed; 37 focused tests pass. Biological L2.2 remains blocked on a nontrivial Karr stimulus trace and the missing `hollidayJunctions` OC channel.
 - RibosomeAssembly integrated at `ab4126c`; shared event index regenerated and audits clean with one `mode=gate`, `verdict=PASS` row. Scope remains Karr-conditioned per-tick parity, not free-running fidelity.
 - Cytokinesis seed-0 structural canary integrated at `5795ccf`; catalog now records `M_ticks=4000`/`[-3999,0]` as a seed-0 lower bound and a separate 1/50 event-sweep blocker.
 - Replication no-hint source closure integrated at `09823a0`, with strict-zero follow-up `4789c1f`; direct verification: Ruff clean, L1b 115/115 + 28/28 wiring PASS, focused Replication tests PASS. L2.1 strict classification remains COINCIDENTAL on the legacy single-trace rubric.
-- Detached subprocesses are currently idle. DNAS N=200 remains supplemental-only: do not canonicalize because the 0.10 occurrence-rate threshold passes zero activity and OC distinct-seed support is only 31/200.
+- Detached subprocesses are currently idle. No closure track starts before the operator's explicit go-ahead.
+- Formal checkpoint: `docs/phase_f/CHECKPOINT_2026-08-11.md`.
+- Ten planned tracks: 2 L2.1 (`ChromosomeCondensation`, active-window recertification) and 8 L2.2 (Replication, MacromolecularComplexation, ProteinProcessingII, DNASupercoiling, RibosomeAssembly bridge, Cytokinesis, FtsZPolymerization, DNADamage).
+- Tracking policy: one main coordinator owns `plan.md`, SQL `tracks`, catalogs and evidence indexes; detached workers write one `STATUS_<track>.md` each. No progress-manager sub-agents.
 - Fresh L2.1 strict audit on the final merged base: 16 GENUINE / 5 COINCIDENTAL / 6 UNINFORMATIVE / 1 FAIL (`ChromosomeCondensation`).
 - L2.2 stale-only recertification integrated at `47ec14b` with final Replication hash refresh `87d7dca`: authoritative index audits `integrity: OK` at **14 PASS / 4 FAIL / 4 MISSING_EVIDENCE**. All 18 Design-A raw-oracle manifest rows resolve 50/50.
 - Final blocking checks on the combined tree: Ruff + naked-number lint PASS; unit suite 415 PASS / 11 audited skips; L1b 115/115 + 28/28 PASS; Gate 1 PASS; Gate 2 PASS (`diverge_cells=0`, 5 self-tests); L2.2 evidence audit PASS.
