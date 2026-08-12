@@ -91,7 +91,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - L2.2 index now audits `integrity: OK` at **16 PASS / 3 FAIL / 3 MISSING_EVIDENCE** after RibosomeAssembly bridging and the corrected Replication N=50 rerun. All 18 Design-A raw-oracle manifest rows resolve 50/50.
 - Final blocking checks on the combined tree: Ruff + naked-number lint PASS; unit suite 415 PASS / 11 audited skips; L1b 115/115 + 28/28 PASS; Gate 1 PASS; Gate 2 PASS (`diverge_cells=0`, 5 self-tests); L2.2 evidence audit PASS.
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
-- Ten-track wave disposition: Replication and RibosomeAssembly closed; L2.1 active-window rubric integrated; all remaining open rows require new MATLAB-derived state/windows. MATLAB licensing is therefore the single external blocker to further gate closure.
+- Ten-track wave disposition: Replication and RibosomeAssembly closed; L2.1 active-window rubric integrated but its track remains open on five missing extractions. The other seven tracks also require new MATLAB-derived state/windows. MATLAB licensing is therefore the single external blocker to further gate closure.
 
 **Runtime:** detached workers listed above; MATLAB **LICENSE EXPIRED**; WSL up (`.venv-wsl`).
 
