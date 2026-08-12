@@ -70,11 +70,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Replication no-hint source closure integrated at `09823a0`, with strict-zero follow-up `4789c1f`; direct verification: Ruff clean, L1b 115/115 + 28/28 wiring PASS, focused Replication tests PASS. L2.1 strict classification remains COINCIDENTAL on the legacy single-trace rubric.
 - Operator go-ahead received 2026-08-12. Ten isolated detached tracks launch from checkpoint `ff16766`; none may edit shared catalogs or evidence indexes directly.
 - Live detached tracks (PID / worktree):
-  - `L22-DNAS-FOLLOWUP2` 10612 / `wave-l22-dnas`
+  - none
 - Completed first phases:
   - `L21-ACTIVE-WINDOWS`: integrated at `6059f8b`; six rows become GENUINE and five remain `MISSING_ACTIVE_EXTRACTION`.
   - `L21-CHROMCOND`: exact mcg16807 reconstruction remains process-branch-only; blocker is the missing pre-initializeState MCOS surface plus MATLAB licensing.
-  - `L22-DNAS`: sigma clamp bug fixed on the process branch; full MATLAB release/binding/random-order source port follow-up is running under the frozen N=200 gate.
+  - `L22-DNAS`: eight isolated follow-ups ported visible source branches and proved trace-visible candidate arithmetic matches MATLAB, but N=200 remains 1486/200/200 vs 65/58/7. Exact blocker is hidden Karr chromosome state/caches absent from stored traces; partial changes remain branch-only.
   - `L22-PPII`: 28/50 active-window manifest is preserved on the process branch; not merged because shared `h12.py` would stale three PASS rows. Remaining 22 windows require MATLAB licensing.
   - `L22-MACROMOL`: extraction tooling ready at `7e27caa`, blocked by MATLAB Licensing Error 10.
   - `L22-CYTOKINESIS`: cohort plan ready at `65332e0`, one valid seed / 49 missing; blocked by the same MATLAB license.
@@ -83,7 +83,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `L22-RIBOSOME-BRIDGE`: integrated at `fa56fb0`; event-specific authority now moves RibosomeAssembly to L2.2 PASS.
   - `L22-REPLICATION`: current-tree N=50 rerun integrated at `bef0a3f`; chromosome PASS, substrates/boundEnzymes SEED_NOISE.
 - Global MATLAB blocker: the only installed `E:\MATLAB\bin\matlab.exe` uses expired R2026a trial licenses (`License Manager Error -10.2`). No long extraction can start until licensing is restored.
-- Wait shell still active: `wait-l22-dnas-followup2`.
+- No detached wait shells remain active.
 - Formal checkpoint: `docs/phase_f/CHECKPOINT_2026-08-11.md`.
 - Ten planned tracks: 2 L2.1 (`ChromosomeCondensation`, active-window recertification) and 8 L2.2 (Replication, MacromolecularComplexation, ProteinProcessingII, DNASupercoiling, RibosomeAssembly bridge, Cytokinesis, FtsZPolymerization, DNADamage).
 - Tracking policy: one main coordinator owns `plan.md`, SQL `tracks`, catalogs and evidence indexes; detached workers write one `STATUS_<track>.md` each. No progress-manager sub-agents.
@@ -91,6 +91,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - L2.2 index now audits `integrity: OK` at **16 PASS / 3 FAIL / 3 MISSING_EVIDENCE** after RibosomeAssembly bridging and the corrected Replication N=50 rerun. All 18 Design-A raw-oracle manifest rows resolve 50/50.
 - Final blocking checks on the combined tree: Ruff + naked-number lint PASS; unit suite 415 PASS / 11 audited skips; L1b 115/115 + 28/28 PASS; Gate 1 PASS; Gate 2 PASS (`diverge_cells=0`, 5 self-tests); L2.2 evidence audit PASS.
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
+- Ten-track wave disposition: Replication and RibosomeAssembly closed; L2.1 active-window rubric integrated; all remaining open rows require new MATLAB-derived state/windows. MATLAB licensing is therefore the single external blocker to further gate closure.
 
 **Runtime:** detached workers listed above; MATLAB **LICENSE EXPIRED**; WSL up (`.venv-wsl`).
 
