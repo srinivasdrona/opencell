@@ -32,6 +32,9 @@ from opencell.util.matlab_rng import MatlabRandStream
 #   https://www.mathworks.com/help/matlab/ref/double.randi.html
 # - Reference implementation used as secondary oracle for mt19937ar/randn internals:
 #   https://github.com/KrepakVitaly/py_matlab_randn
+# - Park-Miller minimal standard reference vectors:
+#   first values from seed 1 are 16807, 282475249, 1622650073, 984943658, 1144108930
+#   and the 10000th value is 1043618065
 
 
 def test_rand_seed0_first10_matches_published_values() -> None:
@@ -224,6 +227,78 @@ def test_state_roundtrip_after_rand50_matches_following_rand10() -> None:
     state = s.get_state()
 
     s2 = MatlabRandStream(1)
+    s2.set_state(state)
+
+    got1 = s.rand(10)
+    got2 = s2.rand(10)
+    np.testing.assert_array_equal(got1, got2)
+
+
+def test_mcg16807_seed1_first5_matches_park_miller_reference() -> None:
+    s = MatlabRandStream(1, generator="mcg16807")
+    got = s.rand(5)
+    expected = np.array(
+        [
+            16807 / 2147483647,
+            282475249 / 2147483647,
+            1622650073 / 2147483647,
+            984943658 / 2147483647,
+            1144108930 / 2147483647,
+        ],
+        dtype=np.float64,
+    )
+    np.testing.assert_allclose(got, expected, rtol=0.0, atol=1e-15)
+
+
+def test_mcg16807_seed0_matches_seed1_reference() -> None:
+    got = MatlabRandStream(0, generator="mcg16807").rand(5)
+    expected = MatlabRandStream(1, generator="mcg16807").rand(5)
+    np.testing.assert_array_equal(got, expected)
+
+
+def test_mcg16807_seed1_10000th_value_matches_reference() -> None:
+    s = MatlabRandStream(1, generator="mcg16807")
+    got = float(s.rand(10000)[-1])
+    expected = 1043618065 / 2147483647
+    assert got == pytest.approx(expected, rel=0.0, abs=1e-15)
+
+
+def test_mcg16807_randi_seed1_first10_matches_floor_of_reference_uniforms() -> None:
+    s = MatlabRandStream(1, generator="mcg16807")
+    got = s.randi(10, 10)
+    expected = np.array([1, 2, 8, 5, 6, 3, 1, 7, 7, 10], dtype=np.int64)
+    np.testing.assert_array_equal(got, expected)
+
+
+def test_mcg16807_randperm_seed1_first5_matches_key_ranking() -> None:
+    s = MatlabRandStream(1, generator="mcg16807")
+    got = s.randperm(5)
+    expected = np.array([1, 2, 4, 5, 3], dtype=np.int64)
+    np.testing.assert_array_equal(got, expected)
+
+
+def test_mcg16807_weighted_randsample_seed1_matches_reference_thresholds() -> None:
+    s = MatlabRandStream(1, generator="mcg16807")
+    got = s.randsample(3, 5, True, np.array([1.0, 2.0, 3.0], dtype=np.float64))
+    expected = np.array([1, 1, 3, 2, 3], dtype=np.int64)
+    np.testing.assert_array_equal(got, expected)
+
+
+def test_mcg16807_single_weighted_randsample_still_consumes_one_draw() -> None:
+    s = MatlabRandStream(1, generator="mcg16807")
+    got = s.randsample(4, 1, False, np.array([0.0, 0.0, 5.0, 0.0], dtype=np.float64))
+    np.testing.assert_array_equal(got, np.array([3], dtype=np.int64))
+    next_uniform = float(s.rand())
+    expected_next_uniform = 282475249 / 2147483647
+    assert next_uniform == pytest.approx(expected_next_uniform, rel=0.0, abs=1e-15)
+
+
+def test_mcg16807_state_roundtrip_after_rand50_matches_following_rand10() -> None:
+    s = MatlabRandStream(1, generator="mcg16807")
+    _ = s.rand(50)
+    state = s.get_state()
+
+    s2 = MatlabRandStream(7, generator="mcg16807")
     s2.set_state(state)
 
     got1 = s.rand(10)
