@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
-  "content_hash": "04dc595aa5f05ee8952b9da03e126ec6f8a4352a69de467b8c767ddcbabbd7fd",
+  "content_hash": "1ececaf36796b84a070331e053359c623273ce860baf9c67a3e7e51619a699a7",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-08-11T23:30:04.375609+00:00",
+  "generated_at": "2026-08-12T01:29:13.577239+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -643,12 +643,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "b03e846ddcdf37f627acc4678a592ccd78c2091d015a3f95ce065196a51896cc",
+        "SUMMARY.json": "13119327e0e56ed8cd644c3e6c9ac4660ce2252417db7f8f925f16033f53352b",
         "analytical_check.json": "6eb241419d463a4fe42c00805e220ec1da51ba380cd5b84cf8fc6d38362b0b01",
-        "null_calibration.json": "8720dc1bd2de18659b29f5f392205c0540ad14d9fa8ab1ad509cc80b2604ba0e",
-        "provenance.json": "653387be8ae276a32c65534974f00dc68f3f9b10a7a0ec5020fedcd3c3db29a1",
-        "result.json": "b1a0d629d983dd2b1276e5af3ddfa6d0060e6dd17eb0cc75d9cfa326111547e2",
-        "sweep_provenance.json": "ff378fe2a1344b01932d17e6f50211acdf12fc4210a71d37747ec99be7a7c9bf",
+        "null_calibration.json": "33e5b3732b67ee75908c8d0188d0cafec80a6026e22ef51d08f9d628a46b73bd",
+        "provenance.json": "61ed0fa57cb38ee6caa08265cc99755484f429fe74ec7ed592078303b351045b",
+        "result.json": "5a10c6648a2e626e6f7a37ddea2b2f5d48aad43fa0ab7853c6a1d27a9eb85fc2",
+        "sweep_provenance.json": "72ce96f810a598572800dd095294fc41b377abe8af430d6b5a4e72d24ef50e88",
         "thresholds.json": "5c399248d78b450c0e78114e2a4ac2ee54cae809b382c2bdb611a1782bed4cf9"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -663,37 +663,23 @@
       },
       "channel_verdicts": {
         "boundEnzymes": "SEED_NOISE",
-        "chromosome": "PRIMARY_ACTIVITY_MISSING",
+        "chromosome": "PASS",
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Replication/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "Replication",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
-        "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a60a3de8c440.., current=0bf545d5bf3f..)",
-        "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
-        "STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=a60a3de8c440.., current=0bf545d5bf3f..)",
-        "STALE_SWEEP_PROVENANCE: projections source changed since evidence was generated (recorded=ff2154045ffa.., current=2de64997bc27..)",
-        "STALE_SWEEP_PROVENANCE: catalog source changed since evidence was generated (recorded=d7e205d08fa4.., current=f200c8d64190..)",
-        "STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=e250d519ec35.., current=b2939886b293..)",
-        "STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=7066d68f8b3a.., current=7e4a5f758e64..)",
-        "STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=dbc43d5d0850.., current=1a534b3fadc5..)",
-        "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_nnz' has zero nonzero observations on OC while Karr has 420 (OC never exhibited this primary component's activity at all)",
-        "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_1' has zero nonzero observations on OC while Karr has 3118 (OC never exhibited this primary component's activity at all)",
-        "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_2' has zero nonzero observations on OC while Karr has 4155 (OC never exhibited this primary component's activity at all)",
-        "PRIMARY_ACTIVITY_MISSING: channel 'chromosome' component 'polymerizedRegions.delta_value_sum_strand_3' has zero nonzero observations on OC while Karr has 4265 (OC never exhibited this primary component's activity at all)"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 2,
+        "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f1784d00d8d82b5cbefda34b53d3593c54fa086b",
+        "git_sha": "0f2e0397f5adbb2b3409b901a1368ebf5a3acbc6",
         "inputs_verified": true,
-        "result_schema_version": null
+        "result_schema_version": 1
       },
       "warnings": []
     },
@@ -912,8 +898,8 @@
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 4,
+    "FAIL": 3,
     "MISSING_EVIDENCE": 3,
-    "PASS": 15
+    "PASS": 16
   }
 }

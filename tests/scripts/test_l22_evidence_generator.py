@@ -2,10 +2,10 @@
 the REAL PROCESS_CATALOG.yaml and the real evidence tree.
 
 As of this commit the real, mechanically re-derived tally is
-PASS=15 / FAIL=4 / MISSING_EVIDENCE=3: RibosomeAssembly now bridges its
-existing tracked L2.event N=50 PASS bundle into a valid `latest_event/`
-L2.2 authority row, while Cytokinesis/DNADamage/FtsZ remain honest
-MISSING_EVIDENCE. See
+PASS=16 / FAIL=3 / MISSING_EVIDENCE=3: RibosomeAssembly bridges its
+tracked L2.event N=50 PASS bundle into a valid `latest_event/` authority
+row, and Replication's corrected no-hint port passes its current-tree N=50
+rerun. Cytokinesis/DNADamage/FtsZ remain honest MISSING_EVIDENCE. See
 `test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation` below
 for the row-level provenance, plus
 docs/phase_f/l2_2_design_a/h12/H12_REPORT.md for the earlier H12
@@ -140,8 +140,10 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     rejected -- they remain FAIL, non-green, pending either a broader
     sample population or a maintainer-reviewed catalog demotion.
 
-    The 2 unrelated FAIL rows (Replication, DNASupercoiling) were untouched
-    by that H12 delivery. This commit makes one further evidence-driven move:
+    Replication and DNASupercoiling were untouched by that H12 delivery.
+    Replication later moved FAIL -> PASS through a current-tree N=50 rerun
+    after its no-hint source semantics were corrected. This commit makes one
+    further evidence-driven move:
 
     - RibosomeAssembly moves MISSING_EVIDENCE -> PASS, not by touching the
       shared tracked `evidence_index.json`, but by materializing a valid
@@ -164,8 +166,8 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 15,
-        schema.STATUS_FAIL: 4,
+        schema.STATUS_PASS: 16,
+        schema.STATUS_FAIL: 3,
         schema.STATUS_MISSING_EVIDENCE: 3,
     }
     fail_rows = {
@@ -176,12 +178,8 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     assert set(fail_rows) == {
         "MacromolecularComplexation",
         "ProteinProcessingII",
-        "Replication",
         "DNASupercoiling",
     }
-    assert any(
-        "PRIMARY_ACTIVITY_MISSING" in reason for reason in fail_rows["Replication"]
-    )
     assert any(
         "PRIMARY_INSUFFICIENT_SAMPLES" in reason for reason in fail_rows["DNASupercoiling"]
     )
@@ -200,6 +198,7 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     for process in ("ProteinFolding", "ProteinProcessingI", "tRNAAminoacylation"):
         assert process in pass_rows, f"{process} expected real H12_CONFIRMED PASS"
     assert "RibosomeAssembly" in pass_rows, "RibosomeAssembly expected bridged event-class PASS"
+    assert "Replication" in pass_rows, "Replication expected current-tree N=50 PASS"
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -247,8 +246,8 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 15,
-        schema.STATUS_FAIL: 4,
+        schema.STATUS_PASS: 16,
+        schema.STATUS_FAIL: 3,
         schema.STATUS_MISSING_EVIDENCE: 3,
     }
 

@@ -83,13 +83,14 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `L22-DNADAMAGE`: holliday-junction port and stimulus cohort preflight merged at `7779dc4`; real extraction blocked by MATLAB licensing.
   - `L22-FTSZ`: direct fail-closed entrypoint merged at `cdb9a08`; 0/50 cohort blocked by MATLAB licensing.
   - `L22-RIBOSOME-BRIDGE`: integrated at `fa56fb0`; event-specific authority now moves RibosomeAssembly to L2.2 PASS.
+  - `L22-REPLICATION`: current-tree N=50 rerun integrated at `bef0a3f`; chromosome PASS, substrates/boundEnzymes SEED_NOISE.
 - Global MATLAB blocker: the only installed `E:\MATLAB\bin\matlab.exe` uses expired R2026a trial licenses (`License Manager Error -10.2`). No long extraction can start until licensing is restored.
 - Wait shells still active: `wait-l21-chromcond`, `wait-l21-active-windows`, `wait-l22-replication`, `wait-l22-dnas-followup`, `wait-l22-procii-followup`.
 - Formal checkpoint: `docs/phase_f/CHECKPOINT_2026-08-11.md`.
 - Ten planned tracks: 2 L2.1 (`ChromosomeCondensation`, active-window recertification) and 8 L2.2 (Replication, MacromolecularComplexation, ProteinProcessingII, DNASupercoiling, RibosomeAssembly bridge, Cytokinesis, FtsZPolymerization, DNADamage).
 - Tracking policy: one main coordinator owns `plan.md`, SQL `tracks`, catalogs and evidence indexes; detached workers write one `STATUS_<track>.md` each. No progress-manager sub-agents.
 - Fresh L2.1 strict audit on the final merged base: 16 GENUINE / 5 COINCIDENTAL / 6 UNINFORMATIVE / 1 FAIL (`ChromosomeCondensation`).
-- L2.2 index now audits `integrity: OK` at **15 PASS / 4 FAIL / 3 MISSING_EVIDENCE** after the RibosomeAssembly event bridge. All 18 Design-A raw-oracle manifest rows resolve 50/50.
+- L2.2 index now audits `integrity: OK` at **16 PASS / 3 FAIL / 3 MISSING_EVIDENCE** after RibosomeAssembly bridging and the corrected Replication N=50 rerun. All 18 Design-A raw-oracle manifest rows resolve 50/50.
 - Final blocking checks on the combined tree: Ruff + naked-number lint PASS; unit suite 415 PASS / 11 audited skips; L1b 115/115 + 28/28 PASS; Gate 1 PASS; Gate 2 PASS (`diverge_cells=0`, 5 self-tests); L2.2 evidence audit PASS.
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
 
