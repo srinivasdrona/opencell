@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 from __future__ import annotations
 
 import argparse
@@ -36,8 +38,8 @@ from l2_replay_common import (  # type: ignore
     project_observable_from_state,
     refresh_allocator_views,
 )
-from opencell.state.chromosome_store import ChromosomeStore, _read_matlab_dataset
 
+from opencell.state.chromosome_store import ChromosomeStore, _read_matlab_dataset
 
 TARGET_PROCESSES = (
     "DNARepair",
@@ -956,7 +958,7 @@ def _honest_replay(
                 if first_oc_active_tick is None:
                     first_oc_active_tick = tick
 
-            for label, deltas in collect_count_delta_dicts(update):
+            for _label, deltas in collect_count_delta_dicts(update):
                 for value in deltas.values():
                     float(value)
             apply_count_update(state, update)
