@@ -24,7 +24,7 @@ import argparse
 import json
 import sys
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -508,7 +508,7 @@ def build_active_window_validation_artifact(
         "window_verdict_reason": window_verdict_reason,
         "shared_h12_promotion_ready": shared_h12_promotion_ready,
         "shared_h12_promotion_blockers": promotion_blockers,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "anti_laundering_attestation": {
             "predictor_inputs": ["states_before", "static_fixture_params"],
             "states_after_access": "compare_phase_only",
