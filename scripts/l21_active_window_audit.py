@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 import math
+import subprocess
 import sys
 from dataclasses import asdict, dataclass
 from pathlib import Path
@@ -58,6 +59,10 @@ TARGET_PROCESSES = (
 CLASS_EXISTING_WINDOW_PASS = "EXISTING_WINDOW_PASS"
 CLASS_CODE_GAP = "CODE_GAP"
 CLASS_MISSING_ACTIVE_EXTRACTION = "MISSING_ACTIVE_EXTRACTION"
+MANIFEST_VERIFY_EXISTING_WINDOW_PASS = "VERIFIED_EXISTING_WINDOW_PASS"
+MANIFEST_VERIFY_CODE_GAP = "VERIFIED_CODE_GAP"
+MANIFEST_VERIFY_MISSING_ACTIVE_EXTRACTION = "VERIFIED_MISSING_ACTIVE_EXTRACTION"
+MANIFEST_VERIFY_INVALID = "ACTIVE_WINDOW_MANIFEST_INVALID"
 
 COUNT_STORE_KEYS = frozenset(
     {
@@ -713,6 +718,44 @@ def _load_json(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
 
 
+def _resolve_manifest_source_path(manifest_path: Path, raw_source_path: str) -> Path:
+    candidate = Path(raw_source_path)
+    if candidate.is_absolute():
+        return candidate
+    repo_relative = (_REPO_ROOT / candidate).resolve()
+    if repo_relative.exists():
+        return repo_relative
+    return (manifest_path.parent / candidate).resolve()
+
+
+def _locate_manifest_source_path(
+    process_name: str,
+    manifest_path: Path,
+    raw_source_path: str,
+    recorded_sha256: str,
+) -> Path:
+    primary = _resolve_manifest_source_path(manifest_path, raw_source_path)
+    if primary.exists():
+        return primary
+
+    candidate_name = Path(raw_source_path).name
+    fallbacks = (
+        _special_candidates(process_name)
+        + _standard_candidates_from_manifest(process_name)
+        + _direct_standard_candidate(process_name)
+    )
+    for candidate_path, candidate_sha, _source_manifest in fallbacks:
+        if not candidate_path.exists():
+            continue
+        if candidate_sha == recorded_sha256:
+            return candidate_path
+        if candidate_path.name != candidate_name:
+            continue
+        if _sha256(candidate_path) == recorded_sha256:
+            return candidate_path
+    return primary
+
+
 def _standard_candidates_from_manifest(process_name: str) -> list[tuple[Path, str | None, str | None]]:
     payload = _load_json(STANDARD_MANIFEST_PATH)
     sources = {entry["name"]: Path(entry["path"]) for entry in payload.get("sources", [])}
@@ -1049,6 +1092,267 @@ def _honest_replay(
         return bit_result, honest_result
 
 
+def _classify_live_trace_candidate(
+    process_name: str,
+    candidate: TraceCandidate,
+    *,
+    progress: bool = False,
+) -> tuple[BitIdentityResult | None, HonestReplayResult | None, str]:
+    if candidate.first_active_tick is None:
+        return None, None, CLASS_MISSING_ACTIVE_EXTRACTION
+    bit_identity, honest = _honest_replay(process_name=process_name, trace_path=Path(candidate.path), progress=progress)
+    if honest.oc_active_on_karr_active_ticks == 0:
+        return bit_identity, honest, CLASS_CODE_GAP
+    if bit_identity.pass_all_compared_ticks:
+        return bit_identity, honest, CLASS_EXISTING_WINDOW_PASS
+    return bit_identity, honest, CLASS_CODE_GAP
+
+
+def _manifest_scalars_match(recorded: Any, actual: Any) -> bool:
+    if recorded is None or actual is None:
+        return recorded is None and actual is None
+    if isinstance(recorded, bool) or isinstance(actual, bool):
+        return bool(recorded) is bool(actual)
+    if isinstance(recorded, (int, float, np.integer, np.floating)) and isinstance(
+        actual,
+        (int, float, np.integer, np.floating),
+    ):
+        return float(recorded) == float(actual)
+    return recorded == actual
+
+
+def _trace_window_mismatch_reason(row: dict[str, Any], candidate: TraceCandidate) -> str | None:
+    trace_window = row.get("trace_window")
+    if not isinstance(trace_window, dict):
+        return "manifest row missing trace_window payload"
+
+    recorded_pairs = (
+        ("first_active_local_tick", trace_window.get("first_active_local_tick"), candidate.first_active_tick),
+        (
+            "first_active_absolute_tick",
+            trace_window.get("first_active_absolute_tick"),
+            candidate.first_active_absolute_tick,
+        ),
+        ("active_tick_count", trace_window.get("active_tick_count"), candidate.active_tick_count),
+    )
+    for label, recorded, actual in recorded_pairs:
+        if not _manifest_scalars_match(recorded, actual):
+            return f"trace_window {label} mismatch: recorded={recorded!r} actual={actual!r}"
+
+    recorded_detail = trace_window.get("first_active_detail")
+    actual_detail = None if candidate.first_active_detail is None else asdict(candidate.first_active_detail)
+    if recorded_detail is None or actual_detail is None:
+        if recorded_detail is None and actual_detail is None:
+            return None
+        return "trace_window first_active_detail mismatch"
+    if not isinstance(recorded_detail, dict):
+        return "trace_window first_active_detail must be an object or null"
+    for key in ("observable", "detail_path", "index"):
+        if not _manifest_scalars_match(recorded_detail.get(key), actual_detail.get(key)):
+            return (
+                f"trace_window first_active_detail.{key} mismatch: "
+                f"recorded={recorded_detail.get(key)!r} actual={actual_detail.get(key)!r}"
+            )
+    return None
+
+
+def _rerun_manifest_replay_nodeid(row: dict[str, Any]) -> dict[str, Any]:
+    replay_evidence = row.get("replay_evidence")
+    if not isinstance(replay_evidence, dict):
+        return {
+            "passed": False,
+            "nodeid": None,
+            "returncode": None,
+            "stdout_tail": "",
+            "stderr_tail": "",
+            "error": "manifest row missing replay_evidence object",
+        }
+    nodeid = replay_evidence.get("nodeid")
+    if not nodeid or not isinstance(nodeid, str):
+        return {
+            "passed": False,
+            "nodeid": None,
+            "returncode": None,
+            "stdout_tail": "",
+            "stderr_tail": "",
+            "error": "manifest row replay_evidence.nodeid must be a non-empty string",
+        }
+
+    completed = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", nodeid],
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    stdout_tail = "\n".join(line for line in completed.stdout.strip().splitlines()[-20:] if line)
+    stderr_tail = "\n".join(line for line in completed.stderr.strip().splitlines()[-20:] if line)
+    return {
+        "passed": completed.returncode == 0,
+        "nodeid": nodeid,
+        "returncode": completed.returncode,
+        "stdout_tail": stdout_tail,
+        "stderr_tail": stderr_tail,
+        "command": f"{sys.executable} -m pytest -q {nodeid}",
+    }
+
+
+def verify_active_window_manifest_row(
+    manifest_path: Path,
+    process_name: str,
+    *,
+    progress: bool = False,
+) -> dict[str, Any]:
+    manifest_path = Path(manifest_path)
+    result: dict[str, Any] = {
+        "process": process_name,
+        "manifest_path": manifest_path.as_posix(),
+        "manifest_sha256": None,
+        "verification_status": MANIFEST_VERIFY_INVALID,
+        "verified": False,
+        "failure_reason": None,
+        "recorded_classification": None,
+        "fresh_classification": None,
+        "source_path": None,
+        "source_recorded_sha256": None,
+        "source_actual_sha256": None,
+        "live_candidate": None,
+        "bit_identity": None,
+        "honest_replay": None,
+        "replay_verification": None,
+    }
+    if not manifest_path.exists():
+        result["failure_reason"] = f"manifest file not found: {manifest_path.as_posix()}"
+        return result
+
+    result["manifest_sha256"] = _sha256(manifest_path)
+    payload = _load_json(manifest_path)
+    manifest_rows = [row for row in payload.get("rows", []) if row.get("process") == process_name]
+    if not manifest_rows:
+        result["verification_status"] = "MANIFEST_ROW_MISSING"
+        result["failure_reason"] = f"manifest has no row for {process_name}"
+        return result
+    if len(manifest_rows) != 1:
+        result["failure_reason"] = (
+            f"manifest must contain exactly one row for {process_name}; found {len(manifest_rows)}"
+        )
+        return result
+
+    row = manifest_rows[0]
+    recorded_classification = row.get("classification")
+    result["recorded_classification"] = recorded_classification
+    if recorded_classification not in {
+        CLASS_EXISTING_WINDOW_PASS,
+        CLASS_CODE_GAP,
+        CLASS_MISSING_ACTIVE_EXTRACTION,
+    }:
+        result["failure_reason"] = f"unsupported manifest classification: {recorded_classification!r}"
+        return result
+
+    source = row.get("source")
+    if not isinstance(source, dict):
+        result["failure_reason"] = "manifest row missing source object"
+        return result
+    raw_source_path = source.get("path")
+    recorded_sha256 = source.get("sha256")
+    if not raw_source_path or not isinstance(raw_source_path, str):
+        result["failure_reason"] = "manifest row source.path must be a non-empty string"
+        return result
+    if not recorded_sha256 or not isinstance(recorded_sha256, str):
+        result["failure_reason"] = "manifest row source.sha256 must be a non-empty string"
+        return result
+
+    source_path = _locate_manifest_source_path(
+        process_name,
+        manifest_path,
+        raw_source_path,
+        recorded_sha256,
+    )
+    result["source_path"] = source_path.as_posix()
+    result["source_recorded_sha256"] = recorded_sha256
+    if not source_path.exists():
+        result["failure_reason"] = f"manifest source trace missing: {source_path.as_posix()}"
+        return result
+
+    actual_sha256 = _sha256(source_path)
+    result["source_actual_sha256"] = actual_sha256
+    if actual_sha256 != recorded_sha256:
+        result["failure_reason"] = (
+            "manifest source sha256 mismatch: "
+            f"recorded={recorded_sha256} actual={actual_sha256}"
+        )
+        return result
+
+    live_candidate = _summarize_trace_candidate(
+        process_name,
+        source_path,
+        known_sha=actual_sha256,
+        source_manifest=manifest_path.name,
+    )
+    result["live_candidate"] = asdict(live_candidate)
+
+    if recorded_classification == CLASS_MISSING_ACTIVE_EXTRACTION:
+        if row.get("replay_evidence") is not None:
+            result["failure_reason"] = (
+                "MISSING_ACTIVE_EXTRACTION rows must not carry replay_evidence; "
+                "row looks relabeled rather than extraction-limited"
+            )
+            return result
+        extraction_request = row.get("extraction_request")
+        if not extraction_request or not isinstance(extraction_request, str):
+            result["failure_reason"] = "MISSING_ACTIVE_EXTRACTION row missing extraction_request text"
+            return result
+        result["fresh_classification"] = CLASS_MISSING_ACTIVE_EXTRACTION
+        result["verified"] = True
+        result["verification_status"] = MANIFEST_VERIFY_MISSING_ACTIVE_EXTRACTION
+        return result
+
+    trace_window_mismatch = _trace_window_mismatch_reason(row, live_candidate)
+    if trace_window_mismatch is not None:
+        result["failure_reason"] = trace_window_mismatch
+        return result
+
+    if recorded_classification == CLASS_EXISTING_WINDOW_PASS:
+        replay_verification = _rerun_manifest_replay_nodeid(row)
+        result["replay_verification"] = replay_verification
+        result["fresh_classification"] = (
+            CLASS_EXISTING_WINDOW_PASS if replay_verification["passed"] else CLASS_CODE_GAP
+        )
+        if not replay_verification["passed"]:
+            replay_error = replay_verification.get("error")
+            if replay_error:
+                result["failure_reason"] = replay_error
+            else:
+                result["failure_reason"] = (
+                    "manifest classification stale vs. live replay activity: "
+                    f"recorded={recorded_classification} fresh={result['fresh_classification']}"
+                )
+            return result
+        result["verified"] = True
+        result["verification_status"] = MANIFEST_VERIFY_EXISTING_WINDOW_PASS
+        return result
+
+    bit_identity, honest_replay, fresh_classification = _classify_live_trace_candidate(
+        process_name,
+        live_candidate,
+        progress=progress,
+    )
+    result["fresh_classification"] = fresh_classification
+    if bit_identity is not None:
+        result["bit_identity"] = asdict(bit_identity)
+    if honest_replay is not None:
+        result["honest_replay"] = asdict(honest_replay)
+    if fresh_classification != recorded_classification:
+        result["failure_reason"] = (
+            "manifest classification stale vs. live replay/activity: "
+            f"recorded={recorded_classification} fresh={fresh_classification}"
+        )
+        return result
+    result["verified"] = True
+    result["verification_status"] = MANIFEST_VERIFY_CODE_GAP
+    return result
+
+
 def _choose_earliest_active(candidates: list[TraceCandidate]) -> TraceCandidate | None:
     active = [candidate for candidate in candidates if candidate.first_active_tick is not None]
     if not active:
@@ -1103,18 +1407,16 @@ def _classify_process(
             file=sys.stderr,
             flush=True,
         )
-    bit_identity, honest = _honest_replay(process_name=process_name, trace_path=Path(chosen.path), progress=progress)
+    bit_identity, honest, classification = _classify_live_trace_candidate(
+        process_name,
+        chosen,
+        progress=progress,
+    )
     row["chosen_trace"] = asdict(chosen)
-    row["bit_identity"] = asdict(bit_identity)
-    row["honest_replay"] = asdict(honest)
+    row["bit_identity"] = None if bit_identity is None else asdict(bit_identity)
+    row["honest_replay"] = None if honest is None else asdict(honest)
     row["existing_trace_suffices"] = True
-
-    if honest.oc_active_on_karr_active_ticks == 0:
-        row["classification"] = CLASS_CODE_GAP
-    elif bit_identity.pass_all_compared_ticks:
-        row["classification"] = CLASS_EXISTING_WINDOW_PASS
-    else:
-        row["classification"] = CLASS_CODE_GAP
+    row["classification"] = classification
 
     if row["classification"] == CLASS_CODE_GAP:
         row["code_gap_anchor"] = {
