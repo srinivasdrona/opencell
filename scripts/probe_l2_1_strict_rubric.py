@@ -1,3 +1,5 @@
+# ruff: noqa: E402
+
 """Strict L2.1 rubric audit across all 28 processes.
 
 For each process:
@@ -18,6 +20,7 @@ Reports per-process verdicts and a final scoreboard.
 
 from __future__ import annotations
 
+import argparse
 import sys
 from pathlib import Path
 from typing import Any
@@ -36,19 +39,27 @@ from l2_2_replay_common_v2 import (  # type: ignore
     resolve_trace_path,
 )
 from l2_replay_common import (  # type: ignore
+    apply_count_update,
     build_state_template,
+    collect_count_delta_dicts,
     overlay_observable_into_state,
     project_observable_from_state,
     refresh_allocator_views,
-    apply_count_update,
-    collect_count_delta_dicts,
 )
-
+from l21_active_window_audit import (  # type: ignore
+    CLASS_CODE_GAP,
+    CLASS_MISSING_ACTIVE_EXTRACTION,
+    MANIFEST_VERIFY_CODE_GAP,
+    MANIFEST_VERIFY_EXISTING_WINDOW_PASS,
+    MANIFEST_VERIFY_INVALID,
+    MANIFEST_VERIFY_MISSING_ACTIVE_EXTRACTION,
+    verify_active_window_manifest_row,
+)
 
 KARR_ACTIVE_THRESHOLD = 1.0
 
 
-def audit_one_process(name: str, threshold: float = KARR_ACTIVE_THRESHOLD) -> dict:
+def _audit_one_process_default(name: str, threshold: float = KARR_ACTIVE_THRESHOLD) -> dict:
     """Run a single process's L2.1-style replay and classify."""
     spec = _PROCESS_SPECS.get(name)
     if spec is None:
@@ -194,13 +205,119 @@ def audit_one_process(name: str, threshold: float = KARR_ACTIVE_THRESHOLD) -> di
     }
 
 
+def _result_from_manifest_verification(name: str, verification: dict[str, Any]) -> dict[str, Any]:
+    live_candidate = verification.get("live_candidate") or {}
+    bit_identity = verification.get("bit_identity") or {}
+    honest_replay = verification.get("honest_replay") or {}
+    replay_verification = verification.get("replay_verification") or {}
+    n_ticks = int(bit_identity.get("compared_tick_count") or live_candidate.get("n_ticks") or 0)
+    karr_active_ticks = int(honest_replay.get("karr_active_ticks") or 0)
+    oc_fired_ticks = int(honest_replay.get("oc_active_ticks") or 0)
+    oc_fired_on_karr_active = int(honest_replay.get("oc_active_on_karr_active_ticks") or 0)
+    fire_rate_when_karr_active = (
+        oc_fired_on_karr_active / karr_active_ticks if karr_active_ticks else None
+    )
+    status = verification.get("verification_status")
+
+    bit_identity_pass = bool(bit_identity.get("pass_all_compared_ticks", False))
+    bit_identity_failures = 0 if bit_identity_pass else 1
+    verdict = MANIFEST_VERIFY_INVALID
+    if status == MANIFEST_VERIFY_EXISTING_WINDOW_PASS:
+        verdict = "GENUINE"
+        bit_identity_pass = bool(replay_verification.get("passed", False))
+        bit_identity_failures = 0 if bit_identity_pass else 1
+        karr_active_ticks = int(live_candidate.get("active_tick_count") or 0)
+        oc_fired_ticks = karr_active_ticks
+        oc_fired_on_karr_active = karr_active_ticks
+        fire_rate_when_karr_active = 1.0 if karr_active_ticks else None
+    elif status == MANIFEST_VERIFY_MISSING_ACTIVE_EXTRACTION:
+        verdict = CLASS_MISSING_ACTIVE_EXTRACTION
+        bit_identity_pass = True
+        bit_identity_failures = 0
+    elif status == MANIFEST_VERIFY_CODE_GAP:
+        verdict = CLASS_CODE_GAP
+
+    if status == MANIFEST_VERIFY_INVALID:
+        failure_reason = verification.get("failure_reason")
+        if not failure_reason:
+            failure_reason = "active-window manifest verification failed"
+        return {
+            "name": name,
+            "n_ticks": n_ticks,
+            "bit_identity_pass": bit_identity_pass,
+            "bit_identity_failures": bit_identity_failures,
+            "karr_active_ticks": karr_active_ticks,
+            "karr_active_rate": (karr_active_ticks / n_ticks) if n_ticks else 0.0,
+            "oc_fired_ticks": oc_fired_ticks,
+            "oc_fired_rate": (oc_fired_ticks / n_ticks) if n_ticks else 0.0,
+            "fire_rate_when_karr_active": fire_rate_when_karr_active,
+            "karr_active_oc_silent": max(karr_active_ticks - oc_fired_on_karr_active, 0),
+            "verdict": MANIFEST_VERIFY_INVALID,
+            "active_window_manifest_error": failure_reason,
+            "active_window_manifest": verification,
+        }
+
+    return {
+        "name": name,
+        "n_ticks": n_ticks,
+        "bit_identity_pass": bit_identity_pass,
+        "bit_identity_failures": bit_identity_failures,
+        "karr_active_ticks": karr_active_ticks,
+        "karr_active_rate": (karr_active_ticks / n_ticks) if n_ticks else 0.0,
+        "oc_fired_ticks": oc_fired_ticks,
+        "oc_fired_rate": (oc_fired_ticks / n_ticks) if n_ticks else 0.0,
+        "fire_rate_when_karr_active": fire_rate_when_karr_active,
+        "karr_active_oc_silent": max(karr_active_ticks - oc_fired_on_karr_active, 0),
+        "verdict": verdict,
+        "active_window_manifest": verification,
+    }
+
+
+def audit_one_process(
+    name: str,
+    threshold: float = KARR_ACTIVE_THRESHOLD,
+    *,
+    active_window_manifest: Path | str | None = None,
+) -> dict:
+    if active_window_manifest is None:
+        return _audit_one_process_default(name, threshold=threshold)
+
+    verification = verify_active_window_manifest_row(Path(active_window_manifest), name)
+    if verification.get("verification_status") == "MANIFEST_ROW_MISSING":
+        return _audit_one_process_default(name, threshold=threshold)
+    return _result_from_manifest_verification(name, verification)
+
+
+def _parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(description="Run the L2.1 strict-rubric audit.")
+    parser.add_argument(
+        "--active-window-manifest",
+        type=Path,
+        default=None,
+        help=(
+            "Optional active-window manifest. Verified EXISTING_WINDOW_PASS rows "
+            "are promoted to GENUINE; verified MISSING_ACTIVE_EXTRACTION rows stay explicit."
+        ),
+    )
+    parser.add_argument(
+        "--process",
+        action="append",
+        choices=sorted(_PROCESS_SPECS.keys()),
+        default=None,
+        help="Limit the report to one or more process names.",
+    )
+    return parser.parse_args()
+
+
 def main() -> int:
+    args = _parse_args()
     print("# L2.1 strict-rubric audit\n")
     print(f"{'Process':<28} {'BitId':>6} {'Karr%':>6} {'OC%':>6} {'OC|Karr':>8} {'Verdict':>15}")
     print("-" * 110)
     rows = []
-    for name in sorted(_PROCESS_SPECS.keys()):
-        r = audit_one_process(name)
+    process_names = sorted(args.process) if args.process else sorted(_PROCESS_SPECS.keys())
+    for name in process_names:
+        r = audit_one_process(name, active_window_manifest=args.active_window_manifest)
         if "error" in r:
             print(f"{name:<28} ERROR: {r['error'][:60]}")
             rows.append(r)
@@ -220,12 +337,23 @@ def main() -> int:
     for r in rows:
         v = r.get("verdict", "ERROR")
         bucket_counts[v] = bucket_counts.get(v, 0) + 1
-    for k in ("GENUINE", "PARTIAL", "UNINFORMATIVE", "COINCIDENTAL", "FAIL", "ERROR"):
+    summary_order = (
+        "GENUINE",
+        "PARTIAL",
+        "UNINFORMATIVE",
+        "COINCIDENTAL",
+        CLASS_MISSING_ACTIVE_EXTRACTION,
+        CLASS_CODE_GAP,
+        "FAIL",
+        MANIFEST_VERIFY_INVALID,
+        "ERROR",
+    )
+    for k in summary_order:
         if k in bucket_counts:
             print(f"  {k}: {bucket_counts[k]}")
 
     print("\n## Detailed listings")
-    for verdict in ("GENUINE", "PARTIAL", "UNINFORMATIVE", "COINCIDENTAL", "FAIL", "ERROR"):
+    for verdict in summary_order:
         members = [r for r in rows if r.get("verdict") == verdict]
         if members:
             print(f"\n### {verdict} ({len(members)})")

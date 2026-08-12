@@ -1,0 +1,372 @@
+{
+  "generated_by": "scripts/l21_active_window_audit.py selective-audit aggregation",
+  "pytest_replay_command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_dna_repair_l2_replay.py::test_karr_dna_repair_l2_replay_identity_per_tick tests/vivarium/test_karr_metabolism_l2_replay.py::test_karr_metabolism_l2_replay_identity_per_tick tests/vivarium/test_karr_protein_decay_l2_replay.py::test_karr_protein_decay_l2_replay_identity_per_tick tests/vivarium/test_karr_replication_l2_replay.py::test_karr_replication_l2_replay_identity_per_tick tests/vivarium/test_karr_rna_modification_l2_replay.py::test_karr_rna_modification_l2_event_replay tests/vivarium/test_karr_ribosome_assembly_l2_replay.py::test_karr_ribosome_assembly_l2_event_replay",
+  "counts": {
+    "EXISTING_WINDOW_PASS": 6,
+    "CODE_GAP": 0,
+    "MISSING_ACTIVE_EXTRACTION": 5
+  },
+  "rows": [
+    {
+      "process": "DNARepair",
+      "classification": "EXISTING_WINDOW_PASS",
+      "existing_trace_suffices": true,
+      "activity_predicate": "chromosome primary_projection repair_event_present + damage-field delta_nnz",
+      "source": {
+        "path": "/mnt/e/opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/DNARepair_100ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/DNARepair_100ticks.mat",
+        "sha256": "a26696b9412b7c377276529c7c4597cb6426cec855d6277eb7ce1a5a65d73e2f",
+        "trace_family": "canonical_standard",
+        "source_manifest": "oracle_population_manifest.json"
+      },
+      "trace_window": {
+        "n_ticks": 200,
+        "tick_offset": 0.0,
+        "first_active_local_tick": 8,
+        "first_active_absolute_tick": 8.0,
+        "active_tick_count": 5,
+        "first_active_detail": {
+          "observable": "chromosome",
+          "detail_path": "repair_event_present",
+          "index": null,
+          "before": 0.0,
+          "after": 1.0
+        }
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process DNARepair --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "replay_evidence": {
+        "type": "pytest",
+        "nodeid": "tests/vivarium/test_karr_dna_repair_l2_replay.py::test_karr_dna_repair_l2_replay_identity_per_tick",
+        "outcome": "passed",
+        "command": "bin\\\\oc-pytest.cmd -q <targeted nodeids>"
+      }
+    },
+    {
+      "process": "Metabolism",
+      "classification": "EXISTING_WINDOW_PASS",
+      "existing_trace_suffices": true,
+      "activity_predicate": "substrates delta on projected Karr replay surface",
+      "source": {
+        "path": "/mnt/e/opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/Metabolism_100ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/Metabolism_100ticks.mat",
+        "sha256": "c72ee57816eca01a647c6d7bf5d467810b31c61e50d325996b9509b51eb979e3",
+        "trace_family": "canonical_standard",
+        "source_manifest": "oracle_population_manifest.json"
+      },
+      "trace_window": {
+        "n_ticks": 100,
+        "tick_offset": null,
+        "first_active_local_tick": 0,
+        "first_active_absolute_tick": 0.0,
+        "active_tick_count": 100,
+        "first_active_detail": {
+          "observable": "substrates",
+          "detail_path": "substrates",
+          "index": 10,
+          "before": 3622.0,
+          "after": 0.0
+        }
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process Metabolism --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "replay_evidence": {
+        "type": "pytest",
+        "nodeid": "tests/vivarium/test_karr_metabolism_l2_replay.py::test_karr_metabolism_l2_replay_identity_per_tick",
+        "outcome": "passed",
+        "command": "bin\\\\oc-pytest.cmd -q <targeted nodeids>"
+      }
+    },
+    {
+      "process": "ProteinDecay",
+      "classification": "EXISTING_WINDOW_PASS",
+      "existing_trace_suffices": true,
+      "activity_predicate": "substrates/monomers/complexs delta on projected Karr replay surface",
+      "source": {
+        "path": "/mnt/e/opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/ProteinDecay_100ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/ProteinDecay_100ticks.mat",
+        "sha256": "f8699384dd6ebc461c41a762bac70020145c487ce4dd25d682cfb4bdcf6d52eb",
+        "trace_family": "canonical_standard",
+        "source_manifest": "oracle_population_manifest.json"
+      },
+      "trace_window": {
+        "n_ticks": 200,
+        "tick_offset": 0.0,
+        "first_active_local_tick": 3,
+        "first_active_absolute_tick": 3.0,
+        "active_tick_count": 76,
+        "first_active_detail": {
+          "observable": "substrates",
+          "detail_path": "substrates",
+          "index": 0,
+          "before": 0.0,
+          "after": 6.0
+        }
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process ProteinDecay --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "replay_evidence": {
+        "type": "pytest",
+        "nodeid": "tests/vivarium/test_karr_protein_decay_l2_replay.py::test_karr_protein_decay_l2_replay_identity_per_tick",
+        "outcome": "passed",
+        "command": "bin\\\\oc-pytest.cmd -q <targeted nodeids>"
+      }
+    },
+    {
+      "process": "Replication",
+      "classification": "EXISTING_WINDOW_PASS",
+      "existing_trace_suffices": true,
+      "activity_predicate": "chromosome primary_projection polymerizedRegions delta_value_sum_strand_1..4 + delta_nnz",
+      "source": {
+        "path": "/mnt/e/opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/Replication_100ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/l22-evidence-gate/data/m1_sources/karr_native/per_process_traces_v2/Replication_100ticks.mat",
+        "sha256": "6d96e9b9e403cae68cd3689952a23c3745cd9582b770e74f5a7f595064b1a77f",
+        "trace_family": "canonical_standard",
+        "source_manifest": "oracle_population_manifest.json"
+      },
+      "trace_window": {
+        "n_ticks": 100,
+        "tick_offset": null,
+        "first_active_local_tick": 0,
+        "first_active_absolute_tick": 0.0,
+        "active_tick_count": 96,
+        "first_active_detail": {
+          "observable": "chromosome",
+          "detail_path": "polymerizedRegions.delta_value_sum_strand_2",
+          "index": null,
+          "before": 0.0,
+          "after": -44.0
+        }
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process Replication --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "replay_evidence": {
+        "type": "pytest",
+        "nodeid": "tests/vivarium/test_karr_replication_l2_replay.py::test_karr_replication_l2_replay_identity_per_tick",
+        "outcome": "passed",
+        "command": "bin\\\\oc-pytest.cmd -q <targeted nodeids>"
+      }
+    },
+    {
+      "process": "TranscriptionalRegulation",
+      "classification": "MISSING_ACTIVE_EXTRACTION",
+      "existing_trace_suffices": false,
+      "activity_predicate": "projected Karr replay observables delta on accepted trace surface",
+      "source": {
+        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/TranscriptionalRegulation_100ticks.mat",
+        "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2/TranscriptionalRegulation_100ticks.mat",
+        "sha256": "9f9984839056fc70e8c38929eb7926a95f00315cc7a103a3ae17d93fea1cbb5c",
+        "trace_family": "canonical_standard",
+        "source_manifest": "direct_standard_fallback"
+      },
+      "trace_window": {
+        "n_ticks": 100,
+        "tick_offset": null,
+        "first_active_local_tick": null,
+        "first_active_absolute_tick": null,
+        "active_tick_count": 0,
+        "first_active_detail": null
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process TranscriptionalRegulation --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "extraction_request": "If all canonical standard seeds remain inactive, request the earliest non-trivial per_process_traces_v2 seed for TranscriptionalRegulation."
+    },
+    {
+      "process": "ChromosomeSegregation",
+      "classification": "MISSING_ACTIVE_EXTRACTION",
+      "existing_trace_suffices": false,
+      "activity_predicate": "projected Karr replay observables delta on accepted trace surface",
+      "source": {
+        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/ChromosomeSegregation_100ticks.mat",
+        "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2/ChromosomeSegregation_100ticks.mat",
+        "sha256": "18e03828918b7091e9531e1c01a25c0cd5ac44523330409e6909dec2bda73fe2",
+        "trace_family": "canonical_standard",
+        "source_manifest": "direct_standard_fallback"
+      },
+      "trace_window": {
+        "n_ticks": 100,
+        "tick_offset": null,
+        "first_active_local_tick": null,
+        "first_active_absolute_tick": null,
+        "active_tick_count": 0,
+        "first_active_detail": null
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process ChromosomeSegregation --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "extraction_request": "Request a late-cell-cycle active ChromosomeSegregation window; the canonical birth-window cohort remains inactive."
+    },
+    {
+      "process": "Cytokinesis",
+      "classification": "MISSING_ACTIVE_EXTRACTION",
+      "existing_trace_suffices": false,
+      "activity_predicate": "event-window scalar deltas: chromosome_segregated/pinchedDiameter/ftsZ ring channels",
+      "source": {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
+        "repo_relative_hint": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
+        "sha256": "de09b63ccd190c4e767bcf0eabe174065e880fa56d411ab4452fb51caa9cf1bd",
+        "trace_family": "event_window",
+        "source_manifest": "docs/phase_f/l2_event/evidence_bundle/Cytokinesis/input_manifest.json"
+      },
+      "trace_window": {
+        "n_ticks": 4000,
+        "tick_offset": 0.0,
+        "first_active_local_tick": 128,
+        "first_active_absolute_tick": 27556,
+        "active_tick_count": null,
+        "first_active_detail": {
+          "observable": "pinchedDiameter",
+          "detail_path": "first_strict_decrease",
+          "index": null,
+          "before": null,
+          "after": null
+        }
+      },
+      "mechanical_scan": {
+        "evidence_summary": "docs/phase_f/l2_event/evidence_bundle/Cytokinesis/SUMMARY.json",
+        "evidence_result": "docs/phase_f/l2_event/evidence_bundle/Cytokinesis/result.json",
+        "structural_verdict": "NOT_APPLICABLE",
+        "karr_seed_count": 1,
+        "oc_seed_count": 0
+      },
+      "extraction_request": "Run the authorized Cytokinesis onset-span survey, then extract the remaining 49 event-window seeds for the same completion-anchored contract before any L2.1 batch claim."
+    },
+    {
+      "process": "DNADamage",
+      "classification": "MISSING_ACTIVE_EXTRACTION",
+      "existing_trace_suffices": false,
+      "activity_predicate": "chromosome primary_projection damage-field delta_nnz",
+      "source": {
+        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/DNADamage_100ticks.mat",
+        "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2/DNADamage_100ticks.mat",
+        "sha256": "996043f7cabbce69918d4b85e45ff4d7a0b420b482be9fa7c1865e531a75be23",
+        "trace_family": "canonical_standard",
+        "source_manifest": null
+      },
+      "trace_window": {
+        "n_ticks": 100,
+        "tick_offset": null,
+        "first_active_local_tick": null,
+        "first_active_absolute_tick": null,
+        "active_tick_count": 0,
+        "first_active_detail": null
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process DNADamage --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "extraction_request": "Request a source-backed stimulus-conditioned DNADamage active window (UVB_radiation or gamma_radiation); existing standard/full-cycle traces are no-stimulus."
+    },
+    {
+      "process": "HostInteraction",
+      "classification": "MISSING_ACTIVE_EXTRACTION",
+      "existing_trace_suffices": false,
+      "activity_predicate": "projected Karr replay observables delta on accepted trace surface",
+      "source": {
+        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/HostInteraction_100ticks.mat",
+        "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2/HostInteraction_100ticks.mat",
+        "sha256": "a87006a356001ac060fcbe233af19dc7e21e863dcf4bf4d848b49147a5114f44",
+        "trace_family": "canonical_standard",
+        "source_manifest": "direct_standard_fallback"
+      },
+      "trace_window": {
+        "n_ticks": 100,
+        "tick_offset": null,
+        "first_active_local_tick": null,
+        "first_active_absolute_tick": null,
+        "active_tick_count": 0,
+        "first_active_detail": null
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process HostInteraction --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "extraction_request": "Request a host-conditioned HostInteraction active window; baseline no-host traces are inactive by construction."
+    },
+    {
+      "process": "RNAModification",
+      "classification": "EXISTING_WINDOW_PASS",
+      "existing_trace_suffices": true,
+      "activity_predicate": "modifiedRNAs/unmodifiedRNAs projected delta on event-window trace",
+      "source": {
+        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2_event_s000/RNAModification_100ticks.mat",
+        "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2_event_s000/RNAModification_100ticks.mat",
+        "sha256": "aebb6d51922c94a4a936c8700638f10ef26ad697a5415c59bdc4c3fb4d50e411",
+        "trace_family": "event_window",
+        "source_manifest": null
+      },
+      "trace_window": {
+        "n_ticks": 100,
+        "tick_offset": 200.0,
+        "first_active_local_tick": 0,
+        "first_active_absolute_tick": 200.0,
+        "active_tick_count": 33,
+        "first_active_detail": {
+          "observable": "substrates",
+          "detail_path": "substrates",
+          "index": 0,
+          "before": 0.0,
+          "after": 1.0
+        }
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process RNAModification --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "replay_evidence": {
+        "type": "pytest",
+        "nodeid": "tests/vivarium/test_karr_rna_modification_l2_replay.py::test_karr_rna_modification_l2_event_replay",
+        "outcome": "passed",
+        "command": "bin\\\\oc-pytest.cmd -q <targeted nodeids>"
+      }
+    },
+    {
+      "process": "RibosomeAssembly",
+      "classification": "EXISTING_WINDOW_PASS",
+      "existing_trace_suffices": true,
+      "activity_predicate": "complexs/RNAs/monomers projected delta on event-window trace",
+      "source": {
+        "path": "/mnt/e/opencell-worktrees/l2-event-ribosome-20260805/data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/l2-event-ribosome-20260805/data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat",
+        "sha256": "834b0a79797c2c1a3a4c64318c8e5e99197545461c489c70add4bc29bc3d4ca1",
+        "trace_family": "event_window",
+        "source_manifest": "input_manifest.json"
+      },
+      "trace_window": {
+        "n_ticks": 100,
+        "tick_offset": 200.0,
+        "first_active_local_tick": 9,
+        "first_active_absolute_tick": 209.0,
+        "active_tick_count": 2,
+        "first_active_detail": {
+          "observable": "complexs",
+          "detail_path": "complexs",
+          "index": 1,
+          "before": 0.0,
+          "after": 1.0
+        }
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process RibosomeAssembly --candidate-limit 1 --skip-replay --write-json <temp>"
+      },
+      "replay_evidence": {
+        "type": "pytest",
+        "nodeid": "tests/vivarium/test_karr_ribosome_assembly_l2_replay.py::test_karr_ribosome_assembly_l2_event_replay",
+        "outcome": "passed",
+        "command": "bin\\\\oc-pytest.cmd -q <targeted nodeids>"
+      }
+    }
+  ]
+}
