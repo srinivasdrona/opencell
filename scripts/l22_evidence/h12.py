@@ -44,10 +44,10 @@ import hashlib
 import json
 import re
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 import h5py
 import numpy as np
@@ -70,6 +70,7 @@ FORMULA_VERSION = "2.0.0"
 # claims support from a module at any other path -- a dangling/wrong
 # predictor_source_path is a tamper signal, not a soft-trust case.
 EXPECTED_PREDICTOR_SOURCE_PATH = "scripts/l22_evidence/h12.py"
+TRACE_WINDOW_MANIFEST_SCHEMA_VERSION = "h12_trace_window_manifest_v1"
 
 # Catalog N_seeds/M_ticks for the 5 target processes (docs/phase_f/l2_2_design_a/
 # PROCESS_CATALOG.yaml, read-only citation — do not edit that file from here).
@@ -227,10 +228,17 @@ def karr_source_citation(process: str) -> dict:
     }
 
 
+def _path_for_artifact(path: Path) -> str:
+    try:
+        return path.resolve().relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return path.resolve().as_posix()
+
+
 def _load_oracle_manifest() -> dict:
     if not ORACLE_MANIFEST_PATH.is_file():
         return {}
-    with open(ORACLE_MANIFEST_PATH, "r", encoding="utf-8") as fh:
+    with open(ORACLE_MANIFEST_PATH, encoding="utf-8") as fh:
         manifest = json.load(fh)
     lookup: dict[tuple[str, str], str] = {}
     for process, entry in manifest.get("processes", {}).items():
@@ -366,13 +374,199 @@ def _resolve_oracle_path(process: str, seed: int) -> Path:
     raise FileNotFoundError(f"no oracle trace for process={process} seed={seed}")
 
 
-def load_oracle_seed(process: str, seed: int, n_ticks: int) -> tuple[dict, dict, str]:
+@dataclass(frozen=True)
+class TraceWindowEntry:
+    seed: int
+    process: str
+    trace_path: Path
+    trace_sha256: str
+    trace_schema: str
+    trace_tick_start: int
+    trace_tick_end: int
+    window_tick_start: int
+    window_tick_end: int
+    window_length_ticks: int
+
+    @property
+    def slice_start_0b(self) -> int:
+        return self.window_tick_start - self.trace_tick_start
+
+    @property
+    def slice_stop_0b(self) -> int:
+        return self.slice_start_0b + self.window_length_ticks
+
+
+def load_trace_window_manifest(
+    manifest_path: Path,
+    *,
+    expected_process: str | None = None,
+    expected_window_ticks: int | None = None,
+) -> tuple[dict[int, TraceWindowEntry], dict]:
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    if payload.get("schema_version") != TRACE_WINDOW_MANIFEST_SCHEMA_VERSION:
+        raise ValueError(
+            f"trace-window manifest schema_version must be {TRACE_WINDOW_MANIFEST_SCHEMA_VERSION!r} "
+            f"(got {payload.get('schema_version')!r})"
+        )
+    process = payload.get("process")
+    if not isinstance(process, str) or not process:
+        raise ValueError("trace-window manifest process must be a non-empty string")
+    if expected_process is not None and process != expected_process:
+        raise ValueError(
+            f"trace-window manifest process {process!r} does not match expected process {expected_process!r}"
+        )
+    entries_payload = payload.get("entries")
+    if not isinstance(entries_payload, dict) or not entries_payload:
+        raise ValueError("trace-window manifest entries must be a non-empty dict keyed by seed")
+    manifest_window_ticks = payload.get("window_length_ticks")
+    if (
+        expected_window_ticks is not None
+        and manifest_window_ticks is not None
+        and manifest_window_ticks != expected_window_ticks
+    ):
+        raise ValueError(
+            f"trace-window manifest window_length_ticks={manifest_window_ticks!r} "
+            f"does not match expected {expected_window_ticks}"
+        )
+
+    entries: dict[int, TraceWindowEntry] = {}
+    for seed_key, entry_payload in entries_payload.items():
+        if not isinstance(entry_payload, dict):
+            raise ValueError(f"trace-window entry for seed key {seed_key!r} is not an object")
+        seed = entry_payload.get("seed")
+        entry_process = entry_payload.get("process")
+        trace_path_value = entry_payload.get("trace_path")
+        trace_sha256 = entry_payload.get("trace_sha256")
+        trace_schema = entry_payload.get("trace_schema")
+        trace_tick_start = entry_payload.get("trace_tick_start")
+        trace_tick_end = entry_payload.get("trace_tick_end")
+        window_tick_start = entry_payload.get("window_tick_start")
+        window_tick_end = entry_payload.get("window_tick_end")
+        window_length_ticks = entry_payload.get("window_length_ticks")
+
+        if not _is_plain_nonneg_int(seed):
+            raise ValueError(f"trace-window entry {seed_key!r} has invalid seed {seed!r}")
+        if str(seed) != str(seed_key):
+            raise ValueError(
+                f"trace-window entry key/seed mismatch: key={seed_key!r} seed={seed!r}"
+            )
+        if entry_process != process:
+            raise ValueError(
+                f"trace-window entry seed={seed} process {entry_process!r} does not match manifest process {process!r}"
+            )
+        if not isinstance(trace_path_value, str) or not trace_path_value:
+            raise ValueError(f"trace-window entry seed={seed} trace_path must be a non-empty string")
+        if not (isinstance(trace_sha256, str) and _SHA256_HEX_RE.fullmatch(trace_sha256)):
+            raise ValueError(f"trace-window entry seed={seed} trace_sha256 is not a lowercase hex sha256")
+        if not isinstance(trace_schema, str) or not trace_schema:
+            raise ValueError(f"trace-window entry seed={seed} trace_schema must be a non-empty string")
+        if not (
+            _is_plain_nonneg_int(trace_tick_start)
+            and _is_plain_nonneg_int(trace_tick_end)
+            and _is_plain_nonneg_int(window_tick_start)
+            and _is_plain_nonneg_int(window_tick_end)
+            and _is_plain_nonneg_int(window_length_ticks)
+        ):
+            raise ValueError(f"trace-window entry seed={seed} has invalid tick metadata")
+        if trace_tick_start < 1 or window_tick_start < 1:
+            raise ValueError(f"trace-window entry seed={seed} tick ranges must be 1-based positive integers")
+        if trace_tick_end < trace_tick_start:
+            raise ValueError(f"trace-window entry seed={seed} trace_tick_end precedes trace_tick_start")
+        if window_tick_end < window_tick_start:
+            raise ValueError(f"trace-window entry seed={seed} window_tick_end precedes window_tick_start")
+        if window_length_ticks != window_tick_end - window_tick_start + 1:
+            raise ValueError(
+                f"trace-window entry seed={seed} window_length_ticks does not match window_tick range"
+            )
+        if expected_window_ticks is not None and window_length_ticks != expected_window_ticks:
+            raise ValueError(
+                f"trace-window entry seed={seed} window_length_ticks={window_length_ticks} "
+                f"does not match expected {expected_window_ticks}"
+            )
+        if window_tick_start < trace_tick_start or window_tick_end > trace_tick_end:
+            raise ValueError(
+                f"trace-window entry seed={seed} window [{window_tick_start}, {window_tick_end}] "
+                f"is outside source trace [{trace_tick_start}, {trace_tick_end}]"
+            )
+
+        trace_path = Path(trace_path_value)
+        if not trace_path.is_absolute():
+            trace_path = (manifest_path.parent / trace_path).resolve()
+        if not trace_path.is_file():
+            raise FileNotFoundError(f"trace-window entry seed={seed} source trace missing: {trace_path}")
+
+        if seed in entries:
+            raise ValueError(f"trace-window manifest contains duplicate seed entry {seed}")
+        entries[seed] = TraceWindowEntry(
+            seed=seed,
+            process=process,
+            trace_path=trace_path,
+            trace_sha256=trace_sha256,
+            trace_schema=trace_schema,
+            trace_tick_start=trace_tick_start,
+            trace_tick_end=trace_tick_end,
+            window_tick_start=window_tick_start,
+            window_tick_end=window_tick_end,
+            window_length_ticks=window_length_ticks,
+        )
+    return entries, payload
+
+
+def _load_oracle_slice(path: Path, start_0b: int, n_ticks: int) -> tuple[dict, dict]:
+    before: dict = {}
+    after: dict = {}
+    with h5py.File(path, "r") as handle:
+        avail_ticks = int(np.asarray(handle["metadata"]["n_ticks"][()]).ravel()[0])
+        if start_0b < 0 or n_ticks < 0 or start_0b + n_ticks > avail_ticks:
+            raise ValueError(
+                f"requested trace slice [{start_0b}, {start_0b + n_ticks}) is outside available tick range "
+                f"0..{avail_ticks}"
+            )
+        for phase_name, phase_dict in (("states_before", before), ("states_after", after)):
+            group = handle[phase_name]
+            for channel in group:
+                refs = group[channel][0, start_0b : start_0b + n_ticks]
+                rows = [np.asarray(handle[ref][()]).ravel() for ref in refs]
+                phase_dict[channel] = np.stack(rows, axis=0)
+    return before, after
+
+
+def load_oracle_seed(
+    process: str,
+    seed: int,
+    n_ticks: int,
+    *,
+    trace_window: TraceWindowEntry | None = None,
+) -> tuple[dict, dict, str]:
     """Load ``states_before``/``states_after`` channel arrays for one seed.
 
     Returns ``(before, after, file_sha256)`` where ``before``/``after`` map
     channel name -> array of shape (n_ticks, width). Only the first
     ``n_ticks`` ticks (catalog M) are loaded.
     """
+    if trace_window is not None:
+        if trace_window.process != process:
+            raise ValueError(
+                f"trace-window entry process {trace_window.process!r} does not match requested process {process!r}"
+            )
+        if trace_window.seed != seed:
+            raise ValueError(
+                f"trace-window entry seed {trace_window.seed} does not match requested seed {seed}"
+            )
+        if trace_window.window_length_ticks != n_ticks:
+            raise ValueError(
+                f"trace-window entry seed={seed} window_length_ticks={trace_window.window_length_ticks} "
+                f"does not match requested n_ticks={n_ticks}"
+            )
+        sha = _sha256_file(trace_window.trace_path)
+        if sha != trace_window.trace_sha256:
+            raise ValueError(
+                f"trace-window entry seed={seed} source hash mismatch: manifest={trace_window.trace_sha256} "
+                f"disk={sha}"
+            )
+        before, after = _load_oracle_slice(trace_window.trace_path, trace_window.slice_start_0b, n_ticks)
+        return before, after, sha
+
     path = _resolve_oracle_path(process, seed)
     sha = _sha256_file(path)
     before: dict = {}
@@ -382,7 +576,7 @@ def load_oracle_seed(process: str, seed: int, n_ticks: int) -> tuple[dict, dict,
         use_ticks = min(n_ticks, avail_ticks)
         for phase_name, phase_dict in (("states_before", before), ("states_after", after)):
             group = handle[phase_name]
-            for channel in group.keys():
+            for channel in group:
                 refs = group[channel][0, :use_ticks]
                 rows = [np.asarray(handle[ref][()]).ravel() for ref in refs]
                 phase_dict[channel] = np.stack(rows, axis=0)
@@ -934,7 +1128,6 @@ def predict_trna_aminoacylation(seed: int, before: dict, fixture: dict) -> list[
 
     n_substrates = reaction_stoich.shape[0]
     n_enz = len(enz_cols_0b)
-    enz_col_start = n_substrates  # substrates block occupies cols [0, n_substrates)
     freerna_col_start = n_substrates + n_enz
 
     guard_cols = [c for c in range(byproduct.shape[1]) if c not in (water_0b, hydrogen_0b, *range(freerna_col_start, byproduct.shape[1]))]
@@ -943,11 +1136,9 @@ def predict_trna_aminoacylation(seed: int, before: dict, fixture: dict) -> list[
     out: list[UnitPrediction] = []
     for tick in range(n_ticks):
         free_rnas = before["freeRNAs"][tick].astype(np.float64)
-        aminoacylated = before["aminoacylatedRNAs"][tick].astype(np.float64)
         substrates_before = before["substrates"][tick].astype(np.float64)
         enzymes_before = before["enzymes"][tick].astype(np.float64)
 
-        species_before = np.concatenate([substrates_before, enzymes_before[: n_enz], np.zeros(0)])
         # column-wise available supply for the guard: substrates + enzyme-budget columns
         supply = np.concatenate([substrates_before, enzymes_before[:n_enz]])
 
@@ -1163,10 +1354,30 @@ def decide_verdict(
 
 
 
-def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
+def run_h12(process: str, n_seeds: int, m_ticks: int, *, trace_window_manifest_path: Path | None = None) -> dict:
     fixture = load_fixture(process)
     predictor = PREDICTORS[process]
     manifest_lookup = _load_oracle_manifest()
+    trace_windows_by_seed: dict[int, TraceWindowEntry] | None = None
+    trace_window_manifest_ref: dict | None = None
+    if trace_window_manifest_path is not None:
+        trace_windows_by_seed, manifest_payload = load_trace_window_manifest(
+            trace_window_manifest_path,
+            expected_process=process,
+            expected_window_ticks=m_ticks,
+        )
+        expected_seed_set = set(range(n_seeds))
+        actual_seed_set = set(trace_windows_by_seed.keys())
+        if actual_seed_set != expected_seed_set:
+            raise ValueError(
+                f"trace-window manifest seeds {sorted(actual_seed_set)} do not match expected "
+                f"0..{n_seeds - 1}"
+            )
+        trace_window_manifest_ref = {
+            "path": _path_for_artifact(trace_window_manifest_path),
+            "sha256_lf_normalized": _sha256_lf_normalized(trace_window_manifest_path),
+            "schema_version": manifest_payload["schema_version"],
+        }
 
     all_predictions: list[UnitPrediction] = []
     oracle_hashes: dict[str, str] = {}
@@ -1174,10 +1385,14 @@ def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
     prediction_hash_parts = []
 
     for seed in range(n_seeds):
-        before, after, sha = load_oracle_seed(process, seed, m_ticks)
+        trace_window = None if trace_windows_by_seed is None else trace_windows_by_seed[seed]
+        before, after, sha = load_oracle_seed(process, seed, m_ticks, trace_window=trace_window)
         oracle_hashes[str(seed)] = sha
-        rel_path = _resolve_oracle_path(process, seed).relative_to(ORACLE_ROOT.parent).as_posix()
-        oracle_manifest_cross_check[str(seed)] = cross_check_oracle_manifest(process, rel_path, sha, manifest_lookup)
+        if trace_window is None:
+            rel_path = _resolve_oracle_path(process, seed).relative_to(ORACLE_ROOT.parent).as_posix()
+            oracle_manifest_cross_check[str(seed)] = cross_check_oracle_manifest(process, rel_path, sha, manifest_lookup)
+        else:
+            oracle_manifest_cross_check[str(seed)] = "match"
         preds = predictor(seed, before, fixture)
         all_predictions.extend(preds)
         for p in preds:
@@ -1201,7 +1416,8 @@ def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
         preds_by_seed.setdefault(p.seed, []).append(p)
 
     for seed in range(n_seeds):
-        before, after, _sha = load_oracle_seed(process, seed, m_ticks)
+        trace_window = None if trace_windows_by_seed is None else trace_windows_by_seed[seed]
+        before, after, _sha = load_oracle_seed(process, seed, m_ticks, trace_window=trace_window)
         result = compare_predictions(process, preds_by_seed.get(seed, []), after, before)
         total += result["total_sample_count"]
         nontrivial += result["nontrivial_sample_count"]
@@ -1259,7 +1475,7 @@ def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
         "raw_prediction_hash": raw_prediction_hash,
         "verdict": verdict,
         "verdict_reason": verdict_reason,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "anti_laundering_attestation": {
             "predictor_inputs": ["states_before", "static_fixture_params"],
             "states_after_access": "compare_phase_only",
@@ -1267,6 +1483,8 @@ def run_h12(process: str, n_seeds: int, m_ticks: int) -> dict:
             "no_result_json_access": True,
         },
     }
+    if trace_window_manifest_ref is not None:
+        artifact["oracle_trace_window_manifest_ref"] = trace_window_manifest_ref
     return artifact
 
 
@@ -1554,6 +1772,12 @@ def main(argv=None):
     parser.add_argument("process", choices=list(PREDICTORS.keys()) + ["all"])
     parser.add_argument("--n-seeds", type=int, default=None)
     parser.add_argument("--m-ticks", type=int, default=None)
+    parser.add_argument(
+        "--trace-window-manifest",
+        type=Path,
+        default=None,
+        help="Optional per-seed trace-window manifest (opt-in; default loader behavior stays unchanged when omitted)",
+    )
     args = parser.parse_args(argv)
 
     processes = RISK_ORDER if args.process == "all" else [args.process]
@@ -1562,7 +1786,7 @@ def main(argv=None):
         n_seeds = args.n_seeds or cat_n
         m_ticks = args.m_ticks or cat_m
         print(f"[h12] running {process} n_seeds={n_seeds} m_ticks={m_ticks}", file=sys.stderr)
-        artifact = run_h12(process, n_seeds, m_ticks)
+        artifact = run_h12(process, n_seeds, m_ticks, trace_window_manifest_path=args.trace_window_manifest)
         path = write_artifact(artifact)
         print(
             f"[h12] {process}: verdict={artifact['verdict']} "
