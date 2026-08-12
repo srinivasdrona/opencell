@@ -44,10 +44,10 @@ import hashlib
 import json
 import re
 import sys
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Callable
 
 import h5py
 import numpy as np
@@ -238,7 +238,7 @@ def _path_for_artifact(path: Path) -> str:
 def _load_oracle_manifest() -> dict:
     if not ORACLE_MANIFEST_PATH.is_file():
         return {}
-    with open(ORACLE_MANIFEST_PATH, "r", encoding="utf-8") as fh:
+    with open(ORACLE_MANIFEST_PATH, encoding="utf-8") as fh:
         manifest = json.load(fh)
     lookup: dict[tuple[str, str], str] = {}
     for process, entry in manifest.get("processes", {}).items():
@@ -419,12 +419,15 @@ def load_trace_window_manifest(
     if not isinstance(entries_payload, dict) or not entries_payload:
         raise ValueError("trace-window manifest entries must be a non-empty dict keyed by seed")
     manifest_window_ticks = payload.get("window_length_ticks")
-    if expected_window_ticks is not None:
-        if manifest_window_ticks is not None and manifest_window_ticks != expected_window_ticks:
-            raise ValueError(
-                f"trace-window manifest window_length_ticks={manifest_window_ticks!r} "
-                f"does not match expected {expected_window_ticks}"
-            )
+    if (
+        expected_window_ticks is not None
+        and manifest_window_ticks is not None
+        and manifest_window_ticks != expected_window_ticks
+    ):
+        raise ValueError(
+            f"trace-window manifest window_length_ticks={manifest_window_ticks!r} "
+            f"does not match expected {expected_window_ticks}"
+        )
 
     entries: dict[int, TraceWindowEntry] = {}
     for seed_key, entry_payload in entries_payload.items():
@@ -521,7 +524,7 @@ def _load_oracle_slice(path: Path, start_0b: int, n_ticks: int) -> tuple[dict, d
             )
         for phase_name, phase_dict in (("states_before", before), ("states_after", after)):
             group = handle[phase_name]
-            for channel in group.keys():
+            for channel in group:
                 refs = group[channel][0, start_0b : start_0b + n_ticks]
                 rows = [np.asarray(handle[ref][()]).ravel() for ref in refs]
                 phase_dict[channel] = np.stack(rows, axis=0)
@@ -573,7 +576,7 @@ def load_oracle_seed(
         use_ticks = min(n_ticks, avail_ticks)
         for phase_name, phase_dict in (("states_before", before), ("states_after", after)):
             group = handle[phase_name]
-            for channel in group.keys():
+            for channel in group:
                 refs = group[channel][0, :use_ticks]
                 rows = [np.asarray(handle[ref][()]).ravel() for ref in refs]
                 phase_dict[channel] = np.stack(rows, axis=0)
@@ -1125,7 +1128,6 @@ def predict_trna_aminoacylation(seed: int, before: dict, fixture: dict) -> list[
 
     n_substrates = reaction_stoich.shape[0]
     n_enz = len(enz_cols_0b)
-    enz_col_start = n_substrates  # substrates block occupies cols [0, n_substrates)
     freerna_col_start = n_substrates + n_enz
 
     guard_cols = [c for c in range(byproduct.shape[1]) if c not in (water_0b, hydrogen_0b, *range(freerna_col_start, byproduct.shape[1]))]
@@ -1134,11 +1136,9 @@ def predict_trna_aminoacylation(seed: int, before: dict, fixture: dict) -> list[
     out: list[UnitPrediction] = []
     for tick in range(n_ticks):
         free_rnas = before["freeRNAs"][tick].astype(np.float64)
-        aminoacylated = before["aminoacylatedRNAs"][tick].astype(np.float64)
         substrates_before = before["substrates"][tick].astype(np.float64)
         enzymes_before = before["enzymes"][tick].astype(np.float64)
 
-        species_before = np.concatenate([substrates_before, enzymes_before[: n_enz], np.zeros(0)])
         # column-wise available supply for the guard: substrates + enzyme-budget columns
         supply = np.concatenate([substrates_before, enzymes_before[:n_enz]])
 
@@ -1475,7 +1475,7 @@ def run_h12(process: str, n_seeds: int, m_ticks: int, *, trace_window_manifest_p
         "raw_prediction_hash": raw_prediction_hash,
         "verdict": verdict,
         "verdict_reason": verdict_reason,
-        "generated_at": datetime.now(timezone.utc).isoformat(),
+        "generated_at": datetime.now(UTC).isoformat(),
         "anti_laundering_attestation": {
             "predictor_inputs": ["states_before", "static_fixture_params"],
             "states_after_access": "compare_phase_only",
