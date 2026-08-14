@@ -71,7 +71,7 @@ expand.
 
 **Write-set discipline:** READ ONLY for opencell/, tests/, data/. Only
 write to:
-- `docs/phase_f/STATUS_cause5_diagnosis.md`
+- `docs/phase_f/status/STATUS_cause5_diagnosis.md`
 - A temporary probe script `_probe_cause5_<pair>.py` (delete before final
   commit, but it MAY exist during the session)
 

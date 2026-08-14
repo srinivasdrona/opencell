@@ -8,7 +8,7 @@ Use `bin\oc-pytest.cmd` and `bin\oc-py.cmd` for all Python/pytest. Do NOT run py
 The WSL venv at `/mnt/e/opencell/.venv-wsl` is the only correct interpreter.
 
 ## STATUS file
-Write `docs/phase_f/STATUS_translation_evolvestate_port.md` as you go.
+Write `docs/phase_f/status/STATUS_translation_evolvestate_port.md` as you go.
 Final assistant message: "done, see STATUS".
 Do NOT write STATUS at the repo root — repo .gitignore drops STATUS_*.md there.
 
@@ -205,14 +205,14 @@ mechanism) for transitions 3-4 but make transitions 1 + 2 fully faithful.
 - `tests/vivarium/test_karr_translation_l2_replay.py`
 - `tests/vivarium/test_l2_2_translation_plus_rna_processing_v2.py`
 - `tests/vivarium/l2_2_replay_common_v2.py` (composition harness)
-- `docs/phase_f/STATUS_translation_l25_divergence.md` (the forensic analysis from this morning)
+- `docs/phase_f/status/STATUS_translation_l25_divergence.md` (the forensic analysis from this morning)
 - `data/schemas/per_process/translation.toml` (v2.1 schema — has enzyme WIDs, observables)
 
 ## Files you may write (write-set)
 
 - `opencell/vivarium/karr_translation_v3.py` (PRIMARY)
 - `tests/vivarium/test_karr_translation_evolvestate.py` (NEW — unit tests for transitions)
-- `docs/phase_f/STATUS_translation_evolvestate_port.md` (status doc)
+- `docs/phase_f/status/STATUS_translation_evolvestate_port.md` (status doc)
 
 DO NOT modify:
 - `karr_translation.py` (v1 — leave alone)

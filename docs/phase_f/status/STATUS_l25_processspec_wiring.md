@@ -7,7 +7,7 @@ Wire all 20 missing `_ProcessSpec` entries in `tests/vivarium/l2_2_replay_common
 - Python invocations use `bin\oc-py.cmd` / `bin\oc-pytest.cmd` only.
 - Modified files limited to:
   - `tests/vivarium/l2_2_replay_common_v2.py`
-  - `docs/phase_f/STATUS_l25_processspec_wiring.md`
+  - `docs/phase_f/status/STATUS_l25_processspec_wiring.md`
 
 ## Beat Tracker
 | Beat | Description | Status | Notes |

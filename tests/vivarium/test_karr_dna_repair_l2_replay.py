@@ -115,8 +115,9 @@ def _assert_identity_or_tolerance(
 def test_karr_dna_repair_l2_replay_identity_per_tick(rng_seed: int) -> None:
     trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
     with h5py.File(trace_path, "r") as trace:
-        n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
-        assert n_ticks == 100
+        available_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+        assert available_ticks >= 100
+        n_ticks = 100
 
         if "metadata" in trace and "rng_seed" in trace["metadata"]:
             recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])

@@ -7,7 +7,7 @@ Read `./SESSION_CONTEXT.md` for project rules. Pay attention to Hard Rule 17
 Use `bin\oc-pytest.cmd` and `bin\oc-py.cmd`. Do NOT run python directly.
 
 ## STATUS file
-Write `docs/phase_f/STATUS_l25_ds_pairs.md` as you go.
+Write `docs/phase_f/status/STATUS_l25_ds_pairs.md` as you go.
 Final message: "done, see STATUS".
 
 ## Commit cadence
@@ -147,12 +147,12 @@ whether to:
 - `tests/vivarium/test_l2_2_translation_plus_rna_processing_v2.py`
 - `docs/phase_f/L2_5_ACCEPTANCE_RUBRIC.md`
 - `docs/phase_f/L2_5_PAIR_MATRIX.md`
-- `docs/phase_f/STATUS_cause_4_sweep.md`
+- `docs/phase_f/status/STATUS_cause_4_sweep.md`
 
 ## Files you may write (write-set)
 
 - `tests/vivarium/test_l25_deterministic_stochastic_pairs.py` (NEW)
-- `docs/phase_f/STATUS_l25_ds_pairs.md`
+- `docs/phase_f/status/STATUS_l25_ds_pairs.md`
 
 DO NOT modify:
 - `l2_2_replay_common_v2.py` (harness — operator approval required)

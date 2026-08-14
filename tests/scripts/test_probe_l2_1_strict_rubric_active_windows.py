@@ -23,7 +23,7 @@ if str(SCRIPTS) not in sys.path:
 import l21_active_window_audit as active_windows  # noqa: E402
 import probe_l2_1_strict_rubric as probe  # noqa: E402
 
-MANIFEST_PATH = REPO_ROOT / "L21_ACTIVE_WINDOWS_MANIFEST.json"
+MANIFEST_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_1" / "L21_ACTIVE_WINDOWS_MANIFEST.json"
 
 EXPECTED_ACTIVE_WINDOW_VERDICTS = {
     "DNARepair": "GENUINE",

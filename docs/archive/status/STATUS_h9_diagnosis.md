@@ -12,7 +12,7 @@ CONFIRMED: in `ChromosomeCondensation+DNASupercoiling`, the pre-step shared `sub
 > | ATP | 907 | 907 | **72** | -4 | -60 | -4 |
 > | H2O | 9080624 | 9080624 | **756715** | -4 | -60 | -4 |
 >
-> **Key observation:** Between tick start and DNASupercoiling's step, ATP dropped from 907 to 72 (-835). ChromosomeCondensation, which ran between those points, is DETERMINISTIC and known to consume at most a few units of ATP (`docs/phase_f/STATUS_cause5_diagnosis.md` previously showed Cond's substrate touches at tick 0 as `ATP: 75 -> 72 delta=-3` — only -3, NOT -835).
+> **Key observation:** Between tick start and DNASupercoiling's step, ATP dropped from 907 to 72 (-835). ChromosomeCondensation, which ran between those points, is DETERMINISTIC and known to consume at most a few units of ATP (`docs/phase_f/status/STATUS_cause5_diagnosis.md` previously showed Cond's substrate touches at tick 0 as `ATP: 75 -> 72 delta=-3` — only -3, NOT -835).
 >
 > **Suspicion:** The `72` figure matches Karr's *Metabolism* trace ATP value at tick 0 (also documented in `STATUS_cause5_diagnosis.md` yesterday: `ATP: 72 -> 72` for Metabolism). This is suspicious: why would DNASupercoiling see Metabolism's substrate baseline?
 

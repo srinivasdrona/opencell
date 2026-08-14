@@ -6,7 +6,7 @@ Read `./SESSION_CONTEXT.md` for project rules.
 Use `bin\oc-pytest.cmd` and `bin\oc-py.cmd`. Do NOT run python directly.
 
 ## STATUS file
-Write `docs/phase_f/STATUS_l25_deterministic_pairs.md` as you go.
+Write `docs/phase_f/status/STATUS_l25_deterministic_pairs.md` as you go.
 Final message: "done, see STATUS".
 
 ## Commit cadence
@@ -109,7 +109,7 @@ composition bug we couldn't catch at L2.1 single-process.
 - `tests/vivarium/test_l25_chromosome_condensation_plus_segregation.py` (NEW)
 - `tests/vivarium/test_l25_host_interaction_plus_terminal_organelle.py` (NEW)
 - `tests/vivarium/l2_2_replay_common_v2.py` (MAY MODIFY — add bit-identity support if needed)
-- `docs/phase_f/STATUS_l25_deterministic_pairs.md`
+- `docs/phase_f/status/STATUS_l25_deterministic_pairs.md`
 
 DO NOT modify:
 - Process implementations (`opencell/vivarium/karr_*.py`)
