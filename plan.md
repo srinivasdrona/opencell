@@ -80,7 +80,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     retrying in shell `matlabq2-l22-ftsz` after the first real run exposed
     missing WholeCell `isodd`/`iseven` compatibility functions and an omitted
     WholeCell `lib` path for `glpkcc`
-  - `l22-dnadamage`: PID `28972`
+  - `l22-dnadamage`: Codex extraction phase ended with 50 valid UVB traces
+    but a real red (Karr 0 events vs OC 992/1000 ticks); source-rate probe is
+    queued in shell `matlabq-l22-dnadamage-rate-probe`
 - A ninth lower-gate gap was discovered by the fresh 2026-08-17 baseline and
   is running independently in `E:\opencell-worktrees\wave-l21-repinit`
   as PID `43988`:
