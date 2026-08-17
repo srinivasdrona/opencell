@@ -63,22 +63,31 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`; clean at `2f53f93`, synchronized with `origin/main`.
 - MATLAB R2026a Update 2 is restored at `E:\MATLAB\bin\matlab.exe`; `license('test','Statistics_Toolbox') == 1`.
+- **Critical correction:** `license('test','Statistics_Toolbox') == 1` did
+  not mean the product was installed. `E:\MATLAB\toolbox\stats` is absent and
+  no genuine `mnrnd.m` exists. Any new full-simulation trace produced while
+  `scripts/matlab/mnrnd.m` shadows the missing toolbox is non-authoritative
+  Karr evidence. Full-simulation extraction lanes are stopped until Statistics
+  and Machine Learning Toolbox is installed.
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
 - Eight preserved process worktrees are running as detached Codex subprocesses:
   - `l21-active-windows`: Codex preparation ended; four-process extraction
-    batch exited before work because `run()` resolved `scripts/matlab`
-    relative to `tmp`; absolute repo-root fix applied and retrying
+    batch path defect is fixed, but extraction is blocked on genuine
+    Statistics Toolbox; no new authoritative traces were produced
   - `l21-chromcond`: exact post-warmup endpoint captured
     (`randStream.state=1279689633`, 80 SMC bound); live MATLAB vs Python
     restored-state vectors proved `matlab_rng.py` was wrong; commit `8d06797`
-    fixes exact MATLAB RNG semantics. A residual tick-0 binding-geometry
-    mismatch remains; focused source pass PID `35968` is running.
+    fixes exact MATLAB RNG semantics and `2d917d4` fixes direct storage.
+    Live WholeCell resets the process RNG to `931316785` before tick 0 while
+    retaining warmup state effects; focused handoff repair PID `29144` is
+    running without new full-simulation extraction.
   - `l22-macromol`: Codex phase ended at `478721d`; direct MATLAB extraction
-    produced valid seeds `1..3`, then MATLAB exited `-1`; seeds `4..49` now
-    retry one fresh MATLAB process per seed. Seed `0` remains a separate
-    trigger-window defect. The first retry proved
+    produced apparent seeds `1..3`, then MATLAB exited `-1`; those traces are
+    non-authoritative because the repo `mnrnd` shim was active. Seed `0`
+    also has a separate trigger-window defect. The first retry proved
     `glpkcc` resolves but broad `lib` path injection shadowed modern MATLAB
     `strjoin`, so bootstrap now adds only `lib\glpkmex-2.9`
+    A focused agent is separately fixing seed `0`'s scan/capture trigger drift.
   - `l22-procii`: **REJECTED by independent Opus 5 review**. The 22 new
     traces used the repository `mnrnd` shim because genuine Statistics
     Toolbox `mnrnd` is not installed; the full50 manifest also uses
@@ -89,22 +98,22 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     is `1472/200/199` vs Karr `65/58/7`; independent Opus 5 review
     **REJECTED** the one-sided/non-discriminating gate, and a focused source
     gap repair fixed topoIV legality at `55d1441`. One major-region
-    `linkingNumbers` residual remains (`51933` vs `51932`). Before auditing
-    more consumers, the next pass is testing ChromCond's exact corrected
-    MATLAB RNG semantics (`8d06797`) against the DNAS ledger as PID `35600`.
+    `linkingNumbers` residual remains (`51933` vs `51932`). Corrected RNG
+    semantics isolated the first divergence to tick-0 gyrase release; a
+    focused release-ledger repair PID `21604` is running.
   - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
-    code `-1` at 42.6 minutes; the exact single-seed retry succeeded and
-    validated seeds `[0,1]`. Seeds `2..49` run one fresh MATLAB process at a
-    time with up to three fresh-process retries per seed in shell
-    `matlabseq2-l22-cytokinesis`, leaving the second slot free.
+    code `-1` at 42.6 minutes; the single-seed retry produced seed `1`, but
+    shim contamination makes that new trajectory non-authoritative.
+    Remaining extraction is stopped pending genuine Statistics Toolbox.
   - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
-    switching to one fresh MATLAB process per seed after seed `0` again
-    exited MATLAB `-1`; the first real run exposed
+    stopped pending genuine Statistics Toolbox after seed `0` again exited
+    MATLAB `-1`; the first real run exposed
     missing WholeCell `isodd`/`iseven` compatibility functions and an omitted
     WholeCell `lib` path for `glpkcc`
   - `l22-dnadamage`: 50 old UVB traces are vacuous despite a live Karr rate of
-    `0.1` events/tick. Focused global-state override repair PID `33520` is
-    running;
+    `0.1` events/tick. Target-only probes narrowed the contradiction inside
+    `DNADamage.evolveState`; a target-only inline-loop probe is launching,
+    as PID `40528`, while full-cohort extraction is toolbox-blocked.
     it must pass a 5-seed Karr-support canary before any new full cohort.
 - A ninth lower-gate gap was discovered by the fresh 2026-08-17 baseline and
   is running independently in `E:\opencell-worktrees\wave-l21-repinit`
