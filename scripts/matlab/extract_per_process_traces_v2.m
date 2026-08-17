@@ -256,6 +256,7 @@ for i = 1:numel(process_names)
         metadata.mnrnd_provider_toolbox_version = mnrnd_provider.toolbox_version;
         metadata.mnrnd_provider_path_relative_to_matlabroot = mnrnd_provider.provider_path_relative_to_matlabroot;
         metadata.mnrnd_provider_sha256 = mnrnd_provider.sha256_lf_normalized;
+        metadata.statistics_rng_provider_identity_json = mnrnd_provider.identity_json;
     end
 
     if ~isempty(extraction_opts.condition_label)

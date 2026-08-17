@@ -157,13 +157,18 @@ def build_matlab_command(
         f"extract_per_process_traces_v2({{{proc_list}}}, '{output_subdir}', {int(n_ticks)}, "
         f"uint32({int(seed)}));"
     )
-    prefix = "addpath('scripts/matlab'); " if include_addpath else ""
+    prefix = (
+        "addpath('scripts/matlab'); "
+        "addpath(fullfile(matlabroot, 'toolbox', 'stats', 'stats'), '-begin'); "
+        if include_addpath
+        else ""
+    )
     if log_relpath is None:
         return f"{prefix}{call}"
     return (
         f"{prefix}"
         f"diary('{log_relpath}'); "
-        f"try; {call} catch err; disp(getReport(err, 'extended', 'hyperlinks', 'off')); end; "
+        f"try; {call} catch err; disp(getReport(err, 'extended', 'hyperlinks', 'off')); rethrow(err); end; "
         f"diary off;"
     )
 

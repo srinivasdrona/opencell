@@ -214,6 +214,10 @@ def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = 
             "mnrnd_provider_path_relative_to_matlabroot",
         )
         mnrnd_provider_sha256 = _read_metadata_string(handle, "mnrnd_provider_sha256")
+        statistics_rng_provider_identity_json = _read_metadata_string(
+            handle,
+            "statistics_rng_provider_identity_json",
+        )
         projection_version = _read_metadata_scalar_int(handle, "event_observable_projection_version")
 
     division_relative_onset = onset_abs - completion_abs
@@ -252,7 +256,8 @@ def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = 
             f"matlab_release={mnrnd_provider_matlab_release} "
             f"toolbox_version={mnrnd_provider_toolbox_version} "
             f"provider_path={mnrnd_provider_path} "
-            f"provider_sha256={mnrnd_provider_sha256}",
+            f"provider_sha256={mnrnd_provider_sha256} "
+            f"statistics_rng_provider_identity_json={statistics_rng_provider_identity_json}",
             f"event_observable_projection_version={projection_version}",
         ],
     )
@@ -310,6 +315,7 @@ def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = 
         "mnrnd_provider_toolbox_version": mnrnd_provider_toolbox_version,
         "mnrnd_provider_path_relative_to_matlabroot": mnrnd_provider_path,
         "mnrnd_provider_sha256": mnrnd_provider_sha256,
+        "statistics_rng_provider_identity_json": statistics_rng_provider_identity_json,
         "event_observable_projection_version": projection_version,
         "generated_at": generated_at,
     }

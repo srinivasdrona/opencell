@@ -225,6 +225,9 @@ def test_genuine_mnrnd_provider_metadata_written_for_fixed_and_anchor_not_legacy
         == 1
     )
     assert source.count("metadata.mnrnd_provider_sha256 = mnrnd_provider.sha256_lf_normalized;") == 1
+    assert source.count(
+        "metadata.statistics_rng_provider_identity_json = mnrnd_provider.identity_json;"
+    ) == 1
     assert "mnrnd_shim" not in source
 
     # The single assignment site must be guarded by

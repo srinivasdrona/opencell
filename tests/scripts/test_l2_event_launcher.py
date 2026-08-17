@@ -56,9 +56,10 @@ _MNRND_PROVIDER_DEFAULT = object()
 @pytest.fixture(autouse=True)
 def _fake_local_genuine_provider(monkeypatch, tmp_path):
     matlab_root = tmp_path / "MATLAB"
-    provider_path = matlab_root / launcher.GENUINE_MNRND_RELATIVE_PATH
-    provider_path.parent.mkdir(parents=True, exist_ok=True)
-    provider_path.write_text("% fake genuine mnrnd provider\n", encoding="utf-8", newline="\n")
+    for name in launcher.STATISTICS_RNG_FUNCTIONS:
+        provider_path = launcher.genuine_statistics_rng_path(name, matlab_root=matlab_root)
+        provider_path.parent.mkdir(parents=True, exist_ok=True)
+        provider_path.write_text(f"% fake genuine {name} provider\n", encoding="utf-8", newline="\n")
 
     contents_path = matlab_root / launcher.STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH
     contents_path.write_text(
@@ -114,6 +115,7 @@ def _write_event_window_fixture(
     mnrnd_provider_toolbox_version: str | None | object = _MNRND_PROVIDER_DEFAULT,
     mnrnd_provider_path_relative_to_matlabroot: str | None | object = _MNRND_PROVIDER_DEFAULT,
     mnrnd_provider_sha256: str | None | object = _MNRND_PROVIDER_DEFAULT,
+    statistics_rng_provider_identity_json: str | None | object = _MNRND_PROVIDER_DEFAULT,
 ) -> Path:
     """Write a minimal synthetic event-window trace: a `metadata` group
     plus empty `states_before`/`states_after` groups (optionally with a
@@ -135,6 +137,12 @@ def _write_event_window_fixture(
         mnrnd_provider_path_relative_to_matlabroot = current_provider["provider_path_relative_to_matlabroot"]
     if mnrnd_provider_sha256 is _MNRND_PROVIDER_DEFAULT:
         mnrnd_provider_sha256 = current_provider["sha256_lf_normalized"]
+    if statistics_rng_provider_identity_json is _MNRND_PROVIDER_DEFAULT:
+        statistics_rng_provider_identity_json = json.dumps(
+            launcher.current_genuine_statistics_rng_provider(),
+            sort_keys=True,
+            separators=(",", ":"),
+        )
     path.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(path, "w") as handle:
         metadata = handle.create_group("metadata")
@@ -184,6 +192,11 @@ def _write_event_window_fixture(
             )
         if mnrnd_provider_sha256 is not None:
             metadata.create_dataset("mnrnd_provider_sha256", data=_encode_char_metadata(mnrnd_provider_sha256))
+        if statistics_rng_provider_identity_json is not None:
+            metadata.create_dataset(
+                "statistics_rng_provider_identity_json",
+                data=_encode_char_metadata(statistics_rng_provider_identity_json),
+            )
 
         states_before = handle.create_group("states_before")
         states_after = handle.create_group("states_after")
@@ -1033,7 +1046,57 @@ def test_plan_regenerate_invalid_for_mnrnd_provider_toolbox_version_drift(tmp_pa
     assert len(plan.jobs) == 1
 
 
-def test_current_genuine_mnrnd_provider_reads_local_install_metadata():
+def test_plan_regenerate_invalid_for_missing_statistics_rng_provider_identity(tmp_path):
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=26, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="RibosomeAssembly",
+        seed=26,
+        n_ticks=4,
+        tick_offset=200.0,
+        stride=1,
+        tick_start=201,
+        tick_end=204,
+        observables=("substrates",),
+        statistics_rng_provider_identity_json=None,
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "statistics_rng_provider_identity_json is missing" in plan.decisions[0].reason
+
+
+def test_plan_regenerate_invalid_for_sibling_rng_provider_drift(tmp_path):
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=27, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    provider = launcher.current_genuine_statistics_rng_provider()
+    provider["functions"][0]["sha256_lf_normalized"] = "0" * 64
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="RibosomeAssembly",
+        seed=27,
+        n_ticks=4,
+        tick_offset=200.0,
+        stride=1,
+        tick_start=201,
+        tick_end=204,
+        observables=("substrates",),
+        statistics_rng_provider_identity_json=json.dumps(
+            provider,
+            sort_keys=True,
+            separators=(",", ":"),
+        ),
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "does not match the current local" in plan.decisions[0].reason
+
+
+def test_current_genuine_mnrnd_provider_reads_synthetic_install_metadata():
     provider = launcher.current_genuine_mnrnd_provider()
     assert provider["kind"] == launcher.GENUINE_MNRND_KIND
     assert provider["matlab_release"] == "R2026a"

@@ -40,9 +40,10 @@ from scripts.l2_event.prepare_cytokinesis_cohort import (  # noqa: E402
 @pytest.fixture(autouse=True)
 def _fake_local_genuine_provider(monkeypatch, tmp_path):
     matlab_root = tmp_path / "MATLAB"
-    provider_path = matlab_root / launcher.GENUINE_MNRND_RELATIVE_PATH
-    provider_path.parent.mkdir(parents=True, exist_ok=True)
-    provider_path.write_text("% fake genuine mnrnd provider\n", encoding="utf-8", newline="\n")
+    for name in launcher.STATISTICS_RNG_FUNCTIONS:
+        provider_path = launcher.genuine_statistics_rng_path(name, matlab_root=matlab_root)
+        provider_path.parent.mkdir(parents=True, exist_ok=True)
+        provider_path.write_text(f"% fake genuine {name} provider\n", encoding="utf-8", newline="\n")
     contents_path = matlab_root / launcher.STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH
     contents_path.write_text(
         "% Statistics and Machine Learning Toolbox\n% Version 26.1 (R2026a) 12-Jan-2026\n",
@@ -125,6 +126,16 @@ def _write_valid_anchor_trace(
         metadata.create_dataset(
             "mnrnd_provider_sha256",
             data=_encode_char_metadata(provider["sha256_lf_normalized"]),
+        )
+        metadata.create_dataset(
+            "statistics_rng_provider_identity_json",
+            data=_encode_char_metadata(
+                json.dumps(
+                    launcher.current_genuine_statistics_rng_provider(),
+                    sort_keys=True,
+                    separators=(",", ":"),
+                )
+            ),
         )
 
         states_before = handle.create_group("states_before")

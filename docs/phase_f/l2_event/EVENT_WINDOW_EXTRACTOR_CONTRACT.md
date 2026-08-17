@@ -360,11 +360,13 @@ compatibility uses (including its Octave-only regression tests), but
 **full-simulation extraction is no longer allowed to use it as evidence**.
 `build_matlab_command` still adds `scripts/matlab` so the extractor itself
 is callable, but it now immediately re-promotes
-`fullfile(matlabroot,'toolbox','stats','stats')` to the front of the path,
-and `karr_bootstrap()` independently fails closed unless `which mnrnd`
-resolves to the genuine MathWorks file
-`matlabroot/toolbox/stats/stats/mnrnd.m` even after all repo paths are
-added.
+`fullfile(matlabroot,'toolbox','stats','stats')` to the front of the path.
+`karr_bootstrap()` independently fails closed unless all five colliding RNG
+entry points (`binornd`, `mnrnd`, `poissrnd`, `random`, `randsample`) resolve
+to the genuine MathWorks files even after all repo paths are added and after
+the caller's original working directory is restored. This final cwd check is
+required because MATLAB resolves a same-named file in the current folder
+ahead of every path entry.
 
 This is a **run-level** contract, not a per-target-process convention:
 every process's `evolveState()` executes during a full simulation, so the
@@ -382,6 +384,11 @@ metadata/mnrnd_provider_path_relative_to_matlabroot -- char, e.g. 'toolbox/stats
 metadata/mnrnd_provider_sha256                      -- char, lowercase hex SHA-256 of the
                                                        real provider file with CR (0x0D)
                                                        stripped first (LF-normalized)
+metadata/statistics_rng_provider_identity_json      -- deterministic JSON identity for
+                                                       binornd/mnrnd/poissrnd/random/
+                                                       randsample (name, relative path,
+                                                       LF-normalized SHA-256), plus release
+                                                       and toolbox version
 ```
 
 `validate_existing_event_window` now recomputes the **current local**
@@ -393,7 +400,7 @@ Consequently:
 * any legacy shim-bound trace,
 * any trace missing these provider fields,
 * any trace whose provider hash/version no longer matches the local MATLAB
-  install,
+  install, including any of the four sibling RNG providers,
 
 is explicitly `regenerate_invalid` / non-authoritative. There is no
 success-shaped fallback to the repo shim.

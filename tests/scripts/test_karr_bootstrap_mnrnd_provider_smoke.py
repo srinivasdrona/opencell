@@ -57,6 +57,10 @@ def test_karr_bootstrap_rebinds_real_mnrnd_after_repo_paths():
         "result.before = which('mnrnd'); "
         "[~, provider] = karr_bootstrap(); "
         "result.after = which('mnrnd'); "
+        "result.after_binornd = which('binornd'); "
+        "result.after_poissrnd = which('poissrnd'); "
+        "result.after_random = which('random'); "
+        "result.after_randsample = which('randsample'); "
         "result.kind = provider.kind; "
         "result.matlab_release = provider.matlab_release; "
         "result.toolbox_version = provider.toolbox_version; "
@@ -89,3 +93,24 @@ def test_karr_bootstrap_rebinds_real_mnrnd_after_repo_paths():
         == expected_provider["provider_path_relative_to_matlabroot"]
     )
     assert payload["sha256_lf_normalized"] == expected_provider["sha256_lf_normalized"]
+    for name in ("binornd", "poissrnd", "random", "randsample"):
+        expected_path = str(Path(r"E:\MATLAB") / launcher.STATISTICS_TOOLBOX_FUNCTIONS_RELATIVE_DIR / f"{name}.m")
+        assert payload[f"after_{name}"].replace("/", "\\") == expected_path.replace("/", "\\")
+
+
+def test_karr_bootstrap_fails_if_caller_cwd_contains_repo_shim():
+    scripts_dir = f"{MATLAB_REPO_ROOT}/scripts/matlab"
+    batch = (
+        f"restoredefaultpath; cd('{scripts_dir}'); addpath('{scripts_dir}'); "
+        "karr_bootstrap();"
+    )
+    result = subprocess.run(
+        [str(MATLAB_EXE), "-batch", batch],
+        capture_output=True,
+        text=True,
+        timeout=600,
+        check=False,
+    )
+    combined = f"{result.stdout}\n{result.stderr}"
+    assert result.returncode != 0, combined
+    assert "Current-folder and repo shims are prohibited as Karr evidence" in combined

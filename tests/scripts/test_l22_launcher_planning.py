@@ -128,6 +128,8 @@ def test_build_matlab_command_is_diary_wrapped_when_log_given():
     assert "diary('artifacts/seed003.log')" in command
     assert "diary off" in command
     assert "try;" in command and "catch err;" in command
+    assert "addpath(fullfile(matlabroot, 'toolbox', 'stats', 'stats'), '-begin')" in command
+    assert "rethrow(err)" in command
 
 
 def test_plan_to_dict_is_json_serializable(tmp_path):

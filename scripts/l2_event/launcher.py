@@ -117,7 +117,9 @@ DEFAULT_MATLAB_ROOT = Path(
     )
 )
 GENUINE_MNRND_KIND = "statistics_toolbox"
-GENUINE_MNRND_RELATIVE_PATH = Path("toolbox") / "stats" / "stats" / "mnrnd.m"
+STATISTICS_RNG_FUNCTIONS = ("binornd", "mnrnd", "poissrnd", "random", "randsample")
+STATISTICS_TOOLBOX_FUNCTIONS_RELATIVE_DIR = Path("toolbox") / "stats" / "stats"
+GENUINE_MNRND_RELATIVE_PATH = STATISTICS_TOOLBOX_FUNCTIONS_RELATIVE_DIR / "mnrnd.m"
 STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH = Path("toolbox") / "stats" / "stats" / "Contents.m"
 MATLAB_VERSION_INFO_RELATIVE_PATH = Path("VersionInfo.xml")
 
@@ -132,6 +134,13 @@ def lf_normalized_sha256_hex(path: Path) -> str:
 def genuine_mnrnd_path(*, matlab_root: Path | None = None) -> Path:
     root = DEFAULT_MATLAB_ROOT if matlab_root is None else Path(matlab_root)
     return root / GENUINE_MNRND_RELATIVE_PATH
+
+
+def genuine_statistics_rng_path(name: str, *, matlab_root: Path | None = None) -> Path:
+    if name not in STATISTICS_RNG_FUNCTIONS:
+        raise ValueError(f"unsupported Statistics Toolbox RNG function: {name!r}")
+    root = DEFAULT_MATLAB_ROOT if matlab_root is None else Path(matlab_root)
+    return root / STATISTICS_TOOLBOX_FUNCTIONS_RELATIVE_DIR / f"{name}.m"
 
 
 def _matlab_release(*, matlab_root: Path | None = None) -> str:
@@ -158,19 +167,43 @@ def _statistics_toolbox_version(*, matlab_root: Path | None = None) -> str:
     return match.group("version")
 
 
-def current_genuine_mnrnd_provider(*, matlab_root: Path | None = None) -> dict[str, str]:
-    """Current local genuine MathWorks ``mnrnd`` provider identity."""
-    provider_path = genuine_mnrnd_path(matlab_root=matlab_root)
-    if not provider_path.is_file():
-        raise FileNotFoundError(
-            f"genuine Statistics Toolbox mnrnd.m not found at {provider_path}; shim-bound traces are non-authoritative"
+def current_genuine_statistics_rng_provider(*, matlab_root: Path | None = None) -> dict[str, Any]:
+    """Current local MathWorks identity for every repo-shadowed RNG helper."""
+    functions: list[dict[str, str]] = []
+    for name in STATISTICS_RNG_FUNCTIONS:
+        provider_path = genuine_statistics_rng_path(name, matlab_root=matlab_root)
+        if not provider_path.is_file():
+            raise FileNotFoundError(
+                f"genuine Statistics Toolbox {name}.m not found at {provider_path}; "
+                "repo-shim trajectories are non-authoritative"
+            )
+        functions.append(
+            {
+                "name": name,
+                "provider_path_relative_to_matlabroot": (
+                    STATISTICS_TOOLBOX_FUNCTIONS_RELATIVE_DIR / f"{name}.m"
+                ).as_posix(),
+                "sha256_lf_normalized": lf_normalized_sha256_hex(provider_path),
+            }
         )
     return {
         "kind": GENUINE_MNRND_KIND,
         "matlab_release": _matlab_release(matlab_root=matlab_root),
         "toolbox_version": _statistics_toolbox_version(matlab_root=matlab_root),
-        "provider_path_relative_to_matlabroot": GENUINE_MNRND_RELATIVE_PATH.as_posix(),
-        "sha256_lf_normalized": lf_normalized_sha256_hex(provider_path),
+        "functions": functions,
+    }
+
+
+def current_genuine_mnrnd_provider(*, matlab_root: Path | None = None) -> dict[str, str]:
+    """Backward-compatible mnrnd view of the complete RNG-provider identity."""
+    provider = current_genuine_statistics_rng_provider(matlab_root=matlab_root)
+    mnrnd = next(row for row in provider["functions"] if row["name"] == "mnrnd")
+    return {
+        "kind": provider["kind"],
+        "matlab_release": provider["matlab_release"],
+        "toolbox_version": provider["toolbox_version"],
+        "provider_path_relative_to_matlabroot": mnrnd["provider_path_relative_to_matlabroot"],
+        "sha256_lf_normalized": mnrnd["sha256_lf_normalized"],
     }
 
 
@@ -740,6 +773,7 @@ def _read_mnrnd_provider_metadata(path: Path) -> dict[str, Any]:
         "mnrnd_provider_toolbox_version": None,
         "mnrnd_provider_path_relative_to_matlabroot": None,
         "mnrnd_provider_sha256": None,
+        "statistics_rng_provider_identity_json": None,
     }
     with h5py.File(path, "r") as handle:
         metadata = handle.get("metadata")
@@ -751,6 +785,7 @@ def _read_mnrnd_provider_metadata(path: Path) -> dict[str, Any]:
             "mnrnd_provider_toolbox_version",
             "mnrnd_provider_path_relative_to_matlabroot",
             "mnrnd_provider_sha256",
+            "statistics_rng_provider_identity_json",
         ):
             if key in metadata:
                 result[key] = _decode_char_metadata(metadata[key][()])
@@ -1018,6 +1053,28 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
         return False, (
             f"metadata.mnrnd_provider_sha256={mnrnd_meta['mnrnd_provider_sha256']!r} != current "
             f"provider sha256 {expected_provider['sha256_lf_normalized']!r}"
+        )
+    raw_rng_identity = mnrnd_meta["statistics_rng_provider_identity_json"]
+    if raw_rng_identity is None:
+        return False, (
+            "metadata.statistics_rng_provider_identity_json is missing -- the trace does not bind "
+            "all repo-shadowed Statistics Toolbox RNG providers"
+        )
+    try:
+        trace_rng_identity = json.loads(raw_rng_identity)
+    except (TypeError, json.JSONDecodeError) as exc:
+        return False, f"metadata.statistics_rng_provider_identity_json is invalid JSON ({exc})"
+    try:
+        expected_rng_identity = current_genuine_statistics_rng_provider()
+    except (OSError, ValueError, KeyError) as exc:
+        return False, (
+            "current local genuine Statistics Toolbox RNG providers are unavailable or unreadable "
+            f"({type(exc).__name__}: {exc})"
+        )
+    if trace_rng_identity != expected_rng_identity:
+        return False, (
+            "metadata.statistics_rng_provider_identity_json does not match the current local "
+            "binornd/mnrnd/poissrnd/random/randsample provider identities"
         )
 
     if isinstance(spec, FixedWindowSpec):
