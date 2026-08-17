@@ -59,10 +59,14 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live state (2026-08-12) — ten-track L2.1/L2.2 closure wave active:**
+**Live state (2026-08-17) — MATLAB-restored eight-track closure wave relaunching:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
-- Active integration worktree: `E:\opencell-worktrees\main-integrate`; clean and synchronized with `origin/main` before this closeout commit.
-- No built-in background agents are running. Future delegated work runs as detached Codex subprocesses with logs/status files outside the main conversation; the main context continues integration work.
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`; clean at `2f53f93`, synchronized with `origin/main`.
+- MATLAB R2026a Update 2 is restored at `E:\MATLAB\bin\matlab.exe`; `license('test','Statistics_Toolbox') == 1`.
+- Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
+- Eight preserved process worktrees are being relaunched as detached Codex subprocesses: `l21-active-windows`, `l21-chromcond`, `l22-macromol`, `l22-procii`, `l22-dnas`, `l22-cytokinesis`, `l22-ftsz`, `l22-dnadamage`.
+- Each worker owns only its process branch/status/evidence. The coordinator alone edits shared catalogs, evidence indexes, `plan.md`, and SQL `tracks`.
+- Inventory-before-extraction remains mandatory across the primary checkout and all active worktrees; only proven missing matrix cells may be generated.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green), RibosomeAssembly N=50 event PASS (`ab4126c` + index `d179b63`), DNADamage blocker evidence (`dde2510`), MacromolecularComplexation lifecycle correction (`f627b34`), and exact tick-0 allocator infrastructure (`d5298a1`).
 - DNADamage integrated at `dde2510`: production per-tick trace-oracle path removed; 37 focused tests pass. Biological L2.2 remains blocked on a nontrivial Karr stimulus trace and the missing `hollidayJunctions` OC channel.
 - RibosomeAssembly integrated at `ab4126c`; shared event index regenerated and audits clean with one `mode=gate`, `verdict=PASS` row. Scope remains Karr-conditioned per-tick parity, not free-running fidelity.
@@ -82,8 +86,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `L22-FTSZ`: direct fail-closed entrypoint merged at `cdb9a08`; 0/50 cohort blocked by MATLAB licensing.
   - `L22-RIBOSOME-BRIDGE`: integrated at `fa56fb0`; event-specific authority now moves RibosomeAssembly to L2.2 PASS.
   - `L22-REPLICATION`: current-tree N=50 rerun integrated at `bef0a3f`; chromosome PASS, substrates/boundEnzymes SEED_NOISE.
-- Global MATLAB blocker: the only installed `E:\MATLAB\bin\matlab.exe` uses expired R2026a trial licenses (`License Manager Error -10.2`). No long extraction can start until licensing is restored.
-- No detached wait shells remain active.
+- Previous global MATLAB blocker is resolved. The current critical path is extraction, source-faithful repair where newly exposed, process-local recertification, then coordinator-owned shared-index regeneration.
 - Formal checkpoint: `docs/phase_f/CHECKPOINT_2026-08-11.md`.
 - Wave closeout checkpoint: `docs/phase_f/CHECKPOINT_2026-08-14.md`.
 - Ten planned tracks: 2 L2.1 (`ChromosomeCondensation`, active-window recertification) and 8 L2.2 (Replication, MacromolecularComplexation, ProteinProcessingII, DNASupercoiling, RibosomeAssembly bridge, Cytokinesis, FtsZPolymerization, DNADamage).
@@ -94,7 +97,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
 - Ten-track wave disposition: Replication and RibosomeAssembly closed; L2.1 active-window rubric integrated but its track remains open on five missing extractions. The other seven tracks also require new MATLAB-derived state/windows. MATLAB licensing is therefore the single external blocker to further gate closure.
 
-**Runtime:** detached workers listed above; MATLAB **LICENSE EXPIRED**; WSL up (`.venv-wsl`).
+**Runtime:** MATLAB licensed; WSL up (`.venv-wsl`); detached worker PIDs and wait-shell IDs are recorded in SQL `tracks` notes and session files after launch.
 
 **🛑 GATE 2 STATUS (post GPT-5.4 rubber-duck) — honest scope: per-process INPUT FIDELITY (vocab + reaction stoichiometry) vs the frozen spec. NOT cross-process wiring (that is L1b Half B + L3).** `scripts/gate2_verify_oc_vs_spec.py` compares each OC `Karr<X>Process` to the frozen spec. After the rubber-duck (logged: `sha256:ab399ac…`), strengthened + correctly scoped:
 - **Vocab (substrates/enzymes/stimuli): STRENGTHENED to ORDERED comparison** (index alignment, not sets) + surfaces `@compartment` representation (TOA) instead of stripping it. 27 CONFORM, **1 DIVERGE = Translation** (loads 20 AAs via `aa_ids`, omits GTP/H2O reads + write-products GDP/PI/H/FMET). This is the ONE reliable red. Metabolism 585 now validated via `model.raw['ids']['substrate_wcm_585']`.
