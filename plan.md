@@ -67,11 +67,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Eight preserved process worktrees are running as detached Codex subprocesses:
   - `l21-active-windows`: PID `35032`
   - `l21-chromcond`: PID `27076`
-  - `l22-macromol`: PID `36632`
+  - `l22-macromol`: Codex phase ended at `478721d`; direct MATLAB extraction
+    is queued in shell `matlabq-l22-macromol`
   - `l22-procii`: PID `34464`
   - `l22-dnas`: PID `30712`
   - `l22-cytokinesis`: PID `15772`
-  - `l22-ftsz`: PID `26740`
+  - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
+    queued in shell `matlabq-l22-ftsz`
   - `l22-dnadamage`: PID `28972`
 - A ninth lower-gate gap was discovered by the fresh 2026-08-17 baseline and
   is running independently in `E:\opencell-worktrees\wave-l21-repinit`
