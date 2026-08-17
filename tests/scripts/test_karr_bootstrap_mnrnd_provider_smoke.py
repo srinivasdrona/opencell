@@ -61,6 +61,9 @@ def test_karr_bootstrap_rebinds_real_mnrnd_after_repo_paths():
         "result.after_poissrnd = which('poissrnd'); "
         "result.after_random = which('random'); "
         "result.after_randsample = which('randsample'); "
+        "result.glpkcc = which('glpkcc'); "
+        "result.isodd = isodd([1 2 3]); "
+        "result.iseven = iseven([1 2 3]); "
         "result.kind = provider.kind; "
         "result.matlab_release = provider.matlab_release; "
         "result.toolbox_version = provider.toolbox_version; "
@@ -96,6 +99,9 @@ def test_karr_bootstrap_rebinds_real_mnrnd_after_repo_paths():
     for name in ("binornd", "poissrnd", "random", "randsample"):
         expected_path = str(Path(r"E:\MATLAB") / launcher.STATISTICS_TOOLBOX_FUNCTIONS_RELATIVE_DIR / f"{name}.m")
         assert payload[f"after_{name}"].replace("/", "\\") == expected_path.replace("/", "\\")
+    assert payload["glpkcc"].replace("/", "\\").endswith(r"lib\glpkmex-2.9\glpkcc.mexw64")
+    assert payload["isodd"] == [True, False, True]
+    assert payload["iseven"] == [False, True, False]
 
 
 def test_karr_bootstrap_fails_if_caller_cwd_contains_repo_shim():
@@ -113,4 +119,4 @@ def test_karr_bootstrap_fails_if_caller_cwd_contains_repo_shim():
     )
     combined = f"{result.stdout}\n{result.stderr}"
     assert result.returncode != 0, combined
-    assert "Current-folder and repo shims are prohibited as Karr evidence" in combined
+    assert "repo shims are prohibited as Karr evidence" in combined

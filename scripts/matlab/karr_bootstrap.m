@@ -40,6 +40,7 @@ old_dir = pwd;
 cleanup_obj = onCleanup(@() cd(old_dir));
 cd(wcm_root);
 addpath(genpath(fullfile(wcm_root, 'src')));
+addpath(fullfile(wcm_root, 'lib', 'glpkmex-2.9'));
 mnrnd_provider = require_genuine_statistics_rng_providers(repo_root);
 fprintf('[karr_bootstrap] mnrnd provider: %s (%s, toolbox %s)\n', ...
     fullfile(matlabroot, strrep(mnrnd_provider.provider_path_relative_to_matlabroot, '/', filesep)), ...
