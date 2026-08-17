@@ -73,7 +73,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     `strjoin`, so bootstrap now adds only `lib\glpkmex-2.9`
   - `l22-procii`: PID `34464`
   - `l22-dnas`: PID `30712`
-  - `l22-cytokinesis`: PID `15772`
+  - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
+    code `-1` at 42.6 minutes; the exact prepared single-seed retry is queued
+    in shell `matlabq-l22-cytokinesis-s001`
   - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
     retrying in shell `matlabq2-l22-ftsz` after the first real run exposed
     missing WholeCell `isodd`/`iseven` compatibility functions and an omitted
