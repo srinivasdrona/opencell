@@ -2,9 +2,9 @@
 
 ## Scope
 
-This document freezes the active-window extraction contract for
+This document freezes the process-local active-window contract for
 `MacromolecularComplexation` under L2.2 Design-A without editing the shared
-catalog or index.
+catalog, shared evidence index, or shared runner helpers.
 
 Catalog entry (authoritative spec):
 
@@ -18,69 +18,88 @@ closed_form_dominant: candidate
 karr_artifact: per_process_traces_v2
 ```
 
-The August 11 checkpoint and `dec-004` establish why the canonical early
-100-tick cohort is invalid for closure: its `tick_offset=0` windows never reach
-the naturally reachable network-2 competitive branch, while a corrected real
-scheduler lifecycle scan shows E1 first nonzero near tick 8264 and both
-network-2 pentamers forming later in the same natural run.
+The canonical early 100-tick cohort is not admissible for this closeout
+because it never reaches the naturally reachable network-2 branch. This
+prereg instead binds a process-local active-window cohort under:
+
+`data/m1_sources/karr_native/macromol_active_window/`
 
 ## Frozen rule
 
 For each seed `s in [0, 49]`:
 
-1. Run the real Karr scheduler (`sim.evolveState()`) from cell birth with the
-   real seeded `Simulation` until the first tick where either network-2 complex
-   (`complexs` indices `22` or `23`, 0-based) has a positive delta.
-2. Record that first trigger tick and the triggering complex identity or
-   identities.
-3. Re-run extraction from seed start with
-   `extract_per_process_traces_v2(..., n_ticks=100, tick_offset=trigger_tick-1, 'fixed')`.
-4. Accept the seed only if the resulting MAT file proves the window begins at
-   the trigger tick:
-   `metadata.tick_start == metadata.active_window_trigger_tick`, the first
-   captured `complexs` delta is positive on the recorded network-2 indices, and
-   no non-network-2 index appears in the trigger metadata.
+1. Start from cell birth with the real seeded `Simulation`.
+2. Advance one tick at a time with the tapped allocator-correct scheduler
+   semantics used by `extract_per_process_traces_v2`'s per-tick capture path.
+3. Detect the first tick where either network-2 complex (`complexs` indices
+   `22` or `23`, 0-based) has a positive delta on that tick's own
+   `states_after.complexs - states_before.complexs`.
+4. Treat that same tick as tick 1 of the active window, and continue
+   capturing the next 99 ticks from that same trajectory.
 
-No derived summary tick may be substituted for the real scheduler-discovered
-first positive `complexs` delta.
+No second replay pass is allowed. The trigger source and the captured first
+tick must come from one identical trajectory.
 
-## On-disk contract
+## Required metadata
 
-Process-local cohort root:
+Every accepted seed file must contain the ordinary fixed-window metadata plus
+the following process-local fields:
 
-`data/m1_sources/karr_native/macromol_active_window/`
+- `active_window_rule = "first_network2_formation_tick"`
+- `active_window_rule_version = 2`
+- `active_window_trigger_tick`
+- `active_window_trigger_complex_indices_0b`
+- `active_window_search_max_ticks = 33000`
+- `active_window_search_stop_reason = "first_network2_positive_delta"`
+- `active_window_detection_mechanism`
+- `active_window_capture_mode = "same_pass_tapped_scheduler_trigger_and_capture"`
+- optional: `active_window_first_e1_nonzero_tick`
 
-Required layout:
+Every accepted seed must also bind:
+
+- genuine-provider metadata (`mnrnd_provider_*`,
+  `statistics_rng_provider_identity_json`)
+- extractor driver path/hash
+- fixture path/hash
+- vendored MATLAB source path/hash
+
+## Acceptance checks
+
+A seed is accepted only if all of the following are true:
+
+- `metadata.tick_start == metadata.active_window_trigger_tick`
+- `metadata.tick_offset == metadata.active_window_trigger_tick - 1`
+- `metadata.tick_end - metadata.tick_start + 1 == 100`
+- the first captured `complexs` delta is positive on the recorded
+  network-2 index or indices
+- no non-network-2 index appears in
+  `active_window_trigger_complex_indices_0b`
+- the seed validates under
+  `scripts/l22_extraction/macromol_active_window.py`
+
+## On-disk layout
+
+Required cohort layout:
 
 - `per_process_traces_v2/MacromolecularComplexation_100ticks.mat`
 - `per_process_traces_v2_s001/MacromolecularComplexation_100ticks.mat`
 - ...
 - `per_process_traces_v2_s049/MacromolecularComplexation_100ticks.mat`
 
-Required metadata additions on every accepted seed:
+All paths are rooted at:
 
-- `active_window_rule = "first_network2_formation_tick"`
-- `active_window_rule_version = 1`
-- `active_window_trigger_tick`
-- `active_window_trigger_complex_indices_0b`
-- `active_window_search_max_ticks = 33000`
-- `active_window_search_stop_reason = "first_network2_positive_delta"`
-- `active_window_detection_mechanism`
-- optional: `active_window_first_e1_nonzero_tick`
+`data/m1_sources/karr_native/macromol_active_window/`
 
 ## Design-A consumption
 
-The Design-A loader must consume this cohort only when the
-Macromol-specific override is set:
+The shared runner helpers are intentionally not edited for this closeout.
+Instead, `scripts/l22_evidence/macromol_active_windows.py` temporarily routes
+only `MacromolecularComplexation`'s oracle lookup to the active-window root in
+process, runs the ordinary shared Design-A runner, and emits a separate
+portable process-local artifact.
 
-`OPENCELL_L22_PROCESS_ORACLE_ROOT__MACROMOLECULARCOMPLEXATION`
-
-Set it to:
-
-`E:\opencell-worktrees\wave-l22-macromol\data\m1_sources\karr_native\macromol_active_window`
-
-The override is authoritative, not fallback. If it is set, the loader must not
-silently fall back to the canonical early-window root.
+This process-local artifact is not consumed by the shared evidence index or
+generator without an explicit promotion step.
 
 ## Commands
 
@@ -90,21 +109,8 @@ Audit the cohort:
 bin\oc-py.cmd scripts/l22_extraction/macromol_active_window.py --out artifacts/l22_macromol_active_window_audit.json
 ```
 
-Run the Macromol-only Design-A sweep against the active cohort:
+Produce the process-local ordinary Design-A artifact:
 
 ```powershell
-$env:OPENCELL_L22_PROCESS_ORACLE_ROOT__MACROMOLECULARCOMPLEXATION = "E:\opencell-worktrees\wave-l22-macromol\data\m1_sources\karr_native\macromol_active_window"
-bin\oc-py.cmd scripts/l22_evidence/sweep.py run --processes MacromolecularComplexation --max-workers 1 --report-out artifacts/l22_macromol_sweep_report.json
-bin\oc-py.cmd scripts/l22_evidence/generator.py bundle --source-root artifacts/l2_2_gates
+bin\oc-py.cmd scripts/l22_evidence/macromol_active_windows.py --out docs/phase_f/l2_2_design_a/active_windows/MacromolecularComplexation_genuine_provider_design_a.json
 ```
-
-## MATLAB slot rule
-
-Long MATLAB work must first acquire the shared lock file by atomically
-creating:
-
-`E:\opencell-worktrees\.opencell-matlab-lock`
-
-If the lock is unavailable, do not run the extraction. Finish code/tests and
-record `READY_FOR_MATLAB` in `STATUS_L22_MACROMOL.md` instead. Always remove
-the lock on exit.
