@@ -66,14 +66,18 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
 - Eight preserved process worktrees are running as detached Codex subprocesses:
   - `l21-active-windows`: PID `35032`
-  - `l21-chromcond`: Codex phase recovered exact pre-warmup state; exact
-    post-warmup endpoint capture is queued in shell
-    `matlabq-l21-chromcond-postwarmup`
+  - `l21-chromcond`: exact post-warmup endpoint captured
+    (`randStream.state=1279689633`, 80 SMC bound); final source-fix pass is
+    running as PID `34876` from that validated boundary
   - `l22-macromol`: Codex phase ended at `478721d`; direct MATLAB extraction
     is retrying in shell `matlabq2-l22-macromol`; the first retry proved
     `glpkcc` resolves but broad `lib` path injection shadowed modern MATLAB
     `strjoin`, so bootstrap now adds only `lib\glpkmex-2.9`
-  - `l22-procii`: PID `34464`
+  - `l22-procii`: **REJECTED by independent Opus 5 review**. The 22 new
+    traces used the repository `mnrnd` shim because genuine Statistics
+    Toolbox `mnrnd` is not installed; the full50 manifest also uses
+    machine-absolute paths and bypasses the oracle-population provenance
+    check. Valid coverage remains 28/50; commit `bfbfe5d` must not merge.
   - `l22-dnas`: PID `30712`
   - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
     code `-1` at 42.6 minutes; the exact prepared single-seed retry is queued
