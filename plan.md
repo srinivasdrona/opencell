@@ -69,8 +69,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     batch remains live as PID `43968`
   - `l21-chromcond`: exact post-warmup endpoint captured
     (`randStream.state=1279689633`, 80 SMC bound); live MATLAB vs Python
-    restored-state vectors prove `matlab_rng.py` is wrong, and a focused RNG
-    repair pass is running as PID `15772`
+    restored-state vectors proved `matlab_rng.py` was wrong; commit `8d06797`
+    fixes exact MATLAB RNG semantics. A residual tick-0 binding-geometry
+    mismatch remains; focused source pass PID `35968` is running.
   - `l22-macromol`: Codex phase ended at `478721d`; direct MATLAB extraction
     is retrying in shell `matlabq2-l22-macromol`; the first retry proved
     `glpkcc` resolves but broad `lib` path injection shadowed modern MATLAB
@@ -84,7 +85,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     metric PASS, but the known tick-5 source mismatch remains and OC support
     is `1472/200/199` vs Karr `65/58/7`; independent Opus 5 review
     **REJECTED** the one-sided/non-discriminating gate, and a focused source
-    gap repair is running as PID `18700`
+    gap repair fixed topoIV legality at `55d1441`. One major-region
+    `linkingNumbers` residual remains (`51933` vs `51932`); focused source
+    ledger PID `43104` is running.
   - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
     code `-1` at 42.6 minutes; the exact single-seed retry succeeded and
     validated seeds `[0,1]`. Seeds `2..49` run one fresh MATLAB process at a
