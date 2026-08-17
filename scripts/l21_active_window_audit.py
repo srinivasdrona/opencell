@@ -10,6 +10,7 @@ import math
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -131,6 +132,18 @@ CUSTOM_ACTIVITY_OBSERVABLES: dict[str, tuple[str, ...]] = {
         "ftsZRing_numResidualBent",
         "substrates",
     ),
+    "HostInteraction": (
+        "isBacteriumAdherent",
+        "isTLRActivated_1",
+        "isTLRActivated_2",
+        "isTLRActivated_3",
+        "isNFkBActivated",
+        "isInflammatoryResponseActivated",
+    ),
+    "TranscriptionalRegulation": (
+        "boundTFs",
+        "tfBoundPromoters",
+    ),
     "RibosomeAssembly": ("complexs", "RNAs", "monomers", "substrates"),
 }
 
@@ -141,6 +154,18 @@ CUSTOM_COMPARE_OBSERVABLES: dict[str, tuple[str, ...]] = {
         "ftsZRing_numEdgesTwoStraight",
         "ftsZRing_numEdgesTwoBent",
         "ftsZRing_numResidualBent",
+    ),
+    "HostInteraction": (
+        "isBacteriumAdherent",
+        "isTLRActivated_1",
+        "isTLRActivated_2",
+        "isTLRActivated_3",
+        "isNFkBActivated",
+        "isInflammatoryResponseActivated",
+    ),
+    "TranscriptionalRegulation": (
+        "boundTFs",
+        "tfBoundPromoters",
     ),
     "RibosomeAssembly": ("RNAs",),
 }
@@ -154,12 +179,18 @@ CUSTOM_VECTOR_SURFACES: dict[str, dict[str, tuple[str, ...]]] = {
         "ftsZRing_numEdgesTwoBent": ("ftsZRing", "numEdgesTwoBent"),
         "ftsZRing_numResidualBent": ("ftsZRing", "numResidualBent"),
     },
+    "HostInteraction": {
+        "isBacteriumAdherent": ("cell", "host_attached"),
+    },
     "RibosomeAssembly": {
         "RNAs": ("rna", "counts"),
     },
 }
 
 CUSTOM_WID_ATTRS: dict[str, dict[str, str]] = {
+    "TranscriptionalRegulation": {
+        "boundTFs": "tf_wids",
+    },
     "RibosomeAssembly": {
         "RNAs": "rna_subunit_wids",
     },
@@ -170,11 +201,11 @@ PROCESS_ACTIVITY_PREDICATE_TEXT: dict[str, str] = {
     "Metabolism": "substrates delta on projected Karr replay surface",
     "ProteinDecay": "substrates/monomers/complexs delta on projected Karr replay surface",
     "Replication": "chromosome primary_projection polymerizedRegions delta_value_sum_strand_1..4 + delta_nnz",
-    "TranscriptionalRegulation": "projected Karr replay observables delta on accepted trace surface",
+    "TranscriptionalRegulation": "source-faithful TF-binding deltas (`boundTFs` / `tfBoundPromoters`)",
     "ChromosomeSegregation": "projected Karr replay observables delta on accepted trace surface",
     "Cytokinesis": "event-window scalar deltas: chromosome_segregated/pinchedDiameter/ftsZ ring channels",
     "DNADamage": "chromosome primary_projection damage-field delta_nnz",
-    "HostInteraction": "projected Karr replay observables delta on accepted trace surface",
+    "HostInteraction": "source-faithful host boolean deltas (adherence/TLR/NFkB/inflammatory-response)",
     "RNAModification": "modifiedRNAs/unmodifiedRNAs projected delta on event-window trace",
     "RibosomeAssembly": "complexs/RNAs/monomers projected delta on event-window trace",
 }
@@ -497,6 +528,12 @@ def _infer_custom_wids(process: Any, process_name: str, observable: str, vector_
     return [f"{observable}_{idx}" for idx in range(vector_len)]
 
 
+@lru_cache(maxsize=1)
+def _tr_surface_order() -> tuple[list[str], list[str]]:
+    process = _PROCESS_SPECS["TranscriptionalRegulation"].process_cls({})
+    return list(getattr(process, "tf_wids", [])), list(getattr(process, "tu_wids", []))
+
+
 def _overlay_custom_observable(
     *,
     state: dict[str, Any],
@@ -505,6 +542,16 @@ def _overlay_custom_observable(
     process_name: str,
     wids: list[str],
 ) -> None:
+    if process_name == "TranscriptionalRegulation":
+        return
+
+    if process_name == "HostInteraction":
+        if observable == "isBacteriumAdherent":
+            attached = bool(float(vector[0])) if vector.size else False
+            _deep_set(state, ("cell", "host_attached"), attached)
+            _deep_set(state, ("cell", "host_adhesion_strength"), 1.0 if attached else 0.0)
+        return
+
     path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
     if path is None:
         raise KeyError(f"No custom overlay path for {process_name}:{observable}")
@@ -530,6 +577,43 @@ def _project_custom_observable(
     process_name: str,
     wids: list[str],
 ) -> np.ndarray:
+    if process_name == "TranscriptionalRegulation":
+        binding_store = state.get("tf_binding", {})
+        if not isinstance(binding_store, dict):
+            binding_store = {}
+        if observable == "boundTFs":
+            tf_wids = list(wids)
+            out = np.zeros(len(tf_wids), dtype=np.float64)
+            for idx, tf_wid in enumerate(tf_wids):
+                per_tf = binding_store.get(tf_wid, {})
+                if not isinstance(per_tf, dict):
+                    continue
+                out[idx] = float(sum(float(value) for value in per_tf.values()))
+            return out
+        if observable == "tfBoundPromoters":
+            tf_wids, tu_wids = _tr_surface_order()
+            flattened: list[float] = []
+            for tf_wid in tf_wids:
+                per_tf = binding_store.get(tf_wid, {})
+                if not isinstance(per_tf, dict):
+                    per_tf = {}
+                for tu_wid in tu_wids:
+                    flattened.append(float(per_tf.get(tu_wid, 0.0)))
+            return np.asarray(flattened, dtype=np.float64)
+
+    if process_name == "HostInteraction":
+        if observable == "isBacteriumAdherent":
+            attached = bool(_deep_get(state, ("cell", "host_attached")))
+            return np.asarray([1.0 if attached else 0.0], dtype=np.float64)
+        if observable in {
+            "isTLRActivated_1",
+            "isTLRActivated_2",
+            "isTLRActivated_3",
+            "isNFkBActivated",
+            "isInflammatoryResponseActivated",
+        }:
+            return np.zeros(len(wids), dtype=np.float64)
+
     path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
     if path is None:
         raise KeyError(f"No custom projection path for {process_name}:{observable}")
