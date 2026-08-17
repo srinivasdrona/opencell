@@ -69,6 +69,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `scripts/matlab/mnrnd.m` shadows the missing toolbox is non-authoritative
   Karr evidence. Full-simulation extraction lanes are stopped until Statistics
   and Machine Learning Toolbox is installed.
+- **2026-08-17 22:43 IST:** Statistics and Machine Learning Toolbox 26.1 is
+  now installed and genuine `mnrnd` resolves at
+  `E:\MATLAB\toolbox\stats\stats\mnrnd.m` with successful checkout. Extraction
+  remains paused only until the provider-binding migration prevents
+  `scripts/matlab/mnrnd.m` from shadowing it and records genuine-provider
+  provenance. Migration worktree `wave-mnrnd-provider` is running as PID
+  `35492`.
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
 - Eight preserved process worktrees are running as detached Codex subprocesses:
   - `l21-active-windows`: Codex preparation ended; four-process extraction
