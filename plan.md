@@ -66,14 +66,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
 - Eight preserved process worktrees are running as detached Codex subprocesses:
   - `l21-active-windows`: Codex preparation ended; four-process extraction
-    batch remains live as PID `43968`
+    batch exited before work because `run()` resolved `scripts/matlab`
+    relative to `tmp`; absolute repo-root fix applied and retrying
   - `l21-chromcond`: exact post-warmup endpoint captured
     (`randStream.state=1279689633`, 80 SMC bound); live MATLAB vs Python
     restored-state vectors proved `matlab_rng.py` was wrong; commit `8d06797`
     fixes exact MATLAB RNG semantics. A residual tick-0 binding-geometry
     mismatch remains; focused source pass PID `35968` is running.
   - `l22-macromol`: Codex phase ended at `478721d`; direct MATLAB extraction
-    is retrying in shell `matlabq2-l22-macromol`; the first retry proved
+    produced valid seeds `1..3`, then MATLAB exited `-1`; seeds `4..49` now
+    retry one fresh MATLAB process per seed. Seed `0` remains a separate
+    trigger-window defect. The first retry proved
     `glpkcc` resolves but broad `lib` path injection shadowed modern MATLAB
     `strjoin`, so bootstrap now adds only `lib\glpkmex-2.9`
   - `l22-procii`: **REJECTED by independent Opus 5 review**. The 22 new
@@ -92,9 +95,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
     code `-1` at 42.6 minutes; the exact single-seed retry succeeded and
     validated seeds `[0,1]`. Seeds `2..49` run one fresh MATLAB process at a
-    time in shell `matlabseq-l22-cytokinesis`, leaving the second slot free.
+    time with up to three fresh-process retries per seed in shell
+    `matlabseq2-l22-cytokinesis`, leaving the second slot free.
   - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
-    retrying in shell `matlabq2-l22-ftsz` after the first real run exposed
+    switching to one fresh MATLAB process per seed after seed `0` again
+    exited MATLAB `-1`; the first real run exposed
     missing WholeCell `isodd`/`iseven` compatibility functions and an omitted
     WholeCell `lib` path for `glpkcc`
   - `l22-dnadamage`: 50 old UVB traces are vacuous despite a live Karr rate of
