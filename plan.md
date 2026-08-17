@@ -86,8 +86,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     **REJECTED** the one-sided/non-discriminating gate, and a focused source
     gap repair is running as PID `18700`
   - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
-    code `-1` at 42.6 minutes; the exact prepared single-seed retry is queued
-    in shell `matlabq-l22-cytokinesis-s001`
+    code `-1` at 42.6 minutes; the exact single-seed retry succeeded and
+    validated seeds `[0,1]`. Seeds `2..49` run one fresh MATLAB process at a
+    time in shell `matlabseq-l22-cytokinesis`, leaving the second slot free.
   - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
     retrying in shell `matlabq2-l22-ftsz` after the first real run exposed
     missing WholeCell `isodd`/`iseven` compatibility functions and an omitted
