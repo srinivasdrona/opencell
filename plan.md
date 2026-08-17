@@ -73,6 +73,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `l22-cytokinesis`: PID `15772`
   - `l22-ftsz`: PID `26740`
   - `l22-dnadamage`: PID `28972`
+- A ninth lower-gate gap was discovered by the fresh 2026-08-17 baseline and
+  is running independently in `E:\opencell-worktrees\wave-l21-repinit`
+  as PID `43988`:
+  `ReplicationInitiation` is bit-identical but only fires on 55/103 active
+  Karr ticks, so its honest strict-rubric verdict is `PARTIAL`, not `GENUINE`.
 - Each worker owns only its process branch/status/evidence. The coordinator alone edits shared catalogs, evidence indexes, `plan.md`, and SQL `tracks`.
 - Inventory-before-extraction remains mandatory across the primary checkout and all active worktrees; only proven missing matrix cells may be generated.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green), RibosomeAssembly N=50 event PASS (`ab4126c` + index `d179b63`), DNADamage blocker evidence (`dde2510`), MacromolecularComplexation lifecycle correction (`f627b34`), and exact tick-0 allocator infrastructure (`d5298a1`).
@@ -99,7 +104,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Wave closeout checkpoint: `docs/phase_f/CHECKPOINT_2026-08-14.md`.
 - Ten planned tracks: 2 L2.1 (`ChromosomeCondensation`, active-window recertification) and 8 L2.2 (Replication, MacromolecularComplexation, ProteinProcessingII, DNASupercoiling, RibosomeAssembly bridge, Cytokinesis, FtsZPolymerization, DNADamage).
 - Tracking policy: one main coordinator owns `plan.md`, SQL `tracks`, catalogs and evidence indexes; detached workers write one `STATUS_<track>.md` each. No progress-manager sub-agents.
-- Active-window-aware L2.1 rubric: **22 GENUINE / 5 MISSING_ACTIVE_EXTRACTION / 1 FAIL** (`ChromosomeCondensation`).
+- Active-window-aware L2.1 rubric, freshly rerun 2026-08-17:
+  **21 GENUINE / 1 PARTIAL / 5 MISSING_ACTIVE_EXTRACTION / 1 FAIL**.
+  The `PARTIAL` row is `ReplicationInitiation`; the `FAIL` row is
+  `ChromosomeCondensation`.
 - L2.2 index now audits `integrity: OK` at **16 PASS / 3 FAIL / 3 MISSING_EVIDENCE** after RibosomeAssembly bridging and the corrected Replication N=50 rerun. All 18 Design-A raw-oracle manifest rows resolve 50/50.
 - Final blocking checks on the combined tree: Ruff + naked-number lint PASS; unit suite 415 PASS / 11 audited skips; L1b 115/115 + 28/28 PASS; Gate 1 PASS; Gate 2 PASS (`diverge_cells=0`, 5 self-tests); L2.2 evidence audit PASS.
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
