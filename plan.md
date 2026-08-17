@@ -64,7 +64,15 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`; clean at `2f53f93`, synchronized with `origin/main`.
 - MATLAB R2026a Update 2 is restored at `E:\MATLAB\bin\matlab.exe`; `license('test','Statistics_Toolbox') == 1`.
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
-- Eight preserved process worktrees are being relaunched as detached Codex subprocesses: `l21-active-windows`, `l21-chromcond`, `l22-macromol`, `l22-procii`, `l22-dnas`, `l22-cytokinesis`, `l22-ftsz`, `l22-dnadamage`.
+- Eight preserved process worktrees are running as detached Codex subprocesses:
+  - `l21-active-windows`: PID `35032`
+  - `l21-chromcond`: PID `27076`
+  - `l22-macromol`: PID `36632`
+  - `l22-procii`: PID `34464`
+  - `l22-dnas`: PID `30712`
+  - `l22-cytokinesis`: PID `15772`
+  - `l22-ftsz`: PID `26740`
+  - `l22-dnadamage`: PID `28972`
 - Each worker owns only its process branch/status/evidence. The coordinator alone edits shared catalogs, evidence indexes, `plan.md`, and SQL `tracks`.
 - Inventory-before-extraction remains mandatory across the primary checkout and all active worktrees; only proven missing matrix cells may be generated.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green), RibosomeAssembly N=50 event PASS (`ab4126c` + index `d179b63`), DNADamage blocker evidence (`dde2510`), MacromolecularComplexation lifecycle correction (`f627b34`), and exact tick-0 allocator infrastructure (`d5298a1`).
