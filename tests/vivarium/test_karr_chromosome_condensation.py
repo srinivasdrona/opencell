@@ -91,6 +91,13 @@ def test_process_initializes_with_fixture_defaults() -> None:
     assert 0.0 <= p.default_condensation_level <= 1.0
 
 
+def test_replay_rng_starts_from_seeded_process_stream() -> None:
+    p = KarrChromosomeCondensationProcess({"rng_seed": 0})
+    assert p._postwarmup_state is not None
+    assert p._rng.get_state()["mcg_state"] == 931_316_785
+    assert p._rng.get_state()["mcg_state"] != p._postwarmup_state["rand_stream_state"]
+
+
 def test_one_tick_binding_and_condensation_sign() -> None:
     p = KarrChromosomeCondensationProcess(
         {

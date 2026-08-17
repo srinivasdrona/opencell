@@ -468,9 +468,11 @@ class KarrChromosomeCondensationProcess(Process):
         self._load_metabolite_fixture_json(self.parameters["metabolite_fixture_json_path"])
         self._load_trace_anchor(self.parameters["trace_path"])
         seed = int(self.parameters["rng_seed"])
-        self._rng = MatlabRandStream(seed)
+        # The replay/extraction path reseeds process streams after loading the
+        # fitted simulation surface, so tick 0 must begin from the seeded
+        # process stream rather than the warmup endpoint stream state.
+        self._rng = MatlabRandStream(seed, generator="mcg16807")
         self._postwarmup_state = self._load_postwarmup_state(self.parameters["postwarmup_state_path"])
-        self._restore_validated_postwarmup_rng(seed=seed)
         self._np_rng = np.random.default_rng(seed)
         self.chromosome_shape = (
             int(self.parameters["genome_length_bp"]),
@@ -513,18 +515,6 @@ class KarrChromosomeCondensationProcess(Process):
             "smc_adp": int(enzymes[self.enzyme_index_smc_adp]),
             "bound_smc_adp": int(bound_enzymes[self.enzyme_index_smc_adp]),
         }
-
-    def _restore_validated_postwarmup_rng(self, *, seed: int) -> None:
-        if self._postwarmup_state is None or int(self._postwarmup_state["seed"]) != int(seed):
-            return
-        self._rng = MatlabRandStream(seed, generator="mcg16807")
-        self._rng.set_state(
-            {
-                "generator": "mcg16807",
-                "seed": int(seed),
-                "mcg_state": int(self._postwarmup_state["rand_stream_state"]),
-            }
-        )
 
     def _restore_validated_postwarmup_pools(self) -> None:
         if self._postwarmup_state is None:
