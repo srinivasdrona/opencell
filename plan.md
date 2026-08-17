@@ -86,8 +86,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     is `1472/200/199` vs Karr `65/58/7`; independent Opus 5 review
     **REJECTED** the one-sided/non-discriminating gate, and a focused source
     gap repair fixed topoIV legality at `55d1441`. One major-region
-    `linkingNumbers` residual remains (`51933` vs `51932`); focused source
-    ledger PID `43104` is running.
+    `linkingNumbers` residual remains (`51933` vs `51932`). Before auditing
+    more consumers, the next pass is testing ChromCond's exact corrected
+    MATLAB RNG semantics (`8d06797`) against the DNAS ledger as PID `35600`.
   - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
     code `-1` at 42.6 minutes; the exact single-seed retry succeeded and
     validated seeds `[0,1]`. Seeds `2..49` run one fresh MATLAB process at a
