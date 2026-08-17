@@ -105,6 +105,10 @@ class MatlabRandStream:
 
     _MCG_MOD = 2_147_483_647
     _MCG_MUL = 16_807
+    _MCG_HALF_MASK = 0xFFFF
+    _MCG_HALF_SIGN = 0x8000
+    _MCG_STATE_XOR_MASK = 0x80008000
+    _MCG_DEFAULT_STATE = 931_316_785
 
     def __init__(self, seed: int, generator: str = "mt19937ar") -> None:
         if generator not in {"mt19937ar", "mcg16807"}:
@@ -345,7 +349,8 @@ class MatlabRandStream:
     def _initialize_mcg(self, seed: int) -> None:
         seed_i = int(seed)
         if seed_i <= 0:
-            seed_i = 1
+            self._mcg_state = self._MCG_DEFAULT_STATE
+            return
         else:
             seed_i %= self._MCG_MOD
             if seed_i == 0:
@@ -353,8 +358,36 @@ class MatlabRandStream:
         self._mcg_state = seed_i
 
     def _mcg_rand_scalar(self) -> float:
-        self._mcg_state = (self._MCG_MUL * self._mcg_state) % self._MCG_MOD
-        return self._mcg_state / self._MCG_MOD
+        raw_state = self._decode_mcg_state(self._mcg_state)
+        raw_state = (self._MCG_MUL * raw_state) % self._MCG_MOD
+        self._mcg_state = self._encode_mcg_state(raw_state)
+        return raw_state / self._MCG_MOD
+
+    @classmethod
+    def _encode_mcg_state(cls, raw_state: int) -> int:
+        raw_i = int(raw_state)
+        if raw_i <= 0 or raw_i >= cls._MCG_MOD:
+            raise ValueError("raw mcg16807 state must be in [1, 2147483646]")
+        lo = raw_i & cls._MCG_HALF_MASK
+        hi = (raw_i >> 16) & cls._MCG_HALF_MASK
+        encoded = (lo << 16) | hi
+        if lo & cls._MCG_HALF_SIGN:
+            encoded ^= cls._MCG_STATE_XOR_MASK
+        return int(encoded)
+
+    @classmethod
+    def _decode_mcg_state(cls, encoded_state: int) -> int:
+        encoded_i = int(encoded_state)
+        if encoded_i <= 0 or encoded_i >= cls._MCG_MOD:
+            raise ValueError("encoded mcg16807 state must be in [1, 2147483646]")
+        if encoded_i & cls._MCG_HALF_SIGN:
+            encoded_i ^= cls._MCG_STATE_XOR_MASK
+        lo = encoded_i & cls._MCG_HALF_MASK
+        hi = (encoded_i >> 16) & cls._MCG_HALF_MASK
+        raw = (lo << 16) | hi
+        if raw <= 0 or raw >= cls._MCG_MOD:
+            raise ValueError("decoded mcg16807 state must be in [1, 2147483646]")
+        return int(raw)
 
     def _weighted_randsample_with_replacement(
         self,
