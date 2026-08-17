@@ -122,7 +122,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     code `-1` at 42.6 minutes; the single-seed retry produced seed `1`, but
     shim contamination makes that new trajectory non-authoritative.
     Clean genuine-provider regeneration is running in
-    `genuine-l22-cytokinesis` as PID `35684`.
+    `genuine-l22-cytokinesis`; prep commits `9d64ebd`/`418646a` are green and
+    genuine seed `0` is queued in shell `matlabq-genuine-cytokinesis-s000`.
   - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
     stopped pending genuine Statistics Toolbox after seed `0` again exited
     MATLAB `-1`; the first real run exposed
