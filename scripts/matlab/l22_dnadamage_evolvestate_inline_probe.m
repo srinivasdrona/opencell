@@ -271,7 +271,9 @@ end
 end
 
 function [max_reactions, diag] = compute_max_reactions(proc, reaction_idx)
-denom = max(0, -proc.reactionSmallMoleculeStoichiometryMatrix(:, reaction_idx));
+% Normalize exact-zero stoichiometry rows so MATLAB signed zero cannot flip
+% non-reactant ratios from +Inf to -Inf before the evolveState guard.
+denom = abs(max(0, -proc.reactionSmallMoleculeStoichiometryMatrix(:, reaction_idx)));
 ratio = proc.substrates ./ denom;
 max_reactions = floor(min(ratio));
 diag = empty_max_reactions_diag();

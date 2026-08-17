@@ -38,7 +38,7 @@ for i = 1:numel(uvb_rxn_idxs)
         continue;
     end
     row_idx = row_idx + 1;
-    denom = max(0, -proc.reactionSmallMoleculeStoichiometryMatrix(:, j));
+    denom = abs(max(0, -proc.reactionSmallMoleculeStoichiometryMatrix(:, j)));
     max_reactions_raw = floor(min(proc.substrates ./ denom));
     if isinf(max_reactions_raw)
         max_reactions_value = -1;

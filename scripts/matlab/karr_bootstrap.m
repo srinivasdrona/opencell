@@ -24,14 +24,16 @@ repo_root = fileparts(scripts_dir);
 fprintf('[karr_bootstrap] repo root: %s\n', repo_root);
 
 % Karr WCM source tree — try current worktree first, fall back to main checkout
-wcm_root = fullfile(repo_root, 'data', 'm1_sources', 'WholeCell');
-if ~exist(wcm_root, 'dir')
-    fallback = 'E:\opencell\data\m1_sources\WholeCell';
+worktree_wcm_root = fullfile(repo_root, 'data', 'm1_sources', 'WholeCell');
+fallback = 'E:\opencell\data\m1_sources\WholeCell';
+if exist(fullfile(worktree_wcm_root, 'data', 'Simulation_fitted.mat'), 'file')
+    wcm_root = worktree_wcm_root;
+else
     if exist(fallback, 'dir')
         fprintf('[karr_bootstrap] worktree WCM missing, using main checkout: %s\n', fallback);
         wcm_root = fallback;
     else
-        error('Karr WCM source not found at: %s (and fallback %s also missing)', wcm_root, fallback);
+        error('Karr WCM source not found at: %s (and fallback %s also missing)', worktree_wcm_root, fallback);
     end
 end
 
@@ -41,6 +43,7 @@ cleanup_obj = onCleanup(@() cd(old_dir));
 cd(wcm_root);
 addpath(genpath(fullfile(wcm_root, 'src')));
 addpath(fullfile(wcm_root, 'lib', 'glpkmex-2.9'));
+add_worktree_source_overlays(repo_root, wcm_root, worktree_wcm_root);
 mnrnd_provider = require_genuine_statistics_rng_providers(repo_root);
 fprintf('[karr_bootstrap] mnrnd provider: %s (%s, toolbox %s)\n', ...
     fullfile(matlabroot, strrep(mnrnd_provider.provider_path_relative_to_matlabroot, '/', filesep)), ...
@@ -142,6 +145,62 @@ provider.identity_json = jsonencode(struct( ...
     'toolbox_version', provider.toolbox_version, ...
     'functions', provider.functions ...
 ));
+end
+
+function add_worktree_source_overlays(repo_root, wcm_root, worktree_wcm_root)
+overlay_src_root = fullfile(worktree_wcm_root, 'src');
+if exist(overlay_src_root, 'dir')
+    fprintf('[karr_bootstrap] using worktree source overlay: %s\n', overlay_src_root);
+    addpath(genpath(overlay_src_root), '-begin');
+    rehash;
+    return;
+end
+
+if same_path(wcm_root, worktree_wcm_root)
+    return;
+end
+
+generated_overlay_root = fullfile(repo_root, 'tmp', 'wcm_source_overlay');
+generated_overlay_src = fullfile(generated_overlay_root, 'src');
+generated_dnadamage_path = fullfile(generated_overlay_src, ...
+    '+edu', '+stanford', '+covert', '+cell', '+sim', '+process', 'DNADamage.m');
+source_dnadamage_path = fullfile(wcm_root, 'src', ...
+    '+edu', '+stanford', '+covert', '+cell', '+sim', '+process', 'DNADamage.m');
+
+ensure_dnadamage_signed_zero_overlay(source_dnadamage_path, generated_dnadamage_path);
+fprintf('[karr_bootstrap] using generated DNADamage overlay: %s\n', generated_overlay_src);
+addpath(genpath(generated_overlay_src), '-begin');
+rehash;
+end
+
+function ensure_dnadamage_signed_zero_overlay(source_path, overlay_path)
+source_text = fileread(source_path);
+needle = '                maxReactions = floor(min(this.substrates ./ max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j))));';
+replacement = sprintf([ ...
+    '                denom = abs(max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j)));%% signed-zero normalization for exact-zero stoich rows\n' ...
+    '                maxReactions = floor(min(this.substrates ./ denom));']);
+
+if isempty(strfind(source_text, needle)) %#ok<STREMP>
+    error('karr_bootstrap:dnadamage_overlay_source_mismatch', ...
+        'Unable to find the expected DNADamage maxReactions line in %s', source_path);
+end
+patched_text = strrep(source_text, needle, replacement);
+if strcmp(source_text, patched_text)
+    error('karr_bootstrap:dnadamage_overlay_noop', ...
+        'DNADamage overlay replacement did not change the source text at %s', source_path);
+end
+
+overlay_dir = fileparts(overlay_path);
+if ~exist(overlay_dir, 'dir')
+    mkdir(overlay_dir);
+end
+fid = fopen(overlay_path, 'w');
+if fid < 0
+    error('karr_bootstrap:dnadamage_overlay_open_failed', ...
+        'Unable to open generated overlay path for writing: %s', overlay_path);
+end
+cleanup_fid = onCleanup(@() fclose(fid)); %#ok<NASGU>
+fwrite(fid, patched_text, 'char');
 end
 
 function rel = relative_to_matlabroot(path_value)

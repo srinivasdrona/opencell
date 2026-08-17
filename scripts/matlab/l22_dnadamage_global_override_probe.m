@@ -404,7 +404,7 @@ rows = repmat(struct( ...
     'exact_accessible_sites', 0), numel(uvb_rxn_idxs), 1);
 for i = 1:numel(uvb_rxn_idxs)
     j = uvb_rxn_idxs(i);
-    denom = max(0, -proc.reactionSmallMoleculeStoichiometryMatrix(:, j));
+    denom = abs(max(0, -proc.reactionSmallMoleculeStoichiometryMatrix(:, j)));
     max_reactions_raw = floor(min(proc.substrates ./ denom));
     rows(i).reaction_index = double(j);
     rows(i).reaction_id = reaction_ids{j};
