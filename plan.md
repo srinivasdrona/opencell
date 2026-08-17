@@ -68,12 +68,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `l21-active-windows`: PID `35032`
   - `l21-chromcond`: PID `27076`
   - `l22-macromol`: Codex phase ended at `478721d`; direct MATLAB extraction
-    is queued in shell `matlabq-l22-macromol`
+    is retrying in shell `matlabq2-l22-macromol`; the first retry proved
+    `glpkcc` resolves but broad `lib` path injection shadowed modern MATLAB
+    `strjoin`, so bootstrap now adds only `lib\glpkmex-2.9`
   - `l22-procii`: PID `34464`
   - `l22-dnas`: PID `30712`
   - `l22-cytokinesis`: PID `15772`
   - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
-    queued in shell `matlabq-l22-ftsz`
+    retrying in shell `matlabq2-l22-ftsz` after the first real run exposed
+    missing WholeCell `isodd`/`iseven` compatibility functions and an omitted
+    WholeCell `lib` path for `glpkcc`
   - `l22-dnadamage`: PID `28972`
 - A ninth lower-gate gap was discovered by the fresh 2026-08-17 baseline and
   is running independently in `E:\opencell-worktrees\wave-l21-repinit`
