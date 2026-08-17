@@ -102,6 +102,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     Toolbox `mnrnd` is not installed; the full50 manifest also uses
     machine-absolute paths and bypasses the oracle-population provenance
     check. Valid coverage remains 28/50; commit `bfbfe5d` must not merge.
+    Accepted genuine-provider commits are now on the PPII branch and a clean
+    22-window replacement run is active as PID `25976`.
   - `l22-dnas`: hidden-state candidate `ca7f84c`/`b7d21aa` reports the frozen
     metric PASS, but the known tick-5 source mismatch remains and OC support
     is `1472/200/199` vs Karr `65/58/7`; independent Opus 5 review
