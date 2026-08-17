@@ -78,11 +78,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `39708`; its first agent produced the implementation diff but died during
   validation from provider high-demand errors, and this execution-only resume
   is validating/committing the preserved diff.
+- **Provider migration is now independently ACCEPTED and merged to main**
+  through `0b23928`; complete runtime support landed at `b8a27a5`. Clean
+  provider-native worktrees are replacing the conflict-heavy legacy
+  extraction branches for active windows, Macromol, Cytokinesis, FtsZ, and
+  DNADamage. Old shim-derived raw outputs are not copied.
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
 - Eight preserved process worktrees are running as detached Codex subprocesses:
   - `l21-active-windows`: Codex preparation ended; four-process extraction
-    batch path defect is fixed, but extraction is blocked on genuine
-    Statistics Toolbox; no new authoritative traces were produced
+    restarted from clean provider-native worktree `genuine-l21-active` as PID
+    `21852`; no old raw traces were copied
   - `l21-chromcond`: exact post-warmup endpoint captured
     (`randStream.state=1279689633`, 80 SMC bound); live MATLAB vs Python
     restored-state vectors proved `matlab_rng.py` was wrong; commit `8d06797`
@@ -95,8 +100,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     non-authoritative because the repo `mnrnd` shim was active. Seed `0`
     also has a separate trigger-window defect. The first retry proved
     `glpkcc` resolves but broad `lib` path injection shadowed modern MATLAB
-    `strjoin`, so bootstrap now adds only `lib\glpkmex-2.9`
-    A focused agent is separately fixing seed `0`'s scan/capture trigger drift.
+    `strjoin`, so bootstrap now adds only `lib\glpkmex-2.9`. Clean genuine
+    lane `genuine-l22-macromol` is running as PID `41056`, including seed-0
+    scan/capture repair.
   - `l22-procii`: **REJECTED by independent Opus 5 review**. The 22 new
     traces used the repository `mnrnd` shim because genuine Statistics
     Toolbox `mnrnd` is not installed; the full50 manifest also uses
@@ -115,16 +121,20 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
     code `-1` at 42.6 minutes; the single-seed retry produced seed `1`, but
     shim contamination makes that new trajectory non-authoritative.
-    Remaining extraction is stopped pending genuine Statistics Toolbox.
+    Clean genuine-provider regeneration is running in
+    `genuine-l22-cytokinesis` as PID `35684`.
   - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
     stopped pending genuine Statistics Toolbox after seed `0` again exited
     MATLAB `-1`; the first real run exposed
     missing WholeCell `isodd`/`iseven` compatibility functions and an omitted
-    WholeCell `lib` path for `glpkcc`
+    WholeCell `lib` path for `glpkcc`. Clean genuine-provider lane
+    `genuine-l22-ftsz` is running as PID `43760`.
   - `l22-dnadamage`: 50 old UVB traces are vacuous despite a live Karr rate of
     `0.1` events/tick. Target-only probes narrowed the contradiction inside
     `DNADamage.evolveState`; a target-only inline-loop probe is launching,
-    as PID `40528`, while full-cohort extraction is toolbox-blocked.
+    in the legacy branch. Clean provider-native lane
+    `genuine-l22-dnadamage` is running as PID `32432`, starting from the
+    isolated `maxReactions=-Inf` defect and a genuine 5-seed canary.
     it must pass a 5-seed Karr-support canary before any new full cohort.
 - A ninth lower-gate gap was discovered by the fresh 2026-08-17 baseline and
   is running independently in `E:\opencell-worktrees\wave-l21-repinit`
