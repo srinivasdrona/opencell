@@ -34,6 +34,7 @@ _DEFAULT_METABOLITE_FIXTURE_JSON_PATH = "data/karr_fixtures/per_process/Metaboli
 _DEFAULT_TRACE_PATH = (
     "data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat"
 )
+_DEFAULT_POSTWARMUP_STATE_PATH = "tmp/chromcond_postwarmup_state.mat"
 _LITERAL_OCCUPANCY_FIELDS: tuple[str, ...] = (
     "monomerBoundSites",
     "damagedBases",
@@ -176,10 +177,17 @@ def _intersect_intervals(
     return out
 
 
+def _intervals_overlap(
+    intervals_a: list[tuple[int, int]],
+    intervals_b: list[tuple[int, int]],
+) -> bool:
+    return bool(_intersect_intervals(intervals_a, intervals_b))
+
+
 def _sort_region_pos_strnds(pos_strnds: np.ndarray) -> np.ndarray:
     if pos_strnds.size == 0:
         return np.zeros(0, dtype=np.int64)
-    return np.lexsort((pos_strnds[:, 1], pos_strnds[:, 0])).astype(np.int64)
+    return np.lexsort((pos_strnds[:, 0], pos_strnds[:, 1])).astype(np.int64)
 
 
 def _split_over_oric_regions(
@@ -439,6 +447,7 @@ class KarrChromosomeCondensationProcess(Process):
         "chromosome_fixture_path": _DEFAULT_CHROMOSOME_FIXTURE_PATH,
         "metabolite_fixture_json_path": _DEFAULT_METABOLITE_FIXTURE_JSON_PATH,
         "trace_path": _DEFAULT_TRACE_PATH,
+        "postwarmup_state_path": _DEFAULT_POSTWARMUP_STATE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
         "genome_length_bp": float(GENOME_LENGTH_BP),
@@ -460,6 +469,8 @@ class KarrChromosomeCondensationProcess(Process):
         self._load_trace_anchor(self.parameters["trace_path"])
         seed = int(self.parameters["rng_seed"])
         self._rng = MatlabRandStream(seed)
+        self._postwarmup_state = self._load_postwarmup_state(self.parameters["postwarmup_state_path"])
+        self._restore_validated_postwarmup_rng(seed=seed)
         self._np_rng = np.random.default_rng(seed)
         self.chromosome_shape = (
             int(self.parameters["genome_length_bp"]),
@@ -472,9 +483,55 @@ class KarrChromosomeCondensationProcess(Process):
         self._bound_smc = int(self.trace_anchor_bound)
         self._free_smc = int(min(self._fixture_enzyme_smc, self._total_smc_pool - self._bound_smc))
         self._free_smc_adp = int(max(0, self._total_smc_pool - self._bound_smc - self._free_smc))
+        self._restore_validated_postwarmup_pools()
         self._synthetic_complex_bound: SparseTriplet | None = None
         self._prev_bound_smc_nohint: int | None = None
         self._initialized = False
+
+    def _load_postwarmup_state(self, path: str | Path) -> dict[str, int] | None:
+        try:
+            resolved = _resolve_data_path(path)
+        except FileNotFoundError:
+            return None
+
+        artifact = loadmat(str(resolved), squeeze_me=True, struct_as_record=False).get("artifact")
+        if artifact is None or not hasattr(artifact, "metadata") or not hasattr(artifact, "post"):
+            return None
+
+        metadata = artifact.metadata
+        post = artifact.post
+        seed = int(np.asarray(getattr(metadata, "seed", 0)).reshape(-1)[0])
+        enzymes = np.asarray(getattr(post, "enzymes", np.zeros(2, dtype=np.int64))).reshape(-1)
+        bound_enzymes = np.asarray(getattr(post, "boundEnzymes", np.zeros(2, dtype=np.int64))).reshape(-1)
+        rand_stream_state = int(np.asarray(getattr(post, "randStreamState", 0)).reshape(-1)[0])
+        if enzymes.size <= self.enzyme_index_smc_adp or bound_enzymes.size <= self.enzyme_index_smc_adp:
+            return None
+        return {
+            "seed": seed,
+            "rand_stream_state": rand_stream_state,
+            "smc": int(enzymes[self.enzyme_index_smc]),
+            "smc_adp": int(enzymes[self.enzyme_index_smc_adp]),
+            "bound_smc_adp": int(bound_enzymes[self.enzyme_index_smc_adp]),
+        }
+
+    def _restore_validated_postwarmup_rng(self, *, seed: int) -> None:
+        if self._postwarmup_state is None or int(self._postwarmup_state["seed"]) != int(seed):
+            return
+        self._rng = MatlabRandStream(seed, generator="mcg16807")
+        self._rng.set_state(
+            {
+                "generator": "mcg16807",
+                "seed": int(seed),
+                "mcg_state": int(self._postwarmup_state["rand_stream_state"]),
+            }
+        )
+
+    def _restore_validated_postwarmup_pools(self) -> None:
+        if self._postwarmup_state is None:
+            return
+        self._bound_smc = int(self._postwarmup_state["bound_smc_adp"])
+        self._free_smc = int(self._postwarmup_state["smc"])
+        self._free_smc_adp = int(self._postwarmup_state["smc_adp"])
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_data_path(path)
@@ -514,6 +571,8 @@ class KarrChromosomeCondensationProcess(Process):
         self.smc_sep_nt = float(_coerce_scalar(fx.smcSepNt))
         self.smc_sep_prob_center = float(_coerce_scalar(fx.smcSepProbCenter))
         self.smc_footprint_bp = float(np.asarray(fx.enzymeDNAFootprints, dtype=np.float64).flat[0])
+        self._smc_footprint_5prime = int(math.ceil((self.smc_footprint_bp - 1.0) / 2.0))
+        self._smc_footprint_3prime = int(self.smc_footprint_bp - 1.0 - self._smc_footprint_5prime)
         self._smc_exclusion_len = int(max(0, round(self.smc_sep_nt + self.smc_sep_prob_center)))
         self._smc_exclusion_offset = int(
             round((self.smc_footprint_bp - self.smc_sep_nt - self.smc_sep_prob_center) / 2.0)
@@ -730,7 +789,7 @@ class KarrChromosomeCondensationProcess(Process):
             bound_delta_smc_adp = _safe_count(bound_update.get(self.smc_adp_wid, 0.0))
             n_bound = max(0, min(bound_delta_smc_adp, n_binding_max))
         else:
-            n_bound, complex_bound_sites_next = self._sample_smc_binding_no_hints(
+            n_bound, chromosome_field_updates = self._sample_smc_binding_no_hints(
                 n_binding_max=n_binding_max,
                 chrom_state=states.get("chromosome", {}),
                 current_bound_smc=current_bound_smc,
@@ -739,8 +798,9 @@ class KarrChromosomeCondensationProcess(Process):
                 bound_update[self.smc_adp_wid] = float(
                     bound_update.get(self.smc_adp_wid, 0.0) + n_bound
                 )
-            if complex_bound_sites_next is not None:
-                chromosome_update["complexBoundSites"] = complex_bound_sites_next.to_state()
+            if chromosome_field_updates is not None:
+                for field_name, triplet in chromosome_field_updates.items():
+                    chromosome_update[field_name] = triplet.to_state()
 
         smc_delta = smc_adp_dissociated - n_bound
         smc_adp_delta = -smc_adp_dissociated
@@ -805,7 +865,7 @@ class KarrChromosomeCondensationProcess(Process):
         n_binding_max: int,
         chrom_state: Any,
         current_bound_smc: int,
-    ) -> tuple[int, SparseTriplet | None]:
+    ) -> tuple[int, dict[str, SparseTriplet] | None]:
         if n_binding_max <= 0:
             return 0, None
 
@@ -819,28 +879,27 @@ class KarrChromosomeCondensationProcess(Process):
                 chromosome_store=store,
                 polymerized=polymerized,
             )
-            bound_positions, bound_strands = self._sample_binding_regions_literal(
+            bound_centroids, bound_strands = self._sample_binding_regions_literal(
                 pos_strnds=binding_pos_strnds,
                 lens=binding_lens,
                 n_to_bind=int(n_binding_max),
                 sequence_len=polymerized.shape[0],
             )
-            n_bound = len(bound_positions)
+            n_bound = len(bound_centroids)
             if n_bound == 0:
                 return 0, None
             self._consume_inner_bind_sampling_literal(n_bound=n_bound)
 
-            complex_next = self._append_bound_sites(
+            chromosome_updates = self._bind_smc_sites_literal(
+                chromosome_store=store,
                 complex_bound=complex_bound,
-                bound_positions=bound_positions,
+                bound_centroids=bound_centroids,
                 bound_strands=bound_strands,
+                sequence_len=polymerized.shape[0],
             )
-            if "complexBoundSites" not in chrom_state or not isinstance(
-                chrom_state.get("complexBoundSites"),
-                dict,
-            ):
+            if not chromosome_updates:
                 return n_bound, None
-            return n_bound, complex_next
+            return n_bound, chromosome_updates
 
         return self._sample_smc_binding_fallback(
             chrom_state=chrom_state,
@@ -856,7 +915,7 @@ class KarrChromosomeCondensationProcess(Process):
         current_bound_smc: int,
         n_binding_max: int,
         polymerized: SparseTriplet,
-    ) -> tuple[int, SparseTriplet | None]:
+    ) -> tuple[int, dict[str, SparseTriplet] | None]:
         store = self._resolve_chromosome_store(chrom_state)
         complex_bound_input = store.get_field("complexBoundSites")
         if (
@@ -876,7 +935,7 @@ class KarrChromosomeCondensationProcess(Process):
                 dict,
             ):
                 self._prev_bound_smc_nohint = int(current_bound_smc)
-                return n_bound, self._synthetic_complex_bound
+                return n_bound, {"complexBoundSites": self._synthetic_complex_bound}
             self._prev_bound_smc_nohint = int(current_bound_smc)
             return n_bound, None
 
@@ -937,7 +996,7 @@ class KarrChromosomeCondensationProcess(Process):
             dict,
         ):
             return n_bound, None
-        return n_bound, complex_next
+        return n_bound, {"complexBoundSites": complex_next}
 
     def _has_literal_chromosome_surface(self, chrom_state: dict[str, Any]) -> bool:
         return any(isinstance(chrom_state.get(field_name), dict) for field_name in _LITERAL_OCCUPANCY_FIELDS)
@@ -1176,7 +1235,6 @@ class KarrChromosomeCondensationProcess(Process):
                         - self.smc_sep_prob_center / 2.0
                         + self.smc_footprint_bp / 2.0
                         - 1.0
-                        - 1.0
                     )
                     % sequence_len
                 )
@@ -1255,7 +1313,6 @@ class KarrChromosomeCondensationProcess(Process):
                                 - self.smc_sep_prob_center / 2.0
                                 + self.smc_footprint_bp / 2.0
                                 - 1.0
-                                - 1.0
                             )
                             % sequence_len
                         )
@@ -1279,7 +1336,121 @@ class KarrChromosomeCondensationProcess(Process):
         n_bound_i = max(0, int(n_bound))
         if n_bound_i <= 0:
             return
-        _ = self._rng.randperm(n_bound_i, n_bound_i)
+        _ = self._rng.randsample(
+            n_bound_i,
+            n_bound_i,
+            False,
+            np.ones(n_bound_i, dtype=np.float64),
+        )
+
+    def _bind_smc_sites_literal(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        complex_bound: SparseTriplet,
+        bound_centroids: list[int],
+        bound_strands: list[int],
+        sequence_len: int,
+    ) -> dict[str, SparseTriplet]:
+        if not bound_centroids:
+            return {}
+        monomer_bound = chromosome_store.get_field("monomerBoundSites")
+        bound_positions = self._smc_centroids_to_start_positions(
+            bound_centroids=bound_centroids,
+            bound_strands=bound_strands,
+            sequence_len=sequence_len,
+        )
+        monomer_next = self._release_overlapping_releasable_bound_sites_literal(
+            triplet=monomer_bound,
+            releasable_global_indexs=self._releasable_monomer_global_indexs_for_smc,
+            footprints=self.monomer_dna_footprints,
+            release_positions=bound_positions,
+            release_strands=bound_strands,
+            release_length=int(self.smc_footprint_bp),
+            sequence_len=sequence_len,
+        )
+        complex_released = self._release_overlapping_releasable_bound_sites_literal(
+            triplet=complex_bound,
+            releasable_global_indexs=self._releasable_complex_global_indexs_for_smc,
+            footprints=self.complex_dna_footprints,
+            release_positions=bound_positions,
+            release_strands=bound_strands,
+            release_length=int(self.smc_footprint_bp),
+            sequence_len=sequence_len,
+        )
+        complex_next = self._append_bound_sites(
+            complex_bound=complex_released,
+            bound_positions=bound_positions,
+            bound_strands=bound_strands,
+        )
+        updates: dict[str, SparseTriplet] = {"complexBoundSites": complex_next}
+        if (
+            monomer_next.shape != monomer_bound.shape
+            or not np.array_equal(monomer_next.positions, monomer_bound.positions)
+            or not np.array_equal(monomer_next.strands, monomer_bound.strands)
+            or not np.array_equal(monomer_next.values, monomer_bound.values)
+        ):
+            updates["monomerBoundSites"] = monomer_next
+        return updates
+
+    def _smc_centroids_to_start_positions(
+        self,
+        *,
+        bound_centroids: list[int],
+        bound_strands: list[int],
+        sequence_len: int,
+    ) -> list[int]:
+        del bound_strands, sequence_len
+        # WholeCell stores the sampled binding positions directly here because
+        # bindProteinToChromosomeStochastically passes
+        # isPositionsStrandFootprintCentroid = false into the stable bind.
+        return [int(centroid) for centroid in bound_centroids]
+
+    def _release_overlapping_releasable_bound_sites_literal(
+        self,
+        *,
+        triplet: SparseTriplet,
+        releasable_global_indexs: frozenset[int],
+        footprints: np.ndarray,
+        release_positions: list[int],
+        release_strands: list[int],
+        release_length: int,
+        sequence_len: int,
+    ) -> SparseTriplet:
+        if triplet.calc_num_edges() == 0 or not releasable_global_indexs or not release_positions:
+            return triplet
+
+        release_intervals = [
+            (
+                int(release_strand) // 2,
+                _split_circular_region(int(release_pos), int(release_length), int(sequence_len)),
+            )
+            for release_pos, release_strand in zip(release_positions, release_strands, strict=False)
+        ]
+        keep = np.ones(triplet.values.size, dtype=bool)
+        for idx, (pos, strand, global_idx) in enumerate(triplet.to_regions()):
+            global_i = int(global_idx)
+            if global_i not in releasable_global_indexs:
+                continue
+            footprint = self._footprint_by_global_index(global_index=global_i, footprints=footprints)
+            if footprint <= 0:
+                continue
+            bound_pair = int(strand) // 2
+            bound_intervals = _split_circular_region(int(pos), int(footprint), int(sequence_len))
+            for release_pair, intervals in release_intervals:
+                if int(release_pair) != bound_pair:
+                    continue
+                if _intervals_overlap(bound_intervals, intervals):
+                    keep[idx] = False
+                    break
+        if np.all(keep):
+            return triplet
+        return SparseTriplet(
+            positions=triplet.positions[keep],
+            strands=triplet.strands[keep],
+            values=triplet.values[keep],
+            shape=triplet.shape,
+        )
 
     def _build_polymerized_intervals_literal(
         self,
@@ -1454,7 +1625,7 @@ class KarrChromosomeCondensationProcess(Process):
                             pos=pos_i,
                             strand=strand_i,
                             sequence_len=sequence_len,
-                            shift_kind="base3prime",
+                            shift_kind="base5prime",
                         ),
                         strand_i,
                     )
