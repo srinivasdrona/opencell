@@ -66,7 +66,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
 - Eight preserved process worktrees are running as detached Codex subprocesses:
   - `l21-active-windows`: PID `35032`
-  - `l21-chromcond`: PID `27076`
+  - `l21-chromcond`: Codex phase recovered exact pre-warmup state; exact
+    post-warmup endpoint capture is queued in shell
+    `matlabq-l21-chromcond-postwarmup`
   - `l22-macromol`: Codex phase ended at `478721d`; direct MATLAB extraction
     is retrying in shell `matlabq2-l22-macromol`; the first retry proved
     `glpkcc` resolves but broad `lib` path injection shadowed modern MATLAB
