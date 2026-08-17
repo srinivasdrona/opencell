@@ -147,9 +147,10 @@ def build_matlab_command(
     `diary`-wrapping gives a genuine per-job (per-seed) log file even though
     several seed jobs may be concatenated into a single long-lived MATLAB
     `-batch` process per worker (amortizing MATLAB startup cost across a
-    worker's seed shard). The `try/catch` ensures one seed's unexpected
-    top-level failure does not abort the remaining seeds queued in the same
-    worker process.
+    worker's seed shard). Any seed failure is rethrown so the worker exits
+    nonzero rather than producing success-shaped output. The planner is
+    resumable: a subsequent run skips completed valid seeds and retries the
+    unfinished remainder of that shard.
     """
     output_subdir = f"per_process_traces_v2_s{int(seed):03d}"
     proc_list = ", ".join(f"'{p}'" for p in processes)

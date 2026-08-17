@@ -2,7 +2,7 @@
 
 ## Outcome
 
-`READY_FOR_INDEPENDENT_REVIEW`
+`ACCEPTED_BY_INDEPENDENT_REVIEW`
 
 Full-simulation extraction now requires the genuine Statistics and Machine
 Learning Toolbox implementations of all five repo-shadowed RNG entry points
@@ -83,3 +83,16 @@ tests will remain red or stale until those cohorts are regenerated.
 Process-specific custom extractors must also record/bind this provider before
 their outputs can be promoted; this patch does not silently bless old
 MacromolecularComplexation or PPII artifacts.
+
+## Independent review
+
+Opus 5 initially rejected three evidence-integrity gaps:
+
+1. caller working-directory shadowing after bootstrap;
+2. four sibling repo RNG shims not included in provider identity;
+3. the L2.2 shard launcher swallowing provider failures.
+
+All three were fixed and independently re-reviewed. Final verdict: `ACCEPT`.
+The reviewer additionally verified live cross-language provider JSON equality,
+real trace metadata round-trip/validation, legacy-trace rejection, and
+byte-identical repo shims.

@@ -16,9 +16,11 @@
   Seeds are sharded round-robin across -Workers MATLAB batch processes, one
   process per worker, each running its assigned seeds sequentially inside a
   single MATLAB session (amortizing startup cost) with diary()-wrapped
-  try/catch per seed so one seed's failure does not abort the rest of that
-  worker's shard. Never touches seed 0 (canonical/unsuffixed; enforced by
-  the Python planner's SeedZeroForbiddenError).
+  fail-fast handling per seed. A seed failure exits that worker nonzero and
+  leaves later seeds in the shard unfinished; rerunning the resumable planner
+  skips completed valid outputs and retries the remainder. Never touches seed
+  0 (canonical/unsuffixed; enforced by the Python planner's
+  SeedZeroForbiddenError).
 
 .PARAMETER Processes
   Comma-separated process names (e.g. "RNADecay,ProteinDecay"). No default:
