@@ -38,6 +38,7 @@ from dataclasses import asdict, dataclass, field
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any, Literal
+from xml.etree import ElementTree
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
 # Self-contained sys.path bootstrap (mirrors scripts/l22_extraction/launcher.py):
@@ -109,51 +110,68 @@ CYTOKINESIS_SCALAR_FINITE_OBSERVABLES = (
 # silently skip-valid against a v2 spec.
 EVENT_OBSERVABLE_PROJECTION_VERSION = 2
 
-# Path to the repo-owned mnrnd compatibility shim (see scripts/matlab/
-# mnrnd.m's own docstring for the Canary D root cause: the previous
-# revision built histogram bin edges directly from a probability vector
-# that could contain zero-probability categories, producing duplicate
-# non-strictly-increasing edges). build_matlab_command's unconditional
-# addpath('scripts/matlab') means this file shadows the real
-# Statistics-Toolbox mnrnd for EVERY extraction job (fixed or anchor, any
-# process -- the scheduler runs every process's evolveState() every
-# tick), so every trace must be identity-bound to the exact revision of
-# this file that produced it.
-MNRND_SHIM_PATH = REPO_ROOT / "scripts" / "matlab" / "mnrnd.m"
-
-# Coarse, human-bumped version gate for scripts/matlab/mnrnd.m's on-disk
-# revision. Bump this (and the corresponding literal
-# extract_per_process_traces_v2.m writes into metadata.mnrnd_shim_version)
-# only when the shim's algorithm/semantics change. This is deliberately a
-# SEPARATE version namespace from EVENT_OBSERVABLE_PROJECTION_VERSION
-# (that one tracks the Cytokinesis anchor observable projection schema;
-# this one tracks the mnrnd RNG compatibility shim, which every window
-# kind and every process is exposed to).
-#
-# 1: first identity-bound revision -- fixes the duplicate-edge/
-# zero-probability-category defect (Canary D, tick 25361,
-# ProteinProcessingII.m:394). Any pre-existing trace (of ANY window kind,
-# including 'fixed', since the path-shadow was already unconditionally
-# active before this fix) lacks this metadata field entirely and must
-# therefore regenerate_invalid, never silently skip_valid.
-MNRND_SHIM_VERSION = 1
+DEFAULT_MATLAB_ROOT = Path(
+    os.environ.get(
+        "OPENCELL_MATLAB_ROOT",
+        r"E:\MATLAB" if os.name == "nt" else "/mnt/e/MATLAB",
+    )
+)
+GENUINE_MNRND_KIND = "statistics_toolbox"
+GENUINE_MNRND_RELATIVE_PATH = Path("toolbox") / "stats" / "stats" / "mnrnd.m"
+STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH = Path("toolbox") / "stats" / "stats" / "Contents.m"
+MATLAB_VERSION_INFO_RELATIVE_PATH = Path("VersionInfo.xml")
 
 
-def mnrnd_shim_sha256_hex(path: Path = MNRND_SHIM_PATH) -> str:
-    """SHA-256 (lowercase hex) of ``scripts/matlab/mnrnd.m``, with CR
-    (0x0D) bytes stripped first so a CRLF-checked-out file hashes
-    identically to an LF one -- matches the LF-normalization
-    ``extract_per_process_traces_v2.m``'s own
-    ``mnrnd_shim_sha256_hex(matlab_dir)`` MATLAB helper applies when it
-    persists the ACTUAL hash into a trace's metadata at extraction time.
-    ``validate_existing_event_window`` calls this to compute the
-    EXPECTED hash fresh from whatever ``mnrnd.m`` is on disk right now
-    (never a hardcoded string literal), so an edit to the shim file
-    invalidates every prior trace even if nobody remembered to bump
-    ``MNRND_SHIM_VERSION`` too.
-    """
+def lf_normalized_sha256_hex(path: Path) -> str:
+    """SHA-256 (lowercase hex) of ``path`` after stripping CR bytes so the
+    identity is stable across CRLF/LF checkouts."""
     raw = path.read_bytes().replace(b"\r", b"")
     return hashlib.sha256(raw).hexdigest()
+
+
+def genuine_mnrnd_path(*, matlab_root: Path | None = None) -> Path:
+    root = DEFAULT_MATLAB_ROOT if matlab_root is None else Path(matlab_root)
+    return root / GENUINE_MNRND_RELATIVE_PATH
+
+
+def _matlab_release(*, matlab_root: Path | None = None) -> str:
+    root = DEFAULT_MATLAB_ROOT if matlab_root is None else Path(matlab_root)
+    version_info_path = root / MATLAB_VERSION_INFO_RELATIVE_PATH
+    if not version_info_path.is_file():
+        raise FileNotFoundError(f"MATLAB VersionInfo.xml not found at {version_info_path}")
+    tree = ElementTree.parse(version_info_path)
+    release = tree.findtext("./release")
+    if not release:
+        raise ValueError(f"MATLAB VersionInfo.xml at {version_info_path} has no <release> entry")
+    return release.strip()
+
+
+def _statistics_toolbox_version(*, matlab_root: Path | None = None) -> str:
+    root = DEFAULT_MATLAB_ROOT if matlab_root is None else Path(matlab_root)
+    contents_path = root / STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH
+    if not contents_path.is_file():
+        raise FileNotFoundError(f"Statistics Toolbox Contents.m not found at {contents_path}")
+    header = contents_path.read_text(encoding="utf-8", errors="replace")
+    match = re.search(r"^% Version (?P<version>[0-9.]+) \((?P<release>R[0-9]{4}[ab])\)", header, re.MULTILINE)
+    if match is None:
+        raise ValueError(f"could not parse Statistics Toolbox version from {contents_path}")
+    return match.group("version")
+
+
+def current_genuine_mnrnd_provider(*, matlab_root: Path | None = None) -> dict[str, str]:
+    """Current local genuine MathWorks ``mnrnd`` provider identity."""
+    provider_path = genuine_mnrnd_path(matlab_root=matlab_root)
+    if not provider_path.is_file():
+        raise FileNotFoundError(
+            f"genuine Statistics Toolbox mnrnd.m not found at {provider_path}; shim-bound traces are non-authoritative"
+        )
+    return {
+        "kind": GENUINE_MNRND_KIND,
+        "matlab_release": _matlab_release(matlab_root=matlab_root),
+        "toolbox_version": _statistics_toolbox_version(matlab_root=matlab_root),
+        "provider_path_relative_to_matlabroot": GENUINE_MNRND_RELATIVE_PATH.as_posix(),
+        "sha256_lf_normalized": lf_normalized_sha256_hex(provider_path),
+    }
 
 
 # Suffix for a not-yet-validated regeneration's output directory (see
@@ -586,10 +604,16 @@ def build_matlab_command(
     output subdir, log path, signal property/field/kind) is passed through
     ``_matlab_quote`` -- an embedded ``'`` can never terminate the literal
     early and splice arbitrary MATLAB source in (Opus 5 rejection finding:
-    "MATLAB quoting ... incomplete"). The wrapped form (when ``log_relpath``
-    is given) also creates the log's parent directory if missing and
-    propagates a nonzero process exit code on any caught error -- no broad
-    catch that prints an error and returns success-shaped (exit 0) output.
+    "MATLAB quoting ... incomplete"). When ``include_addpath`` is left at
+    its default True, the command both adds ``scripts/matlab`` (so the
+    extractor itself is callable) and immediately re-promotes the genuine
+    Statistics Toolbox provider directory to the front of the MATLAB path,
+    so ``mnrnd`` does not silently resolve to the repo shim before
+    ``karr_bootstrap()`` gets its own fail-closed check. The wrapped form
+    (when ``log_relpath`` is given) also creates the log's parent
+    directory if missing and propagates a nonzero process exit code on
+    any caught error -- no broad catch that prints an error and returns
+    success-shaped (exit 0) output.
 
     ``output_subdir`` overrides the spec's own event-window output
     directory name; used only by ``plan_event_window_extraction`` to
@@ -631,7 +655,12 @@ def build_matlab_command(
     else:  # pragma: no cover - exhaustiveness guard
         raise WindowContractConfigError(f"Unrecognized window spec type: {type(spec)!r}")
 
-    prefix = "addpath('scripts/matlab'); " if include_addpath else ""
+    prefix = (
+        "addpath('scripts/matlab'); "
+        "addpath(fullfile(matlabroot, 'toolbox', 'stats', 'stats'), '-begin'); "
+        if include_addpath
+        else ""
+    )
     if log_relpath is None:
         return (
             f"{prefix}"
@@ -691,38 +720,40 @@ def _window_boundary_kind(path: Path) -> str:
     return "neither"
 
 
-def _read_mnrnd_shim_metadata(path: Path) -> dict[str, Any]:
-    """Read the mnrnd-shim identity-binding metadata
-    (``mnrnd_shim_version``/``mnrnd_shim_sha256``)
-    ``extract_per_process_traces_v2.m`` persists for EVERY 'fixed' or
-    'anchor' trace (never just anchor -- the addpath('scripts/matlab')
-    path-shadow build_matlab_command applies is window-kind-agnostic), so
-    ``validate_existing_event_window`` can cross-check that an on-disk
-    trace was produced under the current, fixed revision of
-    ``scripts/matlab/mnrnd.m`` -- never trusting structural/tick agreement
-    alone (a trace produced under a stale/pre-fix mnrnd.m is contract-
-    complete in every other respect). Any key absent from ``metadata``
-    maps to ``None`` (never raises for a missing key, matching a
-    pre-identity-binding trace written before this check existed); an
-    unreadable/corrupt file DOES raise ``OSError``/``ValueError``/
-    ``KeyError`` -- callers must catch those explicitly (see
-    ``validate_existing_event_window``), consistent with
+def _read_mnrnd_provider_metadata(path: Path) -> dict[str, Any]:
+    """Read the genuine-mnrnd provider identity metadata persisted for
+    every 'fixed' or 'anchor' trace.
+
+    Any key absent from ``metadata`` maps to ``None`` (never raises for a
+    missing key, matching a pre-provider-binding trace written before this
+    check existed); an unreadable/corrupt file DOES raise
+    ``OSError``/``ValueError``/``KeyError`` -- callers must catch those
+    explicitly (see ``validate_existing_event_window``), consistent with
     ``_window_boundary_kind``'s and ``_read_anchor_signal_metadata``'s
     corrupt-file handling.
     """
     import h5py
 
-    result: dict[str, Any] = {"mnrnd_shim_version": None, "mnrnd_shim_sha256": None}
+    result: dict[str, Any] = {
+        "mnrnd_provider_kind": None,
+        "mnrnd_provider_matlab_release": None,
+        "mnrnd_provider_toolbox_version": None,
+        "mnrnd_provider_path_relative_to_matlabroot": None,
+        "mnrnd_provider_sha256": None,
+    }
     with h5py.File(path, "r") as handle:
         metadata = handle.get("metadata")
         if metadata is None:
             return result
-        if "mnrnd_shim_version" in metadata:
-            value, problem = _read_optional_scalar(metadata, "mnrnd_shim_version")
-            if problem is None and value is not None:
-                result["mnrnd_shim_version"] = int(value)
-        if "mnrnd_shim_sha256" in metadata:
-            result["mnrnd_shim_sha256"] = _decode_char_metadata(metadata["mnrnd_shim_sha256"][()])
+        for key in (
+            "mnrnd_provider_kind",
+            "mnrnd_provider_matlab_release",
+            "mnrnd_provider_toolbox_version",
+            "mnrnd_provider_path_relative_to_matlabroot",
+            "mnrnd_provider_sha256",
+        ):
+            if key in metadata:
+                result[key] = _decode_char_metadata(metadata[key][()])
     return result
 
 
@@ -867,11 +898,13 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
     the on-disk trace's own persisted anchor-config metadata -- so a trace
     produced for a DIFFERENT fixed-offset or anchor-signal request can
     never ``skip_valid`` against this one. Independently of window kind,
-    ``mnrnd_shim_version``/``mnrnd_shim_sha256`` must match the current
-    ``scripts/matlab/mnrnd.m`` on disk (see ``_read_mnrnd_shim_metadata``)
-    -- a trace produced under a stale/pre-fix revision of that
-    unconditionally-path-shadowed RNG compatibility shim must never
-    ``skip_valid``, for either 'fixed' or 'anchor' traces.
+    the trace must also carry genuine-provider metadata whose kind,
+    MATLAB release, Statistics Toolbox version, provider path relative to
+    ``matlabroot``, and LF-normalized provider SHA-256 all match the
+    current local MathWorks install exactly. Legacy shim-bound or
+    provider-metadata-missing traces are therefore explicitly
+    non-authoritative and must regenerate_invalid, never silently
+    ``skip_valid``.
 
     Never crashes on a corrupt/malformed file (Opus 5 rejection finding):
     every path that opens/parses the file (the loader call and the two
@@ -937,30 +970,54 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
                 "reused across different extractor identity payloads)"
             )
 
-    # mnrnd-shim identity binding (legacy-mnrnd defect fix): applies to
-    # BOTH 'fixed' and 'anchor' specs -- build_matlab_command's
-    # addpath('scripts/matlab') path-shadow is window-kind-agnostic, so a
-    # trace produced under a stale/pre-fix scripts/matlab/mnrnd.m must
-    # never skip_valid regardless of window kind, even a 'fixed' window
-    # whose own captured process never itself calls mnrnd (the shadow was
-    # active for the WHOLE simulated run, every process, every tick).
+    # Genuine-provider identity binding: applies to BOTH 'fixed' and
+    # 'anchor' specs. Event-window traces are authoritative only if they
+    # were produced under the current local Statistics Toolbox provider,
+    # not the repo shim.
     try:
-        mnrnd_meta = _read_mnrnd_shim_metadata(path)
+        mnrnd_meta = _read_mnrnd_provider_metadata(path)
     except (OSError, ValueError, KeyError) as exc:
-        return False, f"{path}: failed to inspect mnrnd shim identity-binding metadata ({type(exc).__name__}: {exc})"
-    if mnrnd_meta["mnrnd_shim_version"] != MNRND_SHIM_VERSION:
         return False, (
-            f"metadata.mnrnd_shim_version={mnrnd_meta['mnrnd_shim_version']!r} != expected "
-            f"{MNRND_SHIM_VERSION!r} -- trace was produced under a stale/pre-fix or unversioned "
-            "scripts/matlab/mnrnd.m path-shadow (see EVENT_WINDOW_EXTRACTOR_CONTRACT.md 'Legacy mnrnd "
-            "compatibility')"
+            f"{path}: failed to inspect genuine mnrnd provider identity-binding metadata "
+            f"({type(exc).__name__}: {exc})"
         )
-    expected_mnrnd_sha256 = mnrnd_shim_sha256_hex()
-    if mnrnd_meta["mnrnd_shim_sha256"] != expected_mnrnd_sha256:
+    try:
+        expected_provider = current_genuine_mnrnd_provider()
+    except (OSError, ValueError, KeyError) as exc:
         return False, (
-            f"metadata.mnrnd_shim_sha256={mnrnd_meta['mnrnd_shim_sha256']!r} != current "
-            f"scripts/matlab/mnrnd.m sha256 {expected_mnrnd_sha256!r} -- the shim file changed since "
-            "this trace was produced"
+            f"current local genuine Statistics Toolbox mnrnd provider is unavailable or unreadable "
+            f"({type(exc).__name__}: {exc}) -- event-window traces cannot be treated as authoritative "
+            "without verifying against the live local provider"
+        )
+    if mnrnd_meta["mnrnd_provider_kind"] != expected_provider["kind"]:
+        return False, (
+            f"metadata.mnrnd_provider_kind={mnrnd_meta['mnrnd_provider_kind']!r} != expected "
+            f"{expected_provider['kind']!r} -- legacy shim-bound or non-genuine-provider traces are "
+            "explicitly non-authoritative"
+        )
+    if mnrnd_meta["mnrnd_provider_matlab_release"] != expected_provider["matlab_release"]:
+        return False, (
+            f"metadata.mnrnd_provider_matlab_release={mnrnd_meta['mnrnd_provider_matlab_release']!r} != "
+            f"current MATLAB release {expected_provider['matlab_release']!r}"
+        )
+    if mnrnd_meta["mnrnd_provider_toolbox_version"] != expected_provider["toolbox_version"]:
+        return False, (
+            f"metadata.mnrnd_provider_toolbox_version={mnrnd_meta['mnrnd_provider_toolbox_version']!r} != "
+            f"current Statistics Toolbox version {expected_provider['toolbox_version']!r}"
+        )
+    if (
+        mnrnd_meta["mnrnd_provider_path_relative_to_matlabroot"]
+        != expected_provider["provider_path_relative_to_matlabroot"]
+    ):
+        return False, (
+            "metadata.mnrnd_provider_path_relative_to_matlabroot="
+            f"{mnrnd_meta['mnrnd_provider_path_relative_to_matlabroot']!r} != current provider path "
+            f"{expected_provider['provider_path_relative_to_matlabroot']!r}"
+        )
+    if mnrnd_meta["mnrnd_provider_sha256"] != expected_provider["sha256_lf_normalized"]:
+        return False, (
+            f"metadata.mnrnd_provider_sha256={mnrnd_meta['mnrnd_provider_sha256']!r} != current "
+            f"provider sha256 {expected_provider['sha256_lf_normalized']!r}"
         )
 
     if isinstance(spec, FixedWindowSpec):

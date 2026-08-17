@@ -206,8 +206,14 @@ def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = 
         )
 
     with h5py.File(trace_path, "r") as handle:
-        mnrnd_shim_version = _read_metadata_scalar_int(handle, "mnrnd_shim_version")
-        mnrnd_shim_sha256 = _read_metadata_string(handle, "mnrnd_shim_sha256")
+        mnrnd_provider_kind = _read_metadata_string(handle, "mnrnd_provider_kind")
+        mnrnd_provider_matlab_release = _read_metadata_string(handle, "mnrnd_provider_matlab_release")
+        mnrnd_provider_toolbox_version = _read_metadata_string(handle, "mnrnd_provider_toolbox_version")
+        mnrnd_provider_path = _read_metadata_string(
+            handle,
+            "mnrnd_provider_path_relative_to_matlabroot",
+        )
+        mnrnd_provider_sha256 = _read_metadata_string(handle, "mnrnd_provider_sha256")
         projection_version = _read_metadata_scalar_int(handle, "event_observable_projection_version")
 
     division_relative_onset = onset_abs - completion_abs
@@ -228,7 +234,8 @@ def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = 
         n_seeds_karr=1,
         n_seeds_oc=0,
         reasons=[
-            "karr_only_structural_smoke: Canary D retry after the mnrnd shim repair. "
+            "karr_only_structural_smoke: Canary D retry under the genuine Statistics "
+            "Toolbox mnrnd provider. "
             "Proves the extractor/loader/adapter round-trip on one real anchor-mode "
             "seed; this is NOT a calibrated ensemble gate verdict and is NOT an "
             "OC-vs-Karr comparison (the anchor snapshot only carries boundEnzymes/"
@@ -241,7 +248,11 @@ def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = 
             f"division_relative_onset_tick={division_relative_onset} "
             f"division_relative_completion_tick={division_relative_completion} "
             "(completion == the division-relative origin by this canary's own timing definition)",
-            f"mnrnd_shim_version={mnrnd_shim_version} mnrnd_shim_sha256={mnrnd_shim_sha256}",
+            f"mnrnd_provider_kind={mnrnd_provider_kind} "
+            f"matlab_release={mnrnd_provider_matlab_release} "
+            f"toolbox_version={mnrnd_provider_toolbox_version} "
+            f"provider_path={mnrnd_provider_path} "
+            f"provider_sha256={mnrnd_provider_sha256}",
             f"event_observable_projection_version={projection_version}",
         ],
     )
@@ -294,8 +305,11 @@ def build_evidence(trace_path: Path, *, seed: int, registry_path: Path | None = 
         "stride_contract_ok": window.stride_contract_ok,
         "division_relative_onset_tick": division_relative_onset,
         "division_relative_completion_tick": division_relative_completion,
-        "mnrnd_shim_version": mnrnd_shim_version,
-        "mnrnd_shim_sha256": mnrnd_shim_sha256,
+        "mnrnd_provider_kind": mnrnd_provider_kind,
+        "mnrnd_provider_matlab_release": mnrnd_provider_matlab_release,
+        "mnrnd_provider_toolbox_version": mnrnd_provider_toolbox_version,
+        "mnrnd_provider_path_relative_to_matlabroot": mnrnd_provider_path,
+        "mnrnd_provider_sha256": mnrnd_provider_sha256,
         "event_observable_projection_version": projection_version,
         "generated_at": generated_at,
     }

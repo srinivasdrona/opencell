@@ -353,84 +353,53 @@ addition to (not instead of) the lightweight block-keyword-balance
 heuristic. No extraction/simulation/bootstrap is authorized or performed
 by that test.
 
-### Legacy `mnrnd` compatibility shim (Canary D root cause)
+### Genuine Statistics-Toolbox `mnrnd` provider binding
 
-`build_matlab_command` unconditionally prepends `addpath('scripts/matlab')`
-for **every** extraction job (`window_contract=''`/`'fixed'`/`'anchor'`,
-any process) -- this is a pre-existing, project-wide "no Statistics
-Toolbox required" convention (sibling shims: `binornd.m`, `poissrnd.m`,
-`random.m`, `randsample.m`, ...; all part of the accepted base, commit
-`e4cd4ef`), not something introduced by this branch. Because MATLAB's
-path-search shadows the real toolbox function whenever a same-named `.m`
-file appears earlier on the path, `scripts/matlab/mnrnd.m` silently
-replaces MATLAB's own `mnrnd` for every run through this launcher,
-including runs of processes (like Cytokinesis) that never call `mnrnd`
-themselves -- the shadow is a property of the *run*, not of the *target
-process*.
+The repo still contains `scripts/matlab/mnrnd.m` for isolated
+compatibility uses (including its Octave-only regression tests), but
+**full-simulation extraction is no longer allowed to use it as evidence**.
+`build_matlab_command` still adds `scripts/matlab` so the extractor itself
+is callable, but it now immediately re-promotes
+`fullfile(matlabroot,'toolbox','stats','stats')` to the front of the path,
+and `karr_bootstrap()` independently fails closed unless `which mnrnd`
+resolves to the genuine MathWorks file
+`matlabroot/toolbox/stats/stats/mnrnd.m` even after all repo paths are
+added.
 
-Canary D crashed at tick 25361 inside `ProteinProcessingII.m`'s call
-`RandStream.mnrnd(1, p)` with a **column** probability vector `p`. The
-old `scripts/matlab/mnrnd.m` built histogram bin edges as
-`edges = [0, cumsum(p)]` directly from the raw sparse probability vector,
-then forced `edges(end)=1`. Trailing zero-probability categories can leave
-the penultimate cumulative edge at a floating-point value slightly above
-1; forcing the final edge to exactly 1 then creates a genuinely decreasing
-edge pair and MATLAB raises `MATLAB:histcounts:DecreasingBinEdges`. This is a
-pre-existing defect in the accepted-base shim, not a new regression, and
-it is orthogonal to row/column orientation (the crash trigger was
-`p`'s sparsity, not its shape).
+This is a **run-level** contract, not a per-target-process convention:
+every process's `evolveState()` executes during a full simulation, so the
+resolved `mnrnd` provider for the run must be authoritative even for a
+captured process that never itself calls `mnrnd`.
 
-The fix (in `scripts/matlab/mnrnd.m`): normalize `p` to a row, filter to
-`positive_idx = find(p_row > 0)` **before** building
-`edges = [0, cumsum(p_pos)]` (every contributing step is strictly `>0`
-by construction, so edges are always strictly increasing), draw exactly
-`rand(n,1)` once from the active default stream, count via a manual
-vectorized comparison loop (`histcounts`/`histc` are never called --
-`histcounts` does not exist in Octave, and the manual loop is identical
-under MATLAB and Octave), and map `counts_pos` back to the original
-category positions so zero-probability categories are always `0`. The
-shim fails closed (specific `mnrnd:*` error identifiers, never a silent
-clamp) on: non-vector `p`; empty/non-finite/negative `p`;
-non-finite/non-integer/negative scalar `n`; and `sum(p)<=0` when `n>0`.
-`n==0` returns correctly-shaped zeros without drawing, even when
-`sum(p)==0`. Output is always a `1 x numel(p)` row, matching Karr's own
-trailing transpose convention at the call site.
-
-Because the shadow is active for every run, every extractor trace
-(`'fixed'` and `'anchor'` alike -- a fixed window never itself calling
-`mnrnd` was still produced under the shadowed path) persists two new
-identity-binding metadata keys:
+Accordingly, every event-window trace (`'fixed'` and `'anchor'`) now
+persists the actual provider identity from `karr_bootstrap()`:
 
 ```text
-metadata/mnrnd_shim_version   -- int32, MNRND_SHIM_VERSION (currently 1;
-                                  a coarse, human-bumped gate, independent
-                                  of event_observable_projection_version)
-metadata/mnrnd_shim_sha256    -- char, lowercase hex SHA-256 of
-                                  scripts/matlab/mnrnd.m's bytes with CR
-                                  (0x0D) stripped (LF-normalized), so the
-                                  hash is stable across CRLF/LF checkouts
+metadata/mnrnd_provider_kind                         -- char, currently 'statistics_toolbox'
+metadata/mnrnd_provider_matlab_release              -- char, e.g. 'R2026a'
+metadata/mnrnd_provider_toolbox_version             -- char, e.g. '26.1'
+metadata/mnrnd_provider_path_relative_to_matlabroot -- char, e.g. 'toolbox/stats/stats/mnrnd.m'
+metadata/mnrnd_provider_sha256                      -- char, lowercase hex SHA-256 of the
+                                                       real provider file with CR (0x0D)
+                                                       stripped first (LF-normalized)
 ```
 
-`validate_existing_event_window` recomputes `mnrnd_shim_sha256_hex()`
-fresh from whatever `scripts/matlab/mnrnd.m` is on disk at validation
-time (never a hardcoded constant) and compares both fields before ever
-returning `skip_valid`, for both `FixedWindowSpec` and `AnchorWindowSpec`.
-Consequently, **every pre-fix trace produced before this shim correction
--- fixed or anchor -- classifies `regenerate_invalid`** and requires a
-cheap re-regeneration, even a trace (like a Canary-A RA-style fixed
-window) whose own process never calls `mnrnd`, because the metadata
-records the shim identity the *run* was produced under, not just the
-target process's own dependency on it. This metadata is never written
-for the legacy `window_contract=''` path, which keeps its exact
-pre-existing metadata shape.
+`validate_existing_event_window` now recomputes the **current local**
+provider identity from the MATLAB install itself (`VersionInfo.xml`,
+`toolbox/stats/stats/Contents.m`, and the real `mnrnd.m` file) and
+requires every field above to match before it can return `skip_valid`.
+Consequently:
 
-This shim is a toolbox-independence and now also a correctness fix for
-reproducing the original whole-cell simulation trajectory under the
-project's runtime MATLAB/Octave environment; it is not, and does not
-claim to be, genuine Statistics-Toolbox evidence. The unrelated
-`scripts/octave_h12_perturbation/mnrndStub.m` (a different, explicitly
-out-of-scope ProcII Scenario-A/B harness scaffold) is untouched by this
-fix and remains outside any exact-match claim.
+* any legacy shim-bound trace,
+* any trace missing these provider fields,
+* any trace whose provider hash/version no longer matches the local MATLAB
+  install,
+
+is explicitly `regenerate_invalid` / non-authoritative. There is no
+success-shaped fallback to the repo shim.
+
+The unrelated `scripts/octave_h12_perturbation/mnrndStub.m` remains a
+different, explicitly out-of-scope ProcII Scenario-A/B harness scaffold.
 
 ## Non-goals
 
@@ -449,4 +418,3 @@ fix and remains outside any exact-match claim.
   same `validate_existing_event_window` gauntlet. The prior file's
   SHA-256 is recorded in the plan/manifest before any such replacement so
   its identity is never lost even though it is never deleted up front.
-

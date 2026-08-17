@@ -46,12 +46,37 @@ def _encode_char_metadata(text: str) -> np.ndarray:
 # Sentinel distinct from `None`: `None` already means "omit this metadata
 # key entirely" for every optional _write_event_window_fixture parameter
 # (matching signal_kind/window_anchor/etc.'s existing convention), so a
-# separate sentinel is needed to mean "use today's real, valid
-# mnrnd-shim-identity value" as the DEFAULT -- keeping every pre-existing
-# call site (27 of them) a valid/skip_valid-eligible fixture unless a test
-# explicitly overrides mnrnd_shim_version/mnrnd_shim_sha256 to omit or
-# mismatch them.
-_MNRND_SHIM_DEFAULT = object()
+# separate sentinel is needed to mean "use today's current, valid genuine
+# provider identity" as the DEFAULT -- keeping every pre-existing call
+# site a valid/skip_valid-eligible fixture unless a test explicitly
+# overrides provider metadata to omit or mismatch it.
+_MNRND_PROVIDER_DEFAULT = object()
+
+
+@pytest.fixture(autouse=True)
+def _fake_local_genuine_provider(monkeypatch, tmp_path):
+    matlab_root = tmp_path / "MATLAB"
+    provider_path = matlab_root / launcher.GENUINE_MNRND_RELATIVE_PATH
+    provider_path.parent.mkdir(parents=True, exist_ok=True)
+    provider_path.write_text("% fake genuine mnrnd provider\n", encoding="utf-8", newline="\n")
+
+    contents_path = matlab_root / launcher.STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH
+    contents_path.write_text(
+        "% Statistics and Machine Learning Toolbox\n% Version 26.1 (R2026a) 12-Jan-2026\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    version_info_path = matlab_root / launcher.MATLAB_VERSION_INFO_RELATIVE_PATH
+    version_info_path.write_text(
+        "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n"
+        "<MathWorks_version_info>\n"
+        "  <release>R2026a</release>\n"
+        "</MathWorks_version_info>\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    monkeypatch.setattr(launcher, "DEFAULT_MATLAB_ROOT", matlab_root)
+    return matlab_root
 
 
 def _write_event_window_fixture(
@@ -78,13 +103,17 @@ def _write_event_window_fixture(
     max_search_ticks: int | None = None,
     event_observable_projection_version: int | None = None,
     extraction_identity_json: str | None = None,
-    # mnrnd-shim identity-binding metadata (legacy-mnrnd defect fix):
-    # _MNRND_SHIM_DEFAULT (the default) embeds today's real, valid
-    # version/hash so every pre-existing call site stays a valid fixture;
-    # pass None explicitly to omit the key (pre-identity-binding trace);
-    # pass an explicit wrong value to simulate a stale/tampered shim.
-    mnrnd_shim_version: int | None | object = _MNRND_SHIM_DEFAULT,
-    mnrnd_shim_sha256: str | None | object = _MNRND_SHIM_DEFAULT,
+    # Genuine-provider identity-binding metadata:
+    # _MNRND_PROVIDER_DEFAULT (the default) embeds today's current valid
+    # local provider identity so every pre-existing call site stays a
+    # valid fixture; pass None explicitly to omit the keys
+    # (pre-provider-binding trace); pass an explicit wrong value to
+    # simulate a stale/tampered/non-genuine provider binding.
+    mnrnd_provider_kind: str | None | object = _MNRND_PROVIDER_DEFAULT,
+    mnrnd_provider_matlab_release: str | None | object = _MNRND_PROVIDER_DEFAULT,
+    mnrnd_provider_toolbox_version: str | None | object = _MNRND_PROVIDER_DEFAULT,
+    mnrnd_provider_path_relative_to_matlabroot: str | None | object = _MNRND_PROVIDER_DEFAULT,
+    mnrnd_provider_sha256: str | None | object = _MNRND_PROVIDER_DEFAULT,
 ) -> Path:
     """Write a minimal synthetic event-window trace: a `metadata` group
     plus empty `states_before`/`states_after` groups (optionally with a
@@ -95,10 +124,17 @@ def _write_event_window_fixture(
     """
     if tick_end == -1:
         tick_end = n_ticks - 1
-    if mnrnd_shim_version is _MNRND_SHIM_DEFAULT:
-        mnrnd_shim_version = launcher.MNRND_SHIM_VERSION
-    if mnrnd_shim_sha256 is _MNRND_SHIM_DEFAULT:
-        mnrnd_shim_sha256 = launcher.mnrnd_shim_sha256_hex()
+    current_provider = launcher.current_genuine_mnrnd_provider()
+    if mnrnd_provider_kind is _MNRND_PROVIDER_DEFAULT:
+        mnrnd_provider_kind = current_provider["kind"]
+    if mnrnd_provider_matlab_release is _MNRND_PROVIDER_DEFAULT:
+        mnrnd_provider_matlab_release = current_provider["matlab_release"]
+    if mnrnd_provider_toolbox_version is _MNRND_PROVIDER_DEFAULT:
+        mnrnd_provider_toolbox_version = current_provider["toolbox_version"]
+    if mnrnd_provider_path_relative_to_matlabroot is _MNRND_PROVIDER_DEFAULT:
+        mnrnd_provider_path_relative_to_matlabroot = current_provider["provider_path_relative_to_matlabroot"]
+    if mnrnd_provider_sha256 is _MNRND_PROVIDER_DEFAULT:
+        mnrnd_provider_sha256 = current_provider["sha256_lf_normalized"]
     path.parent.mkdir(parents=True, exist_ok=True)
     with h5py.File(path, "w") as handle:
         metadata = handle.create_group("metadata")
@@ -131,10 +167,23 @@ def _write_event_window_fixture(
             )
         if extraction_identity_json is not None:
             metadata.create_dataset("extraction_identity_json", data=_encode_char_metadata(extraction_identity_json))
-        if mnrnd_shim_version is not None:
-            metadata.create_dataset("mnrnd_shim_version", data=np.array([mnrnd_shim_version]))
-        if mnrnd_shim_sha256 is not None:
-            metadata.create_dataset("mnrnd_shim_sha256", data=_encode_char_metadata(mnrnd_shim_sha256))
+        if mnrnd_provider_kind is not None:
+            metadata.create_dataset("mnrnd_provider_kind", data=_encode_char_metadata(mnrnd_provider_kind))
+        if mnrnd_provider_matlab_release is not None:
+            metadata.create_dataset(
+                "mnrnd_provider_matlab_release", data=_encode_char_metadata(mnrnd_provider_matlab_release)
+            )
+        if mnrnd_provider_toolbox_version is not None:
+            metadata.create_dataset(
+                "mnrnd_provider_toolbox_version", data=_encode_char_metadata(mnrnd_provider_toolbox_version)
+            )
+        if mnrnd_provider_path_relative_to_matlabroot is not None:
+            metadata.create_dataset(
+                "mnrnd_provider_path_relative_to_matlabroot",
+                data=_encode_char_metadata(mnrnd_provider_path_relative_to_matlabroot),
+            )
+        if mnrnd_provider_sha256 is not None:
+            metadata.create_dataset("mnrnd_provider_sha256", data=_encode_char_metadata(mnrnd_provider_sha256))
 
         states_before = handle.create_group("states_before")
         states_after = handle.create_group("states_after")
@@ -380,26 +429,22 @@ def test_build_matlab_command_fixed_window_can_carry_extraction_opts():
     assert "'UVB_radiation', 7.474096569667582" in command
 
 
-def test_build_matlab_command_unconditionally_shadows_mnrnd_for_fixed_and_anchor():
-    """Documents/tests, rather than leaves implicit, the exact mechanism
-    that makes scripts/matlab/mnrnd.m identity-binding necessary: every
-    generated command -- 'fixed' or 'anchor', regardless of which process
-    is targeted -- prepends addpath('scripts/matlab') BEFORE the default
-    (include_addpath=True), so the repo-owned mnrnd/poissrnd/binornd/
-    random/randsample fallbacks silently shadow the real Statistics-
-    Toolbox implementations for the entire simulated run, not just the
-    requested process. include_addpath=False is available (and exercised
-    here) precisely so a future caller COULD opt out, but no caller in
-    this codebase does -- the shadow is universal today by construction."""
+def test_build_matlab_command_repromotes_genuine_provider_for_fixed_and_anchor():
+    """Every generated command still adds `scripts/matlab` so the
+    extractor is callable, but it must immediately re-promote the genuine
+    Statistics Toolbox provider directory to the front of the path so
+    `mnrnd` does not stay resolved to the repo shim before
+    `karr_bootstrap()` gets its own fail-closed check."""
     fixed_spec = launcher.FixedWindowSpec(
         process="RibosomeAssembly", seed=30, tick_offset=200, n_ticks=4, required_observables=("substrates",)
     )
     anchor_spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=31, n_ticks=4, required_observables=("pinchedDiameter",))
     for spec in (fixed_spec, anchor_spec):
         command = launcher.build_matlab_command(spec)
-        assert command.startswith("addpath('scripts/matlab'); ")
+        assert command.startswith("addpath('scripts/matlab'); addpath(fullfile(matlabroot, 'toolbox', 'stats', 'stats'), '-begin'); ")
         no_addpath_command = launcher.build_matlab_command(spec, include_addpath=False)
         assert "addpath('scripts/matlab')" not in no_addpath_command
+        assert "toolbox', 'stats', 'stats'" not in no_addpath_command
 
 
 def test_build_matlab_command_anchor_window_never_supplies_tick_offset():
@@ -849,15 +894,10 @@ def test_plan_regenerate_invalid_for_anchor_missing_chromosome_segregated_observ
     assert len(plan.jobs) == 1
 
 
-def test_plan_regenerate_invalid_for_fixed_missing_mnrnd_shim_metadata(tmp_path):
-    """Legacy-mnrnd defect fix: a pre-existing 'fixed' trace (structurally
-    complete, correct tick_offset/tick_start/tick_end) that was produced
-    BEFORE mnrnd-shim identity-binding metadata existed must never
-    skip_valid -- build_matlab_command's addpath('scripts/matlab') path-
-    shadow was already unconditionally active for every 'fixed' window
-    job, so a trace lacking mnrnd_shim_version/mnrnd_shim_sha256 entirely
-    cannot be told apart from one produced under the pre-fix, duplicate-
-    edge-unsafe mnrnd.m."""
+def test_plan_regenerate_invalid_for_fixed_missing_genuine_provider_metadata(tmp_path):
+    """A pre-existing 'fixed' trace that lacks the genuine-provider
+    identity fields entirely must never skip_valid: legacy shim-bound or
+    pre-provider-binding traces are explicitly non-authoritative."""
     spec = launcher.FixedWindowSpec(
         process="RibosomeAssembly", seed=21, tick_offset=200, n_ticks=4, required_observables=("substrates",)
     )
@@ -872,20 +912,21 @@ def test_plan_regenerate_invalid_for_fixed_missing_mnrnd_shim_metadata(tmp_path)
         tick_start=201,
         tick_end=204,
         observables=("substrates",),
-        mnrnd_shim_version=None,
-        mnrnd_shim_sha256=None,
+        mnrnd_provider_kind=None,
+        mnrnd_provider_matlab_release=None,
+        mnrnd_provider_toolbox_version=None,
+        mnrnd_provider_path_relative_to_matlabroot=None,
+        mnrnd_provider_sha256=None,
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "regenerate_invalid"
-    assert "mnrnd_shim_version" in plan.decisions[0].reason
+    assert "mnrnd_provider_kind" in plan.decisions[0].reason
     assert len(plan.jobs) == 1
 
 
-def test_plan_regenerate_invalid_for_anchor_missing_mnrnd_shim_metadata(tmp_path):
+def test_plan_regenerate_invalid_for_anchor_missing_genuine_provider_metadata(tmp_path):
     """Same as the 'fixed' case above, but for an otherwise contract- and
-    identity-complete 'anchor' trace: mnrnd-shim identity binding is a
-    SEPARATE check from signal_kind/property/field/max_search_ticks/
-    projection-version, and must independently refuse skip_valid."""
+    identity-complete 'anchor' trace."""
     spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=22, n_ticks=4, required_observables=("pinchedDiameter",))
     path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
     _write_event_window_fixture(
@@ -905,21 +946,22 @@ def test_plan_regenerate_invalid_for_anchor_missing_mnrnd_shim_metadata(tmp_path
         signal_field=spec.signal_field,
         max_search_ticks=spec.max_search_ticks,
         event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
-        mnrnd_shim_version=None,
-        mnrnd_shim_sha256=None,
+        mnrnd_provider_kind=None,
+        mnrnd_provider_matlab_release=None,
+        mnrnd_provider_toolbox_version=None,
+        mnrnd_provider_path_relative_to_matlabroot=None,
+        mnrnd_provider_sha256=None,
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "regenerate_invalid"
-    assert "mnrnd_shim_version" in plan.decisions[0].reason
+    assert "mnrnd_provider_kind" in plan.decisions[0].reason
     assert len(plan.jobs) == 1
 
 
-def test_plan_regenerate_invalid_for_stale_mnrnd_shim_version(tmp_path):
-    """A trace stamped with an OLD/wrong mnrnd_shim_version integer (but a
-    matching current sha256 -- simulating a future revision bump where
-    only the version literal was forgotten to be updated at write time)
-    must still regenerate_invalid: version is checked independently of,
-    and before, hash."""
+def test_plan_regenerate_invalid_for_non_genuine_provider_kind(tmp_path):
+    """A trace that explicitly declares the wrong provider kind must never
+    skip_valid, even if every other field matches the current local
+    provider."""
     spec = launcher.FixedWindowSpec(
         process="RibosomeAssembly", seed=23, tick_offset=200, n_ticks=4, required_observables=("substrates",)
     )
@@ -934,20 +976,18 @@ def test_plan_regenerate_invalid_for_stale_mnrnd_shim_version(tmp_path):
         tick_start=201,
         tick_end=204,
         observables=("substrates",),
-        mnrnd_shim_version=launcher.MNRND_SHIM_VERSION + 1,
+        mnrnd_provider_kind="repo_shim",
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "regenerate_invalid"
-    assert "mnrnd_shim_version" in plan.decisions[0].reason
+    assert "mnrnd_provider_kind" in plan.decisions[0].reason
     assert len(plan.jobs) == 1
 
 
-def test_plan_regenerate_invalid_for_mnrnd_shim_sha256_drift(tmp_path):
-    """A trace stamped with the CURRENT mnrnd_shim_version but a
-    mismatched mnrnd_shim_sha256 (simulating scripts/matlab/mnrnd.m being
-    edited without a version bump) must regenerate_invalid -- the hash is
-    the strong content binding that catches exactly this case, computed
-    fresh from today's on-disk mnrnd.m, never a hardcoded constant."""
+def test_plan_regenerate_invalid_for_mnrnd_provider_sha256_drift(tmp_path):
+    """A trace stamped with the right provider kind but a mismatched
+    provider SHA-256 must regenerate_invalid -- the hash is the strong
+    content binding that catches a changed local provider file."""
     spec = launcher.FixedWindowSpec(
         process="RibosomeAssembly", seed=24, tick_offset=200, n_ticks=4, required_observables=("substrates",)
     )
@@ -962,35 +1002,64 @@ def test_plan_regenerate_invalid_for_mnrnd_shim_sha256_drift(tmp_path):
         tick_start=201,
         tick_end=204,
         observables=("substrates",),
-        mnrnd_shim_sha256="0" * 64,
+        mnrnd_provider_sha256="0" * 64,
     )
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "regenerate_invalid"
-    assert "mnrnd_shim_sha256" in plan.decisions[0].reason
+    assert "mnrnd_provider_sha256" in plan.decisions[0].reason
     assert len(plan.jobs) == 1
 
 
-def test_mnrnd_shim_sha256_hex_matches_real_file_and_is_lf_normalized(tmp_path):
-    """Direct unit check of the Python-side hash helper: it must read the
-    real, current scripts/matlab/mnrnd.m and be insensitive to CRLF vs LF
-    line endings (matching the MATLAB-side mnrnd_shim_sha256_hex helper's
-    own CR-stripping normalization -- both independently compute the same
-    hash for the same logical content regardless of checkout settings)."""
-    real_hash = launcher.mnrnd_shim_sha256_hex()
+def test_plan_regenerate_invalid_for_mnrnd_provider_toolbox_version_drift(tmp_path):
+    spec = launcher.FixedWindowSpec(
+        process="RibosomeAssembly", seed=25, tick_offset=200, n_ticks=4, required_observables=("substrates",)
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="RibosomeAssembly",
+        seed=25,
+        n_ticks=4,
+        tick_offset=200.0,
+        stride=1,
+        tick_start=201,
+        tick_end=204,
+        observables=("substrates",),
+        mnrnd_provider_toolbox_version="0.0",
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "mnrnd_provider_toolbox_version" in plan.decisions[0].reason
+    assert len(plan.jobs) == 1
+
+
+def test_current_genuine_mnrnd_provider_reads_local_install_metadata():
+    provider = launcher.current_genuine_mnrnd_provider()
+    assert provider["kind"] == launcher.GENUINE_MNRND_KIND
+    assert provider["matlab_release"] == "R2026a"
+    assert provider["toolbox_version"] == "26.1"
+    assert provider["provider_path_relative_to_matlabroot"] == launcher.GENUINE_MNRND_RELATIVE_PATH.as_posix()
+    assert len(provider["sha256_lf_normalized"]) == 64
+
+
+def test_lf_normalized_sha256_hex_is_line_ending_invariant(tmp_path):
+    """Direct unit check of the Python-side hash helper: it must be
+    insensitive to CRLF vs LF line endings for the same logical file."""
+    real_hash = launcher.lf_normalized_sha256_hex(launcher.genuine_mnrnd_path())
     assert isinstance(real_hash, str)
     assert len(real_hash) == 64
     int(real_hash, 16)  # must be valid hex
 
     lf_copy = tmp_path / "mnrnd_lf.m"
     crlf_copy = tmp_path / "mnrnd_crlf.m"
-    original_bytes = launcher.MNRND_SHIM_PATH.read_bytes()
+    original_bytes = launcher.genuine_mnrnd_path().read_bytes()
     lf_bytes = original_bytes.replace(b"\r\n", b"\n")
     crlf_bytes = lf_bytes.replace(b"\n", b"\r\n")
     lf_copy.write_bytes(lf_bytes)
     crlf_copy.write_bytes(crlf_bytes)
 
-    assert launcher.mnrnd_shim_sha256_hex(lf_copy) == launcher.mnrnd_shim_sha256_hex(crlf_copy)
-    assert launcher.mnrnd_shim_sha256_hex(lf_copy) == real_hash
+    assert launcher.lf_normalized_sha256_hex(lf_copy) == launcher.lf_normalized_sha256_hex(crlf_copy)
+    assert launcher.lf_normalized_sha256_hex(lf_copy) == real_hash
 
 
 def test_plan_regenerate_invalid_for_window_contract_kind_mismatch(tmp_path):

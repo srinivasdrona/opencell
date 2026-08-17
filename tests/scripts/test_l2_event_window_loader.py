@@ -21,7 +21,8 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
-from scripts.l2_event.window_loader import (
+from scripts.l2_event import launcher  # noqa: E402
+from scripts.l2_event.window_loader import (  # noqa: E402
     EventWindowRefused,
     _decode_char_metadata,
     classify_trace_dir,
@@ -48,7 +49,7 @@ _REAL_CYTOKINESIS_TRACE = (
     / "Cytokinesis_4000ticks.mat"
 )
 
-_CYTOKINESIS_MNRND_SHIM_SHA256 = "819218f9c4db0e9b24606e6bd9d34dd31600bfbdc764c8c46e17bf72da391e67"
+
 
 
 def _encode_char_metadata(text: str) -> np.ndarray:
@@ -381,18 +382,26 @@ def test_load_real_cytokinesis_seed0_event_trace_anchor_completeness():
 
 
 @pytest.mark.skipif(not _REAL_CYTOKINESIS_TRACE.exists(), reason="Real Cytokinesis seed-000 event-window MAT not present locally")
-def test_load_real_cytokinesis_seed0_event_trace_bound_to_final_mnrnd_shim():
-    """The regenerated trace must carry provenance binding to the FINAL
-    (post-repair) mnrnd shim, not the version that crashed at tick 25,361 --
-    both the coarse version bump and the strong content-hash binding must
-    match what `scripts/matlab/mnrnd.m` hashes to today."""
+def test_load_real_cytokinesis_seed0_event_trace_bound_to_genuine_mnrnd_provider():
+    """A regenerated trace must bind the genuine local MathWorks provider."""
     with h5py.File(_REAL_CYTOKINESIS_TRACE, "r") as handle:
         metadata = handle["metadata"]
-        shim_version = int(np.asarray(metadata["mnrnd_shim_version"][()]).reshape(-1)[0])
-        shim_sha256 = _decode_char_metadata(np.asarray(metadata["mnrnd_shim_sha256"][()]))
+        if "mnrnd_provider_kind" not in metadata:
+            pytest.skip("local Cytokinesis trace is legacy shim-bound and awaits regeneration")
+        provider_kind = _decode_char_metadata(np.asarray(metadata["mnrnd_provider_kind"][()]))
+        provider_release = _decode_char_metadata(np.asarray(metadata["mnrnd_provider_matlab_release"][()]))
+        provider_version = _decode_char_metadata(np.asarray(metadata["mnrnd_provider_toolbox_version"][()]))
+        provider_path = _decode_char_metadata(
+            np.asarray(metadata["mnrnd_provider_path_relative_to_matlabroot"][()])
+        )
+        provider_sha256 = _decode_char_metadata(np.asarray(metadata["mnrnd_provider_sha256"][()]))
         projection_version = int(np.asarray(metadata["event_observable_projection_version"][()]).reshape(-1)[0])
-    assert shim_version == 1
-    assert shim_sha256 == _CYTOKINESIS_MNRND_SHIM_SHA256
+    expected = launcher.current_genuine_mnrnd_provider()
+    assert provider_kind == expected["kind"]
+    assert provider_release == expected["matlab_release"]
+    assert provider_version == expected["toolbox_version"]
+    assert provider_path == expected["provider_path_relative_to_matlabroot"]
+    assert provider_sha256 == expected["sha256_lf_normalized"]
     assert projection_version == 2
 
 
@@ -599,4 +608,3 @@ def test_load_trace_cytokinesis_diameter_anchor_shaped_round_trip(tmp_path):
     with h5py.File(trace_path, "r") as handle:
         assert "chromosome" not in handle["states_before"]
         assert "chromosome" not in handle["states_after"]
-

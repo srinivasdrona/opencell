@@ -37,6 +37,27 @@ from scripts.l2_event.prepare_cytokinesis_cohort import (  # noqa: E402
 )
 
 
+@pytest.fixture(autouse=True)
+def _fake_local_genuine_provider(monkeypatch, tmp_path):
+    matlab_root = tmp_path / "MATLAB"
+    provider_path = matlab_root / launcher.GENUINE_MNRND_RELATIVE_PATH
+    provider_path.parent.mkdir(parents=True, exist_ok=True)
+    provider_path.write_text("% fake genuine mnrnd provider\n", encoding="utf-8", newline="\n")
+    contents_path = matlab_root / launcher.STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH
+    contents_path.write_text(
+        "% Statistics and Machine Learning Toolbox\n% Version 26.1 (R2026a) 12-Jan-2026\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    version_info_path = matlab_root / launcher.MATLAB_VERSION_INFO_RELATIVE_PATH
+    version_info_path.write_text(
+        "<?xml version=\"1.0\"?><MathWorks_version_info><release>R2026a</release></MathWorks_version_info>\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    monkeypatch.setattr(launcher, "DEFAULT_MATLAB_ROOT", matlab_root)
+
+
 def _encode_char_metadata(text: str) -> np.ndarray:
     return np.array([ord(c) for c in text], dtype=np.uint16).reshape(-1, 1)
 
@@ -87,10 +108,23 @@ def _write_valid_anchor_trace(
             "event_observable_projection_version",
             data=np.array([launcher.EVENT_OBSERVABLE_PROJECTION_VERSION]),
         )
-        metadata.create_dataset("mnrnd_shim_version", data=np.array([launcher.MNRND_SHIM_VERSION]))
+        provider = launcher.current_genuine_mnrnd_provider()
+        metadata.create_dataset("mnrnd_provider_kind", data=_encode_char_metadata(provider["kind"]))
         metadata.create_dataset(
-            "mnrnd_shim_sha256",
-            data=_encode_char_metadata(launcher.mnrnd_shim_sha256_hex()),
+            "mnrnd_provider_matlab_release",
+            data=_encode_char_metadata(provider["matlab_release"]),
+        )
+        metadata.create_dataset(
+            "mnrnd_provider_toolbox_version",
+            data=_encode_char_metadata(provider["toolbox_version"]),
+        )
+        metadata.create_dataset(
+            "mnrnd_provider_path_relative_to_matlabroot",
+            data=_encode_char_metadata(provider["provider_path_relative_to_matlabroot"]),
+        )
+        metadata.create_dataset(
+            "mnrnd_provider_sha256",
+            data=_encode_char_metadata(provider["sha256_lf_normalized"]),
         )
 
         states_before = handle.create_group("states_before")
