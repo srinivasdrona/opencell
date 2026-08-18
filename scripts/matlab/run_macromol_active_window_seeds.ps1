@@ -106,8 +106,21 @@ while ($pendingSeeds.Count -gt 0 -or $active.Count -gt 0) {
             $stillActive += $entry
             continue
         }
-        Write-Host "[run_macromol_active_window_seeds] seed=$($entry.Seed) exit=$($entry.Process.ExitCode)"
-        if ($entry.Process.ExitCode -ne 0) {
+        $entry.Process.WaitForExit()
+        $entry.Process.Refresh()
+        $exitCode = $entry.Process.ExitCode
+        if ($null -eq $exitCode -or "$exitCode" -eq "") {
+            $stderrText = if (Test-Path $entry.StderrLog) { Get-Content $entry.StderrLog -Raw } else { "" }
+            $stdoutText = if (Test-Path $entry.StdoutLog) { Get-Content $entry.StdoutLog -Raw } else { "" }
+            if (($stderrText -match "MATLAB error Exit Status") -or ($stdoutText -match "Error using ") -or ($stdoutText -match "FAILED during extraction")) {
+                $exitCode = 1
+            }
+            else {
+                $exitCode = 0
+            }
+        }
+        Write-Host "[run_macromol_active_window_seeds] seed=$($entry.Seed) exit=$exitCode"
+        if ($exitCode -ne 0) {
             $failures += $entry
         }
     }

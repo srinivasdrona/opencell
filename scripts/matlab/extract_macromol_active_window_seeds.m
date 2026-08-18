@@ -37,6 +37,9 @@ if nargin < 3 || isempty(force_seeds)
 end
 
 this_file = mfilename('fullpath');
+if exist([this_file '.m'], 'file') == 2
+    this_file = [this_file '.m'];
+end
 matlab_dir = fileparts(this_file);
 scripts_dir = fileparts(matlab_dir);
 repo_root = fileparts(scripts_dir);
