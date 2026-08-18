@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pytest
 from scipy.io import loadmat
 
 # Ensure pytest imports from this worktree even if another editable install exists.
@@ -41,6 +42,9 @@ class _FixedPoissonRng:
         _ = lam
         return self.n_events
 
+    def permutation(self, n: int) -> np.ndarray:
+        return np.arange(int(n), dtype=np.int64)
+
     def integers(
         self,
         low: int,
@@ -52,6 +56,28 @@ class _FixedPoissonRng:
         if size is None:
             return np.int64(low)
         return np.full(size, low, dtype=dtype)
+
+
+class _QueuedPoissonRng(_FixedPoissonRng):
+    def __init__(self, poisson_values: list[int]) -> None:
+        super().__init__(0)
+        self._poisson_values = list(poisson_values)
+
+    def poisson(self, lam: float) -> int:
+        _ = lam
+        if not self._poisson_values:
+            return 0
+        return int(self._poisson_values.pop(0))
+
+
+class _RecordingRng(_FixedPoissonRng):
+    def __init__(self) -> None:
+        super().__init__(0)
+        self.lams: list[float] = []
+
+    def poisson(self, lam: float) -> int:
+        self.lams.append(float(lam))
+        return 0
 
 
 def _empty_sparse(shape: tuple[int, int]) -> dict[str, object]:
@@ -73,8 +99,16 @@ def _base_state(
             "replication_state": replication_state,
         },
         "substrates": {
+            "H2O": 1.0e9,
             "UVB_radiation": 1.0,
             "gamma_radiation": 1.0,
+        },
+        "substrates_allocated": {
+            "karr_dna_damage": {
+                "H2O": 1.0e9,
+                "UVB_radiation": 1.0,
+                "gamma_radiation": 1.0,
+            }
         },
     }
 
@@ -154,6 +188,48 @@ def test_instantiates_with_defaults() -> None:
     assert all(process.kind_rates_per_s[k] >= 0.0 for k in process.damage_kinds)
 
 
+def test_calc_expected_reaction_rates_matches_accepted_uv_aggregate() -> None:
+    process = KarrDNADamageProcess({})
+    state = _base_state()
+    state["substrates"]["UVB_radiation"] = 1.0
+    state["substrates"]["gamma_radiation"] = 0.0
+    state["substrates_allocated"][process.name]["UVB_radiation"] = 1.0
+    state["substrates_allocated"][process.name]["gamma_radiation"] = 0.0
+
+    rates = process.calcExpectedReactionRates(state)
+    uv_local_idx = process.substrate_wids.index("UVB_radiation") + 1
+    observed = float(np.sum(rates[process.reaction_radiation == uv_local_idx]))
+    assert observed == pytest.approx(0.013379543476309085, rel=0.0, abs=1e-15)
+
+
+def test_next_update_routes_poisson_law_through_per_reaction_uv_lambdas() -> None:
+    process = KarrDNADamageProcess({})
+    state = _base_state()
+    dose = 7.474096569667582
+    state["substrates"]["UVB_radiation"] = dose
+    state["substrates"]["gamma_radiation"] = 0.0
+    state["substrates_allocated"][process.name]["UVB_radiation"] = dose
+    state["substrates_allocated"][process.name]["gamma_radiation"] = 0.0
+
+    rng = _RecordingRng()
+    process._rng = rng
+    rates = process.calcExpectedReactionRates(state)
+    update = process.next_update(1.0, state)
+
+    positive_indices = [idx for idx in process._reaction_order(rates.size).tolist() if float(rates[idx]) > 0.0]
+    expected_lams = [float(rates[idx]) for idx in positive_indices]
+    uv_local_idx = process.substrate_wids.index("UVB_radiation") + 1
+    uv_lams = [
+        float(rates[idx])
+        for idx in positive_indices
+        if int(process.reaction_radiation[idx]) == uv_local_idx
+    ]
+
+    assert update == {"requests": update["requests"]}
+    assert rng.lams == pytest.approx(expected_lams, rel=0.0, abs=1e-18)
+    assert sum(uv_lams) == pytest.approx(0.1, rel=0.0, abs=1e-12)
+
+
 def test_one_tick_damage_delta_sign() -> None:
     process = KarrDNADamageProcess(
         {
@@ -173,6 +249,9 @@ def test_one_tick_damage_delta_sign() -> None:
         assert int(site["position"]) > 0
         assert int(site["position"]) <= process.sequence_length_nt
         assert str(site["kind"]) in set(process.damage_kinds)
+        assert str(site["reaction_id"]).startswith("DNADamage_")
+        assert str(site["damage_field"]) in _SPARSE_FIELDS
+        assert int(site["damage_product"]) > 0
         assert int(site["age_ticks"]) == 0
 
 
@@ -194,21 +273,13 @@ def test_emits_substrate_requests_from_vulnerable_site_rates() -> None:
 
 
 def test_replication_stall_flag_on_fork_hit() -> None:
-    process = KarrDNADamageProcess(
-        {
-            "kind_rates_per_s": {
-                "uv_like": 1.0,
-                "oxidative": 0.0,
-                "alkylation": 0.0,
-                "depurination": 0.0,
-            },
-            "rng_seed": 7,
-        }
-    )
-    process._rng = _FixedPoissonRng(1)  # deterministic one event per active kind
-    process._sample_positions = lambda n_events, occupied_positions: np.asarray(  # type: ignore[method-assign]
-        [10101], dtype=np.int64
-    )
+    process = KarrDNADamageProcess({"rng_seed": 7})
+    reaction_index = process.reaction_ids.index("DNADamage_CSNCSN_cyclobutane_CSNCSN_UVB_radiation")
+    process._rng = _QueuedPoissonRng([1])
+    rates = np.zeros(process.reaction_bounds.shape[0], dtype=np.float64)
+    rates[reaction_index] = 1.0
+    process.calcExpectedReactionRates = lambda states=None: rates.copy()  # type: ignore[method-assign]
+    process._sample_positions = lambda n_events, occupied_positions: np.asarray([10101], dtype=np.int64)  # type: ignore[method-assign]
     state = _base_state(
         replication_state="elongating",
         fork_position_bp={"left": 10101, "right": 250000},
@@ -218,47 +289,54 @@ def test_replication_stall_flag_on_fork_hit() -> None:
     assert update["chromosome"]["damage_events_cumulative"][0]["position"] == 10101
 
 
-def test_sparse_writeback_uses_mapped_chromosome_field() -> None:
-    process = KarrDNADamageProcess(
-        {
-            "kind_rates_per_s": {
-                "uv_like": 1.0,
-                "oxidative": 0.0,
-                "alkylation": 0.0,
-                "depurination": 0.0,
-            },
-            "rng_seed": 3,
-        }
-    )
-    process._rng = _FixedPoissonRng(1)
-    process._sample_positions = lambda n_events, occupied_positions: np.asarray([11], dtype=np.int64)  # type: ignore[method-assign]
+def test_sparse_writeback_uses_reaction_field_and_product_semantics() -> None:
+    process = KarrDNADamageProcess({"rng_seed": 3})
+    uv_idx = process.reaction_ids.index("DNADamage_CSNCSN_cyclobutane_CSNCSN_UVB_radiation")
+    base_loss_idx = process.reaction_ids.index("DNADamage_SpontaneousBaseLoss_adenine")
+    process._rng = _QueuedPoissonRng([1, 1])
+    rates = np.zeros(process.reaction_bounds.shape[0], dtype=np.float64)
+    rates[uv_idx] = 1.0
+    rates[base_loss_idx] = 1.0
+    process.calcExpectedReactionRates = lambda states=None: rates.copy()  # type: ignore[method-assign]
+    samples = [np.asarray([11], dtype=np.int64), np.asarray([17], dtype=np.int64)]
 
-    update = process.next_update(1.0, _base_state())
+    def _sample_positions(n_events: int, occupied_positions: set[int]) -> np.ndarray:
+        _ = n_events, occupied_positions
+        return samples.pop(0)
+
+    process._sample_positions = _sample_positions  # type: ignore[method-assign]
+    state = _base_state()
+    state["substrates"]["gamma_radiation"] = 0.0
+    state["substrates_allocated"][process.name]["gamma_radiation"] = 0.0
+    update = process.next_update(1.0, state)
     chrom_update = update["chromosome"]
-    assert len(chrom_update["damage_events_cumulative"]) == 1
-    triplet = SparseTriplet.from_state(
+    assert len(chrom_update["damage_events_cumulative"]) == 2
+
+    uv_triplet = SparseTriplet.from_state(
         chrom_update["intrastrandCrossLinks"],
         shape=process.chromosome_shape,
     )
-    assert triplet.positions.tolist() == [10]
-    assert triplet.values.tolist() == [1]
-    assert 0 <= int(triplet.strands[0]) < process.chromosome_shape[1]
+    assert uv_triplet.positions.tolist() == [10]
+    assert uv_triplet.values.tolist() == [process.reaction_dna_products[uv_idx]]
+    assert 0 <= int(uv_triplet.strands[0]) < process.chromosome_shape[1]
+
+    abasic_triplet = SparseTriplet.from_state(
+        chrom_update["abasicSites"],
+        shape=process.chromosome_shape,
+    )
+    assert abasic_triplet.positions.tolist() == [16]
+    assert abasic_triplet.values.tolist() == [process.reaction_dna_products[base_loss_idx]]
+    assert chrom_update["damage_events_cumulative"][0]["damage_field"] == "intrastrandCrossLinks"
+    assert chrom_update["damage_events_cumulative"][1]["damage_field"] == "abasicSites"
 
 
 def test_sparse_occupied_sites_prevent_reuse_when_unique_enabled() -> None:
-    process = KarrDNADamageProcess(
-        {
-            "kind_rates_per_s": {
-                "uv_like": 1.0,
-                "oxidative": 0.0,
-                "alkylation": 0.0,
-                "depurination": 0.0,
-            },
-            "rng_seed": 5,
-            "enforce_unique_positions": True,
-        }
-    )
-    process._rng = _FixedPoissonRng(1)
+    process = KarrDNADamageProcess({"rng_seed": 5, "enforce_unique_positions": True})
+    reaction_index = process.reaction_ids.index("DNADamage_CSNCSN_cyclobutane_CSNCSN_UVB_radiation")
+    process._rng = _QueuedPoissonRng([1])
+    rates = np.zeros(process.reaction_bounds.shape[0], dtype=np.float64)
+    rates[reaction_index] = 1.0
+    process.calcExpectedReactionRates = lambda states=None: rates.copy()  # type: ignore[method-assign]
     state = _base_state()
     state["chromosome"]["intrastrandCrossLinks"] = SparseTriplet(
         positions=np.asarray([0], dtype=np.int64),
@@ -275,12 +353,7 @@ def test_sparse_occupied_sites_prevent_reuse_when_unique_enabled() -> None:
 
 def test_100_tick_total_damage_within_20_percent_of_expectation() -> None:
     template = KarrDNADamageProcess({})
-    expected_from_trace = _trace_total_if_available(template)
-    expected = (
-        float(expected_from_trace)
-        if expected_from_trace is not None
-        else float(sum(template.kind_rates_per_s.values()) * 100.0)
-    )
+    expected = float(np.sum(template.calcExpectedReactionRates(_base_state())) * 100.0)
 
     totals: list[float] = []
     for seed in range(64):
@@ -362,10 +435,11 @@ def test_no_production_oracle_trace_read_rule_8_regression() -> None:
     assert "per_process_traces" not in source
     assert "DNADamage_100ticks.mat" not in source
 
-    # kind_rates_per_s is always exactly the canonical default, or an
-    # explicit caller-supplied override -- passing an unrelated `trace_path`
-    # kwarg (e.g. a caller still on old code) must be silently ignored by
-    # Process's parameter merging, never trigger a trace read.
+    # The legacy compatibility map is still stored on the process for
+    # explicit caller overrides/tests, but it is never sourced from an
+    # oracle trace. Passing an unrelated `trace_path` kwarg (e.g. a caller
+    # still on old code) must be silently ignored by Process's parameter
+    # merging, never trigger a trace read.
     default_process = KarrDNADamageProcess({})
     from opencell.vivarium.karr_dna_damage import _DEFAULT_KIND_RATES_PER_S
 

@@ -1,9 +1,10 @@
-function [sim, mnrnd_provider] = karr_bootstrap()
+function [sim, mnrnd_provider, dnadamage_overlay] = karr_bootstrap()
 % karr_bootstrap  Common Karr WCM bootstrap for all extraction scripts.
 %
 % Returns a fully-initialized Simulation object ready for state extraction
 % or process evolution, plus the genuine Statistics Toolbox mnrnd
-% provider identity that was bound for this run. Mirrors the pattern that
+% provider identity that was bound for this run, plus DNADamage overlay
+% provenance for the actual source tree this bootstrap resolved. Mirrors the pattern that
 % worked in regenerate_metabolism_dynamics.m.
 %
 % Usage:
@@ -43,7 +44,7 @@ cleanup_obj = onCleanup(@() cd(old_dir));
 cd(wcm_root);
 addpath(genpath(fullfile(wcm_root, 'src')));
 addpath(fullfile(wcm_root, 'lib', 'glpkmex-2.9'));
-add_worktree_source_overlays(repo_root, wcm_root, worktree_wcm_root);
+dnadamage_overlay = add_worktree_source_overlays(repo_root, wcm_root, worktree_wcm_root);
 mnrnd_provider = require_genuine_statistics_rng_providers(repo_root);
 fprintf('[karr_bootstrap] mnrnd provider: %s (%s, toolbox %s)\n', ...
     fullfile(matlabroot, strrep(mnrnd_provider.provider_path_relative_to_matlabroot, '/', filesep)), ...
@@ -147,19 +148,7 @@ provider.identity_json = jsonencode(struct( ...
 ));
 end
 
-function add_worktree_source_overlays(repo_root, wcm_root, worktree_wcm_root)
-overlay_src_root = fullfile(worktree_wcm_root, 'src');
-if exist(overlay_src_root, 'dir')
-    fprintf('[karr_bootstrap] using worktree source overlay: %s\n', overlay_src_root);
-    addpath(genpath(overlay_src_root), '-begin');
-    rehash;
-    return;
-end
-
-if same_path(wcm_root, worktree_wcm_root)
-    return;
-end
-
+function overlay = add_worktree_source_overlays(repo_root, wcm_root, worktree_wcm_root)
 generated_overlay_root = fullfile(repo_root, 'tmp', 'wcm_source_overlay');
 generated_overlay_src = fullfile(generated_overlay_root, 'src');
 generated_dnadamage_path = fullfile(generated_overlay_src, ...
@@ -167,40 +156,97 @@ generated_dnadamage_path = fullfile(generated_overlay_src, ...
 source_dnadamage_path = fullfile(wcm_root, 'src', ...
     '+edu', '+stanford', '+covert', '+cell', '+sim', '+process', 'DNADamage.m');
 
-ensure_dnadamage_signed_zero_overlay(source_dnadamage_path, generated_dnadamage_path);
-fprintf('[karr_bootstrap] using generated DNADamage overlay: %s\n', generated_overlay_src);
-addpath(genpath(generated_overlay_src), '-begin');
+overlay = ensure_dnadamage_signed_zero_overlay(source_dnadamage_path, generated_dnadamage_path);
+overlay.wcm_root = wcm_root;
+overlay.worktree_wcm_root = worktree_wcm_root;
+if overlay.overlay_required
+    fprintf('[karr_bootstrap] using generated DNADamage overlay: %s\n', generated_overlay_src);
+    addpath(genpath(generated_overlay_src), '-begin');
+else
+    fprintf('[karr_bootstrap] DNADamage source already normalized at: %s\n', source_dnadamage_path);
+end
 rehash;
+overlay = verify_resolved_dnadamage_source(overlay);
 end
 
-function ensure_dnadamage_signed_zero_overlay(source_path, overlay_path)
+function overlay = ensure_dnadamage_signed_zero_overlay(source_path, overlay_path)
 source_text = fileread(source_path);
 needle = '                maxReactions = floor(min(this.substrates ./ max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j))));';
 replacement = sprintf([ ...
     '                denom = abs(max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j)));%% signed-zero normalization for exact-zero stoich rows\n' ...
     '                maxReactions = floor(min(this.substrates ./ denom));']);
+normalized_line = '                denom = abs(max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j)));% signed-zero normalization for exact-zero stoich rows';
 
-if isempty(strfind(source_text, needle)) %#ok<STREMP>
-    error('karr_bootstrap:dnadamage_overlay_source_mismatch', ...
-        'Unable to find the expected DNADamage maxReactions line in %s', source_path);
-end
-patched_text = strrep(source_text, needle, replacement);
-if strcmp(source_text, patched_text)
-    error('karr_bootstrap:dnadamage_overlay_noop', ...
-        'DNADamage overlay replacement did not change the source text at %s', source_path);
+overlay_required = isempty(strfind(source_text, normalized_line)); %#ok<STREMP>
+if overlay_required
+    if isempty(strfind(source_text, needle)) %#ok<STREMP>
+        error('karr_bootstrap:dnadamage_overlay_source_mismatch', ...
+            'Unable to find the expected DNADamage maxReactions line in %s', source_path);
+    end
+    patched_text = strrep(source_text, needle, replacement);
+    if strcmp(source_text, patched_text)
+        error('karr_bootstrap:dnadamage_overlay_noop', ...
+            'DNADamage overlay replacement did not change the source text at %s', source_path);
+    end
+else
+    patched_text = source_text;
 end
 
-overlay_dir = fileparts(overlay_path);
-if ~exist(overlay_dir, 'dir')
-    mkdir(overlay_dir);
+if isempty(strfind(patched_text, normalized_line)) %#ok<STREMP>
+    error('karr_bootstrap:dnadamage_overlay_missing_normalized_denominator', ...
+        'DNADamage patched text still lacks the normalized denominator line for %s', source_path);
 end
-fid = fopen(overlay_path, 'w');
-if fid < 0
-    error('karr_bootstrap:dnadamage_overlay_open_failed', ...
-        'Unable to open generated overlay path for writing: %s', overlay_path);
+
+if overlay_required
+    overlay_dir = fileparts(overlay_path);
+    if ~exist(overlay_dir, 'dir')
+        mkdir(overlay_dir);
+    end
+    fid = fopen(overlay_path, 'w');
+    if fid < 0
+        error('karr_bootstrap:dnadamage_overlay_open_failed', ...
+            'Unable to open generated overlay path for writing: %s', overlay_path);
+    end
+    cleanup_fid = onCleanup(@() fclose(fid)); %#ok<NASGU>
+    fwrite(fid, patched_text, 'char');
 end
-cleanup_fid = onCleanup(@() fclose(fid)); %#ok<NASGU>
-fwrite(fid, patched_text, 'char');
+
+overlay = struct( ...
+    'source_path', source_path, ...
+    'overlay_path', overlay_path, ...
+    'overlay_required', logical(overlay_required), ...
+    'source_sha256_lf_normalized', sha256_lf_normalized_text(source_text), ...
+    'patched_sha256_lf_normalized', sha256_lf_normalized_text(patched_text), ...
+    'expected_normalized_denominator_line', normalized_line, ...
+    'resolved_path', '', ...
+    'resolved_sha256_lf_normalized', '' ...
+);
+end
+
+function overlay = verify_resolved_dnadamage_source(overlay)
+resolved_path = which('edu.stanford.covert.cell.sim.process.DNADamage');
+if isempty(resolved_path)
+    error('karr_bootstrap:dnadamage_overlay_unresolved', ...
+        'Unable to resolve edu.stanford.covert.cell.sim.process.DNADamage after bootstrap path setup');
+end
+resolved_text = fileread(resolved_path);
+if isempty(strfind(resolved_text, overlay.expected_normalized_denominator_line)) %#ok<STREMP>
+    error('karr_bootstrap:dnadamage_overlay_resolved_source_unpatched', ...
+        'Resolved DNADamage source %s does not contain the normalized denominator line', resolved_path);
+end
+% Compare resolved content on the same fileread/normalized-text basis used
+% to derive source_sha256_lf_normalized and patched_sha256_lf_normalized
+% above. The Karr source contains non-ASCII comment bytes, so hashing the
+% raw file bytes here would disagree with the text-derived patched hash
+% even when MATLAB resolves the correct overlaid source content.
+resolved_sha = sha256_lf_normalized_text(resolved_text);
+if ~strcmp(resolved_sha, overlay.patched_sha256_lf_normalized)
+    error('karr_bootstrap:dnadamage_overlay_resolved_hash_mismatch', ...
+        'Resolved DNADamage source hash %s does not match patched hash %s', ...
+        resolved_sha, overlay.patched_sha256_lf_normalized);
+end
+overlay.resolved_path = resolved_path;
+overlay.resolved_sha256_lf_normalized = resolved_sha;
 end
 
 function rel = relative_to_matlabroot(path_value)
@@ -227,6 +273,16 @@ end
 raw = fread(fid, Inf, '*uint8')';
 fclose(fid);
 raw = raw(raw ~= uint8(13));
+hash_hex = sha256_lf_normalized_bytes(raw);
+end
+
+function hash_hex = sha256_lf_normalized_text(text_value)
+raw = uint8(text_value);
+raw = raw(raw ~= uint8(13));
+hash_hex = sha256_lf_normalized_bytes(raw);
+end
+
+function hash_hex = sha256_lf_normalized_bytes(raw)
 digest = java.security.MessageDigest.getInstance('SHA-256');
 digest_bytes = typecast(digest.digest(raw), 'uint8');
 hash_hex = lower(sprintf('%02x', digest_bytes));

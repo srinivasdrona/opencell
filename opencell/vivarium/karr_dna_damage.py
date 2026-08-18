@@ -123,6 +123,7 @@ class KarrDNADamageProcess(Process):
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        raw_parameters = {} if parameters is None else dict(parameters)
         super().__init__(parameters)
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
         self.damage_kinds = list(_DAMAGE_KINDS)
@@ -137,6 +138,9 @@ class KarrDNADamageProcess(Process):
         self.reaction_bounds = np.zeros((0, 2), dtype=np.float64)
         self.reaction_small_molecule_stoich = np.zeros((0, 0), dtype=np.float64)
         self.reaction_radiation = np.zeros((0,), dtype=np.int64)
+        self.reaction_ids: list[str] = []
+        self.reaction_damage_types: list[str] = []
+        self.reaction_dna_products = np.zeros((0,), dtype=np.int64)
         self.reaction_vulnerable_motifs: list[object] = []
         self.reaction_vulnerable_motif_types: list[str] = []
         self._load_schema_observables(self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH))
@@ -151,6 +155,12 @@ class KarrDNADamageProcess(Process):
             kind: max(0.0, float(configured_rates.get(kind, _DEFAULT_KIND_RATES_PER_S[kind])))
             for kind in self.damage_kinds
         }
+        # Compatibility-only debug/test surface: callers may still pass an
+        # explicit kind-rate override, but production firing now comes from
+        # the source-faithful per-reaction calcExpectedReactionRates() path.
+        self._kind_rate_override_active = "kind_rates_per_s" in raw_parameters and raw_parameters.get(
+            "kind_rates_per_s"
+        ) is not None
 
         sequence_length_param = self.parameters.get("sequence_length_nt")
         if sequence_length_param is not None and _is_finite_number(sequence_length_param):
@@ -178,12 +188,17 @@ class KarrDNADamageProcess(Process):
         if enzyme_ids is not None:
             self.enzyme_wids = [str(_coerce_scalar(raw)) for raw in np.asarray(enzyme_ids, dtype=object).ravel()]
         reaction_bounds = getattr(fixture, "reactionBounds", None)
+        reaction_ids = getattr(fixture, "reactionWholeCellModelIDs", None)
         reaction_small_stoich = getattr(fixture, "reactionSmallMoleculeStoichiometryMatrix", None)
+        reaction_damage_types = getattr(fixture, "reactionDamageTypes", None)
+        reaction_dna_products = getattr(fixture, "reactionDNAProduct", None)
         reaction_radiation = getattr(fixture, "reactionRadiation", None)
         reaction_vulnerable_motifs = getattr(fixture, "reactionVulnerableMotifs", None)
         reaction_vulnerable_motif_types = getattr(fixture, "reactionVulnerableMotifTypes", None)
         if reaction_bounds is not None:
             self.reaction_bounds = np.asarray(reaction_bounds, dtype=np.float64)
+        if reaction_ids is not None:
+            self.reaction_ids = [str(_coerce_scalar(raw)) for raw in np.asarray(reaction_ids, dtype=object).ravel()]
         if reaction_small_stoich is not None:
             self.reaction_small_molecule_stoich = np.asarray(reaction_small_stoich, dtype=np.float64)
             consumed_idx = np.flatnonzero(
@@ -195,6 +210,13 @@ class KarrDNADamageProcess(Process):
                 for idx in consumed_idx
                 if 0 <= int(idx) < len(self.substrate_wids)
             ]
+        if reaction_damage_types is not None:
+            self.reaction_damage_types = [
+                str(_coerce_scalar(raw))
+                for raw in np.asarray(reaction_damage_types, dtype=object).ravel()
+            ]
+        if reaction_dna_products is not None:
+            self.reaction_dna_products = np.asarray(reaction_dna_products, dtype=np.int64).reshape(-1)
         if reaction_radiation is not None:
             self.reaction_radiation = np.asarray(reaction_radiation, dtype=np.int64).reshape(-1)
         if reaction_vulnerable_motifs is not None:
@@ -302,46 +324,63 @@ class KarrDNADamageProcess(Process):
         touched_sparse_fields: set[str] = set()
 
         new_sites: list[dict[str, Any]] = []
-        substrates_state = states.get("substrates", {})
-        for kind in self.damage_kinds:
-            rate_per_s = max(0.0, float(self.kind_rates_per_s.get(kind, 0.0)))
+        rates = self.calcExpectedReactionRates(states)
+        if self._kind_rate_override_active:
+            rates = self._scaled_reaction_rates_from_kind_override(rates)
+        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
 
-            # Radiation gating: Karr DNADamage.m L549-551 multiplies
-            # selectionProbability by the radiation substrate count.
-            # If the gating substrate is absent or 0, the kind doesn't fire.
-            gate_wid = _RADIATION_GATE.get(kind)
-            if gate_wid is not None:
-                gate_count = max(0.0, float(substrates_state.get(gate_wid, 0.0)))
-                rate_per_s *= gate_count
-
-            lam = rate_per_s * dt
+        for rxn_idx in self._reaction_order(rates.size):
+            lam = max(0.0, float(rates[int(rxn_idx)]) * dt)
             if lam <= 0.0:
                 continue
 
+            max_reactions = self._max_reactions_for_reaction(
+                int(rxn_idx),
+                allocated_state=allocated_state,
+                substrates_state=states.get("substrates", {}),
+            )
+            if max_reactions is not None and max_reactions <= 0:
+                continue
+
             n_events = int(self._rng.poisson(lam))
+            if max_reactions is not None:
+                n_events = min(n_events, int(max_reactions))
             if n_events <= 0:
                 continue
 
-            sampled_positions = self._sample_positions(
+            sampled_coords = self._sample_reaction_coords(
+                reaction_index=int(rxn_idx),
                 n_events=n_events,
+                chromosome_state=chromosome_state,
+                sparse_by_field=sparse_by_field,
                 occupied_positions=occupied_positions,
             )
-            for event_idx, pos in enumerate(sampled_positions):
-                site_id = f"{kind}@{int(pos)}@tick{self._tick_index}@{event_idx}"
+            if not sampled_coords:
+                continue
+
+            damage_field = self._reaction_damage_field(int(rxn_idx))
+            damage_product = self._reaction_damage_product(int(rxn_idx))
+            reaction_id = self._reaction_id(int(rxn_idx))
+            kind = self._legacy_damage_kind(int(rxn_idx))
+            for event_idx, (zero_based_pos, strand) in enumerate(sampled_coords):
+                pos = int(zero_based_pos) + 1
+                site_id = f"{reaction_id}@{int(pos)}@tick{self._tick_index}@{event_idx}"
                 damage = {
                     "id": site_id,
                     "site_id": site_id,
                     "position": int(pos),
                     "kind": str(kind),
+                    "reaction_id": reaction_id,
+                    "reaction_index": int(rxn_idx),
+                    "damage_field": damage_field,
+                    "damage_product": damage_product,
                     "age_ticks": 0,
                 }
                 new_sites.append(damage)
-                chrom_field = _DAMAGE_KIND_TO_CHROMOSOME_FIELD[str(kind)]
-                strand = int(self._rng.integers(0, self.chromosome_shape[1]))
-                sparse_key = (int(pos) - 1, strand)
-                sparse_by_field[chrom_field][sparse_key] = max(1, sparse_by_field[chrom_field].get(sparse_key, 0))
-                touched_sparse_fields.add(chrom_field)
-                if self.enforce_unique_positions:
+                sparse_key = (int(zero_based_pos), int(strand))
+                sparse_by_field[damage_field][sparse_key] = damage_product
+                touched_sparse_fields.add(damage_field)
+                if self.enforce_unique_positions and self._reaction_uses_sequence_sampling(int(rxn_idx)):
                     occupied_positions.add(int(pos))
 
         if not new_sites:
@@ -459,6 +498,178 @@ class KarrDNADamageProcess(Process):
     def expected_events_per_tick(self, timestep: float = 1.0) -> dict[str, float]:
         dt = max(0.0, float(timestep))
         return {kind: float(self.kind_rates_per_s[kind] * dt) for kind in self.damage_kinds}
+
+    def _allocated_or_state(self, allocated_state: dict[str, Any], substrates_state: dict[str, Any], wid: str) -> float:
+        if wid in allocated_state:
+            return max(0.0, float(allocated_state.get(wid, 0.0)))
+        return max(0.0, float(substrates_state.get(wid, 0.0)))
+
+    def _reaction_order(self, n_reactions: int) -> np.ndarray:
+        if n_reactions <= 0:
+            return np.asarray([], dtype=np.int64)
+        permutation = getattr(self._rng, "permutation", None)
+        if callable(permutation):
+            return np.asarray(permutation(int(n_reactions)), dtype=np.int64).reshape(-1)
+        return np.arange(n_reactions, dtype=np.int64)
+
+    def _reaction_id(self, reaction_index: int) -> str:
+        if 0 <= int(reaction_index) < len(self.reaction_ids):
+            return self.reaction_ids[int(reaction_index)]
+        return f"reaction_{int(reaction_index)}"
+
+    def _reaction_damage_field(self, reaction_index: int) -> str:
+        if 0 <= int(reaction_index) < len(self.reaction_damage_types):
+            field = str(self.reaction_damage_types[int(reaction_index)])
+            if field in _SPARSE_DAMAGE_FIELDS:
+                return field
+        return "damagedBases"
+
+    def _reaction_damage_product(self, reaction_index: int) -> int:
+        if 0 <= int(reaction_index) < int(self.reaction_dna_products.size):
+            return int(self.reaction_dna_products[int(reaction_index)])
+        return 1
+
+    def _legacy_damage_kind(self, reaction_index: int) -> str:
+        field = self._reaction_damage_field(reaction_index)
+        reaction_id = self._reaction_id(reaction_index)
+        radiation_idx = int(self.reaction_radiation[int(reaction_index)]) if int(reaction_index) < self.reaction_radiation.size else 0
+        if field == "intrastrandCrossLinks":
+            return "uv_like"
+        if "BaseLoss" in reaction_id or field == "abasicSites":
+            return "depurination"
+        if radiation_idx != 0 or field in {"strandBreaks", "damagedSugarPhosphates"}:
+            return "oxidative"
+        if "BaseDeamination" in reaction_id or field == "damagedBases":
+            return "alkylation"
+        return "oxidative"
+
+    def _scaled_reaction_rates_from_kind_override(self, rates: np.ndarray) -> np.ndarray:
+        scaled = np.asarray(rates, dtype=np.float64).copy()
+        if scaled.size == 0:
+            return scaled
+        for kind in self.damage_kinds:
+            idxs = [idx for idx in range(scaled.size) if self._legacy_damage_kind(idx) == kind]
+            if not idxs:
+                continue
+            baseline = float(np.sum(scaled[idxs]))
+            target = max(0.0, float(self.kind_rates_per_s.get(kind, 0.0)))
+            if baseline <= 0.0:
+                scaled[idxs] = 0.0
+                continue
+            scaled[idxs] *= target / baseline
+        return scaled
+
+    def _max_reactions_for_reaction(
+        self,
+        reaction_index: int,
+        *,
+        allocated_state: dict[str, Any],
+        substrates_state: dict[str, Any],
+    ) -> int | None:
+        if self.reaction_small_molecule_stoich.size == 0:
+            return None
+        if reaction_index < 0 or reaction_index >= self.reaction_small_molecule_stoich.shape[1]:
+            return None
+        stoich = np.asarray(self.reaction_small_molecule_stoich[:, int(reaction_index)], dtype=np.float64).reshape(-1)
+        denom = np.abs(np.maximum(0.0, -stoich))
+        active = denom > 0.0
+        if not np.any(active):
+            return None
+        ratios: list[float] = []
+        for sub_idx in np.flatnonzero(active).tolist():
+            if sub_idx < 0 or sub_idx >= len(self.substrate_wids):
+                return 0
+            wid = self.substrate_wids[int(sub_idx)]
+            available = self._allocated_or_state(allocated_state, substrates_state, wid)
+            ratios.append(available / float(denom[int(sub_idx)]))
+        if not ratios:
+            return None
+        return max(0, int(np.floor(min(ratios))))
+
+    def _reaction_uses_sequence_sampling(self, reaction_index: int) -> bool:
+        if reaction_index < 0 or reaction_index >= len(self.reaction_vulnerable_motifs):
+            return True
+        return isinstance(self.reaction_vulnerable_motifs[int(reaction_index)], str)
+
+    def _sample_reaction_coords(
+        self,
+        *,
+        reaction_index: int,
+        n_events: int,
+        chromosome_state: dict[str, Any],
+        sparse_by_field: dict[str, dict[tuple[int, int], int]],
+        occupied_positions: set[int],
+    ) -> list[tuple[int, int]]:
+        if n_events <= 0:
+            return []
+
+        motif = self.reaction_vulnerable_motifs[int(reaction_index)] if reaction_index < len(self.reaction_vulnerable_motifs) else ""
+        if not isinstance(motif, str):
+            candidates = self._reaction_candidate_coords(chromosome_state, reaction_index)
+            if not candidates:
+                return []
+            order = self._reaction_order(len(candidates)).tolist()
+            limit = min(int(n_events), len(candidates))
+            return [candidates[int(order[idx])] for idx in range(limit)]
+
+        sampled_positions = self._sample_positions(
+            n_events=n_events,
+            occupied_positions=occupied_positions,
+        )
+        if sampled_positions.size <= 0:
+            return []
+        strands = np.asarray(
+            self._rng.integers(0, self.chromosome_shape[1], size=sampled_positions.size, dtype=np.int64),
+            dtype=np.int64,
+        ).reshape(-1)
+        out: list[tuple[int, int]] = []
+        for pos, strand in zip(sampled_positions.tolist(), strands.tolist(), strict=False):
+            out.append((int(pos) - 1, int(strand)))
+        return out
+
+    def _reaction_candidate_coords(
+        self,
+        chromosome_state: dict[str, Any],
+        reaction_index: int,
+    ) -> list[tuple[int, int]]:
+        if reaction_index < 0 or reaction_index >= len(self.reaction_vulnerable_motifs):
+            return []
+        motif = self.reaction_vulnerable_motifs[int(reaction_index)]
+        motif_type = (
+            self.reaction_vulnerable_motif_types[int(reaction_index)]
+            if reaction_index < len(self.reaction_vulnerable_motif_types)
+            else ""
+        )
+        try:
+            motif_value = int(motif)
+        except (TypeError, ValueError):
+            return []
+        if not motif_type:
+            return []
+
+        store = self._resolve_chromosome_store(chromosome_state)
+        try:
+            specific_triplet = store.get_field(str(motif_type))
+        except KeyError:
+            return []
+        damaged_sites = self._damaged_sites_value_map(store, chromosome_state)
+        damaged_coords = {
+            coord for coord, value in damaged_sites.items() if int(value) == motif_value
+        }
+        if not damaged_coords:
+            return []
+
+        candidates: list[tuple[int, int]] = []
+        for position, strand, value in zip(
+            specific_triplet.positions.tolist(),
+            specific_triplet.strands.tolist(),
+            specific_triplet.values.tolist(),
+            strict=False,
+        ):
+            coord = (int(position), int(strand))
+            if int(value) == motif_value and coord in damaged_coords:
+                candidates.append(coord)
+        return candidates
 
     def _polymerized_nt_count(self, chromosome_store: ChromosomeStore) -> float:
         try:
