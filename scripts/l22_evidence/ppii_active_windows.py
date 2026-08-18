@@ -36,6 +36,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.l22_evidence import h12  # noqa: E402
+from scripts.l22_extraction import ppii_active_window as paw_contract  # noqa: E402
 from scripts.l22_extraction.trace_validation import validate_structural  # noqa: E402
 
 PROCESS = "ProteinProcessingII"
@@ -83,6 +84,8 @@ class TraceWindowEntry:
     window_length_ticks: int
     first_regime_valid_transferase_tick: int | None = None
     window_selection: str | None = None
+    trace_origin_kind: str | None = None
+    tracked_extraction_provenance: dict[str, Any] | None = None
 
     @property
     def trace_length_ticks(self) -> int:
@@ -110,6 +113,8 @@ class TraceWindowEntry:
             "window_length_ticks": self.window_length_ticks,
             "first_regime_valid_transferase_tick": self.first_regime_valid_transferase_tick,
             "window_selection": self.window_selection,
+            "trace_origin_kind": self.trace_origin_kind,
+            "tracked_extraction_provenance": self.tracked_extraction_provenance,
         }
 
 
@@ -263,6 +268,14 @@ def load_trace_window_manifest(manifest_path: Path) -> tuple[dict[int, TraceWind
         window_selection = entry_payload.get("window_selection")
         if window_selection is not None and not isinstance(window_selection, str):
             raise ValueError(f"trace-window entry seed={seed} window_selection must be a string if present")
+        trace_origin_kind = entry_payload.get("trace_origin_kind")
+        if trace_origin_kind is not None and not isinstance(trace_origin_kind, str):
+            raise ValueError(f"trace-window entry seed={seed} trace_origin_kind must be a string if present")
+        tracked_extraction_provenance = entry_payload.get("tracked_extraction_provenance")
+        if tracked_extraction_provenance is not None and not isinstance(tracked_extraction_provenance, dict):
+            raise ValueError(
+                f"trace-window entry seed={seed} tracked_extraction_provenance must be an object if present"
+            )
 
         if seed in entries:
             raise ValueError(f"trace-window manifest contains duplicate seed entry {seed}")
@@ -279,6 +292,8 @@ def load_trace_window_manifest(manifest_path: Path) -> tuple[dict[int, TraceWind
             window_length_ticks=window_length_ticks,
             first_regime_valid_transferase_tick=first_tick,
             window_selection=window_selection,
+            trace_origin_kind=trace_origin_kind,
+            tracked_extraction_provenance=tracked_extraction_provenance,
         )
 
     return entries, payload
@@ -345,8 +360,95 @@ def _seed_report_status(entry: TraceWindowEntry, compare_result: dict[str, Any],
         "nontrivial_sample_count": compare_result["nontrivial_sample_count"],
         "branches_confirmed": sorted(confirmed_branches),
         "branches_observed": sorted(compare_result["branches_observed"]),
-        "oracle_manifest_cross_check": "pending",
+        "trace_provenance_check": "pending",
     }
+
+
+def _validate_tracked_extraction_provenance(entry: TraceWindowEntry, trace_sha: str) -> str:
+    provenance = entry.tracked_extraction_provenance
+    if provenance is None:
+        raise ValueError(
+            f"trace-window entry seed={entry.seed} is not in the oracle population manifest and must declare "
+            "tracked_extraction_provenance"
+        )
+    if provenance.get("kind") != paw_contract.TRACE_ORIGIN_TRACKED_ACTIVE_WINDOW:
+        raise ValueError(
+            f"trace-window entry seed={entry.seed} tracked_extraction_provenance.kind must be "
+            f"{paw_contract.TRACE_ORIGIN_TRACKED_ACTIVE_WINDOW!r}"
+        )
+
+    driver_path = REPO_ROOT / str(provenance.get("driver_path", ""))
+    fixture_path = REPO_ROOT / str(provenance.get("fixture_path", ""))
+    karr_source_path = REPO_ROOT / str(provenance.get("karr_source_path", ""))
+    for label, path_value in (
+        ("driver_path", driver_path),
+        ("fixture_path", fixture_path),
+        ("karr_source_path", karr_source_path),
+    ):
+        if not path_value.is_file():
+            raise FileNotFoundError(
+                f"trace-window entry seed={entry.seed} tracked_extraction_provenance.{label} missing: {path_value}"
+            )
+
+    if provenance.get("driver_sha256_lf_normalized") != h12._sha256_lf_normalized(driver_path):  # noqa: SLF001
+        raise ValueError(f"trace-window entry seed={entry.seed} driver hash is stale/tampered")
+    if provenance.get("fixture_sha256") != h12._sha256_file(fixture_path):  # noqa: SLF001
+        raise ValueError(f"trace-window entry seed={entry.seed} fixture hash is stale/tampered")
+    if provenance.get("karr_source_sha256_lf_normalized") != h12._sha256_lf_normalized(karr_source_path):  # noqa: SLF001
+        raise ValueError(f"trace-window entry seed={entry.seed} Karr source hash is stale/tampered")
+
+    expected_trace_rel = _path_for_record(entry.trace_path)
+    if provenance.get("mat_path") != expected_trace_rel:
+        raise ValueError(
+            f"trace-window entry seed={entry.seed} provenance mat_path {provenance.get('mat_path')!r} "
+            f"!= trace_path {expected_trace_rel!r}"
+        )
+    if provenance.get("mat_sha256") != trace_sha or trace_sha != entry.trace_sha256:
+        raise ValueError(f"trace-window entry seed={entry.seed} MAT hash provenance mismatch")
+
+    scalar_matches = {
+        "seed": entry.seed,
+        "trace_tick_start": entry.trace_tick_start,
+        "trace_tick_end": entry.trace_tick_end,
+        "window_tick_start": entry.window_tick_start,
+        "window_tick_end": entry.window_tick_end,
+        "window_length_ticks": entry.window_length_ticks,
+        "first_regime_valid_transferase_tick": entry.first_regime_valid_transferase_tick,
+    }
+    for key, expected in scalar_matches.items():
+        if provenance.get(key) != expected:
+            raise ValueError(
+                f"trace-window entry seed={entry.seed} tracked_extraction_provenance.{key}="
+                f"{provenance.get(key)!r} != manifest {expected!r}"
+            )
+
+    if provenance.get("active_window_rule") != paw_contract.ACTIVE_WINDOW_RULE:
+        raise ValueError(
+            f"trace-window entry seed={entry.seed} active_window_rule != {paw_contract.ACTIVE_WINDOW_RULE!r}"
+        )
+    if provenance.get("active_window_rule_version") != paw_contract.ACTIVE_WINDOW_RULE_VERSION:
+        raise ValueError(
+            f"trace-window entry seed={entry.seed} active_window_rule_version != "
+            f"{paw_contract.ACTIVE_WINDOW_RULE_VERSION}"
+        )
+
+    provider, rng_identity_json = paw_contract.validate_genuine_provider_binding(entry.trace_path)
+    provider_matches = {
+        "mnrnd_provider_kind": provider["kind"],
+        "mnrnd_provider_matlab_release": provider["matlab_release"],
+        "mnrnd_provider_toolbox_version": provider["toolbox_version"],
+        "mnrnd_provider_path_relative_to_matlabroot": provider["provider_path_relative_to_matlabroot"],
+        "mnrnd_provider_sha256": provider["sha256_lf_normalized"],
+        "statistics_rng_provider_identity_json": rng_identity_json,
+    }
+    for key, expected in provider_matches.items():
+        if provenance.get(key) != expected:
+            raise ValueError(
+                f"trace-window entry seed={entry.seed} tracked_extraction_provenance.{key}="
+                f"{provenance.get(key)!r} != live/local value {expected!r}"
+            )
+
+    return "tracked_extraction_provenance_verified"
 
 
 def build_active_window_validation_artifact(
@@ -365,7 +467,7 @@ def build_active_window_validation_artifact(
     preds_by_seed: dict[int, list[h12.UnitPrediction]] = {}
     prediction_hash_parts: list[str] = []
     window_seed_source_sha256: dict[str, str] = {}
-    oracle_manifest_cross_check: dict[str, str] = {}
+    trace_provenance_check: dict[str, str] = {}
     seed_windows_verified: dict[str, Any] = {}
 
     for seed in sorted(entries):
@@ -398,23 +500,31 @@ def build_active_window_validation_artifact(
         compare_result = h12.compare_predictions(PROCESS, preds, after, before)
         seed_report = _seed_report_status(entry, compare_result, derived_first_tick)
         rel_trace = _oracle_manifest_relative_path(entry.trace_path)
-        if rel_trace is None:
-            cross_check = "accepted_external_fixture"
+        if entry.trace_origin_kind == paw_contract.TRACE_ORIGIN_TRACKED_ACTIVE_WINDOW or (
+            entry.tracked_extraction_provenance is not None
+        ):
+            provenance_check = _validate_tracked_extraction_provenance(entry, sha)
         else:
-            manifest_rel_trace = f"per_process_traces_v2/{rel_trace}" if rel_trace.startswith(f"{PROCESS}_") else rel_trace
-            cross_check = h12.cross_check_oracle_manifest(PROCESS, manifest_rel_trace, sha, manifest_lookup)
-            if cross_check != "match":
+            if rel_trace is None:
                 raise ValueError(
-                    f"trace-window entry seed={seed} oracle population cross-check failed: {cross_check}"
+                    f"trace-window entry seed={seed} is missing oracle-population path provenance and does not "
+                    "declare tracked_extraction_provenance"
                 )
-        seed_report["oracle_manifest_cross_check"] = cross_check
+            manifest_rel_trace = f"per_process_traces_v2/{rel_trace}" if rel_trace.startswith(f"{PROCESS}_") else rel_trace
+            provenance_check = h12.cross_check_oracle_manifest(PROCESS, manifest_rel_trace, sha, manifest_lookup)
+            if provenance_check != "match":
+                raise ValueError(
+                    f"trace-window entry seed={seed} oracle population cross-check failed: {provenance_check}"
+                )
+            provenance_check = "oracle_population_manifest_match"
+        seed_report["trace_provenance_check"] = provenance_check
         if not seed_report["window_contains_confirmed_transferase_fires"]:
             raise ValueError(
                 f"trace-window entry seed={seed} does not actually confirm transferase_fires inside the chosen window"
             )
 
         window_seed_source_sha256[str(seed)] = sha
-        oracle_manifest_cross_check[str(seed)] = cross_check
+        trace_provenance_check[str(seed)] = provenance_check
         seed_windows_verified[str(seed)] = seed_report
 
     raw_prediction_hash = h12._sha256_bytes("\n".join(prediction_hash_parts).encode("utf-8"))  # noqa: SLF001
@@ -489,7 +599,8 @@ def build_active_window_validation_artifact(
         "missing_catalog_seeds": missing_catalog_seeds,
         "license_blocked_missing_seeds": missing_catalog_seeds,
         "window_seed_source_sha256": window_seed_source_sha256,
-        "oracle_manifest_cross_check": oracle_manifest_cross_check,
+        "trace_provenance_check": trace_provenance_check,
+        "oracle_manifest_cross_check": trace_provenance_check,
         "seed_windows_verified": seed_windows_verified,
         "total_sample_count": total,
         "nontrivial_sample_count": nontrivial,
@@ -589,6 +700,8 @@ def validate_active_window_artifact(payload: dict[str, Any], *, repo_root: Path 
         current_hash = h12._sha256_file(trace_path)  # noqa: SLF001
         if current_hash != recorded_hash:
             return f"seed {seed} source trace hash stale/tampered"
+        if entry.get("trace_provenance_check") == "pending":
+            return f"seed {seed} trace_provenance_check remained pending"
 
     if payload.get("shared_h12_promotion_ready") is True:
         if payload.get("manifest_seed_count") != h12.CATALOG_N_M[PROCESS][0]:

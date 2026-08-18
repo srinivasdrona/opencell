@@ -14,6 +14,7 @@ if str(REPO_ROOT) not in sys.path:
 
 from scripts.l22_evidence import h12  # noqa: E402
 from scripts.l22_evidence import ppii_active_windows as paw  # noqa: E402
+from scripts.l22_extraction import ppii_active_window as paw_contract  # noqa: E402
 
 
 def _write_trace(path: Path, *, seed: int, n_ticks: int = 20) -> Path:
@@ -57,6 +58,85 @@ def _write_manifest(path: Path, *, entries: dict[str, dict]) -> Path:
     return path
 
 
+def _fake_provider_bundle() -> tuple[dict[str, str], str]:
+    provider = {
+        "kind": "statistics_toolbox",
+        "matlab_release": "R2026a",
+        "toolbox_version": "26.1",
+        "provider_path_relative_to_matlabroot": "toolbox/stats/stats/mnrnd.m",
+        "sha256_lf_normalized": "1" * 64,
+    }
+    rng_identity_json = json.dumps(
+        {
+            "kind": "statistics_toolbox",
+            "matlab_release": "R2026a",
+            "toolbox_version": "26.1",
+            "functions": [
+                {
+                    "name": "binornd",
+                    "provider_path_relative_to_matlabroot": "toolbox/stats/stats/binornd.m",
+                    "sha256_lf_normalized": "2" * 64,
+                },
+                {
+                    "name": "mnrnd",
+                    "provider_path_relative_to_matlabroot": "toolbox/stats/stats/mnrnd.m",
+                    "sha256_lf_normalized": "1" * 64,
+                },
+            ],
+        }
+    )
+    return provider, rng_identity_json
+
+
+def _tracked_provenance_for(
+    trace: Path,
+    *,
+    seed: int,
+    tick_start: int,
+    tick_end: int,
+    first_regime_valid_transferase_tick: int | None = None,
+) -> dict:
+    provider, rng_identity_json = _fake_provider_bundle()
+    if first_regime_valid_transferase_tick is None:
+        first_regime_valid_transferase_tick = tick_start
+    return {
+        "kind": paw_contract.TRACE_ORIGIN_TRACKED_ACTIVE_WINDOW,
+        "version": 1,
+        "driver_path": "scripts/matlab/extract_ppii_active_window_seeds.m",
+        "driver_sha256_lf_normalized": h12._sha256_lf_normalized(  # noqa: SLF001
+            REPO_ROOT / "scripts" / "matlab" / "extract_ppii_active_window_seeds.m"
+        ),
+        "fixture_path": "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+        "fixture_sha256": h12._sha256_file(  # noqa: SLF001
+            REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "ProteinProcessingII_flat.mat"
+        ),
+        "karr_source_path": "data/karr_vendored_source/ProteinProcessingII.m",
+        "karr_source_sha256_lf_normalized": h12._sha256_lf_normalized(  # noqa: SLF001
+            REPO_ROOT / "data" / "karr_vendored_source" / "ProteinProcessingII.m"
+        ),
+        "mat_path": trace.relative_to(REPO_ROOT).as_posix() if trace.is_relative_to(REPO_ROOT) else trace.resolve().as_posix(),
+        "mat_sha256": h12._sha256_file(trace),  # noqa: SLF001
+        "seed": seed,
+        "trace_tick_start": tick_start,
+        "trace_tick_end": tick_end,
+        "window_tick_start": tick_start,
+        "window_tick_end": tick_end,
+        "window_length_ticks": 20,
+        "first_regime_valid_transferase_tick": first_regime_valid_transferase_tick,
+        "active_window_rule": paw_contract.ACTIVE_WINDOW_RULE,
+        "active_window_rule_version": paw_contract.ACTIVE_WINDOW_RULE_VERSION,
+        "active_window_search_max_ticks": 2000,
+        "active_window_search_stop_reason": paw_contract.SEARCH_STOP_REASON_SUCCESS,
+        "active_window_detection_mechanism": "synthetic_test_driver",
+        "mnrnd_provider_kind": provider["kind"],
+        "mnrnd_provider_matlab_release": provider["matlab_release"],
+        "mnrnd_provider_toolbox_version": provider["toolbox_version"],
+        "mnrnd_provider_path_relative_to_matlabroot": provider["provider_path_relative_to_matlabroot"],
+        "mnrnd_provider_sha256": provider["sha256_lf_normalized"],
+        "statistics_rng_provider_identity_json": rng_identity_json,
+    }
+
+
 def _fake_predict(seed: int, before: dict, fixture: dict) -> list[h12.UnitPrediction]:
     del fixture
     branch_by_tick = {
@@ -84,6 +164,11 @@ def _fake_predict(seed: int, before: dict, fixture: dict) -> list[h12.UnitPredic
 def test_build_active_window_validation_artifact_uses_shared_h12_predictor_contract(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     trace0 = _write_trace(tmp_path / "seed0.mat", seed=0)
     trace1 = _write_trace(tmp_path / "seed1.mat", seed=1)
+    monkeypatch.setattr(
+        paw_contract,
+        "validate_genuine_provider_binding",
+        lambda _path: _fake_provider_bundle(),
+    )
     manifest_path = _write_manifest(
         tmp_path / "manifest.json",
         entries={
@@ -100,6 +185,14 @@ def test_build_active_window_validation_artifact_uses_shared_h12_predictor_contr
                 "window_length_ticks": 20,
                 "first_regime_valid_transferase_tick": 3,
                 "window_selection": "whole_trace_for_test",
+                "trace_origin_kind": paw_contract.TRACE_ORIGIN_TRACKED_ACTIVE_WINDOW,
+                "tracked_extraction_provenance": _tracked_provenance_for(
+                    trace0,
+                    seed=0,
+                    tick_start=1,
+                    tick_end=20,
+                    first_regime_valid_transferase_tick=3,
+                ),
             },
             "1": {
                 "seed": 1,
@@ -114,6 +207,14 @@ def test_build_active_window_validation_artifact_uses_shared_h12_predictor_contr
                 "window_length_ticks": 20,
                 "first_regime_valid_transferase_tick": 3,
                 "window_selection": "whole_trace_for_test",
+                "trace_origin_kind": paw_contract.TRACE_ORIGIN_TRACKED_ACTIVE_WINDOW,
+                "tracked_extraction_provenance": _tracked_provenance_for(
+                    trace1,
+                    seed=1,
+                    tick_start=1,
+                    tick_end=20,
+                    first_regime_valid_transferase_tick=3,
+                ),
             },
         },
     )
@@ -128,12 +229,17 @@ def test_build_active_window_validation_artifact_uses_shared_h12_predictor_contr
     assert artifact["shared_h12_promotion_ready"] is False
     assert artifact["missing_catalog_seeds"][0] == 2
     assert artifact["seed_windows_verified"]["0"]["window_contains_confirmed_transferase_fires"] is True
-    assert artifact["seed_windows_verified"]["0"]["oracle_manifest_cross_check"] == "accepted_external_fixture"
+    assert artifact["seed_windows_verified"]["0"]["trace_provenance_check"] == "tracked_extraction_provenance_verified"
     assert paw.validate_active_window_artifact(artifact) is None
 
 
 def test_cli_writes_non_gating_report(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     trace = _write_trace(tmp_path / "seed0.mat", seed=0)
+    monkeypatch.setattr(
+        paw_contract,
+        "validate_genuine_provider_binding",
+        lambda _path: _fake_provider_bundle(),
+    )
     manifest_path = _write_manifest(
         tmp_path / "manifest.json",
         entries={
@@ -149,6 +255,14 @@ def test_cli_writes_non_gating_report(tmp_path: Path, monkeypatch: pytest.Monkey
                 "window_tick_end": 20,
                 "window_length_ticks": 20,
                 "first_regime_valid_transferase_tick": 3,
+                "trace_origin_kind": paw_contract.TRACE_ORIGIN_TRACKED_ACTIVE_WINDOW,
+                "tracked_extraction_provenance": _tracked_provenance_for(
+                    trace,
+                    seed=0,
+                    tick_start=1,
+                    tick_end=20,
+                    first_regime_valid_transferase_tick=3,
+                ),
             }
         },
     )
@@ -193,6 +307,50 @@ def test_tampered_trace_hash_fails_closed(tmp_path: Path):
 
 def test_validator_rejects_stale_shared_h12_hash(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
     trace = _write_trace(tmp_path / "seed0.mat", seed=0)
+    monkeypatch.setattr(
+        paw_contract,
+        "validate_genuine_provider_binding",
+        lambda _path: _fake_provider_bundle(),
+    )
+    manifest_path = _write_manifest(
+        tmp_path / "manifest.json",
+        entries={
+            "0": {
+                "seed": 0,
+                "process": paw.PROCESS,
+                "trace_path": str(trace),
+                "trace_sha256": h12._sha256_file(trace),  # noqa: SLF001
+                "trace_schema": "synthetic_trace_v1",
+                "trace_tick_start": 1,
+                "trace_tick_end": 20,
+                "window_tick_start": 1,
+                "window_tick_end": 20,
+                "window_length_ticks": 20,
+                "first_regime_valid_transferase_tick": 3,
+                "trace_origin_kind": paw_contract.TRACE_ORIGIN_TRACKED_ACTIVE_WINDOW,
+                "tracked_extraction_provenance": _tracked_provenance_for(
+                    trace,
+                    seed=0,
+                    tick_start=1,
+                    tick_end=20,
+                    first_regime_valid_transferase_tick=3,
+                ),
+            }
+        },
+    )
+
+    monkeypatch.setitem(h12.PREDICTORS, paw.PROCESS, _fake_predict)
+
+    artifact = paw.build_active_window_validation_artifact(manifest_path)
+    artifact["shared_h12_predictor_source_sha256_lf_normalized"] = "0" * 64
+
+    reason = paw.validate_active_window_artifact(artifact)
+    assert reason is not None
+    assert "shared_h12_predictor_source_sha256_lf_normalized" in reason
+
+
+def test_external_trace_without_tracked_provenance_is_rejected(tmp_path: Path, monkeypatch: pytest.MonkeyPatch):
+    trace = _write_trace(tmp_path / "seed0.mat", seed=0)
     manifest_path = _write_manifest(
         tmp_path / "manifest.json",
         entries={
@@ -211,15 +369,10 @@ def test_validator_rejects_stale_shared_h12_hash(tmp_path: Path, monkeypatch: py
             }
         },
     )
-
     monkeypatch.setitem(h12.PREDICTORS, paw.PROCESS, _fake_predict)
 
-    artifact = paw.build_active_window_validation_artifact(manifest_path)
-    artifact["shared_h12_predictor_source_sha256_lf_normalized"] = "0" * 64
-
-    reason = paw.validate_active_window_artifact(artifact)
-    assert reason is not None
-    assert "shared_h12_predictor_source_sha256_lf_normalized" in reason
+    with pytest.raises(ValueError, match="tracked_extraction_provenance"):
+        paw.build_active_window_validation_artifact(manifest_path)
 
 
 def test_shared_canonical_h12_source_hash_remains_fresh():
