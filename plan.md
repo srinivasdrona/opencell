@@ -59,93 +59,29 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live state (2026-08-17) — MATLAB-restored eight-track closure wave relaunching:**
+**Live state (2026-08-18 14:20 IST) — seven original lanes + RepInit remain:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
-- Active integration worktree: `E:\opencell-worktrees\main-integrate`; clean at `2f53f93`, synchronized with `origin/main`.
-- MATLAB R2026a Update 2 is restored at `E:\MATLAB\bin\matlab.exe`; `license('test','Statistics_Toolbox') == 1`.
-- **Critical correction:** `license('test','Statistics_Toolbox') == 1` did
-  not mean the product was installed. `E:\MATLAB\toolbox\stats` is absent and
-  no genuine `mnrnd.m` exists. Any new full-simulation trace produced while
-  `scripts/matlab/mnrnd.m` shadows the missing toolbox is non-authoritative
-  Karr evidence. Full-simulation extraction lanes are stopped until Statistics
-  and Machine Learning Toolbox is installed.
-- **2026-08-17 22:43 IST:** Statistics and Machine Learning Toolbox 26.1 is
-  now installed and genuine `mnrnd` resolves at
-  `E:\MATLAB\toolbox\stats\stats\mnrnd.m` with successful checkout. Extraction
-  remains paused only until the provider-binding migration prevents
-  `scripts/matlab/mnrnd.m` from shadowing it and records genuine-provider
-  provenance. Migration worktree `wave-mnrnd-provider` is running as PID
-  `39708`; its first agent produced the implementation diff but died during
-  validation from provider high-demand errors, and this execution-only resume
-  is validating/committing the preserved diff.
-- **Provider migration is now independently ACCEPTED and merged to main**
-  through `0b23928`; complete runtime support landed at `b8a27a5`. Clean
-  provider-native worktrees are replacing the conflict-heavy legacy
-  extraction branches for active windows, Macromol, Cytokinesis, FtsZ, and
-  DNADamage. Old shim-derived raw outputs are not copied.
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`; main is
+  pushed through `c42d6e3`.
+- MATLAB R2026a Update 2 + Statistics and Machine Learning Toolbox 26.1 are
+  installed. All five colliding RNG providers are fail-closed/hash-bound;
+  GLPK and parity helpers are verified by real MATLAB smoke.
+- **PPII CLOSED:** genuine-provider full50 authority merged at `edadbe3`,
+  shared H12 promoted at `a62c258`, current-tree sweep/index closure at
+  `c42d6e3`. L2.2 is **17 PASS / 2 FAIL / 3 MISSING**, integrity OK.
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
-- Eight preserved process worktrees are running as detached Codex subprocesses:
-  - `l21-active-windows`: Codex preparation ended; four-process extraction
-    restarted from clean provider-native worktree `genuine-l21-active` as PID
-    `21852`; no old raw traces were copied
-  - `l21-chromcond`: exact post-warmup endpoint captured
-    (`randStream.state=1279689633`, 80 SMC bound); live MATLAB vs Python
-    restored-state vectors proved `matlab_rng.py` was wrong; commit `8d06797`
-    fixes exact MATLAB RNG semantics and `2d917d4` fixes direct storage.
-    Live WholeCell resets the process RNG to `931316785` before tick 0 while
-    retaining warmup state effects; focused handoff repair PID `29144` is
-    running without new full-simulation extraction.
-  - `l22-macromol`: Codex phase ended at `478721d`; direct MATLAB extraction
-    produced apparent seeds `1..3`, then MATLAB exited `-1`; those traces are
-    non-authoritative because the repo `mnrnd` shim was active. Seed `0`
-    also has a separate trigger-window defect. The first retry proved
-    `glpkcc` resolves but broad `lib` path injection shadowed modern MATLAB
-    `strjoin`, so bootstrap now adds only `lib\glpkmex-2.9`. Clean genuine
-    lane `genuine-l22-macromol` is running as PID `41056`, including seed-0
-    scan/capture repair.
-  - `l22-procii`: **REJECTED by independent Opus 5 review**. The 22 new
-    traces used the repository `mnrnd` shim because genuine Statistics
-    Toolbox `mnrnd` is not installed; the full50 manifest also uses
-    machine-absolute paths and bypasses the oracle-population provenance
-    check. Valid coverage remains 28/50; commit `bfbfe5d` must not merge.
-    Accepted genuine-provider commits are now on the PPII branch and a clean
-    22-window replacement run is active as PID `25976`.
-  - `l22-dnas`: hidden-state candidate `ca7f84c`/`b7d21aa` reports the frozen
-    metric PASS, but the known tick-5 source mismatch remains and OC support
-    is `1472/200/199` vs Karr `65/58/7`; independent Opus 5 review
-    **REJECTED** the one-sided/non-discriminating gate, and a focused source
-    gap repair fixed topoIV legality at `55d1441`. One major-region
-    `linkingNumbers` residual remains (`51933` vs `51932`). Corrected RNG
-    semantics isolated the first divergence to tick-0 gyrase release; a
-    focused release-ledger repair PID `21604` is running.
-  - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
-    code `-1` at 42.6 minutes; the single-seed retry produced seed `1`, but
-    shim contamination makes that new trajectory non-authoritative.
-    Clean genuine-provider regeneration is running in
-    `genuine-l22-cytokinesis`; prep commits `9d64ebd`/`418646a` are green and
-    genuine seed `0` is queued in shell `matlabq-genuine-cytokinesis-s000`.
-  - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
-    stopped pending genuine Statistics Toolbox after seed `0` again exited
-    MATLAB `-1`; the first real run exposed
-    missing WholeCell `isodd`/`iseven` compatibility functions and an omitted
-    WholeCell `lib` path for `glpkcc`. Clean genuine-provider lane
-    `genuine-l22-ftsz` is running as PID `43760`.
-  - `l22-dnadamage`: 50 old UVB traces are vacuous despite a live Karr rate of
-    `0.1` events/tick. Target-only probes narrowed the contradiction inside
-    `DNADamage.evolveState`; a target-only inline-loop probe is launching,
-    in the legacy branch. Clean provider-native lane
-    `genuine-l22-dnadamage` is running as PID `32432`, starting from the
-    isolated `maxReactions=-Inf` defect and a genuine 5-seed canary.
-    Genuine Karr N50 is now accepted at 99 fire ticks versus preregistered
-    97.22; OC fires 992 due a confirmed 44.85x hardcoded rate-law error.
-    OC per-reaction repair plus fail-closed overlay provenance is running as
-    PID `34880`.
-    it must pass a 5-seed Karr-support canary before any new full cohort.
-- A ninth lower-gate gap was discovered by the fresh 2026-08-17 baseline and
-  is running independently in `E:\opencell-worktrees\wave-l21-repinit`
-  as PID `43988`:
-  `ReplicationInitiation` is bit-identical but only fires on 55/103 active
-  Karr ticks, so its honest strict-rubric verdict is `PARTIAL`, not `GENUINE`.
+- No detached Codex or MATLAB process is currently alive. Relaunch targets:
+  - `l21-active-windows`: prep `7e2e5e9`/`10d355c`; run five genuine traces.
+  - `l21-chromcond`: fixes `8d06797`/`2d917d4`/`649fbf1`; next hidden
+    divergence is tick-1 `complexBoundSites` carryover/application.
+  - `l21-repinit`: `884f830` plus dirty identity/bind-port work; finish L2.1.
+  - `l22-macromol`: prep `9279dc6`; execute same-path 50-seed cohort/verdict.
+  - `l22-dnas`: topoIV fix `55d1441`; capture hidden chromosome RNG state,
+    then fix split-stream release and re-preregister two-sided gate.
+  - `l22-cytokinesis`: prep `9d64ebd`/`418646a`; execute genuine seeds 0-49.
+  - `l22-ftsz`: fixes `4b0eac6`/`7dda296`; resume genuine seeds 0-49.
+  - `l22-dnadamage`: genuine Karr 99 events accepted; dirty OC per-reaction
+    rate-law/overlay-provenance repair must be completed and reviewed.
 - Each worker owns only its process branch/status/evidence. The coordinator alone edits shared catalogs, evidence indexes, `plan.md`, and SQL `tracks`.
 - Inventory-before-extraction remains mandatory across the primary checkout and all active worktrees; only proven missing matrix cells may be generated.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green), RibosomeAssembly N=50 event PASS (`ab4126c` + index `d179b63`), DNADamage blocker evidence (`dde2510`), MacromolecularComplexation lifecycle correction (`f627b34`), and exact tick-0 allocator infrastructure (`d5298a1`).
