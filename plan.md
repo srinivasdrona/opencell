@@ -136,6 +136,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     in the legacy branch. Clean provider-native lane
     `genuine-l22-dnadamage` is running as PID `32432`, starting from the
     isolated `maxReactions=-Inf` defect and a genuine 5-seed canary.
+    Genuine Karr N50 is now accepted at 99 fire ticks versus preregistered
+    97.22; OC fires 992 due a confirmed 44.85x hardcoded rate-law error.
+    OC per-reaction repair plus fail-closed overlay provenance is running as
+    PID `34880`.
     it must pass a 5-seed Karr-support canary before any new full cohort.
 - A ninth lower-gate gap was discovered by the fresh 2026-08-17 baseline and
   is running independently in `E:\opencell-worktrees\wave-l21-repinit`
