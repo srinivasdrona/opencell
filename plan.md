@@ -70,18 +70,18 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   shared H12 promoted at `a62c258`, current-tree sweep/index closure at
   `c42d6e3`. L2.2 is **17 PASS / 2 FAIL / 3 MISSING**, integrity OK.
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
-- No detached Codex or MATLAB process is currently alive. Relaunch targets:
-  - `l21-active-windows`: prep `7e2e5e9`/`10d355c`; run five genuine traces.
+- Live detached Codex PIDs:
+  - `l21-active-windows`: `21060`; prep `7e2e5e9`/`10d355c`, run five genuine traces.
   - `l21-chromcond`: fixes `8d06797`/`2d917d4`/`649fbf1`; next hidden
-    divergence is tick-1 `complexBoundSites` carryover/application.
-  - `l21-repinit`: `884f830` plus dirty identity/bind-port work; finish L2.1.
-  - `l22-macromol`: prep `9279dc6`; execute same-path 50-seed cohort/verdict.
+    divergence is tick-1 `complexBoundSites` carryover/application; PID `21896`.
+  - `l21-repinit`: PID `18896`; `884f830` plus dirty identity/bind-port work.
+  - `l22-macromol`: PID `484`; prep `9279dc6`, execute same-path cohort/verdict.
   - `l22-dnas`: topoIV fix `55d1441`; capture hidden chromosome RNG state,
-    then fix split-stream release and re-preregister two-sided gate.
-  - `l22-cytokinesis`: prep `9d64ebd`/`418646a`; execute genuine seeds 0-49.
-  - `l22-ftsz`: fixes `4b0eac6`/`7dda296`; resume genuine seeds 0-49.
+    then fix split-stream release and re-preregister two-sided gate; PID `3088`.
+  - `l22-cytokinesis`: PID `20564`; prep `9d64ebd`/`418646a`, seeds 0-49.
+  - `l22-ftsz`: PID `15188`; fixes `4b0eac6`/`7dda296`, seeds 0-49.
   - `l22-dnadamage`: genuine Karr 99 events accepted; dirty OC per-reaction
-    rate-law/overlay-provenance repair must be completed and reviewed.
+    rate-law/overlay-provenance repair PID `21588`.
 - Each worker owns only its process branch/status/evidence. The coordinator alone edits shared catalogs, evidence indexes, `plan.md`, and SQL `tracks`.
 - Inventory-before-extraction remains mandatory across the primary checkout and all active worktrees; only proven missing matrix cells may be generated.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green), RibosomeAssembly N=50 event PASS (`ab4126c` + index `d179b63`), DNADamage blocker evidence (`dde2510`), MacromolecularComplexation lifecycle correction (`f627b34`), and exact tick-0 allocator infrastructure (`d5298a1`).
