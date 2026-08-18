@@ -22,6 +22,16 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
+from l2_2_replay_common_v2 import (
+    _build_context as _build_hidden_context,
+)
+from l2_2_replay_common_v2 import (
+    _inject_hidden_read_surface,
+    _trace_cell_payload,
+)
+from l2_2_replay_common_v2 import (
+    _project_trace_vector as _project_hidden_trace_vector,
+)
 from l2_replay_common import (
     apply_count_update,
     build_state_template,
@@ -44,6 +54,7 @@ from l2_replay_common import (
     audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
 )
 
+from opencell.state.chromosome_store import ChromosomeStore
 from opencell.vivarium.karr_chromosome_condensation import KarrChromosomeCondensationProcess
 
 _TRACE_PROCESS_NAME = "ChromosomeCondensation"
@@ -98,6 +109,21 @@ def _assert_identity_or_tolerance(
         oc_after=oc_after,
         karr_after=karr_after,
     )
+
+
+def _triplets(store: ChromosomeStore, field_name: str) -> np.ndarray:
+    triplet = store.get_field(field_name)
+    if triplet.calc_num_edges() == 0:
+        return np.zeros((0, 3), dtype=np.int64)
+    arr = np.column_stack(
+        (
+            triplet.positions.astype(np.int64, copy=False),
+            triplet.strands.astype(np.int64, copy=False),
+            triplet.values.astype(np.int64, copy=False),
+        )
+    )
+    order = np.lexsort((arr[:, 2], arr[:, 1], arr[:, 0]))
+    return arr[order]
 
 
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
@@ -193,3 +219,42 @@ def test_karr_chromosome_condensation_l2_replay_identity_per_tick(rng_seed: int)
                     oc_after=oc_after,
                     karr_after=karr_after,
                 )
+
+
+def test_hidden_chromosome_replay_applies_sparse_replacements() -> None:
+    with h5py.File(resolve_trace_path(_TRACE_PROCESS_NAME), "r") as trace:
+        ctx = _build_hidden_context(name=_TRACE_PROCESS_NAME, rng_seed=0, handle=trace)
+        process = ctx.process
+
+        for tick in (0, 1):
+            state = build_state_template(process)
+            for observable in _OBSERVABLES:
+                overlay_observable_into_state(
+                    process=process,
+                    state=state,
+                    observable=observable,
+                    vector=_project_hidden_trace_vector(ctx, "states_before", observable, tick),
+                    wids=ctx.wids_by_observable[observable],
+                )
+            _inject_hidden_read_surface(ctx=ctx, state=state, tick=tick)
+            refresh_allocator_views(process, state)
+
+            update = process.next_update(1.0, state)
+            _apply_update(state, update, process)
+
+            payload = _trace_cell_payload(
+                ctx=ctx,
+                group="states_after",
+                name="chromosome",
+                tick=tick,
+            )
+            assert isinstance(payload, h5py.Group)
+            expected_store = ChromosomeStore.from_hdf5_group(payload)
+            actual_store = ChromosomeStore.from_state_mapping(
+                state["chromosome"],
+                shape=process.chromosome_shape,
+            )
+            assert np.array_equal(
+                _triplets(actual_store, "complexBoundSites"),
+                _triplets(expected_store, "complexBoundSites"),
+            )
