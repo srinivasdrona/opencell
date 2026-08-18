@@ -86,12 +86,25 @@ RIBOSOME_EVENT_MANIFEST = (
 )
 
 DIRECT_SPECIAL_TRACES: dict[str, tuple[Path, ...]] = {
+    "TranscriptionalRegulation": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "TranscriptionalRegulation_4000ticks.mat",
+    ),
+    "ChromosomeSegregation": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "ChromosomeSegregation_100ticks.mat",
+    ),
+    "Cytokinesis": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "Cytokinesis_4000ticks.mat",
+    ),
     "RNAModification": (
         Path("/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2_event_s000/RNAModification_100ticks.mat"),
     ),
     "DNADamage": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "DNADamage_20ticks.mat",
         Path("/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/DNADamage_100ticks.mat"),
         Path("/mnt/e/opencell/data/m1_sources/karr_native/dnadamage_fullcycle/DNADamage_32400ticks.mat"),
+    ),
+    "HostInteraction": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "HostInteraction_100ticks.mat",
     ),
 }
 
@@ -887,6 +900,8 @@ def _event_candidates_from_manifest(manifest_path: Path) -> list[tuple[Path, str
 def _special_candidates(process_name: str) -> list[tuple[Path, str | None, str | None]]:
     candidates: list[tuple[Path, str | None, str | None]] = []
     if process_name == "Cytokinesis":
+        for path in DIRECT_SPECIAL_TRACES.get(process_name, ()):
+            candidates.append((path, None, "local_event_window"))
         payload = _load_json(CYTOKINESIS_EVENT_MANIFEST)
         for row in payload.get("inputs", []):
             rel = row["path"]
