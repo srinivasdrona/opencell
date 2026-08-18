@@ -60,12 +60,15 @@ from l2_replay_common import (  # type: ignore
 # processes (oracle_type=bit_identity). This is the correct rubric per
 # process class and restores the L2.2 ⊆ L2.1 hierarchy expectation.
 EXPECTED_VERDICTS = {
-    # GENUINE: 19 (was 16 at Day-37 PM: +TerminalOrg from schema-v2.1
+    # GENUINE: 20 (was 16 at Day-37 PM: +TerminalOrg from schema-v2.1
     # fallback, +TranscriptionalRegulation and +Metabolism from
     # non-standard channel detection — their biology fires on
     # tf_binding/tx_rate_fold_change/metabolic_reaction.fluxs which the
     # strict rubric now recognizes; +Replication, see its inline comment
-    # below for the corrected-activity-gate root cause and evidence)
+    # below for the corrected-activity-gate root cause and evidence;
+    # +ChromosomeCondensation after the shared replay applier started
+    # preserving hidden `chromosome` sparse replacements between ticks)
+    "ChromosomeCondensation": "GENUINE",
     #
     # DNARepair stays COINCIDENTAL, but NOT because the harness lacks its inputs:
     # `_classify()` now injects the chromosome hidden-read surface (states_before,
@@ -118,8 +121,7 @@ EXPECTED_VERDICTS = {
     # DNARepair and ProteinDecay are still biology-silent on this
     # standard-observable-only strict-rubric surface — real gaps)
     "ProteinDecay": "COINCIDENTAL",
-    # FAIL: 1 (bit-identity broken for deterministic process)
-    "ChromosomeCondensation": "FAIL",
+    # FAIL: 0
     # ERROR: 0 (was 1 — TerminalOrg moved to GENUINE Day-37 PM after schema v2.1 fallback)
 }
 
@@ -302,12 +304,11 @@ def test_l2_1_strict_rubric_matches_expected(process_name: str) -> None:
     improve a verdict (e.g. FAIL -> GENUINE) should update the pin AND the
     process-specific test if applicable.
 
-    GENUINE: 9 processes; the real L2.1 validation surface today.
+    GENUINE: 20 processes; the real L2.1 validation surface today.
     UNINFORMATIVE: 6 processes; Karr trace shows no activity (vacuous PASS).
-    COINCIDENTAL: 1 process; biology dodges Karr-active ticks.
-    FAIL: 11 processes; bit-identity or fire-rate fails (trace-hint
-    short-circuits + ProteinTranslocation port-mismatch).
-    ERROR: 1 (TerminalOrg config issue).
+    COINCIDENTAL: 2 processes; biology dodges Karr-active ticks.
+    FAIL: 0 processes.
+    ERROR: 0.
     """
     expected = EXPECTED_VERDICTS[process_name]
     result = _classify(process_name)

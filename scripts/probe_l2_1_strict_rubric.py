@@ -35,6 +35,7 @@ sys.path.insert(0, str(_REPO / "tests" / "vivarium"))
 from l2_2_replay_common_v2 import (  # type: ignore
     _PROCESS_SPECS,
     _build_context,
+    _inject_hidden_read_surface,
     _project_trace_vector,
     resolve_trace_path,
 )
@@ -105,6 +106,7 @@ def _audit_one_process_default(name: str, threshold: float = KARR_ACTIVE_THRESHO
                     store_path_override=spec.store_path_override,
                 )
 
+            _inject_hidden_read_surface(ctx=ctx, state=state, tick=tick)
             refresh_allocator_views(process, state)
             update = process.next_update(1.0, state)
             apply_count_update(state, update)
