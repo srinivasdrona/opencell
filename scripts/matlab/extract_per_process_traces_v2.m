@@ -584,8 +584,6 @@ if ~strcmp(canonical_name, 'DNADamage')
         'per_process_substrate_overrides are only supported for DNADamage in this extractor (requested process ''%s'')', canonical_name);
 end
 
-import edu.stanford.covert.cell.sim.constant.Condition;
-
 mets = sim.state_metabolite;
 n_metabolites = size(mets.counts, 1);
 n_compartments = size(mets.counts, 2);
@@ -612,16 +610,16 @@ for i = 1:numel(override_fields)
     object_compartment_idx = proc.substrateMetaboliteGlobalCompartmentIndexs(local_idx);
     [object_idx, compartment_idx] = ind2sub([n_metabolites n_compartments], object_compartment_idx);
 
-    keep = mets.setCounts(:, Condition.objectCompartmentIndexs) ~= object_compartment_idx;
+    keep = mets.setCounts(:, edu.stanford.covert.cell.sim.constant.Condition.objectCompartmentIndexs) ~= object_compartment_idx;
     mets.setCounts = mets.setCounts(keep, :);
 
     row = zeros(1, 6);
-    row(Condition.objectIndexs) = object_idx;
-    row(Condition.compartmentIndexs) = compartment_idx;
-    row(Condition.valueIndexs) = double(value);
-    row(Condition.initialTimeIndexs) = 0;
-    row(Condition.finalTimeIndexs) = Inf;
-    row(Condition.objectCompartmentIndexs) = object_compartment_idx;
+    row(edu.stanford.covert.cell.sim.constant.Condition.objectIndexs) = object_idx;
+    row(edu.stanford.covert.cell.sim.constant.Condition.compartmentIndexs) = compartment_idx;
+    row(edu.stanford.covert.cell.sim.constant.Condition.valueIndexs) = double(value);
+    row(edu.stanford.covert.cell.sim.constant.Condition.initialTimeIndexs) = 0;
+    row(edu.stanford.covert.cell.sim.constant.Condition.finalTimeIndexs) = Inf;
+    row(edu.stanford.covert.cell.sim.constant.Condition.objectCompartmentIndexs) = object_compartment_idx;
     mets.setCounts = [mets.setCounts; row];
     mets.counts(object_compartment_idx) = double(value);
 
