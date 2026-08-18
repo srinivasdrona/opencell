@@ -57,6 +57,14 @@ DEFAULT_OUT_PATH = (
     / "active_windows"
     / "ProteinProcessingII_active_window_validation.covered28.json"
 )
+DEFAULT_SHARED_H12_OUT_PATH = (
+    REPO_ROOT
+    / "docs"
+    / "phase_f"
+    / "l2_2_design_a"
+    / "h12"
+    / "ProteinProcessingII_h12.json"
+)
 EXPECTED_NOT_CONSUMED_BY = [
     "scripts/l22_evidence/verdict.py",
     "scripts/l22_evidence/generator.py",
@@ -730,10 +738,88 @@ def write_artifact(payload: dict[str, Any], out_path: Path) -> Path:
     return out_path
 
 
+def build_shared_h12_artifact(active_payload: dict[str, Any]) -> dict[str, Any]:
+    validation_error = validate_active_window_artifact(active_payload)
+    if validation_error is not None:
+        raise ValueError(f"active-window artifact is invalid: {validation_error}")
+    if active_payload.get("shared_h12_promotion_ready") is not True:
+        raise ValueError("active-window artifact is not ready for shared H12 promotion")
+
+    cross_check = {
+        str(seed): (
+            "match"
+            if status == "oracle_population_manifest_match"
+            else "accepted"
+        )
+        for seed, status in active_payload["oracle_manifest_cross_check"].items()
+    }
+    artifact = {
+        "process": PROCESS,
+        "formula_version": h12.FORMULA_VERSION,
+        "predictor_source_path": h12.EXPECTED_PREDICTOR_SOURCE_PATH,
+        "predictor_source_sha256_lf_normalized": active_payload[
+            "shared_h12_predictor_source_sha256_lf_normalized"
+        ],
+        "karr_source_citation": active_payload["karr_source_citation"],
+        "fixture_path": active_payload["fixture_path"],
+        "fixture_sha256": active_payload["fixture_sha256"],
+        "oracle_seed_file_sha256": active_payload["window_seed_source_sha256"],
+        "oracle_manifest_cross_check": cross_check,
+        "n_seeds": active_payload["catalog_n_seeds"],
+        "m_ticks": active_payload["window_length_ticks"],
+        "total_sample_count": active_payload["total_sample_count"],
+        "nontrivial_sample_count": active_payload["nontrivial_sample_count"],
+        "exact_match_count": active_payload["exact_match_count"],
+        "exact_match_rate": active_payload["exact_match_rate"],
+        "trivial_checked_count": active_payload["trivial_checked_count"],
+        "trivial_mismatch_count": active_payload["trivial_mismatch_count"],
+        "mismatch_examples": active_payload["mismatch_examples"],
+        "trivial_mismatch_examples": active_payload["trivial_mismatch_examples"],
+        "required_branches": active_payload["required_branches"],
+        "branches_confirmed": active_payload["branches_confirmed"],
+        "branches_observed": active_payload["branches_observed"],
+        "missing_required_branches": active_payload["missing_required_branches"],
+        "raw_prediction_hash": active_payload["raw_prediction_hash"],
+        "verdict": active_payload["window_verdict"],
+        "verdict_reason": active_payload["window_verdict_reason"],
+        "generated_at": active_payload["generated_at"],
+        "anti_laundering_attestation": {
+            "predictor_inputs": active_payload["anti_laundering_attestation"][
+                "predictor_inputs"
+            ],
+            "states_after_access": "compare_phase_only",
+            "no_sut_import": True,
+            "no_result_json_access": True,
+        },
+        "active_window_authority": {
+            "artifact_kind": active_payload["artifact_kind"],
+            "artifact_version": active_payload["artifact_version"],
+            "manifest_ref": active_payload["manifest_ref"],
+            "generator_source_path": active_payload["generator_source_path"],
+            "generator_source_sha256_lf_normalized": active_payload[
+                "generator_source_sha256_lf_normalized"
+            ],
+            "trace_provenance_check": active_payload["trace_provenance_check"],
+        },
+    }
+    support_error = h12.validate_h12_support(
+        artifact,
+        expected_process=PROCESS,
+    )
+    if support_error is not None:
+        raise ValueError(f"promoted shared H12 artifact is invalid: {support_error}")
+    return artifact
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="Validate ProteinProcessingII active-window manifests without editing shared h12.py")
     parser.add_argument("--manifest", type=Path, default=DEFAULT_MANIFEST_PATH)
     parser.add_argument("--out", type=Path, default=DEFAULT_OUT_PATH)
+    parser.add_argument(
+        "--shared-h12-out",
+        type=Path,
+        help="When supplied, write a mechanically promoted shared H12 artifact after full validation.",
+    )
     parser.add_argument(
         "--require-full-catalog",
         action="store_true",
@@ -759,6 +845,14 @@ def main(argv: list[str] | None = None) -> int:
     )
     if args.require_full_catalog and not artifact["shared_h12_promotion_ready"]:
         return 1
+    if args.shared_h12_out is not None:
+        try:
+            shared_h12_artifact = build_shared_h12_artifact(artifact)
+        except ValueError as exc:
+            print(f"[ppii-active-windows] shared H12 promotion failed: {exc}", file=sys.stderr)
+            return 3
+        shared_out = write_artifact(shared_h12_artifact, args.shared_h12_out)
+        print(f"[ppii-active-windows] shared H12 promoted -> {shared_out}", file=sys.stderr)
     return 0
 
 

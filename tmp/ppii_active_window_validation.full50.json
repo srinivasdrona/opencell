@@ -17,7 +17,7 @@
     "schema_version": "h12_trace_window_manifest_v1"
   },
   "generator_source_path": "scripts/l22_evidence/ppii_active_windows.py",
-  "generator_source_sha256_lf_normalized": "aea8ee13bd267f9222276fa9728e46778054f727d68290fd9b53626d7b666456",
+  "generator_source_sha256_lf_normalized": "6d6e5f8423f88c510ea53c5eaf61334789ca2fe654e8c51649a344ceeeab611b",
   "shared_h12_predictor_source_path": "scripts/l22_evidence/h12.py",
   "shared_h12_predictor_source_sha256_lf_normalized": "aee4b9b89219284c9cd570d4208f39e95a89d657f3604c683a9908fdf883fd10",
   "karr_source_citation": {
@@ -1530,7 +1530,7 @@
   "window_verdict_reason": "nontrivial_sample_count>0, 100% exact match, full required branch coverage",
   "shared_h12_promotion_ready": true,
   "shared_h12_promotion_blockers": [],
-  "generated_at": "2026-08-18T09:06:30.789568+00:00",
+  "generated_at": "2026-08-18T09:12:26.328365+00:00",
   "anti_laundering_attestation": {
     "predictor_inputs": [
       "states_before",

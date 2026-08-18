@@ -385,3 +385,39 @@ def test_shared_canonical_h12_source_hash_remains_fresh():
 
     assert payload["predictor_source_path"] == h12.EXPECTED_PREDICTOR_SOURCE_PATH
     assert payload["predictor_source_sha256_lf_normalized"] == expected_hash
+
+
+def test_full50_active_window_authority_promotes_to_valid_shared_h12():
+    manifest_path = (
+        REPO_ROOT
+        / "docs"
+        / "phase_f"
+        / "l2_2_design_a"
+        / "h12"
+        / "ProteinProcessingII_active_window_manifest.full50.json"
+    )
+    active = paw.build_active_window_validation_artifact(
+        manifest_path,
+        require_full_catalog=True,
+    )
+    promoted = paw.build_shared_h12_artifact(active)
+
+    assert promoted["verdict"] == "H12_CONFIRMED"
+    assert promoted["n_seeds"] == 50
+    assert promoted["m_ticks"] == 20
+    assert promoted["branches_confirmed"] == sorted(h12.REQUIRED_BRANCHES[paw.PROCESS])
+    assert h12.validate_h12_support(promoted, expected_process=paw.PROCESS) is None
+
+
+def test_shared_h12_promotion_refuses_non_ready_active_artifact():
+    active = json.loads(
+        (
+            REPO_ROOT
+            / "tmp"
+            / "ppii_active_window_validation.full50.json"
+        ).read_text(encoding="utf-8")
+    )
+    active["shared_h12_promotion_ready"] = False
+
+    with pytest.raises(ValueError, match="not ready"):
+        paw.build_shared_h12_artifact(active)
