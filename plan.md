@@ -95,6 +95,24 @@ snapshot below:**
   the 14-seed Macromol extraction; finish RepInit/DNAS source gaps; then run
   the multi-day FtsZ/Cytokinesis and remaining L2.1 active-window extractions.
 
+**Relaunch intent (2026-09-02 15:15 IST):**
+
+- Operator directed continuous execution until both L2.1 and L2.2 are all
+  green; no gate skipping or known-gap waivers.
+- Relaunching isolated workers for `l21-active-windows`, `l21-chromcond`,
+  `l21-repinit`, `l22-macromol`, `l22-dnas`, `l22-cytokinesis`, and
+  `l22-ftsz`.
+- `l22-dnadamage` candidate `c2174bb` + branch-local PASS evidence enters
+  independent Opus 5 review before any integration or further same-branch
+  edits.
+- MATLAB concurrency increases from 2 to **4 shared slots** for this closure
+  wave. Every long extractor must still acquire
+  `with_matlab_slot.ps1 -Slots 4`; no uncoordinated MATLAB process is allowed.
+  This prioritizes active-window and Macromol completion while allowing one
+  FtsZ and one Cytokinesis seed to advance concurrently.
+- The coordinator remains the sole writer for main, shared catalogs, evidence
+  indexes, and final gate scoreboards.
+
 **Live state (2026-08-18 14:20 IST) — seven original lanes + RepInit remain:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`; main is
