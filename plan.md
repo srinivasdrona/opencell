@@ -139,6 +139,18 @@ snapshot below:**
 - `l22-dnas-sept2` -> `wave-l22-dnas`
 - `dnadamage-sept2-review` -> read-only review of `genuine-l22-dnadamage`
 
+**Cytokinesis durable extraction handoff:**
+
+- Agent preparation commit: `b68596d` (`-Slots 4` runner support).
+- Detached queue PID: `18600`.
+- Run state:
+  `genuine-l22-cytokinesis\artifacts\l2_event\cytokinesis_genuine_runs\run_full50_sept2_20260902_154521.json`.
+- Seeds `0..3` currently hold slots `1..4`; 46 seeds remain queued. Initial
+  valid count remains 0 until the first approximately five-hour seed finishes
+  and passes provider/anchor validation.
+- Wait shell: `wait-cytokinesis-full50`.
+- Do not launch a second Cytokinesis queue while PID `18600` is alive.
+
 **DNADamage review result:** REJECT. The measured PASS is reproducible, but
 the branch is stale versus PPII and retains literal Karr gaps: Poisson instead
 of per-reaction stochastic-round/accessibility sampling, a legacy rate
@@ -4923,4 +4935,3 @@ A spin-off project building on top of OpenCell to simulate drug interactions, pr
 - **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
 - **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
 - **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
-
