@@ -187,6 +187,43 @@ def _total_ftsz_subunits(process: KarrCytokinesisProcess, state: dict[str, Any])
     return total
 
 
+def test_water_request_matches_karr_literal_formula_unconditionally() -> None:
+    """`_water_request` must literally reproduce Karr's
+    `Cytokinesis.calcResourceRequirements_Current`:
+
+        result(substrateIndexs_water) = ...
+            numFtsZSubunitsPerFilament * enzymes(enzymeIndexs_ftsZ_GTP_polymer);
+
+    Karr's method has no segregation, `geometry.pinched`, or ring-size
+    guard -- it runs every tick as part of the pre-`evolveState`
+    resource-request phase. Assert the request tracks the free
+    `ftsZ_GTP_polymer` enzyme pool directly (via `numFtsZSubunitsPerFilament`,
+    the fixed constant from the FtsZRing fixture -- never a naked literal)
+    even when unsegregated, pinched, or with an empty ring.
+    """
+    process = KarrCytokinesisProcess({})
+    gtp_polymer_wid = process.fixture_enzyme_wids[process.enzyme_index_ftsz_gtp_polymer]
+
+    for segregated in (True, False):
+        for pinched_diameter in (process.initial_pinched_diameter, 0.0):
+            for enzyme_count in (0.0, 5.0, 41.0):
+                state = _base_state(
+                    process,
+                    segregated=segregated,
+                    pinched_diameter=pinched_diameter,
+                    num_edges_one_straight=0,
+                    num_edges_two_straight=0,
+                    enzymes={gtp_polymer_wid: enzyme_count},
+                )
+                update = process.next_update(1.0, state)
+                expected = process.num_ftsz_subunits_per_filament * int(enzyme_count)
+                requested = update["requests"][process.name][process.water_wid]
+                assert requested == pytest.approx(float(expected)), (
+                    f"segregated={segregated} pinched_diameter={pinched_diameter} "
+                    f"enzyme_count={enzyme_count}"
+                )
+
+
 def test_process_instantiates_with_faithful_surface() -> None:
     process = KarrCytokinesisProcess({})
     schema = process.ports_schema()

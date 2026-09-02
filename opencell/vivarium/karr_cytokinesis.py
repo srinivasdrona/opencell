@@ -375,7 +375,7 @@ class KarrCytokinesisProcess(Process):
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         water_allocated = self._allocated_count(allocated_state, self.water_wid)
-        water_requested = self._water_request(ring, geometry, chromosome_state)
+        water_requested = self._water_request(ring, current_enzymes)
 
         substrate_delta = {wid: 0.0 for wid in self.fixture_substrate_wids}
         segregated = self._segregated(chromosome_state)
@@ -518,22 +518,25 @@ class KarrCytokinesisProcess(Process):
     def _water_request(
         self,
         ring: dict[str, Any],
-        geometry: dict[str, Any],
-        chromosome_state: dict[str, Any],
+        enzymes: np.ndarray,
     ) -> int:
-        if not self._segregated(chromosome_state) or geometry["pinched"] or ring["numEdges"] <= 0:
-            return 0
-        potential_hydrolysis_edges = 0
-        if ring["numEdgesTwoBent"] == 0:
-            potential_hydrolysis_edges = ring["numEdges"]
-        elif (
-            ring["numEdgesTwoBent"] + ring["numEdgesTwoStraight"] == ring["numEdges"]
-            and ring["numEdgesTwoStraight"] > 0
-            and ring["numResidualBent"] == 0
-        ):
-            potential_hydrolysis_edges = ring["numEdgesTwoStraight"]
+        """Karr's literal ``Cytokinesis.calcResourceRequirements_Current``::
 
-        return 2 * ring["numFtsZSubunitsPerFilament"] * max(0, potential_hydrolysis_edges)
+            result(substrateIndexs_water) = ...
+                numFtsZSubunitsPerFilament * enzymes(enzymeIndexs_ftsZ_GTP_polymer);
+
+        Source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/
+        +sim/+process/Cytokinesis.m (``calcResourceRequirements_Current``).
+        Unconditional: Karr's method has no segregation/pinched/ring-size
+        guard -- it is called every tick during the pre-``evolveState``
+        resource-request phase, using ``numFtsZSubunitsPerFilament`` (a
+        fixed constant loaded from the ``FtsZRing`` fixture) and the
+        *current* free ``ftsZ_GTP_polymer`` enzyme count, regardless of
+        whether the chromosome has segregated yet.
+        """
+        return int(ring["numFtsZSubunitsPerFilament"]) * int(
+            enzymes[self.enzyme_index_ftsz_gtp_polymer]
+        )
 
     def _phase_bind_first_and_second_straight(
         self,
