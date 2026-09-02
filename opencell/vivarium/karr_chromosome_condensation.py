@@ -878,7 +878,6 @@ class KarrChromosomeCondensationProcess(Process):
             n_bound = len(bound_centroids)
             if n_bound == 0:
                 return 0, None
-            self._consume_inner_bind_sampling_literal(n_bound=n_bound)
 
             chromosome_updates = self._bind_smc_sites_literal(
                 chromosome_store=store,
@@ -1321,17 +1320,6 @@ class KarrChromosomeCondensationProcess(Process):
                 exc_len,
             )
         return bound_positions, bound_strands
-
-    def _consume_inner_bind_sampling_literal(self, *, n_bound: int) -> None:
-        n_bound_i = max(0, int(n_bound))
-        if n_bound_i <= 0:
-            return
-        _ = self._rng.randsample(
-            n_bound_i,
-            n_bound_i,
-            False,
-            np.ones(n_bound_i, dtype=np.float64),
-        )
 
     def _bind_smc_sites_literal(
         self,
