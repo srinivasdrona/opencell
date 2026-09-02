@@ -125,6 +125,34 @@ matlab -batch "s=load('data/m1_sources/karr_native/per_process_traces_v2_s000/Me
 
 Optional future helper (`bin\oc-py scripts/verify_extractions.py`) can be added later; not required for this runbook.
 
+## 6a) Quote-safe / slot-coordinated invocation (commands with embedded quotes)
+
+`matlab -batch "<command>"` breaks silently when `<command>` itself
+contains embedded double-quoted strings (e.g. `jsonencode(...)` output or
+any literal JSON) -- the quotes get stripped or the argument truncated
+somewhere in the PowerShell/cmd -> `matlab.exe` argv chain, and MATLAB
+either errors or silently runs a truncated command with no diary and no
+output. This bit both `run_l22_seed_shards.ps1` (which now hard-fails with
+an explicit error rather than corrupting silently) and, more seriously, the
+DNADamage genuine-corpus re-extraction (Sept-2 review item 8), which needed
+embedded JSON in its command.
+
+For any such command, or whenever multiple parallel worktree agents share
+this host's MATLAB license, use the tracked helper instead of `matlab -batch`
+directly:
+
+```powershell
+scripts\tools\run_matlab_slot.ps1 -Tag "my_job" -Slots 4 `
+  -MatlabCommand "addpath('scripts/matlab'); <your command, quotes and all>"
+```
+
+It writes the command verbatim to a scratch `.m` file (so no shell ever
+re-tokenizes embedded quotes) and invokes MATLAB with the minimal, quote-free
+`run('<scratch path>')`, while also acquiring one of `-Slots` file-locked
+concurrency slots under `artifacts/matlab_slots/` (self-contained, no
+dependency on any path outside this repo). See the script's own
+`Get-Help scripts\tools\run_matlab_slot.ps1 -Full` for details.
+
 ## 7) Troubleshooting
 
 - License expiry mid-run:
