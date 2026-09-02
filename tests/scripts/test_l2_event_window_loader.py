@@ -75,6 +75,7 @@ def _write_synthetic_trace(
     omit_stride_contract: bool = False,
     observable_values: dict[str, tuple[np.ndarray, np.ndarray]] | None = None,
     non_scalar_observable: str | None = None,
+    group_ref_observable: str | None = None,
 ) -> Path:
     """Write a minimal synthetic HDF5 trace exercising every window_loader
     refusal branch on demand (via the keyword toggles above), without
@@ -94,6 +95,9 @@ def _write_synthetic_trace(
     deliberately. ``non_scalar_observable`` writes that one observable as a
     2-wide (non-scalar) row per tick instead of a scalar, for the
     require_scalar_finite_observables non-scalar-shape refusal branch.
+    ``group_ref_observable`` writes that observable the way real chromosome
+    snapshots are stored: a MATLAB cell array of object references to HDF5
+    groups, one group per tick.
     """
     if tick_end == -1:
         tick_end = n_ticks - 1
@@ -145,6 +149,16 @@ def _write_synthetic_trace(
                             f"__data/{section}/{observable}/{tick}", data=np.array([0.0, 1.0])
                         )
                         refs[0, tick] = dset.ref
+                    sink.create_dataset(observable, data=refs, dtype=h5py.special_dtype(ref=h5py.Reference))
+                continue
+            if observable == group_ref_observable:
+                for section, sink in (("states_before", states_before), ("states_after", states_after)):
+                    refs = np.empty((1, rows), dtype=h5py.special_dtype(ref=h5py.Reference))
+                    for tick in range(rows):
+                        payload = handle.create_group(f"__group_payload/{section}/{observable}/{tick}")
+                        payload.create_dataset("field_a", data=np.array([tick], dtype=np.int64))
+                        payload.create_dataset("field_b", data=np.array([tick, tick + 1], dtype=np.int64))
+                        refs[0, tick] = payload.ref
                     sink.create_dataset(observable, data=refs, dtype=h5py.special_dtype(ref=h5py.Reference))
                 continue
             # Row-vector-per-tick shape (1, rows) so `_cell_series` treats it
@@ -542,6 +556,29 @@ def test_load_event_window_rejects_scalar_finite_observables_not_subset_of_requi
             required_observables=("obsA",),
             require_scalar_finite_observables=("obsB",),
         )
+
+
+def test_load_trace_group_ref_observable_round_trip(tmp_path):
+    """Real chromosome snapshots are cell entries that point at HDF5 groups,
+    not numeric datasets. The loader must materialize those payloads before
+    closing the file so validation callers can safely require
+    ``required_observables=('chromosome', ...)`` on real traces."""
+    trace_path = _write_synthetic_trace(
+        tmp_path / "group_ref.mat",
+        observables=("chromosome", "obsA"),
+        group_ref_observable="chromosome",
+    )
+    window = load_event_window(trace_path, required_observables=("chromosome", "obsA"))
+    assert window.states_before["chromosome"].shape == (3, 1)
+    assert window.states_after["chromosome"].shape == (3, 1)
+    before_tick0 = window.before("chromosome", 0)[0]
+    after_tick2 = window.after("chromosome", 2)[0]
+    assert isinstance(before_tick0, dict)
+    assert before_tick0["field_a"].reshape(-1).tolist() == [0]
+    assert before_tick0["field_b"].reshape(-1).tolist() == [0, 1]
+    assert isinstance(after_tick2, dict)
+    assert after_tick2["field_a"].reshape(-1).tolist() == [2]
+    assert after_tick2["field_b"].reshape(-1).tolist() == [2, 3]
 
 
 def test_load_trace_chromosome_segregated_boolean_observable_round_trip(tmp_path):

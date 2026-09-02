@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
-  "content_hash": "550af6c69c51eafd66552a5fb834ff6a092fbb4d803e25bf28eb1310c03ad7cd",
+  "content_hash": "196abf1e273edb08da8ad821f9a1a1033bc6c2d9873c4503e77178a561e8a77b",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-08-18T09:20:50.197109+00:00",
+  "generated_at": "2026-09-02T18:30:11.532695+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -29,7 +29,15 @@
       ]
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "1a93a4019c266145231a5a65259f52be69baba0070010fc3f4106ba2767c937d",
+        "analytical_check.json": "89d6f0e368121788b610be66af8e56f17a3508b53082b65053396739da126e0e",
+        "null_calibration.json": "91bbb90f6da38b82da8fd5d47b648c397d6fe7ec8ea36936d682b5d584ceaca3",
+        "provenance.json": "d3791001dc23bd044603bd81cd7007c378ff6d78313f57b2ece0b1675dbb9be3",
+        "result.json": "d97512c97170d98145e03b5cab2a8f6ecd9554929869cee9b1ac4128c68cf906",
+        "sweep_provenance.json": "c8a402bff5049c5e3fca87cd3aff542cbd04b4e2f2a084d65903ad123a7ade4a",
+        "thresholds.json": "a003f687c212d54f0efd18ff09b0c5a2069de27fb56efaddc8014775089202e5"
+      },
       "bucket": "EVENT_CLASS",
       "catalog_soft_flags": {
         "M_ticks": 20,
@@ -40,14 +48,25 @@
         "primary_channel": "chromosome",
         "primary_distance": "hurdle_event_rate_plus_conditional_scaled_distance"
       },
+      "channel_verdicts": {
+        "chromosome": "PASS"
+      },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event",
-      "green": false,
+      "green": true,
       "harness_type": "event_class",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "DNADamage",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process DNADamage"
-      ]
+      "provenance_git_sha": "cc8ba6b5bddcecf4b0774095479896f0b04484ae",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 4,
+        "git_dirty": null,
+        "git_sha": "cc8ba6b5bddcecf4b0774095479896f0b04484ae",
+        "inputs_verified": true,
+        "result_schema_version": 1
+      },
+      "warnings": []
     },
     {
       "artifact_hashes": {
@@ -890,7 +909,7 @@
   "schema_version": 1,
   "tally": {
     "FAIL": 2,
-    "MISSING_EVIDENCE": 3,
-    "PASS": 17
+    "MISSING_EVIDENCE": 2,
+    "PASS": 18
   }
 }

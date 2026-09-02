@@ -1,0 +1,14 @@
+{
+  "channels": [
+    {
+      "aggregation": "hurdle_event_rate_plus_conditional_scaled_distance",
+      "channel": "chromosome",
+      "conditional_scaled_distance_threshold": 1.0,
+      "event_rate_threshold": 0.1
+    }
+  ],
+  "condition": "uvb_mechanism",
+  "mode": "fixed_metric_contract",
+  "note": "DNADamage latest_event authority uses the fixed hurdle metric contract from tests/vivarium/_l2_2_design_a_projections.py rather than a separate bootstrap null. The raw authority is the stored hurdle payload plus the tracked full/canary verifier JSONs.",
+  "process": "DNADamage"
+}

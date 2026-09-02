@@ -151,7 +151,7 @@ for i = 1:numel(process_names)
     requested_name = process_names{i};
     fprintf('\n[trace_v2] === %s ===\n', requested_name);
 
-    [sim, mnrnd_provider] = karr_bootstrap();
+    [sim, mnrnd_provider, dnadamage_overlay] = karr_bootstrap();
     [target_idx, canonical_name] = find_process_index(sim, requested_name);
     if isempty(target_idx)
         fprintf('[trace_v2] WARN process not found: %s\n', requested_name);
@@ -257,6 +257,12 @@ for i = 1:numel(process_names)
         metadata.mnrnd_provider_path_relative_to_matlabroot = mnrnd_provider.provider_path_relative_to_matlabroot;
         metadata.mnrnd_provider_sha256 = mnrnd_provider.sha256_lf_normalized;
         metadata.statistics_rng_provider_identity_json = mnrnd_provider.identity_json;
+        if strcmp(canonical_name, 'DNADamage')
+            metadata.dnadamage_source_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized;
+            metadata.dnadamage_source_patched_sha256 = dnadamage_overlay.patched_sha256_lf_normalized;
+            metadata.dnadamage_source_resolved_sha256 = dnadamage_overlay.resolved_sha256_lf_normalized;
+            metadata.dnadamage_source_resolved_path = dnadamage_overlay.resolved_path;
+        end
     end
 
     if ~isempty(extraction_opts.condition_label)

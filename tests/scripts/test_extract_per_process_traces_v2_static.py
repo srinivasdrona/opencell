@@ -245,7 +245,17 @@ def test_genuine_mnrnd_provider_metadata_written_for_fixed_and_anchor_not_legacy
     guard_body = guard_match.group(1)
     assert "metadata.mnrnd_provider_kind" in guard_body
     assert "metadata.mnrnd_provider_sha256" in guard_body
-    assert "[sim, mnrnd_provider] = karr_bootstrap();" in source
+    assert "[sim, mnrnd_provider, dnadamage_overlay] = karr_bootstrap();" in source
+
+
+def test_dnadamage_overlay_provenance_is_written_into_trace_metadata():
+    source = _read_source()
+
+    assert source.count("metadata.dnadamage_source_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized;") == 1
+    assert source.count("metadata.dnadamage_source_patched_sha256 = dnadamage_overlay.patched_sha256_lf_normalized;") == 1
+    assert source.count("metadata.dnadamage_source_resolved_sha256 = dnadamage_overlay.resolved_sha256_lf_normalized;") == 1
+    assert source.count("metadata.dnadamage_source_resolved_path = dnadamage_overlay.resolved_path;") == 1
+    assert "if strcmp(canonical_name, 'DNADamage')" in source
 
 
 def test_extraction_opts_override_surface_is_wired_into_real_scheduler_path():

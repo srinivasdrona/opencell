@@ -305,14 +305,18 @@ def evaluate_mechanism_distance(result: dict[str, Any], *, n_seeds: int, m_ticks
     out["event_rate_component"] = event_rate_component
     out["payload_component"] = payload_component
     # Mechanism-fidelity verdict is deliberately structural, not a pass/fail
-    # threshold call: OC's firing algorithm uses a lumped per-kind rate
-    # (`_DEFAULT_KIND_RATES_PER_S`), not Karr's per-reaction
-    # `calcExpectedReactionRates`, so the event-rate component is EXPECTED to
-    # diverge from the Karr-analytical prediction whenever it is exercised.
-    # Reporting `within_oc_ci95: false` here is not the harness lying about
-    # a threshold breach -- it is the honest output of a real structural
-    # mismatch that a future higher-fidelity DNADamage port would need to
-    # close. See MECHANISM_FIDELITY_CANARY note in the proposal doc.
+    # threshold call. Even after the 2026-09-02 review remediation (items
+    # 3/4: OC's firing algorithm now uses Karr's own literal per-reaction
+    # `evolveState`/`setSiteDamaged` selectionProbability/stochasticRound
+    # law, not a lumped per-kind rate), this canary's Karr-analytical
+    # comparator is `calcExpectedReactionRates`/`calcNumberVulnerableSites`
+    # -- a *different* Karr formula, used in Karr itself only for FBA
+    # resource-request bookkeeping (no footprint/maxReactions/stochastic
+    # rounding terms). The two formulas are not expected to agree even in
+    # real Karr, so `within_oc_ci95: false` here is not the harness lying
+    # about a threshold breach -- it is the honest output of a real
+    # structural difference between two genuine Karr code paths. See
+    # MECHANISM_FIDELITY_CANARY note in the proposal doc.
     out["verdict"] = "MECHANISM_MISMATCH" if not event_rate_component["within_oc_ci95"] else "MECHANISM_CONSISTENT"
     return out
 
@@ -503,17 +507,17 @@ def probe_biological_gate_blocker() -> dict[str, Any]:
     }
 
 
-def _kind_rates_provenance() -> dict[str, Any]:
-    """Fix #1 companion (Rule 8): record the effective kind_rates_per_s a
-    freshly constructed KarrDNADamageProcess uses, plus a live, runtime
-    check that no per-tick oracle trace-rate override path exists on the
-    production process at all (not merely "was not used this run").
-    Expected: no such path/attribute -- `trace_rate_override_mechanism_exists`
-    must be False.
+def _rate_law_provenance() -> dict[str, Any]:
+    """Fix #1 companion (Rule 8), updated for the Sept-2 review's item-3/4
+    fix: record a live, runtime check that no per-tick oracle trace-rate
+    override path -- nor the older lumped per-kind rate override
+    (`kind_rates_per_s`) -- exists on the production process at all (not
+    merely "was not used this run"). Expected: no such
+    path/attribute -- `trace_rate_override_mechanism_exists` and
+    `kind_rate_override_mechanism_exists` must both be False.
     """
     process = KarrDNADamageProcess({})
     return {
-        "kind_rates_per_s": dict(process.kind_rates_per_s),
         "trace_rate_override_mechanism_exists": (
             hasattr(process, "_load_trace_kind_rates")
             or "trace_path" in KarrDNADamageProcess.defaults
@@ -522,12 +526,20 @@ def _kind_rates_provenance() -> dict[str, Any]:
             or hasattr(process, "used_trace_rates")
         ),
         "trace_rate_override_path_used": False,
+        "kind_rate_override_mechanism_exists": (
+            hasattr(process, "kind_rates_per_s")
+            or hasattr(process, "_kind_rate_override_active")
+            or hasattr(process, "_scaled_reaction_rates_from_kind_override")
+            or "kind_rates_per_s" in KarrDNADamageProcess.defaults
+        ),
         "note": (
             "KarrDNADamageProcess no longer supports any per-tick oracle trace-rate "
-            "override (Rule 8 fix, 2026-08-05 remediation). kind_rates_per_s above is "
-            "always exactly the canonical default or an explicit caller-supplied "
-            "override; it is never derived from DNADamage_100ticks.mat or any other "
-            "per-tick trace."
+            "override (Rule 8 fix, 2026-08-05 remediation) NOR the lumped per-kind "
+            "rate override removed in the 2026-09-02 review remediation (items 3/4). "
+            "Firing is governed solely by the literal per-reaction "
+            "selectionProbability/stochasticRound law "
+            "(DNADamage.m::evolveState/Chromosome.m::setSiteDamaged); there is no "
+            "override re-entry path of any kind left in production."
         ),
     }
 
@@ -562,7 +574,7 @@ def run_canary(*, n_seeds: int, m_ticks: int) -> dict[str, Any]:
         ),
         "oc_mechanism_canary_execution_status": "EXECUTED",
         "oc_mechanism_canary_is_biological_l2_2_evidence": False,
-        "kind_rates_provenance": _kind_rates_provenance(),
+        "kind_rates_provenance": _rate_law_provenance(),
         "conditions": results,
         "mechanism_distance": distances,
         "biological_l2_2_event_class_gate": blocker,

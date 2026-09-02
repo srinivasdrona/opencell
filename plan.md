@@ -59,6 +59,48 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-03 00:53 IST) — supersedes all Sept-2 snapshots
+below:**
+
+- Main integration worktree:
+  `E:\opencell-worktrees\main-integrate`, branch `main`, HEAD `8f813da`.
+  The independently accepted DNADamage closure is merged. Fresh post-merge
+  verification is fully green: evidence audit **18 PASS / 2 FAIL /
+  2 MISSING_EVIDENCE**, integrity OK; provenance **241 records**; focused
+  suite **100 passed**; Ruff and `git diff --check` clean. `origin/main` is
+  still `744974c`; push the verified merge before integrating another lane.
+- ChromosomeCondensation is independently accepted and staged in
+  `E:\opencell-worktrees\integrate-l21-chromcond-sept2` at `0196a81`.
+  Its source fix and packaging gates are green. The only expected
+  post-integration non-green is the stale L2.2 authority for the six
+  chromosome-update consumers (Replication, ReplicationInitiation,
+  DNARepair, DNASupercoiling, DNADamage, Cytokinesis). Re-sweep those six
+  against the complete evidence bundle, regenerate the index, then review
+  and merge.
+- Durable MATLAB queues:
+  - Cytokinesis PID `18600` is alive at **4/50 validated**, seeds `4-7`
+    active, 42 queued, 0 failed.
+  - FtsZ orchestrator PID `22568` and watchdog PID `7904` are alive at
+    **2/50 validated**. Seeds `1-2` completed attempt 1 without producing
+    traces and were requeued; seeds `3-4` are active.
+  - MacromolecularComplexation has **47** matching raw trace files in its
+    worktree; the owning agent must run its fail-closed audit before any
+    count is promoted.
+- L2.1 active-window extraction produced genuine-provider traces for
+  TranscriptionalRegulation seed 0, Cytokinesis seed 0, and DNADamage seed 1.
+  HostInteraction and ChromosomeSegregation launchers exited without trace
+  output. All five recorded waiter PIDs are dead or reused; the owning agent
+  must validate/promote the three completed traces and diagnose/relaunch only
+  the two missing processes.
+- ReplicationInitiation remains open at an honest stateful tick-4
+  `enzymes[1]` mismatch despite its strict-rubric GENUINE result; its agent
+  is still working. DNASupercoiling remains `PRIMARY_OVERACTIVE`; its agent
+  is still working on hash-bound chromosome RNG `states_before` restoration.
+- Immediate order: push DNADamage; validate/promote the three completed
+  L2.1 active traces and relaunch only the two missing ones; perform the six
+  ChromCond L2.2 re-sweeps and index regeneration; then independently review
+  and integrate ChromCond.
+
 **Current status (2026-09-02 15:10 IST) — supersedes the August live-PID
 snapshot below:**
 
@@ -109,7 +151,11 @@ snapshot below:**
   wave. Every long extractor must still acquire
   `with_matlab_slot.ps1 -Slots 4`; no uncoordinated MATLAB process is allowed.
   This prioritizes active-window and Macromol completion while allowing one
-  FtsZ and one Cytokinesis seed to advance concurrently.
+  FtsZ and one Cytokinesis seed to advance concurrently. (For any job whose
+  MATLAB command needs embedded double-quoted strings/JSON, use the tracked,
+  self-contained `scripts\tools\run_matlab_slot.ps1` from the DNADamage
+  worktree instead -- see its `RUN_EXTRACTION.md` section 6a; it fixes the
+  argv quote-stripping bug the Sept-2 DNADamage re-extraction hit.)
 - The coordinator remains the sole writer for main, shared catalogs, evidence
   indexes, and final gate scoreboards.
 
@@ -177,7 +223,8 @@ snapshot below:**
   relaunch is allowed while these PIDs remain alive.
 - Aggregate wait shell: `wait-l21-active-five`.
 
-**ChromosomeCondensation candidate review:**
+
+**DNAS two-sided result and redirect:** the preregistered N=200 gate returns `PRIMARY_OVERACTIVE` (OC 1487 pooled ticks vs Karr 65). The source gap is the chromosome-owned RNG shared across ten MATLAB processes. This is not waived: the same agent is now capturing `chromosome.randStream.state` as a hash-bound `states_before` input and restoring it per tick, avoiding a nine-process reimplementation while preserving the no-answer-leak contract.**ChromosomeCondensation candidate review:**
 
 - Candidate commits through `b2e6e0d` + status `ae4254b`.
 - Claimed result: official strict rubric GENUINE and full 100-tick applied
@@ -188,6 +235,17 @@ snapshot below:**
   separate safe commits from dirty wiring-YAML/scratch files and adjudicate
   the shared `matlab_rng.py` / `l2_replay_common.py` blast radius before merge.
 
+**ReplicationInitiation candidate review:**
+
+- Candidate commits: `884f830`, `c9f6a6f`, `f466bf4`.
+- Claimed gates: L2.1 strict-rubric GENUINE; process-local L2.2 N=50/M=200
+  PASS with both channels SEED_NOISE.
+- Known residuals prevent automatic closure: honest stateful replay still
+  first mismatches at tick 4, and scoped L1b anchors still FAIL. The branch
+  labels these out of scope, but the repository no-known-gap rule does not.
+- `repinit-sept2-review` owns read-only adjudication, evidence portability,
+  oversized artifact review, and the minimum source fixes before integration.
+
 **DNADamage review result:** REJECT. The measured PASS is reproducible, but
 the branch is stale versus PPII and retains literal Karr gaps: Poisson instead
 of per-reaction stochastic-round/accessibility sampling, a legacy rate
@@ -195,7 +253,8 @@ override re-entry, missing substrate writeback, fail-open damage routing,
 incomplete overlay provenance, and a broken general worktree overlay path.
 `l22-dnadamage-sept2-fix` is active and owns all findings; no item is waived.
 
-**DNADamage re-review candidate (2026-09-02 evening):**
+
+**DNADamage second re-review:** REJECT. Three blockers remain before the measured PASS can integrate: restore 237-line JSONL provenance, replace the GC/uniform approximation with literal genome motif + accessibility sampling from `Chromosome_positive_strand.txt`, and track the quote-safe MATLAB launcher used to produce the corpus. The same implementer is active; no threshold or Karr-trace changes are allowed.**DNADamage re-review candidate (2026-09-02 evening):**
 
 - Candidate commits: `ef11bca`, `5569e77`, `f7d4310`, `c389ff6`,
   `cbe3fc3` (plus merge of current main).
