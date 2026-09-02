@@ -1,5 +1,76 @@
 # STATUS: L2.1 Cytokinesis Active-Window CODE_GAP Fix
 
+## Update (2026-09-03, continuation session) — water fix + Stage-1 MATLAB probe launched
+
+Per operator instruction: tick 228 and the water-request gap are NOT a
+terminal CODE_GAP waiver. This session:
+
+1. **Fixed** `_water_request` to Karr's literal, unconditional
+   `calcResourceRequirements_Current` formula (see "Follow-up" section
+   below, now closed) — commit `3efcbf7`. Confirmed via
+   `test_water_request_matches_karr_literal_formula_unconditionally`
+   (segregated x pinched x enzyme_count sweep) that this does **not**
+   change the tick-228 residual divergence (hydrolyze phase's guard is
+   false at ticks 226-229 regardless of which water formula is used, so
+   this fix was necessary for source fidelity but not sufficient on its
+   own to close the gap).
+2. **Built** `scripts/matlab/probe_cytokinesis_randstream_state.m`
+   (commit `b9c54b4`) — a tracked, hash-bound-provenance Stage-1 probe
+   that re-runs the REAL full Karr Simulation trajectory (seed 0, the
+   exact setup that produced the accepted genuine trace) and records
+   `this.randStream.state` entering/exiting Cytokinesis's own
+   `evolveState()` call for local ticks 224-230, without modifying any
+   WCM source. 8 static tests pass (including a real `octave-cli`
+   parse-only syntax check — confirmed valid before spending any MATLAB
+   slot time on it).
+3. **Built** `scripts/l2_event/analyze_cytokinesis_randstream_probe.py`
+   (commit `4d0407a`) — derives Karr's real per-tick draw counts purely
+   from the probe's captured states (independent Lehmer-recurrence
+   forward-step count, never inferred from OC's own output), plus a
+   contiguous-tick gap check that would catch a draw consumed BETWEEN two
+   captured ticks. 7 unit tests pass against synthetic state sequences.
+4. **Launched** the probe (`tmp/run_cytokinesis_randstream_probe_s000.m`)
+   via the session's shared slot coordinator
+   (`C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`,
+   `-Slots 4`, `-Tag cytokinesis_randstream_probe_s000`,
+   `-TimeoutMinutes 720`) as a **durable background waiter**, coordinating
+   with (never bypassing/stopping) the live 50-seed Cytokinesis L2.2
+   extraction queue (PID `18600`, unaffected — see "L2.2 queue
+   implications" below) that shares the same 4-slot pool.
+
+**Operational handoff (if this session ends before the probe completes):**
+
+- Slot coordinator lock directory (shared, machine-wide, NOT this repo's
+  `scripts/tools/run_matlab_slot.ps1`'s per-worktree default):
+  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\matlab-slots\`.
+  As of this update, all 4 slots are held (by the live 50-seed queue and
+  other already-running jobs per the plan.md handoff block); my probe is
+  queued and will acquire a slot automatically once one frees, up to a
+  720-minute timeout.
+- Probe log (once a slot is acquired): `.matlab_cytokinesis_randstream_probe_s000.log`
+  in this worktree root.
+- Probe output (once the run completes — this requires the real
+  simulation to advance ~27,277 ticks from cell birth, the same
+  order-of-magnitude cost as the original trace extraction, so expect a
+  long run even after a slot is acquired):
+  `tmp/cytokinesis_randstream_probe_s000.json`.
+- Next step once the JSON exists:
+  `bin\oc-py.cmd scripts/l2_event/analyze_cytokinesis_randstream_probe.py tmp/cytokinesis_randstream_probe_s000.json --oc-draws 226=45,227=13,228=3`
+  — compare Karr's real per-tick draw counts (and the contiguous-tick gap
+  check) against OC's own (45, 13, 3 for local ticks 226/227/228). A
+  mismatch at tick 227 or 228, or a nonzero gap between any two
+  contiguous captured ticks, localizes exactly where the extra/missing
+  draw occurs; from there, either fix the identified OC-side gap directly
+  (if the mismatch is IN a tick OC also computes a count for) or build the
+  Stage-2 hash-bound Cytokinesis.m source overlay (per-phase checkpoints,
+  mirroring `karr_bootstrap.m`'s existing DNADamage signed-zero overlay
+  pattern under `tmp/wcm_source_overlay/` — never modifying the canonical
+  file in place) to localize further within the implicated tick's
+  `evolveState()` call.
+- Do NOT re-launch a duplicate probe job before checking
+  `Get-Process -Id <pid-from-a-later-session>` / the lock directory above
+  for an already-running one.
+
 **Task**: Close the Cytokinesis L2.1 active-window CODE_GAP found in the
 accepted genuine 4000-tick event trace. Branch
 `agent/l21-cytokinesis-active-fix-20260903`, worktree
@@ -319,21 +390,20 @@ yet bit-identical (317/3774 active-tick mismatches remain, first at 228).
   fixed `karr_cytokinesis.py` (or later fixes on top of it), not the
   pre-`a5d1aa0` version.
 
-## Follow-up (not fixed in this pass, flagged for the next iteration)
+## Follow-up (status as of the continuation session)
 
-- `_water_request`'s formula in `karr_cytokinesis.py` diverges from Karr's
-  `calcResourceRequirements_Current` (`Cytokinesis.m`). It never fires in
-  the ticks 226-229 investigated here (hydrolyze phase guard is false
-  throughout), but should be reconciled to the primary source before it is
-  exercised by a later active-window tick where hydrolysis actually
-  triggers.
-- The tick-228 stream-position divergence should be revisited with either
-  (a) real MATLAB access to generate a ground-truth per-draw reference for
-  this exact seed/window, or (b) a systematic bisection across ticks
-  226-3966 narrowing which SPECIFIC absolute tick first introduces the
-  stream-position offset (this session localized it to "somewhere at or
-  before tick 228," not to an earlier precise point beyond ticks 226-227
-  being individually verified correct).
+- ~~`_water_request`'s formula in `karr_cytokinesis.py` diverges from
+  Karr's `calcResourceRequirements_Current`~~ — **CLOSED** in the
+  continuation session (commit `3efcbf7`): replaced with Karr's literal,
+  unconditional formula. Confirmed (via a segregated x pinched x
+  enzyme_count sweep test) this does not change the tick-228 divergence.
+- The tick-228 stream-position divergence: a Stage-1 MATLAB randStream
+  state probe (`scripts/matlab/probe_cytokinesis_randstream_state.m`,
+  commit `b9c54b4`) was built and launched (durable background waiter via
+  the shared slot coordinator) to get a real, ground-truth per-draw
+  reference for local ticks 224-230 of the exact accepted seed-0
+  trajectory — see the "Update" section at the top of this file for full
+  operational-handoff detail if this run has not yet completed.
 
 ## Commits (this branch, this session)
 
