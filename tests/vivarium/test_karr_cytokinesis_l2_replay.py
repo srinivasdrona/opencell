@@ -85,6 +85,83 @@ _CANONICAL_WIDS = {
 _STORE_PATH_OVERRIDE: dict[str, tuple[str, ...]] = {}
 _INDEX_PROJECTION_ATTR: dict[str, str] = {}
 
+# Ring/geometry/chromosome witness scalars recorded ONLY by anchor-window
+# event traces (window_contract='anchor', signal_kind='diameter_decrease';
+# see extract_per_process_traces_v2.m:merge_event_observables). Absent from
+# the standard 100-tick trace, whose states_before/after only carry
+# substrates/enzymes/boundEnzymes/chromosome(full-object) -- Cytokinesis is
+# genuinely quiescent (chromosome never segregates) for the whole
+# cell-birth window, so the ports_schema() defaults (segregated=False,
+# ring at its initial cell-birth geometry) happen to already be correct
+# there and no overlay was ever needed. The event window is centered on the
+# real ring-assembly/pinch transition, so replaying it correctly requires
+# feeding Karr's own recorded per-tick ring/geometry/chromosome snapshot
+# into `next_update`'s input state -- without this, `state` is rebuilt
+# fresh from `build_state_template` every tick (chromosome.segregated
+# always defaults to False), the `if segregated:` gate in `next_update`
+# never fires, and every tick silently no-ops regardless of what Karr's
+# trace shows really happened.
+_RING_WITNESS_FIELDS: dict[str, tuple[str, str, type]] = {
+    "chromosome_segregated": ("chromosome", "segregated", bool),
+    "pinchedDiameter": ("geometry", "pinchedDiameter", float),
+    "ftsZRing_numEdgesOneStraight": ("ftsZRing", "numEdgesOneStraight", int),
+    "ftsZRing_numEdgesTwoStraight": ("ftsZRing", "numEdgesTwoStraight", int),
+    "ftsZRing_numEdgesTwoBent": ("ftsZRing", "numEdgesTwoBent", int),
+    "ftsZRing_numResidualBent": ("ftsZRing", "numResidualBent", int),
+}
+
+
+def _has_ring_witnesses(trace: h5py.File) -> bool:
+    return "chromosome_segregated" in trace["states_before"]
+
+
+def _overlay_ring_witness_state(trace: h5py.File, tick: int, state: dict[str, object]) -> None:
+    """Overlay Karr's recorded ring/geometry/chromosome witnesses (see
+    `_RING_WITNESS_FIELDS`) into `state`, mutating the relevant nested port
+    dicts in place. No-op if the trace lacks these fields (standard trace)."""
+    if not _has_ring_witnesses(trace):
+        return
+    for trace_key, (port, field, caster) in _RING_WITNESS_FIELDS.items():
+        raw = cell_vector(trace, "states_before", trace_key, tick)[0]
+        state.setdefault(port, {})[field] = caster(raw)
+
+
+def _assert_ring_witness_after(
+    trace: h5py.File,
+    tick: int,
+    update: dict[str, object],
+) -> None:
+    """Cross-check `next_update`'s emitted geometry/ftsZRing absolute values
+    (Karr's real completion signal + the 4 ring-state witnesses that gate
+    it -- see merge_event_observables's docstring) against Karr's own
+    states_after snapshot for the same tick. `chromosome.segregated` is
+    read-only input to this process (never written by `next_update`), so
+    it has no after-state to compare."""
+    if not _has_ring_witnesses(trace):
+        return
+    geometry_update = update.get("geometry")
+    ring_update = update.get("ftsZRing")
+    checks: list[tuple[str, str, object]] = [
+        ("pinchedDiameter", "geometry", geometry_update),
+        ("ftsZRing_numEdgesOneStraight", "ftsZRing", ring_update),
+        ("ftsZRing_numEdgesTwoStraight", "ftsZRing", ring_update),
+        ("ftsZRing_numEdgesTwoBent", "ftsZRing", ring_update),
+        ("ftsZRing_numResidualBent", "ftsZRing", ring_update),
+    ]
+    for trace_key, port, port_update in checks:
+        if not isinstance(port_update, dict):
+            continue
+        _, field, caster = _RING_WITNESS_FIELDS[trace_key]
+        karr_val = caster(cell_vector(trace, "states_after", trace_key, tick)[0])
+        if field not in port_update:
+            continue
+        oc_val = caster(port_update[field])
+        if oc_val != karr_val:
+            pytest.fail(
+                "L2a ring-witness mismatch: "
+                f"tick={tick}, field={port}.{field}, oc={oc_val}, karr={karr_val}"
+            )
+
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
     _assert_delta_integral_shared(label, deltas)
@@ -165,6 +242,7 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
 
     for tick in range(n_ticks):
         state = build_state_template(process)
+        _overlay_ring_witness_state(trace, tick, state)
         before_vectors = {
             observable: project_karr_vector(
                 process,
@@ -187,6 +265,7 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
         refresh_allocator_views(process, state)
 
         update = process.next_update(1.0, state)
+        _assert_ring_witness_after(trace, tick, update)
         _apply_update(state, update, process)
 
         for observable in _OBSERVABLES:
