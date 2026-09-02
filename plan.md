@@ -184,7 +184,7 @@ snapshot below:**
   hidden `complexBoundSites` identity (0/100 mismatches).
 - Final root cause: a source-less extra post-bind RNG draw introduced in the
   Python literal binding path; removing it closes the tick-7+ desynchrony.
-- `chromcond-sept2-review` is active and owns the read-only integration review. It must
+- `chromcond-sept2-review` REJECTED packaging but confirmed the science and 0/100 hidden identity. The same implementer is fixing the untracked runtime-fixture dependency, stale L1b anchors, and incorrect recertification report. It must
   separate safe commits from dirty wiring-YAML/scratch files and adjudicate
   the shared `matlab_rng.py` / `l2_replay_common.py` blast radius before merge.
 
@@ -4972,4 +4972,5 @@ A spin-off project building on top of OpenCell to simulate drug interactions, pr
 - **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
 - **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
 - **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
+
 
