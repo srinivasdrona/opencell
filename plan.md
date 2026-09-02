@@ -105,10 +105,14 @@ below:**
   source-fidelity fixes under the no-known-gap rule. DNADamage seeds 0 and 1
   are both zero-activity. Accepted L2.2 seed 2000 supplies a genuine active
   window. The audit's sparse-state semantics are now corrected, but the
-  active-window branch still uses a pre-closure `karr_dna_damage.py`
-  (SHA differs from accepted main by the 685-line literal Karr port). Merge
-  current main into that branch and reclassify before treating its 20/20
-  OC-activity result as a new production gap. Cytokinesis's first active
+  active-window branch has now merged the accepted main implementation and
+  still reports a genuine per-seed `CODE_GAP` (first mismatch tick 2; OC
+  active 20/20 vs Karr 1/20). The remaining exact-replay gap is concrete:
+  DNADamage still seeds NumPy PCG64, uses NumPy permutation/integer draws,
+  and skips `stochasticRound` draws on zero/integer inputs instead of Karr's
+  `mcg16807` stream semantics. Port and verify that exact draw path in a
+  separate lane, then re-run both L2.1 and the accepted L2.2 event gate.
+  Cytokinesis's first active
   mismatch was fixed by replacing NumPy PCG64 with MATLAB-faithful
   `mcg16807`; exact replay now matches ticks 226-227 and first diverges at
   tick 228. Run a live MATLAB per-call RNG-state ledger and also reconcile
