@@ -97,11 +97,17 @@ below:**
   Cytokinesis first diverges at active tick 226
   (`ftsZRing_numEdgesOneStraight`, OC 6 vs Karr 9). These are mandatory
   source-fidelity fixes under the no-known-gap rule. DNADamage seeds 0 and 1
-  are both zero-activity and remain unpromoted; inventory the accepted
-  DNADamage L2.2 corpus before extracting another seed. HostInteraction and
+  are both zero-activity. Accepted L2.2 seed 2000 supplies a genuine active
+  window, but its initial L2.1 `CODE_GAP` classification is provisional:
+  `l21_active_window_audit.py` deep-merges chromosome sparse replacements
+  and counts any non-empty chromosome update payload as OC activity, yielding
+  an implausible 20/20 active ticks against the accepted L2.2 event rate.
+  Fix and re-run the audit's process-aware chromosome application/activity
+  calculation before diagnosing production RNG. HostInteraction and
   ChromosomeSegregation were relaunched as PIDs `27484` and `26372`, queued
-  on the shared slot pool. Manifest state is **6 EXISTING_WINDOW_PASS /
-  2 CODE_GAP / 3 MISSING_ACTIVE_EXTRACTION**.
+  on the shared slot pool. Branch manifest currently records
+  **6 EXISTING_WINDOW_PASS / 3 CODE_GAP / 2 MISSING_ACTIVE_EXTRACTION**,
+  pending that DNADamage audit correction.
 - ReplicationInitiation remains open at an honest stateful tick-4
   `enzymes[1]` mismatch despite strict-rubric GENUINE. All five Opus review
   fixes are complete; L1b and canonical N=50/M=200 L2.2 are PASS. Site-level
