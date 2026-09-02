@@ -113,6 +113,21 @@ snapshot below:**
 - The coordinator remains the sole writer for main, shared catalogs, evidence
   indexes, and final gate scoreboards.
 
+**Execution relaunch (2026-09-02 15:40 IST):**
+
+- Seven independent Claude Sonnet implementation sessions will own:
+  `l21-active-windows`, `l21-chromcond`, `l21-repinit`, `l22-macromol`,
+  `l22-dnas`, `l22-cytokinesis`, and `l22-ftsz`.
+- One independent Claude Opus 5 read-only reviewer will adjudicate the
+  DNADamage candidate (`c2174bb` plus branch-local event authority).
+- Every implementation session must read its `PROMPT_SEPT2.md`, work only in
+  its assigned worktree, commit green chunks, and write its final
+  `STATUS_*_SEPT2.md`.
+- Long MATLAB work must use the common slot helper with `-Slots 4`; no
+  uncoordinated MATLAB launches. FtsZ is capped at two simultaneous seeds so
+  active windows, Macromol and Cytokinesis retain capacity.
+- After implementation, Opus review remains mandatory before integration.
+
 **Live state (2026-08-18 14:20 IST) — seven original lanes + RepInit remain:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`; main is
