@@ -1,0 +1,345 @@
+# STATUS: L2.1 Cytokinesis Active-Window CODE_GAP Fix
+
+**Task**: Close the Cytokinesis L2.1 active-window CODE_GAP found in the
+accepted genuine 4000-tick event trace. Branch
+`agent/l21-cytokinesis-active-fix-20260903`, worktree
+`E:\opencell-worktrees\fix-l21-cytokinesis-active`.
+
+## Composition mandate compliance
+
+Per `docs/prompts/COMPOSITION_MANDATE_v2.md` and
+`docs/prompts/FIX_TEMPLATE_L2_REPLAY.md`, the authoritative catalog entry
+was read and quoted **before** investigation began. Cytokinesis entry from
+`docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml` (verbatim):
+
+```yaml
+  - name: Cytokinesis
+    oc_module: opencell/vivarium/karr_cytokinesis.py
+    bucket: EVENT_CLASS
+    harness_type: event_class
+    in_scope_L2_2: true
+    M_ticks: 4000
+    N_seeds: 50
+    event_density: sparse                 # only active during division
+    input_channels: [substrates, enzymes, chromosome]
+    output_channels: [substrates, chromosome]
+    event_channels: [chromosome]
+    primary_channel: substrates
+    karr_artifact: per_process_traces_v2
+    rationale_M: "2026-08-05 (Canary D closeout): the old M_ticks=100 'default' failed closed -- seed 0's real onset-to-completion span is 3871 ticks (onset_tick=27556, completion_tick=31427), not ~50-100. 4000 is the smallest validated seed-0 LOWER BOUND (the exact retry size that succeeded), NOT a confirmed cohort-wide maximum -- see event_sweep_blocked_on."
+    event_sweep_blocked_on: "N=50 sweep unauthorized until scripts/l2_event/survey_cytokinesis_onset_span.py reports a FULL (50/50 seed) survey of the real onset-to-completion span and the cohort-wide maximum is reconciled into M_ticks/seed_window here. Do not run an uncontrolled 50-seed extraction to determine this number -- generate seeds one at a time via the resumable/atomic scripts/l2_event/launcher.py and re-run the survey once all 50 exist."
+    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS. v3.7 (2026-06-16): SUT audit DIVERGENT_DOCUMENTED. v3.8 (2026-06-16): FIXED at 3cee339 — full 5-phase FtsZ ring port replacing Karr-light v1. All 5 stochastic phases, edge state tracking, geometry, mass conservation. Algorithm now faithful to Karr. Still EVENT_CLASS — needs event-window traces for distributional validation. v3.9 (2026-08-05): Canary D CLOSED — real seed-0 anchor trace extracted post-mnrnd-shim-fix (data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat). M_ticks/seed_window reconciled to the seed-0 lower bound (see rationale_M); still 1/50 required seeds, N=50 remains blocked (see event_sweep_blocked_on). v3.10 (2026-08-06): renamed blocked_on -> event_sweep_blocked_on -- the former name collided with derive_l25_pair_matrix.py's generic L2.2 pass/fail fallback, incorrectly flipping Cytokinesis's l2_2_passed to False in the pairwise matrix even though its actual L2.2 in-scope status is unaffected by the N=50 sweep authorization gate. See docs/phase_f/l2_event/event_registry.yaml + docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md §9-11 for full detail."
+    seed_window:
+      tick_range_from_division: [-3999, 0]     # reconciled 2026-08-05: seed-0 lower bound, not yet a cohort-wide maximum (see event_sweep_blocked_on)
+      rationale: "Cytokinesis is biologically active only in late cell cycle around division. 2026-08-05: the prior [-50,0] rationale assumed a span far too short for the real Karr dynamics (3871 ticks observed on seed 0); [-3999,0] is the validated seed-0 lower bound pending a full 50-seed survey (scripts/l2_event/survey_cytokinesis_onset_span.py)."
+```
+
+This is an **L2.1** task (per-process single-trace bit-identity), not L2.2
+(distributional). The catalog entry is quoted per mandate because the task
+explicitly requires it and because it defines the `karr_artifact`
+(`per_process_traces_v2`, matching the accepted trace family) and confirms
+Cytokinesis's `event_class`/sparse-activity nature that motivates the
+event-window (anchor) trace used here.
+
+## Branch setup
+
+- Merged local `main` (`b0b800c`) into this branch (merge commit `77a1215`).
+  One true conflict: `opencell/provenance/llm_interactions.jsonl`
+  (append-only log). Resolved by taking the **union** of both sides
+  (7 HEAD records + 18 main records = 25 in the conflicted block, 248 total
+  lines after merge), sorted by `timestamp_utc`. No `event_id` collisions;
+  all 248 lines re-validated as parseable JSON. `plan.md` merged cleanly
+  with no conflict; main's newest "Operational handoff" snapshot
+  (2026-09-03 00:53 IST) correctly remains the non-superseded block at the
+  top of the file.
+- Created a directory junction `data\m1_sources\WholeCell` in this worktree
+  pointing directly at the canonical `E:\opencell\data\m1_sources\WholeCell`
+  (gitignored source tree, not checked out per-worktree). Junctioned
+  directly from the canonical root per the TRAPS.md
+  `git-worktree-junction-traversal` guidance (never junction-of-junction).
+
+## Primary sources read (in order, before any edit)
+
+1. `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m`
+   — full class header + `evolveState` (lines ~178-260) + static helpers.
+2. `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+state/FtsZRing.m`
+   — confirms `numEdges` is a **dependent** (computed) property:
+   `floor(pi / asin(filamentLengthInNm*1e-9 / pinchedDiameter))`, and that
+   only Cytokinesis (no other process) writes `numEdgesOneStraight` /
+   `numEdgesTwoStraight` / `numEdgesTwoBent` / `numResidualBent`.
+3. `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/Process.m:283,290`
+   — `this.randStream = edu.stanford.covert.util.RandStream('mcg16807')`;
+   `seedRandStream()` -> `this.randStream.reset(this.seed)`.
+4. `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/Simulation.m:454-459`
+   — `seedRandStream`: `for i=1:length(processes); o.seed=this.seed;
+   o.seedRandStream(); end` — **every** process reseeded with the
+   **identical** simulation-level seed value, independently.
+5. `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+util/RandStream.m`
+   — confirms this is a thin wrapper over MATLAB's built-in
+   `RandStream(type, ...)`; `'mcg16807'` is MATLAB's standard
+   Park-Miller "Minimal Standard" multiplicative-congruential generator,
+   not `mt19937ar` (the Mersenne Twister MATLAB's *default* stream uses).
+6. `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m`
+   — grepped for `ftsZRing` usage: zero matches. Confirms
+   FtsZPolymerization never touches ring-edge counters (only the shared
+   enzyme pool), so Cytokinesis exclusively owns the observable under
+   investigation.
+7. Genuine event trace:
+   `data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat`
+   (`n_ticks=4000`, `tick_start=27047`, `onset_tick=27310`,
+   `window_anchor=31046`, `rng_seed=0`).
+8. `opencell/vivarium/karr_cytokinesis.py` (the SUT) and
+   `opencell/util/matlab_rng.py` / `opencell/vivarium/karr_protein_decay_light.py`
+   (existing MATLAB-RNG shims already used by other Karr ports in this
+   codebase — `karr_replication.py`, `karr_protein_translocation.py`,
+   `karr_metabolism.py`).
+
+No web fetches were made; nothing beyond local primary sources was needed.
+
+## Root cause (first proven divergence, tick 226)
+
+`KarrCytokinesisProcess.__init__` seeded:
+
+```python
+self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+```
+
+NumPy's `default_rng` uses **PCG64**. Karr's real `this.randStream` is a
+**Park-Miller / Lehmer multiplicative-congruential generator (`mcg16807`)**
+— an entirely unrelated bit stream from the same numeric seed (source
+citation #3/#4/#5 above). Every process in the real Simulation is
+independently reset with the *same* scalar seed value (no per-process
+offset), matching the pre-existing `_Mcg16807(seed)` direct-seed convention
+already used elsewhere in this codebase.
+
+### Fix
+
+- Added `_MatlabCytokinesisRNG`, a minimal `.random()` adapter over the
+  canonical `_Mcg16807` shim (`opencell/vivarium/karr_protein_decay_light.py`),
+  reused rather than duplicated (same pattern as `karr_metabolism.py`,
+  `karr_chromosome_condensation.py`'s intended usage).
+- Replaced `self._rng = np.random.default_rng(...)` with
+  `self._rng = _MatlabCytokinesisRNG(int(self.parameters["rng_seed"]))`.
+- No change to `evolveState`'s ported structure (`_phase_bind_first_and_second_straight`
+  etc.) — the loop/guard/threshold logic already faithfully mirrored
+  `Cytokinesis.m` character-for-character; only the RNG *provider* was
+  wrong.
+
+### Independent validation of the `_Mcg16807` shim
+
+Before trusting the shim over 50+ consecutive draws, it was checked
+against the **published Park & Miller (1988) "Minimal Standard" generator
+test vector**: seed=1, after 10000 iterations the internal state must equal
+exactly `1043618065`. Verified bit-exact (see commit; probe deleted after
+use). This independently confirms the shim's Lehmer recurrence
+(`state = 16807*state mod (2**31-1)`) is a correct, standard
+implementation with no cumulative-iteration bug possible (Python's
+arbitrary-precision `int` arithmetic makes this recurrence exact for any
+seed/iteration count).
+
+## First-divergence ledger (tick 226, absolute tick 27273)
+
+All values read directly from `states_before`/`states_after` at trace-local
+tick 226 (Karr ground truth) vs. `KarrCytokinesisProcess.next_update`'s
+emitted absolute values (with the ring/geometry/chromosome witness overlay
+already in place from the prior harness-fix commit `5ab1667`).
+
+| Field | Karr `before` | Karr `after` | OC (wrong RNG) `after` | OC (fixed) `after` |
+|---|---|---|---|---|
+| `chromosome.segregated` | 0 | 1 (tick226 is the first-ever active tick; 0 for every tick 0-225) | — | — |
+| `geometry.pinchedDiameter` | 2.840467121583285e-07 | unchanged | unchanged | unchanged |
+| `ftsZRing.numEdges` (dependent, both sides agree) | 22 | 22 | 22 | 22 |
+| `ftsZRing.numEdgesOneStraight` | 0 | **9** | 6 | **9** |
+| `ftsZRing.numEdgesTwoStraight` | 0 | **11** | ? | **11** |
+| `enzymes[MG_224_9MER_GTP]` | 34 | 3 | — | 3 |
+| `boundEnzymes[MG_224_9MER_GTP]` | 0 | 31 | — | 31 |
+
+Decomposition of tick 226's 45-draw `_phase_bind_first_and_second_straight`
+call (fully deterministic given ground-truth-fed `ring` input — no
+ambiguity in trip counts, only in per-draw outcomes):
+
+- Pass 1 (`j=1`, `empty_edges=22`): 22 draws, 19 successes (rate 0.7).
+- Pass 2 (`j=2`, `empty_edges=22-19=3`): 3 draws, 1 success.
+- Final promote loop (`numEdgesOneStraight=19+1=20`): 20 draws, 11 successes.
+- Total: 45 draws, final `(numEdgesOneStraight, numEdgesTwoStraight) = (20-11, 11) = (9, 11)`.
+
+This exact `(9, 11)` matches Karr's real recorded after-state precisely,
+under the fixed RNG. Tick 227 (before=(9,11), after=(3,19)) **also**
+matches exactly with a second, independently-verified deterministic
+decomposition (2+0+11=13 draws). Both tests confirmed via
+`tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay`.
+
+## Residual divergence (tick 228, absolute tick 27275) — NOT resolved
+
+After the RNG-family fix, the harness's first mismatch moves from tick 226
+to **tick 228**:
+
+- Karr `before`: `numEdgesOneStraight=3, numEdgesTwoStraight=19` (matches
+  OC's tick-227 output exactly, ledger-continuous).
+- `numEdges=22` (both sides), so
+  `empty_edges = 22-3-19 = 0` — the `j`-loop (pass1/pass2) is provably a
+  **0-draw no-op** on both sides (deterministic from ground-truth input,
+  no RNG dependency in the trip count itself).
+- Final promote loop trip count = `numEdgesOneStraight = 3` — also
+  provably deterministic, not RNG-dependent.
+- OC's 3 draws at this exact stream position:
+  `[0.9092081016438119, 0.06056432754758947, 0.9046530923362137]` → exactly
+  **1** success (`<=0.7`) → OC final `(2, 20)`.
+- Karr's real recorded after-state: `(1, 21)` → requires **2** successes
+  in the same 3 draws.
+
+**Exhaustive elimination performed** (all primary-source-grounded, no
+speculation left unchecked):
+
+1. `_phase_unbind_residual_bent` — guard passes at both tick 227-end and
+   tick 228 (`numEdgesOneStraight+numEdgesTwoStraight==numEdges`), but
+   `numResidualBent=0` throughout ticks 0-229 (confirmed via full sweep)
+   → 0 draws regardless.
+2. `_phase_hydrolyze_and_bend` — guard (`numEdgesTwoBent+numEdgesTwoStraight==numEdges`)
+   is false for both OC's (0+20=20) and Karr's (0+21=21) post-bind ring
+   state at tick 228 → never fires, 0 draws either way.
+3. `_phase_dissociate_first_bent` — guard requires
+   `numEdgesTwoStraight==0`; false (20 or 21) on both sides → skipped.
+4. `numFtsZSubunitsPerFilament`/enzyme availability: enzymes[GTP_polymer]=13
+   at tick 228, never limiting for a 3-draw loop.
+5. `calc_num_edges` matches Karr's `FtsZRing.calcNumEdges` formula
+   character-for-character (`floor(pi/asin(L*1e-9/d))`); the diameter at
+   this tick is `0.235` away from the nearest floor-integer boundary
+   (verified numerically) — not a libm-precision floor-flip risk.
+6. Full 4000-tick sweep: 3774 active ticks, 317 mismatches (8.4%), first at
+   228, last at 3966 — **not** a near-100%-mismatch pattern a full stream
+   desync would produce on an exact-integer comparison; consistent with a
+   **single, permanent stream-position offset** introduced once (not a
+   recurring per-tick bug), after which large-trip-count ticks
+   occasionally still land on the same aggregate sum by chance while
+   small-trip-count ticks (like 228's 3 draws) are far more sensitive.
+7. `_water_request`'s formula was found to differ from Karr's
+   `calcResourceRequirements_Current` (Karr's simpler
+   `numFtsZSubunitsPerFilament * enzymes[GTP_polymer]` vs. OC's
+   phase-aware `potential_hydrolysis_edges`-based estimate) — a real,
+   separate discrepancy, but **ruled out** as the tick-228 cause because
+   the hydrolyze phase never fires at tick 226-229 on either side (item 2
+   above), so the water-allocation path is never exercised here. Flagged
+   as a follow-up item (see below), not fixed in this pass (out of the
+   proven first-divergence scope; fixing it would not change tick 228's
+   outcome and risks an unrelated, unverified change).
+
+**What I could not verify without live MATLAB**: whether
+`edu.stanford.covert.util.RandStream('mcg16807')`'s Statistics-Toolbox
+wrapper applies any decorrelation/scrambling beyond the plain Park-Miller
+recurrence for very long draw sequences. The `_Mcg16807` shim is proven
+exact against the published reference vector and against 58 consecutive
+real Karr draws spanning two full ticks with a non-trivial, self-referential,
+RNG-dependent trip-count decomposition (astronomically unlikely to match by
+chance if misaligned) — this is strong evidence the shim itself is correct,
+which is why the residual gap could not be attributed to it either. This is
+a **precise, source-proven blocker**: a single-tick, single-position stream
+desync whose upstream cause (an extra or missing draw somewhere in the real
+Karr trajectory, not reproducible from the available primary sources) could
+not be conclusively pinned down in this session.
+
+## Tests added
+
+`tests/vivarium/test_karr_cytokinesis.py`:
+
+- `test_rng_provider_is_mcg16807_not_numpy_default_rng` — anti-regression:
+  asserts `process._rng` wraps `_Mcg16807`, not a NumPy `Generator`.
+- `test_rng_first_draw_matches_mcg16807_park_miller_reference` — pins the
+  exact first `.random()` value for `rng_seed=0` (`7.826369259425611e-06`).
+- `test_rng_no_oracle_file_io_in_production_module` — anti-cheat (Rule 8):
+  greps the production module source for forbidden oracle markers
+  (`_100ticks`, `_4000ticks`, `states_before`, `states_after`, `h5py`).
+
+No hardcoded tick-226/228-specific branches, oracle file reads, or answer
+leakage were added anywhere in `opencell/vivarium/karr_cytokinesis.py`
+(confirmed by the new Rule 8 test itself, which would fail if any were).
+
+## Exact commands run and results
+
+```
+bin\oc-pytest.cmd tests/vivarium/test_karr_cytokinesis.py -q -rs
+  -> 10 passed
+
+bin\oc-pytest.cmd tests/integration/test_l1b_verify_wiring.py::test_all_28_rows_run_without_exception -q
+  -> 1 passed   (process-local L1b; Cytokinesis has no per-process-named L1b
+                 test in this repo's L1b suite, only the all-28-rows gate)
+
+bin\oc-pytest.cmd "tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay" -q -rs -v
+  -> 1 failed: L2a ring-witness mismatch: tick=228, field=ftsZRing.numEdgesOneStraight, oc=2, karr=1
+     (exact active-window nodeid; first-mismatch tick moved from 226 -> 228)
+
+ruff check opencell/vivarium/karr_cytokinesis.py tests/vivarium/test_karr_cytokinesis.py
+  -> All checks passed!
+```
+
+## Final L2.1 classification
+
+**CODE_GAP** (unchanged verdict; NOT promoted to GENUINE). The manifest row
+in `docs/phase_f/l2_1/L21_ACTIVE_WINDOWS_MANIFEST.json` (`Cytokinesis`
+entry, `classification: "CODE_GAP"`) was **not hand-edited** — its
+`code_gap_evidence`/`first_active_detail` fields are machine-generated by
+`scripts/l21_active_window_audit.py` and predate even this session's fix
+(they still show the pre-fix `first_mismatch_oc_val: 0.0`, stale relative
+to both the "OC 6" state this task started from and the "OC 9" state now
+achieved for tick 226). Regenerating this evidence blob requires the
+audit tool's own re-run, not manual JSON editing; that re-run should happen
+once tick 228 (or whatever the true first divergence is at that point) is
+resolved, not now, to avoid recording a still-CODE_GAP row's evidence twice.
+
+**Fail-closed verification requirement**: the "Promote Cytokinesis manifest
+CODE_GAP -> GENUINE only after fail-closed fresh verification" gate is
+**not met** this session — the full 4000-tick active-window replay is not
+yet bit-identical (317/3774 active-tick mismatches remain, first at 228).
+
+## L2.2 queue implications (blast radius)
+
+- The live 50-seed Cytokinesis L2.2 extraction queue (PID `18600`,
+  `scripts\matlab\run_cytokinesis_genuine_chunk.ps1`, running in worktree
+  `E:\opencell-worktrees\genuine-l22-cytokinesis`) was checked (not
+  disturbed, not stopped/restarted). It is a **pure-MATLAB ground-truth
+  extraction** process — it does not import or execute
+  `opencell/vivarium/karr_cytokinesis.py` at all, so this fix has **zero
+  effect** on the extraction itself. 5/50 seeds exist so far
+  (`per_process_traces_v2_event_s000` through `s004`).
+- **L2.2 evaluation/comparison** (the step that runs OC's `next_update`
+  against each extracted seed) **does** import this same production
+  module. Any L2.2 evaluation run against the 5 (or eventually 50)
+  extracted seeds under the **pre-fix** RNG family would be evaluating
+  stale, wrong-RNG-family OC output and must be **re-run under this
+  fixed tree** once the cohort completes. No such full-cohort evaluation
+  currently exists (per `event_sweep_blocked_on` in the catalog — the
+  N=50 sweep itself is not yet authorized/complete), so there is no
+  "already-completed" L2.2 verdict to invalidate/regenerate at this time.
+- Per the no-fabrication instruction: I am **not** drawing any
+  distributional (L2.2) conclusion from the partial 5-seed cohort. The
+  only claim made here is L2.1 (single accepted seed-0 trace, per-tick
+  bit-identity), which remains CODE_GAP.
+- Once the 50/50 cohort completes and `event_sweep_blocked_on` is
+  reconciled, whoever runs the L2.2 evaluation must do so against this
+  fixed `karr_cytokinesis.py` (or later fixes on top of it), not the
+  pre-`a5d1aa0` version.
+
+## Follow-up (not fixed in this pass, flagged for the next iteration)
+
+- `_water_request`'s formula in `karr_cytokinesis.py` diverges from Karr's
+  `calcResourceRequirements_Current` (`Cytokinesis.m`). It never fires in
+  the ticks 226-229 investigated here (hydrolyze phase guard is false
+  throughout), but should be reconciled to the primary source before it is
+  exercised by a later active-window tick where hydrolysis actually
+  triggers.
+- The tick-228 stream-position divergence should be revisited with either
+  (a) real MATLAB access to generate a ground-truth per-draw reference for
+  this exact seed/window, or (b) a systematic bisection across ticks
+  226-3966 narrowing which SPECIFIC absolute tick first introduces the
+  stream-position offset (this session localized it to "somewhere at or
+  before tick 228," not to an earlier precise point beyond ticks 226-227
+  being individually verified correct).
+
+## Commits (this branch, this session)
+
+- `77a1215` — merge main (`b0b800c`) into this branch; union-resolved the
+  one append-only provenance conflict.
+- `a5d1aa0` — `fix(cytokinesis): seed process RNG from MATLAB-faithful
+  mcg16807, not numpy PCG64` + 3 regression/anti-cheat tests.
+
+Not pushed; not merged into main, per instructions.
