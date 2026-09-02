@@ -1,0 +1,5 @@
+[31;1mException: [0mC:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1:80:5[0m
+[31;1m[0m[36;1mLine |[0m
+[31;1m[0m[36;1m[36;1m  80 | [0m     [36;1mthrow "MATLAB exited with code $exitCode. See $logPath."[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m     | [31;1m     ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~[0m
+[31;1m[0m[36;1m[36;1m[0m[36;1m[0m[36;1m[31;1m[31;1m[36;1m     | [31;1mMATLAB exited with code -1. See E:\opencell-worktrees\genuine-l21-active\.matlab_l21-active-genuine-chromseg.log.[0m
