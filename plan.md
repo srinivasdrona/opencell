@@ -195,7 +195,8 @@ override re-entry, missing substrate writeback, fail-open damage routing,
 incomplete overlay provenance, and a broken general worktree overlay path.
 `l22-dnadamage-sept2-fix` is active and owns all findings; no item is waived.
 
-**DNADamage re-review candidate (2026-09-02 evening):**
+
+**DNADamage second re-review:** REJECT. Three blockers remain before the measured PASS can integrate: restore 237-line JSONL provenance, replace the GC/uniform approximation with literal genome motif + accessibility sampling from `Chromosome_positive_strand.txt`, and track the quote-safe MATLAB launcher used to produce the corpus. The same implementer is active; no threshold or Karr-trace changes are allowed.**DNADamage re-review candidate (2026-09-02 evening):**
 
 - Candidate commits: `ef11bca`, `5569e77`, `f7d4310`, `c389ff6`,
   `cbe3fc3` (plus merge of current main).
@@ -4982,4 +4983,5 @@ A spin-off project building on top of OpenCell to simulate drug interactions, pr
 - **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
 - **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
 - **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
+
 
