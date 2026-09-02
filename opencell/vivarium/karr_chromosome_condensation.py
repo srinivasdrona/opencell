@@ -34,7 +34,6 @@ _DEFAULT_METABOLITE_FIXTURE_JSON_PATH = "data/karr_fixtures/per_process/Metaboli
 _DEFAULT_TRACE_PATH = (
     "data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat"
 )
-_DEFAULT_POSTWARMUP_STATE_PATH = "tmp/chromcond_postwarmup_state.mat"
 _LITERAL_OCCUPANCY_FIELDS: tuple[str, ...] = (
     "monomerBoundSites",
     "damagedBases",
@@ -447,7 +446,6 @@ class KarrChromosomeCondensationProcess(Process):
         "chromosome_fixture_path": _DEFAULT_CHROMOSOME_FIXTURE_PATH,
         "metabolite_fixture_json_path": _DEFAULT_METABOLITE_FIXTURE_JSON_PATH,
         "trace_path": _DEFAULT_TRACE_PATH,
-        "postwarmup_state_path": _DEFAULT_POSTWARMUP_STATE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
         "genome_length_bp": float(GENOME_LENGTH_BP),
@@ -472,7 +470,6 @@ class KarrChromosomeCondensationProcess(Process):
         # fitted simulation surface, so tick 0 must begin from the seeded
         # process stream rather than the warmup endpoint stream state.
         self._rng = MatlabRandStream(seed, generator="mcg16807")
-        self._postwarmup_state = self._load_postwarmup_state(self.parameters["postwarmup_state_path"])
         self._np_rng = np.random.default_rng(seed)
         self.chromosome_shape = (
             int(self.parameters["genome_length_bp"]),
@@ -485,43 +482,9 @@ class KarrChromosomeCondensationProcess(Process):
         self._bound_smc = int(self.trace_anchor_bound)
         self._free_smc = int(min(self._fixture_enzyme_smc, self._total_smc_pool - self._bound_smc))
         self._free_smc_adp = int(max(0, self._total_smc_pool - self._bound_smc - self._free_smc))
-        self._restore_validated_postwarmup_pools()
         self._synthetic_complex_bound: SparseTriplet | None = None
         self._prev_bound_smc_nohint: int | None = None
         self._initialized = False
-
-    def _load_postwarmup_state(self, path: str | Path) -> dict[str, int] | None:
-        try:
-            resolved = _resolve_data_path(path)
-        except FileNotFoundError:
-            return None
-
-        artifact = loadmat(str(resolved), squeeze_me=True, struct_as_record=False).get("artifact")
-        if artifact is None or not hasattr(artifact, "metadata") or not hasattr(artifact, "post"):
-            return None
-
-        metadata = artifact.metadata
-        post = artifact.post
-        seed = int(np.asarray(getattr(metadata, "seed", 0)).reshape(-1)[0])
-        enzymes = np.asarray(getattr(post, "enzymes", np.zeros(2, dtype=np.int64))).reshape(-1)
-        bound_enzymes = np.asarray(getattr(post, "boundEnzymes", np.zeros(2, dtype=np.int64))).reshape(-1)
-        rand_stream_state = int(np.asarray(getattr(post, "randStreamState", 0)).reshape(-1)[0])
-        if enzymes.size <= self.enzyme_index_smc_adp or bound_enzymes.size <= self.enzyme_index_smc_adp:
-            return None
-        return {
-            "seed": seed,
-            "rand_stream_state": rand_stream_state,
-            "smc": int(enzymes[self.enzyme_index_smc]),
-            "smc_adp": int(enzymes[self.enzyme_index_smc_adp]),
-            "bound_smc_adp": int(bound_enzymes[self.enzyme_index_smc_adp]),
-        }
-
-    def _restore_validated_postwarmup_pools(self) -> None:
-        if self._postwarmup_state is None:
-            return
-        self._bound_smc = int(self._postwarmup_state["bound_smc_adp"])
-        self._free_smc = int(self._postwarmup_state["smc"])
-        self._free_smc_adp = int(self._postwarmup_state["smc_adp"])
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_data_path(path)

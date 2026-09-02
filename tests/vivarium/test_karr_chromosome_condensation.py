@@ -93,9 +93,10 @@ def test_process_initializes_with_fixture_defaults() -> None:
 
 def test_replay_rng_starts_from_seeded_process_stream() -> None:
     p = KarrChromosomeCondensationProcess({"rng_seed": 0})
-    assert p._postwarmup_state is not None
+    # The replay/extraction path reseeds process streams after loading the
+    # fitted simulation surface, so tick 0 must begin from the seeded
+    # process stream (not any warmup-endpoint stream state).
     assert p._rng.get_state()["mcg_state"] == 931_316_785
-    assert p._rng.get_state()["mcg_state"] != p._postwarmup_state["rand_stream_state"]
 
 
 def test_one_tick_binding_and_condensation_sign() -> None:
