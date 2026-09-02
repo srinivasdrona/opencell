@@ -139,6 +139,13 @@ snapshot below:**
 - `l22-dnas-sept2` -> `wave-l22-dnas`
 - `dnadamage-sept2-review` -> read-only review of `genuine-l22-dnadamage`
 
+**DNADamage review result:** REJECT. The measured PASS is reproducible, but
+the branch is stale versus PPII and retains literal Karr gaps: Poisson instead
+of per-reaction stochastic-round/accessibility sampling, a legacy rate
+override re-entry, missing substrate writeback, fail-open damage routing,
+incomplete overlay provenance, and a broken general worktree overlay path.
+`l22-dnadamage-sept2-fix` now owns all findings; no item is waived.
+
 **Live state (2026-08-18 14:20 IST) — seven original lanes + RepInit remain:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`; main is
