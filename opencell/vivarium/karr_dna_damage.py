@@ -24,6 +24,13 @@ from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, spar
 from opencell.vivarium.chromosome_views import current_damage_sites
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNADamage_flat.mat"
+# Chromosome state's own per-process-style fixture. Carries the WholeCellKB
+# monomer/complex DNA-footprint arrays (`monomerDNAFootprints`,
+# `complexDNAFootprints`) that Karr's Chromosome.m::sampleAccessibleSites
+# subtracts from `nAccessibleSites`. Not part of DNADamage's own fixture --
+# DNADamage.m never touches these arrays directly, it delegates to
+# `this.chromosome.setSiteDamaged`, which lives on the Chromosome state.
+_DEFAULT_CHROMOSOME_FIXTURE_PATH = "data/karr_fixtures/per_process/Chromosome_flat.mat"
 _DAMAGE_KINDS = ("uv_like", "oxidative", "alkylation", "depurination")
 _DAMAGE_FIELDS = (
     "damagedBases",
@@ -50,14 +57,6 @@ _DAMAGE_KIND_TO_CHROMOSOME_FIELD = {
     "alkylation": "damagedBases",
     "depurination": "abasicSites",
 }
-_DEFAULT_KIND_RATES_PER_S = {
-    # Karr extract table order-of-magnitude defaults for a light baseline.
-    "uv_like": 6.0e-1,
-    "oxidative": 1.7e-11,
-    "alkylation": 0.0,
-    "depurination": 8.4e-5,
-}
-
 
 def _resolve_path(path: str | Path) -> Path:
     candidate = Path(path)
@@ -114,16 +113,15 @@ class KarrDNADamageProcess(Process):
     name = "karr_dna_damage"
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
+        "chromosome_fixture_path": _DEFAULT_CHROMOSOME_FIXTURE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
         "sequence_length_nt": None,
         "enforce_unique_positions": True,
-        "kind_rates_per_s": dict(_DEFAULT_KIND_RATES_PER_S),
         "fork_match_tolerance_nt": 0,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
-        raw_parameters = {} if parameters is None else dict(parameters)
         super().__init__(parameters)
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
         self.damage_kinds = list(_DAMAGE_KINDS)
@@ -143,24 +141,12 @@ class KarrDNADamageProcess(Process):
         self.reaction_dna_products = np.zeros((0,), dtype=np.int64)
         self.reaction_vulnerable_motifs: list[object] = []
         self.reaction_vulnerable_motif_types: list[str] = []
+        self.monomer_dna_footprints = np.zeros((0,), dtype=np.float64)
+        self.complex_dna_footprints = np.zeros((0,), dtype=np.float64)
         self._load_schema_observables(self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH))
-
-        # Rule 8: production never reads a per-tick oracle trace to derive
-        # rates. kind_rates_per_s is always exactly the canonical
-        # _DEFAULT_KIND_RATES_PER_S baseline or an explicit caller-supplied
-        # override via the `kind_rates_per_s` parameter -- never anything
-        # loaded from a per-tick Karr trace file.
-        configured_rates = self.parameters.get("kind_rates_per_s") or {}
-        self.kind_rates_per_s = {
-            kind: max(0.0, float(configured_rates.get(kind, _DEFAULT_KIND_RATES_PER_S[kind])))
-            for kind in self.damage_kinds
-        }
-        # Compatibility-only debug/test surface: callers may still pass an
-        # explicit kind-rate override, but production firing now comes from
-        # the source-faithful per-reaction calcExpectedReactionRates() path.
-        self._kind_rate_override_active = "kind_rates_per_s" in raw_parameters and raw_parameters.get(
-            "kind_rates_per_s"
-        ) is not None
+        self._load_footprint_fixture(
+            self.parameters.get("chromosome_fixture_path", _DEFAULT_CHROMOSOME_FIXTURE_PATH)
+        )
 
         sequence_length_param = self.parameters.get("sequence_length_nt")
         if sequence_length_param is not None and _is_finite_number(sequence_length_param):
@@ -172,6 +158,7 @@ class KarrDNADamageProcess(Process):
         self.sequence_length_nt = min(self.sequence_length_nt, self.chromosome_length)
         self.fork_match_tolerance_nt = max(0, _safe_int(self.parameters.get("fork_match_tolerance_nt"), 0))
         self.enforce_unique_positions = bool(self.parameters.get("enforce_unique_positions", True))
+
 
     def _load_schema_observables(self, fixture_path: str | Path) -> None:
         resolved = _resolve_path(fixture_path)
@@ -238,6 +225,33 @@ class KarrDNADamageProcess(Process):
             if _is_finite_number(gc):
                 self.sequence_gc_content = float(gc)
             break
+
+    def _load_footprint_fixture(self, fixture_path: str | Path) -> None:
+        """Load WholeCellKB monomer/complex DNA-footprint arrays.
+
+        Karr source: Chromosome.m::sampleAccessibleSites subtracts
+        ``sum(this.monomerDNAFootprints(boundMonomers, 1))`` and
+        ``sum(this.complexDNAFootprints(boundComplexs, 1))`` from
+        ``nAccessibleSites``. These arrays are indexed by the 1-based global
+        monomer/complex index stored as the *value* of each
+        ``monomerBoundSites``/``complexBoundSites`` sparse entry; index i
+        (0-based, ``value - 1``) here holds the footprint (nt) for global
+        species index ``value``. Fail closed (empty arrays -> zero
+        contribution, not fabricated data) if the fixture is unavailable.
+        """
+        resolved = _resolve_path(fixture_path)
+        if not resolved.exists():
+            return
+        try:
+            fixture = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)["data"].fixture
+        except Exception:
+            return
+        monomer_footprints = getattr(fixture, "monomerDNAFootprints", None)
+        complex_footprints = getattr(fixture, "complexDNAFootprints", None)
+        if monomer_footprints is not None:
+            self.monomer_dna_footprints = np.asarray(monomer_footprints, dtype=np.float64).reshape(-1)
+        if complex_footprints is not None:
+            self.complex_dna_footprints = np.asarray(complex_footprints, dtype=np.float64).reshape(-1)
 
     def ports_schema(self) -> dict[str, Any]:
         chromosome_schema = {
@@ -316,41 +330,51 @@ class KarrDNADamageProcess(Process):
             return update
 
         chromosome_state = states.get("chromosome", {})
+        chromosome_store = self._resolve_chromosome_store(chromosome_state)
         existing_sites = current_damage_sites(states)
         occupied_positions = _coerce_position_set(existing_sites)
         occupied_positions.update(self._occupied_positions_from_sparse(chromosome_state))
+        occupied_positions.update(self._footprint_occupied_positions(chromosome_store))
         fork_positions = self._active_fork_positions(chromosome_state)
         sparse_by_field = self._sparse_damage_entries(chromosome_state)
         touched_sparse_fields: set[str] = set()
 
-        new_sites: list[dict[str, Any]] = []
-        rates = self.calcExpectedReactionRates(states)
-        if self._kind_rate_override_active:
-            rates = self._scaled_reaction_rates_from_kind_override(rates)
+        # Literal Karr DNADamage.m::evolveState per-reaction loop. Firing is
+        # never derived from calcExpectedReactionRates()/
+        # calcNumberVulnerableSites() (those exist solely for
+        # calcResourceRequirements_Current above, matching Karr's own
+        # split); each reaction gets its own stepSizeSec*reactionBounds(:,2)
+        # selectionProbability, gated by a random-order maxReactions cap
+        # read from a same-tick-mutable substrate pool (substrate
+        # writeback, Karr line: `substrates = substrates + numDamaged *
+        # reactionSmallMoleculeStoichiometryMatrix(:,j)`).
+        n_accessible_sites = self._n_accessible_sites(chromosome_store, chromosome_state)
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+        substrates_state = states.get("substrates", {})
+        working_substrates: dict[str, float] = {
+            wid: self._allocated_or_state(allocated_state, substrates_state, wid) for wid in self.substrate_wids
+        }
+        substrate_deltas: dict[str, float] = {}
 
-        for rxn_idx in self._reaction_order(rates.size):
-            lam = max(0.0, float(rates[int(rxn_idx)]) * dt)
-            if lam <= 0.0:
-                continue
+        new_sites: list[dict[str, Any]] = []
+        n_reactions = int(self.reaction_bounds.shape[0]) if self.reaction_bounds.ndim >= 2 else 0
 
-            max_reactions = self._max_reactions_for_reaction(
-                int(rxn_idx),
-                allocated_state=allocated_state,
-                substrates_state=states.get("substrates", {}),
-            )
+        for rxn_idx in self._reaction_order(n_reactions):
+            rxn_idx = int(rxn_idx)
+
+            max_reactions = self._max_reactions_for_reaction(rxn_idx, working_substrates=working_substrates)
             if max_reactions is not None and max_reactions <= 0:
                 continue
 
-            n_events = int(self._rng.poisson(lam))
-            if max_reactions is not None:
-                n_events = min(n_events, int(max_reactions))
-            if n_events <= 0:
+            selection_probability = self._selection_probability(rxn_idx, dt, working_substrates)
+            if selection_probability <= 0.0:
                 continue
 
             sampled_coords = self._sample_reaction_coords(
-                reaction_index=int(rxn_idx),
-                n_events=n_events,
+                reaction_index=rxn_idx,
+                max_reactions=max_reactions,
+                selection_probability=selection_probability,
+                n_accessible_sites=n_accessible_sites,
                 chromosome_state=chromosome_state,
                 sparse_by_field=sparse_by_field,
                 occupied_positions=occupied_positions,
@@ -358,10 +382,10 @@ class KarrDNADamageProcess(Process):
             if not sampled_coords:
                 continue
 
-            damage_field = self._reaction_damage_field(int(rxn_idx))
-            damage_product = self._reaction_damage_product(int(rxn_idx))
-            reaction_id = self._reaction_id(int(rxn_idx))
-            kind = self._legacy_damage_kind(int(rxn_idx))
+            damage_field = self._reaction_damage_field(rxn_idx)
+            damage_product = self._reaction_damage_product(rxn_idx)
+            reaction_id = self._reaction_id(rxn_idx)
+            kind = self._legacy_damage_kind(rxn_idx)
             for event_idx, (zero_based_pos, strand) in enumerate(sampled_coords):
                 pos = int(zero_based_pos) + 1
                 site_id = f"{reaction_id}@{int(pos)}@tick{self._tick_index}@{event_idx}"
@@ -380,8 +404,27 @@ class KarrDNADamageProcess(Process):
                 sparse_key = (int(zero_based_pos), int(strand))
                 sparse_by_field[damage_field][sparse_key] = damage_product
                 touched_sparse_fields.add(damage_field)
-                if self.enforce_unique_positions and self._reaction_uses_sequence_sampling(int(rxn_idx)):
+                if self.enforce_unique_positions and self._reaction_uses_sequence_sampling(rxn_idx):
                     occupied_positions.add(int(pos))
+
+            # Substrate writeback (Karr line 543): the small-molecule pool
+            # this same reaction consumed/produced feeds every subsequent
+            # reaction this tick (working_substrates) AND must be
+            # reflected in the real `substrates` port (accumulate updater)
+            # so DNADamage's consumption is not silently dropped.
+            count = len(sampled_coords)
+            if count and self.reaction_small_molecule_stoich.size and rxn_idx < self.reaction_small_molecule_stoich.shape[1]:
+                stoich_col = self.reaction_small_molecule_stoich[:, rxn_idx]
+                for sub_idx, delta in enumerate(stoich_col.tolist()):
+                    if delta == 0.0 or sub_idx >= len(self.substrate_wids):
+                        continue
+                    wid = self.substrate_wids[sub_idx]
+                    contribution = count * float(delta)
+                    working_substrates[wid] = working_substrates.get(wid, 0.0) + contribution
+                    substrate_deltas[wid] = substrate_deltas.get(wid, 0.0) + contribution
+
+        if substrate_deltas:
+            update["substrates"] = {wid: delta for wid, delta in substrate_deltas.items() if delta != 0.0}
 
         if not new_sites:
             return update
@@ -495,10 +538,6 @@ class KarrDNADamageProcess(Process):
             out[rxn_idx] = float(len(specific_coords & damaged_coords))
         return out
 
-    def expected_events_per_tick(self, timestep: float = 1.0) -> dict[str, float]:
-        dt = max(0.0, float(timestep))
-        return {kind: float(self.kind_rates_per_s[kind] * dt) for kind in self.damage_kinds}
-
     def _allocated_or_state(self, allocated_state: dict[str, Any], substrates_state: dict[str, Any], wid: str) -> float:
         if wid in allocated_state:
             return max(0.0, float(allocated_state.get(wid, 0.0)))
@@ -518,11 +557,21 @@ class KarrDNADamageProcess(Process):
         return f"reaction_{int(reaction_index)}"
 
     def _reaction_damage_field(self, reaction_index: int) -> str:
-        if 0 <= int(reaction_index) < len(self.reaction_damage_types):
-            field = str(self.reaction_damage_types[int(reaction_index)])
-            if field in _SPARSE_DAMAGE_FIELDS:
-                return field
-        return "damagedBases"
+        # Fail-closed (item 6): an unknown/out-of-range reaction damage
+        # type is a corrupt-fixture or programming error, never silently
+        # routed to a plausible-looking default field.
+        if reaction_index < 0 or reaction_index >= len(self.reaction_damage_types):
+            raise ValueError(
+                f"DNADamage reaction index {reaction_index} has no reactionDamageTypes "
+                "entry (fail-closed: refusing to guess a damage field)"
+            )
+        field = str(self.reaction_damage_types[int(reaction_index)])
+        if field not in _SPARSE_DAMAGE_FIELDS:
+            raise ValueError(
+                f"DNADamage reaction index {reaction_index} damage field {field!r} is not "
+                "a known sparse chromosome field (fail-closed: refusing to guess a damage field)"
+            )
+        return field
 
     def _reaction_damage_product(self, reaction_index: int) -> int:
         if 0 <= int(reaction_index) < int(self.reaction_dna_products.size):
@@ -543,28 +592,131 @@ class KarrDNADamageProcess(Process):
             return "alkylation"
         return "oxidative"
 
-    def _scaled_reaction_rates_from_kind_override(self, rates: np.ndarray) -> np.ndarray:
-        scaled = np.asarray(rates, dtype=np.float64).copy()
-        if scaled.size == 0:
-            return scaled
-        for kind in self.damage_kinds:
-            idxs = [idx for idx in range(scaled.size) if self._legacy_damage_kind(idx) == kind]
-            if not idxs:
+    def _stochastic_round(self, value: float) -> int:
+        """Karr `randStream.stochasticRound`: floor(value) + Bernoulli(frac)."""
+        if value <= 0.0:
+            return 0
+        base = int(np.floor(value))
+        frac = float(value - base)
+        if frac <= 0.0:
+            return base
+        return base + int(self._rng.random() < frac)
+
+    def _selection_probability(
+        self,
+        reaction_index: int,
+        dt: float,
+        working_substrates: dict[str, float],
+    ) -> float:
+        """Literal Karr DNADamage.m::evolveState selectionProbability.
+
+        `selectionProbability = stepSizeSec * reactionBounds(j,2)`, scaled
+        by the radiation-dose substrate level when `reactionRadiation(j) ~=
+        0`. This never reads calcExpectedReactionRates()/
+        calcNumberVulnerableSites() -- those are a distinct Karr code path
+        used only for FBA resource-request bookkeeping.
+        """
+        if self.reaction_bounds.ndim < 2 or reaction_index < 0 or reaction_index >= self.reaction_bounds.shape[0]:
+            return 0.0
+        prob = float(dt) * float(self.reaction_bounds[int(reaction_index), 1])
+        if prob == 0.0:
+            return 0.0
+        radiation_idx = (
+            int(self.reaction_radiation[int(reaction_index)]) if reaction_index < self.reaction_radiation.size else 0
+        )
+        if radiation_idx != 0:
+            local_idx = radiation_idx - 1
+            if local_idx < 0 or local_idx >= len(self.substrate_wids):
+                return 0.0
+            wid = self.substrate_wids[local_idx]
+            prob *= max(0.0, float(working_substrates.get(wid, 0.0)))
+        return max(0.0, prob)
+
+    def _n_accessible_sites(
+        self,
+        chromosome_store: ChromosomeStore,
+        chromosome_state: dict[str, Any],
+    ) -> float:
+        """Literal Karr Chromosome.m::sampleAccessibleSites nAccessibleSites.
+
+        `nAccessibleSites = collapse(polymerizedRegions)
+        - sum(monomerDNAFootprints(boundMonomers))
+        - sum(complexDNAFootprints(boundComplexs)) - nnz(damagedSites)`.
+        """
+        polymerized_nt = self._polymerized_nt_count(chromosome_store)
+        monomer_footprint_sum = self._bound_footprint_sum(
+            chromosome_store, "monomerBoundSites", self.monomer_dna_footprints
+        )
+        complex_footprint_sum = self._bound_footprint_sum(
+            chromosome_store, "complexBoundSites", self.complex_dna_footprints
+        )
+        damaged_nnz = float(len(self._damaged_sites_value_map(chromosome_store, chromosome_state)))
+        return max(0.0, polymerized_nt - monomer_footprint_sum - complex_footprint_sum - damaged_nnz)
+
+    def _bound_footprint_sum(
+        self,
+        chromosome_store: ChromosomeStore,
+        field_name: str,
+        footprint_table: np.ndarray,
+    ) -> float:
+        if footprint_table.size == 0:
+            return 0.0
+        try:
+            triplet = chromosome_store.get_field(field_name)
+        except KeyError:
+            return 0.0
+        n = int(footprint_table.size)
+        total = 0.0
+        for value in triplet.values.tolist():
+            idx = int(value) - 1
+            if 0 <= idx < n:
+                total += float(footprint_table[idx])
+        return total
+
+    def _footprint_occupied_positions(self, chromosome_store: ChromosomeStore) -> set[int]:
+        """Positions occluded by bound-protein DNA footprints.
+
+        Documented scope narrowing: Karr's `isRegionAccessible` occludes an
+        asymmetric 5'/3' window keyed by strand direction and footprint
+        binding-strandedness; here we mark a footprint-width window
+        downstream of the bound anchor position on both strands (a
+        strand-agnostic, coarser-than-Karr exclusion -- rejects at least as
+        many candidate sites as the literal formula, never fewer), matching
+        the same strand-agnostic convention `_occupied_positions_from_sparse`
+        already uses for existing-damage exclusion.
+        """
+        occupied: set[int] = set()
+        if self.sequence_length_nt <= 0:
+            return occupied
+        for field_name, footprint_table in (
+            ("monomerBoundSites", self.monomer_dna_footprints),
+            ("complexBoundSites", self.complex_dna_footprints),
+        ):
+            if footprint_table.size == 0:
                 continue
-            baseline = float(np.sum(scaled[idxs]))
-            target = max(0.0, float(self.kind_rates_per_s.get(kind, 0.0)))
-            if baseline <= 0.0:
-                scaled[idxs] = 0.0
+            try:
+                triplet = chromosome_store.get_field(field_name)
+            except KeyError:
                 continue
-            scaled[idxs] *= target / baseline
-        return scaled
+            n = int(footprint_table.size)
+            for position, value in zip(triplet.positions.tolist(), triplet.values.tolist(), strict=False):
+                idx = int(value) - 1
+                if not (0 <= idx < n):
+                    continue
+                footprint = int(footprint_table[idx])
+                if footprint <= 0:
+                    continue
+                start = int(position) + 1
+                for offset in range(footprint):
+                    pos = ((start + offset - 1) % self.sequence_length_nt) + 1
+                    occupied.add(pos)
+        return occupied
 
     def _max_reactions_for_reaction(
         self,
         reaction_index: int,
         *,
-        allocated_state: dict[str, Any],
-        substrates_state: dict[str, Any],
+        working_substrates: dict[str, float],
     ) -> int | None:
         if self.reaction_small_molecule_stoich.size == 0:
             return None
@@ -580,7 +732,7 @@ class KarrDNADamageProcess(Process):
             if sub_idx < 0 or sub_idx >= len(self.substrate_wids):
                 return 0
             wid = self.substrate_wids[int(sub_idx)]
-            available = self._allocated_or_state(allocated_state, substrates_state, wid)
+            available = max(0.0, float(working_substrates.get(wid, 0.0)))
             ratios.append(available / float(denom[int(sub_idx)]))
         if not ratios:
             return None
@@ -595,25 +747,54 @@ class KarrDNADamageProcess(Process):
         self,
         *,
         reaction_index: int,
-        n_events: int,
+        max_reactions: int | None,
+        selection_probability: float,
+        n_accessible_sites: float,
         chromosome_state: dict[str, Any],
         sparse_by_field: dict[str, dict[tuple[int, int], int]],
         occupied_positions: set[int],
     ) -> list[tuple[int, int]]:
-        if n_events <= 0:
+        if selection_probability <= 0.0:
+            return []
+        if max_reactions is not None and max_reactions <= 0:
             return []
 
         motif = self.reaction_vulnerable_motifs[int(reaction_index)] if reaction_index < len(self.reaction_vulnerable_motifs) else ""
         if not isinstance(motif, str):
+            # Karr Chromosome.m::setSiteDamaged non-string branch:
+            # `maxDamages = min(maxDamages, stochasticRound(nCandidates * probDamage))`
             candidates = self._reaction_candidate_coords(chromosome_state, reaction_index)
             if not candidates:
                 return []
+            n_sites = self._stochastic_round(len(candidates) * selection_probability)
+            if max_reactions is not None:
+                n_sites = min(n_sites, int(max_reactions))
+            if n_sites <= 0:
+                return []
             order = self._reaction_order(len(candidates)).tolist()
-            limit = min(int(n_events), len(candidates))
+            limit = min(n_sites, len(candidates))
             return [candidates[int(order[idx])] for idx in range(limit)]
 
+        # Karr Chromosome.m::sampleAccessibleSites string-motif branch:
+        # `nGC = sum(seq=='G'|seq=='C')`;
+        # `nSites = min(nSites, stochasticRound(nAccessibleSites * prob *
+        #  (gc/2)^nGC * ((1-gc)/2)^(seqLen-nGC)))`.
+        gc = float(self.sequence_gc_content)
+        # Karr: `nGC = sum(seq=='G'|seq=='C')`; the complement exponent is
+        # `seqLen - nGC`, not an explicit A/T count, so any non-G/C
+        # character in the motif (there are none in practice, but this
+        # matches the literal formula for any input) falls in that bucket.
+        n_gc = sum(1 for base in motif if base in ("G", "C"))
+        n_complement = len(motif) - n_gc
+        gc_term = (gc / 2.0) ** n_gc * ((1.0 - gc) / 2.0) ** n_complement
+        n_sites = self._stochastic_round(n_accessible_sites * selection_probability * gc_term)
+        if max_reactions is not None:
+            n_sites = min(n_sites, int(max_reactions))
+        if n_sites <= 0:
+            return []
+
         sampled_positions = self._sample_positions(
-            n_events=n_events,
+            n_events=n_sites,
             occupied_positions=occupied_positions,
         )
         if sampled_positions.size <= 0:
