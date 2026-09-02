@@ -144,7 +144,7 @@ the branch is stale versus PPII and retains literal Karr gaps: Poisson instead
 of per-reaction stochastic-round/accessibility sampling, a legacy rate
 override re-entry, missing substrate writeback, fail-open damage routing,
 incomplete overlay provenance, and a broken general worktree overlay path.
-`l22-dnadamage-sept2-fix` now owns all findings; no item is waived.
+`l22-dnadamage-sept2-fix` is active and owns all findings; no item is waived.
 
 **Live state (2026-08-18 14:20 IST) — seven original lanes + RepInit remain:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
@@ -4923,3 +4923,4 @@ A spin-off project building on top of OpenCell to simulate drug interactions, pr
 - **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
 - **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
 - **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
+
