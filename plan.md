@@ -71,15 +71,15 @@ below:**
   still `744974c`; push the verified merge before integrating another lane.
 - ChromosomeCondensation is independently accepted and merged with current
   main in `E:\opencell-worktrees\integrate-l21-chromcond-sept2` through
-  `803089b`. Its source fix and packaging gates are green. Integration
-  exposed a broader provenance problem: changing shared
-  `tests/vivarium/l2_replay_common.py` invalidates 19 L2.2 rows by hash, not
-  just the six chromosome consumers, and the raw Karr cohorts are not all
-  locally available. The smallest correct next step is to restore that
-  shared helper byte-for-byte and isolate chromosome-state replay
-  application to a ChromCond/L2.1-only helper, then prove the L2.2 index
-  remains at the accepted **18/2/2** without a behavior-changing harness
-  diff. Independent review remains mandatory before merge.
+  `1e4d413`. The isolation refactor is complete: shared
+  `tests/vivarium/l2_replay_common.py` and
+  `opencell/util/matlab_rng.py` are byte-identical to main; ChromCond-only
+  replay/RNG behavior lives in `_chromcond_replay_apply.py` and
+  `chromcond_mcg_rand.py`. The 0/100 hidden replay proof, L2.1 GENUINE,
+  L1b, provenance, and focused tests are green; L2.2 audit is restored to
+  **18 PASS / 2 FAIL / 2 MISSING_EVIDENCE**, integrity OK, with zero
+  evidence/index changes. Candidate now awaits independent Opus 5 review
+  before merge.
 - Durable MATLAB queues:
   - Cytokinesis PID `18600` is alive at **4/50 validated**, seeds `4-7`
     active, 42 queued, 0 failed.
