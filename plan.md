@@ -195,6 +195,16 @@ override re-entry, missing substrate writeback, fail-open damage routing,
 incomplete overlay provenance, and a broken general worktree overlay path.
 `l22-dnadamage-sept2-fix` is active and owns all findings; no item is waived.
 
+**DNADamage re-review candidate (2026-09-02 evening):**
+
+- Candidate commits: `ef11bca`, `5569e77`, `f7d4310`, `c389ff6`,
+  `cbe3fc3` (plus merge of current main).
+- Claimed result: literal per-reaction Karr law, all 11 review findings
+  closed, genuine provider/overlay-hash-bound 55-trace corpus, event PASS,
+  complete-bundle index **18 PASS / 2 FAIL / 2 MISSING**, PPII preserved.
+- `dnadamage-sept2-rereview` owns final read-only acceptance before
+  integration.
+
 **Live state (2026-08-18 14:20 IST) — seven original lanes + RepInit remain:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`; main is
@@ -4972,5 +4982,4 @@ A spin-off project building on top of OpenCell to simulate drug interactions, pr
 - **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
 - **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
 - **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
-
 
