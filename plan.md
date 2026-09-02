@@ -189,6 +189,17 @@ snapshot below:**
   separate safe commits from dirty wiring-YAML/scratch files and adjudicate
   the shared `matlab_rng.py` / `l2_replay_common.py` blast radius before merge.
 
+**ReplicationInitiation candidate review:**
+
+- Candidate commits: `884f830`, `c9f6a6f`, `f466bf4`.
+- Claimed gates: L2.1 strict-rubric GENUINE; process-local L2.2 N=50/M=200
+  PASS with both channels SEED_NOISE.
+- Known residuals prevent automatic closure: honest stateful replay still
+  first mismatches at tick 4, and scoped L1b anchors still FAIL. The branch
+  labels these out of scope, but the repository no-known-gap rule does not.
+- `repinit-sept2-review` owns read-only adjudication, evidence portability,
+  oversized artifact review, and the minimum source fixes before integration.
+
 **DNADamage review result:** REJECT. The measured PASS is reproducible, but
 the branch is stale versus PPII and retains literal Karr gaps: Poisson instead
 of per-reaction stochastic-round/accessibility sampling, a legacy rate
@@ -4984,6 +4995,5 @@ A spin-off project building on top of OpenCell to simulate drug interactions, pr
 - **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
 - **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
 - **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
-
 
 
