@@ -104,12 +104,15 @@ below:**
   (`ftsZRing_numEdgesOneStraight`, OC 6 vs Karr 9). These are mandatory
   source-fidelity fixes under the no-known-gap rule. DNADamage seeds 0 and 1
   are both zero-activity. Accepted L2.2 seed 2000 supplies a genuine active
-  window, but its initial L2.1 `CODE_GAP` classification is provisional:
-  `l21_active_window_audit.py` deep-merges chromosome sparse replacements
-  and counts any non-empty chromosome update payload as OC activity, yielding
-  an implausible 20/20 active ticks against the accepted L2.2 event rate.
-  Fix and re-run the audit's process-aware chromosome application/activity
-  calculation before diagnosing production RNG. HostInteraction and
+  window. The audit's sparse-state semantics are now corrected, but the
+  active-window branch still uses a pre-closure `karr_dna_damage.py`
+  (SHA differs from accepted main by the 685-line literal Karr port). Merge
+  current main into that branch and reclassify before treating its 20/20
+  OC-activity result as a new production gap. Cytokinesis's first active
+  mismatch was fixed by replacing NumPy PCG64 with MATLAB-faithful
+  `mcg16807`; exact replay now matches ticks 226-227 and first diverges at
+  tick 228. Run a live MATLAB per-call RNG-state ledger and also reconcile
+  the known `_water_request` formula deviation before closure. HostInteraction and
   ChromosomeSegregation were relaunched as PIDs `27484` and `26372`, queued
   on the shared slot pool. Branch manifest currently records
   **6 EXISTING_WINDOW_PASS / 3 CODE_GAP / 2 MISSING_ACTIVE_EXTRACTION**,
