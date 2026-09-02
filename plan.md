@@ -177,7 +177,8 @@ snapshot below:**
   relaunch is allowed while these PIDs remain alive.
 - Aggregate wait shell: `wait-l21-active-five`.
 
-**ChromosomeCondensation candidate review:**
+
+**DNAS two-sided result and redirect:** the preregistered N=200 gate returns `PRIMARY_OVERACTIVE` (OC 1487 pooled ticks vs Karr 65). The source gap is the chromosome-owned RNG shared across ten MATLAB processes. This is not waived: the same agent is now capturing `chromosome.randStream.state` as a hash-bound `states_before` input and restoring it per tick, avoiding a nine-process reimplementation while preserving the no-answer-leak contract.**ChromosomeCondensation candidate review:**
 
 - Candidate commits through `b2e6e0d` + status `ae4254b`.
 - Claimed result: official strict rubric GENUINE and full 100-tick applied
@@ -4983,5 +4984,6 @@ A spin-off project building on top of OpenCell to simulate drug interactions, pr
 - **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
 - **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
 - **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
+
 
 
