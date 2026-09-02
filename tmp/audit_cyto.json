@@ -1,0 +1,144 @@
+{
+  "generated_by": "scripts/l21_active_window_audit.py",
+  "standard_manifest": "/mnt/e/opencell-worktrees/genuine-l21-active/docs/phase_f/l2_2_design_a/oracle_population_manifest.json",
+  "process_count": 1,
+  "counts": {
+    "EXISTING_WINDOW_PASS": 0,
+    "CODE_GAP": 1,
+    "MISSING_ACTIVE_EXTRACTION": 0
+  },
+  "rows": [
+    {
+      "process": "Cytokinesis",
+      "activity_predicate": "event-window scalar deltas: chromosome_segregated/pinchedDiameter/ftsZ ring channels",
+      "scanned_candidate_count": 1,
+      "candidate_traces": [
+        {
+          "path": "/mnt/e/opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
+          "repo_relative_hint": "opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
+          "sha256": "c53fd34994f2d049fbfadf77ec5d4319fdc5bccd2cfd97c75d393705e99bec96",
+          "trace_family": "event_window",
+          "n_ticks": 4000,
+          "rng_seed": 0,
+          "tick_offset": 0.0,
+          "states_after_keys": [
+            "boundEnzymes",
+            "chromosome_segregated",
+            "enzymes",
+            "ftsZRing_numEdgesOneStraight",
+            "ftsZRing_numEdgesTwoBent",
+            "ftsZRing_numEdgesTwoStraight",
+            "ftsZRing_numResidualBent",
+            "pinchedDiameter",
+            "substrates"
+          ],
+          "first_active_tick": 226,
+          "first_active_absolute_tick": 226.0,
+          "active_tick_count": 2114,
+          "first_active_detail": {
+            "observable": "ftsZRing_numEdgesOneStraight",
+            "detail_path": "ftsZRing_numEdgesOneStraight",
+            "index": 0,
+            "before": 0.0,
+            "after": 9.0
+          },
+          "source_manifest": "local_event_window",
+          "duplicate_of": null
+        }
+      ],
+      "chosen_trace": {
+        "path": "/mnt/e/opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
+        "sha256": "c53fd34994f2d049fbfadf77ec5d4319fdc5bccd2cfd97c75d393705e99bec96",
+        "trace_family": "event_window",
+        "n_ticks": 4000,
+        "rng_seed": 0,
+        "tick_offset": 0.0,
+        "states_after_keys": [
+          "boundEnzymes",
+          "chromosome_segregated",
+          "enzymes",
+          "ftsZRing_numEdgesOneStraight",
+          "ftsZRing_numEdgesTwoBent",
+          "ftsZRing_numEdgesTwoStraight",
+          "ftsZRing_numResidualBent",
+          "pinchedDiameter",
+          "substrates"
+        ],
+        "first_active_tick": 226,
+        "first_active_absolute_tick": 226.0,
+        "active_tick_count": 2114,
+        "first_active_detail": {
+          "observable": "ftsZRing_numEdgesOneStraight",
+          "detail_path": "ftsZRing_numEdgesOneStraight",
+          "index": 0,
+          "before": 0.0,
+          "after": 9.0
+        },
+        "source_manifest": "local_event_window",
+        "duplicate_of": null
+      },
+      "bit_identity": {
+        "pass_all_compared_ticks": false,
+        "compared_surfaces": [
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "pinchedDiameter",
+          "ftsZRing_numEdgesOneStraight",
+          "ftsZRing_numEdgesTwoStraight",
+          "ftsZRing_numEdgesTwoBent",
+          "ftsZRing_numResidualBent"
+        ],
+        "first_mismatch_tick": 226,
+        "first_mismatch_observable": "ftsZRing_numEdgesOneStraight",
+        "first_mismatch_index": 0,
+        "first_mismatch_oc_val": 0.0,
+        "first_mismatch_karr_val": 9.0,
+        "first_mismatch_diff": -9.0,
+        "compared_tick_count": 4000
+      },
+      "honest_replay": {
+        "karr_active_ticks": 2114,
+        "oc_active_ticks": 4000,
+        "oc_active_on_karr_active_ticks": 2114,
+        "first_karr_active_tick": 226,
+        "first_karr_active_detail": {
+          "observable": "ftsZRing_numEdgesOneStraight",
+          "detail_path": "ftsZRing_numEdgesOneStraight",
+          "index": 0,
+          "before": 0.0,
+          "after": 9.0
+        },
+        "first_oc_active_tick": 0,
+        "first_measured_mismatch": {
+          "observable": "ftsZRing_numEdgesOneStraight",
+          "detail_path": "ftsZRing_numEdgesOneStraight",
+          "index": 0,
+          "before": 0.0,
+          "after": 9.0
+        }
+      },
+      "classification": "CODE_GAP",
+      "existing_trace_suffices": true,
+      "extraction_request": null,
+      "code_gap_anchor": {
+        "first_karr_active_tick": 226,
+        "first_karr_active_detail": {
+          "observable": "ftsZRing_numEdgesOneStraight",
+          "detail_path": "ftsZRing_numEdgesOneStraight",
+          "index": 0,
+          "before": 0.0,
+          "after": 9.0
+        },
+        "first_measured_mismatch": {
+          "observable": "ftsZRing_numEdgesOneStraight",
+          "detail_path": "ftsZRing_numEdgesOneStraight",
+          "index": 0,
+          "before": 0.0,
+          "after": 9.0
+        }
+      }
+    }
+  ]
+}
