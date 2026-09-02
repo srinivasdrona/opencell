@@ -151,6 +151,19 @@ snapshot below:**
 - Wait shell: `wait-cytokinesis-full50`.
 - Do not launch a second Cytokinesis queue while PID `18600` is alive.
 
+**FtsZ durable extraction handoff:**
+
+- Tooling/status commit: `254d8c9`.
+- Queue orchestrator PID: `22568`; watchdog PID: `7904`.
+- FtsZ is self-limited to two concurrent seeds while sharing the common
+  four-slot pool. Seeds `0` and `47` remain validated; seeds `1` and `2` are
+  queued/waiting behind the current Cytokinesis slot holders.
+- Queue logs and owner PID live under
+  `genuine-l22-ftsz\tmp\l22_ftsz_genuine_extract\`.
+- Wait shell: `wait-ftsz-full50`.
+- Do not launch another FtsZ queue while the PID in `queue_owner.pid` is alive;
+  the watchdog restarts the orchestrator if needed.
+
 **DNADamage review result:** REJECT. The measured PASS is reproducible, but
 the branch is stale versus PPII and retains literal Karr gaps: Poisson instead
 of per-reaction stochastic-round/accessibility sampling, a legacy rate
