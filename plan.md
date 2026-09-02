@@ -103,8 +103,13 @@ below:**
   on the shared slot pool. Manifest state is **6 EXISTING_WINDOW_PASS /
   2 CODE_GAP / 3 MISSING_ACTIVE_EXTRACTION**.
 - ReplicationInitiation remains open at an honest stateful tick-4
-  `enzymes[1]` mismatch despite its strict-rubric GENUINE result; its agent
-  is still working. DNASupercoiling's chromosome-release RNG ledger is now
+  `enzymes[1]` mismatch despite strict-rubric GENUINE. All five Opus review
+  fixes are complete; L1b and canonical N=50/M=200 L2.2 are PASS. Site-level
+  state and the 29-candidate release set match Karr through tick 3, ruling
+  out occupancy, size, and ordering. The sole remaining hypothesis is an
+  upstream RNG draw-count drift during ticks 0-3; run a real MATLAB
+  call-by-call draw ledger now rather than closing on the rubric.
+  DNASupercoiling's chromosome-release RNG ledger is now
   wired, but the corrected N=200 run remains `PRIMARY_OVERACTIVE`
   (pooled nonzero ticks **1526 vs 65**, active seeds **200 vs 58**,
   clustered seeds **199 vs 7**), falsifying the shared-release-RNG
