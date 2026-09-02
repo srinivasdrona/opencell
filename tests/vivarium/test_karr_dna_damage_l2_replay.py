@@ -173,13 +173,7 @@ def _assert_sparse_field_valid(triplet: SparseTriplet, shape: tuple[int, int], *
     assert np.all(triplet.values >= 0), f"tick={tick} field={field} has negative values"
 
 
-@pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
-def test_karr_dna_damage_l2_replay_identity_per_tick(rng_seed: int) -> None:
-    trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
-    with h5py.File(trace_path, "r") as trace:
-        n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
-        assert n_ticks == 100
-
+def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
         if "metadata" in trace and "rng_seed" in trace["metadata"]:
             recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
             assert int(rng_seed) == recorded_seed
@@ -295,3 +289,77 @@ def test_karr_dna_damage_l2_replay_identity_per_tick(rng_seed: int) -> None:
                     assert (
                         oc_delta_totals[field] > 0
                     ), f"no OC sparse mutations recorded for mapped field {field}"
+
+
+@pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
+def test_karr_dna_damage_l2_replay_identity_per_tick(rng_seed: int) -> None:
+    trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
+    with h5py.File(trace_path, "r") as trace:
+        n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+        assert n_ticks == 100
+        _run_replay(trace, n_ticks, rng_seed)
+
+
+def _resolve_event_trace_path(seed: int) -> Path | None:
+    """Resolve the UVB-mechanism-conditioned fixed-window DNADamage trace for `seed`.
+
+    This is a source-backed stimulus-conditioned active window (see
+    docs/phase_f/l2_2_design_a/stress/DNADAMAGE_SYNTHETIC_MECHANISM_SPEC.json),
+    distinct from the no-stimulus canonical 100-tick trace `resolve_trace_path`
+    resolves. Not every seed's 20-tick window fires (Poisson mean ~2 events per
+    seed window), so callers must tolerate a missing/inactive seed and try the
+    next one -- never fabricate activity.
+    """
+    rel = Path(
+        f"data/m1_sources/karr_native/per_process_traces_v2_event_s{seed:03d}/DNADamage_20ticks.mat"
+    )
+    for base in (_REPO_ROOT, Path("E:/opencell"), Path("/mnt/e/opencell")):
+        candidate = base / rel
+        if candidate.exists():
+            return candidate
+    return None
+
+
+@pytest.mark.parametrize("rng_seed", [0, 1, 2, 3, 4], ids=[f"event_seed_{i}" for i in range(5)])
+def test_karr_dna_damage_l2_event_replay(rng_seed: int) -> None:
+    """L2 replay on a UVB-mechanism-conditioned fixed active window. DNADamage is
+    quiescent under the no-stimulus canonical trace (zero radiation); the
+    stimulus-conditioned trace overrides UVB_radiation to the preregistered
+    synthetic-mechanism dose so intrastrandCrossLinks damage events fire on a
+    subset of ticks."""
+    trace_path = _resolve_event_trace_path(rng_seed)
+    if trace_path is None:
+        pytest.skip(f"UVB-conditioned event-window trace not found for seed {rng_seed}")
+
+    with h5py.File(trace_path, "r") as trace:
+        n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+        assert n_ticks == 20
+
+        condition_label = trace["metadata/condition_label"][()]
+        condition_label = "".join(chr(int(c[0])) for c in condition_label)
+        assert condition_label == "uvb_mechanism"
+
+        mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
+        mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+        has_chromosome_trace = (
+            "chromosome" in trace.get("states_before", {})
+            and "chromosome" in trace.get("states_after", {})
+        )
+        chromosome_active = False
+        if has_chromosome_trace:
+            for tick in range(n_ticks):
+                before_store = _chromosome_store_for_tick(trace, "states_before", tick)
+                after_store = _chromosome_store_for_tick(trace, "states_after", tick)
+                for field in _MAPPED_FIELDS:
+                    if after_store.calc_num_edges(field) != before_store.calc_num_edges(field):
+                        chromosome_active = True
+                        break
+                if chromosome_active:
+                    break
+        if sum(mutated_tick_counts.values()) == 0 and not chromosome_active:
+            pytest.skip(
+                f"UVB-conditioned event-window trace seed {rng_seed} recorded no damage events. "
+                f"Per-observable counts: {mutated_tick_counts}."
+            )
+
+        _run_replay(trace, n_ticks, int(rng_seed))
