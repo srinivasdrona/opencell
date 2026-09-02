@@ -170,7 +170,16 @@ overlay = verify_resolved_dnadamage_source(overlay);
 end
 
 function overlay = ensure_dnadamage_signed_zero_overlay(source_path, overlay_path)
-source_text = fileread(source_path);
+% Read the actual bytes on disk and search/replace on a byte-preserving
+% char view (char(uint8_bytes) maps each byte to the codepoint of the same
+% value, a lossless 1:1 roundtrip via uint8(...) below). This deliberately
+% avoids fileread(), whose encoding auto-detection can merge multi-byte
+% source bytes (the Karr source has non-ASCII comment bytes) into Unicode
+% codepoints above 255; a later uint8() on that decoded text then
+% *saturates* those codepoints to 255, silently corrupting the hash input
+% and desynchronizing it from what actually gets written/resolved on disk.
+source_bytes = read_raw_bytes(source_path);
+source_text = char(source_bytes);
 needle = '                maxReactions = floor(min(this.substrates ./ max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j))));';
 replacement = sprintf([ ...
     '                denom = abs(max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j)));%% signed-zero normalization for exact-zero stoich rows\n' ...
@@ -197,6 +206,11 @@ if isempty(strfind(patched_text, normalized_line)) %#ok<STREMP>
         'DNADamage patched text still lacks the normalized denominator line for %s', source_path);
 end
 
+% patched_text is built entirely from char(uint8(...)) plus a pure-ASCII
+% replacement, so every codepoint is in [0, 255]; uint8() below is an
+% exact inverse of the char() construction above, never a saturating cast.
+patched_bytes = uint8(patched_text);
+
 if overlay_required
     overlay_dir = fileparts(overlay_path);
     if ~exist(overlay_dir, 'dir')
@@ -208,15 +222,15 @@ if overlay_required
             'Unable to open generated overlay path for writing: %s', overlay_path);
     end
     cleanup_fid = onCleanup(@() fclose(fid)); %#ok<NASGU>
-    fwrite(fid, patched_text, 'char');
+    fwrite(fid, patched_bytes, 'uint8');
 end
 
 overlay = struct( ...
     'source_path', source_path, ...
     'overlay_path', overlay_path, ...
     'overlay_required', logical(overlay_required), ...
-    'source_sha256_lf_normalized', sha256_lf_normalized_text(source_text), ...
-    'patched_sha256_lf_normalized', sha256_lf_normalized_text(patched_text), ...
+    'source_sha256_lf_normalized', sha256_lf_normalized_bytes(strip_cr_bytes(source_bytes)), ...
+    'patched_sha256_lf_normalized', sha256_lf_normalized_bytes(strip_cr_bytes(patched_bytes)), ...
     'expected_normalized_denominator_line', normalized_line, ...
     'resolved_path', '', ...
     'resolved_sha256_lf_normalized', '' ...
@@ -229,17 +243,18 @@ if isempty(resolved_path)
     error('karr_bootstrap:dnadamage_overlay_unresolved', ...
         'Unable to resolve edu.stanford.covert.cell.sim.process.DNADamage after bootstrap path setup');
 end
-resolved_text = fileread(resolved_path);
+% Read the resolved file's raw bytes directly (never fileread/decoded
+% text) so this comparison is on the exact same byte-preserving basis used
+% to derive source_sha256_lf_normalized / patched_sha256_lf_normalized
+% above; any encoding-driven decode here would desynchronize the hashes
+% even when MATLAB has correctly resolved the overlaid source content.
+resolved_bytes = read_raw_bytes(resolved_path);
+resolved_text = char(resolved_bytes);
 if isempty(strfind(resolved_text, overlay.expected_normalized_denominator_line)) %#ok<STREMP>
     error('karr_bootstrap:dnadamage_overlay_resolved_source_unpatched', ...
         'Resolved DNADamage source %s does not contain the normalized denominator line', resolved_path);
 end
-% Compare resolved content on the same fileread/normalized-text basis used
-% to derive source_sha256_lf_normalized and patched_sha256_lf_normalized
-% above. The Karr source contains non-ASCII comment bytes, so hashing the
-% raw file bytes here would disagree with the text-derived patched hash
-% even when MATLAB resolves the correct overlaid source content.
-resolved_sha = sha256_lf_normalized_text(resolved_text);
+resolved_sha = sha256_lf_normalized_bytes(strip_cr_bytes(resolved_bytes));
 if ~strcmp(resolved_sha, overlay.patched_sha256_lf_normalized)
     error('karr_bootstrap:dnadamage_overlay_resolved_hash_mismatch', ...
         'Resolved DNADamage source hash %s does not match patched hash %s', ...
@@ -265,21 +280,22 @@ tf = strcmp(normalize(path_a), normalize(path_b));
 end
 
 function hash_hex = sha256_lf_normalized(path_value)
+raw = read_raw_bytes(path_value);
+hash_hex = sha256_lf_normalized_bytes(strip_cr_bytes(raw));
+end
+
+function raw = read_raw_bytes(path_value)
 fid = fopen(path_value, 'rb');
 if fid < 0
-    error('karr_bootstrap:provider_hash_unreadable', ...
-        'could not open %s to compute provider identity hash', path_value);
+    error('karr_bootstrap:raw_bytes_unreadable', ...
+        'could not open %s to read raw file bytes', path_value);
 end
 raw = fread(fid, Inf, '*uint8')';
 fclose(fid);
-raw = raw(raw ~= uint8(13));
-hash_hex = sha256_lf_normalized_bytes(raw);
 end
 
-function hash_hex = sha256_lf_normalized_text(text_value)
-raw = uint8(text_value);
+function raw = strip_cr_bytes(raw)
 raw = raw(raw ~= uint8(13));
-hash_hex = sha256_lf_normalized_bytes(raw);
 end
 
 function hash_hex = sha256_lf_normalized_bytes(raw)
