@@ -14,6 +14,7 @@ TESTS = REPO / "tests" / "vivarium"
 if str(TESTS) not in sys.path:
     sys.path.insert(0, str(TESTS))
 
+from _chromcond_replay_apply import apply_chromcond_replay_update
 from l2_2_replay_common_v2 import (
     _PROCESS_SPECS,
     _build_context,
@@ -22,7 +23,6 @@ from l2_2_replay_common_v2 import (
     _trace_cell_payload,
 )
 from l2_replay_common import (
-    apply_count_update,
     build_state_template,
     overlay_observable_into_state,
     refresh_allocator_views,
@@ -88,7 +88,7 @@ def main() -> int:
             _inject_hidden_read_surface(ctx=ctx, state=state, tick=tick)
             refresh_allocator_views(process, state)
             update = process.next_update(1.0, state)
-            apply_count_update(state, update)
+            apply_chromcond_replay_update(state, update)
 
             after_payload = _trace_cell_payload(ctx=ctx, group="states_after", name="chromosome", tick=tick)
             if after_payload is None:

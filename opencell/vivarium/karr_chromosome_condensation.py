@@ -26,7 +26,7 @@ from vivarium.core.process import Process
 
 from opencell.m_gen_constants import GENOME_LENGTH_BP, N_CHROMOSOME_COMPARTMENTS
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
-from opencell.util import MatlabRandStream
+from opencell.util.chromcond_mcg_rand import ChromCondMcgRandStream
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat"
 _DEFAULT_CHROMOSOME_FIXTURE_PATH = "data/karr_fixtures/per_process/Chromosome_flat.mat"
@@ -469,7 +469,7 @@ class KarrChromosomeCondensationProcess(Process):
         # The replay/extraction path reseeds process streams after loading the
         # fitted simulation surface, so tick 0 must begin from the seeded
         # process stream rather than the warmup endpoint stream state.
-        self._rng = MatlabRandStream(seed, generator="mcg16807")
+        self._rng = ChromCondMcgRandStream(seed)
         self._np_rng = np.random.default_rng(seed)
         self.chromosome_shape = (
             int(self.parameters["genome_length_bp"]),

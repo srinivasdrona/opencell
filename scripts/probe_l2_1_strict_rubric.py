@@ -32,6 +32,7 @@ _REPO = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(_REPO))
 sys.path.insert(0, str(_REPO / "tests" / "vivarium"))
 
+from _chromcond_replay_apply import apply_chromcond_replay_update  # type: ignore
 from l2_2_replay_common_v2 import (  # type: ignore
     _PROCESS_SPECS,
     _build_context,
@@ -109,7 +110,15 @@ def _audit_one_process_default(name: str, threshold: float = KARR_ACTIVE_THRESHO
             _inject_hidden_read_surface(ctx=ctx, state=state, tick=tick)
             refresh_allocator_views(process, state)
             update = process.next_update(1.0, state)
-            apply_count_update(state, update)
+            # ChromosomeCondensation's next_update emits the NEW post-tick chromosome
+            # sparse structure, not an accumulator delta; the generic apply_count_update
+            # would corrupt it (see tests/vivarium/_chromcond_replay_apply.py docstring).
+            # Every other process keeps the plain, main-identical apply_count_update so
+            # its L2.2 provenance hash is untouched.
+            if name == "ChromosomeCondensation":
+                apply_chromcond_replay_update(state, update)
+            else:
+                apply_count_update(state, update)
 
             # Did OC fire on this tick?
             oc_nonempty = False

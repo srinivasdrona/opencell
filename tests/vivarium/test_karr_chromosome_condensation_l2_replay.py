@@ -22,6 +22,7 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
+from _chromcond_replay_apply import apply_chromcond_replay_update
 from l2_2_replay_common_v2 import (
     _build_context as _build_hidden_context,
 )
@@ -33,7 +34,15 @@ from l2_2_replay_common_v2 import (
     _project_trace_vector as _project_hidden_trace_vector,
 )
 from l2_replay_common import (
-    apply_count_update,
+    assert_delta_integral as _assert_delta_integral_shared,
+)
+from l2_replay_common import (
+    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
+)
+from l2_replay_common import (
+    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
+)
+from l2_replay_common import (
     build_state_template,
     cell_vector,
     collect_count_delta_dicts,
@@ -43,15 +52,6 @@ from l2_replay_common import (
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
-)
-from l2_replay_common import (
-    assert_delta_integral as _assert_delta_integral_shared,
-)
-from l2_replay_common import (
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
-)
-from l2_replay_common import (
-    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
 )
 
 from opencell.state.chromosome_store import ChromosomeStore
@@ -85,7 +85,7 @@ def _apply_update(
     del process  # state is rebuilt per tick; only delta application is needed here.
     for label, deltas in collect_count_delta_dicts(update):
         _assert_delta_integral(label, deltas)
-    apply_count_update(state, update)
+    apply_chromcond_replay_update(state, update)
 
 
 def _audit_trace_mutated_ticks(

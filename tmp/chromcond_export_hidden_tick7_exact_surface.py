@@ -18,12 +18,12 @@ if str(TESTS) not in sys.path:
 
 from l2_2_replay_common_v2 import _PROCESS_SPECS, _build_context, _inject_hidden_read_surface, _project_trace_vector
 from l2_replay_common import (
-    apply_count_update,
     build_state_template,
     overlay_observable_into_state,
     refresh_allocator_views,
     resolve_trace_path,
 )
+from _chromcond_replay_apply import apply_chromcond_replay_update
 from opencell.state.chromosome_store import CHROMOSOME_FIELDS, ChromosomeStore
 
 TARGET_TICK = 7
@@ -74,7 +74,7 @@ def main() -> int:
             _inject_hidden_read_surface(ctx=ctx, state=state, tick=tick)
             refresh_allocator_views(process, state)
             update = process.next_update(1.0, state)
-            apply_count_update(state, update)
+            apply_chromcond_replay_update(state, update)
 
         pre_tick7_rng_state = int(process._rng.get_state()["mcg_state"])
 

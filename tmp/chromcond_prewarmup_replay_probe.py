@@ -31,7 +31,7 @@ from l2_replay_common import (  # noqa: E402
 )
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet  # noqa: E402
-from opencell.util import MatlabRandStream  # noqa: E402
+from opencell.util.chromcond_mcg_rand import ChromCondMcgRandStream  # noqa: E402
 
 
 def _mat_field_to_triplet(field: Any) -> SparseTriplet:
@@ -248,7 +248,7 @@ def main() -> int:
         )
         for mode_name, consume_inner, stepper in scenarios:
             warm_process = _build_context(name=name, rng_seed=0, handle=handle).process
-            warm_process._rng = MatlabRandStream(meta["seed"], generator="mcg16807")
+            warm_process._rng = ChromCondMcgRandStream(meta["seed"])
             warm_process._rng.set_state(
                 {
                     "generator": "mcg16807",
@@ -275,7 +275,7 @@ def main() -> int:
                 shape=warm_process.chromosome_shape,
             )
             replay_process = _build_context(name=name, rng_seed=0, handle=handle).process
-            replay_process._rng = MatlabRandStream(meta["seed"], generator="mcg16807")
+            replay_process._rng = ChromCondMcgRandStream(meta["seed"])
             replay_process._rng.set_state(warm_process._rng.get_state())
             if not consume_inner:
                 replay_process._consume_inner_bind_sampling_literal = lambda **kwargs: None  # type: ignore[method-assign]

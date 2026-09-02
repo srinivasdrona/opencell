@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-import types
 import sys
+import types
 from pathlib import Path
 
 import h5py
@@ -26,9 +26,10 @@ from l2_replay_common import (  # noqa: E402
     refresh_allocator_views,
     resolve_trace_path,
 )
-from opencell.state.chromosome_store import ChromosomeStore  # noqa: E402
-from opencell.util import MatlabRandStream  # noqa: E402
 from scipy.io import loadmat  # noqa: E402
+
+from opencell.state.chromosome_store import ChromosomeStore  # noqa: E402
+from opencell.util.chromcond_mcg_rand import ChromCondMcgRandStream  # noqa: E402
 
 
 def _smc_sites(store: ChromosomeStore, smc_adp_global_index: int) -> set[tuple[int, int]]:
@@ -45,7 +46,7 @@ def _load_postwarmup_rng_state() -> int:
         squeeze_me=True,
         struct_as_record=False,
     )["artifact"]
-    return int(getattr(artifact, "post").randStreamState)
+    return int(artifact.post.randStreamState)
 
 
 def _triplets(store: ChromosomeStore, field_name: str) -> set[tuple[int, int, int]]:
@@ -62,7 +63,7 @@ def main() -> int:
     with h5py.File(resolve_trace_path(name), "r") as handle:
         ctx = _build_context(name=name, rng_seed=0, handle=handle)
         process = ctx.process
-        process._rng = MatlabRandStream(0, generator="mcg16807")
+        process._rng = ChromCondMcgRandStream(0)
         process._rng.set_state(
             {
                 "generator": "mcg16807",

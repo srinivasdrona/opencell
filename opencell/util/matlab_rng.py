@@ -101,39 +101,25 @@ _DV1: tuple[float, ...] = (
 
 
 class MatlabRandStream:
-    """MATLAB-compatible stream shim for the generators used in replay work."""
-
-    _MCG_MOD = 2_147_483_647
-    _MCG_MUL = 16_807
-    _MCG_HALF_MASK = 0xFFFF
-    _MCG_HALF_SIGN = 0x8000
-    _MCG_STATE_XOR_MASK = 0x80008000
-    _MCG_DEFAULT_STATE = 931_316_785
+    """Approximate MATLAB RandStream('mt19937ar') behavior for replay work."""
 
     def __init__(self, seed: int, generator: str = "mt19937ar") -> None:
-        if generator not in {"mt19937ar", "mcg16807"}:
-            raise ValueError("generator must be 'mt19937ar' or 'mcg16807'")
+        if generator != "mt19937ar":
+            raise ValueError("Only generator='mt19937ar' is currently supported")
         self.generator = generator
-        self._seed = int(seed)
         self._mt = np.zeros(625, dtype=np.uint32)
-        self._mcg_state = 1
-        if self.generator == "mt19937ar":
-            self._rng(self._seed)
-        else:
-            self._initialize_mcg(self._seed)
+        self._seed = int(seed)
+        self._rng(self._seed)
 
     def rand(self, *shape: int) -> np.ndarray:
         normalized = self._normalize_shape(shape)
-        draw = self._genrandu if self.generator == "mt19937ar" else self._mcg_rand_scalar
         if normalized is None:
-            return np.asarray(draw(), dtype=np.float64)
+            return np.asarray(self._genrandu(), dtype=np.float64)
         count = self._shape_product(normalized)
-        values = np.fromiter((draw() for _ in range(count)), dtype=np.float64, count=count)
+        values = np.fromiter((self._genrandu() for _ in range(count)), dtype=np.float64, count=count)
         return values.reshape(normalized, order="F")
 
     def randn(self, *shape: int) -> np.ndarray:
-        if self.generator != "mt19937ar":
-            raise NotImplementedError("randn is only implemented for generator='mt19937ar'")
         normalized = self._normalize_shape(shape)
         if normalized is None:
             return np.asarray(self._randn_scalar(), dtype=np.float64)
@@ -145,11 +131,6 @@ class MatlabRandStream:
         if int(imax) < 1:
             raise ValueError("imax must be >= 1")
         imax_i = int(imax)
-        if imax_i == 1:
-            normalized = self._normalize_shape(shape)
-            if normalized is None:
-                return np.asarray(1, dtype=np.int64)
-            return np.ones(normalized, dtype=np.int64)
         samples = self.rand(*shape)
         values = np.floor(samples * imax_i).astype(np.int64) + 1
         return values
@@ -171,96 +152,24 @@ class MatlabRandStream:
         order = np.argsort(keys, kind="mergesort").astype(np.int64) + 1
         return order[:k_i]
 
-    def randsample(
-        self,
-        n: int,
-        k: int,
-        replacement: bool = False,
-        w: np.ndarray | list[float] | None = None,
-    ) -> np.ndarray:
-        n_i = int(n)
-        k_i = int(k)
-        if n_i < 0:
-            raise ValueError("n must be >= 0")
-        if k_i < 0:
-            raise ValueError("k must be >= 0")
-        replacement_i = bool(replacement)
-
-        if w is None:
-            weights = np.ones(n_i, dtype=np.float64)
-        else:
-            weights = np.asarray(w, dtype=np.float64).reshape(-1)
-            if weights.size != n_i:
-                raise ValueError("weights must have length n")
-            if np.any(weights < 0.0) or not np.all(np.isfinite(weights)):
-                raise ValueError("weights must be finite and nonnegative")
-
-        if not replacement_i and k_i > n_i:
-            raise ValueError("k must satisfy 0 <= k <= n when sampling without replacement")
-        if n_i == 0 or k_i <= 0 or not np.any(weights):
-            return np.zeros(0, dtype=np.int64)
-
-        if not replacement_i and k_i > 1:
-            if np.all(weights == weights[0]):
-                return self.randperm(n_i, k_i)
-
-            integers = np.flatnonzero(weights >= float(np.finfo(np.float64).max)) + 1
-            if integers.size > k_i:
-                order = self.randperm(int(integers.size))
-                return integers[order[:k_i] - 1].astype(np.int64, copy=False)
-            if integers.size == k_i:
-                return integers.astype(np.int64, copy=False)
-
-            weights = weights.copy()
-            weights[integers - 1] = 0.0
-            chosen = np.zeros(n_i, dtype=bool)
-            chosen[integers - 1] = True
-            out = integers.astype(np.int64).tolist()
-
-            while len(out) < k_i and np.any(weights):
-                tmp = self.randsample(n_i, k_i - len(out), True, weights)
-                accepted: list[int] = []
-                for value in tmp.tolist():
-                    idx = int(value) - 1
-                    if not chosen[idx]:
-                        chosen[idx] = True
-                        accepted.append(int(value))
-                if not accepted:
-                    break
-                weights[tmp - 1] = 0.0
-                out.extend(accepted)
-            return np.asarray(out, dtype=np.int64)
-
-        if k_i == 1:
-            replacement_i = True
-        if not replacement_i:
-            return self.randperm(n_i, k_i)
-        return self._weighted_randsample_with_replacement(n=n_i, k=k_i, weights=weights)
+    def randsample(self, n: int, k: int) -> np.ndarray:
+        return self.randperm(n, k)
 
     def get_state(self) -> dict[str, Any]:
-        state: dict[str, Any] = {"generator": self.generator, "seed": self._seed}
-        if self.generator == "mt19937ar":
-            state["mt"] = self._mt.astype(np.uint32).tolist()
-        else:
-            state["mcg_state"] = int(self._mcg_state)
-        return state
+        return {
+            "generator": self.generator,
+            "seed": self._seed,
+            "mt": self._mt.astype(np.uint32).tolist(),
+        }
 
     def set_state(self, state: dict[str, Any]) -> None:
-        generator = state.get("generator")
-        if generator not in {"mt19937ar", "mcg16807"}:
-            raise ValueError("state generator must be 'mt19937ar' or 'mcg16807'")
-        self.generator = generator
+        if state.get("generator") != "mt19937ar":
+            raise ValueError("state generator must be 'mt19937ar'")
+        mt = state.get("mt")
+        if not isinstance(mt, list) or len(mt) != 625:
+            raise ValueError("state['mt'] must be a list of 625 uint32 values")
+        self._mt = np.asarray(mt, dtype=np.uint32)
         self._seed = int(state.get("seed", 0))
-        if self.generator == "mt19937ar":
-            mt = state.get("mt")
-            if not isinstance(mt, list) or len(mt) != 625:
-                raise ValueError("state['mt'] must be a list of 625 uint32 values")
-            self._mt = np.asarray(mt, dtype=np.uint32)
-        else:
-            mcg_state = int(state.get("mcg_state", 0))
-            if mcg_state <= 0 or mcg_state >= self._MCG_MOD:
-                raise ValueError("state['mcg_state'] must be in [1, 2147483646]")
-            self._mcg_state = mcg_state
 
     def _rng(self, seed: int) -> None:
         seed_temp = int(seed)
@@ -345,67 +254,6 @@ class MatlabRandStream:
                 if b_r < 0.0:
                     return x - 3.65415288536101
                 return 3.65415288536101 - x
-
-    def _initialize_mcg(self, seed: int) -> None:
-        seed_i = int(seed)
-        if seed_i <= 0:
-            self._mcg_state = self._MCG_DEFAULT_STATE
-            return
-        else:
-            seed_i %= self._MCG_MOD
-            if seed_i == 0:
-                seed_i = self._MCG_MOD - 1
-        self._mcg_state = seed_i
-
-    def _mcg_rand_scalar(self) -> float:
-        raw_state = self._decode_mcg_state(self._mcg_state)
-        raw_state = (self._MCG_MUL * raw_state) % self._MCG_MOD
-        self._mcg_state = self._encode_mcg_state(raw_state)
-        return raw_state / self._MCG_MOD
-
-    @classmethod
-    def _encode_mcg_state(cls, raw_state: int) -> int:
-        raw_i = int(raw_state)
-        if raw_i <= 0 or raw_i >= cls._MCG_MOD:
-            raise ValueError("raw mcg16807 state must be in [1, 2147483646]")
-        lo = raw_i & cls._MCG_HALF_MASK
-        hi = (raw_i >> 16) & cls._MCG_HALF_MASK
-        encoded = (lo << 16) | hi
-        if lo & cls._MCG_HALF_SIGN:
-            encoded ^= cls._MCG_STATE_XOR_MASK
-        return int(encoded)
-
-    @classmethod
-    def _decode_mcg_state(cls, encoded_state: int) -> int:
-        encoded_i = int(encoded_state)
-        if encoded_i <= 0 or encoded_i >= cls._MCG_MOD:
-            raise ValueError("encoded mcg16807 state must be in [1, 2147483646]")
-        if encoded_i & cls._MCG_HALF_SIGN:
-            encoded_i ^= cls._MCG_STATE_XOR_MASK
-        lo = encoded_i & cls._MCG_HALF_MASK
-        hi = (encoded_i >> 16) & cls._MCG_HALF_MASK
-        raw = (lo << 16) | hi
-        if raw <= 0 or raw >= cls._MCG_MOD:
-            raise ValueError("decoded mcg16807 state must be in [1, 2147483646]")
-        return int(raw)
-
-    def _weighted_randsample_with_replacement(
-        self,
-        *,
-        n: int,
-        k: int,
-        weights: np.ndarray,
-    ) -> np.ndarray:
-        cdf = np.cumsum(weights, dtype=np.float64)
-        total = float(cdf[-1])
-        draws = np.empty(k, dtype=np.int64)
-        for i in range(k):
-            threshold = float(self.rand()) * total
-            idx = int(np.searchsorted(cdf, threshold, side="right"))
-            if idx >= n:
-                idx = n - 1
-            draws[i] = idx + 1
-        return draws
 
     @staticmethod
     def _shape_product(shape: tuple[int, ...]) -> int:

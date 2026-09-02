@@ -1303,18 +1303,6 @@ def apply_count_update(state: dict[str, Any], update: dict[str, Any]) -> None:
             else:
                 target[key] = value
 
-    def _apply_chromosome_update(target: dict[str, Any], delta: dict[str, Any]) -> None:
-        for key, value in delta.items():
-            if isinstance(value, Number):
-                prev = target.get(key, 0.0)
-                try:
-                    prev_f = float(prev)
-                except Exception:
-                    prev_f = 0.0
-                target[key] = float(prev_f + float(value))
-                continue
-            target[key] = copy.deepcopy(value)
-
     for key in ("substrates", "protein", "rna", "complex", "boundEnzymes", "enzymes"):
         node = update.get(key)
         if isinstance(node, dict):
@@ -1323,14 +1311,6 @@ def apply_count_update(state: dict[str, Any], update: dict[str, Any]) -> None:
                 target = {}
                 state[key] = target
             _accumulate(target, node)
-
-    chromosome_update = update.get("chromosome")
-    if isinstance(chromosome_update, dict):
-        chromosome_state = state.get("chromosome")
-        if not isinstance(chromosome_state, dict):
-            chromosome_state = {}
-            state["chromosome"] = chromosome_state
-        _apply_chromosome_update(chromosome_state, chromosome_update)
 
 
 def assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
