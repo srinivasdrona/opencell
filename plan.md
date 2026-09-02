@@ -128,6 +128,17 @@ snapshot below:**
   active windows, Macromol and Cytokinesis retain capacity.
 - After implementation, Opus review remains mandatory before integration.
 
+**Live background agents:**
+
+- `l21-active-sept2` -> `genuine-l21-active`
+- `l21-chromcond-sept2` -> `wave-l21-chromcond`
+- `l21-repinit-sept2` -> `wave-l21-repinit`
+- `l22-macromol-sept2` -> `genuine-l22-macromol`
+- `l22-cytokinesis-sept2` -> `genuine-l22-cytokinesis`
+- `l22-ftsz-sept2` -> `genuine-l22-ftsz`
+- `l22-dnas-sept2` -> `wave-l22-dnas`
+- `dnadamage-sept2-review` -> read-only review of `genuine-l22-dnadamage`
+
 **Live state (2026-08-18 14:20 IST) — seven original lanes + RepInit remain:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`; main is
