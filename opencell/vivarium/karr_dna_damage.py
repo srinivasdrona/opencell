@@ -210,6 +210,13 @@ class KarrDNADamageProcess(Process):
         self.reaction_vulnerable_motif_types: list[str] = []
         self.monomer_dna_footprints = np.zeros((0,), dtype=np.float64)
         self.complex_dna_footprints = np.zeros((0,), dtype=np.float64)
+        self.monomer_dna_footprint_binding_strandedness = np.zeros((0,), dtype=np.int64)
+        self.complex_dna_footprint_binding_strandedness = np.zeros((0,), dtype=np.int64)
+        # Fail-closed default: 0 never equals a fixture-loaded
+        # dnaStrandedness_dsDNA code (Karr's WholeCellKB values are 1/2/3),
+        # so an unavailable fixture degrades to "no occupant is ever
+        # treated as dsDNA-binding" rather than fabricating a match.
+        self.dna_strandedness_dsdna = 0
         self._load_schema_observables(self.parameters.get("fixture_path", _DEFAULT_FIXTURE_PATH))
         self._load_footprint_fixture(
             self.parameters.get("chromosome_fixture_path", _DEFAULT_CHROMOSOME_FIXTURE_PATH)
@@ -315,6 +322,15 @@ class KarrDNADamageProcess(Process):
         (0-based, ``value - 1``) here holds the footprint (nt) for global
         species index ``value``. Fail closed (empty arrays -> zero
         contribution, not fabricated data) if the fixture is unavailable.
+
+        Also loads ``monomerDNAFootprintBindingStrandedness`` /
+        ``complexDNAFootprintBindingStrandedness`` (same 0-based ``value -
+        1`` indexing convention) and the ``dnaStrandedness_dsDNA`` code
+        constant, both consumed by ``_footprint_occupied_by_strand`` to
+        reproduce Karr Chromosome.m::isRegionProteinFree's occupant-side
+        rule: a bound occupant whose own binding strandedness is dsDNA
+        occludes both strands of its duplex pair, not just its recorded
+        strand.
         """
         resolved = _resolve_path(fixture_path)
         if not resolved.exists():
@@ -329,6 +345,19 @@ class KarrDNADamageProcess(Process):
             self.monomer_dna_footprints = np.asarray(monomer_footprints, dtype=np.float64).reshape(-1)
         if complex_footprints is not None:
             self.complex_dna_footprints = np.asarray(complex_footprints, dtype=np.float64).reshape(-1)
+        monomer_strandedness = getattr(fixture, "monomerDNAFootprintBindingStrandedness", None)
+        complex_strandedness = getattr(fixture, "complexDNAFootprintBindingStrandedness", None)
+        if monomer_strandedness is not None:
+            self.monomer_dna_footprint_binding_strandedness = np.asarray(
+                monomer_strandedness, dtype=np.int64
+            ).reshape(-1)
+        if complex_strandedness is not None:
+            self.complex_dna_footprint_binding_strandedness = np.asarray(
+                complex_strandedness, dtype=np.int64
+            ).reshape(-1)
+        dsdna_code = getattr(fixture, "dnaStrandedness_dsDNA", None)
+        if dsdna_code is not None:
+            self.dna_strandedness_dsdna = int(np.asarray(dsdna_code).reshape(-1)[0])
 
     def ports_schema(self) -> dict[str, Any]:
         chromosome_schema = {
@@ -411,7 +440,13 @@ class KarrDNADamageProcess(Process):
         existing_sites = current_damage_sites(states)
         occupied_positions = _coerce_position_set(existing_sites)
         occupied_positions.update(self._occupied_positions_from_sparse(chromosome_state))
-        occupied_positions.update(self._footprint_occupied_positions(chromosome_store))
+        # Footprint occlusion is no longer folded into this strand-agnostic,
+        # cross-reaction same-tick dedup set (that was the coarse, deleted
+        # `_footprint_occupied_positions`); it is checked precisely and
+        # strand-aware per candidate site via `_footprint_occupied_by_strand`
+        # inside the literal accessibility filter below. `occupied_positions`
+        # now carries only pre-existing-damage exclusion plus this tick's
+        # own newly placed damage (see `_reaction_candidate_coords` uses).
         fork_positions = self._active_fork_positions(chromosome_state)
         sparse_by_field = self._sparse_damage_entries(chromosome_state)
         touched_sparse_fields: set[str] = set()
@@ -750,45 +785,6 @@ class KarrDNADamageProcess(Process):
                 total += float(footprint_table[idx])
         return total
 
-    def _footprint_occupied_positions(self, chromosome_store: ChromosomeStore) -> set[int]:
-        """Positions occluded by bound-protein DNA footprints.
-
-        Documented scope narrowing: Karr's `isRegionAccessible` occludes an
-        asymmetric 5'/3' window keyed by strand direction and footprint
-        binding-strandedness; here we mark a footprint-width window
-        downstream of the bound anchor position on both strands (a
-        strand-agnostic, coarser-than-Karr exclusion -- rejects at least as
-        many candidate sites as the literal formula, never fewer), matching
-        the same strand-agnostic convention `_occupied_positions_from_sparse`
-        already uses for existing-damage exclusion.
-        """
-        occupied: set[int] = set()
-        if self.sequence_length_nt <= 0:
-            return occupied
-        for field_name, footprint_table in (
-            ("monomerBoundSites", self.monomer_dna_footprints),
-            ("complexBoundSites", self.complex_dna_footprints),
-        ):
-            if footprint_table.size == 0:
-                continue
-            try:
-                triplet = chromosome_store.get_field(field_name)
-            except KeyError:
-                continue
-            n = int(footprint_table.size)
-            for position, value in zip(triplet.positions.tolist(), triplet.values.tolist(), strict=False):
-                idx = int(value) - 1
-                if not (0 <= idx < n):
-                    continue
-                footprint = int(footprint_table[idx])
-                if footprint <= 0:
-                    continue
-                start = int(position) + 1
-                for offset in range(footprint):
-                    pos = ((start + offset - 1) % self.sequence_length_nt) + 1
-                    occupied.add(pos)
-        return occupied
-
     def _max_reactions_for_reaction(
         self,
         reaction_index: int,
@@ -1005,12 +1001,25 @@ class KarrDNADamageProcess(Process):
         return any((int(position) - start) % length < region_len for start, region_len in intervals)
 
     def _footprint_occupied_by_strand(self, chromosome_store: ChromosomeStore) -> set[tuple[int, int]]:
+        """Strand-aware positions occluded by bound-protein DNA footprints.
+
+        Literal Karr Chromosome.m::isRegionProteinFree occupant-side rule:
+        each bound monomer/complex occludes its own recorded strand; if that
+        occupant's OWN ``monomerDNAFootprintBindingStrandedness`` /
+        ``complexDNAFootprintBindingStrandedness`` equals
+        ``dnaStrandedness_dsDNA`` (1-based MATLAB pairing
+        ``2*ceil(strand/2)-1``/``2*ceil(strand/2)``, i.e. strands {1,2} and
+        {3,4}), it *also* occludes the partner strand of its duplex pair --
+        here 0-based strands {0,1} and {2,3}, so the partner of ``strand``
+        is ``strand ^ 1``. Non-dsDNA-binding occupants (e.g. ssDNA-binding
+        monomers) occlude only their own literal recorded strand.
+        """
         occupied: set[tuple[int, int]] = set()
         if self.sequence_length_nt <= 0:
             return occupied
-        for field_name, footprint_table in (
-            ("monomerBoundSites", self.monomer_dna_footprints),
-            ("complexBoundSites", self.complex_dna_footprints),
+        for field_name, footprint_table, strandedness_table in (
+            ("monomerBoundSites", self.monomer_dna_footprints, self.monomer_dna_footprint_binding_strandedness),
+            ("complexBoundSites", self.complex_dna_footprints, self.complex_dna_footprint_binding_strandedness),
         ):
             if footprint_table.size == 0:
                 continue
@@ -1028,10 +1037,19 @@ class KarrDNADamageProcess(Process):
                 footprint = int(footprint_table[idx])
                 if footprint <= 0:
                     continue
+                own_strand = int(strand)
+                strands_to_mark = [own_strand]
+                if (
+                    self.dna_strandedness_dsdna
+                    and 0 <= idx < strandedness_table.size
+                    and int(strandedness_table[idx]) == self.dna_strandedness_dsdna
+                ):
+                    strands_to_mark.append(own_strand ^ 1)
                 start = int(position)
                 for offset in range(footprint):
                     pos = (start + offset) % self.sequence_length_nt
-                    occupied.add((pos, int(strand)))
+                    for marked_strand in strands_to_mark:
+                        occupied.add((pos, marked_strand))
         return occupied
 
     def _reaction_candidate_coords(

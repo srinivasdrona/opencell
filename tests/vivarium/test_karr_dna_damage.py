@@ -152,6 +152,11 @@ def test_instantiates_with_defaults() -> None:
     # feed the literal nAccessibleSites formula are genuinely loaded.
     assert process.monomer_dna_footprints.size > 0
     assert process.complex_dna_footprints.size > 0
+    # Final blocker: the fixture-provided binding-strandedness arrays and
+    # dsDNA code constant that drive dsDNA partner-strand occlusion.
+    assert process.monomer_dna_footprint_binding_strandedness.size > 0
+    assert process.complex_dna_footprint_binding_strandedness.size > 0
+    assert process.dna_strandedness_dsdna != 0
 
 
 def test_calc_expected_reaction_rates_matches_accepted_uv_aggregate() -> None:
@@ -251,6 +256,45 @@ def test_n_accessible_sites_subtracts_footprints_and_damaged_nnz() -> None:
     store_damaged = process._resolve_chromosome_store(damaged_state)
     with_damage = process._n_accessible_sites(store_damaged, damaged_state)
     assert with_damage == pytest.approx(baseline - 1.0)
+
+
+def test_footprint_occupied_by_strand_doubles_dsdna_binders_onto_partner_strand() -> None:
+    """Literal Karr Chromosome.m::isRegionProteinFree occupant-side rule: a
+    bound occupant whose own binding strandedness is dsDNA occludes both
+    its recorded strand and the partner strand of its duplex pair (0-based
+    ``strand ^ 1``); a non-dsDNA-binding occupant occludes only its own
+    recorded strand."""
+    process = KarrDNADamageProcess({})
+    assert process.dna_strandedness_dsdna != 0
+
+    strandedness = process.monomer_dna_footprint_binding_strandedness
+    footprints = process.monomer_dna_footprints
+    dsdna_code = process.dna_strandedness_dsdna
+    dsdna_idx = next(
+        i for i in range(strandedness.size) if strandedness[i] == dsdna_code and footprints[i] > 0
+    )
+    non_dsdna_idx = next(
+        i for i in range(strandedness.size) if strandedness[i] != dsdna_code and footprints[i] > 0
+    )
+
+    chromosome_state = _base_state()["chromosome"]
+    bound_state = dict(chromosome_state)
+    bound_state["monomerBoundSites"] = SparseTriplet(
+        positions=np.asarray([100, 300], dtype=np.int64),
+        strands=np.asarray([0, 0], dtype=np.int64),
+        values=np.asarray([dsdna_idx + 1, non_dsdna_idx + 1], dtype=np.int64),
+        shape=process.chromosome_shape,
+    ).to_state()
+    store = process._resolve_chromosome_store(bound_state)
+    occupied = process._footprint_occupied_by_strand(store)
+
+    # dsDNA-binding occupant (strand 0): both strand 0 and its partner
+    # strand (0 ^ 1 == 1) must be occluded at its anchor position.
+    assert (100, 0) in occupied
+    assert (100, 1) in occupied
+    # non-dsDNA-binding occupant (strand 0): only its own recorded strand.
+    assert (300, 0) in occupied
+    assert (300, 1) not in occupied
 
 
 def test_reaction_damage_field_fails_closed_on_unknown_field() -> None:
