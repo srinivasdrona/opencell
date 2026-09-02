@@ -78,8 +78,14 @@ below:**
   `chromcond_mcg_rand.py`. The 0/100 hidden replay proof, L2.1 GENUINE,
   L1b, provenance, and focused tests are green; L2.2 audit is restored to
   **18 PASS / 2 FAIL / 2 MISSING_EVIDENCE**, integrity OK, with zero
-  evidence/index changes. Candidate now awaits independent Opus 5 review
-  before merge.
+  evidence/index changes. Opus 5 **ACCEPTED** the core candidate. Before
+  merge, close its nonblocking-but-policy-relevant findings: promote the
+  100-tick inversion-sensitive scan into a committed regression test;
+  correct two misleading rubric/helper comments; tighten over-broad
+  regenerated wiring anchors; and investigate the pre-existing
+  `karr_fidelity_scorecard.py` ChromCond `FAIL` (`enzymes`, max abs 3 at
+  one tick). The no-known-gap rule requires that scorecard discrepancy to
+  be fixed or proven inapplicable before integration.
 - Durable MATLAB queues:
   - Cytokinesis PID `18600` is alive at **4/50 validated**, seeds `4-7`
     active, 42 queued, 0 failed.
