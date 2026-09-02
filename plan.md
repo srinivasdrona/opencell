@@ -91,19 +91,27 @@ below:**
     count is promoted.
 - L2.1 active-window extraction produced genuine-provider traces for
   TranscriptionalRegulation seed 0, Cytokinesis seed 0, and DNADamage seed 1.
-  HostInteraction and ChromosomeSegregation launchers exited without trace
-  output. All five recorded waiter PIDs are dead or reused; the owning agent
-  must validate/promote the three completed traces and diagnose/relaunch only
-  the two missing processes.
+  Fail-closed replay promoted TranscriptionalRegulation and Cytokinesis to
+  honest `CODE_GAP`, not green: TranscriptionalRegulation models 130 TU-level
+  binding slots where Karr exposes 34 chromosome-site/strand promoter slots;
+  Cytokinesis first diverges at active tick 226
+  (`ftsZRing_numEdgesOneStraight`, OC 6 vs Karr 9). These are mandatory
+  source-fidelity fixes under the no-known-gap rule. DNADamage seeds 0 and 1
+  are both zero-activity and remain unpromoted; inventory the accepted
+  DNADamage L2.2 corpus before extracting another seed. HostInteraction and
+  ChromosomeSegregation were relaunched as PIDs `27484` and `26372`, queued
+  on the shared slot pool. Manifest state is **6 EXISTING_WINDOW_PASS /
+  2 CODE_GAP / 3 MISSING_ACTIVE_EXTRACTION**.
 - ReplicationInitiation remains open at an honest stateful tick-4
   `enzymes[1]` mismatch despite its strict-rubric GENUINE result; its agent
   is still working. DNASupercoiling remains `PRIMARY_OVERACTIVE`; its agent
   is still working on hash-bound chromosome RNG `states_before` restoration.
-- Immediate order: validate/promote the three completed L2.1 active traces
-  and relaunch only the two missing ones; isolate ChromCond's chromosome
-  replay application from the shared L2.2 helper and independently review
-  that integration; continue RepInit/DNAS source closure and the durable
-  Macromol/Cytokinesis/FtsZ queues.
+- Immediate order: fix the TranscriptionalRegulation and Cytokinesis L2.1
+  code gaps in parallel from MATLAB source/fixture evidence; inventory the
+  accepted DNADamage corpus for an already-active authoritative window;
+  isolate ChromCond's chromosome replay application from the shared L2.2
+  helper and independently review that integration; continue RepInit/DNAS
+  source closure and the durable Macromol/Cytokinesis/FtsZ queues.
 
 **Current status (2026-09-02 15:10 IST) — supersedes the August live-PID
 snapshot below:**
