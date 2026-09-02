@@ -3,7 +3,7 @@
   "canary_verify_ref": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event/canary_verify.json",
   "condition": "uvb_mechanism",
   "full_verify_ref": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event/full_verify.json",
-  "generated_at": "2026-09-02T14:02:46.921377+00:00",
+  "generated_at": "2026-09-02T16:40:53.933937+00:00",
   "mechanical_reasons": [],
   "mechanical_verdict": "PASS",
   "mode": "l22_dna_damage_event_verifier",

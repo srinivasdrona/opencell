@@ -327,7 +327,10 @@ def test_replication_stall_flag_on_fork_hit() -> None:
 
     process._selection_probability = _selection_probability  # type: ignore[method-assign]
     process._stochastic_round = lambda value: 1 if value > 0 else 0  # type: ignore[method-assign]
-    process._sample_positions = lambda n_events, occupied_positions: np.asarray([10101], dtype=np.int64)  # type: ignore[method-assign]
+    # 0-based (position, strand) pair; final reported "position" is 1-based
+    # (zero_based_pos + 1), so 10100 here reproduces the fork-hit position
+    # 10101 the old strand-agnostic-position stub used.
+    process._sample_literal_motif_sites = lambda **kwargs: [(10100, 0)]  # type: ignore[method-assign]
     state = _base_state(
         replication_state="elongating",
         fork_position_bp={"left": 10101, "right": 250000},
@@ -354,16 +357,18 @@ def test_sparse_writeback_uses_reaction_field_and_product_semantics() -> None:
     # production; only fixed here for test determinism).
     process._reaction_order = lambda n: np.arange(int(n), dtype=np.int64)  # type: ignore[method-assign]
     ordered_reaction_indices = sorted((uv_idx, base_loss_idx))
-    sample_by_index = {uv_idx: np.asarray([11], dtype=np.int64), base_loss_idx: np.asarray([17], dtype=np.int64)}
+    # 0-based (position, strand) pairs returned directly by the literal
+    # sampler (no further conversion happens in _sample_reaction_coords).
+    sample_by_index = {uv_idx: [(10, 0)], base_loss_idx: [(16, 0)]}
     queue = [sample_by_index[idx] for idx in ordered_reaction_indices]
 
-    def _sample_positions(n_events: int, occupied_positions: set[int]) -> np.ndarray:
-        _ = n_events, occupied_positions
+    def _sample_literal_motif_sites(**kwargs: Any) -> list[tuple[int, int]]:
+        _ = kwargs
         if not queue:
-            return np.asarray([], dtype=np.int64)
+            return []
         return queue.pop(0)
 
-    process._sample_positions = _sample_positions  # type: ignore[method-assign]
+    process._sample_literal_motif_sites = _sample_literal_motif_sites  # type: ignore[method-assign]
     state = _base_state()
     state["substrates"]["gamma_radiation"] = 0.0
     state["substrates_allocated"][process.name]["gamma_radiation"] = 0.0

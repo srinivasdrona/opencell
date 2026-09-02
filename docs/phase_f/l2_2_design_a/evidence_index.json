@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
-  "content_hash": "2770b0c7d16ca97a82560d68ae28788db7a59fdfd0f74d8b3ff04da34e55127c",
+  "content_hash": "16e21a642f1f7cdc933779ad11a6890b4323cfb7c283a6f131e815ab929f49c9",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-02T14:10:37.475068+00:00",
+  "generated_at": "2026-09-02T16:41:37.423569+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -30,12 +30,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "2cfb3f5acf221e938fce6a051c0045ab77eb39f719ff46504ffefbf84c646a36",
-        "analytical_check.json": "25d78941001c47f5a3756437ab4d2c30c80ea34d7ef776149c3bc786b645ac17",
+        "SUMMARY.json": "98d7a9b63bc4bb790e247334e1539e2980507bdcdd3573e309662a2ead9cd208",
+        "analytical_check.json": "89d6f0e368121788b610be66af8e56f17a3508b53082b65053396739da126e0e",
         "null_calibration.json": "91bbb90f6da38b82da8fd5d47b648c397d6fe7ec8ea36936d682b5d584ceaca3",
-        "provenance.json": "1362d0af46d292225b21e9e85885761d1ccfeed528038540c88f9fe6ff23ffd4",
-        "result.json": "019f172858f407517033993720133ff1e24f8fbf9a94aecc99293556a6690fcd",
-        "sweep_provenance.json": "04bdfcfd5119f20d364cba42ba77732ea960f66b2847c1143689046ccd522ad4",
+        "provenance.json": "39fe87a50acb188e9f9f89e82c619c7d21154f0c113c32d1916e6efb91114e3f",
+        "result.json": "4335e04b2fe0c0aa6c996991fe6be5be66b5d84c419981979c199b65a1d4cb20",
+        "sweep_provenance.json": "9fbf97d8956e8c95fec3bea73162626064a79ecf3bc9fc6ff7a530d8d52d8d1d",
         "thresholds.json": "a003f687c212d54f0efd18ff09b0c5a2069de27fb56efaddc8014775089202e5"
       },
       "bucket": "EVENT_CLASS",
@@ -56,13 +56,13 @@
       "harness_type": "event_class",
       "mechanical_verdict": "PASS",
       "process": "DNADamage",
-      "provenance_git_sha": "f7d43109b9df8f12078715c63b4e64ccf83dcdb1",
+      "provenance_git_sha": "fedbad523bc523bda77a6f0f3c7ebd2915d6a5ce",
       "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "f7d43109b9df8f12078715c63b4e64ccf83dcdb1",
+        "git_sha": "fedbad523bc523bda77a6f0f3c7ebd2915d6a5ce",
         "inputs_verified": true,
         "result_schema_version": 1
       },

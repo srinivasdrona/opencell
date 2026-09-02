@@ -29,7 +29,7 @@
       "component_2": 0.0,
       "component_3": 0.0,
       "component_4": 0.0,
-      "component_5": 0.11111111111111116,
+      "component_5": 0.125,
       "component_6": 0.0,
       "component_7": 0.0
     },
@@ -38,15 +38,15 @@
       "component_2": 0.0,
       "component_3": 0.0,
       "component_4": 0.0,
-      "component_5": 0.11111111111111116,
+      "component_5": 0.125,
       "component_6": 0.0,
       "component_7": 0.0
     },
-    "event_rate_diff": 0.009999999999999995,
+    "event_rate_diff": 0.0,
     "event_rate_threshold": 0.1,
     "joint_verdict": "PASS",
     "n_events_karr": 8,
-    "n_events_oc": 9
+    "n_events_oc": 8
   },
   "identity_validation_failures": [],
   "identity_validation_ok_count": 5,
@@ -109,7 +109,7 @@
     8
   ],
   "mechanical_reasons": [
-    "PRIMARY_INSUFFICIENT_SAMPLES: primary channel 'chromosome' recorded n_events_oc=9, n_events_karr=8 across the whole ensemble; below MIN_NONZERO_EVENTS=30 on at least one side (primary hurdle event count not validated at adequate sample size)"
+    "PRIMARY_INSUFFICIENT_SAMPLES: primary channel 'chromosome' recorded n_events_oc=8, n_events_karr=8 across the whole ensemble; below MIN_NONZERO_EVENTS=30 on at least one side (primary hurdle event count not validated at adequate sample size)"
   ],
   "mechanical_verdict": "PRIMARY_INSUFFICIENT_SAMPLES",
   "mnrnd_provider_kind_values": [
@@ -151,8 +151,8 @@
     {
       "karr_nonzero_count": 8,
       "karr_sum": 8.0,
-      "oc_nonzero_count": 9,
-      "oc_sum": 9.0,
+      "oc_nonzero_count": 8,
+      "oc_sum": 8.0,
       "token": "damage_event_present"
     },
     {
@@ -186,8 +186,8 @@
     {
       "karr_nonzero_count": 8,
       "karr_sum": 8.0,
-      "oc_nonzero_count": 9,
-      "oc_sum": 10.0,
+      "oc_nonzero_count": 8,
+      "oc_sum": 9.0,
       "token": "intrastrandCrossLinks.delta_nnz"
     },
     {

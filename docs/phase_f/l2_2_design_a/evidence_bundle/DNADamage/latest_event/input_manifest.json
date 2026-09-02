@@ -4,12 +4,12 @@
     {
       "kind": "tracked_verifier_output",
       "path": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event/canary_verify.json",
-      "sha256": "753aaab586fb628b1168334ae66208fcfcc86d01243234f35ebf2e687466d7a7"
+      "sha256": "0fc0a7abb416ae1b97bd3374a7ebdc4d2819b273cafafc0ecd586f92ee4264d1"
     },
     {
       "kind": "tracked_verifier_output",
       "path": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event/full_verify.json",
-      "sha256": "b642492cf63371834f8bc76d1b2aab68db571d3c719cc7c1523ebebe59957830"
+      "sha256": "13bfe99b23ccb7aa3bd517dce08c86044ae01aaf1ccc7509fbf3460f2e68aebc"
     },
     {
       "kind": "verifier_source",

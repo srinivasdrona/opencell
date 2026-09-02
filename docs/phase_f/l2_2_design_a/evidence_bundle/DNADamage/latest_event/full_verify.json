@@ -29,7 +29,7 @@
       "component_2": 0.0,
       "component_3": 0.0,
       "component_4": 0.0,
-      "component_5": 0.04705882352941182,
+      "component_5": 0.05434782608695654,
       "component_6": 0.0,
       "component_7": 0.0
     },
@@ -38,15 +38,15 @@
       "component_2": 0.0,
       "component_3": 0.0,
       "component_4": 0.0,
-      "component_5": 0.04705882352941182,
+      "component_5": 0.05434782608695654,
       "component_6": 0.0,
       "component_7": 0.0
     },
-    "event_rate_diff": 0.013999999999999999,
+    "event_rate_diff": 0.007000000000000006,
     "event_rate_threshold": 0.1,
     "joint_verdict": "PASS",
     "n_events_karr": 99,
-    "n_events_oc": 85
+    "n_events_oc": 92
   },
   "identity_validation_failures": [],
   "identity_validation_ok_count": 50,
@@ -599,8 +599,8 @@
     {
       "karr_nonzero_count": 99,
       "karr_sum": 99.0,
-      "oc_nonzero_count": 85,
-      "oc_sum": 85.0,
+      "oc_nonzero_count": 92,
+      "oc_sum": 92.0,
       "token": "damage_event_present"
     },
     {
@@ -634,8 +634,8 @@
     {
       "karr_nonzero_count": 99,
       "karr_sum": 99.0,
-      "oc_nonzero_count": 85,
-      "oc_sum": 89.0,
+      "oc_nonzero_count": 92,
+      "oc_sum": 97.0,
       "token": "intrastrandCrossLinks.delta_nnz"
     },
     {

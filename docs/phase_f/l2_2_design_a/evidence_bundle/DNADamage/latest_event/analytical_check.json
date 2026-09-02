@@ -4,14 +4,14 @@
     "expected_pooled_fire_ticks_scaled_from_spec": 9.721982569102039,
     "mechanical_verdict": "PRIMARY_INSUFFICIENT_SAMPLES",
     "observed_pooled_fire_ticks_karr": 8,
-    "observed_pooled_fire_ticks_oc": 9
+    "observed_pooled_fire_ticks_oc": 8
   },
   "condition": "uvb_mechanism",
   "full": {
     "expected_pooled_fire_ticks_scaled_from_spec": 97.21982569102039,
     "mechanical_verdict": "PASS",
     "observed_pooled_fire_ticks_karr": 99,
-    "observed_pooled_fire_ticks_oc": 85
+    "observed_pooled_fire_ticks_oc": 92
   },
   "mode": "dna_damage_support_cross_check"
 }
