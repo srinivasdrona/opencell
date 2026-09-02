@@ -1,0 +1,259 @@
+{
+  "condition": "uvb_mechanism",
+  "condition_label_values": [
+    "uvb_mechanism"
+  ],
+  "expected_pooled_fire_ticks_scaled_from_spec": 9.721982569102039,
+  "hurdle_payload": {
+    "component_verdicts": {
+      "component_1": "PASS",
+      "component_2": "PASS",
+      "component_3": "PASS",
+      "component_4": "PASS",
+      "component_5": "PASS",
+      "component_6": "PASS",
+      "component_7": "PASS"
+    },
+    "conditional_component_scales": {
+      "component_1": 1.0,
+      "component_2": 1.0,
+      "component_3": 1.0,
+      "component_4": 1.0,
+      "component_5": 1.0,
+      "component_6": 1.0,
+      "component_7": 1.0
+    },
+    "conditional_scaled_distance_threshold": 1.0,
+    "conditional_scaled_w1_per_component": {
+      "component_1": 0.0,
+      "component_2": 0.0,
+      "component_3": 0.0,
+      "component_4": 0.0,
+      "component_5": 0.11111111111111116,
+      "component_6": 0.0,
+      "component_7": 0.0
+    },
+    "conditional_w1_per_component": {
+      "component_1": 0.0,
+      "component_2": 0.0,
+      "component_3": 0.0,
+      "component_4": 0.0,
+      "component_5": 0.11111111111111116,
+      "component_6": 0.0,
+      "component_7": 0.0
+    },
+    "event_rate_diff": 0.009999999999999995,
+    "event_rate_threshold": 0.1,
+    "joint_verdict": "PASS",
+    "n_events_karr": 8,
+    "n_events_oc": 9
+  },
+  "identity_validation_failures": [],
+  "identity_validation_ok_count": 5,
+  "identity_validation_total": 5,
+  "input_records": [
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2000/DNADamage_20ticks.mat",
+      "seed": 2000,
+      "seed_index": 0,
+      "sha256": "d15ab35e59b8afeada25fcb9da16289847b92064f886233e475ae77a60e0b252",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2001/DNADamage_20ticks.mat",
+      "seed": 2001,
+      "seed_index": 1,
+      "sha256": "596b7ea968ba192b34504d2f0d8febe92418422bc360655ad6dbcabf5bf136f0",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2002/DNADamage_20ticks.mat",
+      "seed": 2002,
+      "seed_index": 2,
+      "sha256": "2903e5a8c727e049b66467fbe76c1bbe88098c4ff44be23222267fcda6e4c6b1",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2003/DNADamage_20ticks.mat",
+      "seed": 2003,
+      "seed_index": 3,
+      "sha256": "a3a31a34d31263373e13a31ffbb8074a18d458ceba9ec3c2aa943d8e166b8b05",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2004/DNADamage_20ticks.mat",
+      "seed": 2004,
+      "seed_index": 4,
+      "sha256": "cfda080fac7a86957d81a10ab3bff9fb7994b0ea002a6e306bf26306590d8184",
+      "trace_kind": "event_window"
+    }
+  ],
+  "karr_projection_shape": [
+    5,
+    20,
+    8
+  ],
+  "mechanical_reasons": [
+    "PRIMARY_INSUFFICIENT_SAMPLES: primary channel 'chromosome' recorded n_events_oc=9, n_events_karr=8 across the whole ensemble; below MIN_NONZERO_EVENTS=30 on at least one side (primary hurdle event count not validated at adequate sample size)"
+  ],
+  "mechanical_verdict": "PRIMARY_INSUFFICIENT_SAMPLES",
+  "mnrnd_provider_kind_values": [
+    "statistics_toolbox"
+  ],
+  "oc_projection_shape": [
+    5,
+    20,
+    8
+  ],
+  "output_root": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism",
+  "overlay_hash_metadata_provenance": {
+    "all_traces_carry_overlay_hashes": true,
+    "note": "Every trace in this corpus was re-extracted (Sept-2 review item 8) with the raw-byte-hashing karr_bootstrap.m (item 7) and carries dnadamage_source_original_sha256 / patched_sha256 / resolved_sha256 / resolved_path metadata; verify_corpus() raises VerifierError on any trace missing a required field rather than tolerating it as a legacy-corpus caveat.",
+    "present_counts_by_field": {
+      "dnadamage_source_original_sha256": 5,
+      "dnadamage_source_patched_sha256": 5,
+      "dnadamage_source_resolved_path": 5,
+      "dnadamage_source_resolved_sha256": 5
+    },
+    "required_fields": [
+      "dnadamage_source_original_sha256",
+      "dnadamage_source_patched_sha256",
+      "dnadamage_source_resolved_sha256",
+      "dnadamage_source_resolved_path"
+    ]
+  },
+  "primary_projection": [
+    "damage_event_present",
+    "damagedBases.delta_nnz",
+    "abasicSites.delta_nnz",
+    "strandBreaks.delta_nnz",
+    "damagedSugarPhosphates.delta_nnz",
+    "intrastrandCrossLinks.delta_nnz",
+    "hollidayJunctions.delta_nnz",
+    "gapSites.delta_nnz"
+  ],
+  "primary_projection_component_summary": [
+    {
+      "karr_nonzero_count": 8,
+      "karr_sum": 8.0,
+      "oc_nonzero_count": 9,
+      "oc_sum": 9.0,
+      "token": "damage_event_present"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "damagedBases.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "abasicSites.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "strandBreaks.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "damagedSugarPhosphates.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 8,
+      "karr_sum": 8.0,
+      "oc_nonzero_count": 9,
+      "oc_sum": 10.0,
+      "token": "intrastrandCrossLinks.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "hollidayJunctions.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "gapSites.delta_nnz"
+    }
+  ],
+  "root_label": "genuine_signedzero_canary_v4",
+  "run_label": "",
+  "seed_count": 5,
+  "seed_end": 2004,
+  "seed_start": 2000,
+  "statistics_rng_provider_identity_json_values": [
+    "{\"kind\":\"statistics_toolbox\",\"matlab_release\":\"R2026a\",\"toolbox_version\":\"26.1\",\"functions\":[{\"name\":\"binornd\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/binornd.m\",\"sha256_lf_normalized\":\"2028269c75d658c93d37a80c75c8902845174cd34ba7ce7a1b2ff507245653ae\"},{\"name\":\"mnrnd\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/mnrnd.m\",\"sha256_lf_normalized\":\"d68e8ff78af266ad4977e80cd5366cc59984ada5f73ab591a9c08350bc4471dc\"},{\"name\":\"poissrnd\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/poissrnd.m\",\"sha256_lf_normalized\":\"e1700e03c38073adc822b2c104cfd7e1a16d8b74bd004acba3155a3d3d8243e8\"},{\"name\":\"random\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/random.m\",\"sha256_lf_normalized\":\"f954defae982b89e120e5f5c1d71eeeaa1b7739437985805dac30cd2fbf00d30\"},{\"name\":\"randsample\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/randsample.m\",\"sha256_lf_normalized\":\"476dd1cf2f4eba77a90c90b4328f39d23724b1217ce4d42c68ee403d53c15be9\"}]}"
+  ],
+  "stimulus_conditioned_trace_count": 5,
+  "trace_classifications": [
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2000/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2001/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2002/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2003/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_canary_v4/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2004/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    }
+  ]
+}

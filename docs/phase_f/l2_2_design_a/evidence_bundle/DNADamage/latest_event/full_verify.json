@@ -1,0 +1,1067 @@
+{
+  "condition": "uvb_mechanism",
+  "condition_label_values": [
+    "uvb_mechanism"
+  ],
+  "expected_pooled_fire_ticks_scaled_from_spec": 97.21982569102039,
+  "hurdle_payload": {
+    "component_verdicts": {
+      "component_1": "PASS",
+      "component_2": "PASS",
+      "component_3": "PASS",
+      "component_4": "PASS",
+      "component_5": "PASS",
+      "component_6": "PASS",
+      "component_7": "PASS"
+    },
+    "conditional_component_scales": {
+      "component_1": 1.0,
+      "component_2": 1.0,
+      "component_3": 1.0,
+      "component_4": 1.0,
+      "component_5": 1.0,
+      "component_6": 1.0,
+      "component_7": 1.0
+    },
+    "conditional_scaled_distance_threshold": 1.0,
+    "conditional_scaled_w1_per_component": {
+      "component_1": 0.0,
+      "component_2": 0.0,
+      "component_3": 0.0,
+      "component_4": 0.0,
+      "component_5": 0.04705882352941182,
+      "component_6": 0.0,
+      "component_7": 0.0
+    },
+    "conditional_w1_per_component": {
+      "component_1": 0.0,
+      "component_2": 0.0,
+      "component_3": 0.0,
+      "component_4": 0.0,
+      "component_5": 0.04705882352941182,
+      "component_6": 0.0,
+      "component_7": 0.0
+    },
+    "event_rate_diff": 0.013999999999999999,
+    "event_rate_threshold": 0.1,
+    "joint_verdict": "PASS",
+    "n_events_karr": 99,
+    "n_events_oc": 85
+  },
+  "identity_validation_failures": [],
+  "identity_validation_ok_count": 50,
+  "identity_validation_total": 50,
+  "input_records": [
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2000/DNADamage_20ticks.mat",
+      "seed": 2000,
+      "seed_index": 0,
+      "sha256": "55983422c7547b1e864fc18db0a998b3a3721ca28ac22a7291e64e9eda1e8ae7",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2001/DNADamage_20ticks.mat",
+      "seed": 2001,
+      "seed_index": 1,
+      "sha256": "e07d366fb0d72be3a2c39cb28dd41f3696a635a2dffb02b40e3d67adfadc7660",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2002/DNADamage_20ticks.mat",
+      "seed": 2002,
+      "seed_index": 2,
+      "sha256": "2376c74eac286d2ff23b2d93e9b73e5693841201128e6b3d13b5f4d92c5674b0",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2003/DNADamage_20ticks.mat",
+      "seed": 2003,
+      "seed_index": 3,
+      "sha256": "de62cb602c8c97e6ba805b4e6169c477124658ba83d5e1da93cb5d18b1def5d3",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2004/DNADamage_20ticks.mat",
+      "seed": 2004,
+      "seed_index": 4,
+      "sha256": "8041c1f608828602aa88b66cb45ca99553618f3a38e0a78114450f78285ddb23",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2005/DNADamage_20ticks.mat",
+      "seed": 2005,
+      "seed_index": 5,
+      "sha256": "76da88d74629d48fd2d4b260458e79f4948db13527bc4fe62737837568f58cdd",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2006/DNADamage_20ticks.mat",
+      "seed": 2006,
+      "seed_index": 6,
+      "sha256": "5ab65c0376d6e6d08d7959a54d01c5eef4fff385819c1cc51542d9604b161007",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2007/DNADamage_20ticks.mat",
+      "seed": 2007,
+      "seed_index": 7,
+      "sha256": "4c112e668558bcc9d11507580db2e8fd1fcb88f3ae763a8db7d009e0c19c1bad",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2008/DNADamage_20ticks.mat",
+      "seed": 2008,
+      "seed_index": 8,
+      "sha256": "f16c75a623d9c6385e7a9dffb755889b5ee2f66235b1f23241cb204c1cdf95ec",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2009/DNADamage_20ticks.mat",
+      "seed": 2009,
+      "seed_index": 9,
+      "sha256": "5cab0a68405e3b7469141e619f3d26d30923a6278975d534a0c769322aa1e676",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2010/DNADamage_20ticks.mat",
+      "seed": 2010,
+      "seed_index": 10,
+      "sha256": "5de718a8f6a11d12a516b76ada27375766e8e86a2db065bd9a40ebe1f23f7600",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2011/DNADamage_20ticks.mat",
+      "seed": 2011,
+      "seed_index": 11,
+      "sha256": "08ab7bc0fc25a743fecc48dfd04bf9de570600120c44cf9ab62e381642f54094",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2012/DNADamage_20ticks.mat",
+      "seed": 2012,
+      "seed_index": 12,
+      "sha256": "1b39b7a12bdbb62ca3dfbb9df6bb12433b66bdcf1231ef7f223b865494ba7b64",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2013/DNADamage_20ticks.mat",
+      "seed": 2013,
+      "seed_index": 13,
+      "sha256": "b0e97f4afdfb6618a126b2d6acdb8e9486c7347a5c0947c8e112208410b6caeb",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2014/DNADamage_20ticks.mat",
+      "seed": 2014,
+      "seed_index": 14,
+      "sha256": "fc7d5029c7ec7200ad333e688b79c500b1a93a177b3dc3186ac37e8ff6bd27aa",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2015/DNADamage_20ticks.mat",
+      "seed": 2015,
+      "seed_index": 15,
+      "sha256": "31e45389537b48fbcdb1aac5a5bd0a1f3fc3930a4b8819d5f6da830e47f84127",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2016/DNADamage_20ticks.mat",
+      "seed": 2016,
+      "seed_index": 16,
+      "sha256": "503ded5d31782eab37315300205a74501ddaf178e05d26d9ce3b32079a15e0ea",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2017/DNADamage_20ticks.mat",
+      "seed": 2017,
+      "seed_index": 17,
+      "sha256": "1b78fc4ca35d9f6404446705d01647f968f52c773061d74661937c0a88589887",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2018/DNADamage_20ticks.mat",
+      "seed": 2018,
+      "seed_index": 18,
+      "sha256": "de4a31ffc62bf13ec75d9f7bd4776ec4f769305fc72d93da091cdac3c4c0aadf",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2019/DNADamage_20ticks.mat",
+      "seed": 2019,
+      "seed_index": 19,
+      "sha256": "c20770f17a7d93efe786142d8aadb076e5e82bf486b4dbafb1d384b3d4df6c9a",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2020/DNADamage_20ticks.mat",
+      "seed": 2020,
+      "seed_index": 20,
+      "sha256": "d74bc710e1813b7aba9292986138eb5f57e0c216d38c945bb2faba05c78b1b4e",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2021/DNADamage_20ticks.mat",
+      "seed": 2021,
+      "seed_index": 21,
+      "sha256": "57f1945c1177288b8ab130703a8e22dee108fbe5d0206f9eb3ed9ffc2df7928d",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2022/DNADamage_20ticks.mat",
+      "seed": 2022,
+      "seed_index": 22,
+      "sha256": "d5d8fe0557e3d3e1088689988bc4f79bd09976269e8c101a3f2a0c5ba1baa31f",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2023/DNADamage_20ticks.mat",
+      "seed": 2023,
+      "seed_index": 23,
+      "sha256": "585eec1e15fb3aa2bd5ecf1a8c71d57ba562cf04e977b21199e59d22af7052c2",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2024/DNADamage_20ticks.mat",
+      "seed": 2024,
+      "seed_index": 24,
+      "sha256": "e667650d11fe0550d6b5894dccab5d695540eac21c7e2b4089e19007b51ff1e9",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2025/DNADamage_20ticks.mat",
+      "seed": 2025,
+      "seed_index": 25,
+      "sha256": "d379c9fc48cbecf7824581204f02dbe0bc2f96e85b953792e9ee0bce4deba9a3",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2026/DNADamage_20ticks.mat",
+      "seed": 2026,
+      "seed_index": 26,
+      "sha256": "03ce4466a6f98e948daf0ea5c1d9824cc546b6e1094833bf973f1c2f7b6cece3",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2027/DNADamage_20ticks.mat",
+      "seed": 2027,
+      "seed_index": 27,
+      "sha256": "488877e8f54a67ea38b34b214db7957b23bedcbb1096ab0c7f3409901bb575f4",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2028/DNADamage_20ticks.mat",
+      "seed": 2028,
+      "seed_index": 28,
+      "sha256": "01eed84a63c7bda3f4f3943bbf12de52c8724bec9765717339c4558bc544252d",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2029/DNADamage_20ticks.mat",
+      "seed": 2029,
+      "seed_index": 29,
+      "sha256": "e87df6f691b4c63923f1d759c3ac60de4078a369c860755c5ebbe37e6cef1ce3",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2030/DNADamage_20ticks.mat",
+      "seed": 2030,
+      "seed_index": 30,
+      "sha256": "2d84941d58a417cdb9fb580c888a490270984bc7fca9afd6333216f439e86d01",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2031/DNADamage_20ticks.mat",
+      "seed": 2031,
+      "seed_index": 31,
+      "sha256": "b80f70c00d9d667c4facd0dfbc18df848ff5d8e1c7a851ec89f6690a82bcadad",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2032/DNADamage_20ticks.mat",
+      "seed": 2032,
+      "seed_index": 32,
+      "sha256": "8ae810237ca016dffe318bdfcf4f7adb325085508fa43badf9124daaa005506a",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2033/DNADamage_20ticks.mat",
+      "seed": 2033,
+      "seed_index": 33,
+      "sha256": "78e5bdc11810fc90442c609196a2b930551e1f2e11f8a79cbee4c05489128d0d",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2034/DNADamage_20ticks.mat",
+      "seed": 2034,
+      "seed_index": 34,
+      "sha256": "29a2ac598f442fb7d3fa8f62a2b616e500f7fab84f0f804c5fce846698591e77",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2035/DNADamage_20ticks.mat",
+      "seed": 2035,
+      "seed_index": 35,
+      "sha256": "467fa72995dc9107061f7f433d786fa23e5d04aebd1301e54ff180aca431bcec",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2036/DNADamage_20ticks.mat",
+      "seed": 2036,
+      "seed_index": 36,
+      "sha256": "dd339ef97990f63b3058b4de71064e2648c03f6937d0145bdcc649be213dd5c8",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2037/DNADamage_20ticks.mat",
+      "seed": 2037,
+      "seed_index": 37,
+      "sha256": "4a6d88160d0b9a3d262bd2cd79f2009166eebe66dc716dbb9fa85b8db0c05680",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2038/DNADamage_20ticks.mat",
+      "seed": 2038,
+      "seed_index": 38,
+      "sha256": "d8bc7144c1cc9b3378dd2b33159f45b6ea1211a6fea915b4edb5b012ab6eeb8d",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2039/DNADamage_20ticks.mat",
+      "seed": 2039,
+      "seed_index": 39,
+      "sha256": "db81a910ceb22e739614e8cfc297a3e24c98c3450fc29b6b6c80cfb06be6b099",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2040/DNADamage_20ticks.mat",
+      "seed": 2040,
+      "seed_index": 40,
+      "sha256": "8efbcfcdebea2d9363960aad9d0dfd342cdf82f9a76a32781b3c80a4a9a9ab9c",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2041/DNADamage_20ticks.mat",
+      "seed": 2041,
+      "seed_index": 41,
+      "sha256": "8efb637223de9be3bf1438f8debda56fe6110d69a31ee79cd985de5620da2aef",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2042/DNADamage_20ticks.mat",
+      "seed": 2042,
+      "seed_index": 42,
+      "sha256": "c18dd5ce9b9f907ea3c3fd8092ed638df96176c006ba0f5a615396836e8f18e4",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2043/DNADamage_20ticks.mat",
+      "seed": 2043,
+      "seed_index": 43,
+      "sha256": "a235b97f56951967ae1b04358d44e3aca90bdd2e43c6a98a53fbc1c227aa40de",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2044/DNADamage_20ticks.mat",
+      "seed": 2044,
+      "seed_index": 44,
+      "sha256": "f86745a9eeddb842b3cd292e9fbee26a8c3fddff65c6f4de1c21ae950d2d2110",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2045/DNADamage_20ticks.mat",
+      "seed": 2045,
+      "seed_index": 45,
+      "sha256": "f87e88b7c981a4bafe274cf2b2c083a1f6a8769fdda44d6575ffbdddecdb8709",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2046/DNADamage_20ticks.mat",
+      "seed": 2046,
+      "seed_index": 46,
+      "sha256": "4bcee184124c0dadc60734b9771176c9e3f9e4693f95385ae62ee85e9f6d2b6f",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2047/DNADamage_20ticks.mat",
+      "seed": 2047,
+      "seed_index": 47,
+      "sha256": "f55db696696b9416869a6f3ea5ed6773fc9fe37325a6df5c1ee6c045e7e8914b",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2048/DNADamage_20ticks.mat",
+      "seed": 2048,
+      "seed_index": 48,
+      "sha256": "fa6423d34338468dcab7a0c91224bd5609f3539a07aa60779f2e2e07c6bbc585",
+      "trace_kind": "event_window"
+    },
+    {
+      "condition": "uvb_mechanism",
+      "kind": "oracle_data",
+      "n_ticks": 20,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2049/DNADamage_20ticks.mat",
+      "seed": 2049,
+      "seed_index": 49,
+      "sha256": "502dc54ca336e2a6b3e78c3ddd23e9bf916514f5b5930fe0b2f37081d7cc6046",
+      "trace_kind": "event_window"
+    }
+  ],
+  "karr_projection_shape": [
+    50,
+    20,
+    8
+  ],
+  "mechanical_reasons": [],
+  "mechanical_verdict": "PASS",
+  "mnrnd_provider_kind_values": [
+    "statistics_toolbox"
+  ],
+  "oc_projection_shape": [
+    50,
+    20,
+    8
+  ],
+  "output_root": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism",
+  "overlay_hash_metadata_provenance": {
+    "all_traces_carry_overlay_hashes": true,
+    "note": "Every trace in this corpus was re-extracted (Sept-2 review item 8) with the raw-byte-hashing karr_bootstrap.m (item 7) and carries dnadamage_source_original_sha256 / patched_sha256 / resolved_sha256 / resolved_path metadata; verify_corpus() raises VerifierError on any trace missing a required field rather than tolerating it as a legacy-corpus caveat.",
+    "present_counts_by_field": {
+      "dnadamage_source_original_sha256": 50,
+      "dnadamage_source_patched_sha256": 50,
+      "dnadamage_source_resolved_path": 50,
+      "dnadamage_source_resolved_sha256": 50
+    },
+    "required_fields": [
+      "dnadamage_source_original_sha256",
+      "dnadamage_source_patched_sha256",
+      "dnadamage_source_resolved_sha256",
+      "dnadamage_source_resolved_path"
+    ]
+  },
+  "primary_projection": [
+    "damage_event_present",
+    "damagedBases.delta_nnz",
+    "abasicSites.delta_nnz",
+    "strandBreaks.delta_nnz",
+    "damagedSugarPhosphates.delta_nnz",
+    "intrastrandCrossLinks.delta_nnz",
+    "hollidayJunctions.delta_nnz",
+    "gapSites.delta_nnz"
+  ],
+  "primary_projection_component_summary": [
+    {
+      "karr_nonzero_count": 99,
+      "karr_sum": 99.0,
+      "oc_nonzero_count": 85,
+      "oc_sum": 85.0,
+      "token": "damage_event_present"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "damagedBases.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "abasicSites.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "strandBreaks.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "damagedSugarPhosphates.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 99,
+      "karr_sum": 99.0,
+      "oc_nonzero_count": 85,
+      "oc_sum": 89.0,
+      "token": "intrastrandCrossLinks.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "hollidayJunctions.delta_nnz"
+    },
+    {
+      "karr_nonzero_count": 0,
+      "karr_sum": 0.0,
+      "oc_nonzero_count": 0,
+      "oc_sum": 0.0,
+      "token": "gapSites.delta_nnz"
+    }
+  ],
+  "root_label": "genuine_signedzero_full_v2",
+  "run_label": "",
+  "seed_count": 50,
+  "seed_end": 2049,
+  "seed_start": 2000,
+  "statistics_rng_provider_identity_json_values": [
+    "{\"kind\":\"statistics_toolbox\",\"matlab_release\":\"R2026a\",\"toolbox_version\":\"26.1\",\"functions\":[{\"name\":\"binornd\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/binornd.m\",\"sha256_lf_normalized\":\"2028269c75d658c93d37a80c75c8902845174cd34ba7ce7a1b2ff507245653ae\"},{\"name\":\"mnrnd\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/mnrnd.m\",\"sha256_lf_normalized\":\"d68e8ff78af266ad4977e80cd5366cc59984ada5f73ab591a9c08350bc4471dc\"},{\"name\":\"poissrnd\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/poissrnd.m\",\"sha256_lf_normalized\":\"e1700e03c38073adc822b2c104cfd7e1a16d8b74bd004acba3155a3d3d8243e8\"},{\"name\":\"random\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/random.m\",\"sha256_lf_normalized\":\"f954defae982b89e120e5f5c1d71eeeaa1b7739437985805dac30cd2fbf00d30\"},{\"name\":\"randsample\",\"provider_path_relative_to_matlabroot\":\"toolbox/stats/stats/randsample.m\",\"sha256_lf_normalized\":\"476dd1cf2f4eba77a90c90b4328f39d23724b1217ce4d42c68ee403d53c15be9\"}]}"
+  ],
+  "stimulus_conditioned_trace_count": 50,
+  "trace_classifications": [
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2000/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2001/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2002/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2003/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2004/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2005/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2006/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2007/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2008/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2009/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2010/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2011/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2012/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2013/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2014/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2015/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2016/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2017/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2018/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2019/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2020/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2021/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2022/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2023/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2024/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2025/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2026/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2027/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2028/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2029/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2030/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2031/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2032/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2033/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2034/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2035/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2036/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2037/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2038/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2039/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2040/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2041/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2042/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2043/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2044/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2045/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2046/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2047/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2048/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    },
+    {
+      "classification": "stimulus_conditioned",
+      "observed_max_UVB_radiation": 7.474096569667582,
+      "observed_max_gamma_radiation": 2.799999988811752e-11,
+      "path": "data/m1_sources/karr_native/genuine_signedzero_full_v2/dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2049/DNADamage_20ticks.mat",
+      "spec_gamma_mechanism_injected_dose": 0.9386126657343624,
+      "spec_uvb_mechanism_injected_dose": 7.474096569667582
+    }
+  ]
+}

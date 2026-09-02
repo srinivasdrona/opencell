@@ -1,0 +1,27 @@
+{
+  "canary_support_verdict": "PRIMARY_INSUFFICIENT_SAMPLES",
+  "canary_verify_ref": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event/canary_verify.json",
+  "condition": "uvb_mechanism",
+  "full_verify_ref": "docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event/full_verify.json",
+  "generated_at": "2026-09-02T14:02:46.921377+00:00",
+  "mechanical_reasons": [],
+  "mechanical_verdict": "PASS",
+  "mode": "l22_dna_damage_event_verifier",
+  "overlay_hash_metadata_provenance": {
+    "all_traces_carry_overlay_hashes": true,
+    "note": "Every trace in this corpus was re-extracted (Sept-2 review item 8) with the raw-byte-hashing karr_bootstrap.m (item 7) and carries dnadamage_source_original_sha256 / patched_sha256 / resolved_sha256 / resolved_path metadata; verify_corpus() raises VerifierError on any trace missing a required field rather than tolerating it as a legacy-corpus caveat.",
+    "present_counts_by_field": {
+      "dnadamage_source_original_sha256": 50,
+      "dnadamage_source_patched_sha256": 50,
+      "dnadamage_source_resolved_path": 50,
+      "dnadamage_source_resolved_sha256": 50
+    },
+    "required_fields": [
+      "dnadamage_source_original_sha256",
+      "dnadamage_source_patched_sha256",
+      "dnadamage_source_resolved_sha256",
+      "dnadamage_source_resolved_path"
+    ]
+  },
+  "process": "DNADamage"
+}
