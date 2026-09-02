@@ -59,6 +59,48 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-03 00:53 IST) — supersedes all Sept-2 snapshots
+below:**
+
+- Main integration worktree:
+  `E:\opencell-worktrees\main-integrate`, branch `main`, HEAD `8f813da`.
+  The independently accepted DNADamage closure is merged. Fresh post-merge
+  verification is fully green: evidence audit **18 PASS / 2 FAIL /
+  2 MISSING_EVIDENCE**, integrity OK; provenance **241 records**; focused
+  suite **100 passed**; Ruff and `git diff --check` clean. `origin/main` is
+  still `744974c`; push the verified merge before integrating another lane.
+- ChromosomeCondensation is independently accepted and staged in
+  `E:\opencell-worktrees\integrate-l21-chromcond-sept2` at `0196a81`.
+  Its source fix and packaging gates are green. The only expected
+  post-integration non-green is the stale L2.2 authority for the six
+  chromosome-update consumers (Replication, ReplicationInitiation,
+  DNARepair, DNASupercoiling, DNADamage, Cytokinesis). Re-sweep those six
+  against the complete evidence bundle, regenerate the index, then review
+  and merge.
+- Durable MATLAB queues:
+  - Cytokinesis PID `18600` is alive at **4/50 validated**, seeds `4-7`
+    active, 42 queued, 0 failed.
+  - FtsZ orchestrator PID `22568` and watchdog PID `7904` are alive at
+    **2/50 validated**. Seeds `1-2` completed attempt 1 without producing
+    traces and were requeued; seeds `3-4` are active.
+  - MacromolecularComplexation has **47** matching raw trace files in its
+    worktree; the owning agent must run its fail-closed audit before any
+    count is promoted.
+- L2.1 active-window extraction produced genuine-provider traces for
+  TranscriptionalRegulation seed 0, Cytokinesis seed 0, and DNADamage seed 1.
+  HostInteraction and ChromosomeSegregation launchers exited without trace
+  output. All five recorded waiter PIDs are dead or reused; the owning agent
+  must validate/promote the three completed traces and diagnose/relaunch only
+  the two missing processes.
+- ReplicationInitiation remains open at an honest stateful tick-4
+  `enzymes[1]` mismatch despite its strict-rubric GENUINE result; its agent
+  is still working. DNASupercoiling remains `PRIMARY_OVERACTIVE`; its agent
+  is still working on hash-bound chromosome RNG `states_before` restoration.
+- Immediate order: push DNADamage; validate/promote the three completed
+  L2.1 active traces and relaunch only the two missing ones; perform the six
+  ChromCond L2.2 re-sweeps and index regeneration; then independently review
+  and integrate ChromCond.
+
 **Current status (2026-09-02 15:10 IST) — supersedes the August live-PID
 snapshot below:**
 
@@ -4999,5 +5041,4 @@ A spin-off project building on top of OpenCell to simulate drug interactions, pr
 - **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
 - **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
 - **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
-
 
