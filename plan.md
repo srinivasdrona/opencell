@@ -71,15 +71,21 @@ below:**
   still `744974c`; push the verified merge before integrating another lane.
 - ChromosomeCondensation is independently accepted and merged with current
   main in `E:\opencell-worktrees\integrate-l21-chromcond-sept2` through
-  `803089b`. Its source fix and packaging gates are green. Integration
-  exposed a broader provenance problem: changing shared
-  `tests/vivarium/l2_replay_common.py` invalidates 19 L2.2 rows by hash, not
-  just the six chromosome consumers, and the raw Karr cohorts are not all
-  locally available. The smallest correct next step is to restore that
-  shared helper byte-for-byte and isolate chromosome-state replay
-  application to a ChromCond/L2.1-only helper, then prove the L2.2 index
-  remains at the accepted **18/2/2** without a behavior-changing harness
-  diff. Independent review remains mandatory before merge.
+  `1e4d413`. The isolation refactor is complete: shared
+  `tests/vivarium/l2_replay_common.py` and
+  `opencell/util/matlab_rng.py` are byte-identical to main; ChromCond-only
+  replay/RNG behavior lives in `_chromcond_replay_apply.py` and
+  `chromcond_mcg_rand.py`. The 0/100 hidden replay proof, L2.1 GENUINE,
+  L1b, provenance, and focused tests are green; L2.2 audit is restored to
+  **18 PASS / 2 FAIL / 2 MISSING_EVIDENCE**, integrity OK, with zero
+  evidence/index changes. Opus 5 **ACCEPTED** the core candidate. Before
+  merge, close its nonblocking-but-policy-relevant findings: promote the
+  100-tick inversion-sensitive scan into a committed regression test;
+  correct two misleading rubric/helper comments; tighten over-broad
+  regenerated wiring anchors; and investigate the pre-existing
+  `karr_fidelity_scorecard.py` ChromCond `FAIL` (`enzymes`, max abs 3 at
+  one tick). The no-known-gap rule requires that scorecard discrepancy to
+  be fixed or proven inapplicable before integration.
 - Durable MATLAB queues:
   - Cytokinesis PID `18600` is alive at **4/50 validated**, seeds `4-7`
     active, 42 queued, 0 failed.
@@ -91,19 +97,45 @@ below:**
     count is promoted.
 - L2.1 active-window extraction produced genuine-provider traces for
   TranscriptionalRegulation seed 0, Cytokinesis seed 0, and DNADamage seed 1.
-  HostInteraction and ChromosomeSegregation launchers exited without trace
-  output. All five recorded waiter PIDs are dead or reused; the owning agent
-  must validate/promote the three completed traces and diagnose/relaunch only
-  the two missing processes.
+  Fail-closed replay promoted TranscriptionalRegulation and Cytokinesis to
+  honest `CODE_GAP`, not green: TranscriptionalRegulation models 130 TU-level
+  binding slots where Karr exposes 34 chromosome-site/strand promoter slots;
+  Cytokinesis first diverges at active tick 226
+  (`ftsZRing_numEdgesOneStraight`, OC 6 vs Karr 9). These are mandatory
+  source-fidelity fixes under the no-known-gap rule. DNADamage seeds 0 and 1
+  are both zero-activity. Accepted L2.2 seed 2000 supplies a genuine active
+  window, but its initial L2.1 `CODE_GAP` classification is provisional:
+  `l21_active_window_audit.py` deep-merges chromosome sparse replacements
+  and counts any non-empty chromosome update payload as OC activity, yielding
+  an implausible 20/20 active ticks against the accepted L2.2 event rate.
+  Fix and re-run the audit's process-aware chromosome application/activity
+  calculation before diagnosing production RNG. HostInteraction and
+  ChromosomeSegregation were relaunched as PIDs `27484` and `26372`, queued
+  on the shared slot pool. Branch manifest currently records
+  **6 EXISTING_WINDOW_PASS / 3 CODE_GAP / 2 MISSING_ACTIVE_EXTRACTION**,
+  pending that DNADamage audit correction.
 - ReplicationInitiation remains open at an honest stateful tick-4
-  `enzymes[1]` mismatch despite its strict-rubric GENUINE result; its agent
-  is still working. DNASupercoiling remains `PRIMARY_OVERACTIVE`; its agent
-  is still working on hash-bound chromosome RNG `states_before` restoration.
-- Immediate order: validate/promote the three completed L2.1 active traces
-  and relaunch only the two missing ones; isolate ChromCond's chromosome
-  replay application from the shared L2.2 helper and independently review
-  that integration; continue RepInit/DNAS source closure and the durable
-  Macromol/Cytokinesis/FtsZ queues.
+  `enzymes[1]` mismatch despite strict-rubric GENUINE. All five Opus review
+  fixes are complete; L1b and canonical N=50/M=200 L2.2 are PASS. Site-level
+  state and the 29-candidate release set match Karr through tick 3, ruling
+  out occupancy, size, and ordering. The sole remaining hypothesis is an
+  upstream RNG draw-count drift during ticks 0-3; run a real MATLAB
+  call-by-call draw ledger now rather than closing on the rubric.
+  DNASupercoiling's chromosome-release RNG ledger is now
+  wired, but the corrected N=200 run remains `PRIMARY_OVERACTIVE`
+  (pooled nonzero ticks **1526 vs 65**, active seeds **200 vs 58**,
+  clustered seeds **199 vs 7**), falsifying the shared-release-RNG
+  hypothesis. The current branch's process-RNG fallback on 476 ledger
+  shortfall ticks is not acceptable closure: it proves OC requests a
+  different release-candidate population. Remove the fallback, diagnose the
+  earliest shortfall (seed 3 tick 53), and fix the first candidate/state
+  divergence before another full evaluation.
+- Immediate order: fix the TranscriptionalRegulation and Cytokinesis L2.1
+  code gaps in parallel from MATLAB source/fixture evidence; inventory the
+  accepted DNADamage corpus for an already-active authoritative window;
+  isolate ChromCond's chromosome replay application from the shared L2.2
+  helper and independently review that integration; continue RepInit/DNAS
+  source closure and the durable Macromol/Cytokinesis/FtsZ queues.
 
 **Current status (2026-09-02 15:10 IST) — supersedes the August live-PID
 snapshot below:**
