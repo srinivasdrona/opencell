@@ -164,6 +164,19 @@ snapshot below:**
 - Do not launch another FtsZ queue while the PID in `queue_owner.pid` is alive;
   the watchdog restarts the orchestrator if needed.
 
+**L2.1 active-window durable extraction handoff:**
+
+- Harness/prep commits: `bc2f82f`, `5ab1667`; PID handoff commit: `66bb94b`.
+- Confirmed live wrapper PIDs:
+  - DNADamage seed-1 retry: `21172`
+  - TranscriptionalRegulation: `23992`
+  - HostInteraction: `24900`
+  - ChromosomeSegregation: `8560`
+  - Cytokinesis: `19112`
+- All five are waiting fairly on the common four-slot pool; no duplicate
+  relaunch is allowed while these PIDs remain alive.
+- Aggregate wait shell: `wait-l21-active-five`.
+
 **DNADamage review result:** REJECT. The measured PASS is reproducible, but
 the branch is stale versus PPII and retains literal Karr gaps: Poisson instead
 of per-reaction stochastic-round/accessibility sampling, a legacy rate
