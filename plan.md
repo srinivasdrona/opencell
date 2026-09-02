@@ -104,8 +104,15 @@ below:**
   2 CODE_GAP / 3 MISSING_ACTIVE_EXTRACTION**.
 - ReplicationInitiation remains open at an honest stateful tick-4
   `enzymes[1]` mismatch despite its strict-rubric GENUINE result; its agent
-  is still working. DNASupercoiling remains `PRIMARY_OVERACTIVE`; its agent
-  is still working on hash-bound chromosome RNG `states_before` restoration.
+  is still working. DNASupercoiling's chromosome-release RNG ledger is now
+  wired, but the corrected N=200 run remains `PRIMARY_OVERACTIVE`
+  (pooled nonzero ticks **1526 vs 65**, active seeds **200 vs 58**,
+  clustered seeds **199 vs 7**), falsifying the shared-release-RNG
+  hypothesis. The current branch's process-RNG fallback on 476 ledger
+  shortfall ticks is not acceptable closure: it proves OC requests a
+  different release-candidate population. Remove the fallback, diagnose the
+  earliest shortfall (seed 3 tick 53), and fix the first candidate/state
+  divergence before another full evaluation.
 - Immediate order: fix the TranscriptionalRegulation and Cytokinesis L2.1
   code gaps in parallel from MATLAB source/fixture evidence; inventory the
   accepted DNADamage corpus for an already-active authoritative window;
