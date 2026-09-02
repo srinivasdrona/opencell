@@ -156,6 +156,10 @@ foreach ($w in $Plan.workers) {
 
     Write-Host "[run_l22_seed_shards] launching worker $($w.worker_id): seeds=$(($w.jobs | ForEach-Object { $_.seed }) -join ',') -> $workerLog"
     if ($combined -match '"') {
+        # If your job genuinely needs an embedded double-quote (e.g. JSON),
+        # use scripts\tools\run_matlab_slot.ps1 instead of this launcher --
+        # it routes the command through a scratch .m file precisely to
+        # avoid this class of argv quote-stripping/truncation bug.
         throw "matlab_command for worker $($w.worker_id) contains a double-quote; the -batch value is wrapped in double quotes below and cannot safely contain one (got: $combined)"
     }
     # Start-Process -ArgumentList as an array does NOT quote elements containing

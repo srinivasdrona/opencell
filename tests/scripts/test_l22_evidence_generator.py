@@ -2,10 +2,10 @@
 the REAL PROCESS_CATALOG.yaml and the real evidence tree.
 
 As of this commit the real, mechanically re-derived tally is
-PASS=16 / FAIL=3 / MISSING_EVIDENCE=3: RibosomeAssembly bridges its
-tracked L2.event N=50 PASS bundle into a valid `latest_event/` authority
-row, and Replication's corrected no-hint port passes its current-tree N=50
-rerun. Cytokinesis/DNADamage/FtsZ remain honest MISSING_EVIDENCE. See
+PASS=18 / FAIL=2 / MISSING_EVIDENCE=2: DNADamage now joins RibosomeAssembly
+and the (already-closed on main) ProteinProcessingII with a tracked
+`latest_event`/H12 authority bundle, and Replication's corrected no-hint
+port remains green. Cytokinesis/FtsZ remain honest MISSING_EVIDENCE. See
 `test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation` below
 for the row-level provenance, plus
 docs/phase_f/l2_2_design_a/h12/H12_REPORT.md for the earlier H12
@@ -154,6 +154,25 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
       raw metric fields only; the source bundle's stored PASS strings are
       never trusted.
 
+    - DNADamage moves MISSING_EVIDENCE -> PASS through the tracked genuine
+      corpus verifier in `scripts/l22_evidence/dna_damage_event_verifier.py`.
+      That verifier replays the fixed OC process (the Sept-2 literal
+      per-reaction Karr rate law in `opencell/vivarium/karr_dna_damage.py`)
+      against the accepted local genuine UVB cohort, validates the cohort
+      identity contract against `scripts/l2_event/dna_damage_stimulus_cohort.py`,
+      requires and confirms every trace carries full
+      `dnadamage_source_original/patched/resolved_sha256`/`_resolved_path`
+      overlay-hash provenance (fail-closed -- a missing field raises rather
+      than being tolerated as a legacy-corpus caveat), and writes a valid
+      `docs/phase_f/l2_2_design_a/evidence_bundle/DNADamage/latest_event/`
+      authority bundle plus tracked canary/full verifier JSONs. The
+      generator again trusts only the raw hurdle metric fields, never the
+      stored PASS string.
+
+    - ProteinProcessingII's PASS (already closed on `main` prior to this
+      branch's DNADamage work) is preserved unchanged through this branch's
+      merge with `main`.
+
     If this test ever needs to change again, that change must be driven by
     real evidence (a sweep rerun populating/changing rows under the evidence
     tree, a broader H12 artifact regeneration, or a further cited evaluator
@@ -166,9 +185,9 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 16,
-        schema.STATUS_FAIL: 3,
-        schema.STATUS_MISSING_EVIDENCE: 3,
+        schema.STATUS_PASS: 18,
+        schema.STATUS_FAIL: 2,
+        schema.STATUS_MISSING_EVIDENCE: 2,
     }
     fail_rows = {
         row["process"]: row["reasons"]
@@ -177,16 +196,12 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     }
     assert set(fail_rows) == {
         "MacromolecularComplexation",
-        "ProteinProcessingII",
         "DNASupercoiling",
     }
     assert any(
         "PRIMARY_INSUFFICIENT_SAMPLES" in reason for reason in fail_rows["DNASupercoiling"]
     )
-    for process in (
-        "MacromolecularComplexation",
-        "ProteinProcessingII",
-    ):
+    for process in ("MacromolecularComplexation",):
         assert any(
             "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE" in reason
             for reason in fail_rows[process]
@@ -195,8 +210,9 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
             "H12_OBSERVED_REGIME" in reason for reason in fail_rows[process]
         )
     pass_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_PASS}
-    for process in ("ProteinFolding", "ProteinProcessingI", "tRNAAminoacylation"):
+    for process in ("ProteinFolding", "ProteinProcessingI", "ProteinProcessingII", "tRNAAminoacylation"):
         assert process in pass_rows, f"{process} expected real H12_CONFIRMED PASS"
+    assert "DNADamage" in pass_rows, "DNADamage expected verified genuine-corpus PASS"
     assert "RibosomeAssembly" in pass_rows, "RibosomeAssembly expected bridged event-class PASS"
     assert "Replication" in pass_rows, "Replication expected current-tree N=50 PASS"
 
@@ -246,9 +262,9 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 16,
-        schema.STATUS_FAIL: 3,
-        schema.STATUS_MISSING_EVIDENCE: 3,
+        schema.STATUS_PASS: 18,
+        schema.STATUS_FAIL: 2,
+        schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
 

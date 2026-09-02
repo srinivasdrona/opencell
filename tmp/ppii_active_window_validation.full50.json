@@ -1,0 +1,1544 @@
+{
+  "artifact_kind": "ppii_h12_active_window_validation",
+  "artifact_version": "1.0.0",
+  "classification": "PPII_ACTIVE_WINDOW_VALIDATION",
+  "gating": "NON_GATING until a full 50-seed manifest exists; this report validates only the supplied active-window cohort and is not consumed by shared H12 gates or indexes.",
+  "process": "ProteinProcessingII",
+  "not_consumed_by": [
+    "scripts/l22_evidence/verdict.py",
+    "scripts/l22_evidence/generator.py",
+    "docs/phase_f/l2_2_design_a/h12/h12_evidence_index.json",
+    "docs/phase_f/l2_2_design_a/evidence_index.json",
+    "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml"
+  ],
+  "manifest_ref": {
+    "path": "docs/phase_f/l2_2_design_a/h12/ProteinProcessingII_active_window_manifest.full50.json",
+    "sha256_lf_normalized": "1b13247f7649f7c418b83febc7d3005a4359a47ea2a66d9518ecd99a13a58bbd",
+    "schema_version": "h12_trace_window_manifest_v1"
+  },
+  "generator_source_path": "scripts/l22_evidence/ppii_active_windows.py",
+  "generator_source_sha256_lf_normalized": "6d6e5f8423f88c510ea53c5eaf61334789ca2fe654e8c51649a344ceeeab611b",
+  "shared_h12_predictor_source_path": "scripts/l22_evidence/h12.py",
+  "shared_h12_predictor_source_sha256_lf_normalized": "aee4b9b89219284c9cd570d4208f39e95a89d657f3604c683a9908fdf883fd10",
+  "karr_source_citation": {
+    "vendored_path": "data/karr_vendored_source/ProteinProcessingII.m",
+    "vendored_sha256_lf_normalized": "2082bd39cf1e0dfba52de7ddf33a5690cf6368ff8f4eca7eaa457eee4d46e0ca",
+    "upstream_repo": "https://github.com/CovertLab/WholeCell",
+    "upstream_commit": "6cdee6b355aa0f5ff2953b1ab356eea049108e07",
+    "upstream_original_path": "ProteinProcessingII.m",
+    "line_ranges": [
+      [
+        348,
+        446
+      ]
+    ],
+    "symbols": [
+      "evolveState"
+    ]
+  },
+  "fixture_path": "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+  "fixture_sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af",
+  "manifest_seed_count": 50,
+  "catalog_n_seeds": 50,
+  "window_length_ticks": 20,
+  "missing_catalog_seeds": [],
+  "license_blocked_missing_seeds": [],
+  "window_seed_source_sha256": {
+    "0": "e55e6a09bcd414e1ce93be4d654485073e844291748f05026de2cb48b06a3a72",
+    "1": "f444782cb13903ee4e6261b8d52a7db2aa19528c6bb069dd3fa1b81d814711d4",
+    "2": "d5cd05894d48ee708c93d2e83fc7c740391c8f0bbb14b9eef619763cafc6f27b",
+    "3": "26293b55dca6dfb6c87ddaf4d95b24a7c8459f5ed1c976006e979d7c90f9bb39",
+    "4": "8c10c87c4b51d9388f436929c4b8e059f00fd2ac999ba9b92cc521ad707b82bb",
+    "5": "6786ae655ced6d3f1716559106c1860befff6fe08569d91d73a8225c4165bb09",
+    "6": "c2d841c16e1e33fc0363f963463ddc6d9e8b1dd010b3a6b17b2b08ad2b8bb36b",
+    "7": "a3f939867fd4d2b61220584131d3a81e7bf52b581d73c346747b7dda82ee559f",
+    "8": "f938473f88764089441157956263d8d0ef7f3fedbd8d06954314ad24568dd19e",
+    "9": "6e203c7f4a584402c96c0c1365d8ebe2848d638f87c2db00512f6bc78b1afbf9",
+    "10": "24f9c056d2c2a6f2df725809f6a8a7ace40c062693fd0c7c213c48db738f398d",
+    "11": "01a56f37f93abc367dff31ea3f58fd3c5d15d038be0cdc322182a27ff935bb5b",
+    "12": "6cd31266af9c77e88ad513ecfbd82d3201b6d94c481428fc2c89327e08882427",
+    "13": "fca9646525320b3f0b6a8127dd8c7e80596884bbc9964967fccf3d98ef407df9",
+    "14": "850b33f7e8ab60a3f0dfa7bc440ed01f5857251e4ec481148a91bd6e6f90e366",
+    "15": "f99ecec271b9f00dff3475ab43755dd9416481efbf9c2839d9e2c3171ed89b9a",
+    "16": "56733f3e73f030347a0478d2b41f109c5df8ae7b6009d302f61750006d8e8d29",
+    "17": "b9ecf1c5846882addfd7cf02cada128135f84ee5c6f0f82039b4fe0103a8fbc9",
+    "18": "e2fe655af92335ea6bd6e4ddbd7b9d36c83dd85101964874b0124faf8b4a84ae",
+    "19": "6641ed0b32821be3ff73107351698ed107e24387c57db2ae20847256f9995c8f",
+    "20": "a18350755e038abe59d3eb2b3399bdd05519096e3f7bb04c17adb880b3ac378b",
+    "21": "cab3171d4a38d38ca6620e49553850290ebe5ae2fbb72572bd1cc58c595b6eb3",
+    "22": "376bfff074680b8c0dd6bec8c06e7788998ffb85d87bdef61bb7745f20d58f1f",
+    "23": "e1c48f8ba4f2beb7afc5c068f8f7d6cac6ab13164a44c67c72e0fd08ebe16e18",
+    "24": "aad9482ad3edc7b9efabbe8b34d7826dd2fc64c3facb33beb0b847a741bc34c5",
+    "25": "ed791bdbd504ba273c81499ffa925f9919cca9ce213820b05a3595884b523d4d",
+    "26": "7d9c1f3898cacd0bca36e6defd54b02583bb06cab0bf70c9c01b8faf03021ced",
+    "27": "be2bd7a6deb096656526aea172f0ae618c40d7475d8ebba3e94f2bfeeda406f3",
+    "28": "9e296d057b2b2ee96d82024ffa6f0b0e419a1ed386f0b31e9361afda8333fa2c",
+    "29": "81fab0a66ebee3071dd8657a300d0d96b2c71f1ae3da3d00162081646a6cff5f",
+    "30": "16ea7442caa75d4125317b9ffd31442938577b25911f23b7099f5c4a27479cc1",
+    "31": "4736bf607e0db7829973f8d30cfd721639d787f901ce46b03c66b9fe4f725eef",
+    "32": "2b7736076ff9893d15de0faf8cd6f9b88a021b3c205f3bc2254d0dd50253756d",
+    "33": "87fd8d21e3d48e302126845ec357bacd74ec9a4980bd1d339912a4aa1b98f7cb",
+    "34": "7b369a4a163b0c302fadba52ef88298efc3717cd47be7dd0db1400b0f8706ebe",
+    "35": "aab51cbc66c3aa41fae4bec1bf51eac0b850738d8c78b88a0ebeeebc4fa97379",
+    "36": "2551db32c43a1a23ebb332e46fa873f3bece7cffaa2b8a1312faa8fde0608275",
+    "37": "bca0a414d026eb8c1fe5e06d3f924a9181ea844e1b86fc44bfc10d05b418eade",
+    "38": "8d761cf3a7096b3ef52d2a9411b47f08c5584e381010a76e49e23ffca995a85c",
+    "39": "1c835386103f59f690b11dfd59cfb7d1cc1e337431d3d08b8d84ceeff215d214",
+    "40": "2460d2b19381d3b70eae372e5590568c4e729917de68d809b6a63c964e239218",
+    "41": "5d84023be71361c05b77a81cdae8e0caf39e409474949d9da90ead5e4644f24e",
+    "42": "9dde7987d5c8c215e91437ac5e301c89851c1135441902e4e75a08be17d2f9c7",
+    "43": "f8bddf23fbc112cf993c1b4659fe81cac3a573d82aa5510a8c94f68fb7ce02fe",
+    "44": "65eb872fe0a9f2c8a11da22bc1c03fb3c6e9eaf4b1ae9786cda4715320bec670",
+    "45": "bf2d5a92344f0b7670d927fc3b8008494d3b35ebdfa6410e46cef76d38b9b162",
+    "46": "4a4d4aeda8c2294d2319175cec8ddb7e43c43a755b984f3136908e6f0ab911bd",
+    "47": "2022a50c794077d98d037788ae1411101791fe6d7e0ede241f9dcf3f24da95ce",
+    "48": "c11f49aab2972aecb592cae8bfb2068fc244d02553d001d3d5b8adffd4a16dc1",
+    "49": "d7ce2e57042dc83bbcbd54ad77f8e3421079d083ead7c972b8d6670324b4687a"
+  },
+  "trace_provenance_check": {
+    "0": "tracked_extraction_provenance_verified",
+    "1": "tracked_extraction_provenance_verified",
+    "2": "oracle_population_manifest_match",
+    "3": "oracle_population_manifest_match",
+    "4": "tracked_extraction_provenance_verified",
+    "5": "oracle_population_manifest_match",
+    "6": "oracle_population_manifest_match",
+    "7": "tracked_extraction_provenance_verified",
+    "8": "tracked_extraction_provenance_verified",
+    "9": "tracked_extraction_provenance_verified",
+    "10": "oracle_population_manifest_match",
+    "11": "tracked_extraction_provenance_verified",
+    "12": "tracked_extraction_provenance_verified",
+    "13": "oracle_population_manifest_match",
+    "14": "tracked_extraction_provenance_verified",
+    "15": "oracle_population_manifest_match",
+    "16": "tracked_extraction_provenance_verified",
+    "17": "tracked_extraction_provenance_verified",
+    "18": "tracked_extraction_provenance_verified",
+    "19": "oracle_population_manifest_match",
+    "20": "tracked_extraction_provenance_verified",
+    "21": "oracle_population_manifest_match",
+    "22": "oracle_population_manifest_match",
+    "23": "oracle_population_manifest_match",
+    "24": "oracle_population_manifest_match",
+    "25": "tracked_extraction_provenance_verified",
+    "26": "oracle_population_manifest_match",
+    "27": "oracle_population_manifest_match",
+    "28": "tracked_extraction_provenance_verified",
+    "29": "oracle_population_manifest_match",
+    "30": "tracked_extraction_provenance_verified",
+    "31": "tracked_extraction_provenance_verified",
+    "32": "tracked_extraction_provenance_verified",
+    "33": "tracked_extraction_provenance_verified",
+    "34": "oracle_population_manifest_match",
+    "35": "oracle_population_manifest_match",
+    "36": "tracked_extraction_provenance_verified",
+    "37": "oracle_population_manifest_match",
+    "38": "oracle_population_manifest_match",
+    "39": "oracle_population_manifest_match",
+    "40": "oracle_population_manifest_match",
+    "41": "tracked_extraction_provenance_verified",
+    "42": "oracle_population_manifest_match",
+    "43": "oracle_population_manifest_match",
+    "44": "oracle_population_manifest_match",
+    "45": "oracle_population_manifest_match",
+    "46": "oracle_population_manifest_match",
+    "47": "oracle_population_manifest_match",
+    "48": "oracle_population_manifest_match",
+    "49": "tracked_extraction_provenance_verified"
+  },
+  "oracle_manifest_cross_check": {
+    "0": "tracked_extraction_provenance_verified",
+    "1": "tracked_extraction_provenance_verified",
+    "2": "oracle_population_manifest_match",
+    "3": "oracle_population_manifest_match",
+    "4": "tracked_extraction_provenance_verified",
+    "5": "oracle_population_manifest_match",
+    "6": "oracle_population_manifest_match",
+    "7": "tracked_extraction_provenance_verified",
+    "8": "tracked_extraction_provenance_verified",
+    "9": "tracked_extraction_provenance_verified",
+    "10": "oracle_population_manifest_match",
+    "11": "tracked_extraction_provenance_verified",
+    "12": "tracked_extraction_provenance_verified",
+    "13": "oracle_population_manifest_match",
+    "14": "tracked_extraction_provenance_verified",
+    "15": "oracle_population_manifest_match",
+    "16": "tracked_extraction_provenance_verified",
+    "17": "tracked_extraction_provenance_verified",
+    "18": "tracked_extraction_provenance_verified",
+    "19": "oracle_population_manifest_match",
+    "20": "tracked_extraction_provenance_verified",
+    "21": "oracle_population_manifest_match",
+    "22": "oracle_population_manifest_match",
+    "23": "oracle_population_manifest_match",
+    "24": "oracle_population_manifest_match",
+    "25": "tracked_extraction_provenance_verified",
+    "26": "oracle_population_manifest_match",
+    "27": "oracle_population_manifest_match",
+    "28": "tracked_extraction_provenance_verified",
+    "29": "oracle_population_manifest_match",
+    "30": "tracked_extraction_provenance_verified",
+    "31": "tracked_extraction_provenance_verified",
+    "32": "tracked_extraction_provenance_verified",
+    "33": "tracked_extraction_provenance_verified",
+    "34": "oracle_population_manifest_match",
+    "35": "oracle_population_manifest_match",
+    "36": "tracked_extraction_provenance_verified",
+    "37": "oracle_population_manifest_match",
+    "38": "oracle_population_manifest_match",
+    "39": "oracle_population_manifest_match",
+    "40": "oracle_population_manifest_match",
+    "41": "tracked_extraction_provenance_verified",
+    "42": "oracle_population_manifest_match",
+    "43": "oracle_population_manifest_match",
+    "44": "oracle_population_manifest_match",
+    "45": "oracle_population_manifest_match",
+    "46": "oracle_population_manifest_match",
+    "47": "oracle_population_manifest_match",
+    "48": "oracle_population_manifest_match",
+    "49": "tracked_extraction_provenance_verified"
+  },
+  "seed_windows_verified": {
+    "0": {
+      "seed": 0,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "e55e6a09bcd414e1ce93be4d654485073e844291748f05026de2cb48b06a3a72",
+      "trace_tick_start": 192,
+      "trace_tick_end": 211,
+      "window_tick_start": 192,
+      "window_tick_end": 211,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 192,
+      "derived_first_regime_valid_transferase_tick": 192,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "1": {
+      "seed": 1,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s001/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "f444782cb13903ee4e6261b8d52a7db2aa19528c6bb069dd3fa1b81d814711d4",
+      "trace_tick_start": 60,
+      "trace_tick_end": 79,
+      "window_tick_start": 60,
+      "window_tick_end": 79,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 60,
+      "derived_first_regime_valid_transferase_tick": 60,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 15,
+      "nontrivial_sample_count": 15,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "2": {
+      "seed": 2,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s002/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "d5cd05894d48ee708c93d2e83fc7c740391c8f0bbb14b9eef619763cafc6f27b",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 44,
+      "window_tick_end": 63,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 44,
+      "derived_first_regime_valid_transferase_tick": 44,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "3": {
+      "seed": 3,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s003/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "26293b55dca6dfb6c87ddaf4d95b24a7c8459f5ed1c976006e979d7c90f9bb39",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 38,
+      "window_tick_end": 57,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 38,
+      "derived_first_regime_valid_transferase_tick": 38,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 9,
+      "nontrivial_sample_count": 9,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "4": {
+      "seed": 4,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s004/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "8c10c87c4b51d9388f436929c4b8e059f00fd2ac999ba9b92cc521ad707b82bb",
+      "trace_tick_start": 38,
+      "trace_tick_end": 57,
+      "window_tick_start": 38,
+      "window_tick_end": 57,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 38,
+      "derived_first_regime_valid_transferase_tick": 38,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 11,
+      "nontrivial_sample_count": 11,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "5": {
+      "seed": 5,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s005/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "6786ae655ced6d3f1716559106c1860befff6fe08569d91d73a8225c4165bb09",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 44,
+      "window_tick_end": 63,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 44,
+      "derived_first_regime_valid_transferase_tick": 44,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 13,
+      "nontrivial_sample_count": 13,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "6": {
+      "seed": 6,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s006/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "c2d841c16e1e33fc0363f963463ddc6d9e8b1dd010b3a6b17b2b08ad2b8bb36b",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 38,
+      "window_tick_end": 57,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 38,
+      "derived_first_regime_valid_transferase_tick": 38,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 11,
+      "nontrivial_sample_count": 11,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "7": {
+      "seed": 7,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s007/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "a3f939867fd4d2b61220584131d3a81e7bf52b581d73c346747b7dda82ee559f",
+      "trace_tick_start": 572,
+      "trace_tick_end": 591,
+      "window_tick_start": 572,
+      "window_tick_end": 591,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 572,
+      "derived_first_regime_valid_transferase_tick": 572,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 10,
+      "nontrivial_sample_count": 10,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "8": {
+      "seed": 8,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s008/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "f938473f88764089441157956263d8d0ef7f3fedbd8d06954314ad24568dd19e",
+      "trace_tick_start": 126,
+      "trace_tick_end": 145,
+      "window_tick_start": 126,
+      "window_tick_end": 145,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 126,
+      "derived_first_regime_valid_transferase_tick": 126,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 15,
+      "nontrivial_sample_count": 15,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "9": {
+      "seed": 9,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s009/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "6e203c7f4a584402c96c0c1365d8ebe2848d638f87c2db00512f6bc78b1afbf9",
+      "trace_tick_start": 121,
+      "trace_tick_end": 140,
+      "window_tick_start": 121,
+      "window_tick_end": 140,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 121,
+      "derived_first_regime_valid_transferase_tick": 121,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 13,
+      "nontrivial_sample_count": 13,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "10": {
+      "seed": 10,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s010/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "24f9c056d2c2a6f2df725809f6a8a7ace40c062693fd0c7c213c48db738f398d",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 44,
+      "window_tick_end": 63,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 44,
+      "derived_first_regime_valid_transferase_tick": 44,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 11,
+      "nontrivial_sample_count": 11,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "11": {
+      "seed": 11,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s011/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "01a56f37f93abc367dff31ea3f58fd3c5d15d038be0cdc322182a27ff935bb5b",
+      "trace_tick_start": 66,
+      "trace_tick_end": 85,
+      "window_tick_start": 66,
+      "window_tick_end": 85,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 66,
+      "derived_first_regime_valid_transferase_tick": 66,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "12": {
+      "seed": 12,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s012/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "6cd31266af9c77e88ad513ecfbd82d3201b6d94c481428fc2c89327e08882427",
+      "trace_tick_start": 214,
+      "trace_tick_end": 233,
+      "window_tick_start": 214,
+      "window_tick_end": 233,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 214,
+      "derived_first_regime_valid_transferase_tick": 214,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 8,
+      "nontrivial_sample_count": 8,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "13": {
+      "seed": 13,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s013/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "fca9646525320b3f0b6a8127dd8c7e80596884bbc9964967fccf3d98ef407df9",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 73,
+      "window_tick_end": 92,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 73,
+      "derived_first_regime_valid_transferase_tick": 73,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 16,
+      "nontrivial_sample_count": 16,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "14": {
+      "seed": 14,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s014/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "850b33f7e8ab60a3f0dfa7bc440ed01f5857251e4ec481148a91bd6e6f90e366",
+      "trace_tick_start": 226,
+      "trace_tick_end": 245,
+      "window_tick_start": 226,
+      "window_tick_end": 245,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 226,
+      "derived_first_regime_valid_transferase_tick": 226,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 11,
+      "nontrivial_sample_count": 11,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "15": {
+      "seed": 15,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s015/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "f99ecec271b9f00dff3475ab43755dd9416481efbf9c2839d9e2c3171ed89b9a",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 42,
+      "window_tick_end": 61,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 42,
+      "derived_first_regime_valid_transferase_tick": 42,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 13,
+      "nontrivial_sample_count": 13,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "16": {
+      "seed": 16,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s016/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "56733f3e73f030347a0478d2b41f109c5df8ae7b6009d302f61750006d8e8d29",
+      "trace_tick_start": 197,
+      "trace_tick_end": 216,
+      "window_tick_start": 197,
+      "window_tick_end": 216,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 197,
+      "derived_first_regime_valid_transferase_tick": 197,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 11,
+      "nontrivial_sample_count": 11,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "17": {
+      "seed": 17,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s017/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "b9ecf1c5846882addfd7cf02cada128135f84ee5c6f0f82039b4fe0103a8fbc9",
+      "trace_tick_start": 525,
+      "trace_tick_end": 544,
+      "window_tick_start": 525,
+      "window_tick_end": 544,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 525,
+      "derived_first_regime_valid_transferase_tick": 525,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 9,
+      "nontrivial_sample_count": 9,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "18": {
+      "seed": 18,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s018/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "e2fe655af92335ea6bd6e4ddbd7b9d36c83dd85101964874b0124faf8b4a84ae",
+      "trace_tick_start": 197,
+      "trace_tick_end": 216,
+      "window_tick_start": 197,
+      "window_tick_end": 216,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 197,
+      "derived_first_regime_valid_transferase_tick": 197,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 12,
+      "nontrivial_sample_count": 12,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "19": {
+      "seed": 19,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s019/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "6641ed0b32821be3ff73107351698ed107e24387c57db2ae20847256f9995c8f",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 81,
+      "window_tick_end": 100,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 95,
+      "derived_first_regime_valid_transferase_tick": 95,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 5,
+      "nontrivial_sample_count": 5,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "20": {
+      "seed": 20,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s020/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "a18350755e038abe59d3eb2b3399bdd05519096e3f7bb04c17adb880b3ac378b",
+      "trace_tick_start": 61,
+      "trace_tick_end": 80,
+      "window_tick_start": 61,
+      "window_tick_end": 80,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 61,
+      "derived_first_regime_valid_transferase_tick": 61,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "21": {
+      "seed": 21,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s021/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "cab3171d4a38d38ca6620e49553850290ebe5ae2fbb72572bd1cc58c595b6eb3",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 39,
+      "window_tick_end": 58,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 39,
+      "derived_first_regime_valid_transferase_tick": 39,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "22": {
+      "seed": 22,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s022/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "376bfff074680b8c0dd6bec8c06e7788998ffb85d87bdef61bb7745f20d58f1f",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 52,
+      "window_tick_end": 71,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 52,
+      "derived_first_regime_valid_transferase_tick": 52,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 13,
+      "nontrivial_sample_count": 13,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "23": {
+      "seed": 23,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s023/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "e1c48f8ba4f2beb7afc5c068f8f7d6cac6ab13164a44c67c72e0fd08ebe16e18",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 39,
+      "window_tick_end": 58,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 39,
+      "derived_first_regime_valid_transferase_tick": 39,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 11,
+      "nontrivial_sample_count": 11,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "24": {
+      "seed": 24,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s024/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "aad9482ad3edc7b9efabbe8b34d7826dd2fc64c3facb33beb0b847a741bc34c5",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 78,
+      "window_tick_end": 97,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 78,
+      "derived_first_regime_valid_transferase_tick": 78,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "25": {
+      "seed": 25,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s025/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "ed791bdbd504ba273c81499ffa925f9919cca9ce213820b05a3595884b523d4d",
+      "trace_tick_start": 4045,
+      "trace_tick_end": 4064,
+      "window_tick_start": 4045,
+      "window_tick_end": 4064,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 4045,
+      "derived_first_regime_valid_transferase_tick": 4045,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 10,
+      "nontrivial_sample_count": 10,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "26": {
+      "seed": 26,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s026/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "7d9c1f3898cacd0bca36e6defd54b02583bb06cab0bf70c9c01b8faf03021ced",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 37,
+      "window_tick_end": 56,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 37,
+      "derived_first_regime_valid_transferase_tick": 37,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 12,
+      "nontrivial_sample_count": 12,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "27": {
+      "seed": 27,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s027/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "be2bd7a6deb096656526aea172f0ae618c40d7475d8ebba3e94f2bfeeda406f3",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 81,
+      "window_tick_end": 100,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 90,
+      "derived_first_regime_valid_transferase_tick": 90,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 6,
+      "nontrivial_sample_count": 6,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "28": {
+      "seed": 28,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s028/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "9e296d057b2b2ee96d82024ffa6f0b0e419a1ed386f0b31e9361afda8333fa2c",
+      "trace_tick_start": 197,
+      "trace_tick_end": 216,
+      "window_tick_start": 197,
+      "window_tick_end": 216,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 197,
+      "derived_first_regime_valid_transferase_tick": 197,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 8,
+      "nontrivial_sample_count": 8,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "29": {
+      "seed": 29,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s029/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "81fab0a66ebee3071dd8657a300d0d96b2c71f1ae3da3d00162081646a6cff5f",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 74,
+      "window_tick_end": 93,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 74,
+      "derived_first_regime_valid_transferase_tick": 74,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 8,
+      "nontrivial_sample_count": 8,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "30": {
+      "seed": 30,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s030/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "16ea7442caa75d4125317b9ffd31442938577b25911f23b7099f5c4a27479cc1",
+      "trace_tick_start": 487,
+      "trace_tick_end": 506,
+      "window_tick_start": 487,
+      "window_tick_end": 506,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 487,
+      "derived_first_regime_valid_transferase_tick": 487,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 13,
+      "nontrivial_sample_count": 13,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "31": {
+      "seed": 31,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s031/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "4736bf607e0db7829973f8d30cfd721639d787f901ce46b03c66b9fe4f725eef",
+      "trace_tick_start": 122,
+      "trace_tick_end": 141,
+      "window_tick_start": 122,
+      "window_tick_end": 141,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 122,
+      "derived_first_regime_valid_transferase_tick": 122,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "32": {
+      "seed": 32,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s032/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "2b7736076ff9893d15de0faf8cd6f9b88a021b3c205f3bc2254d0dd50253756d",
+      "trace_tick_start": 501,
+      "trace_tick_end": 520,
+      "window_tick_start": 501,
+      "window_tick_end": 520,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 501,
+      "derived_first_regime_valid_transferase_tick": 501,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 12,
+      "nontrivial_sample_count": 12,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "33": {
+      "seed": 33,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s033/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "87fd8d21e3d48e302126845ec357bacd74ec9a4980bd1d339912a4aa1b98f7cb",
+      "trace_tick_start": 486,
+      "trace_tick_end": 505,
+      "window_tick_start": 486,
+      "window_tick_end": 505,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 486,
+      "derived_first_regime_valid_transferase_tick": 486,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 13,
+      "nontrivial_sample_count": 13,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "34": {
+      "seed": 34,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s034/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "7b369a4a163b0c302fadba52ef88298efc3717cd47be7dd0db1400b0f8706ebe",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 81,
+      "window_tick_end": 100,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 83,
+      "derived_first_regime_valid_transferase_tick": 83,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 7,
+      "nontrivial_sample_count": 7,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "35": {
+      "seed": 35,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s035/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "aab51cbc66c3aa41fae4bec1bf51eac0b850738d8c78b88a0ebeeebc4fa97379",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 81,
+      "window_tick_end": 100,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 99,
+      "derived_first_regime_valid_transferase_tick": 99,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 2,
+      "nontrivial_sample_count": 2,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "36": {
+      "seed": 36,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s036/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "2551db32c43a1a23ebb332e46fa873f3bece7cffaa2b8a1312faa8fde0608275",
+      "trace_tick_start": 106,
+      "trace_tick_end": 125,
+      "window_tick_start": 106,
+      "window_tick_end": 125,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 106,
+      "derived_first_regime_valid_transferase_tick": 106,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 8,
+      "nontrivial_sample_count": 8,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "37": {
+      "seed": 37,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s037/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "bca0a414d026eb8c1fe5e06d3f924a9181ea844e1b86fc44bfc10d05b418eade",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 42,
+      "window_tick_end": 61,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 42,
+      "derived_first_regime_valid_transferase_tick": 42,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 12,
+      "nontrivial_sample_count": 12,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "38": {
+      "seed": 38,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s038/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "8d761cf3a7096b3ef52d2a9411b47f08c5584e381010a76e49e23ffca995a85c",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 81,
+      "window_tick_end": 100,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 95,
+      "derived_first_regime_valid_transferase_tick": 95,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 3,
+      "nontrivial_sample_count": 3,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "39": {
+      "seed": 39,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s039/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "1c835386103f59f690b11dfd59cfb7d1cc1e337431d3d08b8d84ceeff215d214",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 73,
+      "window_tick_end": 92,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 73,
+      "derived_first_regime_valid_transferase_tick": 73,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "40": {
+      "seed": 40,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s040/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "2460d2b19381d3b70eae372e5590568c4e729917de68d809b6a63c964e239218",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 44,
+      "window_tick_end": 63,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 44,
+      "derived_first_regime_valid_transferase_tick": 44,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 13,
+      "nontrivial_sample_count": 13,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "41": {
+      "seed": 41,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s041/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "5d84023be71361c05b77a81cdae8e0caf39e409474949d9da90ead5e4644f24e",
+      "trace_tick_start": 159,
+      "trace_tick_end": 178,
+      "window_tick_start": 159,
+      "window_tick_end": 178,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 159,
+      "derived_first_regime_valid_transferase_tick": 159,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 16,
+      "nontrivial_sample_count": 16,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    },
+    "42": {
+      "seed": 42,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s042/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "9dde7987d5c8c215e91437ac5e301c89851c1135441902e4e75a08be17d2f9c7",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 62,
+      "window_tick_end": 81,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 62,
+      "derived_first_regime_valid_transferase_tick": 62,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "43": {
+      "seed": 43,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s043/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "f8bddf23fbc112cf993c1b4659fe81cac3a573d82aa5510a8c94f68fb7ce02fe",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 42,
+      "window_tick_end": 61,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 42,
+      "derived_first_regime_valid_transferase_tick": 42,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "44": {
+      "seed": 44,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s044/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "65eb872fe0a9f2c8a11da22bc1c03fb3c6e9eaf4b1ae9786cda4715320bec670",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 45,
+      "window_tick_end": 64,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 45,
+      "derived_first_regime_valid_transferase_tick": 45,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 14,
+      "nontrivial_sample_count": 14,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "45": {
+      "seed": 45,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s045/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "bf2d5a92344f0b7670d927fc3b8008494d3b35ebdfa6410e46cef76d38b9b162",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 39,
+      "window_tick_end": 58,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 39,
+      "derived_first_regime_valid_transferase_tick": 39,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 11,
+      "nontrivial_sample_count": 11,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "46": {
+      "seed": 46,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s046/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "4a4d4aeda8c2294d2319175cec8ddb7e43c43a755b984f3136908e6f0ab911bd",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 40,
+      "window_tick_end": 59,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 40,
+      "derived_first_regime_valid_transferase_tick": 40,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 15,
+      "nontrivial_sample_count": 15,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "47": {
+      "seed": 47,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s047/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "2022a50c794077d98d037788ae1411101791fe6d7e0ede241f9dcf3f24da95ce",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 44,
+      "window_tick_end": 63,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 44,
+      "derived_first_regime_valid_transferase_tick": 44,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 15,
+      "nontrivial_sample_count": 15,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "48": {
+      "seed": 48,
+      "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_s048/ProteinProcessingII_100ticks.mat",
+      "trace_sha256": "c11f49aab2972aecb592cae8bfb2068fc244d02553d001d3d5b8adffd4a16dc1",
+      "trace_tick_start": 1,
+      "trace_tick_end": 100,
+      "window_tick_start": 78,
+      "window_tick_end": 97,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 78,
+      "derived_first_regime_valid_transferase_tick": 78,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 11,
+      "nontrivial_sample_count": 11,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "oracle_population_manifest_match"
+    },
+    "49": {
+      "seed": 49,
+      "trace_path": "data/m1_sources/karr_native/ppii_active_window/per_process_traces_v2_s049/ProteinProcessingII_20ticks.mat",
+      "trace_sha256": "d7ce2e57042dc83bbcbd54ad77f8e3421079d083ead7c972b8d6670324b4687a",
+      "trace_tick_start": 264,
+      "trace_tick_end": 283,
+      "window_tick_start": 264,
+      "window_tick_end": 283,
+      "window_length_ticks": 20,
+      "recorded_first_regime_valid_transferase_tick": 264,
+      "derived_first_regime_valid_transferase_tick": 264,
+      "window_contains_confirmed_transferase_fires": true,
+      "exact_match_count": 15,
+      "nontrivial_sample_count": 15,
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires",
+        "transferase_fires"
+      ],
+      "trace_provenance_check": "tracked_extraction_provenance_verified"
+    }
+  },
+  "total_sample_count": 1000,
+  "nontrivial_sample_count": 581,
+  "exact_match_count": 581,
+  "exact_match_rate": 1.0,
+  "trivial_checked_count": 332,
+  "trivial_mismatch_count": 0,
+  "mismatch_examples": [],
+  "trivial_mismatch_examples": [],
+  "required_branches": [
+    "passthrough_fires",
+    "peptidase_fires",
+    "transferase_fires"
+  ],
+  "branches_confirmed": [
+    "passthrough_fires",
+    "peptidase_fires",
+    "transferase_fires"
+  ],
+  "branches_observed": [
+    "passthrough_fires",
+    "peptidase_fires",
+    "transferase_fires"
+  ],
+  "missing_required_branches": [],
+  "raw_prediction_hash": "b9ed983ed1f48c1255e3309235002c0dcf485d9fc7cefce80c542b9c659501a4",
+  "window_verdict": "H12_CONFIRMED",
+  "window_verdict_reason": "nontrivial_sample_count>0, 100% exact match, full required branch coverage",
+  "shared_h12_promotion_ready": true,
+  "shared_h12_promotion_blockers": [],
+  "generated_at": "2026-08-18T09:12:26.328365+00:00",
+  "anti_laundering_attestation": {
+    "predictor_inputs": [
+      "states_before",
+      "static_fixture_params"
+    ],
+    "states_after_access": "compare_phase_only",
+    "no_sut_import": true,
+    "no_result_json_access": true,
+    "shared_h12_source_unchanged": true
+  }
+}

@@ -55,7 +55,7 @@ def test_karr_bootstrap_rebinds_real_mnrnd_after_repo_paths():
         f"restoredefaultpath; cd('{MATLAB_REPO_ROOT}'); addpath('scripts/matlab'); "
         "result = struct(); "
         "result.before = which('mnrnd'); "
-        "[~, provider] = karr_bootstrap(); "
+        "[~, provider, dnadamage_overlay] = karr_bootstrap(); "
         "result.after = which('mnrnd'); "
         "result.after_binornd = which('binornd'); "
         "result.after_poissrnd = which('poissrnd'); "
@@ -69,6 +69,13 @@ def test_karr_bootstrap_rebinds_real_mnrnd_after_repo_paths():
         "result.toolbox_version = provider.toolbox_version; "
         "result.provider_path_relative_to_matlabroot = provider.provider_path_relative_to_matlabroot; "
         "result.sha256_lf_normalized = provider.sha256_lf_normalized; "
+        "result.dnadamage_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized; "
+        "result.dnadamage_patched_sha256 = dnadamage_overlay.patched_sha256_lf_normalized; "
+        "result.dnadamage_resolved_sha256 = dnadamage_overlay.resolved_sha256_lf_normalized; "
+        "result.dnadamage_resolved_path = dnadamage_overlay.resolved_path; "
+        "result.dnadamage_overlay_required = logical(dnadamage_overlay.overlay_required); "
+        "result.dnadamage_contains_normalized = contains(fileread(dnadamage_overlay.resolved_path), "
+        "'denom = abs(max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j)));'); "
         "disp(['JSON_RESULT=' jsonencode(result)]);"
     )
     result = subprocess.run(
@@ -96,6 +103,10 @@ def test_karr_bootstrap_rebinds_real_mnrnd_after_repo_paths():
         == expected_provider["provider_path_relative_to_matlabroot"]
     )
     assert payload["sha256_lf_normalized"] == expected_provider["sha256_lf_normalized"]
+    assert payload["dnadamage_contains_normalized"] is True
+    assert payload["dnadamage_patched_sha256"] == payload["dnadamage_resolved_sha256"]
+    assert payload["dnadamage_original_sha256"]
+    assert payload["dnadamage_resolved_path"].lower().endswith("dnadamage.m")
     for name in ("binornd", "poissrnd", "random", "randsample"):
         expected_path = str(Path(r"E:\MATLAB") / launcher.STATISTICS_TOOLBOX_FUNCTIONS_RELATIVE_DIR / f"{name}.m")
         assert payload[f"after_{name}"].replace("/", "\\") == expected_path.replace("/", "\\")

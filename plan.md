@@ -59,78 +59,246 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Live state (2026-08-17) — MATLAB-restored eight-track closure wave relaunching:**
+**Current status (2026-09-03 00:53 IST) — supersedes all Sept-2 snapshots
+below:**
+
+- Main integration worktree:
+  `E:\opencell-worktrees\main-integrate`, branch `main`, HEAD `8f813da`.
+  The independently accepted DNADamage closure is merged. Fresh post-merge
+  verification is fully green: evidence audit **18 PASS / 2 FAIL /
+  2 MISSING_EVIDENCE**, integrity OK; provenance **241 records**; focused
+  suite **100 passed**; Ruff and `git diff --check` clean. `origin/main` is
+  still `744974c`; push the verified merge before integrating another lane.
+- ChromosomeCondensation is independently accepted and merged with current
+  main in `E:\opencell-worktrees\integrate-l21-chromcond-sept2` through
+  `803089b`. Its source fix and packaging gates are green. Integration
+  exposed a broader provenance problem: changing shared
+  `tests/vivarium/l2_replay_common.py` invalidates 19 L2.2 rows by hash, not
+  just the six chromosome consumers, and the raw Karr cohorts are not all
+  locally available. The smallest correct next step is to restore that
+  shared helper byte-for-byte and isolate chromosome-state replay
+  application to a ChromCond/L2.1-only helper, then prove the L2.2 index
+  remains at the accepted **18/2/2** without a behavior-changing harness
+  diff. Independent review remains mandatory before merge.
+- Durable MATLAB queues:
+  - Cytokinesis PID `18600` is alive at **4/50 validated**, seeds `4-7`
+    active, 42 queued, 0 failed.
+  - FtsZ orchestrator PID `22568` and watchdog PID `7904` are alive at
+    **2/50 validated**. Seeds `1-2` completed attempt 1 without producing
+    traces and were requeued; seeds `3-4` are active.
+  - MacromolecularComplexation has **47** matching raw trace files in its
+    worktree; the owning agent must run its fail-closed audit before any
+    count is promoted.
+- L2.1 active-window extraction produced genuine-provider traces for
+  TranscriptionalRegulation seed 0, Cytokinesis seed 0, and DNADamage seed 1.
+  Fail-closed replay promoted TranscriptionalRegulation and Cytokinesis to
+  honest `CODE_GAP`, not green: TranscriptionalRegulation models 130 TU-level
+  binding slots where Karr exposes 34 chromosome-site/strand promoter slots;
+  Cytokinesis first diverges at active tick 226
+  (`ftsZRing_numEdgesOneStraight`, OC 6 vs Karr 9). These are mandatory
+  source-fidelity fixes under the no-known-gap rule. DNADamage seeds 0 and 1
+  are both zero-activity and remain unpromoted; inventory the accepted
+  DNADamage L2.2 corpus before extracting another seed. HostInteraction and
+  ChromosomeSegregation were relaunched as PIDs `27484` and `26372`, queued
+  on the shared slot pool. Manifest state is **6 EXISTING_WINDOW_PASS /
+  2 CODE_GAP / 3 MISSING_ACTIVE_EXTRACTION**.
+- ReplicationInitiation remains open at an honest stateful tick-4
+  `enzymes[1]` mismatch despite its strict-rubric GENUINE result; its agent
+  is still working. DNASupercoiling remains `PRIMARY_OVERACTIVE`; its agent
+  is still working on hash-bound chromosome RNG `states_before` restoration.
+- Immediate order: fix the TranscriptionalRegulation and Cytokinesis L2.1
+  code gaps in parallel from MATLAB source/fixture evidence; inventory the
+  accepted DNADamage corpus for an already-active authoritative window;
+  isolate ChromCond's chromosome replay application from the shared L2.2
+  helper and independently review that integration; continue RepInit/DNAS
+  source closure and the durable Macromol/Cytokinesis/FtsZ queues.
+
+**Current status (2026-09-02 15:10 IST) — supersedes the August live-PID
+snapshot below:**
+
+- No Codex, MATLAB, or wait-shell process is running. Two orphan MATLAB slot
+  locks from dead August PIDs were removed.
+- Main is clean and origin-synced. The authoritative L2.2 index audits
+  `integrity: OK` at **17 PASS / 2 FAIL / 3 MISSING_EVIDENCE**.
+- **Closed:** `l22-procii`. Genuine-provider full50 authority, shared
+  `H12_CONFIRMED`, current-tree N=50/M=20 sweep, and complete-bundle index
+  regeneration are merged through `c42d6e3`.
+- **Candidate awaiting independent review/integration:** `l22-dnadamage`.
+  Genuine Karr N=50 support is accepted (99 fire ticks vs preregistered
+  97.22); commit `c2174bb` ports the OC per-reaction rate law. Branch-local,
+  uncommitted event evidence claims PASS, but it is not authoritative until
+  reviewed and integrated.
+- **Open extraction lanes:**
+  - `l22-macromol`: 36/50 genuine active windows valid; 14 missing
+    (seeds 35, 37-49).
+  - `l22-ftsz`: 2/50 genuine windows valid (seeds 0, 47); 48 missing.
+  - `l22-cytokinesis`: 0/50 genuine windows.
+  - `l21-active-windows`: one DNADamage trace exists locally; the other four
+    target processes have no genuine trace and no manifest promotion landed.
+- **Open source-fidelity lanes:**
+  - `l21-chromcond`: branch strict rubric reports GENUINE after fixes
+    `8d06797`, `2d917d4`, `649fbf1`, `6f2938b`, `ce54280`, but a custom
+    hidden-state probe still finds a tick-7 SMC site shift. Independent review
+    was interrupted; do not merge/close yet.
+  - `l22-dnas`: `55d1441` fixes hidden-sigma topoIV legality and `abb60d4`
+    fixes chromosome-owned release RNG, but tick-5 linking number remains
+    `51933` vs Karr `51932`. No new two-sided N=200 gate is preregistered.
+  - `l21-repinit` (additional lane): `884f830` plus dirty WIP; focused tests
+    remain 11 PASS / 3 FAIL and active replay first mismatches at tick 9.
+- Next execution order: independently review DNADamage and ChromCond; resume
+  the 14-seed Macromol extraction; finish RepInit/DNAS source gaps; then run
+  the multi-day FtsZ/Cytokinesis and remaining L2.1 active-window extractions.
+
+**Relaunch intent (2026-09-02 15:15 IST):**
+
+- Operator directed continuous execution until both L2.1 and L2.2 are all
+  green; no gate skipping or known-gap waivers.
+- Relaunching isolated workers for `l21-active-windows`, `l21-chromcond`,
+  `l21-repinit`, `l22-macromol`, `l22-dnas`, `l22-cytokinesis`, and
+  `l22-ftsz`.
+- `l22-dnadamage` candidate `c2174bb` + branch-local PASS evidence enters
+  independent Opus 5 review before any integration or further same-branch
+  edits.
+- MATLAB concurrency increases from 2 to **4 shared slots** for this closure
+  wave. Every long extractor must still acquire
+  `with_matlab_slot.ps1 -Slots 4`; no uncoordinated MATLAB process is allowed.
+  This prioritizes active-window and Macromol completion while allowing one
+  FtsZ and one Cytokinesis seed to advance concurrently. (For any job whose
+  MATLAB command needs embedded double-quoted strings/JSON, use the tracked,
+  self-contained `scripts\tools\run_matlab_slot.ps1` from the DNADamage
+  worktree instead -- see its `RUN_EXTRACTION.md` section 6a; it fixes the
+  argv quote-stripping bug the Sept-2 DNADamage re-extraction hit.)
+- The coordinator remains the sole writer for main, shared catalogs, evidence
+  indexes, and final gate scoreboards.
+
+**Execution relaunch (2026-09-02 15:40 IST):**
+
+- Seven independent Claude Sonnet implementation sessions will own:
+  `l21-active-windows`, `l21-chromcond`, `l21-repinit`, `l22-macromol`,
+  `l22-dnas`, `l22-cytokinesis`, and `l22-ftsz`.
+- One independent Claude Opus 5 read-only reviewer will adjudicate the
+  DNADamage candidate (`c2174bb` plus branch-local event authority).
+- Every implementation session must read its `PROMPT_SEPT2.md`, work only in
+  its assigned worktree, commit green chunks, and write its final
+  `STATUS_*_SEPT2.md`.
+- Long MATLAB work must use the common slot helper with `-Slots 4`; no
+  uncoordinated MATLAB launches. FtsZ is capped at two simultaneous seeds so
+  active windows, Macromol and Cytokinesis retain capacity.
+- After implementation, Opus review remains mandatory before integration.
+
+**Live background agents:**
+
+- `l21-active-sept2` -> `genuine-l21-active`
+- `l21-chromcond-sept2` -> `wave-l21-chromcond`
+- `l21-repinit-sept2` -> `wave-l21-repinit`
+- `l22-macromol-sept2` -> `genuine-l22-macromol`
+- `l22-cytokinesis-sept2` -> `genuine-l22-cytokinesis`
+- `l22-ftsz-sept2` -> `genuine-l22-ftsz`
+- `l22-dnas-sept2` -> `wave-l22-dnas`
+- `dnadamage-sept2-review` -> read-only review of `genuine-l22-dnadamage`
+
+**Cytokinesis durable extraction handoff:**
+
+- Agent preparation commit: `b68596d` (`-Slots 4` runner support).
+- Detached queue PID: `18600`.
+- Run state:
+  `genuine-l22-cytokinesis\artifacts\l2_event\cytokinesis_genuine_runs\run_full50_sept2_20260902_154521.json`.
+- Seeds `0..3` currently hold slots `1..4`; 46 seeds remain queued. Initial
+  valid count remains 0 until the first approximately five-hour seed finishes
+  and passes provider/anchor validation.
+- Wait shell: `wait-cytokinesis-full50`.
+- Do not launch a second Cytokinesis queue while PID `18600` is alive.
+
+**FtsZ durable extraction handoff:**
+
+- Tooling/status commit: `254d8c9`.
+- Queue orchestrator PID: `22568`; watchdog PID: `7904`.
+- FtsZ is self-limited to two concurrent seeds while sharing the common
+  four-slot pool. Seeds `0` and `47` remain validated; seeds `1` and `2` are
+  queued/waiting behind the current Cytokinesis slot holders.
+- Queue logs and owner PID live under
+  `genuine-l22-ftsz\tmp\l22_ftsz_genuine_extract\`.
+- Wait shell: `wait-ftsz-full50`.
+- Do not launch another FtsZ queue while the PID in `queue_owner.pid` is alive;
+  the watchdog restarts the orchestrator if needed.
+
+**L2.1 active-window durable extraction handoff:**
+
+- Harness/prep commits: `bc2f82f`, `5ab1667`; PID handoff commit: `66bb94b`.
+- Confirmed live wrapper PIDs:
+  - DNADamage seed-1 retry: `21172`
+  - TranscriptionalRegulation: `23992`
+  - HostInteraction: `24900`
+  - ChromosomeSegregation: `8560`
+  - Cytokinesis: `19112`
+- All five are waiting fairly on the common four-slot pool; no duplicate
+  relaunch is allowed while these PIDs remain alive.
+- Aggregate wait shell: `wait-l21-active-five`.
+
+
+**DNAS two-sided result and redirect:** the preregistered N=200 gate returns `PRIMARY_OVERACTIVE` (OC 1487 pooled ticks vs Karr 65). The source gap is the chromosome-owned RNG shared across ten MATLAB processes. This is not waived: the same agent is now capturing `chromosome.randStream.state` as a hash-bound `states_before` input and restoring it per tick, avoiding a nine-process reimplementation while preserving the no-answer-leak contract.**ChromosomeCondensation candidate review:**
+
+- Candidate commits through `b2e6e0d` + status `ae4254b`.
+- Claimed result: official strict rubric GENUINE and full 100-tick applied
+  hidden `complexBoundSites` identity (0/100 mismatches).
+- Final root cause: a source-less extra post-bind RNG draw introduced in the
+  Python literal binding path; removing it closes the tick-7+ desynchrony.
+- `chromcond-sept2-review` REJECTED packaging but confirmed the science and 0/100 hidden identity. The same implementer is fixing the untracked runtime-fixture dependency, stale L1b anchors, and incorrect recertification report. It must
+  separate safe commits from dirty wiring-YAML/scratch files and adjudicate
+  the shared `matlab_rng.py` / `l2_replay_common.py` blast radius before merge.
+
+**ReplicationInitiation candidate review:**
+
+- Candidate commits: `884f830`, `c9f6a6f`, `f466bf4`.
+- Claimed gates: L2.1 strict-rubric GENUINE; process-local L2.2 N=50/M=200
+  PASS with both channels SEED_NOISE.
+- Known residuals prevent automatic closure: honest stateful replay still
+  first mismatches at tick 4, and scoped L1b anchors still FAIL. The branch
+  labels these out of scope, but the repository no-known-gap rule does not.
+- `repinit-sept2-review` owns read-only adjudication, evidence portability,
+  oversized artifact review, and the minimum source fixes before integration.
+
+**DNADamage review result:** REJECT. The measured PASS is reproducible, but
+the branch is stale versus PPII and retains literal Karr gaps: Poisson instead
+of per-reaction stochastic-round/accessibility sampling, a legacy rate
+override re-entry, missing substrate writeback, fail-open damage routing,
+incomplete overlay provenance, and a broken general worktree overlay path.
+`l22-dnadamage-sept2-fix` is active and owns all findings; no item is waived.
+
+
+**DNADamage second re-review:** REJECT. Three blockers remain before the measured PASS can integrate: restore 237-line JSONL provenance, replace the GC/uniform approximation with literal genome motif + accessibility sampling from `Chromosome_positive_strand.txt`, and track the quote-safe MATLAB launcher used to produce the corpus. The same implementer is active; no threshold or Karr-trace changes are allowed.**DNADamage re-review candidate (2026-09-02 evening):**
+
+- Candidate commits: `ef11bca`, `5569e77`, `f7d4310`, `c389ff6`,
+  `cbe3fc3` (plus merge of current main).
+- Claimed result: literal per-reaction Karr law, all 11 review findings
+  closed, genuine provider/overlay-hash-bound 55-trace corpus, event PASS,
+  complete-bundle index **18 PASS / 2 FAIL / 2 MISSING**, PPII preserved.
+- `dnadamage-sept2-rereview` owns final read-only acceptance before
+  integration.
+
+**Live state (2026-08-18 14:20 IST) — seven original lanes + RepInit remain:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
-- Active integration worktree: `E:\opencell-worktrees\main-integrate`; clean at `2f53f93`, synchronized with `origin/main`.
-- MATLAB R2026a Update 2 is restored at `E:\MATLAB\bin\matlab.exe`; `license('test','Statistics_Toolbox') == 1`.
-- **Critical correction:** `license('test','Statistics_Toolbox') == 1` did
-  not mean the product was installed. `E:\MATLAB\toolbox\stats` is absent and
-  no genuine `mnrnd.m` exists. Any new full-simulation trace produced while
-  `scripts/matlab/mnrnd.m` shadows the missing toolbox is non-authoritative
-  Karr evidence. Full-simulation extraction lanes are stopped until Statistics
-  and Machine Learning Toolbox is installed.
-- **2026-08-17 22:43 IST:** Statistics and Machine Learning Toolbox 26.1 is
-  now installed and genuine `mnrnd` resolves at
-  `E:\MATLAB\toolbox\stats\stats\mnrnd.m` with successful checkout. Extraction
-  remains paused only until the provider-binding migration prevents
-  `scripts/matlab/mnrnd.m` from shadowing it and records genuine-provider
-  provenance. Migration worktree `wave-mnrnd-provider` is running as PID
-  `39708`; its first agent produced the implementation diff but died during
-  validation from provider high-demand errors, and this execution-only resume
-  is validating/committing the preserved diff.
+- Active integration worktree: `E:\opencell-worktrees\main-integrate`; main is
+  pushed through `c42d6e3`.
+- MATLAB R2026a Update 2 + Statistics and Machine Learning Toolbox 26.1 are
+  installed. All five colliding RNG providers are fail-closed/hash-bound;
+  GLPK and parity helpers are verified by real MATLAB smoke.
+- **PPII CLOSED:** genuine-provider full50 authority merged at `edadbe3`,
+  shared H12 promoted at `a62c258`, current-tree sweep/index closure at
+  `c42d6e3`. L2.2 is **17 PASS / 2 FAIL / 3 MISSING**, integrity OK.
 - Host capacity at relaunch: 16 logical processors, 63.8 GiB RAM, 33.3 GiB free. MATLAB extraction is bounded to two concurrent slots by `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\with_matlab_slot.ps1`.
-- Eight preserved process worktrees are running as detached Codex subprocesses:
-  - `l21-active-windows`: Codex preparation ended; four-process extraction
-    batch path defect is fixed, but extraction is blocked on genuine
-    Statistics Toolbox; no new authoritative traces were produced
-  - `l21-chromcond`: exact post-warmup endpoint captured
-    (`randStream.state=1279689633`, 80 SMC bound); live MATLAB vs Python
-    restored-state vectors proved `matlab_rng.py` was wrong; commit `8d06797`
-    fixes exact MATLAB RNG semantics and `2d917d4` fixes direct storage.
-    Live WholeCell resets the process RNG to `931316785` before tick 0 while
-    retaining warmup state effects; focused handoff repair PID `29144` is
-    running without new full-simulation extraction.
-  - `l22-macromol`: Codex phase ended at `478721d`; direct MATLAB extraction
-    produced apparent seeds `1..3`, then MATLAB exited `-1`; those traces are
-    non-authoritative because the repo `mnrnd` shim was active. Seed `0`
-    also has a separate trigger-window defect. The first retry proved
-    `glpkcc` resolves but broad `lib` path injection shadowed modern MATLAB
-    `strjoin`, so bootstrap now adds only `lib\glpkmex-2.9`
-    A focused agent is separately fixing seed `0`'s scan/capture trigger drift.
-  - `l22-procii`: **REJECTED by independent Opus 5 review**. The 22 new
-    traces used the repository `mnrnd` shim because genuine Statistics
-    Toolbox `mnrnd` is not installed; the full50 manifest also uses
-    machine-absolute paths and bypasses the oracle-population provenance
-    check. Valid coverage remains 28/50; commit `bfbfe5d` must not merge.
-    Accepted genuine-provider commits are now on the PPII branch and a clean
-    22-window replacement run is active as PID `25976`.
-  - `l22-dnas`: hidden-state candidate `ca7f84c`/`b7d21aa` reports the frozen
-    metric PASS, but the known tick-5 source mismatch remains and OC support
-    is `1472/200/199` vs Karr `65/58/7`; independent Opus 5 review
-    **REJECTED** the one-sided/non-discriminating gate, and a focused source
-    gap repair fixed topoIV legality at `55d1441`. One major-region
-    `linkingNumbers` residual remains (`51933` vs `51932`). Corrected RNG
-    semantics isolated the first divergence to tick-0 gyrase release; a
-    focused release-ledger repair PID `21604` is running.
-  - `l22-cytokinesis`: Codex phase ended after seed `001` exited MATLAB with
-    code `-1` at 42.6 minutes; the single-seed retry produced seed `1`, but
-    shim contamination makes that new trajectory non-authoritative.
-    Remaining extraction is stopped pending genuine Statistics Toolbox.
-  - `l22-ftsz`: Codex phase ended at `4fd863d`; direct MATLAB extraction is
-    stopped pending genuine Statistics Toolbox after seed `0` again exited
-    MATLAB `-1`; the first real run exposed
-    missing WholeCell `isodd`/`iseven` compatibility functions and an omitted
-    WholeCell `lib` path for `glpkcc`
-  - `l22-dnadamage`: 50 old UVB traces are vacuous despite a live Karr rate of
-    `0.1` events/tick. Target-only probes narrowed the contradiction inside
-    `DNADamage.evolveState`; a target-only inline-loop probe is launching,
-    as PID `40528`, while full-cohort extraction is toolbox-blocked.
-    it must pass a 5-seed Karr-support canary before any new full cohort.
-- A ninth lower-gate gap was discovered by the fresh 2026-08-17 baseline and
-  is running independently in `E:\opencell-worktrees\wave-l21-repinit`
-  as PID `43988`:
-  `ReplicationInitiation` is bit-identical but only fires on 55/103 active
-  Karr ticks, so its honest strict-rubric verdict is `PARTIAL`, not `GENUINE`.
+- Live detached Codex PIDs:
+  - `l21-active-windows`: `21060`; prep `7e2e5e9`/`10d355c`, run five genuine traces.
+  - `l21-chromcond`: fixes `8d06797`/`2d917d4`/`649fbf1`; next hidden
+    divergence is tick-1 `complexBoundSites` carryover/application; PID `21896`.
+  - `l21-repinit`: PID `18896`; `884f830` plus dirty identity/bind-port work.
+  - `l22-macromol`: PID `484`; prep `9279dc6`, execute same-path cohort/verdict.
+  - `l22-dnas`: topoIV fix `55d1441`; capture hidden chromosome RNG state,
+    then fix split-stream release and re-preregister two-sided gate; PID `3088`.
+  - `l22-cytokinesis`: PID `20564`; prep `9d64ebd`/`418646a`, seeds 0-49.
+  - `l22-ftsz`: PID `15188`; fixes `4b0eac6`/`7dda296`, seeds 0-49.
+  - `l22-dnadamage`: genuine Karr 99 events accepted; dirty OC per-reaction
+    rate-law/overlay-provenance repair PID `21588`.
 - Each worker owns only its process branch/status/evidence. The coordinator alone edits shared catalogs, evidence indexes, `plan.md`, and SQL `tracks`.
 - Inventory-before-extraction remains mandatory across the primary checkout and all active worktrees; only proven missing matrix cells may be generated.
 - Already merged: green CI/Ruff baseline, FtsZ fail-closed tooling (`52c0eb0`), L2.5 scope ratification (`d90e5cb`; 0 selectable pairs), ProteinProcessingII shim determination (`eb37fe3`; sentinel remains non-green), RibosomeAssembly N=50 event PASS (`ab4126c` + index `d179b63`), DNADamage blocker evidence (`dde2510`), MacromolecularComplexation lifecycle correction (`f627b34`), and exact tick-0 allocator infrastructure (`d5298a1`).
@@ -161,7 +329,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   **21 GENUINE / 1 PARTIAL / 5 MISSING_ACTIVE_EXTRACTION / 1 FAIL**.
   The `PARTIAL` row is `ReplicationInitiation`; the `FAIL` row is
   `ChromosomeCondensation`.
-- L2.2 index now audits `integrity: OK` at **16 PASS / 3 FAIL / 3 MISSING_EVIDENCE** after RibosomeAssembly bridging and the corrected Replication N=50 rerun. All 18 Design-A raw-oracle manifest rows resolve 50/50.
+- L2.2 index now audits `integrity: OK` at **17 PASS / 2 FAIL / 3 MISSING_EVIDENCE** after genuine-provider ProteinProcessingII full50 closure, RibosomeAssembly bridging, and the corrected Replication N=50 rerun. All 18 Design-A raw-oracle manifest rows resolve 50/50.
 - Final blocking checks on the combined tree: Ruff + naked-number lint PASS; unit suite 415 PASS / 11 audited skips; L1b 115/115 + 28/28 PASS; Gate 1 PASS; Gate 2 PASS (`diverge_cells=0`, 5 self-tests); L2.2 evidence audit PASS.
 - L2.5 pair execution remains blocked until process closure, current-tree L2.2 reruns, allocator oracle validation and the final Gate0/1/2 + L2.0/0a/1/2/4 sweep are accepted.
 - Ten-track wave disposition: Replication and RibosomeAssembly closed; L2.1 active-window rubric integrated but its track remains open on five missing extractions. The other seven tracks also require new MATLAB-derived state/windows. MATLAB licensing is therefore the single external blocker to further gate closure.

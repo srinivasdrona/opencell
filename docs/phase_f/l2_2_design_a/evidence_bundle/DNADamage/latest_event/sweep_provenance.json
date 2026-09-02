@@ -1,0 +1,40 @@
+{
+  "completion_status": "COMPLETE",
+  "evaluator_schema_version": 4,
+  "git_dirty": null,
+  "git_sha": "cc8ba6b5bddcecf4b0774095479896f0b04484ae",
+  "inputs_verified": true,
+  "m_ticks": 20,
+  "n_seeds": 50,
+  "process": "DNADamage",
+  "result_schema_version": 1,
+  "schema_version": 2,
+  "sidecar_hashes": {
+    "SUMMARY.json": "1a93a4019c266145231a5a65259f52be69baba0070010fc3f4106ba2767c937d",
+    "analytical_check.json": "89d6f0e368121788b610be66af8e56f17a3508b53082b65053396739da126e0e",
+    "input_manifest.json": "66c53512ca6a7a24ef651e4599c3d5d4d3b2adc3fc020fb45d0fb86ac625a397",
+    "null_calibration.json": "91bbb90f6da38b82da8fd5d47b648c397d6fe7ec8ea36936d682b5d584ceaca3",
+    "provenance.json": "d3791001dc23bd044603bd81cd7007c378ff6d78313f57b2ece0b1675dbb9be3",
+    "result.json": "d97512c97170d98145e03b5cab2a8f6ecd9554929869cee9b1ac4128c68cf906",
+    "thresholds.json": "a003f687c212d54f0efd18ff09b0c5a2069de27fb56efaddc8014775089202e5"
+  },
+  "source_hashes": {
+    "catalog": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
+    "chromosome_store_module": "7e4a5f758e64c7b28a5029a451219ea041952701527b40643cc6f6aa83a7744f",
+    "chromosome_views_module": "ddc90389b287206a25c53e43a7f68e5484e1f2ecd08bbe2eaa982a1cef95bfc5",
+    "dna_damage_event_verifier_module": "e19c970d362323abfde855e941121a17e1e873d4ec705ebad827d46ae1e44c6a",
+    "dna_damage_stimulus_cohort_module": "241637cb1865edd0728e01fbf8211d73ca49ec588b82d1082fcd4ce8f14a6c0f",
+    "event_bridge": "421595e16c855b0dea6331781927c8ed573c5a93bc37df7e4720d49e18464145",
+    "l2_event_evidence": "731fbf819fd2314e61bee8e63117889769c4e84941ea6f9e9f1969e89c42691c",
+    "l2_event_metrics": "2b194475b53121efd3bb34e865b4ee4053704393d33974cfd4ead31147278eda",
+    "l2_event_registry": "7f57d616221569ad9ce51d84a1723ecf6ccb2dc46bf1346e60fb47f916b43f9d",
+    "l2_event_runner": "8770a734cd9ea549fa44a4e70d278277cbf6d2de3dc5e412fe5300ef3509da99",
+    "l2_projections_module": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+    "l2_replay_common_module": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
+    "m_gen_constants_module": "bbfea3ac477e4a3eb93edcfae355350c9d5b8c1501ea574ef9b83acfaebce8ae",
+    "oc_module": "80185dcb5461becde8830833241dc0ce599a6268402c11ab419c6666eb0c380b",
+    "state_init_module": "6f1ff7401f505cfcc68d89d912d2af35776adb08643069e176e922ac912b50ec",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+  },
+  "written_at": "2026-09-02T18:29:03.810853+00:00"
+}

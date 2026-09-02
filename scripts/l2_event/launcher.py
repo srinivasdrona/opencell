@@ -485,6 +485,34 @@ def temp_output_subdir_for(spec: WindowSpec, token: str, *, karr_native_root: Pa
     return f"{output_dir_for(spec, karr_native_root=karr_native_root).name}{TEMP_REGEN_SUFFIX}-{token}"
 
 
+def extractor_output_subdir_for(path: Path, *, repo_karr_native_root: Path | None = None) -> str:
+    """Return the ``output_subdir`` string `extract_per_process_traces_v2.m`
+    must receive to write into ``path`` under the repo-owned
+    ``data/m1_sources/karr_native`` tree.
+
+    The MATLAB extractor always resolves its output root as
+    ``repo_root/data/m1_sources/karr_native/<output_subdir>``. When a caller
+    plans traces under a nested descendant such as
+    ``.../karr_native/dnadamage_stimulus_cohort/uvb_mechanism/...``, passing
+    only ``path.name`` would silently drop the condition-root prefix and
+    write into the default top-level event-window directory instead. This
+    helper preserves that nested identity by emitting the repo-relative
+    subpath when possible.
+
+    If ``path`` is not under ``repo_karr_native_root`` (for example, a unit
+    test using a scratch ``tmp_path`` tree disconnected from the repo),
+    fall back to the leaf directory name. That fallback preserves existing
+    MATLAB-free test behavior; such a command is not executed in those
+    scratch-path tests.
+    """
+    if repo_karr_native_root is None:
+        repo_karr_native_root = KARR_NATIVE_ROOT
+    try:
+        return path.relative_to(repo_karr_native_root).as_posix()
+    except ValueError:
+        return path.name
+
+
 def temp_output_path_for(spec: WindowSpec, token: str, *, karr_native_root: Path = KARR_NATIVE_ROOT) -> Path:
     filename = mat_path_for(spec, karr_native_root=karr_native_root).name
     return karr_native_root / temp_output_subdir_for(spec, token, karr_native_root=karr_native_root) / filename
@@ -656,7 +684,9 @@ def build_matlab_command(
     validated.
     """
     resolved_output_subdir = (
-        output_subdir if output_subdir is not None else output_dir_for(spec, karr_native_root=karr_native_root).name
+        output_subdir
+        if output_subdir is not None
+        else extractor_output_subdir_for(output_dir_for(spec, karr_native_root=karr_native_root))
     )
     proc_arg = f"{{{_matlab_quote(spec.process)}}}"
     output_subdir_lit = _matlab_quote(resolved_output_subdir)
@@ -1223,8 +1253,13 @@ def plan_event_window_extraction(
             # this exact spec + token + the pre-run manifest hash captured
             # above (`prior_sha256`).
             token, temp_path = allocate_unique_temp_output_path(spec, karr_native_root=karr_native_root)
-            temp_subdir = temp_output_subdir_for(spec, token, karr_native_root=karr_native_root)
-            command = build_matlab_command(spec, log_relpath=log_relpath, output_subdir=temp_subdir)
+            temp_subdir = extractor_output_subdir_for(temp_path.parent)
+            command = build_matlab_command(
+                spec,
+                log_relpath=log_relpath,
+                output_subdir=temp_subdir,
+                karr_native_root=karr_native_root,
+            )
             job = WindowJob(
                 process=spec.process,
                 seed=spec.seed,
@@ -1238,7 +1273,7 @@ def plan_event_window_extraction(
             )
         else:
             output_dir = output_dir_for(spec, karr_native_root=karr_native_root)
-            command = build_matlab_command(spec, log_relpath=log_relpath)
+            command = build_matlab_command(spec, log_relpath=log_relpath, karr_native_root=karr_native_root)
             job = WindowJob(
                 process=spec.process,
                 seed=spec.seed,

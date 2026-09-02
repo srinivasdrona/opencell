@@ -442,6 +442,23 @@ def test_build_matlab_command_fixed_window_can_carry_extraction_opts():
     assert "'UVB_radiation', 7.474096569667582" in command
 
 
+def test_build_matlab_command_preserves_nested_repo_relative_output_subdir(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "KARR_NATIVE_ROOT", tmp_path)
+    nested_root = tmp_path / "dnadamage_stimulus_cohort" / "uvb_mechanism"
+    spec = launcher.FixedWindowSpec(
+        process="DNADamage",
+        seed=2000,
+        tick_offset=0,
+        n_ticks=20,
+        required_observables=("chromosome", "substrates"),
+    )
+    command = launcher.build_matlab_command(spec, karr_native_root=nested_root)
+    assert launcher._matlab_quote(
+        "dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2000"
+    ) in command
+    assert launcher._matlab_quote("per_process_traces_v2_event_s2000") not in command
+
+
 def test_build_matlab_command_repromotes_genuine_provider_for_fixed_and_anchor():
     """Every generated command still adds `scripts/matlab` so the
     extractor is callable, but it must immediately re-promote the genuine
@@ -554,6 +571,26 @@ def test_plan_missing_file_is_generate_missing(tmp_path):
     assert plan.decisions[0].action == "generate_missing"
     assert len(plan.jobs) == 1
     assert plan.jobs[0].window_contract == "fixed"
+
+
+def test_plan_uses_nested_condition_root_in_generated_matlab_command(monkeypatch, tmp_path):
+    monkeypatch.setattr(launcher, "KARR_NATIVE_ROOT", tmp_path)
+    nested_root = tmp_path / "dnadamage_stimulus_cohort" / "uvb_mechanism"
+    spec = launcher.FixedWindowSpec(
+        process="DNADamage",
+        seed=2000,
+        tick_offset=0,
+        n_ticks=20,
+        required_observables=("chromosome", "substrates"),
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=nested_root)
+    assert plan.decisions[0].action == "generate_missing"
+    assert plan.jobs[0].final_output_path == str(
+        nested_root / "per_process_traces_v2_event_s2000" / "DNADamage_20ticks.mat"
+    )
+    assert launcher._matlab_quote(
+        "dnadamage_stimulus_cohort/uvb_mechanism/per_process_traces_v2_event_s2000"
+    ) in plan.jobs[0].matlab_command
 
 
 def test_plan_skip_valid_for_contract_complete_fixed_fixture(tmp_path):

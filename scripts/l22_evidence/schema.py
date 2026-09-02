@@ -186,6 +186,8 @@ RUNNER_SCRIPT = REPO_ROOT / "tests" / "vivarium" / "l2_2_design_a_runner.py"
 RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_runner_helpers.py"
 RUNNER_PROJECTIONS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_projections.py"
 EVENT_BRIDGE_MODULE = REPO_ROOT / "scripts" / "l22_evidence" / "event_bridge.py"
+DNA_DAMAGE_EVENT_VERIFIER_MODULE = REPO_ROOT / "scripts" / "l22_evidence" / "dna_damage_event_verifier.py"
+DNA_DAMAGE_STIMULUS_COHORT_MODULE = REPO_ROOT / "scripts" / "l2_event" / "dna_damage_stimulus_cohort.py"
 L2_EVENT_RUNNER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "runner.py"
 L2_EVENT_METRICS_MODULE = REPO_ROOT / "scripts" / "l2_event" / "metrics.py"
 L2_EVENT_EVIDENCE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "evidence.py"
@@ -424,6 +426,7 @@ L2_EVENT_RIBOSOME_GATE_ADAPTER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ad
 L2_EVENT_RIBOSOME_SMOKE_ADAPTER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "adapters" / "ribosome_assembly_smoke.py"
 L2_EVENT_RIBOSOME_N50_GATE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ribosome_assembly_n50_gate.py"
 L2_EVENT_RIBOSOME_SEED_AUDIT_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ribosome_assembly_seed_audit.py"
+L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.py"
 
 # --- Explicit per-process runtime dependency registry (F1, corrected F5) ----
 #
@@ -524,9 +527,13 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         "state_init_module": STATE_INIT_MODULE,
     },
     "DNADamage": {
+        "dna_damage_event_verifier_module": DNA_DAMAGE_EVENT_VERIFIER_MODULE,
+        "dna_damage_stimulus_cohort_module": DNA_DAMAGE_STIMULUS_COHORT_MODULE,
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
         "chromosome_views_module": CHROMOSOME_VIEWS_MODULE,
         "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
+        "l2_projections_module": RUNNER_PROJECTIONS_MODULE,
+        "l2_replay_common_module": L2_REPLAY_COMMON_MODULE,
         "state_init_module": STATE_INIT_MODULE,
     },
     "RibosomeAssembly": {
@@ -548,8 +555,6 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
 # all) rather than by process name, since it is a runner-harness-level
 # dependency, not a per-process one -- keyed the same way
 # `SWEEP_PROVENANCE_SOURCE_FILES` is, just scoped narrower than "always".
-L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.py"
-
 HARNESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     "design_a_per_tick": {"l2_replay_common": L2_REPLAY_COMMON_MODULE},
 }

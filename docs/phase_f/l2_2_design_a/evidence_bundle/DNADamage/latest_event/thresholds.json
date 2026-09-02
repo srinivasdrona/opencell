@@ -1,0 +1,20 @@
+{
+  "channels": {
+    "chromosome": {
+      "aggregation": "hurdle_event_rate_plus_conditional_scaled_distance",
+      "component_name_map": {
+        "component_1": "damagedBases.delta_nnz",
+        "component_2": "abasicSites.delta_nnz",
+        "component_3": "strandBreaks.delta_nnz",
+        "component_4": "damagedSugarPhosphates.delta_nnz",
+        "component_5": "intrastrandCrossLinks.delta_nnz",
+        "component_6": "hollidayJunctions.delta_nnz",
+        "component_7": "gapSites.delta_nnz"
+      },
+      "conditional_scaled_distance_threshold": 1.0,
+      "event_rate_threshold": 0.1
+    }
+  },
+  "condition": "uvb_mechanism",
+  "process": "DNADamage"
+}
