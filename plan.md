@@ -177,6 +177,17 @@ snapshot below:**
   relaunch is allowed while these PIDs remain alive.
 - Aggregate wait shell: `wait-l21-active-five`.
 
+**ChromosomeCondensation candidate review:**
+
+- Candidate commits through `b2e6e0d` + status `ae4254b`.
+- Claimed result: official strict rubric GENUINE and full 100-tick applied
+  hidden `complexBoundSites` identity (0/100 mismatches).
+- Final root cause: a source-less extra post-bind RNG draw introduced in the
+  Python literal binding path; removing it closes the tick-7+ desynchrony.
+- `chromcond-sept2-review` owns the read-only integration review. It must
+  separate safe commits from dirty wiring-YAML/scratch files and adjudicate
+  the shared `matlab_rng.py` / `l2_replay_common.py` blast radius before merge.
+
 **DNADamage review result:** REJECT. The measured PASS is reproducible, but
 the branch is stale versus PPII and retains literal Karr gaps: Poisson instead
 of per-reaction stochastic-round/accessibility sampling, a legacy rate
