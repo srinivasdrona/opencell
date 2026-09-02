@@ -59,6 +59,42 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-02 15:10 IST) — supersedes the August live-PID
+snapshot below:**
+
+- No Codex, MATLAB, or wait-shell process is running. Two orphan MATLAB slot
+  locks from dead August PIDs were removed.
+- Main is clean and origin-synced. The authoritative L2.2 index audits
+  `integrity: OK` at **17 PASS / 2 FAIL / 3 MISSING_EVIDENCE**.
+- **Closed:** `l22-procii`. Genuine-provider full50 authority, shared
+  `H12_CONFIRMED`, current-tree N=50/M=20 sweep, and complete-bundle index
+  regeneration are merged through `c42d6e3`.
+- **Candidate awaiting independent review/integration:** `l22-dnadamage`.
+  Genuine Karr N=50 support is accepted (99 fire ticks vs preregistered
+  97.22); commit `c2174bb` ports the OC per-reaction rate law. Branch-local,
+  uncommitted event evidence claims PASS, but it is not authoritative until
+  reviewed and integrated.
+- **Open extraction lanes:**
+  - `l22-macromol`: 36/50 genuine active windows valid; 14 missing
+    (seeds 35, 37-49).
+  - `l22-ftsz`: 2/50 genuine windows valid (seeds 0, 47); 48 missing.
+  - `l22-cytokinesis`: 0/50 genuine windows.
+  - `l21-active-windows`: one DNADamage trace exists locally; the other four
+    target processes have no genuine trace and no manifest promotion landed.
+- **Open source-fidelity lanes:**
+  - `l21-chromcond`: branch strict rubric reports GENUINE after fixes
+    `8d06797`, `2d917d4`, `649fbf1`, `6f2938b`, `ce54280`, but a custom
+    hidden-state probe still finds a tick-7 SMC site shift. Independent review
+    was interrupted; do not merge/close yet.
+  - `l22-dnas`: `55d1441` fixes hidden-sigma topoIV legality and `abb60d4`
+    fixes chromosome-owned release RNG, but tick-5 linking number remains
+    `51933` vs Karr `51932`. No new two-sided N=200 gate is preregistered.
+  - `l21-repinit` (additional lane): `884f830` plus dirty WIP; focused tests
+    remain 11 PASS / 3 FAIL and active replay first mismatches at tick 9.
+- Next execution order: independently review DNADamage and ChromCond; resume
+  the 14-seed Macromol extraction; finish RepInit/DNAS source gaps; then run
+  the multi-day FtsZ/Cytokinesis and remaining L2.1 active-window extractions.
+
 **Live state (2026-08-18 14:20 IST) — seven original lanes + RepInit remain:**
 - Repository rule: **no known process-code deviation or missing applicable-fidelity gap may be waived as a terminal "known difference."**
 - Active integration worktree: `E:\opencell-worktrees\main-integrate`; main is
