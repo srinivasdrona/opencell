@@ -69,14 +69,17 @@ below:**
   2 MISSING_EVIDENCE**, integrity OK; provenance **241 records**; focused
   suite **100 passed**; Ruff and `git diff --check` clean. `origin/main` is
   still `744974c`; push the verified merge before integrating another lane.
-- ChromosomeCondensation is independently accepted and staged in
-  `E:\opencell-worktrees\integrate-l21-chromcond-sept2` at `0196a81`.
-  Its source fix and packaging gates are green. The only expected
-  post-integration non-green is the stale L2.2 authority for the six
-  chromosome-update consumers (Replication, ReplicationInitiation,
-  DNARepair, DNASupercoiling, DNADamage, Cytokinesis). Re-sweep those six
-  against the complete evidence bundle, regenerate the index, then review
-  and merge.
+- ChromosomeCondensation is independently accepted and merged with current
+  main in `E:\opencell-worktrees\integrate-l21-chromcond-sept2` through
+  `803089b`. Its source fix and packaging gates are green. Integration
+  exposed a broader provenance problem: changing shared
+  `tests/vivarium/l2_replay_common.py` invalidates 19 L2.2 rows by hash, not
+  just the six chromosome consumers, and the raw Karr cohorts are not all
+  locally available. The smallest correct next step is to restore that
+  shared helper byte-for-byte and isolate chromosome-state replay
+  application to a ChromCond/L2.1-only helper, then prove the L2.2 index
+  remains at the accepted **18/2/2** without a behavior-changing harness
+  diff. Independent review remains mandatory before merge.
 - Durable MATLAB queues:
   - Cytokinesis PID `18600` is alive at **4/50 validated**, seeds `4-7`
     active, 42 queued, 0 failed.
@@ -96,10 +99,11 @@ below:**
   `enzymes[1]` mismatch despite its strict-rubric GENUINE result; its agent
   is still working. DNASupercoiling remains `PRIMARY_OVERACTIVE`; its agent
   is still working on hash-bound chromosome RNG `states_before` restoration.
-- Immediate order: push DNADamage; validate/promote the three completed
-  L2.1 active traces and relaunch only the two missing ones; perform the six
-  ChromCond L2.2 re-sweeps and index regeneration; then independently review
-  and integrate ChromCond.
+- Immediate order: validate/promote the three completed L2.1 active traces
+  and relaunch only the two missing ones; isolate ChromCond's chromosome
+  replay application from the shared L2.2 helper and independently review
+  that integration; continue RepInit/DNAS source closure and the durable
+  Macromol/Cytokinesis/FtsZ queues.
 
 **Current status (2026-09-02 15:10 IST) — supersedes the August live-PID
 snapshot below:**
@@ -5041,4 +5045,3 @@ A spin-off project building on top of OpenCell to simulate drug interactions, pr
 - **Applies to**: M. genitalium (azithromycin resistance, novel STI drug targets), E. coli (multi-drug resistance, clinical priority), and any future organism models
 - **Real-world impact**: Pre-screen resistance risk before clinical trials, discover novel drug targets computationally, design resistance-proof therapies
 - **Publication target**: *Nature Microbiology*, *Antimicrobial Agents and Chemotherapy*, or *PNAS*
-
