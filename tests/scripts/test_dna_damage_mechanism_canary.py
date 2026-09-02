@@ -334,16 +334,21 @@ def test_fire_predicate_is_restricted_to_each_conditions_allowed_fields() -> Non
 
 
 def test_kind_rates_provenance_reports_no_trace_override(small_run: dict) -> None:
-    """Fix #1 companion: the canary result must record the process's
-    effective kind_rates_per_s and explicitly confirm no per-tick
-    oracle-trace-rate override mechanism exists on the production process
-    (expected: False/no such path)."""
+    """Fix #1 companion, updated for the Sept-2 review's item-3/4 fix: the
+    canary result must record that no per-tick oracle-trace-rate override
+    mechanism AND no lumped per-kind rate override mechanism exist on the
+    production process (expected: both False/no such path). Firing is
+    governed solely by the literal per-reaction selectionProbability/
+    stochasticRound law."""
     provenance = small_run["kind_rates_provenance"]
     assert provenance["trace_rate_override_mechanism_exists"] is False
     assert provenance["trace_rate_override_path_used"] is False
-    from opencell.vivarium.karr_dna_damage import _DEFAULT_KIND_RATES_PER_S
+    assert provenance["kind_rate_override_mechanism_exists"] is False
 
-    assert provenance["kind_rates_per_s"] == _DEFAULT_KIND_RATES_PER_S
+    from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
+
+    process = KarrDNADamageProcess({})
+    assert not hasattr(process, "kind_rates_per_s")
 
 
 def test_execution_status_is_reconciled_without_biological_claim(small_run: dict) -> None:
