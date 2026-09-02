@@ -24,6 +24,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.vivarium.karr_protein_decay_light import _Mcg16807
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/Cytokinesis_flat.mat"
 _DEFAULT_FTSZ_RING_FIXTURE_PATH = "data/karr_fixtures/per_process/FtsZRing.json"
 _DEFAULT_GEOMETRY_FIXTURE_PATH = "data/karr_fixtures/per_process/CellGeometry.json"
@@ -112,6 +114,37 @@ def _delta_dict(wids: list[str], before: np.ndarray, after: np.ndarray) -> dict[
     return out
 
 
+class _MatlabCytokinesisRNG:
+    """Adapter exposing the scalar ``.random()`` draw Cytokinesis uses.
+
+    Karr's ``Cytokinesis.evolveState`` draws exclusively via scalar
+    ``this.randStream.rand()`` calls (one draw per candidate edge, per
+    binding/dissociation/hydrolysis attempt -- see Cytokinesis.m
+    evolveState). Every process's ``this.randStream`` is constructed as
+    ``edu.stanford.covert.util.RandStream('mcg16807')``
+    (``data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/
+    Process.m:283``) -- a Lehmer/Park-Miller multiplicative congruential
+    generator, NOT the Mersenne Twister (``mt19937ar``) MATLAB's *default*
+    stream uses. Every process is seeded independently with the same
+    simulation-level seed (``Process.seedRandStream`` ->
+    ``this.randStream.reset(this.seed)``, called identically for every
+    process in ``Simulation.seedRandStream``, Simulation.m:454-459), so this
+    process's dedicated stream is seeded the same numeric value directly
+    (no per-process offset). Reuses the canonical ``_Mcg16807`` shim already
+    validated against genuine Karr traces elsewhere in this codebase (see
+    ``karr_protein_decay_light.py``, ``karr_metabolism.py``) rather than
+    duplicating the LCG. NumPy's default Generator/PCG64 (the prior
+    implementation here) produces an entirely unrelated bit stream from the
+    same seed and was the L2.1 active-window CODE_GAP root cause.
+    """
+
+    def __init__(self, seed: int) -> None:
+        self._stream = _Mcg16807(int(seed))
+
+    def random(self) -> float:
+        return float(self._stream.rand((1,))[0])
+
+
 class KarrCytokinesisProcess(Process):
     """Faithful port of Karr ``Process_Cytokinesis.evolveState``."""
 
@@ -139,7 +172,7 @@ class KarrCytokinesisProcess(Process):
             ftsz_ring_path=self.parameters["ftsz_ring_fixture_path"],
             geometry_path=self.parameters["geometry_fixture_path"],
         )
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self._rng = _MatlabCytokinesisRNG(int(self.parameters["rng_seed"]))
 
         binding_override = self.parameters.get("rate_filament_binding_membrane")
         dissociation_override = self.parameters.get("rate_filament_dissociation")

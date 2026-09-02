@@ -18,7 +18,8 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
-from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
+from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess, _MatlabCytokinesisRNG
+from opencell.vivarium.karr_protein_decay_light import _Mcg16807
 
 
 def _enzyme_counts(
@@ -451,3 +452,69 @@ def test_division_completes_when_pinched_diameter_reaches_zero() -> None:
         0.0,
         abs_tol=1.0e-12,
     )
+
+
+# --- Regression: L2.1 active-window CODE_GAP (2026-09-03) ------------------
+#
+# Root cause: `KarrCytokinesisProcess.__init__` seeded `self._rng` with
+# `np.random.default_rng(seed)` (NumPy's PCG64), but Karr's actual
+# `Process.randStream` (data/m1_sources/WholeCell/src/+edu/+stanford/+covert/
+# +cell/+sim/Process.m:283: `this.randStream =
+# edu.stanford.covert.util.RandStream('mcg16807')`) is a Park-Miller
+# "Minimal Standard" multiplicative-congruential (Lehmer) generator --
+# an entirely different bit stream from the same seed. Fixed by seeding
+# `_MatlabCytokinesisRNG` (a thin `.random()` adapter) over the canonical
+# `_Mcg16807` shim already used by other faithful Karr ports
+# (`karr_protein_decay_light.py`, `karr_metabolism.py`). Evidence: at the
+# accepted genuine event trace's first active tick (226 of
+# `Cytokinesis_4000ticks.mat`), `ftsZRing.numEdgesOneStraight` went 0 -> 9 in
+# Karr; the wrong-RNG-family port produced 6, the fixed port reproduces 9
+# exactly (and reproduces tick 227's (3, 19) too) -- see
+# `STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md` for the full per-tick ledger.
+
+
+def test_rng_provider_is_mcg16807_not_numpy_default_rng() -> None:
+    """Anti-regression: `process._rng` must wrap the MATLAB-faithful
+    `_Mcg16807` Lehmer generator, never `np.random.Generator`/PCG64. A
+    silent revert to `np.random.default_rng` would pass every existing
+    deterministic (rate=0/1) unit test in this file -- those never inspect
+    RNG *identity*, only aggregate conservation -- while re-opening the
+    exact L2.1 active-window CODE_GAP this test guards against.
+    """
+    process = KarrCytokinesisProcess({"rng_seed": 0})
+
+    assert isinstance(process._rng, _MatlabCytokinesisRNG)
+    assert isinstance(process._rng._stream, _Mcg16807)
+    assert not hasattr(process._rng, "bit_generator")  # np.random.Generator marker
+
+
+def test_rng_first_draw_matches_mcg16807_park_miller_reference() -> None:
+    """Pin the exact first `.random()` value for `rng_seed=0` against the
+    `_Mcg16807` Lehmer recurrence (state = 16807*state mod (2**31-1), seed 0
+    mapped to state 1 -- `_Mcg16807.__init__`). This is the same value
+    verified via the published Park & Miller (1988) "Minimal Standard"
+    generator test vector (seed=1 -> state 1043618065 after 10000 draws;
+    see `tmp/probe_mcg16807_reference_vector.py` in the fix's provenance).
+    A change to this value signals either a seed-mapping regression or a
+    reversion to a different (non-Karr-faithful) generator family.
+    """
+    process = KarrCytokinesisProcess({"rng_seed": 0})
+    first_draw = process._rng.random()
+    assert first_draw == pytest.approx(7.826369259425611e-06, rel=0.0, abs=1.0e-18)
+
+
+def test_rng_no_oracle_file_io_in_production_module() -> None:
+    """Anti-cheat (Rule 8, docs/prompts/FIX_TEMPLATE_L2_REPLAY.md): the
+    production module must never open, parse, or otherwise read any L2
+    oracle trace (`*_100ticks.mat`, `*_4000ticks.mat`, per-tick
+    `states_before`/`states_after`). The only file I/O in
+    `karr_cytokinesis.py` may target canonical model fixtures
+    (`Cytokinesis_flat.mat`, `FtsZRing.json`, `CellGeometry.json`) loaded
+    once at `__init__` time -- never a per-tick oracle path.
+    """
+    source = Path(_REPO_ROOT / "opencell" / "vivarium" / "karr_cytokinesis.py").read_text(
+        encoding="utf-8"
+    )
+    forbidden_patterns = ("_100ticks", "_4000ticks", "states_before", "states_after", "h5py")
+    for pattern in forbidden_patterns:
+        assert pattern not in source, f"L2.1 Rule 8 violation: found oracle marker {pattern!r}"
