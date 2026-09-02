@@ -270,17 +270,51 @@ def _decode_char_metadata(raw: np.ndarray) -> str:
     return "".join(chr(int(c)) for c in codes)
 
 
+def _materialize_group_payload(group: h5py.Group) -> dict[str, object]:
+    """Recursively copy an HDF5 group payload into plain Python/numpy data.
+
+    Real chromosome snapshots are stored as MATLAB cell entries that point at
+    HDF5 groups, not numeric datasets. `load_event_window` closes the file
+    before returning, so we must materialize those payloads eagerly rather
+    than returning live h5py objects tied to a soon-to-be-closed handle.
+    """
+    out: dict[str, object] = {}
+    for key, value in group.items():
+        if isinstance(value, h5py.Dataset):
+            out[key] = np.asarray(value[()])
+        elif isinstance(value, h5py.Group):
+            out[key] = _materialize_group_payload(value)
+        else:
+            raise ValueError(f"Unsupported HDF5 object {type(value).__name__} at {value.name}")
+    return out
+
+
+def _materialize_cell_payload(payload: h5py.Dataset | h5py.Group) -> np.ndarray:
+    """Normalize one MATLAB cell entry to a stable per-tick numpy row."""
+    if isinstance(payload, h5py.Dataset):
+        return np.asarray(payload[()]).reshape(-1)
+    if isinstance(payload, h5py.Group):
+        return np.array([_materialize_group_payload(payload)], dtype=object)
+    raise ValueError(f"Unsupported cell payload type: {type(payload).__name__}")
+
+
 def _cell_series(dataset: h5py.Dataset, handle: h5py.File) -> np.ndarray:
     """Materialize a MATLAB cell-array-of-vectors dataset (shape (1, n) of
     HDF5 object references, or a plain numeric (1, n) array) into an
-    ``(n_ticks, k)`` numpy array, one row per tick."""
+    ``(n_ticks, k)`` numpy array, one row per tick.
+
+    Some real observables, notably chromosome snapshots for chromosome-primary
+    processes, store each tick as a reference to an HDF5 group rather than a
+    numeric dataset. Those payloads are recursively copied into plain Python
+    dicts so the returned series remains valid after the file handle closes.
+    """
     if dataset.dtype == object:
         rows, cols = dataset.shape
         n = max(rows, cols)
         out: list[np.ndarray] = []
         for i in range(n):
             ref = dataset[0, i] if rows == 1 else dataset[i, 0]
-            out.append(np.asarray(handle[ref][()]).reshape(-1))
+            out.append(_materialize_cell_payload(handle[ref]))
         return np.stack(out, axis=0)
     # Plain numeric array already shaped (1, n_ticks) or (n_ticks, 1).
     arr = np.asarray(dataset[()])

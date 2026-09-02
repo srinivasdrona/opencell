@@ -109,7 +109,11 @@ snapshot below:**
   wave. Every long extractor must still acquire
   `with_matlab_slot.ps1 -Slots 4`; no uncoordinated MATLAB process is allowed.
   This prioritizes active-window and Macromol completion while allowing one
-  FtsZ and one Cytokinesis seed to advance concurrently.
+  FtsZ and one Cytokinesis seed to advance concurrently. (For any job whose
+  MATLAB command needs embedded double-quoted strings/JSON, use the tracked,
+  self-contained `scripts\tools\run_matlab_slot.ps1` from the DNADamage
+  worktree instead -- see its `RUN_EXTRACTION.md` section 6a; it fixes the
+  argv quote-stripping bug the Sept-2 DNADamage re-extraction hit.)
 - The coordinator remains the sole writer for main, shared catalogs, evidence
   indexes, and final gate scoreboards.
 

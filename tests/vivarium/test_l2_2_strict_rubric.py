@@ -76,40 +76,16 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13.14, and for
     this move Section 13.15):
 
-    As of this commit (the Opus5 follow-up review closing the "primary
-    low-sample false-green" gap) the tally is
-    PASS: 11, FAIL: 7, MISSING_EVIDENCE: 4, n_in_scope: 22:
-      - PASS (11): DNARepair, Metabolism, ProteinDecay,
-        ProteinModification, ProteinTranslocation, RNADecay,
-        RNAModification, RNAProcessing, ReplicationInitiation,
-        Transcription, Translation.
-      - FAIL (7): MacromolecularComplexation, ProteinFolding,
-        ProteinProcessingI, ProteinProcessingII, tRNAAminoacylation (all
-        pre-existing `SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE`
-        H12 gaps, untouched by this task) and Replication (moved
-        PASS -> FAIL in the evaluator-v3 commit: its stored `result.json`
-        shows the OC run never exercised the primary `chromosome` channel's
-        `polymerizedRegions.*` components at all (n_nonzero_oc == 0) while
-        Karr shows real nonzero activity (420-4265 events per component) --
-        an asymmetric-activity case the pre-v3 evaluator silently treated as
-        vacuously-equal-so-PASS instead of mechanically non-green; fixed by
-        the `PRIMARY_ACTIVITY_MISSING` guard in `verdict.py`), plus
-        DNASupercoiling, which moves PASS -> FAIL in THIS commit: its
-        stored `result.json` primary `chromosome` channel's per_component
-        comparison on component `linkingNumbers.delta_nnz` has
-        n_oc=17, n_karr=24 -- both genuinely nonzero (neither VACUOUS nor
-        ACTIVITY_MISSING), but both below `MIN_NONZERO_EVENTS=30`. The
-        pre-fix evaluator still computed and passed a W1 statistic
-        (scaled_w1=0.007) on this severely under-sampled component -- a
-        false green closed by the new, gating `PRIMARY_INSUFFICIENT_SAMPLES`
-        guard added to `_rederive_w1_channel`,
-        `_rederive_per_component_scaled_channel`, and
-        `_rederive_hurdle_channel` in `verdict.py` (distinct from, and
-        gating unlike, the pre-existing generic non-primary
-        `INSUFFICIENT_SAMPLES` fallback).
-      - MISSING_EVIDENCE (4): Cytokinesis, DNADamage, FtsZPolymerization,
-        RibosomeAssembly -- no sweep evidence directory exists for these
-        processes at all; unrelated to and untouched by this task.
+    As of this commit (DNADamage's Sept-2 genuine literal-rate-law closure,
+    joining PPII's already-closed main-branch PASS) the tally is
+    PASS: 18, FAIL: 2, MISSING_EVIDENCE: 2, n_in_scope: 22:
+      - PASS (18): DNADamage, DNARepair, Metabolism, ProteinDecay,
+        ProteinFolding, ProteinModification, ProteinProcessingI,
+        ProteinProcessingII, ProteinTranslocation, RNADecay,
+        RNAModification, RNAProcessing, Replication, ReplicationInitiation,
+        RibosomeAssembly, Transcription, Translation, tRNAAminoacylation.
+      - FAIL (2): MacromolecularComplexation, DNASupercoiling.
+      - MISSING_EVIDENCE (2): Cytokinesis, FtsZPolymerization.
 
     This is a deliberate, evidence-driven set of mechanical re-derivations
     (per this task's "if not provable, mark stale/non-green; if the raw
@@ -122,9 +98,9 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 11,
-        schema.STATUS_FAIL: 7,
-        schema.STATUS_MISSING_EVIDENCE: 4,
+        schema.STATUS_PASS: 18,
+        schema.STATUS_FAIL: 2,
+        schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
 
