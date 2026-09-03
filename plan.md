@@ -123,6 +123,16 @@ below:**
   its output still needs adjudication. Branch manifest currently records
   **6 EXISTING_WINDOW_PASS / 3 CODE_GAP / 2 MISSING_ACTIVE_EXTRACTION**,
   pending that DNADamage audit correction.
+- TranscriptionalRegulation's site-level/strand-aware promoter port now
+  matches the genuine active trace through tick 535, but its candidate used
+  shared `MatlabRandStream` (`mt19937ar`) and added weighted sampling to the
+  provenance-hashed shared RNG module. Karr `Process.m` instead gives every
+  process an independent `mcg16807` stream. Restore the shared RNG module
+  byte-for-byte, isolate a TxReg-specific mcg16807 weighted sampler, and
+  rerun the 4000-tick replay. Because genuine TF binding is stochastic, the
+  catalog's current `in_scope_L2_2: false` / `"no RNG"` rationale is now
+  disproven; after L2.1 closes, preregister and build the required TxReg
+  L2.2 evidence rather than leaving a stale deterministic classification.
 - ReplicationInitiation remains open at an honest stateful tick-4
   `enzymes[1]` mismatch despite strict-rubric GENUINE. All five Opus review
   fixes are complete; L1b and canonical N=50/M=200 L2.2 are PASS. Site-level
