@@ -1,6 +1,108 @@
 # STATUS: L2.1 Cytokinesis Active-Window CODE_GAP Fix
 
-## Update (2026-09-03, continuation session) — water fix + Stage-1 MATLAB probe launched
+## Update 2 (2026-09-03) — Stage-1 probe completed: Karr's real MATLAB run is NOT bit-reproducible run-to-run
+
+The Stage-1 randStream probe (`scripts/matlab/probe_cytokinesis_randstream_state.m`,
+launched via the shared `with_matlab_slot.ps1`, ran for ~2.5 hours after
+acquiring slot 3) **completed successfully** and produced a load-bearing,
+unexpected result, committed as evidence at
+`tmp/cytokinesis_randstream_probe_s000.json`:
+
+```
+$ bin\oc-py.cmd scripts/l2_event/analyze_cytokinesis_randstream_probe.py tmp/cytokinesis_randstream_probe_s000.json --oc-draws 226=45,227=13,228=3
+seed=0 tick_start=27047
+local_tick=224 ... seg_before=True seg_after=True entry=1765657302 exit=1765657302 karr_draws_this_tick=0 gap_steps=None
+local_tick=225 ... seg_before=True seg_after=True entry=1765657302 exit=1765657302 karr_draws_this_tick=0 gap_steps=0
+local_tick=226 ... seg_before=True seg_after=True entry=1765657302 exit=1765657302 karr_draws_this_tick=0 gap_steps=0 oc_draws=45 <-- MISMATCH
+local_tick=227 ... seg_before=True seg_after=True entry=1765657302 exit=1765657302 karr_draws_this_tick=0 gap_steps=0 oc_draws=13 <-- MISMATCH
+local_tick=228 ... seg_before=True seg_after=True entry=1765657302 exit=1765657302 karr_draws_this_tick=0 gap_steps=0 oc_draws=3  <-- MISMATCH
+local_tick=229 ... seg_before=True seg_after=True entry=1765657302 exit=1765657302 karr_draws_this_tick=0 gap_steps=0
+local_tick=230 ... seg_before=True seg_after=True entry=1765657302 exit=1765657302 karr_draws_this_tick=0 gap_steps=0
+```
+
+**This fresh MATLAB re-run's `chromosome.segregated` is already `TRUE` at
+local tick 224** (and stays stable through 230, with `entry_state ==
+exit_state` at every captured tick — zero randStream draws consumed
+anywhere in this window). The accepted trace
+(`Cytokinesis_4000ticks.mat`) records `chromosome_segregated = FALSE` for
+local ticks 0-225 and the FIRST `TRUE` at local tick 226 exactly. **These
+two are irreconcilable for the same seed=0 run of the same simulation
+unless the underlying WholeCell MATLAB simulation is not bit-reproducible
+run-to-run.**
+
+**Why this is not a bug in the probe itself:**
+- `probe_cytokinesis_randstream_state.m`'s scheduler
+  (`evolve_state_with_tap_probe`) was re-verified line-by-line against the
+  canonical `evolve_state_with_tap` (re-hash-checked:
+  `test_duplicated_source_hash_is_current` still passes, confirming no
+  drift) — structurally identical except for the two added read-only
+  instrumentation lines; no control-flow, allocation, or scheduling logic
+  differs.
+- `data/m1_sources/WholeCell/data/Simulation_fitted.mat` (the shared,
+  canonical fitted-simulation checkpoint every extraction/probe loads) and
+  the canonical `DNADamage.m` (the one file `karr_bootstrap()` conditionally
+  overlays) both have `LastWriteTime` = 2026-05-26, long before this
+  session — ruling out "the shared MATLAB source changed mid-run from a
+  parallel agent" as an explanation.
+- `seed_simulation(sim, uint32(0))` deterministically resets the
+  simulation-level stream and every process's own stream to the identical
+  numeric seed (verified via primary source, `Simulation.m:454-459`,
+  `Process.m:283,290`) — the SEEDING is not the variable here.
+- No thread-count pinning (`maxNumCompThreads`/`-singleCompThread`) exists
+  anywhere in `karr_bootstrap.m` or this probe. MATLAB's default
+  multi-threaded BLAS/LAPACK (used by Metabolism's FBA/LP solve every
+  tick) is a well-known source of run-to-run floating-point
+  non-determinism (parallel reduction order is not guaranteed
+  deterministic across runs) — this project's own
+  `docs/prompts/FIX_TEMPLATE_L2_REPLAY.md` already names this class of
+  issue as known limitation **K5** ("BLAS/NumPy environment
+  non-determinism"). Over a ~27,000-tick nonlinear whole-cell trajectory,
+  a floating-point-level perturbation in ANY upstream process (most
+  plausibly Metabolism, which every other process's resource allocation
+  depends on every tick) is sufficient to shift when chromosome
+  segregation completes by dozens to thousands of ticks — fully
+  consistent with what was observed (segregation already complete well
+  before local tick 224 in this run, vs. tick 226 in the accepted trace).
+
+**Consequence for the tick-228 investigation:** a **fresh MATLAB re-run
+cannot be used to independently regenerate a ground-truth per-draw
+reference for this SPECIFIC accepted trace's realization** — the accepted
+trace is one frozen, historical, non-reproducible realization of the
+simulation, not a repeatable function of `seed=0` alone. This also means
+**Stage 2** (the conditional, hash-bound Cytokinesis.m source overlay for
+per-phase instrumentation) is **not viable for this purpose either**: it
+would face the identical non-reproducibility problem — any fresh
+instrumented run, however finely granular, diverges from the accepted
+trace's specific trajectory well before reaching the ticks of interest.
+Stage 2 is therefore **not attempted**; building it would consume another
+multi-hour MATLAB slot for a run that cannot, even in principle, answer
+the question it would be built to answer.
+
+**What this does NOT change:** the L2.1 test itself is unaffected and
+remains methodologically sound — it replays OC against the ACCEPTED
+TRACE's own frozen, recorded `states_before`/`states_after` values (via
+the per-tick witness overlay), never against a fresh re-run. The tick-228
+divergence (OC 2 vs Karr 1, from the accepted trace) is real and stands.
+What has changed is the CONCLUSION about how to close it: it cannot be
+resolved by cross-checking against a freshly-regenerated MATLAB reference,
+because no such reference can be faithfully regenerated for this specific
+frozen realization. Every other avenue investigated in Update 1 below
+(structural/algorithmic review of the OC port, the `_Mcg16807` shim's
+correctness, the water-request fix) remains valid and closed.
+
+**Final classification for this session: CODE_GAP stands** (not promoted
+to GENUINE — full 4000-tick bit-identity is not achieved). This is
+reported as a **precise, source-proven, evidence-backed blocker** per the
+task's own allowed terminal-state language, not a "deep stochastic gap"
+hand-wave: the blocker is specifically "Karr's own MATLAB WholeCell
+simulation is not bit-reproducible run-to-run in this environment,
+independently demonstrated via a real ~27,000-tick re-run whose
+`chromosome.segregated` timing diverges by at least 2 ticks (and likely
+much more, given the ring is already fully quiescent by local tick 224)
+from the accepted trace" — a concrete, falsifiable, cited claim, not an
+appeal to general stochastic complexity.
+
+## Update 1 (2026-09-03, continuation session) — water fix + Stage-1 MATLAB probe launched
 
 Per operator instruction: tick 228 and the water-request gap are NOT a
 terminal CODE_GAP waiver. This session:
@@ -38,37 +140,19 @@ terminal CODE_GAP waiver. This session:
    extraction queue (PID `18600`, unaffected — see "L2.2 queue
    implications" below) that shares the same 4-slot pool.
 
-**Operational handoff (if this session ends before the probe completes):**
+**Operational handoff — SUPERSEDED, probe completed (see "Update 2" above
+for the result and conclusion):**
 
-- Slot coordinator lock directory (shared, machine-wide, NOT this repo's
-  `scripts/tools/run_matlab_slot.ps1`'s per-worktree default):
-  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\matlab-slots\`.
-  As of this update, all 4 slots are held (by the live 50-seed queue and
-  other already-running jobs per the plan.md handoff block); my probe is
-  queued and will acquire a slot automatically once one frees, up to a
-  720-minute timeout.
-- Probe log (once a slot is acquired): `.matlab_cytokinesis_randstream_probe_s000.log`
-  in this worktree root.
-- Probe output (once the run completes — this requires the real
-  simulation to advance ~27,277 ticks from cell birth, the same
-  order-of-magnitude cost as the original trace extraction, so expect a
-  long run even after a slot is acquired):
-  `tmp/cytokinesis_randstream_probe_s000.json`.
-- Next step once the JSON exists:
-  `bin\oc-py.cmd scripts/l2_event/analyze_cytokinesis_randstream_probe.py tmp/cytokinesis_randstream_probe_s000.json --oc-draws 226=45,227=13,228=3`
-  — compare Karr's real per-tick draw counts (and the contiguous-tick gap
-  check) against OC's own (45, 13, 3 for local ticks 226/227/228). A
-  mismatch at tick 227 or 228, or a nonzero gap between any two
-  contiguous captured ticks, localizes exactly where the extra/missing
-  draw occurs; from there, either fix the identified OC-side gap directly
-  (if the mismatch is IN a tick OC also computes a count for) or build the
-  Stage-2 hash-bound Cytokinesis.m source overlay (per-phase checkpoints,
-  mirroring `karr_bootstrap.m`'s existing DNADamage signed-zero overlay
-  pattern under `tmp/wcm_source_overlay/` — never modifying the canonical
-  file in place) to localize further within the implicated tick's
-  `evolveState()` call.
+- The probe ran to completion (~2.5 hours after acquiring slot 3) and
+  produced `tmp/cytokinesis_randstream_probe_s000.json` (committed as
+  evidence). Its result is analyzed and interpreted in "Update 2" above —
+  do NOT re-run this probe expecting a different/corrective result; the
+  finding is that Karr's own MATLAB simulation is not bit-reproducible
+  run-to-run, which a re-run would only re-demonstrate (at the cost of
+  another multi-hour MATLAB slot), not resolve.
 - Do NOT re-launch a duplicate probe job before checking
-  `Get-Process -Id <pid-from-a-later-session>` / the lock directory above
+  `Get-Process -Id <pid-from-a-later-session>` / the shared slot lock
+  directory (`C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\matlab-slots\`)
   for an already-running one.
 
 **Task**: Close the Cytokinesis L2.1 active-window CODE_GAP found in the
@@ -399,11 +483,31 @@ yet bit-identical (317/3774 active-tick mismatches remain, first at 228).
   enzyme_count sweep test) this does not change the tick-228 divergence.
 - The tick-228 stream-position divergence: a Stage-1 MATLAB randStream
   state probe (`scripts/matlab/probe_cytokinesis_randstream_state.m`,
-  commit `b9c54b4`) was built and launched (durable background waiter via
-  the shared slot coordinator) to get a real, ground-truth per-draw
-  reference for local ticks 224-230 of the exact accepted seed-0
-  trajectory — see the "Update" section at the top of this file for full
-  operational-handoff detail if this run has not yet completed.
+  commit `b9c54b4`) ran to completion and proved Karr's own MATLAB
+  simulation is not bit-reproducible run-to-run in this environment (see
+  "Update 2" at the top of this file) — a fresh re-run cannot supply a
+  ground-truth per-draw reference for the accepted trace's specific
+  realization, so Stage 2 (per-phase source overlay) was not attempted.
+- **Remaining viable paths for a future session** (not attempted here;
+  each is a substantial, separately-scoped undertaking):
+  1. Re-extract a brand-new instrumented Cytokinesis event trace (same
+     seed=0, anchor-window discovery to completion, with randStream-state
+     capture built into the extraction itself so state data comes from
+     the SAME run that produces the trace, never a separate re-run). This
+     would produce a DIFFERENT accepted trace (its own newly-discovered
+     `tick_start`/`onset_tick`, since completion timing is itself subject
+     to the same non-determinism) and require superseding the currently
+     accepted `Cytokinesis_4000ticks.mat` plus updating the L2.1 test's
+     trace reference — a decision with real provenance/acceptance
+     implications outside this task's scope; flag for explicit
+     authorization before undertaking it.
+  2. Investigate whether pinning MATLAB to single-threaded execution
+     (`-singleCompThread`, `maxNumCompThreads(1)`) makes re-runs
+     reproducible, and if so, whether the ORIGINAL accepted-trace
+     extraction ran under the same constraint (unknown from available
+     provenance) — only useful if the original run was ALSO
+     single-threaded; otherwise a single-threaded re-run still can't
+     match a multi-threaded original.
 
 ## Commits (this branch, this session)
 
@@ -411,5 +515,21 @@ yet bit-identical (317/3774 active-tick mismatches remain, first at 228).
   one append-only provenance conflict.
 - `a5d1aa0` — `fix(cytokinesis): seed process RNG from MATLAB-faithful
   mcg16807, not numpy PCG64` + 3 regression/anti-cheat tests.
+- `191a7bc` — initial `STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md` + provenance log.
+- `3efcbf7` — `fix(cytokinesis): replace heuristic _water_request with
+  Karr's literal calcResourceRequirements_Current` + sweep test.
+- `60b45ab` — provenance log for the water-request fix.
+- `b9c54b4` — `feat(l21-cytokinesis): add Stage-1 randStream state probe`
+  (`scripts/matlab/probe_cytokinesis_randstream_state.m` + 8 static tests).
+- `686cd68` — provenance log for the Stage-1 probe.
+- `4d0407a` — `feat(l21-cytokinesis): add randStream-probe analysis tool +
+  launcher script` (`scripts/l2_event/analyze_cytokinesis_randstream_probe.py`
+  + 7 synthetic unit tests + `tmp/run_cytokinesis_randstream_probe_s000.m`).
+- `c66f6e9` — provenance log for the analyzer + launch.
+- `6eb2b3a` — STATUS update recording the probe launch/handoff (superseded
+  by this file's current content once the probe completed).
+- (this commit) — STATUS update with the completed probe's result
+  (`tmp/cytokinesis_randstream_probe_s000.json`, committed as evidence)
+  and the non-reproducibility finding/final classification.
 
 Not pushed; not merged into main, per instructions.
