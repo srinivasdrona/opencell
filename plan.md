@@ -79,13 +79,13 @@ below:**
   L1b, provenance, and focused tests are green; L2.2 audit is restored to
   **18 PASS / 2 FAIL / 2 MISSING_EVIDENCE**, integrity OK, with zero
   evidence/index changes. Opus 5 **ACCEPTED** the core candidate. Before
-  merge, close its nonblocking-but-policy-relevant findings: promote the
-  100-tick inversion-sensitive scan into a committed regression test;
-  correct two misleading rubric/helper comments; tighten over-broad
-  regenerated wiring anchors; and investigate the pre-existing
-  `karr_fidelity_scorecard.py` ChromCond `FAIL` (`enzymes`, max abs 3 at
-  one tick). The no-known-gap rule requires that scorecard discrepancy to
-  be fixed or proven inapplicable before integration.
+  merge, its five follow-ups were closed at `9859410`: the 100-tick
+  inversion-sensitive scan is now committed; rubric/helper attribution is
+  corrected; anchors were recomputed; and the scorecard `FAIL` was proven
+  to come from a pure-mirror stale fixture and is now fail-closed as a
+  diagnostic `SKIP` with a tripwire test. Full focused gates remain green
+  and L2.2 remains integrity-OK at 18/2/2. The follow-up delta now awaits
+  final Opus 5 re-review before integration.
 - Durable MATLAB queues:
   - Cytokinesis PID `18600` is alive at **4/50 validated**, seeds `4-7`
     active, 42 queued, 0 failed.
