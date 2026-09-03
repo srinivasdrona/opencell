@@ -94,7 +94,7 @@ below:**
   - FtsZ orchestrator PID `22568` and watchdog PID `7904` are alive at
     **2/50 validated**. Seeds `1-2` completed attempt 1 without producing
     traces and were requeued; seeds `3-4` are active.
-  - MacromolecularComplexation has **48** matching raw trace files in its
+  - MacromolecularComplexation has **49** matching raw trace files in its
     worktree; the owning agent must run its fail-closed audit before any
     count is promoted.
 - L2.1 active-window extraction produced genuine-provider traces for
@@ -119,8 +119,9 @@ below:**
   `mcg16807`; exact replay now matches ticks 226-227 and first diverges at
   tick 228. Run a live MATLAB per-call RNG-state ledger and also reconcile
   the   known `_water_request` formula deviation before closure. HostInteraction
-  PID `27484` remains alive; ChromosomeSegregation PID `26372` exited and
-  its output still needs adjudication. Branch manifest currently records
+  PID `27484` remains alive. ChromosomeSegregation PID `26372` completed and
+  saved `per_process_traces_v2_event_s000/ChromosomeSegregation_100ticks.mat`;
+  its fail-closed replay/manifest verification is running. Branch manifest currently records
   **6 EXISTING_WINDOW_PASS / 3 CODE_GAP / 2 MISSING_ACTIVE_EXTRACTION**,
   pending that DNADamage audit correction.
 - TranscriptionalRegulation's site-level/strand-aware promoter port now
@@ -138,8 +139,13 @@ below:**
   fixes are complete; L1b and canonical N=50/M=200 L2.2 are PASS. Site-level
   state and the 29-candidate release set match Karr through tick 3, ruling
   out occupancy, size, and ordering. The sole remaining hypothesis is an
-  upstream RNG draw-count drift during ticks 0-3; run a real MATLAB
-  call-by-call draw ledger now rather than closing on the rubric.
+  upstream RNG draw-count drift during ticks 0-3. The real MATLAB
+  call-by-call ledger harness is committed at `1032886`; waiter PID `3204`
+  (agent shellId `3234`) is alive behind the shared four-slot pool. Expected
+  outputs are `.matlab_repinit_rng_ledger.log` and
+  `docs/phase_f/probes/repinit_rng_ledger/matlab_rng_ledger_ticks0-4.jsonl`;
+  analyze with `scripts/analyze_repinit_rng_ledger.py` immediately after it
+  lands rather than closing on the rubric.
   DNASupercoiling's chromosome-release RNG ledger is now
   wired, but the corrected N=200 run remains `PRIMARY_OVERACTIVE`
   (pooled nonzero ticks **1526 vs 65**, active seeds **200 vs 58**,
