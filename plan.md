@@ -119,11 +119,14 @@ below:**
   `mcg16807`; exact replay now matches ticks 226-227 and first diverges at
   tick 228. Run a live MATLAB per-call RNG-state ledger and also reconcile
   the   known `_water_request` formula deviation before closure. HostInteraction
-  PID `27484` remains alive. ChromosomeSegregation PID `26372` completed and
-  saved `per_process_traces_v2_event_s000/ChromosomeSegregation_100ticks.mat`;
-  its fail-closed replay/manifest verification is running. Branch manifest currently records
-  **6 EXISTING_WINDOW_PASS / 3 CODE_GAP / 2 MISSING_ACTIVE_EXTRACTION**,
-  pending that DNADamage audit correction.
+  PID `27484` remains alive. ChromosomeSegregation's genuine anchor trace is
+  fail-closed and promoted to `CODE_GAP`: Karr completes segregation at
+  local tick 99 (`substrates` 11 -> 10), while OC produces zero activity.
+  The current production file is an explicitly deferred Karr-LIGHT
+  continuous-progress model rather than the literal MATLAB process; fix it
+  from `ChromosomeSegregation.m` in a dedicated lane. Branch manifest now
+  records **6 EXISTING_WINDOW_PASS / 4 CODE_GAP /
+  1 MISSING_ACTIVE_EXTRACTION** (HostInteraction only).
 - TranscriptionalRegulation's site-level/strand-aware promoter port now
   matches the genuine active trace through tick 535, but its candidate used
   shared `MatlabRandStream` (`mt19937ar`) and added weighted sampling to the
