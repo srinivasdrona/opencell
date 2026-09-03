@@ -59,16 +59,14 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-03 00:53 IST) — supersedes all Sept-2 snapshots
+**Current status (2026-09-03 06:05 IST) — supersedes all Sept-2 snapshots
 below:**
 
 - Main integration worktree:
-  `E:\opencell-worktrees\main-integrate`, branch `main`, HEAD `8f813da`.
-  The independently accepted DNADamage closure is merged. Fresh post-merge
-  verification is fully green: evidence audit **18 PASS / 2 FAIL /
-  2 MISSING_EVIDENCE**, integrity OK; provenance **241 records**; focused
-  suite **100 passed**; Ruff and `git diff --check` clean. `origin/main` is
-  still `744974c`; push the verified merge before integrating another lane.
+  `E:\opencell-worktrees\main-integrate`, branch `main`, published through
+  `9f1075b`. The final Opus-accepted ChromCond candidate `9859410` is staged
+  as a local merge with append-only provenance reconciled; it is not pushed.
+  Run the full post-merge gates below before publishing.
 - ChromosomeCondensation is independently accepted and merged with current
   main in `E:\opencell-worktrees\integrate-l21-chromcond-sept2` through
   `1e4d413`. The isolation refactor is complete: shared
@@ -84,15 +82,16 @@ below:**
   corrected; anchors were recomputed; and the scorecard `FAIL` was proven
   to come from a pure-mirror stale fixture and is now fail-closed as a
   diagnostic `SKIP` with a tripwire test. Full focused gates remain green
-  and L2.2 remains integrity-OK at 18/2/2. The follow-up delta now awaits
-  final Opus 5 re-review before integration.
+  and L2.2 remains integrity-OK at 18/2/2. Final Opus 5 re-review
+  **ACCEPTED** with no blockers. Post-merge validation is the only remaining
+  integration step.
 - Durable MATLAB queues:
-  - Cytokinesis PID `18600` is alive at **4/50 validated**, seeds `4-7`
-    active, 42 queued, 0 failed.
+  - Cytokinesis PID `18600` is alive at **8/50 validated**, 4 active,
+    38 queued, 0 failed.
   - FtsZ orchestrator PID `22568` and watchdog PID `7904` are alive at
     **2/50 validated**. Seeds `1-2` completed attempt 1 without producing
     traces and were requeued; seeds `3-4` are active.
-  - MacromolecularComplexation has **47** matching raw trace files in its
+  - MacromolecularComplexation has **48** matching raw trace files in its
     worktree; the owning agent must run its fail-closed audit before any
     count is promoted.
 - L2.1 active-window extraction produced genuine-provider traces for
@@ -116,9 +115,9 @@ below:**
   mismatch was fixed by replacing NumPy PCG64 with MATLAB-faithful
   `mcg16807`; exact replay now matches ticks 226-227 and first diverges at
   tick 228. Run a live MATLAB per-call RNG-state ledger and also reconcile
-  the known `_water_request` formula deviation before closure. HostInteraction and
-  ChromosomeSegregation were relaunched as PIDs `27484` and `26372`, queued
-  on the shared slot pool. Branch manifest currently records
+  the   known `_water_request` formula deviation before closure. HostInteraction
+  PID `27484` remains alive; ChromosomeSegregation PID `26372` exited and
+  its output still needs adjudication. Branch manifest currently records
   **6 EXISTING_WINDOW_PASS / 3 CODE_GAP / 2 MISSING_ACTIVE_EXTRACTION**,
   pending that DNADamage audit correction.
 - ReplicationInitiation remains open at an honest stateful tick-4

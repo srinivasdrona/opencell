@@ -68,6 +68,25 @@ DIAGNOSTIC_MIRROR_PROCESSES = {
     "RNADecay",
     "Replication",
     "ReplicationInitiation",
+    # ChromosomeCondensation: data/karr_fixtures/per_process_replay/
+    # ChromosomeCondensation.npz is a pure mirror across all 100 recorded
+    # ticks and all 3 compared properties (boundEnzymes/enzymes/substrates
+    # states_before == states_after everywhere, confirmed by direct
+    # inspection) -- a placeholder snapshot from before this process had a
+    # real per-tick Karr extraction, not a genuine zero-activity tick. The
+    # real, non-mirror 100-tick trace already exists and is used by the
+    # L2.1/strict-rubric gates (data/m1_sources/karr_native/
+    # per_process_traces_v2/ChromosomeCondensation_100ticks.mat, 66/100
+    # ticks active, GENUINE verdict) -- this scorecard's separate,
+    # older per_process_replay/ fixture format was simply never
+    # re-extracted for this process. Comparing OC's real (correct) output
+    # against a recorded no-op previously produced a spurious FAIL
+    # (enzymes max_abs=3: OC legitimately samples 3 SMC->SMC-ADP binding
+    # events per tick 0's real enzyme counts, which the mirror fixture
+    # never recorded). This is the same "awaiting Track-B MATLAB
+    # re-extract" condition as the other processes in this set, not a
+    # ChromosomeCondensation source-fidelity gap.
+    "ChromosomeCondensation",
 }
 NO_ADAPTER_PROCESSES = {"TerminalOrganelleAssembly", "HostInteraction"}
 

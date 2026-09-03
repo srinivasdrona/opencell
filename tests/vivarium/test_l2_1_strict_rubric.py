@@ -60,12 +60,25 @@ from l2_replay_common import (  # type: ignore
 # processes (oracle_type=bit_identity). This is the correct rubric per
 # process class and restores the L2.2 ⊆ L2.1 hierarchy expectation.
 EXPECTED_VERDICTS = {
-    # GENUINE: 19 (was 16 at Day-37 PM: +TerminalOrg from schema-v2.1
+    # GENUINE: 20 (was 16 at Day-37 PM: +TerminalOrg from schema-v2.1
     # fallback, +TranscriptionalRegulation and +Metabolism from
     # non-standard channel detection — their biology fires on
     # tf_binding/tx_rate_fold_change/metabolic_reaction.fluxs which the
     # strict rubric now recognizes; +Replication, see its inline comment
-    # below for the corrected-activity-gate root cause and evidence)
+    # below for the corrected-activity-gate root cause and evidence;
+    # +ChromosomeCondensation after commit a52a8c1 removed a spurious extra
+    # RNG draw in the production next_update path (a hidden-surface-only
+    # bug -- see STATUS_L21_CHROMCOND_SEPT2.md and the test file docstring
+    # in test_karr_chromosome_condensation_l2_replay.py's full-100-tick
+    # scan/inversion tests). NOT attributable to the shared replay applier:
+    # direct verification (running this rubric's ChromosomeCondensation
+    # classification with the plain shared apply_count_update vs.
+    # tests/vivarium/_chromcond_replay_apply.py's chromosome-aware variant)
+    # shows byte-identical bit_identity_failures/karr_active/oc_fired/
+    # verdict either way -- this rubric's bit-identity check never projects
+    # "chromosome" itself (only substrates/enzymes/boundEnzymes), so how
+    # apply_count_update merges a "chromosome" update key is inert here.
+    "ChromosomeCondensation": "GENUINE",
     #
     # DNARepair stays COINCIDENTAL, but NOT because the harness lacks its inputs:
     # `_classify()` now injects the chromosome hidden-read surface (states_before,
@@ -118,8 +131,7 @@ EXPECTED_VERDICTS = {
     # DNARepair and ProteinDecay are still biology-silent on this
     # standard-observable-only strict-rubric surface — real gaps)
     "ProteinDecay": "COINCIDENTAL",
-    # FAIL: 1 (bit-identity broken for deterministic process)
-    "ChromosomeCondensation": "FAIL",
+    # FAIL: 0
     # ERROR: 0 (was 1 — TerminalOrg moved to GENUINE Day-37 PM after schema v2.1 fallback)
 }
 
@@ -176,6 +188,16 @@ def _classify(name: str) -> dict:
 
             refresh_allocator_views(process, state)
             update = process.next_update(1.0, state)
+            # This rubric's bit-identity check only ever projects
+            # substrates/enzymes/boundEnzymes (never "chromosome" itself -- see
+            # `spec.observables`), so how `apply_count_update` merges a
+            # "chromosome" update key is provably inert here (direct
+            # verification: identical verdict/bit_identity_failures/fire-rate
+            # for ChromosomeCondensation whether this calls the plain shared
+            # apply_count_update or tests/vivarium/_chromcond_replay_apply.py's
+            # chromosome-aware variant). Every process, including
+            # ChromosomeCondensation, uses the plain, main-identical
+            # apply_count_update so the L2.2 provenance hash stays untouched.
             apply_count_update(state, update)
 
             oc_nonempty = False
@@ -302,12 +324,11 @@ def test_l2_1_strict_rubric_matches_expected(process_name: str) -> None:
     improve a verdict (e.g. FAIL -> GENUINE) should update the pin AND the
     process-specific test if applicable.
 
-    GENUINE: 9 processes; the real L2.1 validation surface today.
+    GENUINE: 20 processes; the real L2.1 validation surface today.
     UNINFORMATIVE: 6 processes; Karr trace shows no activity (vacuous PASS).
-    COINCIDENTAL: 1 process; biology dodges Karr-active ticks.
-    FAIL: 11 processes; bit-identity or fire-rate fails (trace-hint
-    short-circuits + ProteinTranslocation port-mismatch).
-    ERROR: 1 (TerminalOrg config issue).
+    COINCIDENTAL: 2 processes; biology dodges Karr-active ticks.
+    FAIL: 0 processes.
+    ERROR: 0.
     """
     expected = EXPECTED_VERDICTS[process_name]
     result = _classify(process_name)

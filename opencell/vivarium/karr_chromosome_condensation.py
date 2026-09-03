@@ -14,6 +14,7 @@ Deferred to v2:
 
 from __future__ import annotations
 
+import json
 import math
 from pathlib import Path
 from typing import Any
@@ -25,10 +26,32 @@ from vivarium.core.process import Process
 
 from opencell.m_gen_constants import GENOME_LENGTH_BP, N_CHROMOSOME_COMPARTMENTS
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
+from opencell.util.chromcond_mcg_rand import ChromCondMcgRandStream
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ChromosomeCondensation_flat.mat"
+_DEFAULT_CHROMOSOME_FIXTURE_PATH = "data/karr_fixtures/per_process/Chromosome_flat.mat"
+_DEFAULT_METABOLITE_FIXTURE_JSON_PATH = "data/karr_fixtures/per_process/Metabolite.json"
 _DEFAULT_TRACE_PATH = (
     "data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat"
+)
+_LITERAL_OCCUPANCY_FIELDS: tuple[str, ...] = (
+    "monomerBoundSites",
+    "damagedBases",
+    "gapSites",
+    "abasicSites",
+    "damagedSugarPhosphates",
+    "intrastrandCrossLinks",
+    "strandBreaks",
+    "hollidayJunctions",
+)
+_DAMAGE_POINT_FIELDS: tuple[str, ...] = (
+    "damagedBases",
+    "gapSites",
+    "abasicSites",
+    "damagedSugarPhosphates",
+    "intrastrandCrossLinks",
+    "strandBreaks",
+    "hollidayJunctions",
 )
 
 
@@ -132,6 +155,278 @@ def _exclude_interval(
     return out
 
 
+def _intersect_intervals(
+    intervals_a: list[tuple[int, int]],
+    intervals_b: list[tuple[int, int]],
+) -> list[tuple[int, int]]:
+    out: list[tuple[int, int]] = []
+    i = 0
+    j = 0
+    while i < len(intervals_a) and j < len(intervals_b):
+        start_a, end_a = intervals_a[i]
+        start_b, end_b = intervals_b[j]
+        start = max(int(start_a), int(start_b))
+        end = min(int(end_a), int(end_b))
+        if start <= end:
+            out.append((start, end))
+        if end_a < end_b:
+            i += 1
+        else:
+            j += 1
+    return out
+
+
+def _intervals_overlap(
+    intervals_a: list[tuple[int, int]],
+    intervals_b: list[tuple[int, int]],
+) -> bool:
+    return bool(_intersect_intervals(intervals_a, intervals_b))
+
+
+def _sort_region_pos_strnds(pos_strnds: np.ndarray) -> np.ndarray:
+    if pos_strnds.size == 0:
+        return np.zeros(0, dtype=np.int64)
+    return np.lexsort((pos_strnds[:, 0], pos_strnds[:, 1])).astype(np.int64)
+
+
+def _split_over_oric_regions(
+    sequence_len: int,
+    pos_strnds: np.ndarray,
+    lens: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    if pos_strnds.size == 0:
+        return pos_strnds.copy(), lens.copy()
+    pos = pos_strnds.copy()
+    ln = lens.astype(np.int64, copy=True)
+    idxs = np.flatnonzero(pos[:, 0] + ln - 1 > sequence_len)
+    if idxs.size == 0:
+        return pos, ln
+    append = np.column_stack((np.ones(idxs.size, dtype=np.int64), pos[idxs, 1]))
+    append_lens = pos[idxs, 0] + ln[idxs] - sequence_len - 1
+    pos = np.vstack((pos, append))
+    ln = np.concatenate((ln, append_lens.astype(np.int64)))
+    ln[idxs] = sequence_len - pos[idxs, 0] + 1
+    return pos, ln
+
+
+def _join_split_over_oric_regions(
+    sequence_len: int,
+    pos_strnds: np.ndarray,
+    lens: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    if pos_strnds.size == 0:
+        return pos_strnds.copy(), lens.copy()
+    pos = pos_strnds[:, 0].astype(np.int64, copy=True)
+    strnds = pos_strnds[:, 1].astype(np.int64, copy=True)
+    ends = pos + lens.astype(np.int64, copy=False) - 1
+    for strand in range(1, int(strnds.max(initial=0)) + 1):
+        idx1_arr = np.flatnonzero((pos == 1) & (strnds == strand))
+        idx2_arr = np.flatnonzero((ends == sequence_len) & (strnds == strand))
+        if idx1_arr.size == 0 or idx2_arr.size == 0:
+            continue
+        idx1 = int(idx1_arr[0])
+        idx2 = int(idx2_arr[0])
+        if idx1 == idx2:
+            continue
+        ends[idx2] = ends[idx2] + (ends[idx1] - pos[idx1] + 1)
+        keep = np.ones(pos.shape[0], dtype=bool)
+        keep[idx1] = False
+        pos = pos[keep]
+        strnds = strnds[keep]
+        ends = ends[keep]
+    out_pos = np.column_stack((pos, strnds))
+    out_lens = ends - pos + 1
+    return out_pos.astype(np.int64), out_lens.astype(np.int64)
+
+
+def _join_split_regions(
+    sequence_len: int,
+    pos_strnds: np.ndarray,
+    lens: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    if pos_strnds.size == 0:
+        return pos_strnds.copy(), lens.copy()
+    pos = pos_strnds.astype(np.int64, copy=True)
+    pos[:, 0] = ((pos[:, 0] - 1) % sequence_len) + 1
+    order = _sort_region_pos_strnds(pos)
+    pos = pos[order]
+    ln = lens.astype(np.int64, copy=False)[order]
+    starts = pos[:, 0].astype(np.int64, copy=True)
+    ends = starts + ln - 1
+    strnds = pos[:, 1].astype(np.int64, copy=True)
+    keep = np.ones(starts.shape[0], dtype=bool)
+    for strand in range(1, int(strnds.max(initial=0)) + 1):
+        idxs = np.flatnonzero(strnds == strand)
+        if idxs.size == 0:
+            continue
+        for j in range(idxs.size - 1):
+            left = int(idxs[j])
+            right = int(idxs[j + 1])
+            if ends[left] + 1 >= starts[right]:
+                starts[right] = starts[left]
+                ends[right] = max(int(ends[left]), int(ends[right]))
+                keep[left] = False
+        if idxs.size >= 2:
+            kept_idxs = idxs[keep[idxs]]
+            if kept_idxs.size > 0:
+                idx = int(kept_idxs[0])
+                last_idx = int(idxs[-1])
+                if ends[last_idx] + 1 >= starts[idx] + sequence_len:
+                    ends[last_idx] = sequence_len
+                    starts[idx] = 1
+    out_pos = np.column_stack((starts[keep], strnds[keep]))
+    out_lens = ends[keep] - starts[keep] + 1
+    return out_pos.astype(np.int64), out_lens.astype(np.int64)
+
+
+def _exclude_regions_literal(
+    sequence_len: int,
+    inc_pos_strnds: np.ndarray,
+    inc_lens: np.ndarray,
+    exc_pos_strnds: np.ndarray,
+    exc_lens: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    if inc_pos_strnds.size == 0:
+        return np.zeros((0, 2), dtype=np.int64), np.zeros(0, dtype=np.int64)
+    if exc_pos_strnds.size == 0:
+        return _join_split_over_oric_regions(sequence_len, inc_pos_strnds, inc_lens)
+
+    inc_pos, inc_ln = _join_split_over_oric_regions(sequence_len, inc_pos_strnds, inc_lens)
+    exc_ln_arr = np.asarray(exc_lens, dtype=np.int64).reshape(-1)
+    if exc_ln_arr.size == 1 and exc_pos_strnds.shape[0] != 1:
+        exc_ln_arr = np.repeat(exc_ln_arr, exc_pos_strnds.shape[0])
+    exc_pos, exc_ln_arr = _join_split_regions(sequence_len, exc_pos_strnds, exc_ln_arr)
+
+    exc_pos_tripled = np.concatenate(
+        (exc_pos[:, 0] - sequence_len, exc_pos[:, 0], exc_pos[:, 0] + sequence_len)
+    )
+    exc_strands_tripled = np.concatenate((exc_pos[:, 1], exc_pos[:, 1], exc_pos[:, 1]))
+    exc_lens_tripled = np.concatenate((exc_ln_arr, exc_ln_arr, exc_ln_arr))
+
+    out_pos: list[int] = []
+    out_ends: list[int] = []
+    out_strands: list[int] = []
+    for (start_coor, strand), length in zip(inc_pos, inc_ln, strict=False):
+        end_coor = int(start_coor + length - 1)
+        mask = (
+            (
+                ((exc_pos_tripled <= start_coor) & (exc_pos_tripled + exc_lens_tripled - 1 >= start_coor))
+                | ((exc_pos_tripled <= end_coor) & (exc_pos_tripled + exc_lens_tripled - 1 >= end_coor))
+                | ((exc_pos_tripled >= start_coor) & (exc_pos_tripled + exc_lens_tripled - 1 <= end_coor))
+            )
+            & (exc_strands_tripled == strand)
+        )
+        exc_idxs = np.flatnonzero(mask)
+        if exc_idxs.size == 0:
+            add_pos = np.asarray([start_coor], dtype=np.int64)
+            add_ends = np.asarray([end_coor], dtype=np.int64)
+        elif exc_pos_tripled[exc_idxs[0]] <= start_coor:
+            # Source-faithful note: MATLAB uses excLens(end) here, not the
+            # matched interval's own length.
+            if exc_pos_tripled[exc_idxs[-1]] + exc_lens_tripled[-1] - 1 >= end_coor:
+                add_pos = exc_pos_tripled[exc_idxs[:-1]] + exc_lens_tripled[exc_idxs[:-1]]
+                add_ends = exc_pos_tripled[exc_idxs[1:]] - 1
+            else:
+                add_pos = exc_pos_tripled[exc_idxs] + exc_lens_tripled[exc_idxs]
+                add_ends = np.concatenate((exc_pos_tripled[exc_idxs[1:]] - 1, np.asarray([end_coor])))
+        else:
+            # Mirror the same MATLAB excLens(end) behavior in the second branch.
+            if exc_pos_tripled[exc_idxs[-1]] + exc_lens_tripled[-1] - 1 >= end_coor:
+                add_pos = np.concatenate(
+                    (np.asarray([start_coor]), exc_pos_tripled[exc_idxs[:-1]] + exc_lens_tripled[exc_idxs[:-1]])
+                )
+                add_ends = exc_pos_tripled[exc_idxs] - 1
+            else:
+                add_pos = np.concatenate(
+                    (np.asarray([start_coor]), exc_pos_tripled[exc_idxs] + exc_lens_tripled[exc_idxs])
+                )
+                add_ends = np.concatenate((exc_pos_tripled[exc_idxs] - 1, np.asarray([end_coor])))
+        out_pos.extend(int(x) for x in add_pos)
+        out_ends.extend(int(x) for x in add_ends)
+        out_strands.extend([int(strand)] * int(add_pos.size))
+
+    out_pos_arr = np.asarray(out_pos, dtype=np.int64)
+    out_ends_arr = np.asarray(out_ends, dtype=np.int64)
+    out_strands_arr = np.asarray(out_strands, dtype=np.int64)
+    high = np.flatnonzero(out_pos_arr > sequence_len)
+    out_pos_arr[high] -= sequence_len
+    out_ends_arr[high] -= sequence_len
+    keep = out_pos_arr <= out_ends_arr
+    out_pos_strnds = np.column_stack((out_pos_arr[keep], out_strands_arr[keep]))
+    out_lens = out_ends_arr[keep] - out_pos_arr[keep] + 1
+    out_pos_strnds, out_lens = _join_split_over_oric_regions(sequence_len, out_pos_strnds, out_lens)
+    if out_pos_strnds.size == 0:
+        return out_pos_strnds, out_lens
+    out_pos_strnds[:, 0] = ((out_pos_strnds[:, 0] - 1) % sequence_len) + 1
+    order = _sort_region_pos_strnds(out_pos_strnds)
+    return out_pos_strnds[order], out_lens[order]
+
+
+def _intersect_regions_literal(
+    sequence_len: int,
+    n_compartments: int,
+    pos_a: np.ndarray,
+    lens_a: np.ndarray,
+    pos_b: np.ndarray,
+    lens_b: np.ndarray,
+) -> tuple[np.ndarray, np.ndarray]:
+    pos_a, lens_a = _split_over_oric_regions(sequence_len, pos_a, lens_a)
+    if pos_a.size:
+        pos_a[:, 0] = ((pos_a[:, 0] - 1) % sequence_len) + 1
+        order_a = _sort_region_pos_strnds(pos_a)
+        pos_a = pos_a[order_a]
+        lens_a = lens_a[order_a]
+
+    pos_b, lens_b = _split_over_oric_regions(sequence_len, pos_b, lens_b)
+    if pos_b.size:
+        pos_b[:, 0] = ((pos_b[:, 0] - 1) % sequence_len) + 1
+        order_b = _sort_region_pos_strnds(pos_b)
+        pos_b = pos_b[order_b]
+        lens_b = lens_b[order_b]
+
+    out_pos: list[tuple[int, int]] = []
+    out_lens: list[int] = []
+    for strand in range(1, n_compartments + 1):
+        rows_a = pos_a[:, 1] == strand if pos_a.size else np.zeros(0, dtype=bool)
+        rows_b = pos_b[:, 1] == strand if pos_b.size else np.zeros(0, dtype=bool)
+        pos_only_a = pos_a[rows_a, 0]
+        pos_only_b = pos_b[rows_b, 0]
+        ln_a = lens_a[rows_a]
+        ln_b = lens_b[rows_b]
+        i_a = 0
+        i_b = 0
+        while i_a < pos_only_a.size and i_b < pos_only_b.size:
+            if pos_only_a[i_a] <= pos_only_b[i_b]:
+                if pos_only_a[i_a] + ln_a[i_a] > pos_only_b[i_b]:
+                    out_pos.append((int(pos_only_b[i_b]), strand))
+                    if pos_only_a[i_a] + ln_a[i_a] < pos_only_b[i_b] + ln_b[i_b]:
+                        out_lens.append(int(pos_only_a[i_a] + ln_a[i_a] - pos_only_b[i_b]))
+                        i_a += 1
+                    else:
+                        out_lens.append(int(ln_b[i_b]))
+                        i_b += 1
+                else:
+                    i_a += 1
+            else:
+                if pos_only_b[i_b] + ln_b[i_b] > pos_only_a[i_a]:
+                    out_pos.append((int(pos_only_a[i_a]), strand))
+                    if pos_only_b[i_b] + ln_b[i_b] < pos_only_a[i_a] + ln_a[i_a]:
+                        out_lens.append(int(pos_only_b[i_b] + ln_b[i_b] - pos_only_a[i_a]))
+                        i_b += 1
+                    else:
+                        out_lens.append(int(ln_a[i_a]))
+                        i_a += 1
+                else:
+                    i_b += 1
+    if not out_pos:
+        return np.zeros((0, 2), dtype=np.int64), np.zeros(0, dtype=np.int64)
+    return _join_split_over_oric_regions(
+        sequence_len,
+        np.asarray(out_pos, dtype=np.int64),
+        np.asarray(out_lens, dtype=np.int64),
+    )
+
+
 def _coerce_shape2(value: Any, fallback: tuple[int, int]) -> tuple[int, int]:
     try:
         arr = np.asarray(value, dtype=np.int64).reshape(-1)
@@ -148,6 +443,8 @@ class KarrChromosomeCondensationProcess(Process):
     name = "karr_chromosome_condensation"
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
+        "chromosome_fixture_path": _DEFAULT_CHROMOSOME_FIXTURE_PATH,
+        "metabolite_fixture_json_path": _DEFAULT_METABOLITE_FIXTURE_JSON_PATH,
         "trace_path": _DEFAULT_TRACE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
@@ -165,8 +462,15 @@ class KarrChromosomeCondensationProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
+        self._load_chromosome_fixture(self.parameters["chromosome_fixture_path"])
+        self._load_metabolite_fixture_json(self.parameters["metabolite_fixture_json_path"])
         self._load_trace_anchor(self.parameters["trace_path"])
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        seed = int(self.parameters["rng_seed"])
+        # The replay/extraction path reseeds process streams after loading the
+        # fitted simulation surface, so tick 0 must begin from the seeded
+        # process stream rather than the warmup endpoint stream state.
+        self._rng = ChromCondMcgRandStream(seed)
+        self._np_rng = np.random.default_rng(seed)
         self.chromosome_shape = (
             int(self.parameters["genome_length_bp"]),
             int(N_CHROMOSOME_COMPARTMENTS),
@@ -180,7 +484,6 @@ class KarrChromosomeCondensationProcess(Process):
         self._free_smc_adp = int(max(0, self._total_smc_pool - self._bound_smc - self._free_smc))
         self._synthetic_complex_bound: SparseTriplet | None = None
         self._prev_bound_smc_nohint: int | None = None
-        self._pending_post_drop_rebind_bonus = False
         self._initialized = False
 
     def _load_fixture(self, path: str | Path) -> None:
@@ -221,6 +524,8 @@ class KarrChromosomeCondensationProcess(Process):
         self.smc_sep_nt = float(_coerce_scalar(fx.smcSepNt))
         self.smc_sep_prob_center = float(_coerce_scalar(fx.smcSepProbCenter))
         self.smc_footprint_bp = float(np.asarray(fx.enzymeDNAFootprints, dtype=np.float64).flat[0])
+        self._smc_footprint_5prime = int(math.ceil((self.smc_footprint_bp - 1.0) / 2.0))
+        self._smc_footprint_3prime = int(self.smc_footprint_bp - 1.0 - self._smc_footprint_5prime)
         self._smc_exclusion_len = int(max(0, round(self.smc_sep_nt + self.smc_sep_prob_center)))
         self._smc_exclusion_offset = int(
             round((self.smc_footprint_bp - self.smc_sep_nt - self.smc_sep_prob_center) / 2.0)
@@ -229,6 +534,66 @@ class KarrChromosomeCondensationProcess(Process):
 
         substrates = np.asarray(fx.substrates, dtype=np.float64).reshape(-1)
         self._fixture_initial_atp = float(max(0.0, substrates[self.substrate_index_atp]))
+
+    def _load_chromosome_fixture(self, path: str | Path) -> None:
+        resolved = _resolve_data_path(path)
+        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
+        fx = mat["data"].fixture
+
+        self.dna_strandedness_ssdna = int(_coerce_scalar(fx.dnaStrandedness_ssDNA))
+        self.dna_strandedness_dsdna = int(_coerce_scalar(fx.dnaStrandedness_dsDNA))
+        self.monomer_dna_footprints = np.asarray(fx.monomerDNAFootprints, dtype=np.int64).reshape(-1)
+        self.complex_dna_footprints = np.asarray(fx.complexDNAFootprints, dtype=np.int64).reshape(-1)
+        self.monomer_dna_binding_strandedness = np.asarray(
+            fx.monomerDNAFootprintBindingStrandedness,
+            dtype=np.int64,
+        ).reshape(-1)
+        self.monomer_dna_region_strandedness = np.asarray(
+            fx.monomerDNAFootprintRegionStrandedness,
+            dtype=np.int64,
+        ).reshape(-1)
+        self.complex_dna_binding_strandedness = np.asarray(
+            fx.complexDNAFootprintBindingStrandedness,
+            dtype=np.int64,
+        ).reshape(-1)
+        self.complex_dna_region_strandedness = np.asarray(
+            fx.complexDNAFootprintRegionStrandedness,
+            dtype=np.int64,
+        ).reshape(-1)
+        self.smc_binding_strandedness = int(
+            self.complex_dna_binding_strandedness[self.smc_adp_global_index - 1]
+        )
+        self.smc_region_strandedness = int(
+            self.complex_dna_region_strandedness[self.smc_adp_global_index - 1]
+        )
+        self._releasable_monomer_global_indexs_for_smc = self._calc_releasable_global_indexs(
+            reaction_bound=np.asarray(
+                getattr(fx, "reactionBoundMonomer", np.array([], dtype=np.int64)),
+                dtype=np.int64,
+            ).reshape(-1),
+            catalysis_matrix=np.asarray(
+                getattr(fx, "reactionMonomerCatalysisMatrix", np.zeros((0, 0), dtype=np.int64)),
+                dtype=np.int64,
+            ),
+            thresholds=np.asarray(
+                getattr(fx, "reactionThresholds", np.array([], dtype=np.int64)),
+                dtype=np.int64,
+            ).reshape(-1),
+        )
+        self._releasable_complex_global_indexs_for_smc = self._calc_releasable_global_indexs(
+            reaction_bound=np.asarray(
+                getattr(fx, "reactionBoundComplex", np.array([], dtype=np.int64)),
+                dtype=np.int64,
+            ).reshape(-1),
+            catalysis_matrix=np.asarray(
+                getattr(fx, "reactionComplexCatalysisMatrix", np.zeros((0, 0), dtype=np.int64)),
+                dtype=np.int64,
+            ),
+            thresholds=np.asarray(
+                getattr(fx, "reactionThresholds", np.array([], dtype=np.int64)),
+                dtype=np.int64,
+            ).reshape(-1),
+        )
 
     def _load_trace_anchor(self, path: str | Path) -> None:
         # Default anchor: fixture-derived baseline.
@@ -249,12 +614,17 @@ class KarrChromosomeCondensationProcess(Process):
                     self.trace_anchor_bound = int(
                         max(0.0, before_values[self.enzyme_index_smc_adp])
                     )
-
             after_ds = trace.get("states_after/boundEnzymes")
             if after_ds is not None:
                 self.trace_states_after_empty = bool(
                     int(after_ds.attrs.get("MATLAB_empty", 0)) == 1
                 )
+
+    def _load_metabolite_fixture_json(self, path: str | Path) -> None:
+        resolved = _resolve_data_path(path)
+        with resolved.open("r", encoding="utf-8") as fh:
+            payload = json.load(fh)
+        self._m6ad_global_index = int(payload["scalars"]["fixture/m6ADIndexs"])
 
     @property
     def total_smc_complexes(self) -> int:
@@ -372,7 +742,7 @@ class KarrChromosomeCondensationProcess(Process):
             bound_delta_smc_adp = _safe_count(bound_update.get(self.smc_adp_wid, 0.0))
             n_bound = max(0, min(bound_delta_smc_adp, n_binding_max))
         else:
-            n_bound, complex_bound_sites_next = self._sample_smc_binding_no_hints(
+            n_bound, chromosome_field_updates = self._sample_smc_binding_no_hints(
                 n_binding_max=n_binding_max,
                 chrom_state=states.get("chromosome", {}),
                 current_bound_smc=current_bound_smc,
@@ -381,8 +751,9 @@ class KarrChromosomeCondensationProcess(Process):
                 bound_update[self.smc_adp_wid] = float(
                     bound_update.get(self.smc_adp_wid, 0.0) + n_bound
                 )
-            if complex_bound_sites_next is not None:
-                chromosome_update["complexBoundSites"] = complex_bound_sites_next.to_state()
+            if chromosome_field_updates is not None:
+                for field_name, triplet in chromosome_field_updates.items():
+                    chromosome_update[field_name] = triplet.to_state()
 
         smc_delta = smc_adp_dissociated - n_bound
         smc_adp_delta = -smc_adp_dissociated
@@ -447,7 +818,7 @@ class KarrChromosomeCondensationProcess(Process):
         n_binding_max: int,
         chrom_state: Any,
         current_bound_smc: int,
-    ) -> tuple[int, SparseTriplet | None]:
+    ) -> tuple[int, dict[str, SparseTriplet] | None]:
         if n_binding_max <= 0:
             return 0, None
 
@@ -455,6 +826,49 @@ class KarrChromosomeCondensationProcess(Process):
             chrom_state = {}
         store = self._resolve_chromosome_store(chrom_state)
         polymerized = store.get_field("polymerizedRegions")
+        if self._has_literal_chromosome_surface(chrom_state):
+            complex_bound = store.get_field("complexBoundSites")
+            binding_pos_strnds, binding_lens = self._build_binding_regions_literal(
+                chromosome_store=store,
+                polymerized=polymerized,
+            )
+            bound_centroids, bound_strands = self._sample_binding_regions_literal(
+                pos_strnds=binding_pos_strnds,
+                lens=binding_lens,
+                n_to_bind=int(n_binding_max),
+                sequence_len=polymerized.shape[0],
+            )
+            n_bound = len(bound_centroids)
+            if n_bound == 0:
+                return 0, None
+
+            chromosome_updates = self._bind_smc_sites_literal(
+                chromosome_store=store,
+                complex_bound=complex_bound,
+                bound_centroids=bound_centroids,
+                bound_strands=bound_strands,
+                sequence_len=polymerized.shape[0],
+            )
+            if not chromosome_updates:
+                return n_bound, None
+            return n_bound, chromosome_updates
+
+        return self._sample_smc_binding_fallback(
+            chrom_state=chrom_state,
+            current_bound_smc=int(current_bound_smc),
+            n_binding_max=int(n_binding_max),
+            polymerized=polymerized,
+        )
+
+    def _sample_smc_binding_fallback(
+        self,
+        *,
+        chrom_state: dict[str, Any],
+        current_bound_smc: int,
+        n_binding_max: int,
+        polymerized: SparseTriplet,
+    ) -> tuple[int, dict[str, SparseTriplet] | None]:
+        store = self._resolve_chromosome_store(chrom_state)
         complex_bound_input = store.get_field("complexBoundSites")
         if (
             self._synthetic_complex_bound is None
@@ -473,7 +887,7 @@ class KarrChromosomeCondensationProcess(Process):
                 dict,
             ):
                 self._prev_bound_smc_nohint = int(current_bound_smc)
-                return n_bound, self._synthetic_complex_bound
+                return n_bound, {"complexBoundSites": self._synthetic_complex_bound}
             self._prev_bound_smc_nohint = int(current_bound_smc)
             return n_bound, None
 
@@ -508,8 +922,6 @@ class KarrChromosomeCondensationProcess(Process):
             and int(current_bound_smc) < int(self._prev_bound_smc_nohint)
         )
         if recent_drop:
-            self._pending_post_drop_rebind_bonus = True
-        if recent_drop:
             bind_cap = min(
                 bind_cap,
                 max(0, self.default_target_bound - int(current_bound_smc)),
@@ -519,27 +931,6 @@ class KarrChromosomeCondensationProcess(Process):
             n_to_bind=bind_cap,
             sequence_len=polymerized.shape[0],
         )
-        if (
-            not recent_drop
-            and int(current_bound_smc) == self.default_target_bound - 1
-            and int(n_binding_max) >= 2
-            and len(bound_positions) == 1
-        ):
-            rebound_pos = int((bound_positions[0] + self._smc_bindable_span) % polymerized.shape[0])
-            bound_positions.append(rebound_pos)
-            bound_strands.append(int(bound_strands[0]))
-        if (
-            self._pending_post_drop_rebind_bonus
-            and not recent_drop
-            and bound_positions
-            and int(n_binding_max) > len(bound_positions)
-        ):
-            bonus_pos = int((bound_positions[-1] + self._smc_bindable_span) % polymerized.shape[0])
-            bound_positions.append(bonus_pos)
-            bound_strands.append(int(bound_strands[-1]))
-            self._pending_post_drop_rebind_bonus = False
-        elif recent_drop:
-            self._pending_post_drop_rebind_bonus = True
         n_bound = len(bound_positions)
         self._prev_bound_smc_nohint = int(current_bound_smc)
         if n_bound == 0:
@@ -557,7 +948,712 @@ class KarrChromosomeCondensationProcess(Process):
             dict,
         ):
             return n_bound, None
-        return n_bound, complex_next
+        return n_bound, {"complexBoundSites": complex_next}
+
+    def _has_literal_chromosome_surface(self, chrom_state: dict[str, Any]) -> bool:
+        return any(isinstance(chrom_state.get(field_name), dict) for field_name in _LITERAL_OCCUPANCY_FIELDS)
+
+    def _build_binding_regions_literal(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        polymerized: SparseTriplet,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        return self._build_outer_binding_regions_literal(
+            chromosome_store=chromosome_store,
+            polymerized=polymerized,
+        )
+
+    def _build_accessible_intervals_literal(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        polymerized: SparseTriplet,
+    ) -> dict[int, list[tuple[int, int]]]:
+        full_intervals = self._intervals_from_polymerized(polymerized)
+        intervals_by_strand = self._build_polymerized_intervals_literal(
+            full_intervals=full_intervals,
+            n_compartments=polymerized.shape[1],
+        )
+        sequence_len = polymerized.shape[0]
+
+        monomer_bound = chromosome_store.get_field("monomerBoundSites")
+        for pos, strand, global_idx in monomer_bound.to_regions():
+            if int(global_idx) in self._releasable_monomer_global_indexs_for_smc:
+                continue
+            footprint = self._footprint_by_global_index(
+                global_index=int(global_idx),
+                footprints=self.monomer_dna_footprints,
+            )
+            intervals_by_strand = self._exclude_bound_site(
+                intervals_by_strand=intervals_by_strand,
+                site_pos=int(pos),
+                site_strand=int(strand),
+                footprint=footprint,
+                binding_strandedness=self._strandedness_by_global_index(
+                    global_index=int(global_idx),
+                    strandednesses=self.monomer_dna_binding_strandedness,
+                    default=self.dna_strandedness_ssdna,
+                ),
+                sequence_len=sequence_len,
+            )
+
+        complex_bound = chromosome_store.get_field("complexBoundSites")
+        for pos, strand, global_idx in complex_bound.to_regions():
+            if int(global_idx) in self._releasable_complex_global_indexs_for_smc:
+                continue
+            footprint = self._footprint_by_global_index(
+                global_index=int(global_idx),
+                footprints=self.complex_dna_footprints,
+            )
+            intervals_by_strand = self._exclude_bound_site(
+                intervals_by_strand=intervals_by_strand,
+                site_pos=int(pos),
+                site_strand=int(strand),
+                footprint=footprint,
+                binding_strandedness=self._strandedness_by_global_index(
+                    global_index=int(global_idx),
+                    strandednesses=self.complex_dna_binding_strandedness,
+                    default=self.dna_strandedness_ssdna,
+                ),
+                sequence_len=sequence_len,
+            )
+
+        for pos, strand in self._iter_damaged_sites_literal(
+            chromosome_store=chromosome_store,
+            sequence_len=sequence_len,
+        ):
+            intervals_by_strand = self._exclude_bound_site(
+                intervals_by_strand=intervals_by_strand,
+                site_pos=pos,
+                site_strand=strand,
+                footprint=1,
+                binding_strandedness=self.dna_strandedness_ssdna,
+                sequence_len=sequence_len,
+            )
+
+        for pos, strand, global_idx in complex_bound.to_regions():
+            if int(global_idx) != self.smc_adp_global_index:
+                continue
+            intervals_by_strand = self._exclude_smc_spacing_literal(
+                intervals_by_strand=intervals_by_strand,
+                site_pos=int(pos),
+                site_strand=int(strand),
+                sequence_len=sequence_len,
+            )
+        return intervals_by_strand
+
+    def _build_double_stranded_regions_literal(
+        self,
+        polymerized: SparseTriplet,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        full_intervals = self._intervals_from_polymerized(polymerized)
+        out_pos: list[tuple[int, int]] = []
+        out_lens: list[int] = []
+        n_compartments = int(polymerized.shape[1])
+        for strand_start in range(0, max(0, n_compartments - 1), 2):
+            pair_id = strand_start // 2 + 1
+            intervals = _intersect_intervals(
+                full_intervals.get(strand_start, []),
+                full_intervals.get(strand_start + 1, []),
+            )
+            for start0, end0 in intervals:
+                out_pos.append((int(start0) + 1, pair_id))
+                out_lens.append(int(end0 - start0 + 1))
+        if not out_pos:
+            return np.zeros((0, 2), dtype=np.int64), np.zeros(0, dtype=np.int64)
+        return np.asarray(out_pos, dtype=np.int64), np.asarray(out_lens, dtype=np.int64)
+
+    def _build_accessible_regions_literal(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        polymerized: SparseTriplet,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        sequence_len = int(polymerized.shape[0])
+        pol_pos, pol_lens = self._build_double_stranded_regions_literal(polymerized)
+        if pol_pos.size == 0:
+            return pol_pos, pol_lens
+
+        exc_pos: list[tuple[int, int]] = []
+        exc_lens: list[int] = []
+
+        monomer_bound = chromosome_store.get_field("monomerBoundSites")
+        for pos0, strand0, global_idx in monomer_bound.to_regions():
+            global_i = int(global_idx)
+            if global_i in self._releasable_monomer_global_indexs_for_smc:
+                continue
+            pos1 = int(pos0) + 1
+            strand1 = int(strand0) + 1
+            footprint = self._footprint_by_global_index(
+                global_index=global_i,
+                footprints=self.monomer_dna_footprints,
+            )
+            strandedness = self._strandedness_by_global_index(
+                global_index=global_i,
+                strandednesses=self.monomer_dna_binding_strandedness,
+                default=self.dna_strandedness_ssdna,
+            )
+            if strandedness == self.dna_strandedness_dsdna:
+                pair_odd = 2 * int(math.ceil(strand1 / 2.0)) - 1
+                exc_pos.append((pos1, pair_odd))
+                exc_pos.append((pos1, pair_odd + 1))
+                exc_lens.extend((footprint, footprint))
+            else:
+                exc_pos.append((pos1, strand1))
+                exc_lens.append(footprint)
+
+        complex_bound = chromosome_store.get_field("complexBoundSites")
+        for pos0, strand0, global_idx in complex_bound.to_regions():
+            global_i = int(global_idx)
+            if global_i in self._releasable_complex_global_indexs_for_smc:
+                continue
+            pos1 = int(pos0) + 1
+            strand1 = int(strand0) + 1
+            footprint = self._footprint_by_global_index(
+                global_index=global_i,
+                footprints=self.complex_dna_footprints,
+            )
+            strandedness = self._strandedness_by_global_index(
+                global_index=global_i,
+                strandednesses=self.complex_dna_binding_strandedness,
+                default=self.dna_strandedness_ssdna,
+            )
+            if strandedness == self.dna_strandedness_dsdna:
+                pair_odd = 2 * int(math.ceil(strand1 / 2.0)) - 1
+                exc_pos.append((pos1, pair_odd))
+                exc_pos.append((pos1, pair_odd + 1))
+                exc_lens.extend((footprint, footprint))
+            else:
+                exc_pos.append((pos1, strand1))
+                exc_lens.append(footprint)
+
+        for pos0, strand0 in self._iter_damaged_sites_literal(
+            chromosome_store=chromosome_store,
+            sequence_len=sequence_len,
+        ):
+            exc_pos.append((int(pos0) + 1, int(strand0) + 1))
+            exc_lens.append(1)
+
+        exc_pos_arr = np.asarray(exc_pos, dtype=np.int64) if exc_pos else np.zeros((0, 2), dtype=np.int64)
+        exc_lens_arr = np.asarray(exc_lens, dtype=np.int64) if exc_lens else np.zeros(0, dtype=np.int64)
+        if exc_pos_arr.size:
+            exc_pos_arr[:, 1] = np.ceil(exc_pos_arr[:, 1] / 2.0).astype(np.int64)
+        pol_pos = pol_pos.copy()
+        rgn_pos, rgn_lens = _exclude_regions_literal(
+            sequence_len,
+            pol_pos,
+            pol_lens,
+            exc_pos_arr,
+            exc_lens_arr,
+        )
+        keep = np.flatnonzero(rgn_lens >= int(self.smc_footprint_bp))
+        rgn_pos = rgn_pos[keep]
+        rgn_lens = rgn_lens[keep]
+        if rgn_pos.size:
+            rgn_pos = rgn_pos.copy()
+            rgn_pos[:, 1] = 2 * rgn_pos[:, 1] - 1
+        return rgn_pos, rgn_lens
+
+    def _build_outer_binding_regions_literal(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        polymerized: SparseTriplet,
+    ) -> tuple[np.ndarray, np.ndarray]:
+        sequence_len = int(polymerized.shape[0])
+        n_compartments = int(polymerized.shape[1])
+        caller_rows = [
+            (int(pos0) + 1, int(strand0) + 1)
+            for pos0, strand0, length in polymerized.to_regions()
+            if int(length) > 0
+        ]
+        caller_lens = [int(length) for _, _, length in polymerized.to_regions() if int(length) > 0]
+        caller_pos = np.asarray(caller_rows, dtype=np.int64) if caller_rows else np.zeros((0, 2), dtype=np.int64)
+        caller_lens_arr = np.asarray(caller_lens, dtype=np.int64) if caller_lens else np.zeros(0, dtype=np.int64)
+
+        smc_pos_rows: list[tuple[int, int]] = []
+        complex_bound = chromosome_store.get_field("complexBoundSites")
+        for pos0, strand0, global_idx in complex_bound.to_regions():
+            if int(global_idx) != int(self.smc_adp_global_index):
+                continue
+            pos1 = int(pos0) + 1
+            strand1 = int(strand0) + 1
+            shifted = int(
+                (
+                    (
+                        pos1
+                        - self.smc_sep_nt / 2.0
+                        - self.smc_sep_prob_center / 2.0
+                        + self.smc_footprint_bp / 2.0
+                        - 1.0
+                    )
+                    % sequence_len
+                )
+                + 1
+            )
+            pair_odd = 2 * int(math.ceil(strand1 / 2.0)) - 1
+            smc_pos_rows.append((shifted, pair_odd))
+            smc_pos_rows.append((shifted, pair_odd + 1))
+
+        if smc_pos_rows:
+            smc_pos = np.asarray(smc_pos_rows, dtype=np.int64)
+            smc_lens = np.full(
+                smc_pos.shape[0],
+                int(self.smc_sep_nt + self.smc_sep_prob_center),
+                dtype=np.int64,
+            )
+            caller_pos, caller_lens_arr = _exclude_regions_literal(
+                sequence_len,
+                caller_pos,
+                caller_lens_arr,
+                smc_pos,
+                smc_lens,
+            )
+
+        accessible_pos, accessible_lens = self._build_accessible_regions_literal(
+            chromosome_store=chromosome_store,
+            polymerized=polymerized,
+        )
+        if caller_pos.size == 0 or accessible_pos.size == 0:
+            return np.zeros((0, 2), dtype=np.int64), np.zeros(0, dtype=np.int64)
+        return _intersect_regions_literal(
+            sequence_len,
+            n_compartments,
+            accessible_pos,
+            accessible_lens,
+            caller_pos,
+            caller_lens_arr,
+        )
+
+    def _sample_binding_regions_literal(
+        self,
+        *,
+        pos_strnds: np.ndarray,
+        lens: np.ndarray,
+        n_to_bind: int,
+        sequence_len: int,
+    ) -> tuple[list[int], list[int]]:
+        if n_to_bind <= 0 or sequence_len <= 0 or pos_strnds.size == 0:
+            return [], []
+        rgn_pos = pos_strnds.astype(np.int64, copy=True)
+        rgn_lens = lens.astype(np.int64, copy=True)
+        bound_positions: list[int] = []
+        bound_strands: list[int] = []
+        for _ in range(int(n_to_bind)):
+            rgn_probs = np.maximum(0, rgn_lens - int(self.smc_footprint_bp) + 1).astype(np.float64)
+            if not np.any(rgn_probs):
+                break
+            rgn_idx = int(self._rng.randsample(int(rgn_probs.size), 1, True, rgn_probs)[0]) - 1
+            n_bind_positions = int(rgn_lens[rgn_idx] - int(self.smc_footprint_bp) + 1)
+            if n_bind_positions <= 0:
+                continue
+            offset = int(math.ceil(float(self._rng.rand()) * float(n_bind_positions)) - 1)
+            if offset < 0:
+                offset = 0
+            bind_pos1 = int(rgn_pos[rgn_idx, 0] + offset)
+            bind_strand1 = int(rgn_pos[rgn_idx, 1])
+            bound_positions.append(int((bind_pos1 - 1) % sequence_len))
+            bound_strands.append(bind_strand1 - 1)
+            exc_pos = np.asarray(
+                [[
+                    int(
+                        (
+                            (
+                                bind_pos1
+                                - self.smc_sep_nt / 2.0
+                                - self.smc_sep_prob_center / 2.0
+                                + self.smc_footprint_bp / 2.0
+                                - 1.0
+                            )
+                            % sequence_len
+                        )
+                        + 1
+                    ),
+                    bind_strand1,
+                ]],
+                dtype=np.int64,
+            )
+            exc_len = np.asarray([int(self.smc_sep_nt + self.smc_sep_prob_center)], dtype=np.int64)
+            rgn_pos, rgn_lens = _exclude_regions_literal(
+                sequence_len,
+                rgn_pos,
+                rgn_lens,
+                exc_pos,
+                exc_len,
+            )
+        return bound_positions, bound_strands
+
+    def _bind_smc_sites_literal(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        complex_bound: SparseTriplet,
+        bound_centroids: list[int],
+        bound_strands: list[int],
+        sequence_len: int,
+    ) -> dict[str, SparseTriplet]:
+        if not bound_centroids:
+            return {}
+        monomer_bound = chromosome_store.get_field("monomerBoundSites")
+        bound_positions = self._smc_centroids_to_start_positions(
+            bound_centroids=bound_centroids,
+            bound_strands=bound_strands,
+            sequence_len=sequence_len,
+        )
+        monomer_next = self._release_overlapping_releasable_bound_sites_literal(
+            triplet=monomer_bound,
+            releasable_global_indexs=self._releasable_monomer_global_indexs_for_smc,
+            footprints=self.monomer_dna_footprints,
+            release_positions=bound_positions,
+            release_strands=bound_strands,
+            release_length=int(self.smc_footprint_bp),
+            sequence_len=sequence_len,
+        )
+        complex_released = self._release_overlapping_releasable_bound_sites_literal(
+            triplet=complex_bound,
+            releasable_global_indexs=self._releasable_complex_global_indexs_for_smc,
+            footprints=self.complex_dna_footprints,
+            release_positions=bound_positions,
+            release_strands=bound_strands,
+            release_length=int(self.smc_footprint_bp),
+            sequence_len=sequence_len,
+        )
+        complex_next = self._append_bound_sites(
+            complex_bound=complex_released,
+            bound_positions=bound_positions,
+            bound_strands=bound_strands,
+        )
+        updates: dict[str, SparseTriplet] = {"complexBoundSites": complex_next}
+        if (
+            monomer_next.shape != monomer_bound.shape
+            or not np.array_equal(monomer_next.positions, monomer_bound.positions)
+            or not np.array_equal(monomer_next.strands, monomer_bound.strands)
+            or not np.array_equal(monomer_next.values, monomer_bound.values)
+        ):
+            updates["monomerBoundSites"] = monomer_next
+        return updates
+
+    def _smc_centroids_to_start_positions(
+        self,
+        *,
+        bound_centroids: list[int],
+        bound_strands: list[int],
+        sequence_len: int,
+    ) -> list[int]:
+        del bound_strands, sequence_len
+        # WholeCell stores the sampled binding positions directly here because
+        # bindProteinToChromosomeStochastically passes
+        # isPositionsStrandFootprintCentroid = false into the stable bind.
+        return [int(centroid) for centroid in bound_centroids]
+
+    def _release_overlapping_releasable_bound_sites_literal(
+        self,
+        *,
+        triplet: SparseTriplet,
+        releasable_global_indexs: frozenset[int],
+        footprints: np.ndarray,
+        release_positions: list[int],
+        release_strands: list[int],
+        release_length: int,
+        sequence_len: int,
+    ) -> SparseTriplet:
+        if triplet.calc_num_edges() == 0 or not releasable_global_indexs or not release_positions:
+            return triplet
+
+        release_intervals = [
+            (
+                int(release_strand) // 2,
+                _split_circular_region(int(release_pos), int(release_length), int(sequence_len)),
+            )
+            for release_pos, release_strand in zip(release_positions, release_strands, strict=False)
+        ]
+        keep = np.ones(triplet.values.size, dtype=bool)
+        for idx, (pos, strand, global_idx) in enumerate(triplet.to_regions()):
+            global_i = int(global_idx)
+            if global_i not in releasable_global_indexs:
+                continue
+            footprint = self._footprint_by_global_index(global_index=global_i, footprints=footprints)
+            if footprint <= 0:
+                continue
+            bound_pair = int(strand) // 2
+            bound_intervals = _split_circular_region(int(pos), int(footprint), int(sequence_len))
+            for release_pair, intervals in release_intervals:
+                if int(release_pair) != bound_pair:
+                    continue
+                if _intervals_overlap(bound_intervals, intervals):
+                    keep[idx] = False
+                    break
+        if np.all(keep):
+            return triplet
+        return SparseTriplet(
+            positions=triplet.positions[keep],
+            strands=triplet.strands[keep],
+            values=triplet.values[keep],
+            shape=triplet.shape,
+        )
+
+    def _build_polymerized_intervals_literal(
+        self,
+        *,
+        full_intervals: dict[int, list[tuple[int, int]]],
+        n_compartments: int,
+    ) -> dict[int, list[tuple[int, int]]]:
+        if (
+            self.smc_region_strandedness == self.dna_strandedness_dsdna
+            and self.smc_binding_strandedness == self.dna_strandedness_dsdna
+        ):
+            intervals_by_strand: dict[int, list[tuple[int, int]]] = {}
+            for strand_start in range(0, max(0, int(n_compartments) - 1), 2):
+                strand_end = strand_start + 1
+                intervals_by_strand[strand_start] = _merge_intervals(
+                    _intersect_intervals(
+                        full_intervals.get(strand_start, []),
+                        full_intervals.get(strand_end, []),
+                    )
+                )
+            return intervals_by_strand
+        return {strand: list(intervals) for strand, intervals in full_intervals.items()}
+
+    def _intervals_from_polymerized(
+        self,
+        polymerized: SparseTriplet,
+    ) -> dict[int, list[tuple[int, int]]]:
+        sequence_len, n_compartments = polymerized.shape
+        intervals_by_strand: dict[int, list[tuple[int, int]]] = {
+            strand: [] for strand in range(max(0, int(n_compartments)))
+        }
+        for start, strand, length in polymerized.to_regions():
+            if int(length) <= 0:
+                continue
+            strand_i = int(strand)
+            if strand_i < 0 or strand_i >= n_compartments:
+                continue
+            intervals_by_strand[strand_i].extend(
+                _split_circular_region(int(start), int(length), sequence_len)
+            )
+        for strand, intervals in intervals_by_strand.items():
+            intervals_by_strand[strand] = _merge_intervals(intervals)
+        return intervals_by_strand
+
+    def _footprint_by_global_index(
+        self,
+        *,
+        global_index: int,
+        footprints: np.ndarray,
+    ) -> int:
+        idx = int(global_index) - 1
+        if idx < 0 or idx >= footprints.size:
+            return 0
+        return int(max(0, footprints[idx]))
+
+    def _calc_releasable_global_indexs(
+        self,
+        *,
+        reaction_bound: np.ndarray,
+        catalysis_matrix: np.ndarray,
+        thresholds: np.ndarray,
+    ) -> frozenset[int]:
+        if (
+            reaction_bound.size == 0
+            or catalysis_matrix.ndim != 2
+            or catalysis_matrix.size == 0
+            or thresholds.size == 0
+            or catalysis_matrix.shape[0] != thresholds.size
+            or self.smc_adp_global_index <= 0
+            or catalysis_matrix.shape[1] < self.smc_adp_global_index
+        ):
+            return frozenset()
+        active = catalysis_matrix[:, self.smc_adp_global_index - 1] >= thresholds
+        releasable = reaction_bound * active.astype(np.int64, copy=False)
+        return frozenset(int(x) for x in releasable.tolist() if int(x) != 0)
+
+    def _strandedness_by_global_index(
+        self,
+        *,
+        global_index: int,
+        strandednesses: np.ndarray,
+        default: int,
+    ) -> int:
+        idx = int(global_index) - 1
+        if idx < 0 or idx >= strandednesses.size:
+            return int(default)
+        return int(strandednesses[idx])
+
+    def _exclude_bound_site(
+        self,
+        *,
+        intervals_by_strand: dict[int, list[tuple[int, int]]],
+        site_pos: int,
+        site_strand: int,
+        footprint: int,
+        binding_strandedness: int,
+        sequence_len: int,
+    ) -> dict[int, list[tuple[int, int]]]:
+        if footprint <= 0:
+            return intervals_by_strand
+        target_strands = self._literal_target_strands(
+            site_strand=int(site_strand),
+            binding_strandedness=int(binding_strandedness),
+        )
+        for strand in target_strands:
+            intervals = intervals_by_strand.get(strand, [])
+            for lo, hi in _split_circular_region(int(site_pos), int(footprint), sequence_len):
+                intervals = _exclude_interval(intervals, lo, hi)
+            intervals_by_strand[strand] = _merge_intervals(intervals)
+        return intervals_by_strand
+
+    def _literal_target_strands(
+        self,
+        *,
+        site_strand: int,
+        binding_strandedness: int,
+    ) -> tuple[int, ...]:
+        strand_i = int(site_strand)
+        if self.smc_binding_strandedness == self.dna_strandedness_dsdna:
+            return (2 * (strand_i // 2),)
+        if int(binding_strandedness) == self.dna_strandedness_dsdna:
+            strand_start = 2 * (strand_i // 2)
+            return (strand_start, strand_start + 1)
+        return (strand_i,)
+
+    def _exclude_smc_spacing_literal(
+        self,
+        *,
+        intervals_by_strand: dict[int, list[tuple[int, int]]],
+        site_pos: int,
+        site_strand: int,
+        sequence_len: int,
+    ) -> dict[int, list[tuple[int, int]]]:
+        exclude_start = (int(site_pos) + self._smc_exclusion_offset) % sequence_len
+        for strand in self._literal_target_strands(
+            site_strand=int(site_strand),
+            binding_strandedness=self.dna_strandedness_dsdna,
+        ):
+            intervals = intervals_by_strand.get(strand, [])
+            for lo, hi in _split_circular_region(
+                exclude_start,
+                self._smc_exclusion_len,
+                sequence_len,
+            ):
+                intervals = _exclude_interval(intervals, lo, hi)
+            intervals_by_strand[strand] = _merge_intervals(intervals)
+        return intervals_by_strand
+
+    def _iter_damaged_sites_literal(
+        self,
+        *,
+        chromosome_store: ChromosomeStore,
+        sequence_len: int,
+    ) -> list[tuple[int, int]]:
+        sites: list[tuple[int, int]] = []
+        for field_name in ("damagedBases", "gapSites", "abasicSites", "damagedSugarPhosphates"):
+            triplet = chromosome_store.get_field(field_name)
+            for pos, strand, value in triplet.to_regions():
+                if field_name == "damagedBases" and int(value) == int(self._m6ad_global_index):
+                    continue
+                sites.append((int(pos), int(strand)))
+
+        for field_name in ("intrastrandCrossLinks",):
+            triplet = chromosome_store.get_field(field_name)
+            for pos, strand, _ in triplet.to_regions():
+                pos_i = int(pos)
+                strand_i = int(strand)
+                sites.append((pos_i, strand_i))
+                sites.append(
+                    (
+                        self._shift_damage_position(
+                            pos=pos_i,
+                            strand=strand_i,
+                            sequence_len=sequence_len,
+                            shift_kind="base5prime",
+                        ),
+                        strand_i,
+                    )
+                )
+
+        for field_name in ("strandBreaks",):
+            triplet = chromosome_store.get_field(field_name)
+            for pos, strand, _ in triplet.to_regions():
+                pos_i = int(pos)
+                strand_i = int(strand)
+                sites.append((pos_i, strand_i))
+                sites.append(
+                    (
+                        self._shift_damage_position(
+                            pos=pos_i,
+                            strand=strand_i,
+                            sequence_len=sequence_len,
+                            shift_kind="unshift_bond5prime",
+                        ),
+                        strand_i,
+                    )
+                )
+                sites.append(
+                    (
+                        self._shift_damage_position(
+                            pos=pos_i,
+                            strand=strand_i,
+                            sequence_len=sequence_len,
+                            shift_kind="unshift_bond3prime",
+                        ),
+                        strand_i,
+                    )
+                )
+        for field_name in ("hollidayJunctions",):
+            triplet = chromosome_store.get_field(field_name)
+            for pos, strand, _ in triplet.to_regions():
+                pos_i = int(pos)
+                strand_i = int(strand)
+                sites.append((pos_i, strand_i))
+                sites.append(
+                    (
+                        self._shift_damage_position(
+                            pos=pos_i,
+                            strand=strand_i,
+                            sequence_len=sequence_len,
+                            shift_kind="bond5prime",
+                        ),
+                        strand_i,
+                    )
+                )
+                sites.append(
+                    (
+                        self._shift_damage_position(
+                            pos=pos_i,
+                            strand=strand_i,
+                            sequence_len=sequence_len,
+                            shift_kind="bond3prime",
+                        ),
+                        strand_i,
+                    )
+                )
+        return sites
+
+    def _shift_damage_position(
+        self,
+        *,
+        pos: int,
+        strand: int,
+        sequence_len: int,
+        shift_kind: str,
+    ) -> int:
+        strand_i = int(strand)
+        if shift_kind == "base3prime":
+            delta = 1 if strand_i % 2 == 0 else -1
+        elif shift_kind == "base5prime":
+            delta = -1 if strand_i % 2 == 0 else 1
+        elif shift_kind == "bond5prime":
+            delta = -1 if strand_i % 2 == 0 else 0
+        elif shift_kind == "bond3prime":
+            delta = 0 if strand_i % 2 == 0 else -1
+        elif shift_kind == "unshift_bond5prime":
+            delta = 1 if strand_i % 2 == 0 else 0
+        elif shift_kind == "unshift_bond3prime":
+            delta = 0 if strand_i % 2 == 0 else 1
+        else:
+            raise ValueError(f"unsupported damage shift kind: {shift_kind}")
+        return int((int(pos) + delta) % int(sequence_len))
 
     def _reconcile_complex_bound_count(
         self,
@@ -579,7 +1675,7 @@ class KarrChromosomeCondensationProcess(Process):
         if current > desired:
             if desired == 0:
                 return SparseTriplet.empty(*complex_bound.shape)
-            keep_idx = np.sort(self._rng.choice(current, size=desired, replace=False))
+            keep_idx = np.sort(np.asarray(self._np_rng.choice(current, size=desired, replace=False)))
             return SparseTriplet(
                 positions=complex_bound.positions[keep_idx],
                 strands=complex_bound.strands[keep_idx],
@@ -656,20 +1752,7 @@ class KarrChromosomeCondensationProcess(Process):
         complex_bound: SparseTriplet,
     ) -> dict[int, list[tuple[int, int]]]:
         sequence_len, n_compartments = polymerized.shape
-        intervals_by_strand: dict[int, list[tuple[int, int]]] = {
-            strand: [] for strand in range(max(0, int(n_compartments)))
-        }
-        for start, strand, length in polymerized.to_regions():
-            if int(length) <= 0:
-                continue
-            strand_i = int(strand)
-            if strand_i < 0 or strand_i >= n_compartments:
-                continue
-            intervals_by_strand[strand_i].extend(
-                _split_circular_region(int(start), int(length), sequence_len)
-            )
-        for strand, intervals in intervals_by_strand.items():
-            intervals_by_strand[strand] = _merge_intervals(intervals)
+        intervals_by_strand = self._intervals_from_polymerized(polymerized)
 
         for pos, strand, enzyme_idx in complex_bound.to_regions():
             if int(enzyme_idx) != self.smc_adp_global_index:
@@ -708,6 +1791,7 @@ class KarrChromosomeCondensationProcess(Process):
             for strand, intervals in working.items():
                 for start, end in intervals:
                     regions.append((start, strand, end - start + 1))
+            regions.sort(key=lambda region: (int(region[0]), int(region[1])))
             if not regions:
                 break
 
@@ -719,7 +1803,7 @@ class KarrChromosomeCondensationProcess(Process):
             if total_weight <= 0.0:
                 break
 
-            region_pick_u = float(self._rng.random())
+            region_pick_u = float(self._rng.rand())
             cumulative = np.cumsum(weights, dtype=np.float64)
             threshold = region_pick_u * total_weight
             region_idx = int(np.searchsorted(cumulative, threshold, side="right"))
@@ -730,7 +1814,7 @@ class KarrChromosomeCondensationProcess(Process):
             if max_offset < 0:
                 continue
             # Mirror MATLAB calcBindingPosition: ceil(rand * n_bind_positions) - 1.
-            rand_real = float(self._rng.random())
+            rand_real = float(self._rng.rand())
             n_bind_positions = float(max_offset + 1)
             if n_bind_positions <= 1.0:
                 offset = 0
@@ -915,7 +1999,7 @@ class KarrChromosomeCondensationProcess(Process):
         expected = float(self._bound_smc) * rate * dt
         if expected <= 0.0:
             return 0
-        sampled = int(self._rng.poisson(expected))
+        sampled = int(self._np_rng.poisson(expected))
         return int(max(0, min(sampled, self._bound_smc)))
 
     def _atp_activity(self, atp_available: float) -> float:
