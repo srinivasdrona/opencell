@@ -97,6 +97,13 @@ below:**
   - MacromolecularComplexation has **49** matching raw trace files in its
     worktree; the owning agent must run its fail-closed audit before any
     count is promoted.
+  - Fast-track opportunity: Cytokinesis spends ~5 hours per seed running
+    the full 28-process simulation to ~31k ticks before saving its 4k-tick
+    division window; the separate FtsZ driver repeats the same trajectory
+    discovery and then reboots/burns in again. Build a one-pass dual-tap
+    Cytokinesis+FtsZ extractor canary for seed 49 that emits both canonical
+    windows from one trajectory. Do not reduce N=50 or disturb the live
+    queues until both existing fail-closed validators accept the canary.
 - L2.1 active-window extraction produced genuine-provider traces for
   TranscriptionalRegulation seed 0, Cytokinesis seed 0, and DNADamage seed 1.
   Fail-closed replay promoted TranscriptionalRegulation and Cytokinesis to
@@ -161,8 +168,9 @@ below:**
 - Immediate order: continue the TranscriptionalRegulation, Cytokinesis, and
   DNADamage exact-replay fixes in parallel; finish the RepInit MATLAB RNG
   ledger and DNAS candidate-population diagnosis; continue the durable
-  Macromol/Cytokinesis/FtsZ queues and adjudicate HostInteraction/
-  ChromosomeSegregation as their traces land.
+  Macromol/Cytokinesis/FtsZ queues; run the dual-extractor canary before
+  deciding whether to replace the remaining Cytokinesis/FtsZ queues; and
+  adjudicate HostInteraction as its trace lands.
 
 **Current status (2026-09-02 15:10 IST) — supersedes the August live-PID
 snapshot below:**
