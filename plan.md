@@ -64,9 +64,9 @@ below:**
 
 - Main integration worktree:
   `E:\opencell-worktrees\main-integrate`, branch `main`, published through
-  `9f1075b`. The final Opus-accepted ChromCond candidate `9859410` is staged
-  as a local merge with append-only provenance reconciled; it is not pushed.
-  Run the full post-merge gates below before publishing.
+  `9f1075b`. The final Opus-accepted ChromCond candidate `9859410` is merged
+  locally at `f4bbd37`; append-only provenance is reconciled and the full
+  post-merge gate set is green. Publish the verified merge and this handoff.
 - ChromosomeCondensation is independently accepted and merged with current
   main in `E:\opencell-worktrees\integrate-l21-chromcond-sept2` through
   `1e4d413`. The isolation refactor is complete: shared
@@ -83,8 +83,11 @@ below:**
   to come from a pure-mirror stale fixture and is now fail-closed as a
   diagnostic `SKIP` with a tripwire test. Full focused gates remain green
   and L2.2 remains integrity-OK at 18/2/2. Final Opus 5 re-review
-  **ACCEPTED** with no blockers. Post-merge validation is the only remaining
-  integration step.
+  **ACCEPTED** with no blockers. Post-merge verification at `f4bbd37`:
+  hidden replay 0/100; 62 passed + 3 expected xpasses; 31 L2.2/L1b tests
+  passed; L1b 1/1; evidence audit 18/2/2 integrity OK; Ruff and diff check
+  clean. ChromCond is closed. The scorecard's remaining FtsZ FAIL is
+  pre-existing and belongs to the open FtsZ lane.
 - Durable MATLAB queues:
   - Cytokinesis PID `18600` is alive at **8/50 validated**, 4 active,
     38 queued, 0 failed.
@@ -136,12 +139,11 @@ below:**
   different release-candidate population. Remove the fallback, diagnose the
   earliest shortfall (seed 3 tick 53), and fix the first candidate/state
   divergence before another full evaluation.
-- Immediate order: fix the TranscriptionalRegulation and Cytokinesis L2.1
-  code gaps in parallel from MATLAB source/fixture evidence; inventory the
-  accepted DNADamage corpus for an already-active authoritative window;
-  isolate ChromCond's chromosome replay application from the shared L2.2
-  helper and independently review that integration; continue RepInit/DNAS
-  source closure and the durable Macromol/Cytokinesis/FtsZ queues.
+- Immediate order: continue the TranscriptionalRegulation, Cytokinesis, and
+  DNADamage exact-replay fixes in parallel; finish the RepInit MATLAB RNG
+  ledger and DNAS candidate-population diagnosis; continue the durable
+  Macromol/Cytokinesis/FtsZ queues and adjudicate HostInteraction/
+  ChromosomeSegregation as their traces land.
 
 **Current status (2026-09-02 15:10 IST) — supersedes the August live-PID
 snapshot below:**
