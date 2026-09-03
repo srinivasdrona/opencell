@@ -38,7 +38,6 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
-from _chromcond_replay_apply import apply_chromcond_replay_update  # type: ignore
 from l2_2_replay_common_v2 import (  # type: ignore
     _PROCESS_SPECS,
     _build_context,
@@ -67,8 +66,18 @@ EXPECTED_VERDICTS = {
     # tf_binding/tx_rate_fold_change/metabolic_reaction.fluxs which the
     # strict rubric now recognizes; +Replication, see its inline comment
     # below for the corrected-activity-gate root cause and evidence;
-    # +ChromosomeCondensation after the shared replay applier started
-    # preserving hidden `chromosome` sparse replacements between ticks)
+    # +ChromosomeCondensation after commit a52a8c1 removed a spurious extra
+    # RNG draw in the production next_update path (a hidden-surface-only
+    # bug -- see STATUS_L21_CHROMCOND_SEPT2.md and the test file docstring
+    # in test_karr_chromosome_condensation_l2_replay.py's full-100-tick
+    # scan/inversion tests). NOT attributable to the shared replay applier:
+    # direct verification (running this rubric's ChromosomeCondensation
+    # classification with the plain shared apply_count_update vs.
+    # tests/vivarium/_chromcond_replay_apply.py's chromosome-aware variant)
+    # shows byte-identical bit_identity_failures/karr_active/oc_fired/
+    # verdict either way -- this rubric's bit-identity check never projects
+    # "chromosome" itself (only substrates/enzymes/boundEnzymes), so how
+    # apply_count_update merges a "chromosome" update key is inert here.
     "ChromosomeCondensation": "GENUINE",
     #
     # DNARepair stays COINCIDENTAL, but NOT because the harness lacks its inputs:
@@ -179,15 +188,17 @@ def _classify(name: str) -> dict:
 
             refresh_allocator_views(process, state)
             update = process.next_update(1.0, state)
-            # ChromosomeCondensation's next_update emits the NEW post-tick chromosome
-            # sparse structure, not an accumulator delta; the generic apply_count_update
-            # would corrupt it (see tests/vivarium/_chromcond_replay_apply.py docstring).
-            # Every other process keeps the plain, main-identical apply_count_update so
-            # its L2.2 provenance hash is untouched.
-            if name == "ChromosomeCondensation":
-                apply_chromcond_replay_update(state, update)
-            else:
-                apply_count_update(state, update)
+            # This rubric's bit-identity check only ever projects
+            # substrates/enzymes/boundEnzymes (never "chromosome" itself -- see
+            # `spec.observables`), so how `apply_count_update` merges a
+            # "chromosome" update key is provably inert here (direct
+            # verification: identical verdict/bit_identity_failures/fire-rate
+            # for ChromosomeCondensation whether this calls the plain shared
+            # apply_count_update or tests/vivarium/_chromcond_replay_apply.py's
+            # chromosome-aware variant). Every process, including
+            # ChromosomeCondensation, uses the plain, main-identical
+            # apply_count_update so the L2.2 provenance hash stays untouched.
+            apply_count_update(state, update)
 
             oc_nonempty = False
             if isinstance(update, dict):

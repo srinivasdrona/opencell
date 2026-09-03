@@ -3,14 +3,22 @@
 Background: ``ChromosomeCondensation.next_update`` emits the chromosome
 state's NEW post-tick sparse structure (e.g. ``complexBoundSites`` triples),
 not an accumulator delta. The generic, shared
-``tests/vivarium/l2_replay_common.py::apply_count_update`` treats every
-nested dict recursively as an accumulate-in-place delta (summing numeric
-leaves wherever they occur), which silently corrupts chromosome sparse
-replacements instead of replacing them. This module isolates the correct
-chromosome-aware apply logic (numeric leaves still accumulate; non-numeric
-values -- the sparse structures -- are replaced wholesale) so it can be used
-by ChromosomeCondensation's own L2.1 hidden-replay proof and diagnostic
-probes WITHOUT changing ``l2_replay_common.py`` itself.
+``tests/vivarium/l2_replay_common.py::apply_count_update`` only ever
+iterates a fixed channel list (``substrates``/``protein``/``rna``/
+``complex``/``boundEnzymes``/``enzymes``) and never reads or writes
+``update["chromosome"]`` at all -- it is not recursive over arbitrary keys,
+so it does not corrupt the chromosome sparse structure; it simply ignores
+it, leaving ``state["chromosome"]`` completely untouched by the update.
+That is wrong for a different reason: without applying
+``update["chromosome"]`` onto ``state["chromosome"]``, a replay harness that
+rebuilds fresh oracle-fed state each tick would compare Karr's real
+post-tick chromosome trace against OC's still-pre-tick (never-updated)
+state, which is not a faithful hidden-replay check at all -- it would not
+exercise `next_update`'s actual chromosome writeback. This module isolates
+the correct chromosome-aware apply logic (numeric leaves still accumulate;
+non-numeric values -- the sparse structures -- are replaced wholesale) so it
+can be used by ChromosomeCondensation's own L2.1 hidden-replay proof and
+diagnostic probes WITHOUT changing ``l2_replay_common.py`` itself.
 
 Why this is a separate module rather than a branch in the shared file: the
 shared ``apply_count_update`` is a registered provenance dependency
@@ -23,17 +31,27 @@ new behavior. Keeping the fix local here means ``l2_replay_common.py``
 stays byte-for-byte identical to main and the L2.2 evidence board's
 provenance hashes are untouched.
 
-Scope: ChromosomeCondensation ONLY.
+Scope: ChromosomeCondensation ONLY, and specifically only the tests/probes
+that read ``state["chromosome"]`` back out after applying an update (the
+L2.1 strict-rubric script/test does NOT -- its bit-identity check only ever
+projects substrates/enzymes/boundEnzymes, never chromosome itself -- so this
+module is provably inert there; direct verification showed byte-identical
+verdicts with the plain ``apply_count_update``, and the rubric files use
+that plain function unconditionally for every process, including
+ChromosomeCondensation).
 
 * DO import this from: ChromosomeCondensation's own L2.1 replay test
-  (``test_karr_chromosome_condensation_l2_replay.py``), the L2.1
-  strict-rubric script/test (special-cased by process name), and the
-  committed ChromCond hidden-replay diagnostic probes under ``tmp/``.
+  (``test_karr_chromosome_condensation_l2_replay.py``, whose hidden-replay
+  proof and inversion test read ``state["chromosome"]`` back out) and the
+  committed ChromCond hidden-replay diagnostic probes under ``tmp/`` (same
+  reason).
 * DO NOT import this from any Design-A L2.2 runner
-  (``tests/vivarium/_l2_2_design_a_runner_helpers.py`` and friends) or from
-  ``scripts/l22_evidence/dna_damage_event_verifier.py`` -- both must keep
-  using the plain, main-identical ``apply_count_update`` so their accepted
-  evidence's provenance hash stays valid.
+  (``tests/vivarium/_l2_2_design_a_runner_helpers.py`` and friends), from
+  ``scripts/l22_evidence/dna_damage_event_verifier.py``, or from the L2.1
+  strict-rubric script/test -- all three must keep using the plain,
+  main-identical ``apply_count_update`` (the first two so their accepted
+  evidence's provenance hash stays valid; the rubric because this module is
+  inert there and adding it would be needless, misleading complexity).
 """
 
 from __future__ import annotations
@@ -66,10 +84,11 @@ def apply_chromcond_replay_update(state: dict[str, Any], update: dict[str, Any])
 
     Delegates the standard count channels (substrates/protein/rna/complex/
     boundEnzymes/enzymes) to the shared, main-identical ``apply_count_update``
-    unchanged, then additionally applies ``update["chromosome"]`` onto
-    ``state["chromosome"]``: numeric leaves accumulate (matching the generic
-    behavior), non-numeric leaves (sparse triple structures) are replaced
-    wholesale via ``copy.deepcopy`` rather than recursively summed.
+    unchanged (which ignores ``update["chromosome"]`` entirely), then
+    additionally applies ``update["chromosome"]`` onto ``state["chromosome"]``:
+    numeric leaves accumulate (matching the generic behavior), non-numeric
+    leaves (sparse triple structures) are replaced wholesale via
+    ``copy.deepcopy`` rather than recursively summed.
     """
     apply_count_update(state, update)
 

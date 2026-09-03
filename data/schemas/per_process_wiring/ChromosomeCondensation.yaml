@@ -26,16 +26,16 @@ integration_touchpoints:
       symbol: "KarrChromosomeCondensationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
-        lines: "676-791"
+        lines: "691-813"
         note: "Merged request emission plus per-tick state update; requests are written into the update dict."
         symbol: "KarrChromosomeCondensationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
-          lines: "691-695"
+          lines: "693-695"
           note: "Reads `substrates_allocated` first, then applies `_allocated_or_state` as a non-negative clamp."
           symbol: KarrChromosomeCondensationProcess.next_update
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
-          lines: "676-791"
+          lines: "691-813"
           note: "Writes ATP/H2O request values each tick."
           symbol: KarrChromosomeCondensationProcess.next_update
     status: "implemented"
@@ -52,12 +52,12 @@ integration_touchpoints:
       symbol: "KarrChromosomeCondensationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
-        lines: "676-791"
+        lines: "691-813"
         note: "Per-tick aggregate update for bound SMC count and substrate deltas."
         symbol: "KarrChromosomeCondensationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
-          lines: "799-938"
+          lines: "815-861"
           note: "No-hints binding sampler and bound-site reconstruction."
           symbol: KarrChromosomeCondensationProcess._sample_smc_binding_no_hints
         - path: "opencell/vivarium/karr_chromosome_condensation.py"
@@ -79,7 +79,7 @@ integration_touchpoints:
       symbol: "KarrChromosomeCondensationProcess"
       source:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
-        lines: "430-1912"
+        lines: "440-2021"
         note: "No LP-bound construction path for this process. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrChromosomeCondensationProcess"
       note: OC does not implement this Karr method.
@@ -127,7 +127,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "676-756"
+      lines: "691-813"
       note: "ATP delta is applied after n_bound is computed."
       symbol: KarrChromosomeCondensationProcess.next_update
     note: "One ATP is spent for each bound SMC."
@@ -142,7 +142,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "676-756"
+      lines: "691-813"
       note: "Water delta is applied alongside ATP."
       symbol: KarrChromosomeCondensationProcess.next_update
     note: "One water molecule is spent for each bound SMC."
@@ -158,7 +158,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "676-750"
+      lines: "691-813"
       note: "All free SMC-ADP dissociates at the top of next_update."
       symbol: KarrChromosomeCondensationProcess.next_update
     note: "Dissociation returns the ADP bookkeeping to the substrate pool."
@@ -173,7 +173,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "676-756"
+      lines: "691-813"
       note: "Phosphate delta is applied with the ATP consumption block."
       symbol: KarrChromosomeCondensationProcess.next_update
     note: "Hydrolysis releases inorganic phosphate."
@@ -188,7 +188,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "676-758"
+      lines: "691-813"
       note: "Hydrogen delta is applied with the ATP consumption block."
       symbol: KarrChromosomeCondensationProcess.next_update
     note: "Hydrolysis releases protons."
@@ -234,7 +234,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_chromosome_condensation.py"
-        lines: "676-791"
+        lines: "691-813"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrChromosomeCondensationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -290,32 +290,32 @@ source_anchors:
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "430-474"
+      lines: "440-487"
       note: "Class definition and constructor defaults."
       symbol: KarrChromosomeCondensationProcess
     fixture_load:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "476-582"
+      lines: "489-536"
       note: "Fixture load and WID/index extraction."
       symbol: KarrChromosomeCondensationProcess._load_fixture
     trace_anchor_load:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "583-616"
+      lines: "598-621"
       note: "Trace anchor load and empty-trace flag."
       symbol: KarrChromosomeCondensationProcess._load_trace_anchor
     ports_schema:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "631-674"
+      lines: "646-689"
       note: "Ports for chromosome, substrates, requests, and substrates_allocated."
       symbol: KarrChromosomeCondensationProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "676-791"
+      lines: "691-813"
       note: "Merged request emission and per-tick update."
       symbol: KarrChromosomeCondensationProcess.next_update
     binding_sampler:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "799-938"
+      lines: "815-861"
       note: "No-hints binding sampler and sparse-site synthesis."
       symbol: KarrChromosomeCondensationProcess._sample_smc_binding_no_hints
     interval_builder:
@@ -330,12 +330,12 @@ source_anchors:
       symbol: KarrChromosomeCondensationProcess._allocated_or_state
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1575-2125"
+      lines: "2120-2125"
       note: "Port mapping for karr_chromosome_condensation in the chassis."
       symbol: build_karr_chassis_v5
     composite_registration:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1575-2320"
+      lines: "2320-2320"
       note: "Process registration in the chassis assembly."
       symbol: build_karr_chassis_v5
 provenance:
@@ -379,7 +379,7 @@ deviations:
       symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_condensation.py"
-      lines: "676-791"
+      lines: "691-813"
       note: "Nearest update block; OC also lacks an LP-bound phase for this process."
       symbol: KarrChromosomeCondensationProcess.next_update
   shared_pool_projection_merges_compartments: true
