@@ -106,6 +106,25 @@ def _normalize_runner_payloads(raw_result: dict[str, Any], raw_summary: dict[str
 
 @contextmanager
 def process_local_oracle_root(data_root: Path) -> Iterator[None]:
+    # `tests/vivarium/l2_2_design_a_runner.py` inserts its own directory onto
+    # `sys.path` and does a bare `import _l2_2_design_a_runner_helpers`. That
+    # creates a SECOND module instance in `sys.modules` (keyed
+    # `"_l2_2_design_a_runner_helpers"`) distinct from the package-qualified
+    # one this script imports as `tests.vivarium._l2_2_design_a_runner_helpers`.
+    # `runner.run_design_a` calls through the bare-imported instance, so a
+    # patch applied only to the package-qualified module never takes effect
+    # and the oracle loader silently falls through to the legacy single-seed
+    # loader (which has no MacromolecularComplexation fixture and raises
+    # FileNotFoundError). Patch every live module instance found under either
+    # name so the process-local routing actually reaches the runner. This is
+    # a process-local workaround inside this script only; it does not modify
+    # `tests/vivarium/l2_2_design_a_runner.py` or
+    # `tests/vivarium/_l2_2_design_a_runner_helpers.py` themselves.
+    modules = {runner_helpers}
+    bare_module = sys.modules.get("_l2_2_design_a_runner_helpers")
+    if bare_module is not None:
+        modules.add(bare_module)
+
     original_seed_mat_path = runner_helpers._v2_seed_mat_path  # noqa: SLF001
 
     def patched_seed_mat_path(process_name: str, seed: int) -> Path:
@@ -113,11 +132,13 @@ def process_local_oracle_root(data_root: Path) -> Iterator[None]:
             return maw._seed_trace_path(int(seed), data_root)  # noqa: SLF001
         return original_seed_mat_path(process_name, seed)
 
-    runner_helpers._v2_seed_mat_path = patched_seed_mat_path  # type: ignore[assignment]  # noqa: SLF001
+    for module in modules:
+        module._v2_seed_mat_path = patched_seed_mat_path  # type: ignore[assignment]  # noqa: SLF001
     try:
         yield
     finally:
-        runner_helpers._v2_seed_mat_path = original_seed_mat_path  # type: ignore[assignment]  # noqa: SLF001
+        for module in modules:
+            module._v2_seed_mat_path = original_seed_mat_path  # type: ignore[assignment]  # noqa: SLF001
 
 
 def build_process_local_artifact(
