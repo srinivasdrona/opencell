@@ -62,12 +62,14 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
 snapshot below:**
 
-- Main is clean and published at `aa07f76`. ChromosomeSegregation's
+- Main has the accepted Macromol merge locally at `7054aae`.
+  ChromosomeSegregation's
   post-merge live replay is non-skipped and green, 33 focused tests pass,
   L1b is 1/1, and L2.2 remains integrity-OK at
   **18 PASS / 2 FAIL / 2 MISSING_EVIDENCE**.
 - Fully completed and published: ProteinProcessingII,
-  ChromosomeCondensation, and (after this push) ChromosomeSegregation L2.1.
+  ChromosomeCondensation, ChromosomeSegregation L2.1, and (after this push)
+  MacromolecularComplexation L2.2.
 - MacromolecularComplexation has **50/50 valid** and a reproducible
   canonical Design-A **PASS**. Opus accepted authoritative L2.2 closure:
   collision-theory rates, index mapping, and seed-dependent RNG match the
@@ -76,10 +78,12 @@ snapshot below:**
   identity check is intentionally overstrict/non-gating for L2.2, not
   waived. Candidate board is integrity-OK at **19 PASS / 1 FAIL /
   2 MISSING_EVIDENCE** with unchanged shared loader hashes. One mechanical
-  pre-merge fix remains: regenerate the tracked selection diagnostic after
-  its generator refactor so its self-hash validates. Before Macromol enters
-  L2.5, preregister and pass a powered (~200+ draws) conditional selection
-  LLR/Poisson-binomial gate; current N=50 marginal evidence is underpowered.
+  pre-merge diagnostic self-hash fix is closed. Post-merge verification:
+  **43 focused tests + tracked-artifact validator pass**, and the
+  authoritative board is integrity-OK at **19 PASS / 1 FAIL /
+  2 MISSING_EVIDENCE**. Before Macromol enters L2.5, preregister and pass a
+  powered (~200+ draws) conditional selection LLR/Poisson-binomial gate;
+  current N=50 marginal evidence is underpowered.
 - Completed investigations that remain non-green:
   - DNASupercoiling: improved from 1489 to 112 pooled nonzero ticks, but
     final gate remains `PRIMARY_OVERACTIVE` (112 vs 65 pooled; 28 vs 7
