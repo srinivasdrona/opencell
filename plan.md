@@ -120,8 +120,13 @@ below:**
     already true from fitted tick 1, not false→true events. The prior
     50,000-tick search used the wrong window strategy. The agent replaced a
     fabricated stochastic Karr-light model with the literal MATLAB boolean
-    cascade and reports 100-tick/9-surface bit identity plus
-    `EXISTING_WINDOW_PASS`. Await independent Opus review before integration.
+    cascade. Opus **REJECTED the evidence layer, not the port**: the audit
+    fabricated `before=0 -> after=1`, seeded only one of six level fields,
+    and let a constant-True stub pass vacuously. Fix level-truth detail and
+    full before-state seeding, classify activity from projected true levels,
+    add a source-legal negative/knockout condition so cascade gates are
+    discriminated, copy the gitignored trace to main, and move two
+    load-bearing MATLAB drivers out of `tmp/` before re-review.
 
 **Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
 snapshot below:**
