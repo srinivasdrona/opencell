@@ -96,14 +96,17 @@ snapshot below:**
   - Cytokinesis: **34/50 raw/validated run-state completions**; queue dead.
   - FtsZPolymerization: **10 raw traces**; queue/watchdog dead; authoritative
     valid count must be rerun.
-  - The one-pass dual Cytokinesis+FtsZ tooling is committed through
-    `725dc14`. Seed-49 canary **PASS**: one seeded trajectory produced both
+  - The one-pass dual Cytokinesis+FtsZ tooling is Opus-accepted and merged
+    locally at `e0e2cdd`. Seed-49 canary **PASS**: one seeded trajectory produced both
     existing-validator-clean outputs in **1h39m**, sharing completion tick
     30237 and genuine provider hash
     `d68e8ff78af266ad4977e80cd5366cc59984ada5f73ab591a9c08350bc4471dc`.
     Cytokinesis SHA-256 is `39b0ee3a...f5f68`; FtsZ SHA-256 is
-    `7a254129...32c70`. Await Opus review before copying these outputs to
-    the live cohorts or replacing the remaining separate queues.
+    `7a254129...32c70`. Both files are copied and destination-validated,
+    bringing Cytokinesis to **35/50** and FtsZ to **11/50**. Before bulk
+    use, run seed 36 and bit-compare its Cytokinesis state arrays against
+    the existing conventional seed-36 trace; only a green equivalence gate
+    authorizes the three-concurrent dual queue.
 
 **Current status (2026-09-03 06:05 IST) — supersedes all Sept-2 snapshots
 below:**
