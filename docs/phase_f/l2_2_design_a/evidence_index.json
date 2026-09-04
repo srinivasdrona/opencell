@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "4d082036886eedf268c125af7921f5f4a3c910bf779b9e91366828fcba996651",
-  "content_hash": "223b8de94d94dcdf6185fe51055cc81f20451c1b1d3ed7a20234653b3f3820a4",
+  "content_hash": "dd2ebe542aa51722d51ebb2c80a14d60273339f2711b2e7a35f9fe77e1fdc0f5",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-04T18:51:10.383577+00:00",
+  "generated_at": "2026-09-04T20:54:58.214834+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -35,7 +35,7 @@
         "null_calibration.json": "91bbb90f6da38b82da8fd5d47b648c397d6fe7ec8ea36936d682b5d584ceaca3",
         "provenance.json": "d3791001dc23bd044603bd81cd7007c378ff6d78313f57b2ece0b1675dbb9be3",
         "result.json": "d97512c97170d98145e03b5cab2a8f6ecd9554929869cee9b1ac4128c68cf906",
-        "sweep_provenance.json": "8d66eea35f2320e0bb8b610e985277a044d3ede1028e1c91e08a664f05bdaa3b",
+        "sweep_provenance.json": "9fd8599d5699805692258b68f313eb5128968931c477fa82e0bad5330e6cb874",
         "thresholds.json": "a003f687c212d54f0efd18ff09b0c5a2069de27fb56efaddc8014775089202e5"
       },
       "bucket": "EVENT_CLASS",
@@ -75,7 +75,7 @@
         "null_calibration.json": "b74a141cc0663497bc067de3a644ef01c199ec8055c1edacc1e613fb9edcdd6a",
         "provenance.json": "481a29ee0fe3c029245d6b0350397572aca961031f5eedac36ab3c9c87c2632a",
         "result.json": "15dbac320d42c829ce90766d964bebbfc92bf8214f2ea3e7c243fca0fa2cbced",
-        "sweep_provenance.json": "64ca979d358e47dcf90b995d964a708c7e0ed991c30ac74322c14b9f158e7b50",
+        "sweep_provenance.json": "37820400eb683f9d1c2a45b20a56eb4aaf6f10533d68002b6bb62f7f6d6fb234",
         "thresholds.json": "beeba9da08cbc55b29ef3e231904f67e3a4ec6f9e741d00aa4c58b188238051b"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -190,7 +190,7 @@
         "null_calibration.json": "4ec2f80a8f95321751707ddae21001a73daf3f02505cbdaacb63a232e3524e43",
         "provenance.json": "ffe78ab92c4414b7db5c7dc55efed7fd79a72bac04a8bb3de97bfb207734d51c",
         "result.json": "dbcbba70da98759efeec736e43d1baa3e1cb12491003691f9db7bbf473872319",
-        "sweep_provenance.json": "0d91ad5fb1206fa3499701cac4bf944c469b93e7d1bf3a05c18f0bacb799c4d9",
+        "sweep_provenance.json": "1e28d0623d7e704998c8fe34148603420b46f86e2e3d74ed82bbdde6ecd97183",
         "thresholds.json": "bfda97ecfa2a3b496ebd796fe21d156d6f1ea19c8e7c88395037d326ba429cf0"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -232,7 +232,7 @@
         "null_calibration.json": "4434c3eb822d4f45b89b4267726e7015cd6952a1b07863e08e80e283078dc750",
         "provenance.json": "5fb09679fc5e4d46fad4122322c68490e708ea63d25ab7fa338aca28927ce35d",
         "result.json": "985845448128f7b99895a756d9c51de8f231d7358bae053342b2f5661c55598f",
-        "sweep_provenance.json": "85cf431abbffb6a908133584ab622bc774e9dce993239d6ff0efe8fa44708f36",
+        "sweep_provenance.json": "8848df8fcb15a20763ab97b53b539e8e1be8be3a01074eaa1bb2d46e2af370ef",
         "thresholds.json": "ef387d2d1ccc0d1aa2e6ba8b251dd3385f465b309be6842a2327649073290751"
       },
       "bucket": "TRIVIAL_RNG",
@@ -272,7 +272,7 @@
         "null_calibration.json": "2c67cb8b57f6a50f75ec653ec30ce2fa2ac4dc3ac93afb9b531812346adbe239",
         "provenance.json": "664f8b1b54b99508d49bd463017c80dde735a0e9a36792aec62d6d43df81b86e",
         "result.json": "9152c07e2c993ed52206b2e16fc5aef3d7dfc031441f108e1424977fc214fc33",
-        "sweep_provenance.json": "eb4a166596ade161bd86e72e20166b3f693e6fba65e64cb046b4506607c4b821",
+        "sweep_provenance.json": "e14daff51b1c1d34938f4a9fd54f94af5e6191ea7d532b8000a34cc9e85f835a",
         "thresholds.json": "d3f39cdbc83c5bd6e95713c30bd263c71761bb46e1477e95bee0158dbe85e322"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -314,7 +314,7 @@
         "null_calibration.json": "d8d668ad3aedb602c51118e2c6568202830d9bd3c1a6705868506012324b3629",
         "provenance.json": "b62a3c183f1d92879c098270e26443fec15fa67f5832b60584ebdd943f3955c3",
         "result.json": "c6bd35c4361d109abc998f77e5f2578377f80de1b14001f5df241d251cf556ca",
-        "sweep_provenance.json": "1df1219f83132a0fd44e7c4c0f4b47351792da6a0bbcafb8a60edbfad91f179b",
+        "sweep_provenance.json": "73c3705c454824e3d45015486a6f9355fa00d28f045ad349863455c09b6abeda",
         "thresholds.json": "67ad0137cbe88e6927828160e3882c366311cd8ab2f9c58cb47940de500adbf9"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -357,7 +357,7 @@
         "null_calibration.json": "ef29162aa0725499d40cbd6c6c863b95c020f02e3fda452f7791629535604aca",
         "provenance.json": "afaefec0e9e4c1b80242f52711bf9cfa43027e9671162a977fc031e05f8157db",
         "result.json": "a0847a7e08069eb84df0222ed21aff35bbf4957afd8cb70931a4048960701984",
-        "sweep_provenance.json": "38031961fe486e027076f0b4537c27e14a0d727fb4f63d72e9e58b2b96ad724a",
+        "sweep_provenance.json": "3fa9a82d6df02b702b2760583087876dfef7e19aa63cec69ed2ef70d06f29fb1",
         "thresholds.json": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -398,7 +398,7 @@
         "null_calibration.json": "6385b3cc1294aed0469612340f220158f9162af79f5a98378dc2e1fe4f7785e6",
         "provenance.json": "04a08ade7c81dc9c1842cfad468880e05674df0f3af35a8fd1506977c2c954cf",
         "result.json": "a08d49851349d90d09a8e6d4e2e4171dff4801835a4a191586bb0a07da9eb67d",
-        "sweep_provenance.json": "68a8ffac6caa3c45e74aa629deaee37283d56b815d0b6954927f9bd8775fd219",
+        "sweep_provenance.json": "49352976e0276169edbc55c79c87055e9df33ec5e93e0ce6ba3e447126299fc4",
         "thresholds.json": "9a7d816fb435dfa8ca266fb56ae9a85f02c2cbb75c48d6b91e2697bf007fe37b"
       },
       "bucket": "TRIVIAL_RNG",
@@ -441,7 +441,7 @@
         "null_calibration.json": "3fef6a99c2f811dac8985aac38087f13140c944145d02fc8b504b5084dc7ae8e",
         "provenance.json": "6e65a18fa35e912a34c2f9bd356aec2d32080b03e427c1e5313e489c7c477f5f",
         "result.json": "976c6fa633ea1b47561df72abb5c9def32fd3e902ad5b414be62fb74319b7f45",
-        "sweep_provenance.json": "a0adc206b6183e73e5f6e42850b66eb4d5fcdb0655c79cf801adb4945db403a4",
+        "sweep_provenance.json": "6066d06ca5215aae26a833eed8e67291143cbaceeeb2bc06adeb97ed473dbd37",
         "thresholds.json": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be"
       },
       "bucket": "TRIVIAL_RNG",
@@ -484,7 +484,7 @@
         "null_calibration.json": "fba67362a73fd58bb7199d0a77c1f8172be2a438606c829185fdf990d3ccffc1",
         "provenance.json": "08f3af0710d1111bf51c240bc46a0926230579d04969c48760e2910b847a9586",
         "result.json": "27f08831eb22ee61c8b2594721efb46ae6ed6a6217bedc649feb10c5cd54e758",
-        "sweep_provenance.json": "ee747002723866ec8aa27b15b7b38fc63cfed91ef823b0df783259a77bbc35f0",
+        "sweep_provenance.json": "1c9fedc33fb41ef7e92317508bcb3cf6a98728c526733213625df0bc7e4ac6db",
         "thresholds.json": "3848dfed718368ea5355509c548b2151c4f4881030bee4a28ebf8c809835d87f"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -525,7 +525,7 @@
         "null_calibration.json": "7c7ee69644053ed68bb1214ee658927eba90c2720862d59c65a44e2c6ab6ed4a",
         "provenance.json": "e1980b18be88c1a660922814eca877a963021a55e1a63791c009807300ddcdd8",
         "result.json": "63caf03282cd965704afc2132e2716ed5f803f6f46825d843866255c9d1e4953",
-        "sweep_provenance.json": "d3ec932392c8e285797ae8b16351dbde3cf1692a65edaa09baec6bbd19d79640",
+        "sweep_provenance.json": "9b69e9ea894dacb4963c2deb38e4481bba5a5774dee59c0b541dcc5d58cc8c5a",
         "thresholds.json": "10ae0c5de9bc6e7643d0b762c9938ba4d0b0c19779969228f812cf4e84953c83"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -566,7 +566,7 @@
         "null_calibration.json": "1ce8ce2c0d274730a86b48cdf3ed3fbe67b2b94afa234e604fd910eb45ea8c21",
         "provenance.json": "28ea6f7c7acba9dfdf00648f312152f220ca87c320c5004125417fd954382286",
         "result.json": "8a2883468f7ae124436be18f0fa8da73b14ab6098b71b640e501554de68d4dfb",
-        "sweep_provenance.json": "79a23692883046f091fa8cca7cbe09111c7fa5a5fddb274318474e4a52c7af24",
+        "sweep_provenance.json": "29a5d820bc69bcedf281c367f872bab7271557112de5b7cdf0f4c2a3a1f5deea",
         "thresholds.json": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -607,7 +607,7 @@
         "null_calibration.json": "7d9f447f0b56425c3c2f55c69012486a0c0930696a7f63b5f0484164c609da3e",
         "provenance.json": "84ebba91993d5d7b4834cdd5d6022b5b1c4ee7da0f3410846bcae85c01cec3dd",
         "result.json": "942ab28abcdd166ac7d0daf9dd85633a3aca2aa93b600a679f7bbd5ce053aee1",
-        "sweep_provenance.json": "f52e4f12db5ef27d4d7b0bc87e5b1717b94817d0444bd26a495816d5e3421c15",
+        "sweep_provenance.json": "7af9d3bfb71bda16a44123f054ce1f63c1509482348118881f1235b27ba73012",
         "thresholds.json": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -648,7 +648,7 @@
         "null_calibration.json": "33e5b3732b67ee75908c8d0188d0cafec80a6026e22ef51d08f9d628a46b73bd",
         "provenance.json": "61ed0fa57cb38ee6caa08265cc99755484f429fe74ec7ed592078303b351045b",
         "result.json": "5a10c6648a2e626e6f7a37ddea2b2f5d48aad43fa0ab7853c6a1d27a9eb85fc2",
-        "sweep_provenance.json": "50813a1223fae3d93fe06337a936ea79368b13c2f241c099d25bf1c932e7d58c",
+        "sweep_provenance.json": "8b97e1d67f042e429ca14057951c886dd739ab4a0317fa683668e51415b27847",
         "thresholds.json": "5c399248d78b450c0e78114e2a4ac2ee54cae809b382c2bdb611a1782bed4cf9"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -690,7 +690,7 @@
         "null_calibration.json": "2aca0217ad429edace31f95967fb806fc8b3f7eb3db9355a710f427e076fe05c",
         "provenance.json": "aa7a8a3c2f747893d4dd153d6f797bcf43eb05e107cfe763c2d950d69a7495f8",
         "result.json": "432459b5c95282c072350cf0b8806364640e6cd2a92dd1f26e2999ccfd6d1d2f",
-        "sweep_provenance.json": "fc259894a1508fabe36c423bb294a9893d9aaf4c45b9b8eb8caa1e7331a176d5",
+        "sweep_provenance.json": "824df110930d0f0b23f909f98ad7300fab71bf4e795351e02afea3a66b0cb724",
         "thresholds.json": "f371d2d65e25e1cf7d577adb812aeb79fa5f5824ede2d7d73628b3e37d33dd6c"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -731,7 +731,7 @@
         "null_calibration.json": "57a4d63a90c681e36822a98818eccaded7f716415b6fb88d7813d045d9ff090f",
         "provenance.json": "ff1d7e11dca7d05837f81507b4fc9f16592d70feceed88bb5a2c471104fa7533",
         "result.json": "1cac37064843d4aae7d9c1eb5534fe87aee4d4218d40b4414eb782c061dae341",
-        "sweep_provenance.json": "79bf6a534662dea27bfd4e68f1f63fe9e81387fb6f526d27dd0bab7a34028a36",
+        "sweep_provenance.json": "51bd7b9f94b076ec383b0722b6cbbb11035bae2802e0d59d6a195386dd13087a",
         "thresholds.json": "514cef6aab5d2b50200518af35c7b15cbad9a1fc15b51681879d4d1c15da3d81"
       },
       "bucket": "EVENT_CLASS",
@@ -773,7 +773,7 @@
         "null_calibration.json": "c7d20bd46c34d7cefdc2523c9970be8e46dc0f3564145e3f5a47804475838236",
         "provenance.json": "9adaf4729d3b7a7e82c69a0f2ef2fade7dc9fb2886293ba49c67e61bd9ea8f8d",
         "result.json": "415c1c4da602d7c984c71fe63ed56a8634274b68b955e69d5d6d525857a1a163",
-        "sweep_provenance.json": "1968c019ef9514946af0a4a9e034a812c4b7802ea95cad7c979947d6221d20ef",
+        "sweep_provenance.json": "ac80aad917200e82748ab786818b1c8b64733d97eeb62fbe82883010e095dff0",
         "thresholds.json": "7e0139c961df6278c1a2b951bd86ad360fe1a88f4cad12d5c4b0dbd94021eaa2"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -815,7 +815,7 @@
         "null_calibration.json": "a5f983471e0a9665bd0adbc041fc49156cfdb336c2c08d96be4c418863194c13",
         "provenance.json": "842fa6556fbf251a2b1d7b04c58d482f412369482144ef27e8edb6295356e0fd",
         "result.json": "35fc85bacafdbbaf673ae761565b70a6e80da7fbbaf7bee1783f960d45ffdc3c",
-        "sweep_provenance.json": "3c9eb9f670153cb21eed53932d18174ee52772fcb0c9f8012643f6091b7837e1",
+        "sweep_provenance.json": "e3584473714e86f789ca776a5223e10c239d5a563e75bd0dea44efeb578f40eb",
         "thresholds.json": "336ed5353c949d53ada1ca567556de7c9f987edaee54eb647a139ae1112ddcbe"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -859,7 +859,7 @@
         "null_calibration.json": "1edfd462a15e8339189458be04ebca9ed190a9cb7044e12308cd3b35b0aaa5ea",
         "provenance.json": "6fc14a8babb7fde83192a95dd32f6403555856649d8072f10bf067fded04ac5c",
         "result.json": "25f45c1bbb56f6d2994db79bd81ac7681ea9c81df9328a53f5e7e8f3244ba949",
-        "sweep_provenance.json": "0dc0686a3f4fd0a08d3716da553c56815c0149a7b7ec8f3cb06cbeaee3261fc4",
+        "sweep_provenance.json": "d253940f908d99e76f123f68c132127c8373165ba2efeef953fec3737271ea97",
         "thresholds.json": "f07ff6164266532d8986ad48c8fb9c50700f7503d7f6955e664b2fff51d90f97"
       },
       "bucket": "ALGORITHMIC_SHALLOW",

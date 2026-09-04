@@ -19,7 +19,7 @@
     "thresholds.json": "a003f687c212d54f0efd18ff09b0c5a2069de27fb56efaddc8014775089202e5"
   },
   "source_hashes": {
-    "catalog_entry": "0b4696104fef09a4b085c07a0a86f3418b8f72fc45c21ea5cd4a24fdd348433b",
+    "catalog_entry": "ddee5a6c19910978920a9fdd8e0fc18f7ba5d68fb4521bff7716f4568c07c1a6",
     "chromosome_store_module": "7e4a5f758e64c7b28a5029a451219ea041952701527b40643cc6f6aa83a7744f",
     "chromosome_views_module": "ddc90389b287206a25c53e43a7f68e5484e1f2ecd08bbe2eaa982a1cef95bfc5",
     "dna_damage_event_verifier_module": "e19c970d362323abfde855e941121a17e1e873d4ec705ebad827d46ae1e44c6a",
