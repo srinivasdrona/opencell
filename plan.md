@@ -59,6 +59,52 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-04 ~23:50 IST) — supersedes the 23:05 IST block
+below (HostInteraction L2.1 closure):**
+
+- Worked in worktree `E:\opencell-worktrees\fix-l21-host-active`, branch
+  `agent/l21-host-active-fix-20260904`, off local main `5cbf4b2`. **Not
+  pushed/merged** — orchestrator merges after review.
+- HostInteraction was the sole `MISSING_ACTIVE_EXTRACTION` L2.1 row. Root
+  cause of the prior 50,000-tick seed-0 false→true anchor-search failure:
+  `host.isBacteriumAdherent` (and everything it gates: TLR1/2/6, NF-kB,
+  inflammatory response) is **not a discrete event** in the unperturbed
+  model — a genuine full-Simulation seed-0 canary
+  (`tmp/probe_host_interaction_canary.m`) proved all 4 Host booleans are
+  TRUE from tick 1 onward, because Karr's fitted initial condition already
+  carries nonzero copy numbers (11-33) for every one of the 13 enzyme WIDs
+  `HostInteraction.m` reads. A false→true SEARCH can never terminate for a
+  signal already true before the search starts — the 50k-tick failure was
+  the honest, correct negative result for that (wrong) search strategy.
+- Extracted a genuine FIXED window (not anchor) via a new opt-in
+  `anchor_opts.capture_signal_container` flag on
+  `scripts/matlab/extract_per_process_traces_v2.m`
+  (`data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat`,
+  sha256 `5eaa308f...`, gitignored, reproducible via
+  `tmp/l21_host_interaction_fixed_active_window.m`).
+- **Replaced the OC process entirely**: the prior `opencell/vivarium/
+  karr_host_interaction.py` ("Karr-light v1") was a fabricated continuous
+  adhesion-fraction + stochastic Poisson bind/unbind model that never
+  modeled TLR/NF-kB/inflammatory response at all (`CODE_DEVIATES` per
+  `docs/phase_f/audits/HostInteraction_semantic_audit.md` HI-S4-01/02/S5-02).
+  New version is a literal port of `HostInteraction.m`'s boolean cascade
+  (all()/any() nonzero-count semantics over the same 5 fixture index
+  sets), zero RNG (matches `PROCESS_CATALOG.yaml` bucket=DETERMINISTIC,
+  unchanged/correct).
+- `l21_active_window_audit.py --process HostInteraction` →
+  `EXISTING_WINDOW_PASS`, bit-identical across all 100 ticks / 9 compared
+  surfaces (incl. all 6 host booleans). Manifest row promoted; independent
+  `verify_active_window_manifest_row` re-check →
+  `VERIFIED_EXISTING_WINDOW_PASS`. L1b: `HostInteraction` row updated
+  (line anchors + notes) and now PASSes; full L1b suite 27/28 (only
+  pre-existing, unrelated `DNADamage` fails). Ruff clean.
+- Full decision record: `docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md`.
+- Live processes: none running; MATLAB slot released after each job.
+  `data/m1_sources/WholeCell` in this worktree is a **junction** (not a
+  symlink — junctions don't need admin rights) to `E:\opencell-mirrors\WholeCell`,
+  created fresh for this worktree (worktrees don't inherit the main
+  checkout's WholeCell symlink).
+
 **Current status (2026-09-04 23:05 IST) — supersedes earlier Sept-4 blocks
 below:**
 

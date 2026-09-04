@@ -9,7 +9,7 @@ process:
   whole_cell_model_id: "Process_HostInteraction"
   functional_area: "host-interaction"
   state_shape_role: "qualitative host-interface state; wiring row adds integration semantics"
-  notes: "MATLAB source is documented in the extract and mirrored upstream; the current OC port is Karr-light and only approximates the boolean cascade with aggregate adhesion state."
+  notes: "MATLAB source is documented in the extract and mirrored upstream; the current OC port is a literal structural port of HostInteraction.m's boolean cascade (adherence/TLR/NF-kB/inflammatory response), reading raw enzyme copy numbers -- see docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md for the L2.1 closure that replaced the prior Karr-light v1 stochastic approximation."
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
@@ -23,7 +23,7 @@ integration_touchpoints:
       symbol: "KarrHostInteractionProcess"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
-        lines: "153-300"
+        lines: "92-232"
         note: "Current OC port has no request-calculator surface and never reads substrates_allocated or substrates. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrHostInteractionProcess"
       supporting:
@@ -46,12 +46,12 @@ integration_touchpoints:
       symbol: "KarrHostInteractionProcess.next_update"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
-        lines: "255-255"
-        note: "Current OC per-tick update computes stochastic aggregate adhesion and host_attached/host_adhesion_strength."
+        lines: "188-232"
+        note: "Literal port: computes isBacteriumAdherent/isTLRActivated(1/2/6)/isNFkBActivated/isInflammatoryResponseActivated from raw protein.counts, writing cell.host_attached/host_tlr1_activated/host_tlr2_activated/host_tlr6_activated/host_nfkb_activated/host_inflammatory_response_activated."
         symbol: "KarrHostInteractionProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_host_interaction.py"
-          lines: "217-243"
+          lines: "132-173"
           note: "Port schema exposes cell and protein stores used by next_update."
           symbol: KarrHostInteractionProcess.ports_schema
         - path: "opencell/vivarium/karr_composite.py"
@@ -59,7 +59,7 @@ integration_touchpoints:
           note: "Topology wiring only exposes cell and protein stores to the process."
           symbol: build_karr_chassis_v6
     status: "implemented"
-    note: "Implemented in OC as a Karr-light approximation, not a literal port of the MATLAB boolean cascade."
+    note: "Literal structural port of the MATLAB boolean cascade (adherence/TLR/NF-kB/inflammatory response), reading raw enzyme copy numbers via all()/any() nonzero-count semantics matching HostInteraction.m exactly. Replaces the prior Karr-light v1 stochastic aggregate-adhesion approximation (L2.1 closure, 2026-09-04)."
   calcFluxBounds:
     matlab:
       symbol: "NOT_IMPLEMENTED"
@@ -72,7 +72,7 @@ integration_touchpoints:
       symbol: "KarrHostInteractionProcess"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
-        lines: "153-300"
+        lines: "92-232"
         note: "No flux-bound equivalent exists in the current OC port. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrHostInteractionProcess"
       note: OC does not implement this Karr method.
@@ -107,7 +107,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_host_interaction.py"
-        lines: "255-300"
+        lines: "188-232"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrHostInteractionProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -157,33 +157,33 @@ source_anchors:
   oc_blocks:
     module_docstring:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "1-24"
-      note: "Karr-light v1 module header and fixture defaults."
+      lines: "1-25"
+      note: "Literal-port module header describing the boolean cascade formulas."
       symbol: <module>
-    trace_rate_helpers:
+    helper_functions:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "27-150"
-      note: "Trace parsing and inferred adhesion-rate helpers."
+      lines: "41-90"
+      note: "Fixture path/scalar/WID/index-array parsing helpers plus the _HOST_BOOLEAN_FIELDS tuple."
       symbol: _resolve_path
     process_class:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "153-193"
+      lines: "92-104"
       note: "Process class definition and constructor."
       symbol: KarrHostInteractionProcess
     fixture_loader:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "195-215"
-      note: "Fixture-backed enzyme and substrate loading."
+      lines: "105-130"
+      note: "Fixture-backed enzyme WID and index-set (terminalOrganelle/adhesin/tlr12Ligand/tlr26Ligand/antigen) loading."
       symbol: KarrHostInteractionProcess._load_fixture
     ports_schema:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "217-243"
-      note: "Cell and protein ports used by the process."
+      lines: "132-173"
+      note: "Cell (6 host booleans) and protein ports used by the process."
       symbol: KarrHostInteractionProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "255-300"
-      note: "Current OC per-tick adhesion update."
+      lines: "188-232"
+      note: "Literal per-tick boolean cascade: adherence, TLR1/2/6, NF-kB, inflammatory response."
       symbol: KarrHostInteractionProcess.next_update
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
@@ -193,7 +193,7 @@ source_anchors:
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/HostInteraction_flat.mat"
-    - "data/m1_sources/karr_native/per_process_traces/HostInteraction_100ticks.mat"
+    - "data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat"
   kb_version: "unknown"
   extraction_date_utc: "2026-06-29"
   notes: |-
@@ -223,13 +223,11 @@ deviations:
       symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "153-300"
+      lines: "92-232"
       note: "Current OC port has no LP or request-calculator path."
       symbol: KarrHostInteractionProcess
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC replaces Karr's boolean host cascade with a Karr-light aggregate adhesion model (`host_adhesion_strength` and `host_attached`)."
-    - "OC reads `cell.terminal_organelle_count` plus `protein.counts`; Karr reads its own `host` state and `enzymes` array."
-    - "No substrate stoichiometry or allocator request surface exists in the current OC port because HostInteraction's fixture has no substrate WIDs."
+    - "No substrate stoichiometry or allocator request surface exists in the current OC port because HostInteraction's fixture has no substrate WIDs (matches Karr's own zero-request vector exactly, so this is a structural bypass, not a behavioral divergence)."
     - "`soft_after: TerminalOrganelleAssembly` is advisory-only; neither MATLAB nor OC encodes an executable HostInteraction-after-TerminalOrganelleAssembly scheduler edge."
-  note: "The row records the current OC approximation honestly instead of implying a literal MATLAB port."
+  note: "L2.1 closure (2026-09-04): OC now literally ports HostInteraction.m's boolean cascade (isBacteriumAdherent/isTLRActivated(1/2/6)/isNFkBActivated/isInflammatoryResponseActivated), reading raw enzyme copy numbers via all()/any() nonzero-count semantics, replacing the prior Karr-light v1 stochastic aggregate-adhesion approximation. The only remaining structural (not behavioral) deviation is allocator bypass, which produces an identical zero-request outcome to Karr's own empty substrate list."
