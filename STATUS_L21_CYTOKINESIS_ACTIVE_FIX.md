@@ -1,5 +1,114 @@
 # STATUS: L2.1 Cytokinesis Active-Window CODE_GAP Fix
 
+## Update 4 (2026-09-04, same session) — extended extractor + randStream ledger built; source-bound M5000 seed-36 extraction IN PROGRESS (background)
+
+**Operational handoff (read this first if resuming):**
+
+- **Live background job**: source-bound M_ticks=5000 seed=36 Cytokinesis
+  extraction, launched via this worktree's own
+  `scripts\tools\run_matlab_slot.ps1` (self-contained, per-worktree slot
+  lock under `artifacts\matlab_slots\`, never the shared session-wide
+  `with_matlab_slot.ps1`/`matlab-slots\` used by Update 1/2's Stage-1
+  probe). Command:
+  `addpath(genpath('E:/opencell-worktrees/fix-l21-cytokinesis-active/scripts/matlab'));
+  extract_per_process_traces_v2({'Cytokinesis'}, 'per_process_traces_v2_event_s036', 5000,
+  uint32(36), 0, 'anchor', struct(), struct())`.
+  - Slot lock: `artifacts\matlab_slots\slot-1.lock` (holder PID recorded
+    inside the lock file).
+  - MATLAB process: parent `matlab.exe` PID 6428, child `MATLAB.exe` PID
+    13556 (verified via `Get-CimInstance Win32_Process` at launch time --
+    re-check by PID before assuming still-alive in a later session).
+  - Log: `artifacts\matlab_jobs\l21_seed36_m5000_randstream_20260904_233639_21024.log`
+    (buffered; may lag behind real progress -- the launching shell's own
+    live stdout, if still attached, is more current).
+  - Launched 2026-09-04 23:36 IST. Expected wall-clock: ~100-220 minutes
+    based on this project's own prior seed-36/seed-49 full-trajectory
+    runs at this M_ticks (`STATUS_DUAL_CYT_WINDOW_FIX.md` §6/§6b, sibling
+    worktree) -- i.e. plausibly still running well past this session's
+    end. **Do NOT launch a second concurrent job for this seed/process in
+    THIS worktree** (dec-005 item 6 concurrency policy) -- check the slot
+    lock and the PIDs above first.
+  - Expected real result (per the task's own corrections and the sibling
+    worktree's already-verified same-source finding, §Update 3): onset_tick=27918,
+    window_anchor=31993, tick_start=26994, exactly 5000 ticks.
+  - Output path (this worktree only, gitignored):
+    `data/m1_sources/karr_native/per_process_traces_v2_event_s036/Cytokinesis_5000ticks.mat`.
+  - **Once this file exists**: run
+    `bin\oc-pytest.cmd tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound -q`.
+    This test is already written, committed, and currently skip-gated on
+    the file's absence (commit `2fbea39`) -- it needs NO further code
+    changes to activate. It will report either GREEN (bit-identity across
+    the full active window under the randStream ledger -- promote to
+    GENUINE) or the exact first-divergence tick with a full ledger
+    (entry state / draw count / exit state, both sides) if not.
+
+**What this session did (commits `153d726`, `7a19b60`, `2fbea39`, in
+order):**
+
+1. Retracted Update 2's "Karr's MATLAB run is not bit-reproducible
+   run-to-run" conclusion (see Update 3 below) -- root cause was a
+   DNADamage.m source-version confound between the 2026-08-05 accepted
+   trace and the 2026-09-03 probe run, independently re-derived from this
+   worktree's own git history and matching the sibling
+   `fix-dual-cyt-window` worktree's `decisions/dec-005` finding exactly
+   (18/18 arrays byte-identical once source is held constant).
+2. Extended `scripts/matlab/extract_per_process_traces_v2.m` (the
+   authoritative extractor, not the old ad hoc Stage-1 probe) to capture
+   the target process's `randStream.state` at both tap points for every
+   tick of a fixed/anchor extraction (`capture_rand_stream_state`,
+   `before_tick.randStreamState`/`after_tick.randStreamState`), and to
+   bind dec-005's DNADamage source-hash metadata unconditionally into
+   every fixed/anchor trace (closing the narrower
+   `if strcmp(canonical_name,'DNADamage')` gate dec-005 named as a
+   follow-up). Ported `current_genuine_dnadamage_source()` +
+   `AnchorWindowSpec.required_dnadamage_source_sha256` into
+   `scripts/l2_event/launcher.py` (fail-closed validator, mirrors the
+   existing mnrnd-provider check). Fixed a latent double-`fclose` bug in
+   the new atomic overlay write along the way (caught as a MATLAB warning
+   during the live background job; parse-verified with `octave-cli`
+   afterward, does not affect this session's launched job's correctness
+   -- it was a harmless double-close warning, not a data-corrupting bug).
+3. Built the first-divergence randStream ledger:
+   `_Mcg16807.get_state()`/`.set_state()` (numerically identical to
+   MATLAB's `RandStream('mcg16807').State`) and
+   `_MatlabCytokinesisRNG.draw_count`, plus
+   `test_karr_cytokinesis_l2_replay.py`'s `_assert_randstream_ledger` --
+   restores the OC replay's RNG to Karr's real captured entry state at
+   the window's first tick (rather than relying on the quiescent-early-
+   return coincidence) and asserts, every tick, that OC's actual
+   entry-state/draw-count/exit-state exactly match Karr's own recorded
+   `randStreamState` values, forward-stepped via the same vetted Lehmer
+   recurrence `analyze_cytokinesis_randstream_probe.py` already uses.
+   Fails at the exact FIRST tick of real RNG-consumption divergence --
+   strictly more precise than an observable-mismatch symptom (which the
+   existing tick-228 ring-witness check can only report one or more
+   ticks AFTER the actual draw-count bug first occurred). 6 new isolated
+   unit tests (synthetic HDF5 fixtures) prove this mechanism itself is
+   correct, independent of any real MATLAB output.
+4. Added a skip-gated
+   `test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound` test
+   (seed=36, n_ticks=5000, asserts onset=27918/anchor=31993/
+   dnadamage-source-binding-present once the file exists) -- the
+   promotion gate for item 1 of the operational handoff above.
+
+**Verification this session:** all touched Python files ruff-clean; 92
+launcher tests, 11 extractor static tests, 8 probe static tests, 11
+karr_cytokinesis unit tests, 18 (17 passed + 1 pre-existing tick-228
+failure + 1 skip) L2.1 replay tests, 19 L1b wiring tests all run and
+their results interpreted (the ONE failure -- tick 228 on the M4000
+seed-0 trace -- independently confirmed via `git stash` A/B to be
+identical before and after this session's changes, i.e. a pre-existing,
+already-documented finding, not a regression).
+
+**What this session explicitly did NOT do:** promote Cytokinesis L2.1 to
+GENUINE (no real M5000 randStream data exists yet to gate on -- the
+background job above is still running); fabricate or assume a result for
+the still-running job; touch the L2.2 bulk queue (`genuine-l22-cytokinesis`)
+or any other worktree; merge `fix-dual-cyt-window`'s branch (worked
+process-local, reading its STATUS/dec-005 for reference only, per task
+instruction "until [the catalog-provenance migration] lands, work
+process-local").
+
 ## Update 3 (2026-09-04, corrective pass) — Update 2's "not bit-reproducible run-to-run" conclusion is RETRACTED
 
 **Update 2 below (the Stage-1 probe's "Karr's real MATLAB run is NOT
