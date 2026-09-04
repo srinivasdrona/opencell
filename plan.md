@@ -107,7 +107,14 @@ below:**
     input ledger; ticks 0-3 are bit-identical. Tick 4 fails closed with
     exactly one missing draw (44 recorded vs 45 required) across 32
     reactions. Continue with per-reaction MATLAB/OC RNG-state checkpoints to
-    identify the extra draw; do not accept the strict xfail. L2.2 stays PASS.
+    identify the extra draw; do not accept the strict xfail. **Algorithmic
+    closure now achieved:** reaction 26's exact-match motif candidate case
+    used `len(candidates) > n_sites`, skipping MATLAB's mandatory
+    `randsample(n,n,false)` draw; changing to `>=` gives zero divergence
+    across all 32 reactions and the full 20-tick seed-2000 replay passes.
+    L2.2 stays PASS (OC84 vs Karr99). The active-window audit still lacks
+    shared-RNG ledger injection and therefore leaves the manifest CODE_GAP;
+    add the same fail-closed ledger support there, promote, then review.
   - TranscriptionalRegulation: process-local mcg16807, exact MathWorks
     weighted-randsample normalization, and chromosome occlusion exemption
     are committed; L1b/focused tests are green. Real MATLAB disproved an
