@@ -86,7 +86,13 @@ below:**
     launches and triggers a separate preregistration.
 - Remaining source/fidelity blockers:
   - DNASupercoiling: `PRIMARY_OVERACTIVE` (112 vs 65 pooled; 28 vs 7
-    clustered); own process RNG / residual legality source remains.
+    clustered). Candidate fixes now restore process-owned RNG draws and
+    correct an inconsistent superhelicalDensity writeback baseline; the
+    28 clustered seeds' known extra ticks dropped **49 -> 0**. Full N=200
+    is still blocked because the reused finite `process_draws` ledger
+    exhausts at ticks ~69-99 on ~40% of seeds. Replace the finite draw list
+    with hash-bound per-tick process.randStream `states_before` restoration
+    across all 200x100 ticks, then rerun the unchanged two-sided gate once.
   - ReplicationInitiation: tick-4 DnaA release mismatch; MATLAB ledger probe
     failed on missing GLPK/parity bootstrap and produced an empty JSONL.
   - DNADamage L2.1: own-process mcg16807 fixed; tick-4 shared chromosome RNG
