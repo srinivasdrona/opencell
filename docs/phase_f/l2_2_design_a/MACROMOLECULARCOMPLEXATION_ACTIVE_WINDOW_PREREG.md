@@ -92,14 +92,49 @@ All paths are rooted at:
 
 ## Design-A consumption
 
-The shared runner helpers are intentionally not edited for this closeout.
-Instead, `scripts/l22_evidence/macromol_active_windows.py` temporarily routes
-only `MacromolecularComplexation`'s oracle lookup to the active-window root in
-process, runs the ordinary shared Design-A runner, and emits a separate
-portable process-local artifact.
+The shared runner helpers (`tests/vivarium/_l2_2_design_a_runner_helpers.py`)
+are never edited for this closeout. The accepted 50-seed active-window
+cohort is instead mirrored, byte-for-byte, into the canonical
+`per_process_traces_v2_sNNN/` layout every other `design_a_per_tick`
+process already uses:
+
+```
+data/m1_sources/karr_native/per_process_traces_v2_s000/MacromolecularComplexation_100ticks.mat
+data/m1_sources/karr_native/per_process_traces_v2_s001/MacromolecularComplexation_100ticks.mat
+...
+data/m1_sources/karr_native/per_process_traces_v2_s049/MacromolecularComplexation_100ticks.mat
+```
+
+produced and hash-verified by
+`scripts/l22_extraction/populate_canonical_macromol_traces.py` (idempotent;
+fails closed on any content conflict at the destination). The ordinary,
+UNMODIFIED canonical Design-A oracle loader therefore finds this process's
+data exactly the way it finds every other process's data -- no
+process-scoped environment-variable override, no shared-loader edit, no
+per-run monkeypatching.
+
+`scripts/l22_evidence/macromol_active_windows.py` runs the ordinary shared
+Design-A runner directly against this canonical mirror and emits a
+separate portable process-local artifact.
 
 This process-local artifact is not consumed by the shared evidence index or
-generator without an explicit promotion step.
+generator without an explicit promotion step -- the shared row promotion
+itself uses the ordinary `scripts/l22_evidence/sweep.py` /
+`scripts/l22_evidence/generator.py` commands unchanged (see "Commands"
+below).
+
+### History (superseded approach)
+
+An earlier iteration of this closure routed the shared Design-A oracle
+loader to the active-window root via a process-scoped
+`OPENCELL_L22_PROCESS_ORACLE_ROOT__MACROMOLECULARCOMPLEXATION` environment
+variable read inside the shared loader module. That required editing
+`tests/vivarium/_l2_2_design_a_runner_helpers.py` -- one of the four
+universally-shared, whole-file-hashed source files every `design_a_per_tick`
+process's `sweep_provenance.json` binds to -- which correctly staled the
+other 17 unrelated processes' evidence rows on any full `generate`/`audit`
+regeneration. That approach was reverted; the canonical-path mirror above
+is the replacement, requiring zero shared-file changes.
 
 ## Commands
 
@@ -109,8 +144,25 @@ Audit the cohort:
 bin\oc-py.cmd scripts/l22_extraction/macromol_active_window.py --out artifacts/l22_macromol_active_window_audit.json
 ```
 
+Populate (or refresh) the canonical mirror:
+
+```powershell
+bin\oc-py.cmd scripts/l22_extraction/populate_canonical_macromol_traces.py
+```
+
 Produce the process-local ordinary Design-A artifact:
 
 ```powershell
 bin\oc-py.cmd scripts/l22_evidence/macromol_active_windows.py --out docs/phase_f/l2_2_design_a/active_windows/MacromolecularComplexation_genuine_provider_design_a.json
 ```
+
+Run the canonical shared sweep/bundle/generate/audit (identical invocation
+to every other `design_a_per_tick` process -- no env var, no override):
+
+```powershell
+bin\oc-py.cmd scripts/l22_evidence/sweep.py run --processes MacromolecularComplexation --max-workers 1 --report-out artifacts/l22_macromol_sweep_report.json
+bin\oc-py.cmd scripts/l22_evidence/generator.py bundle --source-root artifacts/l2_2_gates
+bin\oc-py.cmd scripts/l22_evidence/generator.py generate
+bin\oc-py.cmd scripts/l22_evidence/generator.py audit
+```
+

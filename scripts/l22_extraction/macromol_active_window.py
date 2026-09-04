@@ -18,9 +18,17 @@ early-window traces under a process-local root:
         ...
         per_process_traces_v2_s049/MacromolecularComplexation_100ticks.mat
 
-The existing Design-A runner consumes this cohort via the process-scoped
-environment override documented in
-`docs/phase_f/l2_2_design_a/MACROMOLECULARCOMPLEXATION_ACTIVE_WINDOW_PREREG.md`.
+The existing, UNMODIFIED Design-A runner consumes this cohort via the
+ordinary canonical `per_process_traces_v2_sNNN/` layout every other
+`design_a_per_tick` process uses -- the accepted seeds are ALSO committed,
+byte-for-byte identical, at
+`data/m1_sources/karr_native/per_process_traces_v2_s000/` through `_s049/`
+(see `scripts/l22_extraction/populate_canonical_macromol_traces.py`). No
+process-scoped environment-variable override or shared-loader edit is
+used; see
+`docs/phase_f/l2_2_design_a/MACROMOLECULARCOMPLEXATION_ACTIVE_WINDOW_PREREG.md`
+for the full history (an earlier iteration used such an override and was
+reverted on review because it staled every other process's evidence row).
 """
 
 from __future__ import annotations
@@ -56,7 +64,6 @@ ACTIVE_WINDOW_RULE_VERSION = 2
 ACTIVE_WINDOW_ROOT = REPO_ROOT / "data" / "m1_sources" / "karr_native" / "macromol_active_window"
 DEFAULT_DATA_ROOTS = (ACTIVE_WINDOW_ROOT,)
 MATLAB_DRIVER = REPO_ROOT / "scripts" / "matlab" / "extract_macromol_active_window_seeds.m"
-RUNNER_OVERRIDE_ENV_VAR = "OPENCELL_L22_PROCESS_ORACLE_ROOT__MACROMOLECULARCOMPLEXATION"
 FIXTURE_PATH = REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "MacromolecularComplexation_flat.mat"
 VENDORED_SOURCE_PATH = REPO_ROOT / "data" / "karr_vendored_source" / "MacromolecularComplexation.m"
 ACTIVE_WINDOW_CAPTURE_MODE = "same_pass_tapped_scheduler_trigger_and_capture"
@@ -414,7 +421,9 @@ def resumable_extraction_command(missing_seeds: list[int], invalid_seeds: list[i
     return (
         f"{len(missing)} seed(s) with NO output file at all, "
         f"{len(invalid)} seed(s) with present-but-invalid output. "
-        f"Set `{RUNNER_OVERRIDE_ENV_VAR}` to `{ACTIVE_WINDOW_ROOT}` after extraction, then run:\n"
+        "After extraction, re-run "
+        "`scripts/l22_extraction/populate_canonical_macromol_traces.py` to refresh the canonical "
+        "per_process_traces_v2_sNNN/ copies, then:\n"
         f"matlab -batch \"addpath('scripts/matlab'); extract_macromol_active_window_seeds({start}, {end}, {force_vector});\""
     )
 
