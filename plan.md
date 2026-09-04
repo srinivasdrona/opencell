@@ -72,6 +72,12 @@ below:**
   provenance contract and migrate unchanged evidence without rerunning
   unrelated biology. Expected restored board: **19 PASS / 1 FAIL /
   2 MISSING_EVIDENCE**, integrity OK.
+  Candidate migration reached that target but Opus **REJECTED one contract
+  completeness gap**: `primary_projection`, `joint_check`, and event
+  `seed_window.tick_range_from_division` were not hashed, so a scientific
+  gate edit could remain falsely green. Add them, plumb alternate catalog/
+  registry paths through generator audit, force UTF-8 `git show`, rerun the
+  same fail-closed migration, and re-review before merging.
 - Closed and published: ProteinProcessingII, ChromosomeCondensation,
   ChromosomeSegregation L2.1, MacromolecularComplexation L2.2.
 - Cytokinesis/FtsZ dual extraction:
