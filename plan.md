@@ -121,9 +121,13 @@ below:**
     initialization warmup. First mismatch is now tick 11 because
     `Chromosome.sampleAccessibleRegions` uses the chromosome state's shared
     RandStream, not the process stream. Continue by capturing/restoring that
-    per-tick shared state as an input oracle; do not review/close while the
-    manifest remains `CODE_GAP`. A proposed N=10/M=4000 analytical-null
-    L2.2 prereg exists but must wait for L2.1 closure and review.
+    per-tick shared state as an input oracle. Candidate `6a4dccc` now reports
+    full **4000/4000 bit identity** after adding the shared chromosome draw
+    ledger and fixing own-footprint plus cross-strand occlusion. Before
+    integration, Opus must verify the manifest/audit authority, trace/ledger
+    portability, shared `matlab_rng.py` restoration, duplicate `dec-005`
+    conflict, and remove scratch payload. The proposed N=10/M=4000
+    PIT/Uniform L2.2 prereg also requires independent power/null review.
   - Cytokinesis L2.1: correct RNG family and water request landed only on
     its fix branch. A source-bound M=5000 seed-36 extraction with per-tick
     process randStream state completed. The promotion gate reached tick 894
