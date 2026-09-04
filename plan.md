@@ -144,7 +144,15 @@ snapshot below:**
     bind the resolved DNADamage source hash/path/overlay status; surveys
     filter by active M; M=5000 is explicitly PROVISIONAL with n=1 and a
     separate-commit escalation formula; concurrent jobs require separate
-    worktrees. Await final Opus acceptance before bulk launch.
+    worktrees. Final Opus review **ACCEPTED**. Before bulk, add a mechanical
+    zero-margin guard (`completion-onset+1 >= M` fails) to both survey and
+    canary validation and gitignore `karr_native/probe_*`. Then preserve the
+    current seed-36 pair and re-extract seed 36 alone as the first live smoke:
+    require onset 27918, completion 31993, source hash
+    `86d8b3c2...27e7e`, and overlay-required=true. If green, launch three
+    separate-worktree ranges 0-16, 17-33, 34-49. On any M overrun, stop new
+    launches, let in-flight seeds finish, and re-preregister once from the
+    maximum observed span before restarting.
 
 **Current status (2026-09-03 06:05 IST) — supersedes all Sept-2 snapshots
 below:**
