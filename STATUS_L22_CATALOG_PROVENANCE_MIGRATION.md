@@ -160,7 +160,7 @@ accepted closure.
 
 ## Tests
 
-- **`tests/scripts/test_l22_evidence_catalog_contract.py`** (18 tests,
+- **`tests/scripts/test_l22_evidence_catalog_contract.py`** (19 tests,
   new): cross-process isolation for both `catalog_entry_hash` and
   `event_registry_entry_hash` (a Cytokinesis-analog M_ticks edit never
   changes Translation's/Macromol's hash), a process's own M/N/
@@ -169,9 +169,12 @@ accepted closure.
   processes relying on it (never one that overrides explicitly),
   comment-only and YAML-reformatting/key-order edits change nothing,
   unknown/duplicate process raises, `process_contract_hashes` includes
-  `event_registry_entry` only for `event_class`, plus real-catalog
-  sanity checks (every in-scope process resolves without raising,
-  deterministic across repeated calls).
+  `event_registry_entry` only for `event_class`, an explicit un-migrated-
+  sentinel test (real `Metabolism` evidence with `catalog_entry` swapped
+  back to the old whole-file `catalog` key is flagged non-green via the
+  F5 bidirectional extra-recorded-key check), plus real-catalog sanity
+  checks (every in-scope process resolves without raising, deterministic
+  across repeated calls).
 - **`tests/scripts/test_l22_evidence_catalog_migration.py`** (12 tests,
   new): builds a REAL, synthetic, throwaway git repository per test
   (never mocked) to exercise the actual `git show <ref>:<path>` code
@@ -213,7 +216,7 @@ same method:
 `test_l22_evidence_ast_completeness.py::test_zero_uncovered_first_party_imports_across_real_in_scope_processes`
 (Replication registry gap).
 
-## Commits (this branch, 4, on top of `5cbf4b2`)
+## Commits (this branch, 6, on top of `5cbf4b2`)
 
 1. `e2a6c49` — `fix(l22-evidence): replace whole-catalog provenance with
    per-process contract hashes` — schema.py/generator.py/sweep.py +
@@ -226,6 +229,11 @@ same method:
    `evidence_index.json`, portability test tightening, provenance log.
 4. `e8fe3b2` — `docs(l22-evidence): document R6 per-process
    catalog-contract fix (Section 13.18)` — EVIDENCE_INDEX_SPEC.md.
+5. `4decbee` — `docs(l22-evidence): STATUS write-up + plan.md
+   operational handoff refresh` — this file + plan.md.
+6. `8369662` — `test(l22-evidence): explicit test that a leftover old
+   whole-catalog key is rejected` — direct anti-tamper proof of the
+   post-migration fail-closed property.
 
 ## Not done / explicitly out of scope
 
