@@ -136,14 +136,13 @@ below:**
     conflict, and remove scratch payload. The proposed N=10/M=4000
     PIT/Uniform L2.2 prereg also requires independent power/null review.
   - Cytokinesis L2.1: correct RNG family and water request landed only on
-    its fix branch. A source-bound M=5000 seed-36 extraction with per-tick
-    process randStream state completed. The promotion gate reached tick 894
-    then failed before biology comparison because the extractor/test reduced
-    MATLAB's vector `RandStream.State` to scalar `36`; it could not derive
-    the exit state `1363919953` through the Lehmer recurrence. Fix the
-    full-state serialization/codec against live MATLAB set/get round-trips,
-    then rerun the same M5000 replay; do not classify tick 894 as a process
-    divergence yet.
+    its fix branch. Candidate `3b424e7` now reports M5000 seed-36 full bit
+    identity and manifest GENUINE. Root causes: MATLAB's scalar
+    `mcg16807.State` is a half-word-swap/conditional-XOR encoding of the raw
+    Lehmer state (new live-verified codec), and production hardcoded
+    `filamentLengthInNm=40.0` instead of the fixture's
+    `39.130434782608695`. Loading the fixture value also closes the old
+    M4000 tick-228 divergence. Await independent Opus review/clean merge.
   - HostInteraction candidate `0a4642f`: source review proved adherence and
     the TLR1/2/6→NF-kB→inflammatory cascade are deterministic level signals,
     already true from fitted tick 1, not false→true events. The prior
