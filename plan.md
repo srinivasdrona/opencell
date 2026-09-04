@@ -94,7 +94,14 @@ below:**
   - TranscriptionalRegulation: site-level port is present in a dirty
     worktree; correct mcg16807/init-sequence work is unfinished.
   - Cytokinesis L2.1: correct RNG family and water request landed only on
-    its fix branch; frozen trace still first diverges at tick 228.
+    its fix branch. A source-bound M=5000 seed-36 extraction with per-tick
+    process randStream state is live: parent `matlab.exe` PID `6428`, child
+    `MATLAB.exe` PID `13556`, worktree
+    `E:\opencell-worktrees\fix-l21-cytokinesis-active`, log
+    `artifacts\matlab_jobs\l21_seed36_m5000_randstream_20260904_233639_21024.log`.
+    On completion run
+    `bin\oc-pytest.cmd tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound -q`;
+    this is the exact promotion/next-divergence gate.
   - HostInteraction: no event within 50,000 ticks; no active trace.
 
 **Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
