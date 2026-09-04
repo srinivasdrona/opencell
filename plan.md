@@ -100,7 +100,14 @@ below:**
     with hash-bound per-tick process.randStream `states_before` restoration
     across all 200x100 ticks, then rerun the unchanged two-sided gate once.
   - ReplicationInitiation: tick-4 DnaA release mismatch; MATLAB ledger probe
-    failed on missing GLPK/parity bootstrap and produced an empty JSONL.
+    is repaired and captured 689 real draws. Two source bugs are fixed:
+    evolveState no longer calls lifecycle-only initialization (106 wasted
+    draws/tick), and process/chromosome RNG streams are separated; a polymer
+    conservation subtraction is also fixed. The process-owned stream is
+    now bit-exact across all 689 draws, moving first mismatch
+    **tick 4 -> 13 -> 40** and active overlap to 102/103. Tick 40 is another
+    shared Chromosome RNG boundary; capture/restore its per-tick state as an
+    input oracle and continue, not an architectural waiver.
   - DNADamage L2.1: own-process mcg16807 fixed; tick-4 shared chromosome RNG
     mismatch remains. Candidate now implements exact MathWorks
     randsample-without-replacement and a source-bound chromosome shared-RNG
