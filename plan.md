@@ -62,10 +62,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
 snapshot below:**
 
-- Main has the clean ChromosomeSegregation merge locally at `9d76ae6`;
+- Main is clean and published at `aa07f76`. ChromosomeSegregation's
   post-merge live replay is non-skipped and green, 33 focused tests pass,
   L1b is 1/1, and L2.2 remains integrity-OK at
-  **18 PASS / 2 FAIL / 2 MISSING_EVIDENCE**. Publish this handoff and merge.
+  **18 PASS / 2 FAIL / 2 MISSING_EVIDENCE**.
 - Fully completed and published: ProteinProcessingII,
   ChromosomeCondensation, and (after this push) ChromosomeSegregation L2.1.
 - MacromolecularComplexation has **50/50 valid** and a reproducible
@@ -97,9 +97,13 @@ snapshot below:**
   - FtsZPolymerization: **10 raw traces**; queue/watchdog dead; authoritative
     valid count must be rerun.
   - The one-pass dual Cytokinesis+FtsZ tooling is committed through
-    `725dc14`; its first canary launch exposed and fixed a scratch-runner
-    relative-path bug. The corrected seed-49 canary is now running as
-    detached shell `dual-canary-seed49-r2`.
+    `725dc14`. Seed-49 canary **PASS**: one seeded trajectory produced both
+    existing-validator-clean outputs in **1h39m**, sharing completion tick
+    30237 and genuine provider hash
+    `d68e8ff78af266ad4977e80cd5366cc59984ada5f73ab591a9c08350bc4471dc`.
+    Cytokinesis SHA-256 is `39b0ee3a...f5f68`; FtsZ SHA-256 is
+    `7a254129...32c70`. Await Opus review before copying these outputs to
+    the live cohorts or replacing the remaining separate queues.
 
 **Current status (2026-09-03 06:05 IST) — supersedes all Sept-2 snapshots
 below:**
