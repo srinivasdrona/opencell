@@ -59,6 +59,45 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
+snapshot below:**
+
+- No Copilot sub-agents or MATLAB/queue/waiter processes remain alive after
+  the prior session ended. Worktrees and committed results persist.
+- Main is clean and origin-synced at `6ae2e88`. The authoritative L2.2 audit
+  is still integrity-OK at **18 PASS / 2 FAIL / 2 MISSING_EVIDENCE**.
+- Fully completed and published: ProteinProcessingII and
+  ChromosomeCondensation.
+- Green candidates awaiting independent review/integration:
+  - MacromolecularComplexation: **50/50 valid**, process-local Design-A
+    **PASS**, branch head `84a51ff`.
+  - ChromosomeSegregation L2.1: literal MATLAB port, 100/100 active replay
+    bit-identical, manifest `GENUINE`, branch head `e199331`.
+- Completed investigations that remain non-green:
+  - DNASupercoiling: improved from 1489 to 112 pooled nonzero ticks, but
+    final gate remains `PRIMARY_OVERACTIVE` (112 vs 65 pooled; 28 vs 7
+    clustered), branch head `8b577dc`.
+  - DNADamage L2.1: own-process mcg16807 gap fixed; remaining first mismatch
+    is tick 4 due the shared chromosome RNG/input surface. L2.2 remains PASS,
+    branch head `7e565c5`.
+  - Cytokinesis L2.1: PCG64 and water-request gaps fixed; frozen active trace
+    still first differs at tick 228. Fresh full-simulation reruns are not
+    bit-reproducible at the same anchor, branch head `3c1ea3b`.
+  - TranscriptionalRegulation: site-level port implemented and correct
+    mcg16807 work is partially applied but uncommitted; L2.1 remains open.
+  - ReplicationInitiation: MATLAB ledger attempt acquired a slot but failed
+    before capture because the probe omitted GLPK/parity helper bootstrap
+    (`glpkcc`, `isodd`); ledger JSONL is empty and tick-4 remains open.
+  - HostInteraction: seed-0 anchor search reached 50,000 ticks without the
+    event and wrote no trace; it remains the only missing L2.1 active window.
+- Interrupted extraction state:
+  - Cytokinesis: **34/50 raw/validated run-state completions**; queue dead.
+  - FtsZPolymerization: **10 raw traces**; queue/watchdog dead; authoritative
+    valid count must be rerun.
+  - The one-pass dual Cytokinesis+FtsZ tooling is committed at `e5a5563`,
+    but seed-49 canary never ran; its waiter died. Host is now MATLAB-idle,
+    so relaunch the canary before restarting separate queues.
+
 **Current status (2026-09-03 06:05 IST) — supersedes all Sept-2 snapshots
 below:**
 
