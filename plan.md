@@ -96,7 +96,12 @@ below:**
   - ReplicationInitiation: tick-4 DnaA release mismatch; MATLAB ledger probe
     failed on missing GLPK/parity bootstrap and produced an empty JSONL.
   - DNADamage L2.1: own-process mcg16807 fixed; tick-4 shared chromosome RNG
-    mismatch remains. L2.2 stays PASS.
+    mismatch remains. Candidate now implements exact MathWorks
+    randsample-without-replacement and a source-bound chromosome shared-RNG
+    input ledger; ticks 0-3 are bit-identical. Tick 4 fails closed with
+    exactly one missing draw (44 recorded vs 45 required) across 32
+    reactions. Continue with per-reaction MATLAB/OC RNG-state checkpoints to
+    identify the extra draw; do not accept the strict xfail. L2.2 stays PASS.
   - TranscriptionalRegulation: process-local mcg16807, exact MathWorks
     weighted-randsample normalization, and chromosome occlusion exemption
     are committed; L1b/focused tests are green. Real MATLAB disproved an
