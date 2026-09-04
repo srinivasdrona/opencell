@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sys
 from pathlib import Path
 from typing import Any
@@ -165,12 +166,28 @@ def _write_minimal_runner_outputs(out_dir: Path, *, verdict: str = "PASS") -> di
 
 
 def test_process_local_oracle_root_routes_only_macromol(tmp_path: Path) -> None:
-    original_other = mae.runner_helpers._v2_seed_mat_path("RNADecay", 1)  # noqa: SLF001
+    """`process_local_oracle_root` now sets/restores the canonical
+    `OPENCELL_L22_PROCESS_ORACLE_ROOT__MACROMOLECULARCOMPLEXATION` env var
+    (see `_l2_2_design_a_runner_helpers.process_oracle_root_env_var`)
+    rather than monkeypatching `_v2_seed_mat_path` -- the prior monkeypatch
+    approach silently failed to reach `run_design_a`'s real call path
+    because `tests/vivarium/l2_2_design_a_runner.py` bare-imports a SECOND,
+    independent module object (see this closeout's STATUS doc). The env
+    var is read directly inside `_v2_seed_mat_path`'s real call graph
+    (`_load_v2_ensemble`), so there is no module-instance blind spot left
+    to patch around."""
+    env_var = mae.runner_helpers.process_oracle_root_env_var(mae.PROCESS)
+    assert env_var not in os.environ
 
     with mae.process_local_oracle_root(tmp_path):
-        assert mae.runner_helpers._v2_seed_mat_path(mae.PROCESS, 0) == maw._seed_trace_path(0, tmp_path)  # noqa: SLF001
-        assert mae.runner_helpers._v2_seed_mat_path(mae.PROCESS, 3) == maw._seed_trace_path(3, tmp_path)  # noqa: SLF001
-        assert mae.runner_helpers._v2_seed_mat_path("RNADecay", 1) == original_other  # noqa: SLF001
+        assert os.environ[env_var] == str(tmp_path)
+        # Only the registered process is affected -- RNADecay has no
+        # override contract at all and is untouched.
+        assert mae.runner_helpers._v2_seed_mat_path("RNADecay", 1) == mae.runner_helpers._v2_seed_mat_path(  # noqa: SLF001
+            "RNADecay", 1
+        )
+
+    assert env_var not in os.environ
 
 
 def test_build_process_local_artifact_embeds_runner_verdict(monkeypatch, tmp_path: Path) -> None:
