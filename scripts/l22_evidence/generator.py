@@ -226,11 +226,12 @@ def _check_current_tree_staleness(
 
 
 def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, str | None]:
-    """sha256 of the runner/helpers/projections/catalog files as they exist
-    RIGHT NOW. Mirrors `sweep.current_source_hashes()` exactly (both read
-    the same `schema.SWEEP_PROVENANCE_SOURCE_FILES` dict) -- duplicated here
-    rather than importing `sweep` so this read-only audit/generator module
-    never depends on the execution-launcher module.
+    """sha256 of the runner/helpers/projections files (plus, per R6 below,
+    a process-specific catalog-contract hash) as they exist RIGHT NOW.
+    Mirrors `sweep.current_source_hashes()` exactly (both read the same
+    `schema.SWEEP_PROVENANCE_SOURCE_FILES` dict) -- duplicated here rather
+    than importing `sweep` so this read-only audit/generator module never
+    depends on the execution-launcher module.
 
     `entry`, when given, additionally hashes THAT process's own
     `oc_module` implementation file under the `"oc_module"` key (R2) -- the
@@ -243,11 +244,15 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
     Metabolism's `fva_module`/`calc_flux_bounds_module`/
     `m1_karr_metabolism_module`/`karr_metabolism_writeback_module`/
     `karr_protein_decay_light_module`, DNARepair's `chromosome_store_module`/
-    `chromosome_views_module`), same stale-only-that-process property, and
+    `chromosome_views_module`), same stale-only-that-process property,
     `entry.harness_type`'s shared harness-scoped dependency modules, if any
     (`schema.HARNESS_DEPENDENCY_FILES`, e.g. every `design_a_per_tick`
-    process's `l2_replay_common` -- never for `event_class`), mirroring
-    `sweep.current_source_hashes(process=..., harness_type=...)`."""
+    process's `l2_replay_common` -- never for `event_class`), and (R6)
+    `entry.name`'s own resolved PROCESS_CATALOG.yaml (+ event_registry.yaml
+    for event_class) contract hash under `"catalog_entry"`/
+    `"event_registry_entry"` (`schema.process_contract_hashes`) -- so an
+    edit to a DIFFERENT process's catalog/registry row never stales this
+    one, mirroring `sweep.current_source_hashes(process=..., harness_type=...)`."""
     hashes = {name: _sha256_file(path) for name, path in schema.shared_source_files_for_harness(entry.harness_type if entry else None).items()}
     if entry is not None and entry.oc_module:
         hashes["oc_module"] = _sha256_file(cat.REPO_ROOT / entry.oc_module)
@@ -255,6 +260,11 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
         for name, path in schema.PROCESS_DEPENDENCY_FILES.get(entry.name, {}).items():
             hashes[name] = _sha256_file(path)
         hashes.update(schema.harness_dependency_hashes(entry.harness_type))
+        # R6: process-specific PROCESS_CATALOG.yaml (+ event_registry.yaml
+        # for event_class) resolved-contract hashes -- replaces the old
+        # whole-file "catalog"/"l2_event_registry" keys; see
+        # schema.process_contract_hashes's docstring.
+        hashes.update(schema.process_contract_hashes(entry.name, entry.harness_type))
     return hashes
 
 

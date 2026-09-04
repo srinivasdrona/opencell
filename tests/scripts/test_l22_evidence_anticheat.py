@@ -751,8 +751,15 @@ def test_sut_oc_module_change_stales_only_that_process(tmp_path):
     module_b.write_text("# fake SUT B v1\n", encoding="utf-8")
 
     base = _ENTRIES["Metabolism"]
-    entry_a = dataclasses.replace(base, name="FakeProcA", oc_module=str(module_a))
-    entry_b = dataclasses.replace(base, name="FakeProcB", oc_module=str(module_b))
+    # R6: `name` must resolve to a REAL row in PROCESS_CATALOG.yaml now that
+    # `schema.process_contract_hashes` computes a fail-closed per-process
+    # catalog-contract hash -- two distinct real, in-scope process names
+    # stand in for the synthetic "FakeProcA"/"FakeProcB" this test used to
+    # use (their OTHER fields, e.g. M_ticks/N_seeds, still come from the
+    # `Metabolism` copy below via `dataclasses.replace`; only `name` needs
+    # to resolve in the catalog for the `catalog_entry` hash computation).
+    entry_a = dataclasses.replace(base, name="ProteinFolding", oc_module=str(module_a))
+    entry_b = dataclasses.replace(base, name="ProteinDecay", oc_module=str(module_b))
 
     evidence_root = tmp_path / "evidence"
     for entry in (entry_a, entry_b):

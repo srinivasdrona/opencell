@@ -84,7 +84,7 @@ def test_plan_sweep_rejects_unknown_or_event_class_process_names():
 # --- evidence_is_valid resume semantics -----------------------------------------
 
 
-def _make_job(tmp_path: Path, process: str = "FakeProc", seeds: int = 3, m_ticks: int = 5) -> sweep.SweepJob:
+def _make_job(tmp_path: Path, process: str = "DNARepair", seeds: int = 3, m_ticks: int = 5) -> sweep.SweepJob:
     return sweep.SweepJob(
         process=process,
         seeds=seeds,
@@ -147,10 +147,10 @@ def test_evidence_is_valid_ticks_mismatch_is_invalid(tmp_path):
 
 
 def test_evidence_is_valid_process_name_mismatch_is_invalid(tmp_path):
-    job = _make_job(tmp_path, process="Alpha")
+    job = _make_job(tmp_path, process="Translation")
     _write_valid_evidence(job)
     other_job = sweep.SweepJob(
-        process="Beta", seeds=job.seeds, m_ticks=job.m_ticks, output_dir=job.output_dir, log_path=job.log_path
+        process="Transcription", seeds=job.seeds, m_ticks=job.m_ticks, output_dir=job.output_dir, log_path=job.log_path
     )
     valid, reason = sweep.evidence_is_valid(other_job)
     assert valid is False
@@ -219,18 +219,18 @@ def _fake_slow_command(job: sweep.SweepJob, delay_s: float = 0.3) -> list[str]:
 
 
 def test_run_job_success_writes_log_and_returns_exit_0(tmp_path):
-    job = _make_job(tmp_path, process="Ok1")
+    job = _make_job(tmp_path, process="ProteinFolding")
     result = sweep.run_job(job, command_builder=_fake_ok_command)
     assert result.status == sweep.JOB_STATUS_RAN_OK
     assert result.exit_code == 0
-    assert (tmp_path / "logs" / "Ok1.log").is_file()
-    assert "fake runner ok" in (tmp_path / "logs" / "Ok1.log").read_text(encoding="utf-8")
+    assert (tmp_path / "logs" / "ProteinFolding.log").is_file()
+    assert "fake runner ok" in (tmp_path / "logs" / "ProteinFolding.log").read_text(encoding="utf-8")
     valid, _ = sweep.evidence_is_valid(job)
     assert valid is True
 
 
 def test_run_job_failure_captures_nonzero_exit_and_reason(tmp_path):
-    job = _make_job(tmp_path, process="Bad1")
+    job = _make_job(tmp_path, process="ProteinDecay")
     result = sweep.run_job(job, command_builder=_fake_failing_command)
     assert result.status == sweep.JOB_STATUS_RAN_FAIL
     assert result.exit_code == 1
@@ -238,7 +238,7 @@ def test_run_job_failure_captures_nonzero_exit_and_reason(tmp_path):
 
 
 def test_run_job_skips_when_already_valid_and_not_forced(tmp_path):
-    job = _make_job(tmp_path, process="AlreadyDone")
+    job = _make_job(tmp_path, process="RNADecay")
     _write_valid_evidence(job)
     result = sweep.run_job(job, command_builder=_fake_failing_command)  # would fail if actually run
     assert result.status == sweep.JOB_STATUS_SKIPPED_VALID
@@ -246,14 +246,14 @@ def test_run_job_skips_when_already_valid_and_not_forced(tmp_path):
 
 
 def test_run_job_force_reruns_even_when_valid(tmp_path):
-    job = _make_job(tmp_path, process="ForceMe")
+    job = _make_job(tmp_path, process="RNAModification")
     _write_valid_evidence(job)
     result = sweep.run_job(job, force=True, command_builder=_fake_ok_command)
     assert result.status == sweep.JOB_STATUS_RAN_OK
 
 
 def test_run_job_never_overwrites_valid_evidence_without_force(tmp_path):
-    job = _make_job(tmp_path, process="Untouched")
+    job = _make_job(tmp_path, process="RNAProcessing")
     _write_valid_evidence(job)
     before = (job.output_dir / "result.json").read_text(encoding="utf-8")
     sweep.run_job(job, command_builder=_fake_failing_command)
@@ -262,7 +262,18 @@ def test_run_job_never_overwrites_valid_evidence_without_force(tmp_path):
 
 
 def test_run_sweep_bounded_parallel_all_jobs_complete_in_submission_order(tmp_path):
-    jobs = [_make_job(tmp_path, process=f"Proc{i}") for i in range(6)]
+    # Real, distinct catalog process names (R6: `process` must resolve in
+    # the real PROCESS_CATALOG.yaml -- `sweep.current_source_hashes` now
+    # computes a fail-closed per-process catalog-contract hash).
+    _six_real_processes = [
+        "Translation",
+        "Transcription",
+        "ReplicationInitiation",
+        "DNARepair",
+        "Replication",
+        "DNASupercoiling",
+    ]
+    jobs = [_make_job(tmp_path, process=_six_real_processes[i]) for i in range(6)]
     results = sweep.run_sweep(jobs, max_workers=3, command_builder=_fake_ok_command)
     assert [r.process for r in results] == [j.process for j in jobs]
     assert all(r.status == sweep.JOB_STATUS_RAN_OK for r in results)
@@ -272,7 +283,8 @@ def test_run_sweep_bounded_parallelism_is_actually_bounded(tmp_path):
     """With max_workers=2 and 4 jobs that each sleep, no more than 2 should
     ever run concurrently -- verified via wall-clock: 4 jobs * 0.3s each
     with concurrency 2 must take at least ~2 batches worth of time."""
-    jobs = [_make_job(tmp_path, process=f"Slow{i}") for i in range(4)]
+    _four_real_processes = ["RNAProcessing", "RNAModification", "RNADecay", "tRNAAminoacylation"]
+    jobs = [_make_job(tmp_path, process=_four_real_processes[i]) for i in range(4)]
     start = time.perf_counter()
     results = sweep.run_sweep(jobs, max_workers=2, command_builder=lambda j: _fake_slow_command(j, 0.3))
     elapsed = time.perf_counter() - start
@@ -283,26 +295,26 @@ def test_run_sweep_bounded_parallelism_is_actually_bounded(tmp_path):
 
 
 def test_run_sweep_mixed_success_and_failure_reports_both(tmp_path):
-    ok_job = _make_job(tmp_path, process="MixedOk")
-    bad_job = _make_job(tmp_path, process="MixedBad")
+    ok_job = _make_job(tmp_path, process="tRNAAminoacylation")
+    bad_job = _make_job(tmp_path, process="ProteinModification")
 
     def _builder(job: sweep.SweepJob) -> list[str]:
-        return _fake_ok_command(job) if job.process == "MixedOk" else _fake_failing_command(job)
+        return _fake_ok_command(job) if job.process == "tRNAAminoacylation" else _fake_failing_command(job)
 
     results = sweep.run_sweep([ok_job, bad_job], max_workers=2, command_builder=_builder)
     by_process = {r.process: r for r in results}
-    assert by_process["MixedOk"].status == sweep.JOB_STATUS_RAN_OK
-    assert by_process["MixedBad"].status == sweep.JOB_STATUS_RAN_FAIL
+    assert by_process["tRNAAminoacylation"].status == sweep.JOB_STATUS_RAN_OK
+    assert by_process["ProteinModification"].status == sweep.JOB_STATUS_RAN_FAIL
 
 
 # --- write_sweep_report ----------------------------------------------------------
 
 
 def test_write_sweep_report_is_compact_and_records_tally(tmp_path):
-    jobs = [_make_job(tmp_path, process="RepOk"), _make_job(tmp_path, process="RepBad")]
+    jobs = [_make_job(tmp_path, process="ProteinTranslocation"), _make_job(tmp_path, process="MacromolecularComplexation")]
 
     def _builder(job: sweep.SweepJob) -> list[str]:
-        return _fake_ok_command(job) if job.process == "RepOk" else _fake_failing_command(job)
+        return _fake_ok_command(job) if job.process == "ProteinTranslocation" else _fake_failing_command(job)
 
     results = sweep.run_sweep(jobs, max_workers=2, command_builder=_builder)
     report_path = tmp_path / "report.json"
@@ -322,14 +334,14 @@ def test_write_sweep_report_is_compact_and_records_tally(tmp_path):
 
 
 def test_status_snapshot_not_started_when_no_output_or_log(tmp_path):
-    job = _make_job(tmp_path, process="Fresh")
+    job = _make_job(tmp_path, process="Replication")
     rows = sweep.status_snapshot([job])
     assert rows[0]["status"] == sweep.STATUS_NOT_STARTED
     assert rows[0]["log_path"] is None
 
 
 def test_status_snapshot_done_valid_when_evidence_present(tmp_path):
-    job = _make_job(tmp_path, process="Finished")
+    job = _make_job(tmp_path, process="ProteinFolding")
     _write_valid_evidence(job)
     rows = sweep.status_snapshot([job])
     assert rows[0]["status"] == sweep.STATUS_DONE_VALID
@@ -337,7 +349,7 @@ def test_status_snapshot_done_valid_when_evidence_present(tmp_path):
 
 
 def test_status_snapshot_in_progress_when_log_exists_but_incomplete(tmp_path):
-    job = _make_job(tmp_path, process="Running")
+    job = _make_job(tmp_path, process="ProteinDecay")
     job.log_path.parent.mkdir(parents=True, exist_ok=True)
     job.log_path.write_text("# command: [...]\n# started_at: now\nsome progress output\n", encoding="utf-8")
     rows = sweep.status_snapshot([job])
@@ -345,7 +357,7 @@ def test_status_snapshot_in_progress_when_log_exists_but_incomplete(tmp_path):
 
 
 def test_status_snapshot_done_failed_when_log_shows_error_but_no_evidence(tmp_path):
-    job = _make_job(tmp_path, process="Crashed")
+    job = _make_job(tmp_path, process="RNADecay")
     job.log_path.parent.mkdir(parents=True, exist_ok=True)
     job.log_path.write_text("# command: [...]\nTraceback (most recent call last):\nValueError: boom\n", encoding="utf-8")
     rows = sweep.status_snapshot([job])
@@ -353,9 +365,9 @@ def test_status_snapshot_done_failed_when_log_shows_error_but_no_evidence(tmp_pa
 
 
 def test_write_status_snapshot_is_compact_and_tallies(tmp_path):
-    done_job = _make_job(tmp_path, process="Done1")
+    done_job = _make_job(tmp_path, process="RNAModification")
     _write_valid_evidence(done_job)
-    fresh_job = _make_job(tmp_path, process="Fresh1")
+    fresh_job = _make_job(tmp_path, process="tRNAAminoacylation")
     rows = sweep.status_snapshot([done_job, fresh_job])
     out_path = tmp_path / "status.json"
     payload = sweep.write_status_snapshot(rows, out_path)
@@ -578,7 +590,7 @@ def test_cmd_run_treats_skipped_valid_as_non_failure(tmp_path):
         sweep.JOB_STATUS_RAN_FAIL,
         sweep.JOB_STATUS_RAN_INVALID_EVIDENCE,
     )
-    job = _make_job(tmp_path, process="AlreadyValidCli")
+    job = _make_job(tmp_path, process="tRNAAminoacylation")
     _write_valid_evidence(job)
     result = sweep.run_job(job, command_builder=_fake_failing_command)  # would fail if actually (re)run
     assert result.status == sweep.JOB_STATUS_SKIPPED_VALID
@@ -588,7 +600,7 @@ def test_cmd_run_treats_skipped_valid_as_non_failure(tmp_path):
 
 
 def _make_valid_job_with_provenance(tmp_path: Path, **overrides) -> sweep.SweepJob:
-    job = _make_job(tmp_path, process="StaleCheck")
+    job = _make_job(tmp_path, process="ProteinModification")
     _write_valid_evidence(job)
     payload = json.loads((job.output_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
     payload.update(overrides)
@@ -710,7 +722,7 @@ def test_build_sweep_provenance_records_current_result_schema_version(tmp_path):
 def test_evidence_is_valid_rejects_missing_sweep_provenance_file(tmp_path):
     """Evidence written before the provenance hardening (no
     sweep_provenance.json at all) must be treated as stale, never DONE_VALID."""
-    job = _make_job(tmp_path, process="PreHardening")
+    job = _make_job(tmp_path, process="ProteinTranslocation")
     job.output_dir.mkdir(parents=True, exist_ok=True)
     expected_seeds = list(range(job.seeds))
     (job.output_dir / "result.json").write_text(
@@ -731,7 +743,7 @@ def test_evidence_is_valid_rejects_missing_sweep_provenance_file(tmp_path):
 
 
 def test_force_rerun_atomically_replaces_prior_valid_evidence(tmp_path):
-    job = _make_job(tmp_path, process="AtomicForce")
+    job = _make_job(tmp_path, process="MacromolecularComplexation")
     _write_valid_evidence(job)
     old_provenance = json.loads((job.output_dir / schema.SWEEP_PROVENANCE_FILE).read_text(encoding="utf-8"))
     result = sweep.run_job(job, force=True, command_builder=_fake_ok_command)
@@ -752,7 +764,7 @@ def test_crashed_swap_backup_is_recovered_before_validity_check(tmp_path):
     last-known-good evidence) still exists on disk. `evidence_is_valid` (and
     therefore `run_job`) must recover it automatically rather than treating
     the process as never having valid evidence."""
-    job = _make_job(tmp_path, process="CrashRecover")
+    job = _make_job(tmp_path, process="Translation")
     _write_valid_evidence(job)
     good_bytes = (job.output_dir / "result.json").read_bytes()
 
@@ -772,7 +784,7 @@ def test_concurrent_lock_prevents_double_launch_and_preserves_evidence(tmp_path)
     """A second, concurrently-running `sweep.py run` invocation that already
     holds this process's O_EXCL lock must not be able to relaunch it -- and
     must leave existing evidence (valid or not) completely untouched."""
-    job = _make_job(tmp_path, process="LockedConcurrent")
+    job = _make_job(tmp_path, process="Transcription")
     _write_valid_evidence(job)  # so a real relaunch (if it happened) would be visible as a change
     before = (job.output_dir / "result.json").read_bytes()
 
@@ -788,7 +800,7 @@ def test_concurrent_lock_prevents_double_launch_and_preserves_evidence(tmp_path)
 
 
 def test_concurrent_lock_released_after_run_allows_next_invocation(tmp_path):
-    job = _make_job(tmp_path, process="LockReleased")
+    job = _make_job(tmp_path, process="DNARepair")
     lock_path = sweep._lock_path_for(job)
     sweep.run_job(job, command_builder=_fake_ok_command)
     assert not lock_path.exists()
@@ -801,7 +813,7 @@ def test_stale_lock_with_dead_pid_is_silently_reaped_and_job_runs_normally(tmp_p
     attempt proceeds as an ordinary run -- NOT `JOB_STATUS_LOCKED_SKIPPED`."""
     import subprocess
 
-    job = _make_job(tmp_path, process="StaleLockReap")
+    job = _make_job(tmp_path, process="Replication")
     lock_path = sweep._lock_path_for(job)
     lock_path.parent.mkdir(parents=True, exist_ok=True)
 

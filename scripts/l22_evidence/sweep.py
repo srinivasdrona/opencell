@@ -203,20 +203,26 @@ def _sha256_file(path: Path) -> str | None:
 
 
 def current_source_hashes(
-    oc_module: str | None = None, *, process: str | None = None, harness_type: str | None = None
+    oc_module: str | None = None,
+    *,
+    process: str | None = None,
+    harness_type: str | None = None,
+    catalog_path: Path = schema.CATALOG_PATH,
+    registry_path: Path = schema.L2_EVENT_REGISTRY_PATH,
 ) -> dict[str, str | None]:
-    """sha256 of the runner/helpers/projections/catalog files as they exist
-    RIGHT NOW -- both `build_sweep_provenance` (recording what evidence was
-    generated against) and `evidence_is_valid` (checking whether that
-    recording still matches the current tree) call this, so drift in any of
-    these four sources after evidence was generated shows up as an
-    individually-named stale entry rather than a generic mismatch.
+    """sha256 of the runner/helpers/projections files (plus, per R6 below, a
+    process-specific catalog-contract hash) as they exist RIGHT NOW -- both
+    `build_sweep_provenance` (recording what evidence was generated
+    against) and `evidence_is_valid` (checking whether that recording still
+    matches the current tree) call this, so drift in any of these sources
+    after evidence was generated shows up as an individually-named stale
+    entry rather than a generic mismatch.
 
     `oc_module`, when given (a repo-relative path string, e.g.
     "opencell/vivarium/karr_dna_repair.py" -- see `catalog.ProcessEntry.
     oc_module`), additionally hashes that ONE process's own implementation
     file under the `"oc_module"` key. This is process-specific by
-    construction (unlike the four shared entries above), which is exactly
+    construction (unlike the shared entries above), which is exactly
     what makes a code change to a single process's `karr_<process>.py`
     stale only THAT process's row (R2), never all 18.
 
@@ -229,15 +235,29 @@ def current_source_hashes(
     `karr_metabolism_writeback.py`/`karr_protein_decay_light.py`,
     DNARepair's `chromosome_store.py`/`chromosome_views.py`) under their
     own named keys -- same stale-only-that-process property, for source
-    files that are neither one of the four shared entries nor the
-    process's `oc_module`.
+    files that are neither one of the shared entries nor the process's
+    `oc_module`.
 
     `harness_type`, when given and present in
     `schema.HARNESS_DEPENDENCY_FILES` (currently just
     `"design_a_per_tick"` -> `l2_replay_common.py`, F1), additionally
     hashes that harness's shared dependency modules -- scoped by harness,
     not by process name, since every `design_a_per_tick` process (never
-    `event_class`) runs through the same `l2_replay_common.py` helpers."""
+    `event_class`) runs through the same `l2_replay_common.py` helpers.
+
+    `process`/`harness_type` together (R6) also compute `process`'s own
+    resolved PROCESS_CATALOG.yaml (+ event_registry.yaml for event_class)
+    contract hash under `"catalog_entry"`/`"event_registry_entry"`
+    (`schema.process_contract_hashes`) -- this REPLACES the old whole-file
+    `"catalog"`/`"l2_event_registry"` keys that used to live in the shared
+    dict above: those made an edit to a DIFFERENT process's own catalog/
+    registry row stale every process's evidence at once (empirically
+    observed for a Cytokinesis-only M_ticks edit); see that function's
+    docstring and EVIDENCE_INDEX_SPEC.md Section 13.18. `catalog_path`/
+    `registry_path` default to the real tracked files but are overridable
+    -- `migrate_catalog_provenance.py` passes its own `--catalog`/
+    `--registry` paths through here so its staleness check is against the
+    SAME catalog/registry it is migrating, never silently the default."""
     hashes = {
         name: _sha256_file(path)
         for name, path in schema.shared_source_files_for_harness(harness_type).items()
@@ -249,6 +269,7 @@ def current_source_hashes(
             hashes[name] = _sha256_file(path)
     if harness_type:
         hashes.update(schema.harness_dependency_hashes(harness_type))
+    hashes.update(schema.process_contract_hashes(process, harness_type, catalog_path=catalog_path, registry_path=registry_path))
     return hashes
 
 
