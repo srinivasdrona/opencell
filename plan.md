@@ -118,6 +118,13 @@ snapshot below:**
     preregister a larger uniform Cytokinesis M, update the extractor and
     validators, rerun seed 36 to prove complete capture, then re-extract the
     Cytokinesis cohort uniformly while retaining the paired FtsZ outputs.
+    Candidate `e4e0a04` preregisters **M=5000 / [-4999,0]** through a shared
+    machine-loadable spec and reruns dual seed 36 successfully
+    (onset 27918, completion 31993, 106.6 min). Bulk remains blocked pending
+    Opus review because repeated dual runs reproduce 31993 while the
+    conventional extractor's seed-36 trace completed at 28009; establish
+    whether this is an acceptable source/bootstrap difference or a
+    trajectory-changing dual-tap side effect before replacing the queue.
 
 **Current status (2026-09-03 06:05 IST) — supersedes all Sept-2 snapshots
 below:**
