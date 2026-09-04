@@ -59,8 +59,59 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-04 23:05 IST) — supersedes earlier Sept-4 blocks
-below:**
+**Current status (2026-09-04, L2.2 catalog-provenance migration DONE) —
+supersedes the 23:05 IST block below:**
+
+- Worktree `E:\opencell-worktrees\fix-l22-catalog-provenance`, branch
+  `agent/l22-catalog-provenance-20260904`, 4 commits ahead of the
+  `5cbf4b2` base (`e2a6c49` core fix, `fd2b848` migration tool,
+  `9141632` applied migration + regenerated index, `e8fe3b2` spec doc).
+  **Not pushed/merged to main** -- returned for Opus review per task
+  instruction. STATUS_L22_CATALOG_PROVENANCE_MIGRATION.md has the full
+  write-up.
+- Root cause fixed: `PROCESS_CATALOG.yaml`/`event_registry.yaml` were
+  hashed WHOLE-FILE under a shared `sweep_provenance.json` source-hash
+  key, so any one process's row edit staled all 21 others (empirically:
+  the accepted Cytokinesis M_ticks 4000->5000 edit -> 20 FAIL/2 MISSING).
+  Replaced with per-process RESOLVED-CONTRACT hashes
+  (`schema.resolve_catalog_process_contract`/
+  `resolve_event_registry_process_contract`/`catalog_entry_hash`/
+  `event_registry_entry_hash`/`process_contract_hashes`, mirroring the
+  existing R2 `oc_module` per-process-hash pattern), wired into both
+  `sweep.current_source_hashes` (writer) and
+  `generator._current_source_hashes` (checker) via the existing generic
+  per-key staleness loop -- zero new gating code paths.
+- One-shot migration tool `scripts/l22_evidence/migrate_catalog_provenance.py`
+  (fail-closed on wrong `--pre-ref`, non-catalog source/sidecar drift, or
+  a genuinely-changed process contract; atomic + idempotent/resumable)
+  applied against `--pre-ref f71cfbb` (verified, not assumed: its
+  PROCESS_CATALOG.yaml sha256 matches 19/20 tracked rows' recorded
+  `"catalog"` hash, and its event_registry.yaml sha256 matches both
+  `event_class` rows). Migrated 19 rows; DNASupercoiling correctly left
+  un-migrated (independently stale on multiple unrelated hashes + a real
+  `PRIMARY_INSUFFICIENT_SAMPLES` failure).
+- **Result: `generator.py audit` now reads `integrity: OK`, tally 19
+  PASS / 1 FAIL (DNASupercoiling) / 2 MISSING_EVIDENCE (Cytokinesis,
+  FtsZPolymerization)** -- exactly the target this Sept-4 23:05 block
+  below asked for. Macromol and all 18 other migrated rows retain
+  byte-identical verdict/raw evidence; only each row's
+  `sweep_provenance.json["source_hashes"]` field changed.
+- Full test suite for the touched area is green: 156/157 tests pass
+  across `test_l22_evidence_{sweep,anticheat,generator,portability,
+  catalog_contract,catalog_migration}.py` +
+  `test_l2_2_strict_rubric.py`; the 1 failure
+  (`test_process_dependency_registry_matches_real_current_import_graph`,
+  a stale DNADamage `PROCESS_DEPENDENCY_FILES` assertion) is confirmed
+  pre-existing on the unmodified baseline via `git stash`, unrelated to
+  this task.
+- **Unblocks the Cytokinesis/FtsZ dual-extraction bulk launch** (see the
+  block below -- it was explicitly gated on this migration going green).
+  Next step for that thread: run a fresh source-bound seed-36 smoke, then
+  (if green) launch three disjoint ranges in three separate worktrees.
+
+**Current status (2026-09-04 23:05 IST) — superseded by the block above;
+kept for the still-open Cytokinesis/FtsZ dual-extraction and other-process
+context it carries:**
 
 - Main is clean at local `d37eeb3`, two commits ahead of `origin/main`
   (`2a8846f`). The Opus-accepted M=5000/source-bound Cytokinesis contract is
