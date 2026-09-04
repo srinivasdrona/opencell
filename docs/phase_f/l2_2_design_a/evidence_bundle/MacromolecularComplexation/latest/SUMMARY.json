@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-04T09:42:25.440265+00:00",
+  "generated_at": "2026-09-04T12:46:50.652188+00:00",
   "schema_version": "1.4",
   "harness_version": "design_a_v1_3",
   "k_eng": {
@@ -10,7 +10,7 @@
   "processes": {
     "MacromolecularComplexation": {
       "verdict": "PASS",
-      "latest_run": "2026-09-04T09:42:25.440265+00:00",
+      "latest_run": "2026-09-04T12:46:50.652188+00:00",
       "bucket": "ALGORITHMIC_SHALLOW",
       "failed_channels": [],
       "n_channels_gated": 3,
