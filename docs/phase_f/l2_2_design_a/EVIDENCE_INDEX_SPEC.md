@@ -142,6 +142,13 @@ or `closed_form_dominant` are *correct* or *supported by real evidence*.
 Supporting (or contradicting) evidence for each soft flag is surfaced via
 `reasons[]` and the N/M-mismatch / sentinel-warning / H12-support checks
 below — a row is never green merely because the catalog hash matches.
+NOTE (R6, Section 13.18): `catalog_sha256` here is whole-file and purely
+INFORMATIONAL (it always was, but this is now explicit given that
+`sweep_provenance.json`'s own gating no longer hashes the whole file at
+all) -- the actual per-row staleness GATE is each process's own resolved
+`"catalog_entry"` (+ `"event_registry_entry"` for `event_class`) hash in
+`sweep_provenance.json["source_hashes"]`, checked by
+`_check_sweep_provenance_staleness`, never this top-level field.
 
 `reasons` is a multi-label list (the same "multiple simultaneous causes,
 name them all" convention already used by the L2.2 divergence taxonomy in
@@ -2211,6 +2218,145 @@ commit (stored evidence is stale independent of this fix -- see the
 following Phase B commits for the diagnostic-only re-run and honest
 non-PASS framing).
 
+### 13.18 R6: per-process catalog/registry CONTRACT hashes -- fail-closed
+replacement for whole-file `"catalog"`/`"l2_event_registry"` gating
+
+**Bug (2026-09-04).** The accepted, source-bound Cytokinesis
+`M_ticks: 4000 -> 5000` catalog edit (`8a569de`) made the audit read
+**20 FAIL / 2 MISSING_EVIDENCE** -- every OTHER in-scope process's
+`sweep_provenance.json` went stale, because `SWEEP_PROVENANCE_SOURCE_FILES`
+(and, for `event_class` rows, `EVENT_CLASS_SOURCE_FILES`) hashed the
+ENTIRE `PROCESS_CATALOG.yaml` file, whole, under a shared `"catalog"` key
+-- exactly the SAME class of problem R2 (Section 13.8) already fixed for
+`oc_module` (one file holding every process's own biology-module path):
+a per-process YAML row was gated by a hash of the WHOLE file it lives in,
+so ANY row's edit invalidated ALL of them. Empirical audit of the
+independently-generated `docs/phase_f/l2_event/event_registry.yaml`
+(hashed under `EVENT_CLASS_SOURCE_FILES["l2_event_registry"]` for the 4
+`event_class` rows) found the IDENTICAL defect: the same commit series
+that edited Cytokinesis's catalog row also appended Cytokinesis-only
+notes to the registry, whole-file-staling DNADamage's and
+RibosomeAssembly's rows even though neither process's own registry row
+changed.
+
+**Fix.** Both whole-file keys are replaced by a per-process RESOLVED
+CONTRACT hash, mirroring R2's `oc_module` fix exactly:
+
+- `schema.resolve_catalog_process_contract(process, catalog_dict)` /
+  `resolve_event_registry_process_contract(process, registry_dict)`
+  extract the subset of ONE process's row that can actually affect its
+  evidence/verdict/scope -- `bucket`/`harness_type` (RESOLVED against the
+  bucket-level default when the process omits its own), `in_scope_L2_2`,
+  `M_ticks`, `N_seeds` (RESOLVED against `universals.N_seeds` when
+  omitted), `primary_channel`, `closed_form_dominant`, `primary_distance`,
+  `event_channels`/`output_channels`/`input_channels`, `oc_module` for the
+  catalog; `in_scope_v4`/`adapter_id`/`adapter_status`/
+  `event_timing_model`/`magnitude_gateable`/`required_n_seeds` for the
+  registry -- every field verified by direct inspection to be actually
+  read by `verdict.py`, `generator.py`, `event_bridge.py`, or the runner
+  (`tests/vivarium/l2_2_design_a_runner.py` for the catalog;
+  `scripts/l2_event/runner.py` for the registry). Free-text fields nothing
+  reads (`notes`, `rationale_M`, `event_sweep_blocked_on`, `seed_window`,
+  `karr_artifact`, `deferred_reason`) are deliberately EXCLUDED -- a
+  documentation-only edit to a process's own row must never stale its
+  evidence.
+- **Using RESOLVED values (not raw row bytes) is deliberate**: a process
+  that omits `N_seeds` inherits `universals.N_seeds`, and one that omits
+  `harness_type` inherits `buckets.<bucket>.harness_type` -- editing
+  either default changes that process's REAL effective behavior even
+  though its own row's bytes never changed, and must still stale it.
+  Conversely, comment-only edits, YAML key-order changes, and re-
+  serialization in a different flow style never change the RESOLVED
+  values, so they never change the hash (`yaml.safe_load` already drops
+  comments; canonical JSON with `sort_keys=True` neutralizes mapping key
+  order).
+- `catalog_entry_hash(process, catalog_path)` / `event_registry_entry_hash
+  (process, registry_path)` sha256 the canonical-JSON-serialized resolved
+  contract. Both raise `ValueError` (fail-closed) for an unknown, missing,
+  or duplicated process row -- never guess/return a partial contract.
+- `process_contract_hashes(process, harness_type, *, catalog_path=,
+  registry_path=)` is the single entry point both `sweep.
+  current_source_hashes()` (writer) and `generator._current_source_hashes
+  ()` (checker) call, merging `"catalog_entry"` (+ `"event_registry_entry"`
+  for `event_class`) into the SAME `source_hashes` dict `oc_module`
+  already lives in. No new gating code path was needed: the existing R2
+  per-key staleness loop (`sweep.evidence_is_valid` /
+  `generator._check_sweep_provenance_staleness`) already iterates
+  `source_hashes.items()` generically, including the F5 bidirectional
+  check that flags a RECORDED key no longer in the CURRENT expected set --
+  this is what makes an un-migrated sentinel still carrying the old
+  whole-file `"catalog"` key fail closed (`STALE_SWEEP_PROVENANCE:
+  ...source_hashes has extra/unexpected key(s) ['catalog']...`) rather
+  than being silently ignored.
+- `"catalog"`/`"l2_event_registry"` are REMOVED from
+  `SWEEP_PROVENANCE_SOURCE_FILES`/`EVENT_CLASS_SOURCE_FILES` entirely.
+  Top-level `evidence_index.json["catalog_sha256"]` (whole-file, informational
+  only -- see Section 1/7) is UNCHANGED; it was never gating.
+
+**Migration.** `scripts/l22_evidence/migrate_catalog_provenance.py` is a
+one-shot tool that rewrites EXISTING tracked `evidence_bundle/<Process>/
+<subdir>/sweep_provenance.json` files from the old whole-file key(s) to
+the new per-process key(s) without ANY sweep rerun. Per row, it fails
+closed unless ALL of the following hold, given an EXPLICIT `--pre-ref`
+(never assumed):
+  1. the row's recorded whole-file `"catalog"` (and, for `event_class`,
+     `"l2_event_registry"`) hash equals the ACTUAL sha256 of that file at
+     `--pre-ref` (via `git show <ref>:<path>`, never a checkout);
+  2. every OTHER recorded `source_hashes` entry still matches the CURRENT
+     tree (reusing the real, already-fixed `sweep.current_source_hashes`);
+  3. every `sidecar_hashes` entry still matches the CURRENT bytes on disk;
+  4. the process's OWN resolved catalog (+ registry, for `event_class`)
+     contract is BYTE-IDENTICAL between `--pre-ref` and the current tree.
+Only then does it drop the old key(s) and add the new one(s) -- every
+OTHER field (`process`/`n_seeds`/`m_ticks`/`completion_status`/`git_sha`/
+`git_dirty`/`sidecar_hashes`/`inputs_verified`/`evaluator_schema_version`/
+`result_schema_version`/every other `source_hashes` entry) is copied
+through byte-for-byte unchanged; `result.json`/`thresholds.json`/
+`null_calibration.json`/`SUMMARY.json`/`analytical_check.json`/
+`input_manifest.json`/`provenance.json` are never touched. Writes are
+atomic (temp file + `os.replace`) and idempotent/resumable (an
+already-migrated row -- no `"catalog"` key present -- is reported
+`ALREADY_MIGRATED` and left alone).
+
+**Pre-ref determination.** `f71cfbb` (the commit immediately before
+`8a569de`, which introduced Cytokinesis's `M_ticks: 4000 -> 5000` edit)
+was verified, not assumed: `sha256(git show f71cfbb:PROCESS_CATALOG.yaml)`
+== `f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f`,
+matching the RECORDED `source_hashes["catalog"]` in 19 of the 20 tracked
+`sweep_provenance.json` files (the sole exception, DNASupercoiling, was
+already independently stale on multiple UNRELATED source hashes --
+`runner`/`helpers`/`projections`/`oc_module`/`chromosome_store_module`/
+`l2_replay_common` -- and on a real scientific `PRIMARY_INSUFFICIENT_
+SAMPLES` failure predating this task; it is correctly left un-migrated
+and remains the `FAIL` row). `sha256(git show f71cfbb:event_registry.yaml)`
+== `7f57d616221569ad9ce51d84a1723ecf6ccb2dc46bf1346e60fb47f916b43f9d`,
+matching both `event_class` rows (DNADamage, RibosomeAssembly).
+
+**Result.** Migrating the 19 eligible rows and regenerating
+`evidence_index.json` restores `generator.py audit` to `integrity: OK`,
+**19 PASS / 1 FAIL (DNASupercoiling) / 2 MISSING_EVIDENCE (Cytokinesis,
+FtsZPolymerization)** -- `git diff` on `evidence_bundle/` touches only the
+19 migrated `sweep_provenance.json` files' `source_hashes` field (21
+lines changed total: one key removed, one key added, per file except the
+2 `event_class` rows which also swap `l2_event_registry`/
+`event_registry_entry`); every `result.json`/`thresholds.json`/other
+authority/sidecar file, and every row's `mechanical_verdict`/`channel_
+verdicts`/raw evidence bytes, is byte-for-byte unchanged. See
+`STATUS_L22_CATALOG_PROVENANCE_MIGRATION.md` for the full before/after
+audit, exact migrated-row list, and test inventory.
+
+**Tests.** `tests/scripts/test_l22_evidence_catalog_contract.py` (cross-
+process isolation for both the catalog and registry contract hash,
+own-row M/N/primary/harness_type changes staling only that process,
+universal/bucket-default changes staling processes that rely on them,
+comment/formatting/key-order invariance, unknown/missing/duplicate
+process fail-closed). `tests/scripts/test_l22_evidence_catalog_migration.py`
+(happy-path migration + refusal of a genuinely-changed row using a real,
+synthetic throwaway git repo exercising the actual `git show` code path;
+idempotency; atomic-write crash recovery; wrong `--pre-ref`; non-catalog
+source/sidecar drift; event/design harness mismatch; unknown process
+filter).
+
 ## 14. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).
@@ -2294,3 +2440,21 @@ non-PASS framing).
   detection, round-trip, reproducibility).
 - `tests/scripts/test_h12_evidence_wiring.py` — 11 tests for the
   `h12_evidence_index.json` side-index consumption path in `generator.py`.
+- `scripts/l22_evidence/migrate_catalog_provenance.py` — one-shot,
+  atomic/resumable migration tool from the old whole-file `"catalog"`/
+  `"l2_event_registry"` `sweep_provenance.json` keys to the new
+  per-process `"catalog_entry"`/`"event_registry_entry"` keys; see
+  Section 13.18. Never reruns the sweep, never touches `result.json`/
+  other authority/sidecar files.
+- `tests/scripts/test_l22_evidence_catalog_contract.py` — R6 per-process
+  catalog/registry contract-hash tests (isolation, universal/bucket-
+  default resolution, comment/formatting invariance, fail-closed unknown
+  process); see Section 13.18.
+- `tests/scripts/test_l22_evidence_catalog_migration.py` — anti-tamper
+  tests for `migrate_catalog_provenance.py` (wrong `--pre-ref`, contract
+  drift, non-catalog source/sidecar drift, harness mismatch, atomicity/
+  resumability) against a real synthetic throwaway git repo; see Section
+  13.18.
+- `STATUS_L22_CATALOG_PROVENANCE_MIGRATION.md` — design summary, exact
+  migrated-row list, before/after audit tallies, and test inventory for
+  the R6 catalog-provenance fix and its one-time migration.
