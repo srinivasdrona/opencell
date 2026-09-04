@@ -102,7 +102,13 @@ below:**
     On completion run
     `bin\oc-pytest.cmd tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound -q`;
     this is the exact promotion/next-divergence gate.
-  - HostInteraction: no event within 50,000 ticks; no active trace.
+  - HostInteraction candidate `0a4642f`: source review proved adherence and
+    the TLR1/2/6→NF-kB→inflammatory cascade are deterministic level signals,
+    already true from fitted tick 1, not false→true events. The prior
+    50,000-tick search used the wrong window strategy. The agent replaced a
+    fabricated stochastic Karr-light model with the literal MATLAB boolean
+    cascade and reports 100-tick/9-surface bit identity plus
+    `EXISTING_WINDOW_PASS`. Await independent Opus review before integration.
 
 **Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
 snapshot below:**
