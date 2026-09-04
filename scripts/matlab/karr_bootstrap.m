@@ -232,8 +232,7 @@ if overlay_required
     end
     cleanup_fid = onCleanup(@() fclose(fid)); %#ok<NASGU>
     fwrite(fid, patched_bytes, 'uint8');
-    fclose(fid);
-    clear cleanup_fid;
+    clear cleanup_fid; % triggers the single fclose(fid) above; do not fclose(fid) again here
     movefile(temp_overlay_path, overlay_path, 'f');
 end
 

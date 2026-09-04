@@ -140,9 +140,23 @@ class _MatlabCytokinesisRNG:
 
     def __init__(self, seed: int) -> None:
         self._stream = _Mcg16807(int(seed))
+        self.draw_count = 0
 
     def random(self) -> float:
+        self.draw_count += 1
         return float(self._stream.rand((1,))[0])
+
+    def get_state(self) -> int:
+        """Current Lehmer state (see ``_Mcg16807.get_state`` -- numerically
+        identical to MATLAB's ``randStream.state``). Used by the L2.1
+        active-window ledger to compare/restore against a real per-tick
+        ``randStreamState`` capture."""
+        return self._stream.get_state()
+
+    def set_state(self, state: int) -> None:
+        """Force the wrapped stream's Lehmer state to an explicit captured
+        value (see ``_Mcg16807.set_state``)."""
+        self._stream.set_state(state)
 
 
 class KarrCytokinesisProcess(Process):

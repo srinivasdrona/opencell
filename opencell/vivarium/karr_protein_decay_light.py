@@ -40,6 +40,26 @@ class _Mcg16807:
     def __init__(self, seed: int) -> None:
         self._state = max(1, int(seed))
 
+    def get_state(self) -> int:
+        """Return the current Lehmer state as a plain Python int.
+
+        Numerically identical representation to MATLAB's built-in
+        ``RandStream('mcg16807').State`` (a scalar integer) -- see
+        ``edu.stanford.covert.util.RandStream.m``'s ``get.state`` dependent
+        property, which returns exactly this value. This is the mechanism
+        used to compare (or restore) an isolated OC replay's RNG state
+        against a real per-tick ``randStreamState`` capture from
+        ``extract_per_process_traces_v2.m``.
+        """
+        return int(self._state)
+
+    def set_state(self, state: int) -> None:
+        """Force the Lehmer state to an explicit value (e.g. a captured
+        ``mod.randStream.state`` reading), bypassing ``reset(seed)``'s
+        ``max(1, ...)`` floor -- a genuine captured MATLAB state is always
+        a valid nonzero state already, never a caller-chosen seed."""
+        self._state = int(state)
+
     def rand(self, shape: tuple[int, ...]) -> np.ndarray:
         n = int(np.prod(shape))
         out = np.empty(n, dtype=np.float64)
