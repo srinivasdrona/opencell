@@ -48,6 +48,31 @@ from opencell.vivarium.karr_host_interaction import KarrHostInteractionProcess
 _TRACE_PROCESS_NAME = "HostInteraction"
 _OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes')
 
+# Host boolean surface (event-window traces only -- see
+# _resolve_event_trace_path/test_karr_host_interaction_l2_event_replay
+# below). HostInteraction.evolveState() recomputes these 4 Host booleans
+# (isBacteriumAdherent flattened as-is; isTLRActivated flattened into its
+# 3 tlrIndexs_1/2/6 components) fresh every tick purely from the CURRENT
+# enzyme copy numbers -- see HostInteraction.m:266-303 and Host.m's
+# tlrIndexs_1=1/tlrIndexs_2=2/tlrIndexs_6=3. Compared bit-exact (never
+# tolerance), matching Karr's own boolean semantics.
+_HOST_BOOLEAN_OBSERVABLES = (
+    "isBacteriumAdherent",
+    "isTLRActivated_1",
+    "isTLRActivated_2",
+    "isTLRActivated_3",
+    "isNFkBActivated",
+    "isInflammatoryResponseActivated",
+)
+_HOST_BOOLEAN_CELL_KEY = {
+    "isBacteriumAdherent": "host_attached",
+    "isTLRActivated_1": "host_tlr1_activated",
+    "isTLRActivated_2": "host_tlr2_activated",
+    "isTLRActivated_3": "host_tlr6_activated",
+    "isNFkBActivated": "host_nfkb_activated",
+    "isInflammatoryResponseActivated": "host_inflammatory_response_activated",
+}
+
 # Observables Karr records but `next_update` does not write into. Their
 # `oc_after` MUST be rebuilt from `states_before` (Rule 7 pass-through
 # provenance).
@@ -122,8 +147,11 @@ def test_karr_host_interaction_l2_replay_identity_per_tick(rng_seed: int) -> Non
 def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
     """Shared per-tick L2.1 bit-identity replay body (used by the standard and
     event-window tests). Assumes the trace is open and has been audited as active."""
-    process = KarrHostInteractionProcess({"rng_seed": int(rng_seed)})
+    del rng_seed  # KarrHostInteractionProcess is deterministic (no RNG; see class docstring).
+    process = KarrHostInteractionProcess({})
     state_template = build_state_template(process)
+
+    has_host_boolean_surface = _HOST_BOOLEAN_OBSERVABLES[0] in trace["states_after"]
 
     wids_by_observable: dict[str, list[str]] = {}
     for observable in _OBSERVABLES:
@@ -156,6 +184,13 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
 
         update = process.next_update(1.0, state)
         _apply_update(state, update, process)
+        # _apply_update only merges the count-store observables
+        # (substrates/enzymes/boundEnzymes); HostInteraction's real output
+        # is a "set"-style `cell.*` boolean surface (see
+        # KarrHostInteractionProcess.ports_schema), so merge it separately.
+        cell_update = update.get("cell")
+        if isinstance(cell_update, dict):
+            state.setdefault("cell", {}).update(cell_update)
 
         for observable in _OBSERVABLES:
             karr_after = cell_vector(trace, "states_after", observable, tick)
@@ -183,10 +218,30 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
                 karr_after=karr_after,
             )
 
+        if has_host_boolean_surface:
+            for observable in _HOST_BOOLEAN_OBSERVABLES:
+                karr_after = cell_vector(trace, "states_after", observable, tick)
+                cell_key = _HOST_BOOLEAN_CELL_KEY[observable]
+                oc_value = bool(state.get("cell", {}).get(cell_key, False))
+                karr_value = bool(float(karr_after[0]) != 0.0)
+                if oc_value != karr_value:
+                    pytest.fail(
+                        "L2.1 host boolean cascade mismatch: "
+                        f"tick={tick}, observable={observable} (cell.{cell_key}), "
+                        f"oc={oc_value}, karr={karr_value}"
+                    )
+
 
 def _resolve_event_trace_path(seed: int) -> Path:
-    """Resolve the event-window trace path for HostInteraction (anchor window on
-    the real `host.isBacteriumAdherent` boolean transition)."""
+    """Resolve the event-window trace path for HostInteraction (a genuine
+    fixed, host-conditioned window -- see
+    tmp/l21_host_interaction_fixed_active_window.m and
+    docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md. Karr's
+    fitted seed-0 initial condition already carries nonzero copy numbers
+    for every enzyme HostInteraction.m reads, so host.isBacteriumAdherent
+    (and everything it gates) is TRUE from tick 1 onward -- a false->true
+    anchor SEARCH can never terminate for this process, so this window is
+    a plain fixed capture, not a discovered transition)."""
     rel = Path(
         f"data/m1_sources/karr_native/per_process_traces_v2_event_s{seed:03d}/HostInteraction_100ticks.mat"
     )
@@ -199,11 +254,14 @@ def _resolve_event_trace_path(seed: int) -> Path:
 
 @pytest.mark.parametrize("rng_seed", [0], ids=["event_seed_0"])
 def test_karr_host_interaction_l2_event_replay(rng_seed: int) -> None:
-    """L2 replay on an event-window trace. HostInteraction is quiescent in the
-    standard 100-tick canonical trace; the anchor-window trace
-    (window_contract='anchor', signal_kind='boolean_transition',
-    signal_field='isBacteriumAdherent') captures the real bacterium-adherence
-    completion event."""
+    """L2 replay on a genuine host-conditioned window (fixed, not anchor --
+    see _resolve_event_trace_path docstring). HostInteraction is quiescent
+    on substrates/enzymes/boundEnzymes in EVERY trace (it never mutates
+    them; see HostInteraction.m:266-303) -- its real "activity" signal is
+    the host boolean surface (isBacteriumAdherent/isTLRActivated_1..3/
+    isNFkBActivated/isInflammatoryResponseActivated) being non-degenerately
+    True, a LEVEL signal recomputed fresh every tick, not a discrete event
+    (see docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md)."""
     trace_path = _resolve_event_trace_path(rng_seed)
     if not trace_path.exists():
         pytest.skip(f"Event-window trace not found: {trace_path}")
@@ -212,12 +270,24 @@ def test_karr_host_interaction_l2_event_replay(rng_seed: int) -> None:
         n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
         assert n_ticks == 100
 
+        has_host_boolean_surface = _HOST_BOOLEAN_OBSERVABLES[0] in trace["states_after"]
+        host_active = False
+        if has_host_boolean_surface:
+            for observable in _HOST_BOOLEAN_OBSERVABLES:
+                for tick in range(n_ticks):
+                    if float(cell_vector(trace, "states_after", observable, tick)[0]) != 0.0:
+                        host_active = True
+                        break
+                if host_active:
+                    break
+
         mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
         mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
-        if sum(mutated_tick_counts.values()) == 0:
+        if sum(mutated_tick_counts.values()) == 0 and not host_active:
             pytest.skip(
                 f"Event-window trace seed {rng_seed} has no events. "
-                f"Per-observable counts: {mutated_tick_counts}."
+                f"Per-observable counts: {mutated_tick_counts}, host_active={host_active}."
             )
 
         _run_replay(trace, n_ticks, int(rng_seed))
+
