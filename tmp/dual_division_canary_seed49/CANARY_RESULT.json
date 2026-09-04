@@ -1,0 +1,21 @@
+{
+  "cytokinesis_path": "/mnt/e/opencell-worktrees/fasttrack-division-dual/data/m1_sources/karr_native/per_process_traces_v2_event_s049/Cytokinesis_4000ticks.mat",
+  "cytokinesis_provider_sha256": "d68e8ff78af266ad4977e80cd5366cc59984ada5f73ab591a9c08350bc4471dc",
+  "cytokinesis_reason": "",
+  "cytokinesis_sha256": "39b0ee3a551dc772eb9e690d61b62fd41fa39ad39418cb9f864efd45a3bf5f68",
+  "cytokinesis_valid": true,
+  "cytokinesis_window_anchor": 30237,
+  "distinct_content": true,
+  "distinct_paths": true,
+  "ftsz_path": "/mnt/e/opencell-worktrees/fasttrack-division-dual/data/m1_sources/karr_native/per_process_traces_v2_event_s049/FtsZPolymerization_200ticks.mat",
+  "ftsz_provider_sha256": "d68e8ff78af266ad4977e80cd5366cc59984ada5f73ab591a9c08350bc4471dc",
+  "ftsz_reason": "",
+  "ftsz_sha256": "7a254129a27979dbe13b65a04d3e9e28426a8e148e6e203d559b556888232c70",
+  "ftsz_valid": true,
+  "ftsz_window_anchor": 30237,
+  "provider_sha256_match": true,
+  "reasons": [],
+  "same_completion_tick": true,
+  "seed": 49,
+  "status": "PASS"
+}
