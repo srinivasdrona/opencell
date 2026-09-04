@@ -12,49 +12,62 @@ Never infers Karr's real draw counts from OpenCell's own aggregate
 output -- every number this script reports is derived purely from the
 probe's own captured MATLAB `randStream.state` values, by counting
 forward steps of the SAME Lehmer recurrence Karr's `edu.stanford.covert.
-util.RandStream('mcg16807')` uses (state = 16807*state mod (2**31-1)),
-independently re-implemented here (not imported from
-`opencell.vivarium.karr_protein_decay_light._Mcg16807`, to keep this
-analysis tool fully independent of the production module it is meant to
-audit).
+util.RandStream('mcg16807')` uses (state = 16807*state mod (2**31-1)).
+
+Root-cause correction (M5000 seed-36 promotion, tick=894): a captured
+`randStream.state` value is NOT the raw Lehmer recurrence value -- it is
+a value-domain-encoded representation of it that live MATLAB's real
+`RandStream('mcg16807').State` getter/setter expose (see
+`opencell/util/mcg16807_state_codec.py` for the transform and its live-
+MATLAB derivation/verification). `steps_between` now decodes both
+endpoints into raw recurrence space before counting steps -- comparing/
+stepping the still-encoded values directly (the prior behavior) can never
+reach a real exit state that is only reachable in raw space, exactly the
+failure this task's tick=894 ledger hit (entry/exit states 36 ->
+1363919953, unreachable in encoded space, reachable in exactly 49 real
+steps once decoded).
+
+Imports the codec (not `opencell.vivarium.karr_cytokinesis`'s own
+production RNG shim) to keep this analysis tool independent of the
+production module it is meant to audit, while still sharing the single,
+live-MATLAB-verified encode/decode transform rather than re-deriving (and
+risking re-diverging) it a second time in this file.
 """
 
 from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
-_MOD = 2_147_483_647
-_MUL = 16_807
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+if str(_REPO_ROOT) not in sys.path:
+    sys.path.insert(0, str(_REPO_ROOT))
+
+from opencell.util.mcg16807_state_codec import parse_captured_state  # noqa: E402
+from opencell.util.mcg16807_state_codec import steps_between as _codec_steps_between  # noqa: E402
 
 
 def scalar_state(value: Any) -> int:
     """Coerce a MATLAB `jsonencode`d `randStream.state` value (a bare
     number or a 1-element array, depending on how MATLAB's `mcg16807`
-    generator represents `.State`) into a single Python int."""
-    if isinstance(value, list):
-        if len(value) != 1:
-            raise ValueError(f"expected a scalar or 1-element randStream.state, got {value!r}")
-        return int(value[0])
-    return int(value)
+    generator represents `.State`) into a single Python int -- the
+    MATLAB-exposed ENCODED representation, via the shared, fail-closed
+    codec parser (rejects multi-element/malformed/out-of-range payloads
+    rather than silently truncating them)."""
+    return parse_captured_state(value)
 
 
 def steps_between(state_a: int, state_b: int, max_steps: int = 1_000_000) -> int:
-    """Count forward Lehmer-recurrence steps needed to go from `state_a`
-    to `state_b`. Raises ValueError (never silently caps/wraps) if
-    `state_b` is not reached within `max_steps` -- a genuine desync (or a
-    caller bug) must fail loudly, not report a fabricated count."""
-    state = int(state_a)
-    target = int(state_b)
-    if state == target:
-        return 0
-    for step in range(1, max_steps + 1):
-        state = (_MUL * state) % _MOD
-        if state == target:
-            return step
-    raise ValueError(f"state {target} not reached from {state_a} within {max_steps} Lehmer steps")
+    """Count forward Lehmer-recurrence steps needed to go from encoded
+    state `state_a` to encoded state `state_b`, decoding both endpoints
+    into raw recurrence space first (see module docstring). Raises
+    ValueError (never silently caps/wraps) if `state_b` is not reached
+    within `max_steps` -- a genuine desync (or a caller bug) must fail
+    loudly, not report a fabricated count."""
+    return _codec_steps_between(state_a, state_b, max_steps=max_steps)
 
 
 def analyze(captures: list[dict[str, Any]]) -> list[dict[str, Any]]:

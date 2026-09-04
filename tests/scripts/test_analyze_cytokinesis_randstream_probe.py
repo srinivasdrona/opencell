@@ -17,9 +17,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from opencell.util.mcg16807_state_codec import decode_state, encode_state, step_raw  # noqa: E402
 from scripts.l2_event.analyze_cytokinesis_randstream_probe import (  # noqa: E402
-    _MOD,
-    _MUL,
     analyze,
     scalar_state,
     steps_between,
@@ -27,9 +26,16 @@ from scripts.l2_event.analyze_cytokinesis_randstream_probe import (  # noqa: E40
 
 
 def _advance(state: int, n: int) -> int:
+    """Advance an ENCODED (MATLAB-exposed-representation) state by `n`
+    real Lehmer draws, returning the resulting ENCODED state -- i.e. what
+    a genuine ``randStream.state`` capture would read after `n` draws.
+    Decodes once, steps `n` times in raw recurrence space, re-encodes
+    once (never advances directly on the encoded value -- that is exactly
+    the bug this module's `steps_between` fix corrects)."""
+    raw = decode_state(state)
     for _ in range(n):
-        state = (_MUL * state) % _MOD
-    return state
+        raw = step_raw(raw)
+    return encode_state(raw)
 
 
 def test_scalar_state_accepts_bare_number_and_one_element_list() -> None:

@@ -44,6 +44,7 @@ from l2_replay_common import (
     audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
 )
 
+from opencell.util.mcg16807_state_codec import draw_and_advance as _draw_and_advance
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
 from scripts.l2_event.analyze_cytokinesis_randstream_probe import (  # noqa: E402
     scalar_state as _rand_scalar_state,
@@ -500,12 +501,18 @@ def test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound(rng_seed: int) 
 # replay or the real (currently-extracting) M5000 seed-36 trace.
 # ---------------------------------------------------------------------------
 
-_LEDGER_MOD = 2_147_483_647
-_LEDGER_MUL = 16_807
-
-
 def _lehmer_step(state: int) -> int:
-    return (_LEDGER_MUL * state) % _LEDGER_MOD
+    """Advance one ENCODED (MATLAB-exposed-representation) mcg16807 state
+    by exactly one real draw -- i.e. what a genuine ``randStream.state``
+    capture would read after one draw. Delegates to the same live-MATLAB-
+    verified codec `_MatlabCytokinesisRNG` itself now uses (see
+    `opencell/util/mcg16807_state_codec.py`), rather than a plain
+    ``16807*state mod (2**31-1)`` step directly on the encoded value --
+    that direct-step shortcut IS the M5000 seed-36 tick=894 bug this
+    ledger exists to catch, so these synthetic fixtures must not
+    reintroduce it."""
+    _, next_state = _draw_and_advance(state)
+    return next_state
 
 
 class _StubRNG:

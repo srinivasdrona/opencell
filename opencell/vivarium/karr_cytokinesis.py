@@ -24,7 +24,7 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
-from opencell.vivarium.karr_protein_decay_light import _Mcg16807
+from opencell.util.mcg16807_state_codec import draw_and_advance, seed_state
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/Cytokinesis_flat.mat"
 _DEFAULT_FTSZ_RING_FIXTURE_PATH = "data/karr_fixtures/per_process/FtsZRing.json"
@@ -130,33 +130,50 @@ class _MatlabCytokinesisRNG:
     ``this.randStream.reset(this.seed)``, called identically for every
     process in ``Simulation.seedRandStream``, Simulation.m:454-459), so this
     process's dedicated stream is seeded the same numeric value directly
-    (no per-process offset). Reuses the canonical ``_Mcg16807`` shim already
-    validated against genuine Karr traces elsewhere in this codebase (see
-    ``karr_protein_decay_light.py``, ``karr_metabolism.py``) rather than
-    duplicating the LCG. NumPy's default Generator/PCG64 (the prior
-    implementation here) produces an entirely unrelated bit stream from the
-    same seed and was the L2.1 active-window CODE_GAP root cause.
+    (no per-process offset).
+
+    Root-cause correction (M5000 seed-36 promotion, tick=894): this class
+    previously wrapped ``karr_protein_decay_light._Mcg16807``, whose
+    ``get_state``/``set_state`` expose/consume the RAW Lehmer recurrence
+    value directly. Live MATLAB's real ``RandStream('mcg16807').State`` is
+    NOT that raw value -- it is a value-domain-encoded representation of it
+    (see ``opencell/util/mcg16807_state_codec.py`` for the transform and its
+    live-MATLAB derivation/verification). Reusing the raw-state shim meant
+    ``get_state()``/``set_state()`` round-tripped internally consistently
+    with themselves but never matched a REAL captured
+    ``randStreamState`` value from ``extract_per_process_traces_v2.m`` (the
+    tick=894 ledger failure: entry/exit states 36 -> 1363919953 are
+    unreachable under a raw, undecoded recurrence). This class now tracks
+    the state internally in the SAME encoded representation MATLAB itself
+    exposes, so ``get_state()``/``set_state()`` are directly comparable
+    to/settable-from a genuine captured trace value with no additional
+    transform needed by callers (e.g. the L2.1 randStream ledger).
+    ``karr_protein_decay_light._Mcg16807`` (used by ProteinDecay and other
+    processes) is deliberately left untouched -- this is a Cytokinesis-local
+    fix, not a shared-shim change, to avoid invalidating other processes'
+    already-accepted evidence provenance.
     """
 
     def __init__(self, seed: int) -> None:
-        self._stream = _Mcg16807(int(seed))
+        self._state = seed_state(int(seed))
         self.draw_count = 0
 
     def random(self) -> float:
         self.draw_count += 1
-        return float(self._stream.rand((1,))[0])
+        value, self._state = draw_and_advance(self._state)
+        return float(value)
 
     def get_state(self) -> int:
-        """Current Lehmer state (see ``_Mcg16807.get_state`` -- numerically
-        identical to MATLAB's ``randStream.state``). Used by the L2.1
-        active-window ledger to compare/restore against a real per-tick
-        ``randStreamState`` capture."""
-        return self._stream.get_state()
+        """Current MATLAB-exposed (encoded) mcg16807 state -- numerically
+        identical to a genuine ``randStream.state`` capture. Used by the
+        L2.1 active-window ledger to compare/restore against a real
+        per-tick ``randStreamState`` capture."""
+        return int(self._state)
 
     def set_state(self, state: int) -> None:
-        """Force the wrapped stream's Lehmer state to an explicit captured
-        value (see ``_Mcg16807.set_state``)."""
-        self._stream.set_state(state)
+        """Force the stream's state to an explicit captured (encoded)
+        value -- e.g. a real ``randStreamState`` reading."""
+        self._state = int(state)
 
 
 class KarrCytokinesisProcess(Process):
@@ -173,7 +190,7 @@ class KarrCytokinesisProcess(Process):
         "min_segregation_progress": 1.0,
         "gating_tolerance": 1.0e-9,
         # Canonical FtsZRing.m constant; override in tests if needed.
-        "filament_length_nm": 40.0,
+        "filament_length_nm": None,
         "rate_filament_binding_membrane": None,
         "rate_filament_dissociation": None,
         "rate_ftsz_gtp_hydrolysis": None,
@@ -199,10 +216,13 @@ class KarrCytokinesisProcess(Process):
         if hydrolysis_override is not None:
             self.rate_ftsz_gtp_hydrolysis = float(hydrolysis_override)
 
+        filament_length_override = self.parameters.get("filament_length_nm")
+        if filament_length_override is not None:
+            self.default_filament_length_nm = float(filament_length_override)
+
         self.gtp_wid = str(self.parameters["gtp_wid"])
         self.min_segregation_progress = float(self.parameters["min_segregation_progress"])
         self.gating_tolerance = float(self.parameters["gating_tolerance"])
-        self.default_filament_length_nm = float(self.parameters["filament_length_nm"])
 
         self._substrate_wids = list(self.fixture_substrate_wids)
 
@@ -253,6 +273,27 @@ class KarrCytokinesisProcess(Process):
         self.initial_num_residual_bent = _safe_count(
             ftsz_scalars.get("fixture/numResidualBent", 0)
         )
+
+        # FtsZRing.m: `filamentLengthInNm = numFtsZSubunitsPerFilament /
+        # numFtsZSubunitsPerNm` (a genuine constant per this project's own
+        # fixture, NOT the literature default of 40nm [Anderson 2004] -- the
+        # real fixture value, 9/0.23 = 39.130434782608695nm, differs from
+        # 40.0 by ~2.2% and was previously hardcoded as a naked literal here,
+        # producing a real (non-RNG) `calcNextPinchedDiameter` divergence
+        # from Karr's real trace (M5000 seed-36 promotion, tick=924/M4000
+        # seed-0, tick=263 -- both bit-identical once this fixture value is
+        # used instead of the naive 40.0 default).
+        if "fixture/filamentLengthInNm" in ftsz_scalars:
+            self.default_filament_length_nm = _safe_float(
+                ftsz_scalars["fixture/filamentLengthInNm"], default=40.0
+            )
+        elif "fixture/numFtsZSubunitsPerNm" in ftsz_scalars:
+            num_subunits_per_nm = _safe_float(ftsz_scalars["fixture/numFtsZSubunitsPerNm"], default=0.0)
+            self.default_filament_length_nm = (
+                self.num_ftsz_subunits_per_filament / num_subunits_per_nm if num_subunits_per_nm > 0.0 else 40.0
+            )
+        else:
+            self.default_filament_length_nm = 40.0
 
         self.initial_width = _safe_float(geometry_scalars.get("fixture/width", 0.0))
         self.initial_pinched_diameter = _safe_float(

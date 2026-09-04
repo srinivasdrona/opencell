@@ -19,7 +19,6 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess, _MatlabCytokinesisRNG
-from opencell.vivarium.karr_protein_decay_light import _Mcg16807
 
 
 def _enzyme_counts(
@@ -500,44 +499,56 @@ def test_division_completes_when_pinched_diameter_reaches_zero() -> None:
 # edu.stanford.covert.util.RandStream('mcg16807')`) is a Park-Miller
 # "Minimal Standard" multiplicative-congruential (Lehmer) generator --
 # an entirely different bit stream from the same seed. Fixed by seeding
-# `_MatlabCytokinesisRNG` (a thin `.random()` adapter) over the canonical
-# `_Mcg16807` shim already used by other faithful Karr ports
-# (`karr_protein_decay_light.py`, `karr_metabolism.py`). Evidence: at the
-# accepted genuine event trace's first active tick (226 of
+# `_MatlabCytokinesisRNG` with a MATLAB-faithful mcg16807 Lehmer stream.
+# Evidence: at the accepted genuine event trace's first active tick (226 of
 # `Cytokinesis_4000ticks.mat`), `ftsZRing.numEdgesOneStraight` went 0 -> 9 in
 # Karr; the wrong-RNG-family port produced 6, the fixed port reproduces 9
 # exactly (and reproduces tick 227's (3, 19) too) -- see
 # `STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md` for the full per-tick ledger.
+#
+# Update (M5000 seed-36 promotion, 2026-09-05): `_MatlabCytokinesisRNG` no
+# longer wraps `karr_protein_decay_light._Mcg16807` (whose `get_state`/
+# `set_state` expose the RAW Lehmer value, not the value-domain-encoded
+# representation MATLAB's real `RandStream('mcg16807').State` actually
+# exposes -- see `opencell/util/mcg16807_state_codec.py`). It now tracks the
+# encoded state directly via that codec, matching live MATLAB exactly (see
+# `test_rng_first_draw_matches_live_matlab_mcg16807_reference` below).
 
 
 def test_rng_provider_is_mcg16807_not_numpy_default_rng() -> None:
-    """Anti-regression: `process._rng` must wrap the MATLAB-faithful
-    `_Mcg16807` Lehmer generator, never `np.random.Generator`/PCG64. A
-    silent revert to `np.random.default_rng` would pass every existing
-    deterministic (rate=0/1) unit test in this file -- those never inspect
-    RNG *identity*, only aggregate conservation -- while re-opening the
-    exact L2.1 active-window CODE_GAP this test guards against.
+    """Anti-regression: `process._rng` must be the MATLAB-faithful
+    mcg16807 Lehmer generator (`opencell/util/mcg16807_state_codec.py`),
+    never `np.random.Generator`/PCG64. A silent revert to
+    `np.random.default_rng` would pass every existing deterministic
+    (rate=0/1) unit test in this file -- those never inspect RNG
+    *identity*, only aggregate conservation -- while re-opening the exact
+    L2.1 active-window CODE_GAP this test guards against.
     """
     process = KarrCytokinesisProcess({"rng_seed": 0})
 
     assert isinstance(process._rng, _MatlabCytokinesisRNG)
-    assert isinstance(process._rng._stream, _Mcg16807)
+    assert isinstance(process._rng.get_state(), int)  # Lehmer state is a plain int, never PCG64
     assert not hasattr(process._rng, "bit_generator")  # np.random.Generator marker
 
 
-def test_rng_first_draw_matches_mcg16807_park_miller_reference() -> None:
-    """Pin the exact first `.random()` value for `rng_seed=0` against the
-    `_Mcg16807` Lehmer recurrence (state = 16807*state mod (2**31-1), seed 0
-    mapped to state 1 -- `_Mcg16807.__init__`). This is the same value
-    verified via the published Park & Miller (1988) "Minimal Standard"
-    generator test vector (seed=1 -> state 1043618065 after 10000 draws;
-    see `tmp/probe_mcg16807_reference_vector.py` in the fix's provenance).
+def test_rng_first_draw_matches_live_matlab_mcg16807_reference() -> None:
+    """Pin the exact first `.random()` value for `rng_seed=0` against a
+    LIVE MATLAB reference (not a generic Park & Miller "Minimal Standard"
+    textbook test vector -- see the M5000 seed-36 promotion fix,
+    STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md, for why the two differ). Real
+    `RandStream('mcg16807','Seed',uint32(0))` reports
+    `State==931316785` immediately after construction (NOT the naive
+    "seed 0 -> raw state 1" mapping the textbook vector implies), and its
+    first `rand()` draw is `0.21895918632809036` with resulting
+    `State==1523096582` -- live-verified 2026-09-05 in this worktree via
+    `scripts/tools/run_matlab_slot.ps1` (`tmp/probe_mcg16807_seed0_first_draw.m`).
     A change to this value signals either a seed-mapping regression or a
     reversion to a different (non-Karr-faithful) generator family.
     """
     process = KarrCytokinesisProcess({"rng_seed": 0})
     first_draw = process._rng.random()
-    assert first_draw == pytest.approx(7.826369259425611e-06, rel=0.0, abs=1.0e-18)
+    assert first_draw == pytest.approx(0.21895918632809036, rel=0.0, abs=1.0e-15)
+    assert process._rng.get_state() == 1523096582
 
 
 def test_rng_no_oracle_file_io_in_production_module() -> None:
