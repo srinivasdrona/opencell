@@ -69,12 +69,16 @@ snapshot below:**
 - Fully completed and published: ProteinProcessingII,
   ChromosomeCondensation, and (after this push) ChromosomeSegregation L2.1.
 - MacromolecularComplexation has **50/50 valid** and a reproducible
-  process-local Design-A **PASS** at branch head `84a51ff`. Opus accepted
-  the work but confirmed it is not yet authoritative closure: the portable
-  artifact references 7 gitignored runner JSONs, the shared runner lacks a
-  real process-scoped active-window oracle-root route, and the shared
-  bundle/index still shows the old sentinel failure. Coordinator-owned
-  promotion/schema/generator work remains.
+  process-local Design-A marginal **PASS**. Coordinator promotion fixed
+  portable runner sidecars and produced a candidate shared row, but the
+  preregistered index-aware diagnostic found a real production gap:
+  **26/50 seeds choose the complementary network-2 complex** relative to
+  Karr. Fix the selection/indexing bug before closure. Also revert the
+  shared-loader environment-route edit, which stales 17 unrelated rows;
+  instead place the already-tracked, hash-validated trace blobs at the
+  canonical `per_process_traces_v2_sNNN/` paths (Git deduplicates identical
+  blobs) so the unchanged shared loader can consume them. Then rerun only
+  Macromol and regenerate an integrity-clean shared index.
 - Completed investigations that remain non-green:
   - DNASupercoiling: improved from 1489 to 112 pooled nonzero ticks, but
     final gate remains `PRIMARY_OVERACTIVE` (112 vs 65 pooled; 28 vs 7
