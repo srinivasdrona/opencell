@@ -104,9 +104,15 @@ snapshot below:**
     Cytokinesis SHA-256 is `39b0ee3a...f5f68`; FtsZ SHA-256 is
     `7a254129...32c70`. Both files are copied and destination-validated,
     bringing Cytokinesis to **35/50** and FtsZ to **11/50**. Before bulk
-    use, run seed 36 and bit-compare its Cytokinesis state arrays against
-    the existing conventional seed-36 trace; only a green equivalence gate
-    authorizes the three-concurrent dual queue.
+    use, seed-36 equivalence failed closed because the fresh real trajectory
+    had onset 27918 and completion 31993 (**4,076 ticks inclusive**), so
+    the catalog's 4,000-tick lower bound could not contain the event.
+    Conventional seed 36 was a different valid realization (span 3,963),
+    confirming whole-simulation run-to-run nondeterminism and making a
+    same-seed byte comparison unavailable. Do not start bulk extraction:
+    preregister a larger uniform Cytokinesis M, update the extractor and
+    validators, rerun seed 36 to prove complete capture, then re-extract the
+    Cytokinesis cohort uniformly while retaining the paired FtsZ outputs.
 
 **Current status (2026-09-03 06:05 IST) — supersedes all Sept-2 snapshots
 below:**
