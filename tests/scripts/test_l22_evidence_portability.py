@@ -132,17 +132,23 @@ def test_generate_falls_back_to_bundle_when_evidence_root_absent(tmp_path, monke
     """`schema.default_evidence_root()` -- and therefore `build_evidence_index()`
     with no explicit `evidence_root` -- must resolve to the tracked bundle
     when the live tree does not exist at all (the literal fresh-clone case),
-    not silently produce a DIFFERENT index than the live tree would.
+    not silently produce a DIFFERENT index than an EXPLICIT bundle-rooted
+    build would.
 
-    As of this commit no row is real PASS yet (the Phase-A provenance
-    hardening demotes every pre-hardening evidence dir to MISSING_EVIDENCE
-    until it is rerun through the hardened sweep -- see
-    test_l22_evidence_generator.py), so this only asserts the bundle-sourced
-    fallback reproduces the SAME honest tally as the live tree, not that it
-    contains a PASS row; once Phase-B reruns repopulate real PASS/FAIL rows
-    this assertion set should be tightened back to require at least one
-    real PASS."""
-    live_payload = gen.build_evidence_index(evidence_root=schema.EVIDENCE_ROOT)
+    R6 catalog-provenance migration (2026-09-04) tightening: this used to
+    compare against `schema.EVIDENCE_ROOT` (the live, gitignored sweep-
+    output tree), which is legitimately ABSENT on a machine that never ran
+    the live sweep -- comparing against it produced a spurious all-
+    `MISSING_EVIDENCE` tally that happened to accidentally match a
+    similarly-empty bundle, not a real proof of fallback correctness. Per
+    this test's own prior docstring ("once Phase-B reruns repopulate real
+    PASS/FAIL rows this assertion set should be tightened back to require
+    at least one real PASS"), it now compares the fallback-resolved build
+    against an EXPLICIT `evidence_root=schema.BUNDLE_ROOT` build (the
+    correct ground truth for "did the fallback resolve to the bundle and
+    read the same bytes"), and asserts at least one real PASS row exists
+    (the 19 PASS/1 FAIL/2 MISSING_EVIDENCE post-migration tally)."""
+    explicit_bundle_payload = gen.build_evidence_index(evidence_root=schema.BUNDLE_ROOT)
 
     nonexistent_live_root = tmp_path / "artifacts_that_do_not_exist" / "l2_2_gates"
     assert not nonexistent_live_root.exists()
@@ -153,7 +159,8 @@ def test_generate_falls_back_to_bundle_when_evidence_root_absent(tmp_path, monke
 
     payload = gen.build_evidence_index()  # no explicit evidence_root -> must use the fallback above
     assert payload["n_in_scope"] == 22
-    assert payload["tally"] == live_payload["tally"]
+    assert payload["tally"] == explicit_bundle_payload["tally"]
+    assert payload["tally"].get(schema.STATUS_PASS, 0) >= 1, "expected at least one real PASS row post-migration"
 
 
 def test_default_evidence_root_prefers_live_tree_when_present(tmp_path, monkeypatch):

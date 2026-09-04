@@ -19,7 +19,7 @@
     "thresholds.json": "d3f39cdbc83c5bd6e95713c30bd263c71761bb46e1477e95bee0158dbe85e322"
   },
   "source_hashes": {
-    "catalog": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
+    "catalog_entry": "7495cee12767709f37f311ea286aae419aa6044ce61499986dc05bd94e6cd102",
     "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
     "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
     "oc_module": "f00efd6f524f0f3cf2236f96e7d9e2223e70eb46d6b50b598f40caed05466a9a",

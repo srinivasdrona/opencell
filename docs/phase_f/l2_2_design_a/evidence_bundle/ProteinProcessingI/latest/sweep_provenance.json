@@ -19,7 +19,7 @@
     "thresholds.json": "9a7d816fb435dfa8ca266fb56ae9a85f02c2cbb75c48d6b91e2697bf007fe37b"
   },
   "source_hashes": {
-    "catalog": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
+    "catalog_entry": "95c5f285905f3d9bd323607b60375f4b4ab57c5c09113dd276eaf76d0bcdaf41",
     "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
     "karr_trna_aminoacylation_module": "d200500fa920a176e06af094b8575bc9cd5b2e5964cf05d780eb39d16bae1a14",
     "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
