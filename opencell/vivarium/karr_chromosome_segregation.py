@@ -1,25 +1,48 @@
-"""Vivarium Process port of Karr's ChromosomeSegregation (Karr-LIGHT v1).
+"""Vivarium Process port of Karr's ChromosomeSegregation (literal port).
 
-Primary source: docs/karr_extracts/process/08_ChromosomeSegregation.md
+Primary source:
+data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/process/ChromosomeSegregation.m
 
-Karr models segregation as a gated boolean decision:
-1) chromosome replicated
-2) chromosome properly supercoiled
-3) required segregation proteins available
-4) sufficient GTP (gtpCost)
+Karr models segregation as a literal boolean-gated, one-shot event on the
+Chromosome state's ``segregated`` flag:
 
-Karr-LIGHT v1 maps this to continuous state needed by downstream Phase C turns:
-- chromosome.segregation_progress in [0, 1]
-- chromosome.daughter_pole_positions.{left,right}
-- chromosome.segregation_complete + chromosome.cell_cycle_event pulse
+- ``calcResourceRequirements_Current`` (ChromosomeSegregation.m:179-189):
+  request ``gtpCost`` GTP + H2O iff the chromosome is not yet segregated, the
+  chromosome is fully replicated
+  (``collapse(polymerizedRegions) == nCompartments * sequenceLen``), and
+  every one of the five segregation enzymes -- including topoisomerase IV
+  (``MG_203_204_TETRAMER``) -- is present (``all(this.enzymes)``).
+- ``evolveState`` (ChromosomeSegregation.m:193-212): additionally requires
+  the chromosome to be fully supercoiled
+  (``collapse(supercoiled) == nCompartments``) and at least ``gtpCost`` of
+  allocated GTP and H2O; then sets ``segregated = true`` and applies the
+  exact GTP + H2O -> GDP + PI + H hydrolysis stoichiometry.
 
-Deferred to v2:
-- explicit decatenation/topological mechanism and locus-level spatial dynamics.
+``supercoiled`` is itself a Chromosome-state *dependent* property
+(Chromosome.m:3602 ``get.supercoiled``/``calcSupercoiled``, built on
+``calcDoubleStrandedRegions`` at Chromosome.m:3205) computed from
+``polymerizedRegions`` + ``linkingNumbers`` via the KB constants
+``relaxedBasesPerTurn``, ``equilibriumSuperhelicalDensity``, and
+``supercoiledSuperhelicalDensityTolerance`` (sourced from the Chromosome
+fixture, never hardcoded). The L2 oracle trace does not serialize
+``supercoiled`` directly -- it is derived, not stored -- so this port
+recomputes it from the two raw sparse chromosome fields the trace *does*
+serialize (``polymerizedRegions``, ``linkingNumbers``): a real hidden-state
+read, never an oracle-trace read (see Rule 8,
+docs/prompts/FIX_TEMPLATE_L2_REPLAY.md).
+
+Downstream compatibility: ``chromosome.segregated`` is the literal Karr
+field, and it is already the value ``karr_cytokinesis.py``'s
+``_segregation_gate`` prefers when present. ``segregation_progress`` /
+``segregation_complete`` / ``daughter_pole_positions`` / ``cell_cycle_event``
+are retained as *derived*, pure 0.0/1.0 projections of ``segregated`` --
+carrying no independent state of their own -- solely so
+``karr_cell_cycle_coordinator.py`` and any other pre-existing consumer of
+the old Karr-LIGHT v1 continuous-progress surface keep working unchanged.
 """
 
 from __future__ import annotations
 
-import math
 from functools import lru_cache
 from pathlib import Path
 from typing import Any
@@ -28,12 +51,24 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.m_gen_constants import GENOME_LENGTH_BP, N_CHROMOSOME_COMPARTMENTS
+from opencell.state.chromosome_store import (
+    SparseTriplet,
+    merge_adjacent_regions,
+    sparse_triplet_schema,
+)
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat"
+_DEFAULT_CHROMOSOME_FIXTURE_PATH = "data/karr_fixtures/per_process/Chromosome_flat.mat"
 _MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = (
     "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
 )
 _RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
 _ALWAYS_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
+
+# Chromosome.m:calcDoubleStrandedRegions pairs strand k with strand k+1 within
+# each group `ceil(strand/2)` (1-based); 0-based that is (0, 1) and (2, 3).
+_STRAND_PAIRS = ((0, 1), (2, 3))
 
 
 def _resolve_path(path: str | Path) -> Path:
@@ -70,10 +105,6 @@ def _one_based_to_zero(value: object) -> int:
     return int(_coerce_scalar(value)) - 1
 
 
-def _clamp01(value: float) -> float:
-    return float(min(1.0, max(0.0, value)))
-
-
 @lru_cache(maxsize=1)
 def _canonical_complex_wids() -> frozenset[str]:
     mc = loadmat(
@@ -92,23 +123,95 @@ def _canonical_complex_wids() -> frozenset[str]:
     return frozenset(wids)
 
 
+def _double_stranded_region_entries(
+    polymerized: SparseTriplet,
+) -> list[tuple[int, int, int]]:
+    """Faithful (if degenerate-case-optimized) port of
+    ``Chromosome.m:calcDoubleStrandedRegions`` (~3205-3253).
+
+    Karr pairs strand ``2k-1`` with strand ``2k`` (0-based: strand pair
+    ``(2k, 2k+1)``), intersects each pair's polymerized extents, and emits
+    the intersected extent at *both* member strands of the pair. Returns a
+    list of ``(start, strand, length)`` entries -- one per member strand per
+    intersected sub-region.
+    """
+    merged = merge_adjacent_regions(polymerized)
+    by_strand: dict[int, list[tuple[int, int]]] = {}
+    for position, strand, length in merged.to_regions():
+        by_strand.setdefault(int(strand), []).append((int(position), int(length)))
+
+    entries: list[tuple[int, int, int]] = []
+    for strand_a, strand_b in _STRAND_PAIRS:
+        for start_a, len_a in by_strand.get(strand_a, []):
+            end_a = start_a + len_a
+            for start_b, len_b in by_strand.get(strand_b, []):
+                end_b = start_b + len_b
+                start = max(start_a, start_b)
+                end = min(end_a, end_b)
+                if end > start:
+                    length = end - start
+                    entries.append((start, strand_a, length))
+                    entries.append((start, strand_b, length))
+    return entries
+
+
+def _supercoiled_pass_count(
+    *,
+    polymerized: SparseTriplet,
+    linking: SparseTriplet,
+    bp_per_turn: float,
+    equilibrium_sigma: float,
+    tolerance: float,
+) -> int:
+    """Faithful port of ``Chromosome.m:calcSupercoiled`` (~3602-3614).
+
+    For every double-stranded-region entry, look up the linking number at
+    that exact (position, strand) -- 0 if absent, matching MATLAB's sparse
+    default-fill semantics -- compute the superhelical density sigma, and
+    count entries within tolerance of equilibrium. The caller compares this
+    count against ``nCompartments`` (Chromosome.m's ``collapse(...)``).
+    """
+    linking_lookup: dict[tuple[int, int], int] = {
+        (int(position), int(strand)): int(value)
+        for position, strand, value in zip(
+            linking.positions.tolist(),
+            linking.strands.tolist(),
+            linking.values.tolist(),
+            strict=False,
+        )
+    }
+
+    count = 0
+    for start, strand, length in _double_stranded_region_entries(polymerized):
+        if length <= 0:
+            continue
+        lk = linking_lookup.get((start, strand), 0)
+        lk0 = length / bp_per_turn
+        if lk0 <= 0:
+            continue
+        sigma = (lk - lk0) / lk0
+        if abs(sigma - equilibrium_sigma) < tolerance:
+            count += 1
+    return count
+
+
 class KarrChromosomeSegregationProcess(Process):
-    """Karr Process_ChromosomeSegregation with gated progress + completion signal."""
+    """Karr Process_ChromosomeSegregation: literal boolean-gated segregation."""
 
     name = "karr_chromosome_segregation"
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
+        "chromosome_fixture_path": _DEFAULT_CHROMOSOME_FIXTURE_PATH,
         "time_step": 1.0,
-        # Boolean-rule faithful default: complete in one eligible tick.
-        "segregation_rate_per_s": 1.0,
-        "require_supercoiled": True,
-        "min_required_enzyme_count": 1.0,
-        "include_topoiv_gate": False,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
+        self.chromosome_shape = (int(GENOME_LENGTH_BP), int(N_CHROMOSOME_COMPARTMENTS))
+        self.sequence_len, self.n_compartments = self.chromosome_shape
+
         self._load_fixture(self.parameters["fixture_path"])
+        self._load_chromosome_constants(self.parameters["chromosome_fixture_path"])
 
         gtp_cost_override = self.parameters.get("gtp_cost_override")
         if gtp_cost_override is None:
@@ -118,11 +221,6 @@ class KarrChromosomeSegregationProcess(Process):
         if self.gtp_cost <= 0.0:
             raise ValueError(f"gtp_cost must be > 0, got {self.gtp_cost}")
 
-        if (
-            bool(self.parameters.get("include_topoiv_gate", False))
-            and self.topoiv_wid not in self.required_enzyme_wids
-        ):
-            self.required_enzyme_wids.append(self.topoiv_wid)
         self._partition_enzyme_wids()
 
     def _load_fixture(self, path: str | Path) -> None:
@@ -156,17 +254,30 @@ class KarrChromosomeSegregationProcess(Process):
         self.era_wid = self.enzyme_wids[self.enzyme_index_era]
         self.topoiv_wid = self.enzyme_wids[self.enzyme_index_topoiv]
 
-        self.required_enzyme_wids = [
-            self.cobq_wid,
-            self.mraz_wid,
-            self.era_wid,
-            self.obg_wid,
-        ]
+        # Karr's gate is `all(this.enzymes)`: every one of the 5 fixture
+        # enzymes (including topoisomerase IV) is required, unconditionally.
+        self.required_enzyme_wids = list(self.enzyme_wids)
+
+        # Fixture-provided per-enzyme steady-state counts, consumed by
+        # karr_composite.py's chassis initial-state seeding (not used by the
+        # gate logic itself, which reads live protein/complex counts).
         enzyme_counts = np.asarray(fx.enzymes, dtype=np.float64).reshape(-1)
         self.enzyme_count_by_wid = {
             wid: float(enzyme_counts[idx]) for idx, wid in enumerate(self.enzyme_wids)
         }
+
         self._fixture_gtp_cost = int(_coerce_scalar(fx.gtpCost))
+
+    def _load_chromosome_constants(self, path: str | Path) -> None:
+        mat = loadmat(str(_resolve_path(path)), squeeze_me=True, struct_as_record=False)
+        fx = mat["data"].fixture
+        self.relaxed_bases_per_turn = float(_coerce_scalar(fx.relaxedBasesPerTurn))
+        self.equilibrium_superhelical_density = float(
+            _coerce_scalar(fx.equilibriumSuperhelicalDensity)
+        )
+        self.supercoiled_tolerance = float(
+            _coerce_scalar(fx.supercoiledSuperhelicalDensityTolerance)
+        )
 
     def _partition_enzyme_wids(self) -> None:
         complex_wids = _canonical_complex_wids()
@@ -184,32 +295,29 @@ class KarrChromosomeSegregationProcess(Process):
     def ports_schema(self) -> dict[str, Any]:
         return {
             "chromosome": {
-                "replication_state": {
-                    "_default": "idle",
+                # Literal Karr field (Chromosome.m `segregated` property).
+                "segregated": {
+                    "_default": False,
                     "_updater": "set",
                     "_emit": True,
                 },
-                "supercoiled": {
-                    "_default": True,
-                    "_updater": "set",
-                    "_emit": True,
-                },
+                # Read-only hidden inputs: the two raw sparse Chromosome
+                # fields needed to derive the `replicated` and `supercoiled`
+                # gates. Never written by this process.
+                "polymerizedRegions": sparse_triplet_schema(self.chromosome_shape, emit=False),
+                "linkingNumbers": sparse_triplet_schema(self.chromosome_shape, emit=False),
+                # Derived compatibility outputs (see module docstring): pure
+                # 0.0/1.0 projections of `segregated`, kept only so
+                # pre-existing consumers of the Karr-LIGHT v1 continuous
+                # surface (karr_cell_cycle_coordinator.py) keep working.
                 "segregation_progress": {
                     "_default": 0.0,
                     "_updater": "accumulate",
                     "_emit": True,
                 },
                 "daughter_pole_positions": {
-                    "left": {
-                        "_default": 0.0,
-                        "_updater": "accumulate",
-                        "_emit": True,
-                    },
-                    "right": {
-                        "_default": 0.0,
-                        "_updater": "accumulate",
-                        "_emit": True,
-                    },
+                    "left": {"_default": 0.0, "_updater": "accumulate", "_emit": True},
+                    "right": {"_default": 0.0, "_updater": "accumulate", "_emit": True},
                 },
                 "segregation_complete": {
                     "_default": False,
@@ -254,53 +362,17 @@ class KarrChromosomeSegregationProcess(Process):
             },
             "substrates_allocated": {
                 self.name: {
-                    self.gtp_wid: {
-                        "_default": 0.0,
-
-                        "_emit": False,
-                    },
-                    self.h2o_wid: {
-                        "_default": 0.0,
-
-                        "_emit": False,
-                    },
+                    self.gtp_wid: {"_default": 0.0, "_emit": False},
+                    self.h2o_wid: {"_default": 0.0, "_emit": False},
                 }
             },
         }
 
-    def _allocated_or_state(
-        self,
-        allocated_state: dict[str, Any],
-        wid: str,
-    ) -> float:
+    def _allocated_or_state(self, allocated_state: dict[str, Any], wid: str) -> float:
         allocated = float(allocated_state.get(wid, 0.0))
         return max(0.0, allocated)
 
-    def _gates_satisfied(
-        self,
-        *,
-        replication_state: str,
-        supercoiled: bool,
-        protein_counts: dict[str, Any],
-        complex_counts: dict[str, Any],
-    ) -> bool:
-        if replication_state != "complete":
-            return False
-        if bool(self.parameters["require_supercoiled"]) and not supercoiled:
-            return False
-
-        min_count = float(self.parameters["min_required_enzyme_count"])
-        return all(
-            self._required_enzyme_count(
-                wid=wid,
-                protein_counts=protein_counts,
-                complex_counts=complex_counts,
-            )
-            >= min_count
-            for wid in self.required_enzyme_wids
-        )
-
-    def _required_enzyme_count(
+    def _enzyme_count(
         self,
         *,
         wid: str,
@@ -321,84 +393,102 @@ class KarrChromosomeSegregationProcess(Process):
             return float(protein_counts[wid])
         raise KeyError(f"Required enzyme '{wid}' is not classified for {self.name}")
 
-    def _progress_delta(self, dt: float, current_progress: float) -> float:
-        if current_progress >= 1.0:
-            return 0.0
-        rate = max(0.0, float(self.parameters["segregation_rate_per_s"]))
-        return min(1.0 - current_progress, rate * dt)
+    def _all_enzymes_present(
+        self,
+        *,
+        protein_counts: dict[str, Any],
+        complex_counts: dict[str, Any],
+    ) -> bool:
+        # Karr: `all(this.enzymes)` -- every one of the 5 fixture enzymes
+        # must be nonzero (MATLAB `all()` numeric-nonzero semantics).
+        return all(
+            self._enzyme_count(
+                wid=wid, protein_counts=protein_counts, complex_counts=complex_counts
+            )
+            != 0.0
+            for wid in self.required_enzyme_wids
+        )
 
-    def _request_level(self, can_progress: bool, current_progress: float) -> float:
-        if not can_progress or current_progress >= 1.0:
-            return 0.0
-        return float(self.gtp_cost)
+    def _is_fully_replicated(self, polymerized: SparseTriplet) -> bool:
+        # Karr: `collapse(c.polymerizedRegions) == c.nCompartments * c.sequenceLen`.
+        total = int(np.sum(polymerized.values, dtype=np.int64))
+        return total == self.n_compartments * self.sequence_len
+
+    def _is_fully_supercoiled(
+        self,
+        *,
+        polymerized: SparseTriplet,
+        linking: SparseTriplet,
+    ) -> bool:
+        # Karr: `collapse(c.supercoiled) == c.nCompartments`.
+        pass_count = _supercoiled_pass_count(
+            polymerized=polymerized,
+            linking=linking,
+            bp_per_turn=self.relaxed_bases_per_turn,
+            equilibrium_sigma=self.equilibrium_superhelical_density,
+            tolerance=self.supercoiled_tolerance,
+        )
+        return pass_count == self.n_compartments
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
+        del timestep  # Karr's gate has no dt-dependence: segregation is a one-shot event.
 
         chromosome = states.get("chromosome", {})
-        replication_state = str(chromosome.get("replication_state", "idle"))
-        supercoiled = bool(chromosome.get("supercoiled", True))
-        current_progress = _clamp01(float(chromosome.get("segregation_progress", 0.0)))
-        current_complete = bool(chromosome.get("segregation_complete", False))
+        already_segregated = bool(chromosome.get("segregated", False))
 
-        pos_state = chromosome.get("daughter_pole_positions", {})
-        current_left = float(pos_state.get("left", -current_progress))
-        current_right = float(pos_state.get("right", current_progress))
+        polymerized = SparseTriplet.from_state(
+            chromosome.get("polymerizedRegions"), shape=self.chromosome_shape
+        )
+        linking = SparseTriplet.from_state(
+            chromosome.get("linkingNumbers"), shape=self.chromosome_shape
+        )
 
         protein_counts = states.get("protein", {}).get("counts", {})
         complex_counts = states.get("complex", {}).get("counts", {})
-        gated = self._gates_satisfied(
-            replication_state=replication_state,
-            supercoiled=supercoiled,
-            protein_counts=protein_counts,
-            complex_counts=complex_counts,
+
+        fully_replicated = self._is_fully_replicated(polymerized)
+        all_enzymes_present = self._all_enzymes_present(
+            protein_counts=protein_counts, complex_counts=complex_counts
         )
 
-        allocated = states.get("substrates_allocated", {}).get(self.name, {})
-        gtp_available = self._allocated_or_state(allocated, self.gtp_wid)
-        h2o_available = self._allocated_or_state(allocated, self.h2o_wid)
-        max_events = min(
-            int(math.floor(max(0.0, gtp_available) / self.gtp_cost)),
-            int(math.floor(max(0.0, h2o_available) / self.gtp_cost)),
-        )
-
-        can_progress = gated and (not current_complete) and current_progress < 1.0
-        request_gtp = self._request_level(can_progress, current_progress)
+        # calcResourceRequirements_Current (ChromosomeSegregation.m:179-189).
+        can_request = (not already_segregated) and fully_replicated and all_enzymes_present
+        request_gtp = float(self.gtp_cost) if can_request else 0.0
         request_h2o = request_gtp
 
+        # evolveState (ChromosomeSegregation.m:193-212).
+        just_segregated = False
         substrate_update: dict[str, float] = {}
-        progress_delta = 0.0
-        if can_progress and max_events >= 1:
-            progress_delta = self._progress_delta(dt, current_progress)
-            if progress_delta > 0.0:
+        if can_request:
+            allocated = states.get("substrates_allocated", {}).get(self.name, {})
+            allocated_gtp = self._allocated_or_state(allocated, self.gtp_wid)
+            allocated_h2o = self._allocated_or_state(allocated, self.h2o_wid)
+            fully_supercoiled = self._is_fully_supercoiled(polymerized=polymerized, linking=linking)
+            if (
+                fully_supercoiled
+                and allocated_gtp >= self.gtp_cost
+                and allocated_h2o >= self.gtp_cost
+            ):
+                just_segregated = True
                 substrate_update = {
-                    self.gtp_wid: float(-self.gtp_cost),
-                    self.h2o_wid: float(-self.gtp_cost),
+                    self.gtp_wid: -float(self.gtp_cost),
+                    self.h2o_wid: -float(self.gtp_cost),
                     self.gdp_wid: float(self.gtp_cost),
                     self.pi_wid: float(self.gtp_cost),
                     self.h_wid: float(self.gtp_cost),
                 }
 
-        new_progress = _clamp01(current_progress + progress_delta)
-        desired_left = -new_progress
-        desired_right = new_progress
-        left_delta = desired_left - current_left
-        right_delta = desired_right - current_right
-
-        just_completed = (new_progress >= 1.0) and (not current_complete)
-
         chromosome_update: dict[str, Any] = {
-            "cell_cycle_event": "segregation_complete" if just_completed else "none",
+            "cell_cycle_event": "segregation_complete" if just_segregated else "none",
         }
-        if progress_delta != 0.0:
-            chromosome_update["segregation_progress"] = float(progress_delta)
-        if left_delta != 0.0 or right_delta != 0.0:
-            chromosome_update["daughter_pole_positions"] = {
-                "left": float(left_delta),
-                "right": float(right_delta),
-            }
-        if just_completed:
+        if just_segregated:
+            chromosome_update["segregated"] = True
             chromosome_update["segregation_complete"] = True
+            # Derived compatibility surface: one-shot 0.0 -> 1.0 jump (the
+            # process fires at most once, guarded by `already_segregated`,
+            # so the prior accumulated value is always 0.0 here).
+            chromosome_update["segregation_progress"] = 1.0
+            chromosome_update["daughter_pole_positions"] = {"left": -1.0, "right": 1.0}
 
         update: dict[str, Any] = {
             "requests": {

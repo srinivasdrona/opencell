@@ -32,10 +32,10 @@ EXPECTED_ACTIVE_WINDOW_VERDICTS = {
     "Replication": "GENUINE",
     "RNAModification": "GENUINE",
     "RibosomeAssembly": "GENUINE",
-    "TranscriptionalRegulation": active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
-    "ChromosomeSegregation": active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
-    "Cytokinesis": active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
-    "DNADamage": active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
+    "ChromosomeSegregation": "GENUINE",
+    "TranscriptionalRegulation": active_windows.CLASS_CODE_GAP,
+    "Cytokinesis": active_windows.CLASS_CODE_GAP,
+    "DNADamage": active_windows.CLASS_CODE_GAP,
     "HostInteraction": active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
 }
 
@@ -111,6 +111,15 @@ def test_current_tree_active_window_manifest_checkpoint(process_name: str):
         assert result["bit_identity_pass"] is True
         assert result["karr_active_ticks"] > 0
         assert result["fire_rate_when_karr_active"] is not None
+    elif result["verdict"] == active_windows.CLASS_CODE_GAP:
+        # CODE_GAP rows are re-verified by fully re-running the live bit-identity
+        # replay against the recorded source trace; the manifest classification is
+        # only trusted if the fresh replay independently reproduces a genuine,
+        # Karr-active divergence (not merely an unchanged/stale label).
+        assert manifest_detail["verification_status"] == active_windows.MANIFEST_VERIFY_CODE_GAP
+        assert manifest_detail["fresh_classification"] == active_windows.CLASS_CODE_GAP
+        assert result["bit_identity_pass"] is False
+        assert result["karr_active_ticks"] > 0
     else:
         assert result["verdict"] == active_windows.CLASS_MISSING_ACTIVE_EXTRACTION
         assert (

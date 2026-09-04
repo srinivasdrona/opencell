@@ -24,7 +24,17 @@ def _assert_zero_or_absent_substrate_delta(update: dict[str, Any], wids: Iterabl
 
 
 def test_karr_chromosome_segregation_strict_zero_no_global_fallback() -> None:
-    process = KarrChromosomeSegregationProcess({"segregation_rate_per_s": 0.3})
+    """The process must gate GTP/H2O availability purely from
+    `substrates_allocated`, never falling back to a global `state["substrates"]`
+    read (Karr's per-process `this.substrates` is already the allocated
+    partition; there is no global-pool read in ChromosomeSegregation.m).
+
+    Uses a guarded global `substrates` mapping that raises if GTP or H2O is
+    read. This proves the process gates availability from
+    `substrates_allocated`, while retaining the full state shape expected by
+    the chassis.
+    """
+    process = KarrChromosomeSegregationProcess({})
     blocked_wids = [process.gtp_wid, process.h2o_wid]
 
     substrate_values = {wid: 0.0 for wid in process.substrate_wids}
@@ -32,30 +42,39 @@ def test_karr_chromosome_segregation_strict_zero_no_global_fallback() -> None:
     substrate_values[process.h2o_wid] = 10_000.0
     guarded_substrates = _GuardedSubstrates(substrate_values, blocked_wids)
 
-    protein_counts = {wid: 0.0 for wid in process.monomer_enzyme_wids}
-    complex_counts = {wid: 0.0 for wid in process.complex_enzyme_wids}
-    for wid in process.required_monomer_enzyme_wids:
-        protein_counts[wid] = 10.0
-    for wid in process.required_complex_enzyme_wids:
-        complex_counts[wid] = 10.0
+    protein_counts = {wid: 10.0 for wid in process.monomer_enzyme_wids}
+    complex_counts = {wid: 10.0 for wid in process.complex_enzyme_wids}
+
+    length = process.sequence_len
+    polymerized = {
+        "positions": [0, 0, 0, 0],
+        "strands": [0, 1, 2, 3],
+        "values": [length, length, length, length],
+        "shape": process.chromosome_shape,
+    }
+    linking = {
+        "positions": [0, 0, 0, 0],
+        "strands": [0, 1, 2, 3],
+        "values": [52013, 52013, 52026, 52026],
+        "shape": process.chromosome_shape,
+    }
 
     state = {
         "chromosome": {
-            "replication_state": "complete",
-            "supercoiled": True,
-            "segregation_progress": 0.0,
-            "daughter_pole_positions": {"left": 0.0, "right": 0.0},
-            "segregation_complete": False,
-            "cell_cycle_event": "none",
+            "segregated": False,
+            "polymerizedRegions": polymerized,
+            "linkingNumbers": linking,
         },
         "protein": {"counts": protein_counts},
         "complex": {"counts": complex_counts},
+        # Guarded global pool: reading GTP/H2O here fails the test.
         "substrates": guarded_substrates,
-        "requests": {process.name: {process.gtp_wid: 0.0, process.h2o_wid: 0.0}},
+        # Allocated amount below gtpCost: the process must gate on THIS, not
+        # on the (much larger) guarded global pool above.
         "substrates_allocated": {process.name: {process.gtp_wid: 0.0, process.h2o_wid: 0.0}},
     }
 
     update = process.next_update(1.0, state)
 
-    assert abs(float(update.get("chromosome", {}).get("segregation_progress", 0.0))) <= 1.0e-12
+    assert "segregated" not in update.get("chromosome", {})
     _assert_zero_or_absent_substrate_delta(update, blocked_wids)

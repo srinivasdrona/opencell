@@ -71,11 +71,16 @@ function extract_per_process_traces_v2(process_names, output_subdir, n_ticks, se
 %                                       instead of by path/name heuristics.
 %     per_process_substrate_overrides -- struct keyed by process name, then
 %                                       substrate WID, each leaf a numeric
-%                                       scalar override applied on the REAL
-%                                       process-local substrate vector before
-%                                       calcResourceRequirements_Current() and
-%                                       again after allocation injection but
-%                                       before evolveState().
+%                                       scalar override. For DNADamage this
+%                                       is additionally bound onto the REAL
+%                                       metabolite/setCounts channel the Karr
+%                                       process reads for
+%                                       UVB_radiation/gamma_radiation, then
+%                                       re-applied on the local process
+%                                       substrate vector before
+%                                       calcResourceRequirements_Current()
+%                                       and again after allocation injection
+%                                       but before evolveState().
 %
 % Output file:
 %   data/m1_sources/karr_native/<output_subdir>/<Process>_<n_ticks>ticks.mat
@@ -171,6 +176,7 @@ for i = 1:numel(process_names)
     fprintf('[trace_v2] %s snapshot properties: %s\n', canonical_name, join_props(snapshot_props));
 
     seed_simulation(sim, seed);
+    [sim, applied_condition_overrides] = apply_condition_overrides(sim, proc, canonical_name, extraction_opts);
 
     ok = true;
     error_message = '';
@@ -271,6 +277,11 @@ for i = 1:numel(process_names)
     if ~isempty(extraction_opts.metadata_identity_json)
         metadata.extraction_identity_json = extraction_opts.metadata_identity_json;
     end
+    if ~isempty(applied_condition_overrides)
+        metadata.condition_override_metabolite_wids = {applied_condition_overrides.wid};
+        metadata.condition_override_values = [applied_condition_overrides.value];
+        metadata.condition_override_object_compartment_indexs = int32([applied_condition_overrides.object_compartment_idx]);
+    end
 
     % M4 stride/window-boundary metadata contract (docs/phase_f/l2_event/
     % EVENT_WINDOW_EXTRACTOR_CONTRACT.md) -- only written when the caller
@@ -361,6 +372,7 @@ props = intersect(properties(proc), { ...
     'inactiveMonomers', 'matureMonomers', ...
     'inactiveComplexs', 'matureComplexs', ...
     'complexs', 'monomers', 'rnas', 'RNAs', ...
+    'boundTFs', 'tfBoundPromoters', ...
 });
 end
 
@@ -563,6 +575,66 @@ if ~isfield(opts, 'per_process_substrate_overrides') || isempty(opts.per_process
 end
 end
 
+function [sim, applied] = apply_condition_overrides(sim, proc, canonical_name, extraction_opts)
+applied = struct('wid', {}, 'value', {}, 'object_compartment_idx', {});
+if ~isfield(extraction_opts, 'per_process_substrate_overrides') || isempty(fieldnames(extraction_opts.per_process_substrate_overrides))
+    return;
+end
+
+override_values = select_process_substrate_overrides(extraction_opts.per_process_substrate_overrides, proc);
+if isempty(override_values)
+    return;
+end
+if ~strcmp(canonical_name, 'DNADamage')
+    error('extract_per_process_traces_v2:unsupported_condition_overrides', ...
+        'per_process_substrate_overrides are only supported for DNADamage in this extractor (requested process ''%s'')', canonical_name);
+end
+
+mets = sim.state_metabolite;
+n_metabolites = size(mets.counts, 1);
+n_compartments = size(mets.counts, 2);
+substrate_wids = matlab_cellstr(proc.substrateWholeCellModelIDs);
+override_fields = fieldnames(override_values);
+for i = 1:numel(override_fields)
+    wid = override_fields{i};
+    value = override_values.(wid);
+    if ~isnumeric(value) || ~isscalar(value) || ~isfinite(value) || value < 0
+        error('extract_per_process_traces_v2:invalid_condition_override_value', ...
+            'per_process_substrate_overrides.%s must be a finite nonnegative scalar', wid);
+    end
+
+    local_idx = find(strcmp(substrate_wids, wid));
+    if isempty(local_idx)
+        error('extract_per_process_traces_v2:unknown_condition_override_wid', ...
+            'process ''%s'' has no substrate WholeCellModelID ''%s''', canonical_name, wid);
+    end
+    if numel(local_idx) ~= 1
+        error('extract_per_process_traces_v2:ambiguous_condition_override_wid', ...
+            'process ''%s'' maps substrate WholeCellModelID ''%s'' to %d local indices', canonical_name, wid, numel(local_idx));
+    end
+
+    object_compartment_idx = proc.substrateMetaboliteGlobalCompartmentIndexs(local_idx);
+    [object_idx, compartment_idx] = ind2sub([n_metabolites n_compartments], object_compartment_idx);
+
+    keep = mets.setCounts(:, edu.stanford.covert.cell.sim.constant.Condition.objectCompartmentIndexs) ~= object_compartment_idx;
+    mets.setCounts = mets.setCounts(keep, :);
+
+    row = zeros(1, 6);
+    row(edu.stanford.covert.cell.sim.constant.Condition.objectIndexs) = object_idx;
+    row(edu.stanford.covert.cell.sim.constant.Condition.compartmentIndexs) = compartment_idx;
+    row(edu.stanford.covert.cell.sim.constant.Condition.valueIndexs) = double(value);
+    row(edu.stanford.covert.cell.sim.constant.Condition.initialTimeIndexs) = 0;
+    row(edu.stanford.covert.cell.sim.constant.Condition.finalTimeIndexs) = Inf;
+    row(edu.stanford.covert.cell.sim.constant.Condition.objectCompartmentIndexs) = object_compartment_idx;
+    mets.setCounts = [mets.setCounts; row];
+    mets.counts(object_compartment_idx) = double(value);
+
+    applied(end + 1).wid = wid; %#ok<AGROW>
+    applied(end).value = double(value);
+    applied(end).object_compartment_idx = object_compartment_idx;
+end
+end
+
 function mod = apply_process_substrate_overrides(mod, extraction_opts)
 % apply_process_substrate_overrides  Apply any requested per-process
 % substrate overrides to the REAL process-local substrate vector.
@@ -719,6 +791,27 @@ switch anchor_opts.signal_kind
         end
         value = container.(field_name);  % second dereference, on a validated temporary
         snapshot.(field_name) = logical(value);
+
+        if strcmp(container_name, 'host')
+            host_scalar_fields = {'isBacteriumAdherent', 'isNFkBActivated', 'isInflammatoryResponseActivated'};
+            for k = 1:numel(host_scalar_fields)
+                host_field = host_scalar_fields{k};
+                has_host_field = (isobject(container) && isprop(container, host_field)) || ...
+                                 (isstruct(container) && isfield(container, host_field));
+                if has_host_field
+                    snapshot.(host_field) = logical(container.(host_field));
+                end
+            end
+
+            has_tlr_field = (isobject(container) && isprop(container, 'isTLRActivated')) || ...
+                            (isstruct(container) && isfield(container, 'isTLRActivated'));
+            if has_tlr_field
+                tlr_state = logical(container.isTLRActivated);
+                for k = 1:numel(tlr_state)
+                    snapshot.(sprintf('isTLRActivated_%d', k)) = logical(tlr_state(k));
+                end
+            end
+        end
 
     otherwise
         error('extract_per_process_traces_v2:invalid_signal_kind', ...

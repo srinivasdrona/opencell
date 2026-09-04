@@ -2,9 +2,9 @@
   "generated_by": "scripts/l21_active_window_audit.py selective-audit aggregation",
   "pytest_replay_command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_dna_repair_l2_replay.py::test_karr_dna_repair_l2_replay_identity_per_tick tests/vivarium/test_karr_metabolism_l2_replay.py::test_karr_metabolism_l2_replay_identity_per_tick tests/vivarium/test_karr_protein_decay_l2_replay.py::test_karr_protein_decay_l2_replay_identity_per_tick tests/vivarium/test_karr_replication_l2_replay.py::test_karr_replication_l2_replay_identity_per_tick tests/vivarium/test_karr_rna_modification_l2_replay.py::test_karr_rna_modification_l2_event_replay tests/vivarium/test_karr_ribosome_assembly_l2_replay.py::test_karr_ribosome_assembly_l2_event_replay",
   "counts": {
-    "EXISTING_WINDOW_PASS": 6,
-    "CODE_GAP": 0,
-    "MISSING_ACTIVE_EXTRACTION": 5
+    "EXISTING_WINDOW_PASS": 7,
+    "CODE_GAP": 3,
+    "MISSING_ACTIVE_EXTRACTION": 1
   },
   "rows": [
     {
@@ -157,116 +157,323 @@
     },
     {
       "process": "TranscriptionalRegulation",
-      "classification": "MISSING_ACTIVE_EXTRACTION",
-      "existing_trace_suffices": false,
-      "activity_predicate": "projected Karr replay observables delta on accepted trace surface",
+      "classification": "CODE_GAP",
+      "existing_trace_suffices": true,
+      "activity_predicate": "source-faithful TF-binding deltas (`boundTFs` / `tfBoundPromoters`)",
       "source": {
-        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/TranscriptionalRegulation_100ticks.mat",
-        "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2/TranscriptionalRegulation_100ticks.mat",
-        "sha256": "9f9984839056fc70e8c38929eb7926a95f00315cc7a103a3ae17d93fea1cbb5c",
-        "trace_family": "canonical_standard",
-        "source_manifest": "direct_standard_fallback"
-      },
-      "trace_window": {
-        "n_ticks": 100,
-        "tick_offset": null,
-        "first_active_local_tick": null,
-        "first_active_absolute_tick": null,
-        "active_tick_count": 0,
-        "first_active_detail": null
-      },
-      "mechanical_scan": {
-        "scanned_candidate_count": 1,
-        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process TranscriptionalRegulation --candidate-limit 1 --skip-replay --write-json <temp>"
-      },
-      "extraction_request": "If all canonical standard seeds remain inactive, request the earliest non-trivial per_process_traces_v2 seed for TranscriptionalRegulation."
-    },
-    {
-      "process": "ChromosomeSegregation",
-      "classification": "MISSING_ACTIVE_EXTRACTION",
-      "existing_trace_suffices": false,
-      "activity_predicate": "projected Karr replay observables delta on accepted trace surface",
-      "source": {
-        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/ChromosomeSegregation_100ticks.mat",
-        "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2/ChromosomeSegregation_100ticks.mat",
-        "sha256": "18e03828918b7091e9531e1c01a25c0cd5ac44523330409e6909dec2bda73fe2",
-        "trace_family": "canonical_standard",
-        "source_manifest": "direct_standard_fallback"
-      },
-      "trace_window": {
-        "n_ticks": 100,
-        "tick_offset": null,
-        "first_active_local_tick": null,
-        "first_active_absolute_tick": null,
-        "active_tick_count": 0,
-        "first_active_detail": null
-      },
-      "mechanical_scan": {
-        "scanned_candidate_count": 1,
-        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process ChromosomeSegregation --candidate-limit 1 --skip-replay --write-json <temp>"
-      },
-      "extraction_request": "Request a late-cell-cycle active ChromosomeSegregation window; the canonical birth-window cohort remains inactive."
-    },
-    {
-      "process": "Cytokinesis",
-      "classification": "MISSING_ACTIVE_EXTRACTION",
-      "existing_trace_suffices": false,
-      "activity_predicate": "event-window scalar deltas: chromosome_segregated/pinchedDiameter/ftsZ ring channels",
-      "source": {
-        "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
-        "repo_relative_hint": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
-        "sha256": "de09b63ccd190c4e767bcf0eabe174065e880fa56d411ab4452fb51caa9cf1bd",
+        "path": "/mnt/e/opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/TranscriptionalRegulation_4000ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/TranscriptionalRegulation_4000ticks.mat",
+        "sha256": "1d35fd269b6da5aa0d9b0f0e439bf6f4194b9b0d12eb4c8f2fe82b8323e49913",
         "trace_family": "event_window",
-        "source_manifest": "docs/phase_f/l2_event/evidence_bundle/Cytokinesis/input_manifest.json"
+        "source_manifest": null
       },
       "trace_window": {
         "n_ticks": 4000,
         "tick_offset": 0.0,
-        "first_active_local_tick": 128,
-        "first_active_absolute_tick": 27556,
-        "active_tick_count": null,
+        "first_active_local_tick": 11,
+        "first_active_absolute_tick": 11.0,
+        "active_tick_count": 56,
         "first_active_detail": {
-          "observable": "pinchedDiameter",
-          "detail_path": "first_strict_decrease",
-          "index": null,
-          "before": null,
-          "after": null
+          "observable": "boundTFs",
+          "detail_path": "boundTFs",
+          "index": 3,
+          "before": 0.0,
+          "after": 1.0
         }
       },
       "mechanical_scan": {
-        "evidence_summary": "docs/phase_f/l2_event/evidence_bundle/Cytokinesis/SUMMARY.json",
-        "evidence_result": "docs/phase_f/l2_event/evidence_bundle/Cytokinesis/result.json",
-        "structural_verdict": "NOT_APPLICABLE",
-        "karr_seed_count": 1,
-        "oc_seed_count": 0
+        "scanned_candidate_count": 2,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process TranscriptionalRegulation --write-json <temp>"
       },
-      "extraction_request": "Run the authorized Cytokinesis onset-span survey, then extract the remaining 49 event-window seeds for the same completion-anchored contract before any L2.1 batch claim."
+      "replay_evidence": {
+        "type": "pytest+audit_tool_honest_replay",
+        "nodeid": "tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py::test_karr_transcriptional_regulation_l2_event_replay[event_seed_0]",
+        "outcome": "code_gap",
+        "command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py::test_karr_transcriptional_regulation_l2_event_replay[event_seed_0]"
+      },
+      "code_gap_evidence": {
+        "bit_identity": {
+          "pass_all_compared_ticks": false,
+          "compared_surfaces": [
+            "substrates",
+            "enzymes",
+            "boundEnzymes",
+            "boundTFs",
+            "tfBoundPromoters"
+          ],
+          "first_mismatch_tick": 0,
+          "first_mismatch_observable": "tfBoundPromoters",
+          "first_mismatch_index": null,
+          "first_mismatch_oc_val": 130.0,
+          "first_mismatch_karr_val": 34.0,
+          "first_mismatch_diff": 96.0,
+          "compared_tick_count": 4000
+        },
+        "honest_replay": {
+          "karr_active_ticks": 56,
+          "oc_active_ticks": 4000,
+          "oc_active_on_karr_active_ticks": 56,
+          "first_karr_active_tick": 11,
+          "first_karr_active_detail": {
+            "observable": "boundTFs",
+            "detail_path": "boundTFs",
+            "index": 3,
+            "before": 0.0,
+            "after": 1.0
+          },
+          "first_oc_active_tick": 0,
+          "first_measured_mismatch": {
+            "observable": "tfBoundPromoters",
+            "detail_path": "shape",
+            "index": null,
+            "before": 130.0,
+            "after": 34.0
+          }
+        },
+        "code_gap_anchor": {
+          "first_karr_active_tick": 11,
+          "first_karr_active_detail": {
+            "observable": "boundTFs",
+            "detail_path": "boundTFs",
+            "index": 3,
+            "before": 0.0,
+            "after": 1.0
+          },
+          "first_measured_mismatch": {
+            "observable": "tfBoundPromoters",
+            "detail_path": "shape",
+            "index": null,
+            "before": 130.0,
+            "after": 34.0
+          }
+        }
+      }
     },
     {
-      "process": "DNADamage",
-      "classification": "MISSING_ACTIVE_EXTRACTION",
-      "existing_trace_suffices": false,
-      "activity_predicate": "chromosome primary_projection damage-field delta_nnz",
+      "process": "ChromosomeSegregation",
+      "classification": "EXISTING_WINDOW_PASS",
+      "existing_trace_suffices": true,
+      "activity_predicate": "source-faithful chromosome-segregation completion event (`chromosome.segregated` boolean transition, projected onto `substrates`)",
       "source": {
-        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/DNADamage_100ticks.mat",
-        "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2/DNADamage_100ticks.mat",
-        "sha256": "996043f7cabbce69918d4b85e45ff4d7a0b420b482be9fa7c1865e531a75be23",
-        "trace_family": "canonical_standard",
-        "source_manifest": null
+        "path": "/mnt/e/opencell-worktrees/fix-l21-chromseg-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/ChromosomeSegregation_100ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/fix-l21-chromseg-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/ChromosomeSegregation_100ticks.mat",
+        "sha256": "84d78428490411f5b5cf7271f3ea6dbb62bc1a57b2654ef433ed5f1a8c2c38a1",
+        "trace_family": "event_window",
+        "source_manifest": "local_event_window"
       },
       "trace_window": {
         "n_ticks": 100,
-        "tick_offset": null,
-        "first_active_local_tick": null,
-        "first_active_absolute_tick": null,
-        "active_tick_count": 0,
-        "first_active_detail": null
+        "tick_offset": 0.0,
+        "first_active_local_tick": 99,
+        "first_active_absolute_tick": 99.0,
+        "active_tick_count": 1,
+        "first_active_detail": {
+          "observable": "substrates",
+          "detail_path": "substrates",
+          "index": 0,
+          "before": 11.0,
+          "after": 10.0
+        }
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 2,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process ChromosomeSegregation --write-json <temp>"
+      },
+      "replay_evidence": {
+        "type": "pytest_exact_bit_identity_plus_audit_tool_honest_replay",
+        "nodeid": "tests/vivarium/test_karr_chromosome_segregation_l2_replay.py::test_karr_chromosome_segregation_l2_event_replay[event_seed_0]",
+        "outcome": "passed",
+        "command": "bin\\\\oc-pytest.cmd -q \"tests/vivarium/test_karr_chromosome_segregation_l2_replay.py::test_karr_chromosome_segregation_l2_event_replay[event_seed_0]\"",
+        "caveat": "Promoted CODE_GAP -> GENUINE (2026-09-03, commit 2c139f7) after landing a literal structural port of ChromosomeSegregation.m's calcResourceRequirements_Current/evolveState gates (full replication, all-5-enzymes-including-topoIV, chromosome supercoiled derived from real polymerizedRegions/linkingNumbers hidden state, exact GTP+H2O->GDP+PI+H stoichiometry) plus the chromosome.segregated literal field. The process-local nodeid now genuinely passes bit-identical across all 100 ticks of this window, including the added 'segregated' observable (the literal Chromosome.m field, not a proxy). The audit tool's own internal replay (scripts/l21_active_window_audit.py, compared_surfaces=[substrates, enzymes, boundEnzymes] -- it does not yet score the 'segregated' observable) independently confirms pass_all_compared_ticks=true with zero re-diagnosis: classification=EXISTING_WINDOW_PASS, honest_replay.oc_active_on_karr_active_ticks=1 (was 0 pre-fix)."
+      }
+    },
+    {
+      "process": "Cytokinesis",
+      "classification": "CODE_GAP",
+      "existing_trace_suffices": true,
+      "activity_predicate": "event-window scalar deltas: chromosome_segregated/pinchedDiameter/ftsZ ring channels",
+      "source": {
+        "path": "/mnt/e/opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
+        "sha256": "c53fd34994f2d049fbfadf77ec5d4319fdc5bccd2cfd97c75d393705e99bec96",
+        "trace_family": "event_window",
+        "source_manifest": "local_event_window"
+      },
+      "trace_window": {
+        "n_ticks": 4000,
+        "tick_offset": 0.0,
+        "first_active_local_tick": 226,
+        "first_active_absolute_tick": 226.0,
+        "active_tick_count": 2114,
+        "first_active_detail": {
+          "observable": "ftsZRing_numEdgesOneStraight",
+          "detail_path": "ftsZRing_numEdgesOneStraight",
+          "index": 0,
+          "before": 0.0,
+          "after": 9.0
+        }
       },
       "mechanical_scan": {
         "scanned_candidate_count": 1,
-        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process DNADamage --candidate-limit 1 --skip-replay --write-json <temp>"
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process Cytokinesis --write-json <temp>"
       },
-      "extraction_request": "Request a source-backed stimulus-conditioned DNADamage active window (UVB_radiation or gamma_radiation); existing standard/full-cycle traces are no-stimulus."
+      "replay_evidence": {
+        "type": "pytest+audit_tool_honest_replay",
+        "nodeid": "tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay[event_seed_0]",
+        "outcome": "code_gap",
+        "command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay[event_seed_0]"
+      },
+      "code_gap_evidence": {
+        "bit_identity": {
+          "pass_all_compared_ticks": false,
+          "compared_surfaces": [
+            "substrates",
+            "enzymes",
+            "boundEnzymes",
+            "pinchedDiameter",
+            "ftsZRing_numEdgesOneStraight",
+            "ftsZRing_numEdgesTwoStraight",
+            "ftsZRing_numEdgesTwoBent",
+            "ftsZRing_numResidualBent"
+          ],
+          "first_mismatch_tick": 226,
+          "first_mismatch_observable": "ftsZRing_numEdgesOneStraight",
+          "first_mismatch_index": 0,
+          "first_mismatch_oc_val": 0.0,
+          "first_mismatch_karr_val": 9.0,
+          "first_mismatch_diff": -9.0,
+          "compared_tick_count": 4000
+        },
+        "honest_replay": {
+          "karr_active_ticks": 2114,
+          "oc_active_ticks": 4000,
+          "oc_active_on_karr_active_ticks": 2114,
+          "first_karr_active_tick": 226,
+          "first_karr_active_detail": {
+            "observable": "ftsZRing_numEdgesOneStraight",
+            "detail_path": "ftsZRing_numEdgesOneStraight",
+            "index": 0,
+            "before": 0.0,
+            "after": 9.0
+          },
+          "first_oc_active_tick": 0,
+          "first_measured_mismatch": {
+            "observable": "ftsZRing_numEdgesOneStraight",
+            "detail_path": "ftsZRing_numEdgesOneStraight",
+            "index": 0,
+            "before": 0.0,
+            "after": 9.0
+          }
+        },
+        "code_gap_anchor": {
+          "first_karr_active_tick": 226,
+          "first_karr_active_detail": {
+            "observable": "ftsZRing_numEdgesOneStraight",
+            "detail_path": "ftsZRing_numEdgesOneStraight",
+            "index": 0,
+            "before": 0.0,
+            "after": 9.0
+          },
+          "first_measured_mismatch": {
+            "observable": "ftsZRing_numEdgesOneStraight",
+            "detail_path": "ftsZRing_numEdgesOneStraight",
+            "index": 0,
+            "before": 0.0,
+            "after": 9.0
+          }
+        }
+      }
+    },
+    {
+      "process": "DNADamage",
+      "classification": "CODE_GAP",
+      "existing_trace_suffices": false,
+      "activity_predicate": "chromosome primary_projection damage-field delta_nnz",
+      "source": {
+        "path": "/mnt/e/opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s2000/DNADamage_20ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s2000/DNADamage_20ticks.mat",
+        "sha256": "55983422c7547b1e864fc18db0a998b3a3721ca28ac22a7291e64e9eda1e8ae7",
+        "trace_family": "event_window",
+        "source_manifest": "per_process_traces_v2_event_s2000"
+      },
+      "trace_window": {
+        "n_ticks": 20,
+        "tick_offset": 0.0,
+        "first_active_local_tick": 4,
+        "first_active_absolute_tick": 4.0,
+        "active_tick_count": 1,
+        "first_active_detail": {
+          "observable": "chromosome",
+          "detail_path": "intrastrandCrossLinks.delta_nnz",
+          "index": null,
+          "before": 0.0,
+          "after": 1.0
+        }
+      },
+      "mechanical_scan": {
+        "scanned_candidate_count": 1,
+        "command": "bin\\oc-py.cmd tmp/audit_dna_seed2000_manual.py  # calls l21_active_window_audit._summarize_trace_candidate + _classify_live_trace_candidate directly on the copied trace; DIRECT_SPECIAL_TRACES['DNADamage'] only enumerates the seed0 path so the CLI's automatic candidate discovery cannot see seed2000"
+      },
+      "replay_evidence": {
+        "type": "pytest_nodeid_weaker_aggregate_check_plus_audit_tool_strict_bit_identity",
+        "nodeid": "tests/vivarium/test_karr_dna_damage_l2_replay.py::test_karr_dna_damage_l2_event_replay[event_seed_2000]",
+        "outcome": "passed",
+        "command": "bin\\oc-pytest.cmd -q \"tests/vivarium/test_karr_dna_damage_l2_replay.py::test_karr_dna_damage_l2_event_replay[event_seed_2000]\"",
+        "caveat": "The process-local pytest nodeid genuinely PASSES, but its chromosome/sparse-field acceptance criterion is a weaker aggregate check (per-field: if Karr recorded any damage event of a type anywhere in the window, OC must have recorded at least one event of that type anywhere in the window too), not a strict per-tick bit-identity assertion -- unlike its substrate/enzyme count comparison, which IS bit-exact. The CODE_GAP classification recorded here comes from the stricter, independent per-tick bit-identity replay performed directly via l21_active_window_audit._classify_live_trace_candidate (see code_gap_evidence below), which found OC's chromosome intrastrandCrossLinks.delta_nnz diverges from Karr's specific recorded realization starting at tick=0 (oc=2.0 vs karr=0.0), while Karr's own trace shows no real activity until tick=4. OC is active on 20/20 ticks vs Karr's 1/20 -- consistent with OC's stochastic damage-event selection not being RNG-lockstepped bit-for-bit with Karr's MATLAB Statistics provider draws, the same class of gap documented for Cytokinesis's residual ring-hydrolysis divergence.",
+        "note_postmerge_2026_09_03": "POST-MERGE RE-VERIFICATION (2026-09-03): merged local main (4054fd9) into this branch to bring opencell/vivarium/karr_dna_damage.py from the stale pre-merge blob (which the evidence above was computed against) to the accepted implementation (685 insertions / 92 deletions of literal Karr fixes: sampleAccessibleSites motif-matched accessible-site search replacing the GC-proxy sampler, dsDNA partner-strand footprint occlusion, and a per-reaction rate law -- the same code whose aggregate L2.2 evidence is 'Karr 99 vs OC 85' damage events across the accepted 55-seed corpus, see opencell/provenance/llm_interactions.jsonl event_id sha256:5477d1bffa982d4e8c15fa3cb973dcfc00ef1860e2583b40bf29da513f627070). Re-ran the exact same fixed audit tool (l21_active_window_audit._classify_live_trace_candidate, chromosome-replace-semantics fix intact/unchanged by the merge) against this identical seed2000 trace (sha256 unchanged: 55983422c7547b1e...). Classification is UNCHANGED (CODE_GAP), but the underlying numbers moved because production code changed: first_mismatch_tick 0->2, first_mismatch_oc_val 2.0->1.0 (karr_val unchanged at 0.0). honest_replay counts unchanged: karr_active_ticks=1/20 (first at tick 4), oc_active_ticks=20/20 (first at tick 0). OC still fires a nonzero chromosome delta on every tick in this window while Karr's real recorded realization is active on only 1 of 20 ticks -- this is a genuine, reproducible per-tick over-firing in the CURRENT accepted rate law, not an audit artifact and not attributable to the merge. Exact replay nodeid tests/vivarium/test_karr_dna_damage_l2_replay.py::test_karr_dna_damage_l2_event_replay[event_seed_2000] re-run and still PASSES (its chromosome acceptance criterion remains the weaker per-field aggregate check, not per-tick bit-identity -- see replay_evidence.caveat above). Manifest row verification (l21_active_window_audit.verify_active_window_manifest_row) confirms verification_status=VERIFIED_CODE_GAP, fresh_classification=CODE_GAP, matching recorded_classification. Per explicit instruction, production DNADamage code was NOT diagnosed or edited this turn -- only tested against as merged. Promotion to GENUINE does not apply; CODE_GAP evidence corrected in place, no fields silently left stale."
+      },
+      "code_gap_evidence": {
+        "audit_tool_activity_computation_fix_note": "l21_active_window_audit.py's _honest_replay originally derived OC-active-tick counts from raw process.next_update() dict truthiness (_recursive_update_nontrivial), which for CHROMOSOME_ACTIVITY_TOKENS processes could over-count activity from an always-present chromosome sparse-field replacement payload (e.g. its unconditional nonzero shape tuple) even on ticks where no field value actually moved, and separately relied on a generic recursive dict-merge (_deep_merge_replace) for chromosome sparse fields rather than each process's own authoritative REPLACE semantics. Both were fixed generically (_apply_chromosome_sparse_replace + _chromosome_tokens_active, gated on CHROMOSOME_ACTIVITY_TOKENS, with dedicated regression tests proving an unchanged non-empty sparse replacement is correctly flagged inactive and a one-edge addition is correctly flagged active). Re-running the fixed audit against this exact seed2000 trace reproduced byte-identical evidence (oc_active_ticks=20/20, first mismatch at tick=0 intrastrandCrossLinks.delta_nnz oc=2.0 vs karr=0.0) -- confirming the CODE_GAP finding for this trace was NOT an artifact of the activity-computation bug: OC's damage-rate law genuinely fires a nonzero chromosome delta on every tick at this trace's specific (non-integer, elevated) injected radiation dose, independently reproduced via before/after chromosome-token projection values rather than raw update-dict presence. Full strict rubric suite (14/14) re-verified green after the fix, including DNARepair/Replication (the other two CHROMOSOME_ACTIVITY_TOKENS processes), confirming no regression to already-passing rows.",
+        "bit_identity": {
+          "pass_all_compared_ticks": false,
+          "compared_surfaces": [
+            "substrates",
+            "enzymes",
+            "boundEnzymes",
+            "repair_event_present",
+            "damagedBases.delta_nnz",
+            "abasicSites.delta_nnz",
+            "strandBreaks.delta_nnz",
+            "damagedSugarPhosphates.delta_nnz",
+            "intrastrandCrossLinks.delta_nnz",
+            "gapSites.delta_nnz"
+          ],
+          "first_mismatch_tick": 2,
+          "first_mismatch_observable": "intrastrandCrossLinks.delta_nnz",
+          "first_mismatch_index": 0,
+          "first_mismatch_oc_val": 1.0,
+          "first_mismatch_karr_val": 0.0,
+          "first_mismatch_diff": 1.0,
+          "compared_tick_count": 20
+        },
+        "honest_replay": {
+          "karr_active_ticks": 1,
+          "oc_active_ticks": 20,
+          "oc_active_on_karr_active_ticks": 1,
+          "first_karr_active_tick": 4,
+          "first_karr_active_detail": {
+            "observable": "chromosome",
+            "detail_path": "intrastrandCrossLinks.delta_nnz",
+            "index": null,
+            "before": 0.0,
+            "after": 1.0
+          },
+          "first_oc_active_tick": 0,
+          "first_measured_mismatch": {
+            "observable": "intrastrandCrossLinks.delta_nnz",
+            "detail_path": "intrastrandCrossLinks.delta_nnz",
+            "index": 0,
+            "before": 1.0,
+            "after": 0.0
+          }
+        },
+        "code_gap_anchor": {
+          "tick": 2,
+          "observable": "intrastrandCrossLinks.delta_nnz",
+          "oc_value": 1.0,
+          "karr_value": 0.0
+        }
+      }
     },
     {
       "process": "HostInteraction",

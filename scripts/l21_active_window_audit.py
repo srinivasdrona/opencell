@@ -10,6 +10,7 @@ import math
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -40,7 +41,7 @@ from l2_replay_common import (  # type: ignore
     refresh_allocator_views,
 )
 
-from opencell.state.chromosome_store import ChromosomeStore, _read_matlab_dataset
+from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, _read_matlab_dataset
 
 TARGET_PROCESSES = (
     "DNARepair",
@@ -85,12 +86,25 @@ RIBOSOME_EVENT_MANIFEST = (
 )
 
 DIRECT_SPECIAL_TRACES: dict[str, tuple[Path, ...]] = {
+    "TranscriptionalRegulation": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "TranscriptionalRegulation_4000ticks.mat",
+    ),
+    "ChromosomeSegregation": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "ChromosomeSegregation_100ticks.mat",
+    ),
+    "Cytokinesis": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "Cytokinesis_4000ticks.mat",
+    ),
     "RNAModification": (
         Path("/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2_event_s000/RNAModification_100ticks.mat"),
     ),
     "DNADamage": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "DNADamage_20ticks.mat",
         Path("/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/DNADamage_100ticks.mat"),
         Path("/mnt/e/opencell/data/m1_sources/karr_native/dnadamage_fullcycle/DNADamage_32400ticks.mat"),
+    ),
+    "HostInteraction": (
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "HostInteraction_100ticks.mat",
     ),
 }
 
@@ -131,6 +145,18 @@ CUSTOM_ACTIVITY_OBSERVABLES: dict[str, tuple[str, ...]] = {
         "ftsZRing_numResidualBent",
         "substrates",
     ),
+    "HostInteraction": (
+        "isBacteriumAdherent",
+        "isTLRActivated_1",
+        "isTLRActivated_2",
+        "isTLRActivated_3",
+        "isNFkBActivated",
+        "isInflammatoryResponseActivated",
+    ),
+    "TranscriptionalRegulation": (
+        "boundTFs",
+        "tfBoundPromoters",
+    ),
     "RibosomeAssembly": ("complexs", "RNAs", "monomers", "substrates"),
 }
 
@@ -141,6 +167,18 @@ CUSTOM_COMPARE_OBSERVABLES: dict[str, tuple[str, ...]] = {
         "ftsZRing_numEdgesTwoStraight",
         "ftsZRing_numEdgesTwoBent",
         "ftsZRing_numResidualBent",
+    ),
+    "HostInteraction": (
+        "isBacteriumAdherent",
+        "isTLRActivated_1",
+        "isTLRActivated_2",
+        "isTLRActivated_3",
+        "isNFkBActivated",
+        "isInflammatoryResponseActivated",
+    ),
+    "TranscriptionalRegulation": (
+        "boundTFs",
+        "tfBoundPromoters",
     ),
     "RibosomeAssembly": ("RNAs",),
 }
@@ -154,12 +192,18 @@ CUSTOM_VECTOR_SURFACES: dict[str, dict[str, tuple[str, ...]]] = {
         "ftsZRing_numEdgesTwoBent": ("ftsZRing", "numEdgesTwoBent"),
         "ftsZRing_numResidualBent": ("ftsZRing", "numResidualBent"),
     },
+    "HostInteraction": {
+        "isBacteriumAdherent": ("cell", "host_attached"),
+    },
     "RibosomeAssembly": {
         "RNAs": ("rna", "counts"),
     },
 }
 
 CUSTOM_WID_ATTRS: dict[str, dict[str, str]] = {
+    "TranscriptionalRegulation": {
+        "boundTFs": "tf_wids",
+    },
     "RibosomeAssembly": {
         "RNAs": "rna_subunit_wids",
     },
@@ -170,11 +214,11 @@ PROCESS_ACTIVITY_PREDICATE_TEXT: dict[str, str] = {
     "Metabolism": "substrates delta on projected Karr replay surface",
     "ProteinDecay": "substrates/monomers/complexs delta on projected Karr replay surface",
     "Replication": "chromosome primary_projection polymerizedRegions delta_value_sum_strand_1..4 + delta_nnz",
-    "TranscriptionalRegulation": "projected Karr replay observables delta on accepted trace surface",
+    "TranscriptionalRegulation": "source-faithful TF-binding deltas (`boundTFs` / `tfBoundPromoters`)",
     "ChromosomeSegregation": "projected Karr replay observables delta on accepted trace surface",
     "Cytokinesis": "event-window scalar deltas: chromosome_segregated/pinchedDiameter/ftsZ ring channels",
     "DNADamage": "chromosome primary_projection damage-field delta_nnz",
-    "HostInteraction": "projected Karr replay observables delta on accepted trace surface",
+    "HostInteraction": "source-faithful host boolean deltas (adherence/TLR/NFkB/inflammatory-response)",
     "RNAModification": "modifiedRNAs/unmodifiedRNAs projected delta on event-window trace",
     "RibosomeAssembly": "complexs/RNAs/monomers projected delta on event-window trace",
 }
@@ -497,6 +541,12 @@ def _infer_custom_wids(process: Any, process_name: str, observable: str, vector_
     return [f"{observable}_{idx}" for idx in range(vector_len)]
 
 
+@lru_cache(maxsize=1)
+def _tr_surface_order() -> tuple[list[str], list[str]]:
+    process = _PROCESS_SPECS["TranscriptionalRegulation"].process_cls({})
+    return list(getattr(process, "tf_wids", [])), list(getattr(process, "tu_wids", []))
+
+
 def _overlay_custom_observable(
     *,
     state: dict[str, Any],
@@ -505,6 +555,16 @@ def _overlay_custom_observable(
     process_name: str,
     wids: list[str],
 ) -> None:
+    if process_name == "TranscriptionalRegulation":
+        return
+
+    if process_name == "HostInteraction":
+        if observable == "isBacteriumAdherent":
+            attached = bool(float(vector[0])) if vector.size else False
+            _deep_set(state, ("cell", "host_attached"), attached)
+            _deep_set(state, ("cell", "host_adhesion_strength"), 1.0 if attached else 0.0)
+        return
+
     path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
     if path is None:
         raise KeyError(f"No custom overlay path for {process_name}:{observable}")
@@ -530,6 +590,43 @@ def _project_custom_observable(
     process_name: str,
     wids: list[str],
 ) -> np.ndarray:
+    if process_name == "TranscriptionalRegulation":
+        binding_store = state.get("tf_binding", {})
+        if not isinstance(binding_store, dict):
+            binding_store = {}
+        if observable == "boundTFs":
+            tf_wids = list(wids)
+            out = np.zeros(len(tf_wids), dtype=np.float64)
+            for idx, tf_wid in enumerate(tf_wids):
+                per_tf = binding_store.get(tf_wid, {})
+                if not isinstance(per_tf, dict):
+                    continue
+                out[idx] = float(sum(float(value) for value in per_tf.values()))
+            return out
+        if observable == "tfBoundPromoters":
+            tf_wids, tu_wids = _tr_surface_order()
+            flattened: list[float] = []
+            for tf_wid in tf_wids:
+                per_tf = binding_store.get(tf_wid, {})
+                if not isinstance(per_tf, dict):
+                    per_tf = {}
+                for tu_wid in tu_wids:
+                    flattened.append(float(per_tf.get(tu_wid, 0.0)))
+            return np.asarray(flattened, dtype=np.float64)
+
+    if process_name == "HostInteraction":
+        if observable == "isBacteriumAdherent":
+            attached = bool(_deep_get(state, ("cell", "host_attached")))
+            return np.asarray([1.0 if attached else 0.0], dtype=np.float64)
+        if observable in {
+            "isTLRActivated_1",
+            "isTLRActivated_2",
+            "isTLRActivated_3",
+            "isNFkBActivated",
+            "isInflammatoryResponseActivated",
+        }:
+            return np.zeros(len(wids), dtype=np.float64)
+
     path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
     if path is None:
         raise KeyError(f"No custom projection path for {process_name}:{observable}")
@@ -803,6 +900,8 @@ def _event_candidates_from_manifest(manifest_path: Path) -> list[tuple[Path, str
 def _special_candidates(process_name: str) -> list[tuple[Path, str | None, str | None]]:
     candidates: list[tuple[Path, str | None, str | None]] = []
     if process_name == "Cytokinesis":
+        for path in DIRECT_SPECIAL_TRACES.get(process_name, ()):
+            candidates.append((path, None, "local_event_window"))
         payload = _load_json(CYTOKINESIS_EVENT_MANIFEST)
         for row in payload.get("inputs", []):
             rel = row["path"]
@@ -907,6 +1006,64 @@ def _apply_non_count_updates(state: dict[str, Any], update: dict[str, Any]) -> N
             state[key] = copy.deepcopy(value)
 
 
+def _apply_chromosome_sparse_replace(
+    state: dict[str, Any],
+    chromosome_update: dict[str, Any],
+    *,
+    shape: tuple[int, int],
+) -> None:
+    """Apply a process's chromosome sparse-triplet fields with REPLACE (not
+    recursive-merge) semantics, matching every CHROMOSOME_ACTIVITY_TOKENS
+    process's own authoritative replay harness (e.g.
+    tests/vivarium/test_karr_dna_damage_l2_replay.py::_apply_update, which
+    does ``chrom_state[field] = SparseTriplet.from_state(...).to_state()``
+    per field, never a dict-merge of stale + new entries).
+
+    ``_apply_non_count_updates``'s generic ``_deep_merge_replace`` is
+    dict-merge-shaped and, for a field payload that is a raw ``SparseTriplet``
+    instance rather than an already-``.to_state()``-flattened dict, silently
+    drops through to a whole-object overwrite that ``ChromosomeStore.
+    from_state_mapping`` cannot parse (it only accepts ``Mapping`` payloads),
+    leaving that field's after-store silently reset to empty. Calling this
+    function after the generic merge corrects every ``ChromosomeStore.FIELDS``
+    entry unconditionally, so the after-store used for both activity
+    detection and bit-identity comparison is always built from a genuine
+    replace, regardless of what shape the process emitted.
+    """
+    chrom_state = state.get("chromosome")
+    if not isinstance(chrom_state, dict):
+        chrom_state = {}
+        state["chromosome"] = chrom_state
+    for field in ChromosomeStore.FIELDS:
+        if field in chromosome_update:
+            chrom_state[field] = SparseTriplet.from_state(chromosome_update[field], shape=shape).to_state()
+
+
+def _chromosome_tokens_active(
+    process_name: str,
+    before_store: ChromosomeStore | None,
+    after_store: ChromosomeStore | None,
+) -> bool:
+    """True iff any of the process's declared chromosome projection tokens
+    genuinely changed value between ``before_store`` and ``after_store``.
+
+    This is the authoritative, process-aware activity signal for
+    CHROMOSOME_ACTIVITY_TOKENS processes -- it must be used instead of raw
+    update-dict non-emptiness (``_recursive_update_nontrivial``), which
+    flags OC as "active" merely because a chromosome sparse-field
+    replacement payload is present in the update (e.g. carrying forward an
+    unconditional, always-nonzero ``shape`` tuple or an unchanged-value
+    full replacement), even on ticks where no chromosome field's
+    before->after value actually moved.
+    """
+    if before_store is None or after_store is None:
+        return False
+    tokens = CHROMOSOME_ACTIVITY_TOKENS.get(process_name, ())
+    return any(
+        abs(float(_chromosome_projection_component(token, before_store, after_store))) > 0.0 for token in tokens
+    )
+
+
 def _honest_replay(
     process_name: str,
     trace_path: Path,
@@ -996,10 +1153,6 @@ def _honest_replay(
             refresh_allocator_views(process, state)
 
             update = process.next_update(1.0, state)
-            if _recursive_update_nontrivial(update):
-                oc_active_ticks += 1
-                if first_oc_active_tick is None:
-                    first_oc_active_tick = tick
 
             for _label, deltas in collect_count_delta_dicts(update):
                 for value in deltas.values():
@@ -1007,14 +1160,15 @@ def _honest_replay(
             apply_count_update(state, update)
             _apply_non_count_updates(state, update)
 
-            karr_detail = _trace_activity_detail(process_name, ctx, tick)
-            if karr_detail is not None:
-                karr_active_ticks += 1
-                if first_karr_active_tick is None:
-                    first_karr_active_tick = tick
-                    first_karr_active_detail = karr_detail
-                if _recursive_update_nontrivial(update):
-                    oc_active_on_karr_active_ticks += 1
+            chromosome_tokens = CHROMOSOME_ACTIVITY_TOKENS.get(process_name, ())
+            if chromosome_tokens and before_chromosome_store is not None:
+                chromosome_update = update.get("chromosome")
+                if isinstance(chromosome_update, dict):
+                    _apply_chromosome_sparse_replace(
+                        state,
+                        chromosome_update,
+                        shape=before_chromosome_store.shape,
+                    )
 
             after_chromosome_store: ChromosomeStore | None = None
             if before_chromosome_store is not None:
@@ -1022,6 +1176,37 @@ def _honest_replay(
                     state.get("chromosome", {}),
                     shape=before_chromosome_store.shape,
                 )
+
+            if chromosome_tokens:
+                # Authoritative, process-aware activity signal: a real
+                # before->after change in one of the declared chromosome
+                # projection tokens, unioned with non-emptiness of the
+                # REMAINING (non-chromosome) update surfaces. This replaces
+                # the naive whole-update-dict truthiness check, which
+                # falsely flags every tick as active whenever the process
+                # emits any chromosome sparse-field replacement payload
+                # (e.g. an unconditional nonzero ``shape`` tuple), even on
+                # ticks where no field's value actually moved.
+                non_chromosome_update = {k: v for k, v in update.items() if k != "chromosome"}
+                oc_active_this_tick = _chromosome_tokens_active(
+                    process_name, before_chromosome_store, after_chromosome_store
+                ) or _recursive_update_nontrivial(non_chromosome_update)
+            else:
+                oc_active_this_tick = _recursive_update_nontrivial(update)
+
+            if oc_active_this_tick:
+                oc_active_ticks += 1
+                if first_oc_active_tick is None:
+                    first_oc_active_tick = tick
+
+            karr_detail = _trace_activity_detail(process_name, ctx, tick)
+            if karr_detail is not None:
+                karr_active_ticks += 1
+                if first_karr_active_tick is None:
+                    first_karr_active_tick = tick
+                    first_karr_active_detail = karr_detail
+                if oc_active_this_tick:
+                    oc_active_on_karr_active_ticks += 1
 
             for surface in compared_surfaces:
                 if surface in spec.pass_through:

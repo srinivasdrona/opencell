@@ -42,18 +42,31 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m:calcResourceRequirements_Current:179
         status: inlined
-        oc: opencell/vivarium/karr_chromosome_segregation.py:KarrChromosomeSegregationProcess.next_update:364
+        oc: opencell/vivarium/karr_chromosome_segregation.py:KarrChromosomeSegregationProcess.next_update:433
         note: 'No ChromosomeSegregation RequestCalculator exists in karr_request_calculators.py (class
           list ends at RequestCalculatorMetabolism). Inlined in KarrChromosomeSegregationProcess.next_update:
-          `request_gtp = self._request_level(can_progress, current_progress)` at line 364 and `"requests":
-          {` at lines 401-405; Karr calcResourceRequirements_Current is lines 179-189.'
+          `can_request = (not already_segregated) and fully_replicated and all_enzymes_present` at line 455
+          (literal port of ChromosomeSegregation.m:179-189''s
+          `~c.segregated && collapse(c.polymerizedRegions) == c.nCompartments*c.sequenceLen && all(this.enzymes)`,
+          via `_is_fully_replicated` line 412 and `_all_enzymes_present` line 396 -- the latter now checks
+          all 5 fixture enzymes including topoisomerase IV, matching `all(this.enzymes)` exactly (2026-09-03
+          fix; the prior Karr-LIGHT v1 port made TopoIV optional via `include_topoiv_gate=False`, a
+          documented deviation this fix closes). Request emission at lines 456-458.'
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m:evolveState:193
         status: confirmed
-        oc: opencell/vivarium/karr_chromosome_segregation.py:KarrChromosomeSegregationProcess.next_update:333
-        note: Direct OC runtime port of Karr evolveState (ChromosomeSegregation.m:193-212). The same next_update
-          method enforces the gate, applies progress/substrate updates, and latches `chromosome_update["segregation_complete"]
-          = True` at lines 348-412.
+        oc: opencell/vivarium/karr_chromosome_segregation.py:KarrChromosomeSegregationProcess.next_update:433
+        note: Direct literal OC runtime port of Karr evolveState (ChromosomeSegregation.m:193-212). The
+          same next_update method (lines 433-490) enforces `can_request` (the calcResourceRequirements_Current
+          gate) plus the additional evolveState-only requirements -- `_is_fully_supercoiled` (line 417,
+          a literal port of Chromosome.m's `calcSupercoiled`/`calcDoubleStrandedRegions` dependent
+          properties at Chromosome.m:3602/3205, derived from the real `polymerizedRegions`/`linkingNumbers`
+          hidden chromosome state, never an oracle-trace read) and allocated GTP/H2O >= gtpCost -- then
+          sets `chromosome_update["segregated"] = True` and applies the exact GTP+H2O->GDP+PI+H hydrolysis
+          stoichiometry at lines 472-479. `segregation_progress`/`segregation_complete`/
+          `daughter_pole_positions`/`cell_cycle_event` are retained as derived pure 0.0/1.0 projections of
+          `segregated` for karr_cell_cycle_coordinator.py backward compatibility only (module docstring,
+          lines 1-42).
   Cytokinesis:
     oc_files:
     - opencell/vivarium/karr_cytokinesis.py
