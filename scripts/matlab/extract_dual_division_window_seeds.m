@@ -21,9 +21,11 @@ function extract_dual_division_window_seeds(seed_start, seed_end, force_seeds)
 %
 % Resumable: for each seed s in [seed_start, seed_end] NOT listed in
 % force_seeds, extraction is skipped if BOTH
-%   data/m1_sources/karr_native/per_process_traces_v2_event_s{s:03d}/Cytokinesis_4000ticks.mat
-%   data/m1_sources/karr_native/per_process_traces_v2_event_s{s:03d}/FtsZPolymerization_200ticks.mat
-% already exist (extract_dual_division_window itself already refuses to
+%   data/m1_sources/karr_native/per_process_traces_v2_event_s{s:03d}/Cytokinesis_{cyt_n_ticks}ticks.mat
+%   data/m1_sources/karr_native/per_process_traces_v2_event_s{s:03d}/FtsZPolymerization_{ftsz_n_ticks}ticks.mat
+% already exist, where cyt_n_ticks/ftsz_n_ticks are read from the shared
+% docs/phase_f/l2_event/division_window_spec.json (5000/200 as of the
+% 2026-09-04 window fix; was 4000/200) (extract_dual_division_window itself already refuses to
 % proceed if exactly one of the two exists -- see that file's
 % partial-output guard -- so this driver's own skip check is a fast-path,
 % not the sole safety net).
@@ -54,8 +56,8 @@ scripts_dir = fileparts(matlab_dir);
 repo_root = fileparts(scripts_dir);
 addpath(fullfile(repo_root, 'scripts', 'matlab'));
 
-cyt_n_ticks = 4000;
-ftsz_n_ticks = 200;
+cyt_n_ticks = division_window_spec('Cytokinesis');
+ftsz_n_ticks = division_window_spec('FtsZPolymerization');
 
 fprintf('[dual-extract-seeds] seeds %d..%d, processes=Cytokinesis+FtsZPolymerization, force_seeds=[%s]\n', ...
     seed_start, seed_end, strjoin(arrayfun(@(x) sprintf('%d', x), force_seeds, 'UniformOutput', false), ', '));

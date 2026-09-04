@@ -88,6 +88,62 @@ processes:
       real cohort-wide maximum span -- the reconciled M_ticks=4000 is only
       a seed-0-validated lower bound, never assumed sufficient for all 50
       seeds.
+      UPDATE 2026-09-04 (dual-cyt-window-fix): M_ticks=4000 failed closed.
+      A required same-cohort equivalence run (fresh seed 36, via the
+      one-pass dual Cytokinesis+FtsZ extractor) completed a full
+      ~32k-tick trajectory with a real onset-to-completion span of 4076
+      ticks (onset_tick=27918, completion_tick=31993) -- 76 ticks larger
+      than the 4000-tick capture buffer, so the extractor correctly
+      refused to emit an incomplete file rather than silently truncating.
+      M_ticks is now preregistered at 5000 / seed_window [-4999,0] -- see
+      the new single source of truth
+      docs/phase_f/l2_event/division_window_spec.json for the full margin
+      justification (924 ticks / 22.7% over the 4076-tick overrun) and
+      STATUS_DUAL_CYT_WINDOW_FIX.md for the post-preregistration seed-36
+      re-run result. The existing M_ticks=4000 traces (including this
+      entry's seed-000 file) are PRESERVED on disk, not deleted, but are
+      explicitly NON-AUTHORITATIVE for the M_ticks=5000 cohort.
+      CORRECTION 2026-09-04 (Opus review, same day, post-initial-fix): the
+      original version of this update attributed the seed-36 conventional-
+      vs-dual disagreement (span 3963/3964 inclusive vs 4075/4076
+      inclusive) to "genuine run-to-run whole-simulation nondeterminism"
+      and cited the 35-trace M_ticks=4000 survey (spans 3637-3971) as
+      corroborating margin evidence via a "survivorship bias" argument.
+      BOTH claims are RETRACTED. The actual, mechanical cause: the two
+      runs resolved two DIFFERENT DNADamage.m source variants. The live
+      genuine-l22-cytokinesis queue's worktree checkout predates the
+      DNADamage signed-zero-normalization overlay (its karr_bootstrap.m is
+      unchanged since commit b8a27a5); this worktree's karr_bootstrap.m
+      includes that overlay (commits d3e91e8/c2174bb/f7d4310). DNADamage
+      participates in the shared 28-process scheduler every tick, so its
+      source version affects every other process's real trajectory too --
+      including Cytokinesis's, even though Cytokinesis's own source never
+      changed. This is a source-version confound, not stochastic
+      nondeterminism, and the 35-trace M_ticks=4000 survey is evidence
+      about a DIFFERENT (pre-overlay) model, not a truncated sample of the
+      same one -- it is NOT used as margin-corroborating evidence (the
+      M_ticks=5000 preregistration is n=1 evidence, explicitly PROVISIONAL,
+      see division_window_spec.json). See
+      decisions/dec-005-full-simulation-source-hash-binding.md for the
+      full finding, the independently-recomputed source hashes, and the
+      new dnadamage_source_resolved_sha256 metadata/validation binding
+      every Cytokinesis trace (and, via the dual-tap extractor, its paired
+      FtsZ trace) must now carry and match. Also note (methodology
+      correction that DOES survive this retraction): same-seed byte-for-
+      byte equivalence between two runs that used DIFFERENT source code
+      is meaningless regardless of cause, and remains an unreasonable gate
+      in general for a full ~28-process whole-simulation trajectory unless
+      source identity is independently verified first -- this project's
+      methodological replacement is: verified source-hash identity
+      agreement (decisions/dec-005) PLUS source/scheduler structural
+      equivalence (the dual-tap extractor is a verified structural
+      generalization of the existing single-process extractor, already
+      Opus-accepted) PLUS independent destination validators and
+      complete-event capture for each new trajectory -- once source
+      identity is controlled and verified, byte-equivalence between two
+      SAME-SOURCE runs remains a fully meaningful, achievable requirement
+      (this task's decisive same-source isolation probe tests exactly
+      this -- see STATUS_DUAL_CYT_WINDOW_FIX.md).
 
   - process: RibosomeAssembly
     in_scope_v4: true

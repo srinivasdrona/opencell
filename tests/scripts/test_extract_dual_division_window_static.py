@@ -180,9 +180,11 @@ def test_existing_single_process_scripts_are_untouched_by_this_change():
 
 def test_exactly_one_karr_bootstrap_call_and_one_seed_call():
     source = _read(EXTRACTOR_PATH)
-    assert source.count("[sim, mnrnd_provider, ~] = karr_bootstrap();") == 1, (
+    assert source.count("[sim, mnrnd_provider, dnadamage_overlay] = karr_bootstrap();") == 1, (
         "extract_dual_division_window.m must call karr_bootstrap() exactly once per seed "
-        "(one trajectory shared by both taps), not once per process"
+        "(one trajectory shared by both taps), not once per process, and must capture the "
+        "third return (dnadamage_overlay) -- decisions/dec-005 full-simulation source-hash "
+        "binding, 2026-09-04"
     )
     assert source.count("seed_simulation(sim, seed);") == 1
 
@@ -247,10 +249,50 @@ def test_completion_detected_solely_from_process_a():
 # ---------------------------------------------------------------------------
 
 
-def test_catalog_window_lengths_are_hardcoded_from_the_authoritative_catalog():
+def test_window_lengths_are_read_from_the_single_source_of_truth_spec():
+    """Following the 2026-09-04 Cytokinesis window preregistration fix, the
+    extractor no longer hardcodes M_ticks -- both values are read at run
+    time from division_window_spec.m, which itself reads the single
+    canonical docs/phase_f/l2_event/division_window_spec.json. This
+    replaces the pre-fix hardcoded-literal assertion."""
     source = _read(EXTRACTOR_PATH)
-    assert "cyt_n_ticks = 4000;   % catalog M_ticks (Cytokinesis)" in source
-    assert "ftsz_n_ticks = 200;   % catalog M_ticks (FtsZPolymerization)" in source
+    assert "cyt_n_ticks = division_window_spec('Cytokinesis');" in source
+    assert "ftsz_n_ticks = division_window_spec('FtsZPolymerization');" in source
+    assert "cyt_n_ticks = 4000" not in source
+    assert "ftsz_n_ticks = 200;" not in source or "division_window_spec" in source
+
+
+def test_driver_also_reads_window_lengths_from_the_single_source_of_truth_spec():
+    source = _read(DRIVER_PATH)
+    assert "cyt_n_ticks = division_window_spec('Cytokinesis');" in source
+    assert "ftsz_n_ticks = division_window_spec('FtsZPolymerization');" in source
+    assert "cyt_n_ticks = 4000;" not in source
+
+
+def test_catalog_and_spec_agree_on_cytokinesis_m_ticks():
+    """docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml's Cytokinesis row is
+    a human-readable mirror of the machine-loadable
+    docs/phase_f/l2_event/division_window_spec.json -- this test is the
+    mechanical agreement check the spec file's own header comment
+    references, so the two can never silently drift apart."""
+    import yaml
+
+    from scripts.l2_event.division_window_spec import (
+        m_ticks_for,
+        tick_range_from_division_for,
+    )
+
+    catalog_path = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "PROCESS_CATALOG.yaml"
+    catalog = yaml.safe_load(catalog_path.read_text(encoding="utf-8"))
+    cyt_row = next(row for row in catalog["processes"] if row["name"] == "Cytokinesis")
+    ftsz_row = next(row for row in catalog["processes"] if row["name"] == "FtsZPolymerization")
+
+    assert cyt_row["M_ticks"] == m_ticks_for("Cytokinesis")
+    assert tuple(cyt_row["seed_window"]["tick_range_from_division"]) == tick_range_from_division_for("Cytokinesis")
+    assert ftsz_row["M_ticks"] == m_ticks_for("FtsZPolymerization") == 200
+    assert tuple(ftsz_row["seed_window"]["tick_range_from_division"]) == tick_range_from_division_for(
+        "FtsZPolymerization"
+    )
 
 
 def test_both_windows_end_at_the_same_completion_tick():
@@ -286,7 +328,7 @@ def test_provider_metadata_written_for_both_outputs_from_the_same_provider():
     # Both calls pass the SAME mnrnd_provider variable (returned by the
     # single karr_bootstrap() call) -- never two independently-resolved
     # provider structs.
-    assert "[sim, mnrnd_provider, ~] = karr_bootstrap();" in source
+    assert "[sim, mnrnd_provider, dnadamage_overlay] = karr_bootstrap();" in source
 
     helper_match = re.search(
         r"function metadata = add_genuine_provider_metadata\(metadata, mnrnd_provider\)\n(.*?)\nend\n",
@@ -306,9 +348,32 @@ def test_provider_metadata_written_for_both_outputs_from_the_same_provider():
         assert f"metadata.{field}" in body
 
 
-# ---------------------------------------------------------------------------
-# Atomic / fail-closed writes
-# ---------------------------------------------------------------------------
+def test_dnadamage_source_metadata_written_for_both_outputs_unconditionally():
+    """decisions/dec-005 (2026-09-04): unlike extract_per_process_traces_v2.m's
+    narrower `if strcmp(canonical_name, 'DNADamage')` gate, this dual
+    extractor must write DNADamage source-hash-binding metadata to BOTH
+    Cytokinesis and FtsZPolymerization outputs unconditionally -- DNADamage
+    affects the whole shared-scheduler trajectory both taps are drawn from,
+    regardless of which process's own source changed."""
+    source = _read(EXTRACTOR_PATH)
+    assert source.count("cyt_metadata = add_dnadamage_source_metadata(cyt_metadata, dnadamage_overlay);") == 1
+    assert source.count("ftsz_metadata = add_dnadamage_source_metadata(ftsz_metadata, dnadamage_overlay);") == 1
+
+    helper_match = re.search(
+        r"function metadata = add_dnadamage_source_metadata\(metadata, dnadamage_overlay\)\n(.*?)\nend\n",
+        source,
+        re.DOTALL,
+    )
+    assert helper_match is not None
+    body = helper_match.group(1)
+    for field in (
+        "dnadamage_source_original_sha256",
+        "dnadamage_source_patched_sha256",
+        "dnadamage_source_resolved_sha256",
+        "dnadamage_source_resolved_path",
+        "dnadamage_overlay_required",
+    ):
+        assert f"metadata.{field}" in body
 
 
 def test_atomic_write_uses_temp_paths_and_verifies_before_promoting():

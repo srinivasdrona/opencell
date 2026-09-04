@@ -5,7 +5,10 @@ function extract_dual_division_window(seed, opts)
 % MOTIVATION (plan.md, 2026-09-03 operational handoff): Cytokinesis's own
 % durable queue (extract_per_process_traces_v2.m, window_contract='anchor')
 % runs one full ~31k-tick whole-cell trajectory per seed (~5h) to capture its
-% 4000-tick division-anchored window. FtsZPolymerization's own driver
+% division-anchored window (M_ticks preregistered in
+% docs/phase_f/l2_event/division_window_spec.json -- 5000 as of the
+% 2026-09-04 window fix, see STATUS_DUAL_CYT_WINDOW_FIX.md; was 4000).
+% FtsZPolymerization's own driver
 % (extract_ftsz_pre_division_window_seeds.m) is worse: because
 % FtsZPolymerization does not own the pinchedDiameter/ftsZRing/chromosome
 % witnesses Cytokinesis's own anchor search reads (see
@@ -30,10 +33,14 @@ function extract_dual_division_window(seed, opts)
 % evolve_state_with_tap) that taps BOTH Cytokinesis and FtsZPolymerization
 % at their own real scheduler positions on every tick, using two
 % independently-sized rolling circular buffers:
-%   Cytokinesis:        catalog M_ticks = 4000 (docs/phase_f/l2_2_design_a/
-%                        PROCESS_CATALOG.yaml, Cytokinesis row)
-%   FtsZPolymerization:  catalog M_ticks =  200 (same file, FtsZPolymerization
-%                        row)
+%   Cytokinesis:        preregistered M_ticks (docs/phase_f/l2_event/
+%                        division_window_spec.json, read via
+%                        division_window_spec.m -- 5000 as of 2026-09-04,
+%                        was 4000; ALSO mirrored into
+%                        docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml's
+%                        Cytokinesis row for human-readable catalog parity)
+%   FtsZPolymerization:  preregistered M_ticks = 200 (same spec file,
+%                        FtsZPolymerization entry; unchanged by this fix)
 % Division completion is discovered SOLELY from Cytokinesis's own tap (the
 % real CellGeometry.pinchedDiameter positive->zero transition, cross-checked
 % against the four FtsZRing edge-count witnesses and chromosome.segregated
@@ -43,8 +50,9 @@ function extract_dual_division_window(seed, opts)
 % windows end at that SAME absolute completion tick (the task's explicit
 % "same real geometry pinchedDiameter completion tick" requirement for
 % FtsZPolymerization): Cytokinesis's window is
-% [completion-3999, completion], FtsZPolymerization's is
-% [completion-199, completion].
+% [completion-(cyt_n_ticks-1), completion], FtsZPolymerization's is
+% [completion-(ftsz_n_ticks-1), completion] (cyt_n_ticks/ftsz_n_ticks read
+% from division_window_spec.m at run time, see below).
 %
 % This is a NEW, STANDALONE script. It does not modify
 % extract_per_process_traces_v2.m, extract_ftsz_pre_division_window_seeds.m,
@@ -101,8 +109,12 @@ repo_root = fileparts(scripts_dir);
 
 cyt_process_name = 'Cytokinesis';
 ftsz_process_name = 'FtsZPolymerization';
-cyt_n_ticks = 4000;   % catalog M_ticks (Cytokinesis)
-ftsz_n_ticks = 200;   % catalog M_ticks (FtsZPolymerization)
+% Both M_ticks values are read from the single shared source of truth
+% (docs/phase_f/l2_event/division_window_spec.json via division_window_spec.m)
+% rather than hardcoded here -- see the 2026-09-04 Cytokinesis window
+% preregistration fix (STATUS_DUAL_CYT_WINDOW_FIX.md).
+cyt_n_ticks = division_window_spec('Cytokinesis');
+ftsz_n_ticks = division_window_spec('FtsZPolymerization');
 
 % Both processes' event-window traces live in the SAME per-seed directory,
 % matching the existing single-process layout exactly (see
@@ -144,7 +156,7 @@ end
 ensure_wholecell_runtime_paths(repo_root);
 
 fprintf('[dual-extract] seed %d: single karr_bootstrap() call for BOTH taps...\n', seed);
-[sim, mnrnd_provider, ~] = karr_bootstrap();
+[sim, mnrnd_provider, dnadamage_overlay] = karr_bootstrap();
 
 [cyt_idx, cyt_canonical] = find_process_index(sim, cyt_process_name);
 if isempty(cyt_idx)
@@ -221,6 +233,7 @@ cyt_metadata = struct( ...
     'snapshot_properties', {cyt_snapshot_props} ...
 );
 cyt_metadata = add_genuine_provider_metadata(cyt_metadata, mnrnd_provider);
+cyt_metadata = add_dnadamage_source_metadata(cyt_metadata, dnadamage_overlay);
 cyt_metadata.stride = int32(1);
 cyt_metadata.tick_start = int32(cyt_tick_start);
 cyt_metadata.window_anchor = int32(completion_tick);
@@ -250,6 +263,7 @@ ftsz_metadata = struct( ...
     'snapshot_properties', {ftsz_snapshot_props} ...
 );
 ftsz_metadata = add_genuine_provider_metadata(ftsz_metadata, mnrnd_provider);
+ftsz_metadata = add_dnadamage_source_metadata(ftsz_metadata, dnadamage_overlay);
 ftsz_metadata.stride = int32(1);
 ftsz_metadata.tick_start = int32(ftsz_tick_start);
 % Task requirement: FtsZPolymerization's window ends at the SAME real
@@ -421,10 +435,10 @@ if completion_tick < n_ticks_a
          'collected -- refusing to emit a timing-incomplete file'], completion_tick, n_ticks_a);
     return;
 end
-% n_ticks_a (4000) > n_ticks_b (200) is a documented catalog invariant
-% (docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml M_ticks rows) -- the
-% Cytokinesis completeness check above therefore always subsumes the
-% FtsZPolymerization one, but this is checked explicitly (never assumed)
+% n_ticks_a > n_ticks_b is a documented invariant of the preregistered
+% division_window_spec.json values (Cytokinesis M_ticks strictly exceeds
+% FtsZPolymerization's) -- the Cytokinesis completeness check above
+% therefore always subsumes the FtsZPolymerization one, but this is checked
 % so a future catalog change that inverted the relationship could never
 % silently emit an incomplete FtsZPolymerization window.
 if completion_tick < n_ticks_b
@@ -861,6 +875,36 @@ metadata.mnrnd_provider_toolbox_version = mnrnd_provider.toolbox_version;
 metadata.mnrnd_provider_path_relative_to_matlabroot = mnrnd_provider.provider_path_relative_to_matlabroot;
 metadata.mnrnd_provider_sha256 = mnrnd_provider.sha256_lf_normalized;
 metadata.statistics_rng_provider_identity_json = mnrnd_provider.identity_json;
+end
+
+function metadata = add_dnadamage_source_metadata(metadata, dnadamage_overlay)
+% add_dnadamage_source_metadata  Full-simulation source-hash binding
+% (decisions/dec-005, 2026-09-04 Cytokinesis window fix): records which
+% DNADamage.m source variant (original vs. signed-zero-overlay-patched)
+% was actually resolved for THIS bootstrap's whole-simulation trajectory.
+%
+% Unlike extract_per_process_traces_v2.m's identical-looking fields (see
+% that file's "if strcmp(canonical_name, 'DNADamage')" gate), this dual
+% extractor writes these fields UNCONDITIONALLY for BOTH Cytokinesis and
+% FtsZPolymerization output -- DNADamage participates in the shared
+% 28-process scheduler every tick (calcResourceRequirements_Current /
+% evolveState run for every process, not just the one being tapped), so
+% its source version affects Cytokinesis's and FtsZPolymerization's real
+% trajectories even though neither process's OWN source file changed. A
+% 2026-09-04 Opus review found that a fresh dual-tap seed-36 re-run and an
+% independently-generated conventional seed-36 trace disagreed on real
+% onset/completion specifically because they had resolved DIFFERENT
+% DNADamage.m sources (this worktree's overlay-aware karr_bootstrap.m vs.
+% an older pre-overlay checkout) -- not run-to-run nondeterminism. Writing
+% this identity into every dual-tap output lets
+% scripts/l2_event/launcher.py's validate_existing_event_window and
+% scripts/l2_event/validate_dual_division_canary.py's cross-check catch
+% that exact confound mechanically, instead of requiring a manual review.
+metadata.dnadamage_source_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized;
+metadata.dnadamage_source_patched_sha256 = dnadamage_overlay.patched_sha256_lf_normalized;
+metadata.dnadamage_source_resolved_sha256 = dnadamage_overlay.resolved_sha256_lf_normalized;
+metadata.dnadamage_source_resolved_path = dnadamage_overlay.resolved_path;
+metadata.dnadamage_overlay_required = logical(dnadamage_overlay.overlay_required);
 end
 
 function token = dual_tap_temp_token()

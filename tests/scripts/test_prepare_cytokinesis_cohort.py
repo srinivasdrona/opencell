@@ -28,6 +28,7 @@ from scripts.l2_event import launcher  # noqa: E402
 from scripts.l2_event.prepare_cytokinesis_cohort import (  # noqa: E402
     AUTHORITATIVE_N_TICKS,
     PROCESS,
+    REQUIRED_DNADAMAGE_SOURCE_SHA256,
     REQUIRED_N_SEEDS,
     REQUIRED_OBSERVABLES,
     autodiscover_karr_native_roots,
@@ -70,6 +71,8 @@ def _write_valid_anchor_trace(
     onset_row: int = 120,
     completion_row: int = 240,
     tick_start: int = 1000,
+    dnadamage_source_sha256: str | None = None,
+    omit_dnadamage_source_metadata: bool = False,
 ) -> Path:
     path = root / f"per_process_traces_v2_event_s{seed:03d}" / f"{PROCESS}_{AUTHORITATIVE_N_TICKS}ticks.mat"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -137,6 +140,18 @@ def _write_valid_anchor_trace(
                 )
             ),
         )
+        if not omit_dnadamage_source_metadata:
+            # decisions/dec-005 full-simulation source-hash binding:
+            # defaults to the CURRENT worktree's expected value so
+            # happy-path fixtures validate; tests exercising the
+            # mismatch/missing inversion pass an explicit override or
+            # omit_dnadamage_source_metadata=True instead.
+            resolved_dnadamage_sha256 = (
+                dnadamage_source_sha256 if dnadamage_source_sha256 is not None else REQUIRED_DNADAMAGE_SOURCE_SHA256
+            )
+            metadata.create_dataset(
+                "dnadamage_source_resolved_sha256", data=_encode_char_metadata(resolved_dnadamage_sha256)
+            )
 
         states_before = handle.create_group("states_before")
         states_after = handle.create_group("states_after")

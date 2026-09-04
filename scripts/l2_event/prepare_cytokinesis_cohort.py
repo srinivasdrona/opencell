@@ -5,8 +5,10 @@ closure lane:
 
 * inventory every Cytokinesis trace visible under the current repo, the main
   checkout, and sibling worktrees unless the caller overrides the search roots;
-* validate the real seed-0 event-window trace against the authoritative 4000-
-  tick anchor-window contract;
+* validate the real seed-0 event-window trace against the authoritative
+  event-window contract (M_ticks read from
+  docs/phase_f/l2_event/division_window_spec.json -- the single source of
+  truth, not a local literal);
 * optionally materialize that valid seed-0 trace into THIS worktree's
   gitignored ``data/m1_sources/karr_native/per_process_traces_v2_event_s000/``
   slot, but only if the slot is absent or already byte-identical;
@@ -36,6 +38,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.l2_event import evidence, launcher  # noqa: E402
+from scripts.l2_event.division_window_spec import m_ticks_for  # noqa: E402
 from scripts.l2_event.survey_cytokinesis_onset_span import (  # noqa: E402
     REQUIRED_N_SEEDS,
     REQUIRED_OBSERVABLES,
@@ -44,7 +47,22 @@ from scripts.l2_event.survey_cytokinesis_onset_span import (  # noqa: E402
 from scripts.l2_event.window_loader import classify_trace_dir  # noqa: E402
 
 PROCESS = "Cytokinesis"
-AUTHORITATIVE_N_TICKS = 4000
+# Single source of truth: docs/phase_f/l2_event/division_window_spec.json
+# (read via scripts.l2_event.division_window_spec). Do NOT hardcode this
+# value here -- see the 2026-09-04 Cytokinesis window preregistration fix
+# (STATUS_DUAL_CYT_WINDOW_FIX.md). Was a literal 4000 before that fix.
+AUTHORITATIVE_N_TICKS = m_ticks_for(PROCESS)
+# Full-simulation source-hash binding (decisions/dec-005, 2026-09-04):
+# every Cytokinesis cohort trace must have been produced under the SAME
+# DNADamage.m source this worktree's karr_bootstrap.m currently resolves
+# (DNADamage participates in the shared 28-process scheduler every tick,
+# so its source version affects Cytokinesis's real trajectory even though
+# Cytokinesis's own source did not change). Computed once at import time
+# (mirrors AUTHORITATIVE_N_TICKS's own module-constant convention); raises
+# at import time if the WCM source tree is missing/unreadable, rather than
+# silently treating an unresolvable source tree as "no check needed".
+_EXPECTED_DNADAMAGE_SOURCE = launcher.current_genuine_dnadamage_source()
+REQUIRED_DNADAMAGE_SOURCE_SHA256 = _EXPECTED_DNADAMAGE_SOURCE["patched_sha256_lf_normalized"]
 _TRACE_NAME_RE = re.compile(r"^Cytokinesis_(\d+)ticks\.mat$")
 _EVENT_SEED_DIR_RE = re.compile(r"per_process_traces_v2_event_s(\d+)$")
 _STANDARD_SEED_DIR_RE = re.compile(r"per_process_traces_v2_s(\d+)$")
@@ -66,6 +84,7 @@ def _anchor_spec(seed: int, *, n_ticks: int = AUTHORITATIVE_N_TICKS) -> launcher
         n_ticks=n_ticks,
         required_observables=REQUIRED_OBSERVABLES,
         scalar_finite_observables=launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES,
+        required_dnadamage_source_sha256=REQUIRED_DNADAMAGE_SOURCE_SHA256,
     )
 
 
