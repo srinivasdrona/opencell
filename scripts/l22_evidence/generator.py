@@ -225,12 +225,18 @@ def _check_current_tree_staleness(
     return reasons
 
 
-def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, str | None]:
-    """sha256 of the runner/helpers/projections/catalog files as they exist
-    RIGHT NOW. Mirrors `sweep.current_source_hashes()` exactly (both read
-    the same `schema.SWEEP_PROVENANCE_SOURCE_FILES` dict) -- duplicated here
-    rather than importing `sweep` so this read-only audit/generator module
-    never depends on the execution-launcher module.
+def _current_source_hashes(
+    entry: cat.ProcessEntry | None = None,
+    *,
+    catalog_path: Path = schema.CATALOG_PATH,
+    registry_path: Path = schema.L2_EVENT_REGISTRY_PATH,
+) -> dict[str, str | None]:
+    """sha256 of the runner/helpers/projections files (plus, per R6 below,
+    a process-specific catalog-contract hash) as they exist RIGHT NOW.
+    Mirrors `sweep.current_source_hashes()` exactly (both read the same
+    `schema.SWEEP_PROVENANCE_SOURCE_FILES` dict) -- duplicated here rather
+    than importing `sweep` so this read-only audit/generator module never
+    depends on the execution-launcher module.
 
     `entry`, when given, additionally hashes THAT process's own
     `oc_module` implementation file under the `"oc_module"` key (R2) -- the
@@ -243,11 +249,26 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
     Metabolism's `fva_module`/`calc_flux_bounds_module`/
     `m1_karr_metabolism_module`/`karr_metabolism_writeback_module`/
     `karr_protein_decay_light_module`, DNARepair's `chromosome_store_module`/
-    `chromosome_views_module`), same stale-only-that-process property, and
+    `chromosome_views_module`), same stale-only-that-process property,
     `entry.harness_type`'s shared harness-scoped dependency modules, if any
     (`schema.HARNESS_DEPENDENCY_FILES`, e.g. every `design_a_per_tick`
-    process's `l2_replay_common` -- never for `event_class`), mirroring
-    `sweep.current_source_hashes(process=..., harness_type=...)`."""
+    process's `l2_replay_common` -- never for `event_class`), and (R6)
+    `entry.name`'s own resolved PROCESS_CATALOG.yaml (+ event_registry.yaml
+    for event_class) contract hash under `"catalog_entry"`/
+    `"event_registry_entry"` (`schema.process_contract_hashes`) -- so an
+    edit to a DIFFERENT process's catalog/registry row never stales this
+    one, mirroring `sweep.current_source_hashes(process=..., harness_type=...)`.
+
+    `catalog_path`/`registry_path` default to the real tracked files but
+    are overridable and are threaded straight into
+    `schema.process_contract_hashes` -- so an `audit`/`generate` invocation
+    against an ALTERNATE catalog (e.g. `--catalog docs/.../PROCESS_CATALOG_v2.yaml`,
+    used by a what-if/staging audit) computes its `"catalog_entry"`/
+    `"event_registry_entry"` hashes against that SAME alternate file, never
+    silently falling back to the real tracked one that `build_evidence_index`'s
+    caller already asked to bypass (previously a narrower, pre-existing gap:
+    this function always hashed the default `schema.CATALOG_PATH` regardless
+    of the `catalog_path` a caller passed to `build_evidence_index`)."""
     hashes = {name: _sha256_file(path) for name, path in schema.shared_source_files_for_harness(entry.harness_type if entry else None).items()}
     if entry is not None and entry.oc_module:
         hashes["oc_module"] = _sha256_file(cat.REPO_ROOT / entry.oc_module)
@@ -255,6 +276,15 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
         for name, path in schema.PROCESS_DEPENDENCY_FILES.get(entry.name, {}).items():
             hashes[name] = _sha256_file(path)
         hashes.update(schema.harness_dependency_hashes(entry.harness_type))
+        # R6: process-specific PROCESS_CATALOG.yaml (+ event_registry.yaml
+        # for event_class) resolved-contract hashes -- replaces the old
+        # whole-file "catalog"/"l2_event_registry" keys; see
+        # schema.process_contract_hashes's docstring.
+        hashes.update(
+            schema.process_contract_hashes(
+                entry.name, entry.harness_type, catalog_path=catalog_path, registry_path=registry_path
+            )
+        )
     return hashes
 
 
@@ -275,7 +305,12 @@ def _classify_input_kind(path_str: str) -> str:
 
 
 def _check_sweep_provenance_staleness(
-    payload: dict[str, Any], entry: cat.ProcessEntry, evidence_dir: Path
+    payload: dict[str, Any],
+    entry: cat.ProcessEntry,
+    evidence_dir: Path,
+    *,
+    catalog_path: Path = schema.CATALOG_PATH,
+    registry_path: Path = schema.L2_EVENT_REGISTRY_PATH,
 ) -> list[str]:
     """Reasons a `sweep_provenance.json` payload makes a row stale:
 
@@ -365,7 +400,7 @@ def _check_sweep_provenance_staleness(
             )
 
     recorded_hashes = payload.get("source_hashes") or {}
-    current_hashes = _current_source_hashes(entry)
+    current_hashes = _current_source_hashes(entry, catalog_path=catalog_path, registry_path=registry_path)
     for name, current in current_hashes.items():
         recorded = recorded_hashes.get(name)
         if current is None:
@@ -428,7 +463,14 @@ def _check_sweep_provenance_staleness(
     return reasons
 
 
-def build_process_row(entry: cat.ProcessEntry, evidence_root: Path, *, strict_input_files: bool = False) -> dict[str, Any]:
+def build_process_row(
+    entry: cat.ProcessEntry,
+    evidence_root: Path,
+    *,
+    strict_input_files: bool = False,
+    catalog_path: Path = schema.CATALOG_PATH,
+    registry_path: Path = schema.L2_EVENT_REGISTRY_PATH,
+) -> dict[str, Any]:
     evidence_dir = _evidence_dir_for(entry, evidence_root)
     row: dict[str, Any] = {
         "process": entry.name,
@@ -533,7 +575,11 @@ def build_process_row(entry: cat.ProcessEntry, evidence_root: Path, *, strict_in
 
     all_reasons: list[str] = list(schema_reasons)
     all_reasons.extend(_check_current_tree_staleness(manifest_payload, entry=entry, strict_input_files=strict_input_files))
-    all_reasons.extend(_check_sweep_provenance_staleness(sweep_provenance_payload, entry, evidence_dir))
+    all_reasons.extend(
+        _check_sweep_provenance_staleness(
+            sweep_provenance_payload, entry, evidence_dir, catalog_path=catalog_path, registry_path=registry_path
+        )
+    )
 
     process_verdict = vd.rederive_process(entry.name, entry, _with_h12_evidence_ref(entry.name, result_payload))
     all_reasons.extend(process_verdict.reasons)
@@ -577,13 +623,21 @@ def build_evidence_index(
     *,
     evidence_root: Path | None = None,
     catalog_path: Path = schema.CATALOG_PATH,
+    registry_path: Path = schema.L2_EVENT_REGISTRY_PATH,
     strict_input_files: bool = False,
 ) -> dict[str, Any]:
     if evidence_root is None:
         evidence_root = schema.default_evidence_root()
     entries = cat.in_scope_processes(catalog_path)
     rows = [
-        build_process_row(entries[name], evidence_root, strict_input_files=strict_input_files) for name in sorted(entries)
+        build_process_row(
+            entries[name],
+            evidence_root,
+            strict_input_files=strict_input_files,
+            catalog_path=catalog_path,
+            registry_path=registry_path,
+        )
+        for name in sorted(entries)
     ]
 
     tally: dict[str, int] = {}
@@ -666,6 +720,7 @@ def audit(
     index_path: Path = schema.INDEX_PATH,
     evidence_root: Path | None = None,
     catalog_path: Path = schema.CATALOG_PATH,
+    registry_path: Path = schema.L2_EVENT_REGISTRY_PATH,
     strict_input_files: bool = False,
 ) -> AuditResult:
     """Integrity check: does the tracked index match a fresh regeneration?
@@ -697,6 +752,16 @@ def audit(
     index itself, since it would make the same evidence produce a different
     result depending purely on whether raw data happens to be mounted on
     the machine that ran it.
+
+    `catalog_path`/`registry_path` default to the real tracked files but
+    are overridable (the CLI's `--catalog`/`--registry`) -- both are
+    threaded straight through to `build_evidence_index`/`build_process_row`/
+    `_current_source_hashes`, so an audit against an ALTERNATE catalog/
+    registry (e.g. a staging/what-if copy) computes every row's
+    `"catalog_entry"`/`"event_registry_entry"` staleness hash against that
+    SAME alternate source, never silently falling back to the real tracked
+    `PROCESS_CATALOG.yaml`/`event_registry.yaml` the caller already asked
+    to bypass.
     """
     problems: list[str] = []
     if not index_path.is_file():
@@ -707,7 +772,12 @@ def audit(
     except (json.JSONDecodeError, OSError) as exc:
         return AuditResult(ok=False, aggregate_verdict="NON_GREEN", problems=[f"stored index is not valid JSON: {exc}"])
 
-    fresh = build_evidence_index(evidence_root=evidence_root, catalog_path=catalog_path, strict_input_files=strict_input_files)
+    fresh = build_evidence_index(
+        evidence_root=evidence_root,
+        catalog_path=catalog_path,
+        registry_path=registry_path,
+        strict_input_files=strict_input_files,
+    )
 
     # Always validate the stored content_hash against the stored payload,
     # regardless of whether `_strip_volatile(stored) != _strip_volatile(fresh)`
@@ -829,7 +899,10 @@ def bundle_process_evidence(
 def _cmd_generate(args: argparse.Namespace) -> int:
     evidence_root = Path(args.evidence_root) if args.evidence_root else None
     payload = build_evidence_index(
-        evidence_root=evidence_root, catalog_path=Path(args.catalog), strict_input_files=args.verify_input_files
+        evidence_root=evidence_root,
+        catalog_path=Path(args.catalog),
+        registry_path=Path(args.registry),
+        strict_input_files=args.verify_input_files,
     )
     out_path = Path(args.out)
     write_index(payload, out_path)
@@ -846,6 +919,7 @@ def _cmd_audit(args: argparse.Namespace) -> int:
         index_path=Path(args.index),
         evidence_root=evidence_root,
         catalog_path=Path(args.catalog),
+        registry_path=Path(args.registry),
         strict_input_files=args.verify_input_files,
     )
     print(f"integrity: {'OK' if result.ok else 'FAIL'}")
@@ -887,6 +961,13 @@ def main(argv: list[str] | None = None) -> int:
     )
     gen.add_argument("--catalog", default=str(schema.CATALOG_PATH))
     gen.add_argument(
+        "--registry",
+        default=str(schema.L2_EVENT_REGISTRY_PATH),
+        help="event_registry.yaml path used to resolve event_class rows' 'event_registry_entry' "
+        "contract hash -- kept in sync with --catalog so an alternate-catalog audit's "
+        "'catalog_entry'/'event_registry_entry' hashes always come from the SAME pair of files.",
+    )
+    gen.add_argument(
         "--verify-input-files",
         action="store_true",
         help="Diagnostic only, never used for the tracked index: also rehash raw oracle-data "
@@ -903,6 +984,13 @@ def main(argv: list[str] | None = None) -> int:
         help="Default: live artifacts/l2_2_gates if present locally, else the tracked evidence_bundle/.",
     )
     aud.add_argument("--catalog", default=str(schema.CATALOG_PATH))
+    aud.add_argument(
+        "--registry",
+        default=str(schema.L2_EVENT_REGISTRY_PATH),
+        help="event_registry.yaml path used to resolve event_class rows' 'event_registry_entry' "
+        "contract hash -- kept in sync with --catalog so an alternate-catalog audit's "
+        "'catalog_entry'/'event_registry_entry' hashes always come from the SAME pair of files.",
+    )
     aud.add_argument(
         "--require-all-pass",
         action="store_true",

@@ -20,7 +20,7 @@
   },
   "source_hashes": {
     "calc_flux_bounds_module": "8c17bae8821133dc2bb624874c233902215e600a684ec739793b436ffc7c36b7",
-    "catalog": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
+    "catalog_entry": "d8481827a4b22e02fbb7046822dae7f62c159a8ad421abb98b95a4ce9176ed3b",
     "fva_module": "6e6ba906174d6ecde9c8f7291094690492f9f54b1a48a11972534d5c5204a5e2",
     "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
     "karr_metabolism_writeback_module": "97029398ee5ce2fd22a915aa778dc66689b622bcda3d3153cbbcc300dcc35203",

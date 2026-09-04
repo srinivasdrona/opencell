@@ -292,3 +292,76 @@ def test_audit_reports_failure_when_index_file_absent(tmp_path):
     result = gen.audit(index_path=tmp_path / "does_not_exist.json")
     assert result.ok is False
     assert result.problems
+
+
+# --- Alternate --catalog/--registry threading (R6 follow-up, 2026-09-05) ------
+#
+# A narrower, pre-existing gap this task also closes: `_current_source_hashes`
+# always hashed the DEFAULT `schema.CATALOG_PATH`/`schema.L2_EVENT_REGISTRY_PATH`
+# for the `"catalog_entry"`/`"event_registry_entry"` keys regardless of the
+# `catalog_path`/`registry_path` a caller passed to `build_evidence_index`/
+# `build_process_row`/`audit` -- so an alternate-catalog audit (e.g. a
+# staging/what-if copy) computed every row's contract-staleness hash against
+# the REAL tracked file it was explicitly trying to bypass.
+
+
+def test_current_source_hashes_honors_an_alternate_catalog_path(tmp_path):
+    """`_current_source_hashes(entry, catalog_path=...)` must resolve
+    `catalog_entry` against the GIVEN `catalog_path`, never silently fall
+    back to the default `schema.CATALOG_PATH`."""
+    real_entry = cat.in_scope_processes()["Translation"]
+    real_hashes = gen._current_source_hashes(real_entry, catalog_path=schema.CATALOG_PATH)
+
+    alt_catalog_path = tmp_path / "PROCESS_CATALOG_alt.yaml"
+    original_text = Path(schema.CATALOG_PATH).read_text(encoding="utf-8")
+    marker = "  - name: Translation\n    oc_module: opencell/vivarium/karr_translation.py\n"
+    assert original_text.count(marker) == 1
+    edited_text = original_text.replace(marker, marker + "    closed_form_dominant: candidate\n", 1)
+    assert edited_text != original_text
+    alt_catalog_path.write_text(edited_text, encoding="utf-8")
+
+    alt_entry = cat.in_scope_processes(alt_catalog_path)["Translation"]
+    alt_hashes = gen._current_source_hashes(alt_entry, catalog_path=alt_catalog_path)
+    assert real_hashes["catalog_entry"] != alt_hashes["catalog_entry"]
+
+    # Genuinely `catalog_path`-driven, not `entry`-driven: passing the ALT
+    # entry but the REAL (default) `catalog_path` re-resolves the REAL
+    # file's Translation row again (only `entry.name` matters for the
+    # lookup) -- proving `catalog_path` selects the source, not which
+    # `ProcessEntry` object happens to be passed alongside it.
+    mixed_hashes = gen._current_source_hashes(alt_entry, catalog_path=schema.CATALOG_PATH)
+    assert mixed_hashes["catalog_entry"] == real_hashes["catalog_entry"]
+
+
+def test_build_process_row_honors_alternate_catalog_path_for_staleness(tmp_path):
+    """End-to-end: `build_process_row(entry, evidence_root, catalog_path=alt)`
+    must gate staleness against `alt`'s resolved contract, not the real
+    tracked catalog. A real, currently-PASS row (Metabolism) recomputed
+    against an ALTERED copy of the catalog (a `closed_form_dominant` field
+    added to its own row) must now report the row STALE: the real tracked
+    `sweep_provenance.json`'s recorded `catalog_entry` was generated
+    against the REAL (unaltered) catalog, so it no longer matches the
+    `alt`-resolved current hash -- proving `catalog_path` was actually
+    threaded through to the staleness check, not silently ignored."""
+    real_entry = cat.in_scope_processes()["Metabolism"]
+    real_row = gen.build_process_row(real_entry, schema.BUNDLE_ROOT, catalog_path=schema.CATALOG_PATH)
+    assert real_row["green"] is True, real_row["reasons"]
+
+    alt_catalog_path = tmp_path / "PROCESS_CATALOG_alt.yaml"
+    original_text = Path(schema.CATALOG_PATH).read_text(encoding="utf-8")
+    marker = (
+        "  - name: Metabolism\n    oc_module: opencell/vivarium/karr_metabolism.py\n"
+        "    bucket: TRIVIAL_RNG\n    in_scope_L2_2: true\n    M_ticks: 20\n    N_seeds: 50\n"
+    )
+    assert original_text.count(marker) == 1
+    edited_text = original_text.replace(marker, marker + "    closed_form_dominant: candidate\n", 1)
+    assert edited_text != original_text
+    alt_catalog_path.write_text(edited_text, encoding="utf-8")
+
+    alt_entry = cat.in_scope_processes(alt_catalog_path)["Metabolism"]
+    alt_row = gen.build_process_row(alt_entry, schema.BUNDLE_ROOT, catalog_path=alt_catalog_path)
+
+    assert alt_row["green"] is False
+    assert any(
+        "catalog_entry" in reason and schema.STATUS_STALE_PROVENANCE in reason for reason in alt_row["reasons"]
+    ), alt_row["reasons"]

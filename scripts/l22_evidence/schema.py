@@ -9,14 +9,20 @@ the row shape and update ``EVIDENCE_INDEX_SPEC.md`` in lockstep.
 from __future__ import annotations
 
 import hashlib
+import json
 import sys
 from pathlib import Path
+from typing import Any
+
+import yaml
 
 _REPO_ROOT_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT_BOOTSTRAP))
 
 from scripts.l22_evidence.catalog import CATALOG_PATH, REPO_ROOT  # noqa: E402
+from scripts.l22_evidence.catalog import DEFAULT_N_SEEDS  # noqa: E402
+from scripts.l22_extraction import derive_scope as _ds  # noqa: E402  (reuse the one YAML loader)
 
 SCHEMA_VERSION = 1
 
@@ -223,17 +229,36 @@ VIVARIUM_INIT_MODULE = REPO_ROOT / "opencell" / "vivarium" / "__init__.py"
 # generation time and the generator re-checks against the CURRENT tree --
 # the same names are used as dict keys on both sides so drift in any one of
 # them is individually named in `reasons[]`, not just "something changed".
-# These five are process-AGNOSTIC (shared by every process). The process's
-# own `oc_module` implementation file is hashed separately, under the
+# These are process-AGNOSTIC (shared by every process). The process's own
+# `oc_module` implementation file is hashed separately, under the
 # `"oc_module"` key, by `sweep.current_source_hashes(oc_module=...)` /
 # `generator._current_source_hashes(entry)` -- it is deliberately NOT part
 # of this fixed dict because it differs per process (R2: a code change to
 # `karr_dna_repair.py` must stale only DNARepair's row, never all 18).
+#
+# R6 catalog-provenance fix (2026-09-04): `PROCESS_CATALOG.yaml` (and, for
+# `EVENT_CLASS_SOURCE_FILES` below, `event_registry.yaml`) used to be
+# hashed here too, whole-file, under a `"catalog"`/`"l2_event_registry"`
+# key -- exactly like `oc_module` BEFORE R2, that made an edit to ANY
+# single process's own catalog/registry row invalidate EVERY in-scope
+# process's evidence (empirically observed: a Cytokinesis-only M_ticks
+# 4000->5000 edit staled all 19 unrelated design_a_per_tick + event_class
+# rows at once). Both files are per-process-row YAML documents structurally
+# identical in kind to `oc_module` (one file, many processes' own data)
+# -- so, mirroring R2's fix for `oc_module`, each process's OWN resolved
+# catalog/registry contract is now hashed separately instead, under the
+# `"catalog_entry"` (and, for event_class, `"event_registry_entry"`) key
+# computed by `process_contract_hashes()` below and merged in by
+# `sweep.current_source_hashes()`/`generator._current_source_hashes()` the
+# same way `oc_module` is -- never part of this fixed, process-agnostic
+# dict. See `resolve_catalog_process_contract`/
+# `resolve_event_registry_process_contract`/`process_contract_hashes` and
+# EVIDENCE_INDEX_SPEC.md Section 13.18 for the full design and the
+# migration of pre-existing tracked evidence to this scheme.
 SWEEP_PROVENANCE_SOURCE_FILES = {
     "runner": RUNNER_SCRIPT,
     "helpers": RUNNER_HELPERS_MODULE,
     "projections": RUNNER_PROJECTIONS_MODULE,
-    "catalog": CATALOG_PATH,
     "vivarium_init": VIVARIUM_INIT_MODULE,
 }
 
@@ -241,14 +266,15 @@ SWEEP_PROVENANCE_SOURCE_FILES = {
 # produced/translated their authority, not on Design-A runner files they
 # never touch. Keep the design_a_per_tick set above untouched for the 18
 # existing sweep rows; event_class rows switch to this narrower shared set
-# plus their process-specific dependencies below.
+# plus their process-specific dependencies below. `l2_event_registry`
+# (whole-file `event_registry.yaml`) was removed for the same R6 reason
+# `catalog` was: see this dict's sibling docstring above and
+# `process_contract_hashes()`.
 EVENT_CLASS_SOURCE_FILES = {
     "event_bridge": EVENT_BRIDGE_MODULE,
     "l2_event_runner": L2_EVENT_RUNNER_MODULE,
     "l2_event_metrics": L2_EVENT_METRICS_MODULE,
     "l2_event_evidence": L2_EVENT_EVIDENCE_MODULE,
-    "l2_event_registry": L2_EVENT_REGISTRY_PATH,
-    "catalog": CATALOG_PATH,
     "vivarium_init": VIVARIUM_INIT_MODULE,
 }
 
@@ -593,6 +619,243 @@ def _sha256_module_file(path: Path) -> str | None:
             digest.update(chunk)
     return digest.hexdigest()
 
+
+# --- R6: per-process catalog/registry CONTRACT hashes (fail-closed,      ---
+# --- replaces the old whole-file `"catalog"`/`"l2_event_registry"` keys) ---
+#
+# 2026-09-04: the accepted Cytokinesis-only `M_ticks: 4000 -> 5000` catalog
+# edit staled all 19 unrelated in-scope processes' `sweep_provenance.json`
+# at once, because `SWEEP_PROVENANCE_SOURCE_FILES`/`EVENT_CLASS_SOURCE_FILES`
+# hashed the ENTIRE `PROCESS_CATALOG.yaml` (and, for event_class rows, the
+# entire `event_registry.yaml`) as one process-agnostic blob. Both files
+# are structurally a list of per-process rows (`processes: [...]`, keyed by
+# `name`/`process`) -- exactly the same shape problem R2 already solved for
+# `oc_module` (one file holding every process's own implementation): the
+# fix here is the same in kind -- hash each process's OWN row, resolved
+# against whatever bucket/universal default it falls back to, never the
+# surrounding file's bytes.
+#
+# "Resolved" (not "raw row bytes") is deliberate: a process that omits
+# `N_seeds` inherits `universals.N_seeds`, and a process that omits
+# `harness_type` inherits `buckets.<bucket>.harness_type` -- an edit to
+# either default changes that process's REAL effective behavior even
+# though its own row's bytes never changed, and must still stale it (see
+# `resolve_catalog_process_contract`). Canonical JSON (`sort_keys=True`,
+# no whitespace) makes the hash stable across YAML mapping key-order and
+# comment-only edits (`yaml.safe_load` already drops comments and does not
+# preserve mapping insertion order as anything the hash can see once
+# re-serialized with `sort_keys=True`) -- only the RESOLVED VALUES matter.
+#
+# Only fields actually read by `verdict.py`, `generator.py`,
+# `event_bridge.py`, or the runner (`tests/vivarium/l2_2_design_a_runner.py`
+# for the catalog; `scripts/l2_event/runner.py` for the registry -- both
+# verified by direct inspection) are included. Free-text fields nothing
+# ever reads (`notes`, `rationale_M`, `event_sweep_blocked_on`,
+# `seed_window.rationale`, `karr_artifact`, `deferred_reason`) are
+# deliberately EXCLUDED -- including them would make routine
+# documentation/provenance updates to a process's own row stale its
+# evidence for no scientific reason, which is not what "affects
+# evidence/verdict/scope" means.
+#
+# CORRECTED 2026-09-05 (Opus re-review of this same R6 fix): the first
+# cut of this function silently omitted three fields that ARE read by
+# code, an omission that would have let a real, evidence-affecting edit
+# to any of them pass through without staling the process's evidence:
+#   - `primary_projection` (an ORDERED list of dotted chromosome-field
+#     paths) -- read directly by `tests/vivarium/l2_2_design_a_runner.py`'s
+#     `_process_primary_projection()` (`entry.get("primary_projection",
+#     ())`), which sizes/orders the per-tick projection vector and
+#     verifies every DNADamage mechanism-canary channel
+#     (`tests/scripts/test_dna_damage_mechanism_canary.py`); order is real
+#     content (which component occupies which vector slot), never
+#     incidental, so it is preserved (never sorted) below.
+#   - `joint_check` (bool) -- read directly by the SAME runner's
+#     `_process_joint_check()` (`entry.get("joint_check", False)`), which
+#     gates whether a non-gating cross-complex Spearman-correlation
+#     diagnostic block is computed/emitted for MacromolecularComplexation.
+#   - `seed_window.tick_range_from_division` (a `[lo, hi]` tick-offset
+#     pair, present only on the two division-anchored EVENT_CLASS rows,
+#     Cytokinesis/FtsZPolymerization) -- this is the catalog's own
+#     machine-checkable mirror of
+#     `docs/phase_f/l2_event/division_window_spec.json`
+#     (`tests/scripts/test_extract_dual_division_window_static.py::
+#     test_catalog_and_spec_agree_on_cytokinesis_m_ticks` asserts
+#     byte-for-byte agreement) and the human-maintained
+#     `TICK_RANGE_FROM_DIVISION` constant in
+#     `scripts/l2_event/ftsz_pre_division_evidence.py` that gates which
+#     event windows `validate_seed_window()` accepts -- a silent edit to
+#     this pair (as actually happened: Cytokinesis's window was
+#     reconciled from `[-3999, 0]` to `[-4999, 0]` in the same 2026-09-04
+#     change series that first exposed this whole R6 defect) changes
+#     which windows are valid without changing `M_ticks`, so it must
+#     independently stale evidence. ONLY `tick_range_from_division` is
+#     included -- `seed_window.rationale` is free text (excluded, same as
+#     `notes`/`rationale_M`), and a row with no `seed_window` at all
+#     (every non-division-anchored process) resolves to `None`, never a
+#     guessed/fabricated window.
+def _canonical_content_hash(payload: dict[str, Any]) -> str:
+    """sha256 of `payload` serialized as canonical JSON (sorted keys, no
+    whitespace) -- stable regardless of the dict's construction/insertion
+    order. List-valued fields (`event_channels`/`output_channels`/
+    `input_channels`) keep their own declared order: that is real content
+    (which channel is listed, not incidental formatting), not something
+    this canonicalization is meant to neutralize."""
+    canonical = json.dumps(payload, sort_keys=True, separators=(",", ":"))
+    return hashlib.sha256(canonical.encode("utf-8")).hexdigest()
+
+
+def _single_named_row(rows: Any, key: str, process: str, *, source: str) -> dict[str, Any]:
+    """Exactly one row in `rows` (a parsed YAML `processes:` list) whose
+    `key` field equals `process`. Fails closed (raises `ValueError`, never
+    returns a guessed/partial/first-match row) if there are zero or more
+    than one such row -- an unknown, missing, or duplicated/renamed process
+    must never silently resolve to *some* contract."""
+    if not isinstance(rows, list):
+        raise ValueError(f"{source}: expected a list of process rows, got {type(rows).__name__}")
+    matches = [row for row in rows if isinstance(row, dict) and row.get(key) == process]
+    if not matches:
+        raise ValueError(f"{source}: process {process!r} not found (no row with {key}={process!r})")
+    if len(matches) > 1:
+        raise ValueError(f"{source}: process {process!r} has {len(matches)} duplicate rows (key={key!r})")
+    return matches[0]
+
+
+def resolve_catalog_process_contract(process: str, catalog: dict[str, Any]) -> dict[str, Any]:
+    """The RESOLVED subset of one PROCESS_CATALOG.yaml process row that can
+    affect its evidence/verdict/scope -- see this module's R6 section
+    docstring above for the field-selection rationale. `catalog` is an
+    ALREADY-PARSED mapping (never a path), so a migration/audit tool can
+    resolve a HISTORICAL catalog's contract straight from `git show
+    <ref>:...` text without ever writing it to disk. Raises `ValueError`
+    (fail-closed) via `_single_named_row` if `process` has zero or more
+    than one matching row."""
+    universals = catalog.get("universals", {}) or {}
+    default_n_seeds = int(universals.get("N_seeds", DEFAULT_N_SEEDS))
+    buckets = catalog.get("buckets", {}) or {}
+    raw = _single_named_row(catalog.get("processes", []), "name", process, source="PROCESS_CATALOG.yaml")
+    bucket = raw.get("bucket")
+    bucket_meta = buckets.get(bucket, {}) or {}
+    harness_type = raw.get("harness_type") or bucket_meta.get("harness_type")
+    oc_module = str(raw.get("oc_module")) if raw.get("oc_module") else None
+    # `primary_projection` is ORDER-SENSITIVE (which dotted-path component
+    # occupies which projection-vector slot) -- kept as a `list()` of the
+    # raw sequence, never sorted/deduped. Default `()` mirrors the
+    # runner's own `entry.get("primary_projection", ())` fallback exactly.
+    primary_projection = [str(component) for component in (raw.get("primary_projection") or ())]
+    # `seed_window.tick_range_from_division` is the only structured
+    # (non-free-text) sub-field of `seed_window` -- see this module's R6
+    # docstring above. A row with no `seed_window` (every process except
+    # the two division-anchored EVENT_CLASS rows) resolves to `None`,
+    # never a guessed/fabricated window; `rationale` is deliberately never
+    # read here.
+    raw_seed_window = raw.get("seed_window") or {}
+    tick_range_from_division = raw_seed_window.get("tick_range_from_division")
+    seed_window = (
+        {"tick_range_from_division": list(tick_range_from_division)}
+        if tick_range_from_division is not None
+        else None
+    )
+    return {
+        "process": process,
+        "bucket": bucket,
+        "harness_type": harness_type,
+        "in_scope_L2_2": bool(raw.get("in_scope_L2_2", False)),
+        "M_ticks": raw.get("M_ticks"),
+        "N_seeds": int(raw.get("N_seeds", default_n_seeds)),
+        "primary_channel": raw.get("primary_channel"),
+        "closed_form_dominant": str(raw.get("closed_form_dominant", "false")),
+        "primary_distance": str(raw.get("primary_distance", "per_tick_vector_w1_mean")),
+        "primary_projection": primary_projection,
+        "joint_check": bool(raw.get("joint_check", False)),
+        "event_channels": list(raw.get("event_channels") or ()),
+        "output_channels": list(raw.get("output_channels") or ()),
+        "input_channels": list(raw.get("input_channels") or ()),
+        "seed_window": seed_window,
+        "oc_module": oc_module,
+    }
+
+
+def resolve_event_registry_process_contract(process: str, registry: dict[str, Any]) -> dict[str, Any]:
+    """Analogous resolved-contract extraction for
+    `docs/phase_f/l2_event/event_registry.yaml`. The identical whole-file
+    cross-contamination defect existed here too (verified empirically: the
+    same commit that changed Cytokinesis's catalog M_ticks also appended
+    Cytokinesis-only notes to this file, whose whole-file hash staled
+    DNADamage's and RibosomeAssembly's rows even though neither process's
+    own registry row changed). `adapter_id`/`adapter_status`/
+    `event_timing_model`/`magnitude_gateable`/`required_n_seeds`/
+    `in_scope_v4` ARE read by `scripts/l2_event/runner.py`'s gating logic
+    (verified by direct inspection); `deferred_reason`/`notes` are not and
+    are excluded for the same reason `notes`/`rationale_M` are excluded
+    from the catalog contract above. `registry` is an already-parsed
+    mapping for the same historical-resolution-without-disk-writes reason
+    as `resolve_catalog_process_contract`."""
+    raw = _single_named_row(registry.get("processes", []), "process", process, source="event_registry.yaml")
+    return {
+        "process": process,
+        "in_scope_v4": bool(raw.get("in_scope_v4", False)),
+        "adapter_id": raw.get("adapter_id"),
+        "adapter_status": str(raw.get("adapter_status", "not_implemented")),
+        "event_timing_model": raw.get("event_timing_model"),
+        "magnitude_gateable": bool(raw.get("magnitude_gateable", False)),
+        "required_n_seeds": int(raw.get("required_n_seeds", 50)),
+    }
+
+
+def catalog_entry_hash(process: str, catalog_path: Path = CATALOG_PATH) -> str:
+    """`_canonical_content_hash(resolve_catalog_process_contract(...))` for
+    `process` as PROCESS_CATALOG.yaml exists at `catalog_path` RIGHT NOW.
+    Raises `ValueError` (fail-closed) for an unknown/missing process --
+    never silently omitted from `source_hashes`."""
+    catalog = _ds.load_catalog(Path(catalog_path))
+    return _canonical_content_hash(resolve_catalog_process_contract(process, catalog))
+
+
+def event_registry_entry_hash(process: str, registry_path: Path = L2_EVENT_REGISTRY_PATH) -> str:
+    """`_canonical_content_hash(resolve_event_registry_process_contract(...))`
+    for `process` as `event_registry.yaml` exists at `registry_path` RIGHT
+    NOW. Raises `ValueError` (fail-closed) for an unknown/missing process."""
+    registry = yaml.safe_load(Path(registry_path).read_text(encoding="utf-8")) or {}
+    return _canonical_content_hash(resolve_event_registry_process_contract(process, registry))
+
+
+def process_contract_hashes(
+    process: str | None,
+    harness_type: str | None,
+    *,
+    catalog_path: Path = CATALOG_PATH,
+    registry_path: Path = L2_EVENT_REGISTRY_PATH,
+) -> dict[str, str | None]:
+    """The process-specific replacement for the old whole-file `"catalog"`
+    (and, for `event_class`, `"l2_event_registry"`) shared source-hash
+    keys. Both `sweep.current_source_hashes()` (writer, at generation time)
+    and `generator._current_source_hashes()` (checker, at audit time) call
+    this and merge its result into the SAME `source_hashes` dict `oc_module`
+    already lives in -- no new gating code path is needed, since the
+    existing R2 per-key staleness loop (in both `sweep.evidence_is_valid`
+    and `generator._check_sweep_provenance_staleness`) already iterates
+    `source_hashes.items()` generically and flags any named entry whose
+    current hash no longer matches (including the F5 bidirectional check
+    that flags a RECORDED key no longer in the current expected set -- this
+    is what makes an un-migrated sentinel still carrying the old whole-file
+    `"catalog"` key fail closed rather than being silently ignored). Returns
+    `{}` for a falsy `process` (mirrors the `oc_module`/`harness_type`
+    None-handling convention elsewhere in this module).
+
+    `catalog_path`/`registry_path` default to the real tracked files but
+    are overridable -- `scripts/l22_evidence/migrate_catalog_provenance.py`
+    passes its own `--catalog`/`--registry` paths through here (and its
+    tests point them at a synthetic, throwaway catalog/registry), so this
+    function's notion of "current" always matches whatever catalog/registry
+    the CALLER is actually operating against, never silently the default."""
+    if not process:
+        return {}
+    hashes: dict[str, str | None] = {"catalog_entry": catalog_entry_hash(process, catalog_path)}
+    if harness_type == "event_class":
+        hashes["event_registry_entry"] = event_registry_entry_hash(process, registry_path)
+    return hashes
+
+
 # The fixed set of tracked authority/sidecar files R1 binds a
 # sweep_provenance.json sentinel to (via its own `sidecar_hashes` field) --
 # every file `build_process_row` requires unconditionally, minus nothing.
@@ -743,4 +1006,9 @@ __all__ = [name for name in globals() if name.isupper()] + [
     "default_evidence_root",
     "harness_dependency_hashes",
     "shared_source_files_for_harness",
+    "resolve_catalog_process_contract",
+    "resolve_event_registry_process_contract",
+    "catalog_entry_hash",
+    "event_registry_entry_hash",
+    "process_contract_hashes",
 ]
