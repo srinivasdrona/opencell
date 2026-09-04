@@ -9,13 +9,13 @@
     "docs/phase_f/l2_2_design_a/evidence_index.json",
     "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml"
   ],
-  "generated_at": "2026-09-03T04:32:20.021982+00:00",
+  "generated_at": "2026-09-04T08:56:46.289871+00:00",
   "generator_source_path": "scripts/l22_evidence/macromol_active_windows.py",
-  "generator_source_sha256_lf_normalized": "7d1c5ba37278b752329a7c90db81385a1c77fe4d6a87ee4c944e0e3587858801",
+  "generator_source_sha256_lf_normalized": "3c92babaf328b96fba7b3b002069ac1e9be5508ce346ecc321c633bc51b10d20",
   "runner_source_path": "tests/vivarium/l2_2_design_a_runner.py",
   "runner_source_sha256_lf_normalized": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
   "runner_helpers_source_path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
-  "runner_helpers_source_sha256_lf_normalized": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+  "runner_helpers_source_sha256_lf_normalized": "22f6b63d43a53b11c5fb177e4a3e122df76ea73d8a8f331a0d8f8f9d4ce02e6d",
   "active_window_root": "data/m1_sources/karr_native/macromol_active_window",
   "active_window_driver_path": "scripts/matlab/extract_macromol_active_window_seeds.m",
   "active_window_driver_sha256_lf_normalized": "099c42fe39de73986df486736688eee559de734b1c105eddfce86298ee0d9478",
@@ -87,7 +87,7 @@
     "deficit": 0,
     "resumable_extraction_command": "",
     "data_roots": [
-      "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window"
+      "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window"
     ],
     "cohort_summary": {
       "n_valid_seeds": 50,
@@ -105,7 +105,7 @@
     "0": {
       "process_name": "MacromolecularComplexation",
       "seed": 0,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1142,
       "tick_start": 1143,
@@ -121,7 +121,7 @@
     "1": {
       "process_name": "MacromolecularComplexation",
       "seed": 1,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s001/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s001/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 3860,
       "tick_start": 3861,
@@ -137,7 +137,7 @@
     "2": {
       "process_name": "MacromolecularComplexation",
       "seed": 2,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s002/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s002/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 3297,
       "tick_start": 3298,
@@ -153,7 +153,7 @@
     "3": {
       "process_name": "MacromolecularComplexation",
       "seed": 3,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s003/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s003/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1297,
       "tick_start": 1298,
@@ -169,7 +169,7 @@
     "4": {
       "process_name": "MacromolecularComplexation",
       "seed": 4,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s004/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s004/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 4194,
       "tick_start": 4195,
@@ -185,7 +185,7 @@
     "5": {
       "process_name": "MacromolecularComplexation",
       "seed": 5,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s005/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s005/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 661,
       "tick_start": 662,
@@ -201,7 +201,7 @@
     "6": {
       "process_name": "MacromolecularComplexation",
       "seed": 6,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s006/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s006/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2056,
       "tick_start": 2057,
@@ -217,7 +217,7 @@
     "7": {
       "process_name": "MacromolecularComplexation",
       "seed": 7,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s007/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s007/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 4734,
       "tick_start": 4735,
@@ -233,7 +233,7 @@
     "8": {
       "process_name": "MacromolecularComplexation",
       "seed": 8,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s008/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s008/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 8541,
       "tick_start": 8542,
@@ -249,7 +249,7 @@
     "9": {
       "process_name": "MacromolecularComplexation",
       "seed": 9,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s009/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s009/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2690,
       "tick_start": 2691,
@@ -265,7 +265,7 @@
     "10": {
       "process_name": "MacromolecularComplexation",
       "seed": 10,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s010/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s010/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 6032,
       "tick_start": 6033,
@@ -281,7 +281,7 @@
     "11": {
       "process_name": "MacromolecularComplexation",
       "seed": 11,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s011/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s011/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 6395,
       "tick_start": 6396,
@@ -297,7 +297,7 @@
     "12": {
       "process_name": "MacromolecularComplexation",
       "seed": 12,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s012/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s012/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1017,
       "tick_start": 1018,
@@ -313,7 +313,7 @@
     "13": {
       "process_name": "MacromolecularComplexation",
       "seed": 13,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s013/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s013/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1294,
       "tick_start": 1295,
@@ -329,7 +329,7 @@
     "14": {
       "process_name": "MacromolecularComplexation",
       "seed": 14,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s014/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s014/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 3161,
       "tick_start": 3162,
@@ -345,7 +345,7 @@
     "15": {
       "process_name": "MacromolecularComplexation",
       "seed": 15,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s015/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s015/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2659,
       "tick_start": 2660,
@@ -361,7 +361,7 @@
     "16": {
       "process_name": "MacromolecularComplexation",
       "seed": 16,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s016/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s016/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 7558,
       "tick_start": 7559,
@@ -377,7 +377,7 @@
     "17": {
       "process_name": "MacromolecularComplexation",
       "seed": 17,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s017/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s017/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 6658,
       "tick_start": 6659,
@@ -393,7 +393,7 @@
     "18": {
       "process_name": "MacromolecularComplexation",
       "seed": 18,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s018/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s018/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1255,
       "tick_start": 1256,
@@ -409,7 +409,7 @@
     "19": {
       "process_name": "MacromolecularComplexation",
       "seed": 19,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s019/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s019/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1277,
       "tick_start": 1278,
@@ -425,7 +425,7 @@
     "20": {
       "process_name": "MacromolecularComplexation",
       "seed": 20,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s020/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s020/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2310,
       "tick_start": 2311,
@@ -441,7 +441,7 @@
     "21": {
       "process_name": "MacromolecularComplexation",
       "seed": 21,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s021/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s021/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 4169,
       "tick_start": 4170,
@@ -457,7 +457,7 @@
     "22": {
       "process_name": "MacromolecularComplexation",
       "seed": 22,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s022/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s022/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 8302,
       "tick_start": 8303,
@@ -473,7 +473,7 @@
     "23": {
       "process_name": "MacromolecularComplexation",
       "seed": 23,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s023/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s023/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 3935,
       "tick_start": 3936,
@@ -489,7 +489,7 @@
     "24": {
       "process_name": "MacromolecularComplexation",
       "seed": 24,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s024/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s024/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1236,
       "tick_start": 1237,
@@ -505,7 +505,7 @@
     "25": {
       "process_name": "MacromolecularComplexation",
       "seed": 25,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s025/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s025/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2766,
       "tick_start": 2767,
@@ -521,7 +521,7 @@
     "26": {
       "process_name": "MacromolecularComplexation",
       "seed": 26,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s026/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s026/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 9043,
       "tick_start": 9044,
@@ -537,7 +537,7 @@
     "27": {
       "process_name": "MacromolecularComplexation",
       "seed": 27,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s027/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s027/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1609,
       "tick_start": 1610,
@@ -553,7 +553,7 @@
     "28": {
       "process_name": "MacromolecularComplexation",
       "seed": 28,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s028/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s028/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1699,
       "tick_start": 1700,
@@ -569,7 +569,7 @@
     "29": {
       "process_name": "MacromolecularComplexation",
       "seed": 29,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s029/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s029/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 3740,
       "tick_start": 3741,
@@ -585,7 +585,7 @@
     "30": {
       "process_name": "MacromolecularComplexation",
       "seed": 30,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s030/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s030/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1213,
       "tick_start": 1214,
@@ -601,7 +601,7 @@
     "31": {
       "process_name": "MacromolecularComplexation",
       "seed": 31,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s031/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s031/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2385,
       "tick_start": 2386,
@@ -617,7 +617,7 @@
     "32": {
       "process_name": "MacromolecularComplexation",
       "seed": 32,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s032/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s032/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2932,
       "tick_start": 2933,
@@ -633,7 +633,7 @@
     "33": {
       "process_name": "MacromolecularComplexation",
       "seed": 33,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s033/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s033/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2672,
       "tick_start": 2673,
@@ -649,7 +649,7 @@
     "34": {
       "process_name": "MacromolecularComplexation",
       "seed": 34,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s034/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s034/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 3731,
       "tick_start": 3732,
@@ -665,7 +665,7 @@
     "35": {
       "process_name": "MacromolecularComplexation",
       "seed": 35,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s035/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s035/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 4868,
       "tick_start": 4869,
@@ -681,7 +681,7 @@
     "36": {
       "process_name": "MacromolecularComplexation",
       "seed": 36,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s036/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s036/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 3581,
       "tick_start": 3582,
@@ -697,7 +697,7 @@
     "37": {
       "process_name": "MacromolecularComplexation",
       "seed": 37,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s037/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s037/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 4292,
       "tick_start": 4293,
@@ -713,7 +713,7 @@
     "38": {
       "process_name": "MacromolecularComplexation",
       "seed": 38,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s038/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s038/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 5453,
       "tick_start": 5454,
@@ -729,7 +729,7 @@
     "39": {
       "process_name": "MacromolecularComplexation",
       "seed": 39,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s039/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s039/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2344,
       "tick_start": 2345,
@@ -745,7 +745,7 @@
     "40": {
       "process_name": "MacromolecularComplexation",
       "seed": 40,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s040/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s040/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1079,
       "tick_start": 1080,
@@ -761,7 +761,7 @@
     "41": {
       "process_name": "MacromolecularComplexation",
       "seed": 41,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s041/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s041/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 1552,
       "tick_start": 1553,
@@ -777,7 +777,7 @@
     "42": {
       "process_name": "MacromolecularComplexation",
       "seed": 42,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s042/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s042/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 4050,
       "tick_start": 4051,
@@ -793,7 +793,7 @@
     "43": {
       "process_name": "MacromolecularComplexation",
       "seed": 43,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s043/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s043/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 2314,
       "tick_start": 2315,
@@ -809,7 +809,7 @@
     "44": {
       "process_name": "MacromolecularComplexation",
       "seed": 44,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s044/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s044/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 3959,
       "tick_start": 3960,
@@ -825,7 +825,7 @@
     "45": {
       "process_name": "MacromolecularComplexation",
       "seed": 45,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s045/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s045/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 3772,
       "tick_start": 3773,
@@ -841,7 +841,7 @@
     "46": {
       "process_name": "MacromolecularComplexation",
       "seed": 46,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s046/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s046/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 6291,
       "tick_start": 6292,
@@ -857,7 +857,7 @@
     "47": {
       "process_name": "MacromolecularComplexation",
       "seed": 47,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s047/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s047/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 569,
       "tick_start": 570,
@@ -873,7 +873,7 @@
     "48": {
       "process_name": "MacromolecularComplexation",
       "seed": 48,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s048/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s048/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 5633,
       "tick_start": 5634,
@@ -889,7 +889,7 @@
     "49": {
       "process_name": "MacromolecularComplexation",
       "seed": 49,
-      "path": "/mnt/e/opencell-worktrees/genuine-l22-macromol/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s049/MacromolecularComplexation_100ticks.mat",
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s049/MacromolecularComplexation_100ticks.mat",
       "n_ticks": 100,
       "tick_offset": 5209,
       "tick_start": 5210,
@@ -955,21 +955,21 @@
     "48": "9a77466ad8f56cb6ae3da21b85f6d283208384ddf479c484eca1326c49d99ee6",
     "49": "cfcede7f7accc6aed0e6aace02403036846c4c6835308fd360081c7baec3ee04"
   },
-  "runner_output_dir": "artifacts/l22_macromol_genuine_design_a/latest",
+  "runner_output_dir": "docs/phase_f/l2_2_design_a/active_windows/MacromolecularComplexation_process_local_runner_output",
   "runner_output_hashes": {
-    "result.json": "c2f4945e5885d34a0fc09f4f818f0675c443b294feeb4bdb78f8dd8a8f1113ae",
-    "SUMMARY.json": "7a01b4da559356d7ca30e404d4fb55222633a614804f18bdd663607eb8445938",
+    "result.json": "e43c5dc21592c6e54fd235bada0203b0117146841c2785e75f2bb1312b4ec899",
+    "SUMMARY.json": "6a6e2f478f7045b92cd3272e5bdfdbef9904249af0e87c3de49f430ddb8e88fc",
     "thresholds.json": "bfda97ecfa2a3b496ebd796fe21d156d6f1ea19c8e7c88395037d326ba429cf0",
-    "null_calibration.json": "e7017ab3a94932d7f76165d527656bb39a753b03d1e9b446bcce637c5bbd0935",
+    "null_calibration.json": "14e6e90f8d8ef2ff00645a76bfdb7db22dcfde9dc8e19d48197308b8aad7aa82",
     "analytical_check.json": "851bafe04f1a87092a83b1f2f9ea2f84cb9cf2fcfcb2b45899ff5a6c10f22a86",
-    "input_manifest.json": "bcdb10cfd0b64379bdeafa5cad62f73b5d96a3c65a17e58faa58e799deb18642",
-    "provenance.json": "ca67becf7b019902208535fcd8efd743556b888c17353f6cdfb39a7fdaab8112"
+    "input_manifest.json": "acb899296827b3caa85d9dba010aa261a1fd2635335b7e2b529e5e5881869bba",
+    "provenance.json": "6aa696f98359aea60dd228e4a688014ad4d6634843978c2296e262b60b4e26fd"
   },
   "ordinary_design_a": {
     "result": {
       "process": "MacromolecularComplexation",
       "verdict": "PASS",
-      "timestamp": "2026-09-03T04:32:19.612501+00:00",
+      "timestamp": "2026-09-04T08:56:45.893367+00:00",
       "harness_version": "design_a_v1_3",
       "seeds": [
         0,
@@ -1157,11 +1157,11 @@
         "verdict": null
       },
       "warnings": [],
-      "allocator_inputs_ref": "artifacts/l22_macromol_genuine_design_a/latest/allocator_inputs.json",
-      "provenance_ref": "artifacts/l22_macromol_genuine_design_a/latest/provenance.json"
+      "allocator_inputs_ref": "docs/phase_f/l2_2_design_a/active_windows/MacromolecularComplexation_process_local_runner_output/allocator_inputs.json",
+      "provenance_ref": "docs/phase_f/l2_2_design_a/active_windows/MacromolecularComplexation_process_local_runner_output/provenance.json"
     },
     "summary": {
-      "generated_at": "2026-09-03T04:32:19.612501+00:00",
+      "generated_at": "2026-09-04T08:56:45.893367+00:00",
       "schema_version": "1.4",
       "harness_version": "design_a_v1_3",
       "k_eng": {
@@ -1172,7 +1172,7 @@
       "processes": {
         "MacromolecularComplexation": {
           "verdict": "PASS",
-          "latest_run": "2026-09-03T04:32:19.612501+00:00",
+          "latest_run": "2026-09-04T08:56:45.893367+00:00",
           "bucket": "ALGORITHMIC_SHALLOW",
           "failed_channels": [],
           "n_channels_gated": 3,
@@ -1218,7 +1218,7 @@
       }
     },
     "null_calibration": {
-      "generated_at": "2026-09-03T04:32:19.612501+00:00",
+      "generated_at": "2026-09-04T08:56:45.893367+00:00",
       "process": "MacromolecularComplexation",
       "bucket": "ALGORITHMIC_SHALLOW",
       "channels": {
@@ -1266,7 +1266,7 @@
       "reason": "MacromolecularComplexation has no closed-form per-tick check"
     },
     "input_manifest": {
-      "generated_at": "2026-09-03T04:32:19.612501+00:00",
+      "generated_at": "2026-09-04T08:56:45.893367+00:00",
       "inputs": [
         {
           "path": "data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2/MacromolecularComplexation_100ticks.mat",
@@ -1278,7 +1278,7 @@
         },
         {
           "path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
-          "sha256": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93"
+          "sha256": "22f6b63d43a53b11c5fb177e4a3e122df76ea73d8a8f331a0d8f8f9d4ce02e6d"
         }
       ],
       "resolved_seeds": [
@@ -1336,7 +1336,7 @@
       "m_ticks": 100
     },
     "provenance": {
-      "generated_at": "2026-09-03T04:32:19.612501+00:00",
+      "generated_at": "2026-09-04T08:56:45.893367+00:00",
       "git_sha": "unknown",
       "python_version": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]",
       "platform": "Linux-6.18.35.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",

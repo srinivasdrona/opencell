@@ -19,6 +19,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
+import os
 import sys
 from collections.abc import Iterator
 from contextlib import contextmanager
@@ -41,7 +42,23 @@ ARTIFACT_VERSION = "1.0.0"
 GENERATOR_SOURCE_PATH = "scripts/l22_evidence/macromol_active_windows.py"
 RUNNER_SOURCE_PATH = "tests/vivarium/l2_2_design_a_runner.py"
 RUNNER_HELPERS_SOURCE_PATH = "tests/vivarium/_l2_2_design_a_runner_helpers.py"
-DEFAULT_RUN_OUTPUT_DIR = REPO_ROOT / "artifacts" / "l22_macromol_genuine_design_a" / "latest"
+# Tracked/portable: this used to live under gitignored `artifacts/` (see
+# `.gitignore`'s `artifacts/` line), which made the artifact below
+# reference 7 compact runner-output JSONs that did not exist in a fresh
+# clone -- `validate_process_local_artifact` would report them
+# "missing on disk" off-machine even though the artifact itself was fully
+# committed. Moving the run-output directory under the tracked
+# `docs/phase_f/l2_2_design_a/active_windows/` bundle (never `artifacts/`)
+# makes every hash this artifact binds resolvable from a fresh clone,
+# without relaxing the missing-file check itself.
+DEFAULT_RUN_OUTPUT_DIR = (
+    REPO_ROOT
+    / "docs"
+    / "phase_f"
+    / "l2_2_design_a"
+    / "active_windows"
+    / "MacromolecularComplexation_process_local_runner_output"
+)
 DEFAULT_OUT_PATH = (
     REPO_ROOT
     / "docs"
@@ -106,39 +123,39 @@ def _normalize_runner_payloads(raw_result: dict[str, Any], raw_summary: dict[str
 
 @contextmanager
 def process_local_oracle_root(data_root: Path) -> Iterator[None]:
-    # `tests/vivarium/l2_2_design_a_runner.py` inserts its own directory onto
-    # `sys.path` and does a bare `import _l2_2_design_a_runner_helpers`. That
-    # creates a SECOND module instance in `sys.modules` (keyed
-    # `"_l2_2_design_a_runner_helpers"`) distinct from the package-qualified
-    # one this script imports as `tests.vivarium._l2_2_design_a_runner_helpers`.
-    # `runner.run_design_a` calls through the bare-imported instance, so a
-    # patch applied only to the package-qualified module never takes effect
-    # and the oracle loader silently falls through to the legacy single-seed
-    # loader (which has no MacromolecularComplexation fixture and raises
-    # FileNotFoundError). Patch every live module instance found under either
-    # name so the process-local routing actually reaches the runner. This is
-    # a process-local workaround inside this script only; it does not modify
-    # `tests/vivarium/l2_2_design_a_runner.py` or
-    # `tests/vivarium/_l2_2_design_a_runner_helpers.py` themselves.
-    modules = {runner_helpers}
-    bare_module = sys.modules.get("_l2_2_design_a_runner_helpers")
-    if bare_module is not None:
-        modules.add(bare_module)
+    """Route ONLY MacromolecularComplexation's Design-A oracle loader to
+    `data_root` for the duration of this context.
 
-    original_seed_mat_path = runner_helpers._v2_seed_mat_path  # noqa: SLF001
+    Historically this monkeypatched `_v2_seed_mat_path` on every live module
+    instance of `_l2_2_design_a_runner_helpers` it could find in
+    `sys.modules`, because `tests/vivarium/l2_2_design_a_runner.py` inserts
+    its own directory onto `sys.path` and does a BARE
+    `import _l2_2_design_a_runner_helpers` -- a SECOND, independent module
+    object distinct from the package-qualified
+    `tests.vivarium._l2_2_design_a_runner_helpers` this script imports, so a
+    patch applied to only one of them silently never reached
+    `runner.run_design_a`'s real call path (see this closeout's STATUS doc
+    for the original root-cause writeup).
 
-    def patched_seed_mat_path(process_name: str, seed: int) -> Path:
-        if process_name == PROCESS:
-            return maw._seed_trace_path(int(seed), data_root)  # noqa: SLF001
-        return original_seed_mat_path(process_name, seed)
-
-    for module in modules:
-        module._v2_seed_mat_path = patched_seed_mat_path  # type: ignore[assignment]  # noqa: SLF001
+    That workaround is no longer needed: `_l2_2_design_a_runner_helpers`
+    now implements a REAL, canonical, fail-closed process-scoped oracle-root
+    override (`process_oracle_root_env_var` /
+    `_resolve_process_oracle_root_override`), read directly from
+    `os.environ` inside `_v2_seed_mat_path`'s own call graph. Setting the
+    env var here reaches BOTH module objects identically, because the
+    routing lives in real function code, not a monkeypatched attribute --
+    there is no module-instance blind spot left to work around.
+    """
+    env_var = runner_helpers.process_oracle_root_env_var(PROCESS)
+    previous = os.environ.get(env_var)
+    os.environ[env_var] = str(data_root)
     try:
         yield
     finally:
-        for module in modules:
-            module._v2_seed_mat_path = original_seed_mat_path  # type: ignore[assignment]  # noqa: SLF001
+        if previous is None:
+            os.environ.pop(env_var, None)
+        else:
+            os.environ[env_var] = previous
 
 
 def build_process_local_artifact(

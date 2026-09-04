@@ -29,6 +29,16 @@ htmlcov/
 # Artifacts: probe traces, ensemble runs, extract logs — regeneratable
 artifacts/
 
+# Large, never-hashed, never-tracked Design-A diagnostic bulk
+# (schema.INFORMATIONAL_ONLY_FILES): the shared evidence bundle mechanism
+# already excludes this file when mirroring EVIDENCE_ROOT -> BUNDLE_ROOT
+# (`generator.BUNDLE_EXCLUDE_FILES`); this process-local runner-output
+# directory writes it directly (via the ordinary runner's own `out_dir`)
+# and must exclude it the same way for the same reason: no verdict
+# calculation ever reads it, so tracking it would be large, regenerable
+# noise, not evidence.
+docs/phase_f/l2_2_design_a/active_windows/MacromolecularComplexation_process_local_runner_output/allocator_inputs.json
+
 # Karr WholeCell MATLAB source trees (clone targets, not source-of-truth)
 data/m1_sources/WholeCell/
 data/m1_sources/WholeCellKB/

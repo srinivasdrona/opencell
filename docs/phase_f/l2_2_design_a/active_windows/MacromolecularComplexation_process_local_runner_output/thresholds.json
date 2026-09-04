@@ -1,0 +1,26 @@
+{
+  "schema_version": "1.4",
+  "harness_version": "design_a_v1_3",
+  "process": "MacromolecularComplexation",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "q95_null": 2.0839346666666665,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 4.167869333333333
+    },
+    "monomers": {
+      "q95_null": 2.1037074038461534,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 4.207414807692307
+    },
+    "complexs": {
+      "q95_null": 0.002453129251700683,
+      "k_eng": 2.0,
+      "absolute_floor": 1.0,
+      "threshold": 1.0
+    }
+  }
+}

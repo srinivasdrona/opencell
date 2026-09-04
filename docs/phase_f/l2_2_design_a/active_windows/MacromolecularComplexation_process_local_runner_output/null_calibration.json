@@ -1,0 +1,44 @@
+{
+  "generated_at": "2026-09-04T08:56:45.893367+00:00",
+  "process": "MacromolecularComplexation",
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "channels": {
+    "substrates": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 2.0839346666666665,
+      "bootstrap_values_summary": {
+        "mean": 1.863440375238095,
+        "stddev": 0.12963503793954076,
+        "min": 1.4424971428571427,
+        "max": 2.3060847619047613
+      }
+    },
+    "monomers": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 2.1037074038461534,
+      "bootstrap_values_summary": {
+        "mean": 1.8810118442307688,
+        "stddev": 0.13093075716577593,
+        "min": 1.4563711538461537,
+        "max": 2.328492307692307
+      }
+    },
+    "complexs": {
+      "bootstrap_B": 1000,
+      "n_karr_seeds": 50,
+      "n_ticks": 100,
+      "q95_null": 0.002453129251700683,
+      "bootstrap_values_summary": {
+        "mean": 0.0023200176870748325,
+        "stddev": 8.563626328020951e-05,
+        "min": 0.0020775510204081656,
+        "max": 0.0026095238095238124
+      }
+    }
+  },
+  "warnings": []
+}

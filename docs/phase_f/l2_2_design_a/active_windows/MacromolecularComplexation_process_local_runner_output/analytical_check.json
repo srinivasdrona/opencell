@@ -1,0 +1,4 @@
+{
+  "applicable": false,
+  "reason": "MacromolecularComplexation has no closed-form per-tick check"
+}
