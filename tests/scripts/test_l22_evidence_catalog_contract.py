@@ -33,7 +33,9 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.l22_evidence import catalog as cat  # noqa: E402
+from scripts.l22_evidence import generator as gen  # noqa: E402
 from scripts.l22_evidence import schema  # noqa: E402
+from tests.scripts._l22_evidence_fixtures import write_full_valid_evidence  # noqa: E402
 
 # --- Synthetic catalog fixture (never the real tracked PROCESS_CATALOG.yaml) ---
 
@@ -384,3 +386,54 @@ def test_real_catalog_entry_hash_is_deterministic_across_repeated_calls():
     first = schema.catalog_entry_hash("Translation")
     second = schema.catalog_entry_hash("Translation")
     assert first == second
+
+
+# --- Post-migration fail-closed: a leftover OLD whole-catalog key is rejected --
+
+
+def test_old_style_whole_catalog_key_is_rejected_as_extra_unexpected(tmp_path):
+    """A sentinel still carrying the pre-migration whole-file `"catalog"`
+    key (instead of, or alongside, the new `"catalog_entry"` key) must be
+    flagged non-green by the CURRENT generator/checker -- proving the F5
+    bidirectional "recorded key not in current expected set" check (see
+    `generator._check_sweep_provenance_staleness`) catches an un-migrated
+    sentinel exactly like it catches any other stale/renamed dependency
+    key, with zero new gating code. Uses the real `Metabolism` catalog
+    entry (never a synthetic one) so this exercises the exact real
+    checking code path a truly un-migrated tracked file would hit."""
+    entry = cat.in_scope_processes()["Metabolism"]
+    evidence_dir = tmp_path / "Metabolism" / schema.DESIGN_A_SUBDIR
+    write_full_valid_evidence(
+        evidence_dir,
+        process="Metabolism",
+        seeds=entry.n_seeds,
+        m_ticks=entry.m_ticks,
+        channels={entry.primary_channel or "substrates": {
+            "verdict": "PASS", "aggregation": "per_tick_vector_w1_mean", "is_primary": True, "is_event_channel": False,
+            "w1_oc_vs_karr": 0.1, "threshold": 1.0, "q95_null": 0.05, "n_nonzero_oc": 100, "n_nonzero_karr": 100,
+        }},
+        oc_module=entry.oc_module,
+        harness_type=entry.harness_type,
+    )
+
+    # Sanity: freshly written (current-scheme) evidence is green.
+    row_clean = gen.build_process_row(entry, tmp_path)
+    assert row_clean["green"] is True, row_clean["reasons"]
+
+    # Simulate an UN-MIGRATED sentinel: swap "catalog_entry" back to the
+    # OLD "catalog" (whole-file) key, as every tracked sentinel looked
+    # before the R6 migration.
+    import json
+
+    prov_path = evidence_dir / schema.SWEEP_PROVENANCE_FILE
+    payload = json.loads(prov_path.read_text(encoding="utf-8"))
+    assert "catalog_entry" in payload["source_hashes"]
+    catalog_entry_value = payload["source_hashes"].pop("catalog_entry")
+    payload["source_hashes"]["catalog"] = catalog_entry_value
+    prov_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    row_stale = gen.build_process_row(entry, tmp_path)
+    assert row_stale["green"] is False
+    assert any("extra/unexpected" in reason and "catalog" in reason for reason in row_stale["reasons"])
+    assert any("missing source hash for 'catalog_entry'" in reason for reason in row_stale["reasons"])
+
