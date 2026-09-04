@@ -1,10 +1,10 @@
 {
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
-  "catalog_sha256": "f200c8d64190e918b4eaa5215204ee6c03853d67c628aeb5a5de58558e16152f",
-  "content_hash": "196abf1e273edb08da8ad821f9a1a1033bc6c2d9873c4503e77178a561e8a77b",
+  "catalog_sha256": "8508d17ca4078b961bab720441b8574bda3172ce2fcbcea826e3687121ff54a6",
+  "content_hash": "2b8b56e397a302df4c62d7ff36a7747d79ca9581694c54101dd9e16597e51746",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-02T18:30:11.532695+00:00",
+  "generated_at": "2026-09-04T09:48:51.672277+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -184,13 +184,13 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "9c1c7790c64aa93c69e55fe8e678769a0e802b98cbc1dad8bfdfe6487989d727",
+        "SUMMARY.json": "e531f36b49339a67fd850c395642c51cf9daf578d71bf41b32292e6906005685",
         "analytical_check.json": "851bafe04f1a87092a83b1f2f9ea2f84cb9cf2fcfcb2b45899ff5a6c10f22a86",
-        "null_calibration.json": "99809dc885233be5774da38db4360f3910124ca858f19bacca6a4be243206489",
-        "provenance.json": "8e2edaf2ed9dd28887ca38fe427727244c7a08235df07e0d456ed04d7c46dfe2",
-        "result.json": "c06e3829d57d0af899fba42eb9316f168a19598f197136e996e4b633d4654246",
-        "sweep_provenance.json": "efc34971e1783094fac368b42cef37972797f762a018863b29ea2d2330dd8ce6",
-        "thresholds.json": "3a3e291235e4d91a90f68fcf684c42dc3c74ede86b0130a58a65aae0f944231a"
+        "null_calibration.json": "0fb6b2765635f2f2264f21d31f2bce32c249005cf1b8b52038bafaa2e30c62b0",
+        "provenance.json": "bb8a6cd52bfc75b14bd7648b90ec3c4579ef85ee507c260bdc29ef3f53ae14fe",
+        "result.json": "0acf2c22b0e5e05cc23a61ba386732be7a37d241154ab48070ff1dc0242ba41b",
+        "sweep_provenance.json": "282af9c6b231ae0564f908d94ec57aaba2c050e4a6444a66ff654dad40f9bd68",
+        "thresholds.json": "bfda97ecfa2a3b496ebd796fe21d156d6f1ea19c8e7c88395037d326ba429cf0"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
       "catalog_soft_flags": {
@@ -208,32 +208,21 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/MacromolecularComplexation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "MacromolecularComplexation",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
-        "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
-        "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=44af79f2de58.., current=5cd107f5e64b..)",
-        "STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=d0657a1e2a55.., current=0bf545d5bf3f..)",
-        "STALE_SWEEP_PROVENANCE: projections source changed since evidence was generated (recorded=ff2154045ffa.., current=2de64997bc27..)",
-        "STALE_SWEEP_PROVENANCE: catalog source changed since evidence was generated (recorded=d7e205d08fa4.., current=f200c8d64190..)",
-        "STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=dbc43d5d0850.., current=1a534b3fadc5..)",
-        "SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE demotion claimed without valid machine-checked h12_evidence_ref (h12 artifact verdict != H12_CONFIRMED (got 'H12_OBSERVED_REGIME')); treated as non-green"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
         "git_dirty": null,
-        "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+        "git_sha": "790227cdcd994486f8d52ca9967db64370cf730e",
         "inputs_verified": true,
         "result_schema_version": 1
       },
-      "warnings": [
-        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
-      ]
+      "warnings": []
     },
     {
       "artifact_hashes": {
@@ -908,8 +897,8 @@
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 2,
+    "FAIL": 1,
     "MISSING_EVIDENCE": 2,
-    "PASS": 18
+    "PASS": 19
   }
 }

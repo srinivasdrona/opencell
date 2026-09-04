@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-31T13:13:23.235826+00:00",
+  "generated_at": "2026-09-04T09:42:25.440265+00:00",
   "process": "MacromolecularComplexation",
   "bucket": "ALGORITHMIC_SHALLOW",
   "channels": {
@@ -7,40 +7,38 @@
       "bootstrap_B": 1000,
       "n_karr_seeds": 50,
       "n_ticks": 100,
-      "q95_null": 0.09344447619047633,
+      "q95_null": 2.0839346666666665,
       "bootstrap_values_summary": {
-        "mean": 0.08869768476190487,
-        "stddev": 0.0029413850778469194,
-        "min": 0.078264761904762,
-        "max": 0.09739238095238106
+        "mean": 1.863440375238095,
+        "stddev": 0.12963503793954076,
+        "min": 1.4424971428571427,
+        "max": 2.3060847619047613
       }
     },
     "monomers": {
       "bootstrap_B": 1000,
       "n_karr_seeds": 50,
       "n_ticks": 100,
-      "q95_null": 0.09434298076923088,
+      "q95_null": 2.1037074038461534,
       "bootstrap_values_summary": {
-        "mean": 0.0895505471153847,
-        "stddev": 0.0029696676266723694,
-        "min": 0.07901730769230776,
-        "max": 0.09832884615384624
+        "mean": 1.8810118442307688,
+        "stddev": 0.13093075716577593,
+        "min": 1.4563711538461537,
+        "max": 2.328492307692307
       }
     },
     "complexs": {
       "bootstrap_B": 1000,
       "n_karr_seeds": 50,
       "n_ticks": 100,
-      "q95_null": 0.0028394557823129283,
+      "q95_null": 0.002453129251700683,
       "bootstrap_values_summary": {
-        "mean": 0.0027136095238095266,
-        "stddev": 7.895532437854253e-05,
-        "min": 0.0024272108843537443,
-        "max": 0.00297823129251701
+        "mean": 0.0023200176870748325,
+        "stddev": 8.563626328020951e-05,
+        "min": 0.0020775510204081656,
+        "max": 0.0026095238095238124
       }
     }
   },
-  "warnings": [
-    "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
-  ]
+  "warnings": []
 }
