@@ -1,14 +1,29 @@
-"""Vivarium Process for Karr HostInteraction adhesion dynamics (Karr-light v1).
+"""Vivarium Process for Karr HostInteraction (literal boolean-cascade port).
 
 Primary source:
+- data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m
+- data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+state/Host.m
 - docs/karr_extracts/process/27_HostInteraction.md
 
-Karr-light v1 scope:
-- Aggregate stochastic adhesion/unbinding events (not per-receptor docking)
-- Terminal organelle + adhesin readiness gating
+Karr's HostInteraction.evolveState() is a pure, memoryless boolean cascade
+recomputed FRESH every tick from the CURRENT (raw, not fractional) copy
+numbers of 14 enzyme monomers/complexes -- there is no RNG, no rate
+constant, and no timestep dependence anywhere in the source:
 
-Deferred to v2:
-- Full host signaling cascade (TLR / NF-kB / inflammatory response)
+    isBacteriumAdherent = all(enzymes(terminalOrganelle) > 0) && all(enzymes(adhesin) > 0)
+    isTLRActivated(1)   = isBacteriumAdherent && any(enzymes(tlr12Ligand) > 0)
+    isTLRActivated(2)   = isBacteriumAdherent && (any(enzymes(tlr12Ligand) > 0) || any(enzymes(tlr26Ligand) > 0))
+    isTLRActivated(6)   = isBacteriumAdherent && any(enzymes(tlr26Ligand) > 0)
+    isNFkBActivated     = (isTLRActivated(2) && isTLRActivated(1)) || (isTLRActivated(2) && isTLRActivated(6))
+    isInflammatoryResponseActivated = isNFkBActivated || (isBacteriumAdherent && any(enzymes(antigen) > 0))
+
+A prior "Karr-light v1" revision of this module replaced this cascade with a
+fabricated continuous adhesion-fraction + stochastic Poisson bind/unbind
+model (CODE_DEVIATES per docs/phase_f/audits/HostInteraction_semantic_audit.md
+HI-S4-01/HI-S4-02/HI-S5-02) and never modeled the TLR/NF-kB/inflammatory
+outputs at all. This revision replaces that approximation with the literal
+port above (L2.1 closure, see
+docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md).
 """
 
 from __future__ import annotations
@@ -21,7 +36,6 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/HostInteraction_flat.mat"
-_DEFAULT_TRACE_PATH = "data/m1_sources/karr_native/per_process_traces/HostInteraction_100ticks.mat"
 
 
 def _resolve_path(path: str | Path) -> Path:
@@ -62,135 +76,31 @@ def _parse_index_array(value: object) -> np.ndarray:
     return np.asarray(raw, dtype=np.int64).reshape(-1)
 
 
-def _is_binary_like(series: np.ndarray) -> bool:
-    arr = np.asarray(series, dtype=np.float64).reshape(-1)
-    if arr.size < 5:
-        return False
-    if np.any(~np.isfinite(arr)):
-        return False
-    if np.any((arr < -1e-9) | (arr > 1.0 + 1e-9)):
-        return False
-    uniq = np.unique(np.round(arr, decimals=8))
-    return uniq.size <= 3
-
-
-def _trace_rate_from_attachment_series(series: np.ndarray, dt: float) -> tuple[float, float] | None:
-    if dt <= 0.0:
-        return None
-    arr = np.asarray(series, dtype=np.float64).reshape(-1)
-    if arr.size < 2:
-        return None
-    attached = arr > 0.5
-    prev = attached[:-1]
-    nxt = attached[1:]
-    n_attach = int(np.count_nonzero(~prev & nxt))
-    n_detach = int(np.count_nonzero(prev & ~nxt))
-    unbound_time = float(np.count_nonzero(~prev)) * dt
-    bound_time = float(np.count_nonzero(prev)) * dt
-    if unbound_time <= 0.0 or bound_time <= 0.0:
-        return None
-    bind_rate = n_attach / unbound_time
-    unbind_rate = n_detach / bound_time
-    if bind_rate <= 0.0 and unbind_rate <= 0.0:
-        return None
-    return max(bind_rate, 0.0), max(unbind_rate, 0.0)
-
-
-def _extract_trace_rates(trace_path: str | Path) -> tuple[float, float] | None:
-    try:
-        resolved = _resolve_path(trace_path)
-    except FileNotFoundError:
-        return None
-
-    try:
-        mat = loadmat(str(resolved), squeeze_me=True, struct_as_record=False)
-    except Exception:
-        return None
-
-    lower_keys = {str(k).lower(): k for k in mat}
-    bind_key = next(
-        (k for k in lower_keys if "bind_rate" in k or "attach_rate" in k),
-        None,
-    )
-    unbind_key = next(
-        (k for k in lower_keys if "unbind_rate" in k or "detach_rate" in k),
-        None,
-    )
-    if bind_key is not None and unbind_key is not None:
-        bind_val = float(_coerce_scalar(mat[lower_keys[bind_key]]))
-        unbind_val = float(_coerce_scalar(mat[lower_keys[unbind_key]]))
-        if bind_val >= 0.0 and unbind_val >= 0.0:
-            return bind_val, unbind_val
-
-    dt = 1.0
-    dt_key = next((k for k in lower_keys if "step" in k and "sec" in k), None)
-    if dt_key is not None:
-        try:
-            dt = float(_coerce_scalar(mat[lower_keys[dt_key]]))
-        except Exception:
-            dt = 1.0
-
-    for raw_key, value in mat.items():
-        key = str(raw_key).lower()
-        if not any(token in key for token in ("attach", "adher", "host")):
-            continue
-        arr = np.asarray(value)
-        if arr.dtype == object and arr.size == 1 and isinstance(arr.flat[0], np.ndarray):
-            arr = np.asarray(arr.flat[0])
-        if not np.issubdtype(arr.dtype, np.number):
-            continue
-        if arr.ndim > 2:
-            continue
-        flat = np.asarray(arr, dtype=np.float64).reshape(-1)
-        if not _is_binary_like(flat):
-            continue
-        rates = _trace_rate_from_attachment_series(flat, dt=dt)
-        if rates is not None:
-            return rates
-    return None
+# Host cell-state keys this process owns (mirrors Karr's Host state object's
+# 4 boolean properties -- see Host.m). Kept as a module-level tuple so
+# ports_schema() and next_update() can never silently drift apart.
+_HOST_BOOLEAN_FIELDS = (
+    "host_attached",  # Host.isBacteriumAdherent
+    "host_tlr1_activated",  # Host.isTLRActivated(Host.tlrIndexs_1 == 1)
+    "host_tlr2_activated",  # Host.isTLRActivated(Host.tlrIndexs_2 == 2)
+    "host_tlr6_activated",  # Host.isTLRActivated(Host.tlrIndexs_6 == 3)
+    "host_nfkb_activated",  # Host.isNFkBActivated
+    "host_inflammatory_response_activated",  # Host.isInflammatoryResponseActivated
+)
 
 
 class KarrHostInteractionProcess(Process):
-    """HostInteraction adhesion process with stochastic aggregate bond dynamics."""
+    """Literal port of Karr's HostInteraction boolean adherence/signaling cascade."""
 
     name = "karr_host_interaction"
     defaults: dict[str, Any] = {
         "fixture_path": _DEFAULT_FIXTURE_PATH,
-        "trace_path": _DEFAULT_TRACE_PATH,
-        "rng_seed": 0,
         "time_step": 1.0,
-        "max_adhesion_bonds": 100,
-        "terminal_organelle_saturation_count": 1.0,
-        "attach_threshold": 0.60,
-        "bind_rate_per_s": 0.08,
-        "unbind_rate_per_s": 0.02,
-        "use_trace_rates": True,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
-        explicit_params = parameters or {}
         super().__init__(parameters)
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
         self._load_fixture(self.parameters["fixture_path"])
-
-        bind_rate = float(self.parameters["bind_rate_per_s"])
-        unbind_rate = float(self.parameters["unbind_rate_per_s"])
-        if bool(self.parameters.get("use_trace_rates", True)):
-            inferred = _extract_trace_rates(self.parameters["trace_path"])
-            if inferred is not None:
-                inferred_bind, inferred_unbind = inferred
-                if "bind_rate_per_s" not in explicit_params:
-                    bind_rate = inferred_bind
-                if "unbind_rate_per_s" not in explicit_params:
-                    unbind_rate = inferred_unbind
-
-        self.bind_rate_per_s = max(0.0, bind_rate)
-        self.unbind_rate_per_s = max(0.0, unbind_rate)
-        self.max_adhesion_bonds = max(1, int(self.parameters["max_adhesion_bonds"]))
-        self.terminal_organelle_saturation_count = max(
-            1e-9, float(self.parameters["terminal_organelle_saturation_count"])
-        )
-        self.attach_threshold = float(np.clip(float(self.parameters["attach_threshold"]), 0.0, 1.0))
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_path(path)
@@ -205,18 +115,38 @@ class KarrHostInteractionProcess(Process):
                 "HostInteraction fixture mismatch: enzyme count vector size differs from WIDs"
             )
 
-        adhesin_idx = _parse_index_array(fx.enzymeIndexs_adhesin) - 1
-        terminal_idx = _parse_index_array(fx.enzymeIndexs_terminalOrganelle) - 1
-        self.adhesin_wids = [self.enzyme_wids[int(i)] for i in adhesin_idx.tolist()]
-        self.terminal_organelle_wids = [self.enzyme_wids[int(i)] for i in terminal_idx.tolist()]
+        def _wids_for(role_group_attr: str) -> list[str]:
+            idx = _parse_index_array(getattr(fx, role_group_attr)) - 1
+            return [self.enzyme_wids[int(i)] for i in idx.tolist()]
 
-        self.reference_count_by_wid: dict[str, float] = {}
-        for wid, ref in zip(self.enzyme_wids, self.enzyme_ref_counts, strict=False):
-            self.reference_count_by_wid[wid] = float(max(1.0, float(ref)))
+        # Index sets exactly as declared by HostInteraction.m's own
+        # enzymeIndexs_* properties (see role_groups in
+        # data/karr_input_spec/HostInteraction.yaml, which mirrors them
+        # 1:1 with wids already resolved).
+        self.terminal_organelle_wids = _wids_for("enzymeIndexs_terminalOrganelle")
+        self.adhesin_wids = _wids_for("enzymeIndexs_adhesin")
+        self.tlr12_ligand_wids = _wids_for("enzymeIndexs_tlr12Ligand")
+        self.tlr26_ligand_wids = _wids_for("enzymeIndexs_tlr26Ligand")
+        self.antigen_wids = _wids_for("enzymeIndexs_antigen")
 
     def ports_schema(self) -> dict[str, Any]:
-        required_wids = sorted(set(self.adhesin_wids) | set(self.terminal_organelle_wids))
+        required_wids = sorted(
+            set(self.terminal_organelle_wids)
+            | set(self.adhesin_wids)
+            | set(self.tlr12_ligand_wids)
+            | set(self.tlr26_ligand_wids)
+            | set(self.antigen_wids)
+        )
         return {
+            # substrates/enzymes/boundEnzymes: HostInteraction.m declares
+            # substrateWholeCellModelIDs = {} and never reads/writes
+            # this.substrates/this.boundEnzymes (evolveState only reads
+            # this.enzymes and only mutates this.host's booleans -- see
+            # HostInteraction.m:266-303). These ports are wired-conformance
+            # pass-throughs only (never mutated by next_update, matching
+            # the L2a replay contract in
+            # tests/vivarium/test_karr_host_interaction_l2_replay.py), not
+            # read by the real biology below.
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self.substrate_wids
@@ -230,9 +160,8 @@ class KarrHostInteractionProcess(Process):
                 for wid in self.enzyme_wids
             },
             "cell": {
-                "terminal_organelle_count": {"_default": 0.0, "_updater": "accumulate", "_emit": True},
-                "host_adhesion_strength": {"_default": 0.0, "_updater": "accumulate", "_emit": True},
-                "host_attached": {"_default": False, "_updater": "set", "_emit": True},
+                field: {"_default": False, "_updater": "set", "_emit": True}
+                for field in _HOST_BOOLEAN_FIELDS
             },
             "protein": {
                 "counts": {
@@ -242,61 +171,63 @@ class KarrHostInteractionProcess(Process):
             },
         }
 
-    def _expression_fraction(self, wids: list[str], counts_state: dict[str, Any]) -> float:
+    @staticmethod
+    def _all_nonzero(wids: list[str], counts_state: dict[str, Any]) -> bool:
+        # MATLAB all([]) == true (vacuous truth); mirrored here rather than
+        # short-circuiting on an empty index set, matching HostInteraction.m's
+        # own `all(this.enzymes(idx))` semantics exactly.
         if not wids:
-            return 1.0
-        fractions: list[float] = []
-        for wid in wids:
-            ref = self.reference_count_by_wid.get(wid, 1.0)
-            current = max(0.0, float(counts_state.get(wid, 0.0)))
-            fractions.append(float(np.clip(current / ref, 0.0, 1.0)))
-        return float(min(fractions))
+            return True
+        return all(float(counts_state.get(wid, 0.0)) > 0.0 for wid in wids)
+
+    @staticmethod
+    def _any_nonzero(wids: list[str], counts_state: dict[str, Any]) -> bool:
+        # MATLAB any([]) == false.
+        return any(float(counts_state.get(wid, 0.0)) > 0.0 for wid in wids)
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        dt = float(timestep) if timestep > 0.0 else float(self.parameters["time_step"])
-        dt = max(dt, 1e-9)
+        # HostInteraction.evolveState() has no timestep/rate dependence at
+        # all -- the cascade below is recomputed identically regardless of
+        # dt (see HostInteraction.m:266-303).
+        del timestep
 
         cell_state = states.get("cell", {})
         protein_counts = states.get("protein", {}).get("counts", {})
 
-        prev_strength = float(np.clip(float(cell_state.get("host_adhesion_strength", 0.0)), 0.0, 1.0))
-        prev_attached = bool(cell_state.get("host_attached", prev_strength >= self.attach_threshold))
-        terminal_organelle_count = max(0.0, float(cell_state.get("terminal_organelle_count", 0.0)))
+        is_adherent = self._all_nonzero(
+            self.terminal_organelle_wids, protein_counts
+        ) and self._all_nonzero(self.adhesin_wids, protein_counts)
 
-        adhesin_fraction = self._expression_fraction(self.adhesin_wids, protein_counts)
-        terminal_fraction = self._expression_fraction(self.terminal_organelle_wids, protein_counts)
-        terminal_structure_fraction = float(
-            np.clip(terminal_organelle_count / self.terminal_organelle_saturation_count, 0.0, 1.0)
+        tlr12_ligand_present = self._any_nonzero(self.tlr12_ligand_wids, protein_counts)
+        tlr26_ligand_present = self._any_nonzero(self.tlr26_ligand_wids, protein_counts)
+
+        tlr1 = is_adherent and tlr12_ligand_present
+        tlr2 = is_adherent and (tlr12_ligand_present or tlr26_ligand_present)
+        tlr6 = is_adherent and tlr26_ligand_present
+
+        nfkb = (tlr2 and tlr1) or (tlr2 and tlr6)
+        inflammatory = nfkb or (
+            is_adherent and self._any_nonzero(self.antigen_wids, protein_counts)
         )
-        adhesion_capability = float(
-            np.clip(adhesin_fraction * terminal_fraction * terminal_structure_fraction, 0.0, 1.0)
-        )
 
-        prev_bound = int(np.clip(np.rint(prev_strength * self.max_adhesion_bonds), 0, self.max_adhesion_bonds))
-        free_sites = self.max_adhesion_bonds - prev_bound
+        computed = {
+            "host_attached": is_adherent,
+            "host_tlr1_activated": tlr1,
+            "host_tlr2_activated": tlr2,
+            "host_tlr6_activated": tlr6,
+            "host_nfkb_activated": nfkb,
+            "host_inflammatory_response_activated": inflammatory,
+        }
 
-        expected_bind = max(0.0, self.bind_rate_per_s * adhesion_capability * float(free_sites) * dt)
-        expected_unbind = max(0.0, self.unbind_rate_per_s * float(prev_bound) * dt)
-
-        proposed_bind = int(min(self._rng.poisson(expected_bind), free_sites)) if free_sites > 0 else 0
-        proposed_unbind = int(min(self._rng.poisson(expected_unbind), prev_bound)) if prev_bound > 0 else 0
-
-        applied_bind = proposed_bind
-
-        next_bound = int(np.clip(prev_bound + applied_bind - proposed_unbind, 0, self.max_adhesion_bonds))
-        next_strength = float(next_bound) / float(self.max_adhesion_bonds)
-        strength_delta = float(next_strength - prev_strength)
-        next_attached = bool(next_strength >= self.attach_threshold)
+        cell_update = {
+            field: value
+            for field, value in computed.items()
+            if bool(cell_state.get(field, False)) != value
+        }
 
         update: dict[str, Any] = {}
-        cell_update: dict[str, Any] = {}
-        if abs(strength_delta) > 0.0:
-            cell_update["host_adhesion_strength"] = strength_delta
-        if next_attached != prev_attached:
-            cell_update["host_attached"] = next_attached
         if cell_update:
             update["cell"] = cell_update
-
         return update
 
 
