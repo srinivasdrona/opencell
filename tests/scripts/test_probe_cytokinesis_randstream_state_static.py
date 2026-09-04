@@ -29,7 +29,7 @@ EXTRACTOR_PATH = REPO_ROOT / "scripts" / "matlab" / "extract_per_process_traces_
 _BLOCK_OPENERS = re.compile(r"\b(function|if|for|while|switch|try)\b")
 _STANDALONE_END_LINE_RE = re.compile(r"^\s*end\s*;?\s*$")
 
-_DUPLICATED_FROM_SHA256 = "45d3fdae026204e2ee1e94052822e3b35115051d7b43bc3d79fb5a243f3594ab"
+_DUPLICATED_FROM_SHA256 = "ea6675d76f012e89c3599a01e9deb1ef32c7aea69fc97d637b1e1224c794eb25"
 
 
 def _read_source() -> str:

@@ -25,9 +25,15 @@ function probe_cytokinesis_randstream_state(seed, tick_start, local_from, local_
 % target process's own evolveState() call, plus a chromosome.segregated
 % read at the same two points. The duplicated block's provenance (SHA256
 % of scripts/matlab/extract_per_process_traces_v2.m at duplication time:
-% 45d3fdae026204e2ee1e94052822e3b35115051d7b43bc3d79fb5a243f3594ab) is
-% recorded in the output JSON's metadata so future drift between the two
-% copies is mechanically detectable (re-hash and compare).
+% ea6675d76f012e89c3599a01e9deb1ef32c7aea69fc97d637b1e1224c794eb25 --
+% re-synced 2026-09-04 when the authoritative extractor gained its OWN
+% generic capture_rand_stream_state()/before_tick.randStreamState /
+% after_tick.randStreamState instrumentation plus unconditional dec-005
+% DNADamage source-hash-binding metadata; the shared scheduler/allocation
+% loop and process tap points this probe duplicates were manually
+% re-diffed against the new file and found unchanged) is recorded in the
+% output JSON's metadata so future drift between the two copies is
+% mechanically detectable (re-hash and compare).
 %
 % No source file is modified and no path overlay is used in this stage --
 % RandStream.state is a public-getter dependent property
@@ -86,7 +92,7 @@ capture_from_abs = tick_start + local_from;
 capture_to_abs = tick_start + local_to;
 run_to_abs = capture_to_abs + 1; % one extra tick of margin beyond the requested window
 
-this_file_hash_note = '45d3fdae026204e2ee1e94052822e3b35115051d7b43bc3d79fb5a243f3594ab';
+this_file_hash_note = 'ea6675d76f012e89c3599a01e9deb1ef32c7aea69fc97d637b1e1224c794eb25';
 
 fprintf('[probe] bootstrapping Karr simulation (seed=%d)\n', seed);
 [sim, mnrnd_provider, ~] = karr_bootstrap();

@@ -216,13 +216,25 @@ if overlay_required
     if ~exist(overlay_dir, 'dir')
         mkdir(overlay_dir);
     end
-    fid = fopen(overlay_path, 'w');
+    % Atomic write (dec-005 item 5, ported process-local pending the
+    % catalog-provenance migration landing on main): write to a unique
+    % per-process temp file first, then movefile() into place, so a torn
+    % READ of the shared per-worktree overlay path can never occur even if
+    % this policy's single-worktree-concurrency assumption is accidentally
+    % violated. Defense-in-depth only, not a fix for unsupported
+    % concurrent-job configurations (see decisions/dec-005 in
+    % E:\opencell-worktrees\fix-dual-cyt-window for the full policy).
+    temp_overlay_path = sprintf('%s.tmp-%d-%d', overlay_path, feature('getpid'), round(rand() * 1e9));
+    fid = fopen(temp_overlay_path, 'w');
     if fid < 0
         error('karr_bootstrap:dnadamage_overlay_open_failed', ...
-            'Unable to open generated overlay path for writing: %s', overlay_path);
+            'Unable to open temp overlay path for writing: %s', temp_overlay_path);
     end
     cleanup_fid = onCleanup(@() fclose(fid)); %#ok<NASGU>
     fwrite(fid, patched_bytes, 'uint8');
+    fclose(fid);
+    clear cleanup_fid;
+    movefile(temp_overlay_path, overlay_path, 'f');
 end
 
 overlay = struct( ...

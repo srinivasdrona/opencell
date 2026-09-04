@@ -207,6 +207,105 @@ def current_genuine_mnrnd_provider(*, matlab_root: Path | None = None) -> dict[s
     }
 
 
+# dec-005 (full-simulation source-hash binding), ported process-local into
+# this worktree pending the catalog-provenance migration landing on main --
+# see decisions/dec-005-full-simulation-source-hash-binding.md in
+# E:\opencell-worktrees\fix-dual-cyt-window. DNADamage is one of the 28
+# processes in Karr's shared per-tick scheduler
+# (calcResourceRequirements_Current/evolveState runs for every process every
+# tick, not just DNADamage itself), so its resolved source identity affects
+# every OTHER process's real trajectory too -- including Cytokinesis's, even
+# though Cytokinesis's own source never changes.
+DNADAMAGE_RELATIVE_PATH = Path("src") / "+edu" / "+stanford" / "+covert" / "+cell" / "+sim" / "+process" / "DNADamage.m"
+DEFAULT_WCM_ROOT = Path(
+    os.environ.get(
+        "OPENCELL_WCM_ROOT",
+        str(REPO_ROOT / "data" / "m1_sources" / "WholeCell"),
+    )
+)
+_WCM_FALLBACK_ROOT = Path(r"E:\opencell\data\m1_sources\WholeCell" if os.name == "nt" else "/mnt/e/opencell/data/m1_sources/WholeCell")
+_DNADAMAGE_OVERLAY_NEEDLE = (
+    "                maxReactions = floor(min(this.substrates ./ max(0, "
+    "-this.reactionSmallMoleculeStoichiometryMatrix(:, j))));"
+)
+_DNADAMAGE_OVERLAY_REPLACEMENT = (
+    "                denom = abs(max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j)));"
+    "% signed-zero normalization for exact-zero stoich rows\n"
+    "                maxReactions = floor(min(this.substrates ./ denom));"
+)
+_DNADAMAGE_NORMALIZED_LINE = (
+    "                denom = abs(max(0, -this.reactionSmallMoleculeStoichiometryMatrix(:, j)));"
+    "% signed-zero normalization for exact-zero stoich rows"
+)
+
+
+def _resolve_wcm_root(*, wcm_root: Path | None = None) -> Path:
+    if wcm_root is not None:
+        return Path(wcm_root)
+    if (DEFAULT_WCM_ROOT / "data" / "Simulation_fitted.mat").is_file():
+        return DEFAULT_WCM_ROOT
+    if (_WCM_FALLBACK_ROOT / "data" / "Simulation_fitted.mat").is_file():
+        return _WCM_FALLBACK_ROOT
+    raise FileNotFoundError(
+        f"Karr WCM source not found at {DEFAULT_WCM_ROOT} (and fallback {_WCM_FALLBACK_ROOT} also missing)"
+    )
+
+
+def current_genuine_dnadamage_source(*, wcm_root: Path | None = None) -> dict[str, Any]:
+    """MATLAB-free, pure-Python recomputation of the exact identity
+    ``karr_bootstrap.m``'s ``ensure_dnadamage_signed_zero_overlay`` derives
+    at run time (mirrors ``current_genuine_statistics_rng_provider``'s
+    existing "recompute the expected identity from canonical files on
+    disk, no MATLAB required" pattern). Returns a dict with the same four
+    identity fields ``extract_per_process_traces_v2.m`` now writes
+    unconditionally into every fixed/anchor trace's metadata:
+    ``source_sha256`` (original on-disk bytes), ``patched_sha256`` (the
+    signed-zero-normalized replacement, computed whether or not it is
+    actually needed), ``resolved_sha256`` (whichever of the two this
+    worktree's ``karr_bootstrap()`` would actually resolve), and
+    ``overlay_required``.
+
+    Uses the exact same byte-preserving, CR-stripped SHA-256 algorithm as
+    ``karr_bootstrap.m``'s ``sha256_lf_normalized_bytes`` (LF-normalized:
+    strip CR bytes, then SHA-256 the remaining raw bytes) so hashes
+    computed here are byte-for-byte comparable to MATLAB's own.
+    """
+    root = _resolve_wcm_root(wcm_root=wcm_root)
+    source_path = root / DNADAMAGE_RELATIVE_PATH
+    if not source_path.is_file():
+        raise FileNotFoundError(f"canonical DNADamage.m not found at {source_path}")
+
+    source_bytes = source_path.read_bytes()
+    source_text = source_bytes.decode("latin-1")  # byte-preserving 1:1 codepoint map, mirrors char(uint8(...))
+
+    overlay_required = _DNADAMAGE_NORMALIZED_LINE not in source_text
+    if overlay_required:
+        if _DNADAMAGE_OVERLAY_NEEDLE not in source_text:
+            raise ValueError(
+                f"unable to find the expected DNADamage maxReactions line in {source_path} "
+                "-- current_genuine_dnadamage_source cannot recompute the resolved identity"
+            )
+        patched_text = source_text.replace(_DNADAMAGE_OVERLAY_NEEDLE, _DNADAMAGE_OVERLAY_REPLACEMENT)
+    else:
+        patched_text = source_text
+
+    def _lf_sha256(text: str) -> str:
+        raw = text.encode("latin-1").replace(b"\r", b"")
+        return hashlib.sha256(raw).hexdigest()
+
+    source_sha256 = _lf_sha256(source_text)
+    patched_sha256 = _lf_sha256(patched_text)
+    resolved_sha256 = patched_sha256 if overlay_required else source_sha256
+
+    return {
+        "source_sha256": source_sha256,
+        "patched_sha256": patched_sha256,
+        "resolved_sha256": resolved_sha256,
+        "overlay_required": overlay_required,
+        "source_path": str(source_path),
+    }
+
+
 # Suffix for a not-yet-validated regeneration's output directory (see
 # `temp_output_subdir_for`/`finalize_atomic_regeneration`). Never the real
 # per-process-trace directory a `skip_valid` lookup or the standard mid-cycle
@@ -409,6 +508,12 @@ class AnchorWindowSpec:
     # see window_loader.load_event_window's require_scalar_finite_observables).
     # For Cytokinesis, pass CYTOKINESIS_SCALAR_FINITE_OBSERVABLES.
     scalar_finite_observables: tuple[str, ...] = ()
+    # dec-005 (source-hash binding): when set, the on-disk trace's
+    # metadata.dnadamage_source_resolved_sha256 must match exactly, else
+    # validate_existing_event_window fails closed (regenerate_invalid).
+    # None (default) skips this check entirely -- e.g. for a spec whose
+    # caller has not yet decided to require it.
+    required_dnadamage_source_sha256: str | None = None
     window_contract: str = field(default="anchor", init=False)
 
     def __post_init__(self) -> None:
@@ -873,6 +978,47 @@ def _read_anchor_signal_metadata(path: Path) -> dict[str, Any]:
     return result
 
 
+def _read_dnadamage_source_metadata(path: Path) -> dict[str, Any]:
+    """Read the dec-005 source-hash-binding metadata
+    ``extract_per_process_traces_v2.m`` now writes unconditionally into
+    every 'fixed'/'anchor' trace's metadata (``dnadamage_source_original_
+    sha256``/``dnadamage_source_patched_sha256``/``dnadamage_source_
+    resolved_sha256``/``dnadamage_source_resolved_path``/``dnadamage_
+    overlay_required``). Any key absent from ``metadata`` maps to ``None``
+    (never raises for a missing key -- matches a pre-dec-005 trace written
+    before this metadata existed); an unreadable/corrupt file DOES raise
+    ``OSError``/``ValueError``/``KeyError``, consistent with the sibling
+    ``_read_mnrnd_provider_metadata``/``_read_anchor_signal_metadata``
+    helpers' corrupt-file handling.
+    """
+    import h5py
+
+    result: dict[str, Any] = {
+        "dnadamage_source_original_sha256": None,
+        "dnadamage_source_patched_sha256": None,
+        "dnadamage_source_resolved_sha256": None,
+        "dnadamage_source_resolved_path": None,
+        "dnadamage_overlay_required": None,
+    }
+    with h5py.File(path, "r") as handle:
+        metadata = handle.get("metadata")
+        if metadata is None:
+            return result
+        for str_key in (
+            "dnadamage_source_original_sha256",
+            "dnadamage_source_patched_sha256",
+            "dnadamage_source_resolved_sha256",
+            "dnadamage_source_resolved_path",
+        ):
+            if str_key in metadata:
+                result[str_key] = _decode_char_metadata(metadata[str_key][()])
+        if "dnadamage_overlay_required" in metadata:
+            value, problem = _read_optional_scalar(metadata, "dnadamage_overlay_required")
+            if problem is None and value is not None:
+                result["dnadamage_overlay_required"] = bool(value)
+    return result
+
+
 @dataclass
 class WindowDecision:
     process: str
@@ -1106,6 +1252,35 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
             "metadata.statistics_rng_provider_identity_json does not match the current local "
             "binornd/mnrnd/poissrnd/random/randsample provider identities"
         )
+
+    # dec-005 (source-hash binding), ported process-local: DNADamage is one
+    # of the 28 processes in Karr's shared per-tick scheduler, so its
+    # resolved source identity affects every process's real trajectory --
+    # only enforced when the spec opts in via required_dnadamage_source_sha256
+    # (None skips this check entirely, e.g. for a legacy trace predating
+    # this metadata that a caller has independently accepted).
+    required_dnadamage_sha256 = getattr(spec, "required_dnadamage_source_sha256", None)
+    if required_dnadamage_sha256 is not None:
+        try:
+            dnadamage_meta = _read_dnadamage_source_metadata(path)
+        except (OSError, ValueError, KeyError) as exc:
+            return False, (
+                f"{path}: failed to inspect DNADamage source-hash-binding metadata "
+                f"({type(exc).__name__}: {exc})"
+            )
+        if dnadamage_meta["dnadamage_source_resolved_sha256"] is None:
+            return False, (
+                "metadata.dnadamage_source_resolved_sha256 is missing -- this trace predates "
+                "dec-005 source-hash binding and cannot be treated as authoritative under a spec "
+                "that requires it"
+            )
+        if dnadamage_meta["dnadamage_source_resolved_sha256"] != required_dnadamage_sha256:
+            return False, (
+                f"metadata.dnadamage_source_resolved_sha256="
+                f"{dnadamage_meta['dnadamage_source_resolved_sha256']!r} != required "
+                f"{required_dnadamage_sha256!r} -- this trace's whole-simulation trajectory resolved "
+                "a different DNADamage.m source variant than the current worktree requires"
+            )
 
     if isinstance(spec, FixedWindowSpec):
         expected_tick_start = int(spec.tick_offset) + 1

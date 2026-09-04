@@ -116,6 +116,10 @@ def _write_event_window_fixture(
     mnrnd_provider_path_relative_to_matlabroot: str | None | object = _MNRND_PROVIDER_DEFAULT,
     mnrnd_provider_sha256: str | None | object = _MNRND_PROVIDER_DEFAULT,
     statistics_rng_provider_identity_json: str | None | object = _MNRND_PROVIDER_DEFAULT,
+    # dec-005 (source-hash binding): None (default) omits the key entirely
+    # (pre-dec-005 trace shape); pass an explicit sha256 hex string to
+    # simulate a bound trace.
+    dnadamage_source_resolved_sha256: str | None = None,
 ) -> Path:
     """Write a minimal synthetic event-window trace: a `metadata` group
     plus empty `states_before`/`states_after` groups (optionally with a
@@ -196,6 +200,10 @@ def _write_event_window_fixture(
             metadata.create_dataset(
                 "statistics_rng_provider_identity_json",
                 data=_encode_char_metadata(statistics_rng_provider_identity_json),
+            )
+        if dnadamage_source_resolved_sha256 is not None:
+            metadata.create_dataset(
+                "dnadamage_source_resolved_sha256", data=_encode_char_metadata(dnadamage_source_resolved_sha256)
             )
 
         states_before = handle.create_group("states_before")
@@ -1131,6 +1139,193 @@ def test_plan_regenerate_invalid_for_sibling_rng_provider_drift(tmp_path):
     plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
     assert plan.decisions[0].action == "regenerate_invalid"
     assert "does not match the current local" in plan.decisions[0].reason
+
+
+# ---------------------------------------------------------------------------
+# dec-005 (source-hash binding), ported process-local pending the
+# catalog-provenance migration landing on main -- see
+# decisions/dec-005-full-simulation-source-hash-binding.md in
+# E:\opencell-worktrees\fix-dual-cyt-window.
+# ---------------------------------------------------------------------------
+
+
+def test_current_genuine_dnadamage_source_reads_real_wcm_source():
+    """Pure-Python recomputation against the real, committed (junctioned)
+    Karr WCM source tree -- no MATLAB required. Sanity: every field is
+    present, sha256 hex is well-formed, and resolved_sha256 tracks
+    overlay_required exactly (patched when required, original otherwise)."""
+    identity = launcher.current_genuine_dnadamage_source()
+    for key in ("source_sha256", "patched_sha256", "resolved_sha256"):
+        assert len(identity[key]) == 64
+        int(identity[key], 16)  # must be valid hex
+    assert isinstance(identity["overlay_required"], bool)
+    if identity["overlay_required"]:
+        assert identity["resolved_sha256"] == identity["patched_sha256"]
+        assert identity["resolved_sha256"] != identity["source_sha256"]
+    else:
+        assert identity["resolved_sha256"] == identity["source_sha256"]
+
+
+def test_current_genuine_dnadamage_source_raises_for_missing_wcm_root(tmp_path):
+    with pytest.raises(FileNotFoundError):
+        launcher.current_genuine_dnadamage_source(wcm_root=tmp_path / "does-not-exist")
+
+
+def test_anchor_window_spec_accepts_required_dnadamage_source_sha256():
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis",
+        seed=40,
+        n_ticks=4,
+        required_observables=("pinchedDiameter",),
+        required_dnadamage_source_sha256="a" * 64,
+    )
+    assert spec.required_dnadamage_source_sha256 == "a" * 64
+
+
+def test_anchor_window_spec_dnadamage_source_defaults_to_none():
+    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=41, n_ticks=4, required_observables=("pinchedDiameter",))
+    assert spec.required_dnadamage_source_sha256 is None
+
+
+def test_plan_skip_valid_ignores_dnadamage_source_when_not_required(tmp_path):
+    """A spec that does not opt into required_dnadamage_source_sha256
+    (the default) must keep skip_valid-ing a pre-dec-005 trace that never
+    carries this metadata at all -- backward compatible."""
+    spec = launcher.AnchorWindowSpec(process="Cytokinesis", seed=42, n_ticks=4, required_observables=("pinchedDiameter",))
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=42,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=spec.max_search_ticks,
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "skip_valid"
+
+
+def test_plan_regenerate_invalid_for_missing_dnadamage_source_metadata(tmp_path):
+    """A spec that requires dnadamage-source binding must regenerate_invalid
+    (never skip_valid) against a trace missing the metadata entirely --
+    e.g. every pre-dec-005 trace on disk."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis",
+        seed=43,
+        n_ticks=4,
+        required_observables=("pinchedDiameter",),
+        required_dnadamage_source_sha256="b" * 64,
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=43,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=spec.max_search_ticks,
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+        # dnadamage_source_resolved_sha256 intentionally omitted (default None).
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "dnadamage_source_resolved_sha256 is missing" in plan.decisions[0].reason
+
+
+def test_plan_regenerate_invalid_for_dnadamage_source_mismatch(tmp_path):
+    """A trace whose whole-simulation trajectory resolved a DIFFERENT
+    DNADamage.m source variant than the current worktree requires must
+    never skip_valid -- this is the exact confound dec-005 was written to
+    prevent (two runs used different model code, not run-to-run
+    nondeterminism)."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis",
+        seed=44,
+        n_ticks=4,
+        required_observables=("pinchedDiameter",),
+        required_dnadamage_source_sha256="c" * 64,
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=44,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=spec.max_search_ticks,
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+        dnadamage_source_resolved_sha256="d" * 64,  # deliberately does not match spec's "c" * 64
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+    assert "dnadamage_source_resolved_sha256" in plan.decisions[0].reason
+    assert "!= required" in plan.decisions[0].reason
+
+
+def test_plan_skip_valid_when_dnadamage_source_matches(tmp_path):
+    """The positive case: a trace whose bound DNADamage source hash
+    exactly matches the spec's requirement stays skip_valid (dec-005
+    restores byte-equivalence as a meaningful, achievable gate once
+    source identity is verified -- this is the mechanical enforcement of
+    that restoration)."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis",
+        seed=45,
+        n_ticks=4,
+        required_observables=("pinchedDiameter",),
+        required_dnadamage_source_sha256="e" * 64,
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=45,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=spec.max_search_ticks,
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+        dnadamage_source_resolved_sha256="e" * 64,
+    )
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "skip_valid"
+    assert len(plan.jobs) == 0
 
 
 def test_current_genuine_mnrnd_provider_reads_synthetic_install_metadata():
