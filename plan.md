@@ -125,10 +125,18 @@ snapshot below:**
     Candidate `e4e0a04` preregisters **M=5000 / [-4999,0]** through a shared
     machine-loadable spec and reruns dual seed 36 successfully
     (onset 27918, completion 31993, 106.6 min). Bulk remains blocked pending
-    Opus review because repeated dual runs reproduce 31993 while the
-    conventional extractor's seed-36 trace completed at 28009; establish
-    whether this is an acceptable source/bootstrap difference or a
-    trajectory-changing dual-tap side effect before replacing the queue.
+    Opus review. Review **REJECTED bulk authorization**: the conventional
+    trace used old `karr_bootstrap` SHA `30ecbc14...` with unpatched
+    DNADamage (no damage events), while dual runs used SHA `c5cb9e07...`
+    and the signed-zero DNADamage overlay. The different anchors are
+    different executed source, not nondeterminism. Run a conventional
+    single-tap seed-36 M=5000 extraction under the exact overlay-capable
+    bootstrap and require state-array identity with the dual trace. Also
+    bind DNADamage resolved-source hash/overlay status into every dual
+    output, filter Cytokinesis surveys by the active M, state honestly that
+    M=5000 has n=1 evidence under the damage-active model with fail-closed
+    escalation, and use one worktree per concurrent seed to avoid overlay
+    write races.
 
 **Current status (2026-09-03 06:05 IST) — supersedes all Sept-2 snapshots
 below:**
