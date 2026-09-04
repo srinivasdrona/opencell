@@ -137,6 +137,14 @@ snapshot below:**
     M=5000 has n=1 evidence under the damage-active model with fail-closed
     escalation, and use one worktree per concurrent seed to avoid overlay
     write races.
+    Corrective candidate `31eabde` closes those blockers: a conventional
+    seed-36 M=5000 run under the identical overlay-capable bootstrap matches
+    the dual output's onset 27918, completion 31993, and **all 18
+    states_before/states_after arrays byte-for-byte**. Both dual outputs now
+    bind the resolved DNADamage source hash/path/overlay status; surveys
+    filter by active M; M=5000 is explicitly PROVISIONAL with n=1 and a
+    separate-commit escalation formula; concurrent jobs require separate
+    worktrees. Await final Opus acceptance before bulk launch.
 
 **Current status (2026-09-03 06:05 IST) — supersedes all Sept-2 snapshots
 below:**
