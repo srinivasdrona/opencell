@@ -103,6 +103,13 @@ below:**
     exhausts at ticks ~69-99 on ~40% of seeds. Replace the finite draw list
     with hash-bound per-tick process.randStream `states_before` restoration
     across all 200x100 ticks, then rerun the unchanged two-sided gate once.
+    Candidate `4325cfd` now reports definitive PASS: actual MATLAB streams
+    were restored from captured `process_state_before` and used to generate
+    the full draw batches (zero exhaustion across 200x100); the unchanged
+    frozen gate gives pooled **63 vs 65**, active seeds **57 vs 58**,
+    clustered **6 vs 7**, all balanced with adjusted p=1.0. Await Opus
+    source/provenance/evidence review before integration; if accepted the
+    board becomes 20 PASS / 0 FAIL / 2 MISSING.
   - ReplicationInitiation: tick-4 DnaA release mismatch; MATLAB ledger probe
     is repaired and captured 689 real draws. Two source bugs are fixed:
     evolveState no longer calls lifecycle-only initialization (106 wasted
