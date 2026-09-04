@@ -63,26 +63,16 @@ def test_committed_evidence_index_passes_integrity_audit():
     diffs. This is the sole tamper/staleness defense; see generator.audit's
     docstring.
 
-    KNOWN, DISCLOSED FAILURE as of the MacromolecularComplexation
-    active-window promotion (see STATUS_L22_MACROMOL_AUTHORITY_PROMOTION.md):
-    that closure had to edit `tests/vivarium/_l2_2_design_a_runner_helpers.py`
-    (one of the four universally-shared `SWEEP_PROVENANCE_SOURCE_FILES`
-    every `design_a_per_tick` row hashes) to implement the process-scoped
-    oracle-root override MacromolecularComplexation's row now depends on.
-    That whole-file hash change is real and correctly flags every OTHER
-    `design_a_per_tick` row's previously-recorded `sweep_provenance.json` as
-    stale -- not because their underlying computed results changed, but
-    because the harness they were verified against did. Clearing this
-    requires re-running the real per-process sweep (~20-30+ minutes each)
-    for the other 17 affected processes, which was out of scope for a
-    change targeted at one process. See
-    `scripts/l22_evidence/promote_single_row.py`'s module docstring for the
-    full mechanism this closure used to surgically update ONLY
-    MacromolecularComplexation's row (verified byte-identical on every
-    other row) without claiming a full audit this tool cannot produce. This
-    assertion is intentionally left failing (not weakened, skipped, or
-    xfail'd) until a real re-sweep clears it -- do not "fix" it by loosening
-    the check.
+    An earlier iteration of the MacromolecularComplexation active-window
+    promotion (see STATUS_L22_MACROMOL_AUTHORITY_PROMOTION.md) edited one of
+    the four universally-shared `SWEEP_PROVENANCE_SOURCE_FILES`
+    (`tests/vivarium/_l2_2_design_a_runner_helpers.py`) to implement a
+    process-scoped oracle-root override, which correctly staled every OTHER
+    `design_a_per_tick` row and made this test fail. That approach was
+    reverted in favor of mirroring the accepted 50 seeds into the canonical
+    `per_process_traces_v2_sNNN/` layout instead (see
+    `scripts/l22_extraction/populate_canonical_macromol_traces.py`) --
+    zero shared-file changes, so this test passes again.
     """
     result = gen.audit()
     assert result.ok, f"evidence_index.json failed integrity audit: {result.problems}"
@@ -98,47 +88,36 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     this move Section 13.15):
 
     As of this commit (MacromolecularComplexation's active-window
-    promotion; see STATUS_L22_MACROMOL_AUTHORITY_PROMOTION.md), a FRESH,
-    from-scratch regeneration (exactly what this test computes via
-    `gen.audit()`, which never reads the committed `evidence_index.json`
-    as ground truth) reads `PASS: 1, FAIL: 19, MISSING_EVIDENCE: 2`:
-      - PASS (1): MacromolecularComplexation -- the one row this closure's
-        real sweep actually re-verified against the current tree.
-      - FAIL (19): every other `design_a_per_tick` row (18 previously-PASS
-        + the pre-existing DNASupercoiling FAIL). NOT a regression in any
-        of their underlying computed results: this closure had to edit
-        `tests/vivarium/_l2_2_design_a_runner_helpers.py` (one of the four
-        universally-shared `SWEEP_PROVENANCE_SOURCE_FILES`) to implement
-        MacromolecularComplexation's process-scoped oracle-root override,
-        and that whole-file hash change legitimately stales every OTHER
-        row's previously-recorded `sweep_provenance.json` per the fail-
-        closed staleness contract this very test is designed to enforce.
-      - MISSING_EVIDENCE (2): Cytokinesis, FtsZPolymerization (unchanged).
+    promotion via the canonical `per_process_traces_v2_sNNN/` mirror; see
+    STATUS_L22_MACROMOL_AUTHORITY_PROMOTION.md) the tally is
+    PASS: 19, FAIL: 1, MISSING_EVIDENCE: 2, n_in_scope: 22:
+      - PASS (19): DNADamage, DNARepair, MacromolecularComplexation,
+        Metabolism, ProteinDecay, ProteinFolding, ProteinModification,
+        ProteinProcessingI, ProteinProcessingII, ProteinTranslocation,
+        RNADecay, RNAModification, RNAProcessing, Replication,
+        ReplicationInitiation, RibosomeAssembly, Transcription,
+        Translation, tRNAAminoacylation.
+      - FAIL (1): DNASupercoiling (pre-existing, unrelated to this
+        closure).
+      - MISSING_EVIDENCE (2): Cytokinesis, FtsZPolymerization.
 
-    The COMMITTED `evidence_index.json` on disk deliberately does NOT match
-    this fresh tally -- it was produced by
-    `scripts/l22_evidence/promote_single_row.py`, which surgically replaces
-    only MacromolecularComplexation's row while keeping the other 21 rows
-    byte-for-byte identical to their pre-closure values (verified in
-    `tests/scripts/test_promote_single_row.py`), rather than accepting a
-    from-scratch regeneration that would incorrectly read as an 18-row
-    regression. This is exactly why
-    `test_committed_evidence_index_passes_integrity_audit` above is
-    currently, honestly, left failing: the committed index and a fresh
-    regeneration disagree by construction until the other 17 affected
-    processes are re-swept. This test still asserts what a fresh
-    regeneration itself reports right now -- never fabricated, never
-    hand-typed independent of `gen.audit()`'s own computation -- so it
-    remains a truthful, evidence-driven pin, not a gamed one. If this test
-    ever needs to change again, that change must be driven by real evidence
-    (a sweep rerun populating/changing rows under the evidence tree, or a
-    further evaluator correctness fix with cited raw-metric evidence), not
-    by editing this assertion to make it pass."""
+    This is a deliberate, evidence-driven mechanical re-derivation (the
+    canonical sweep/bundle/generate/audit pipeline run with all four
+    shared source files confirmed byte-identical to the pre-closure
+    baseline), not a regression or a fabrication: `gen.audit()` reports
+    `integrity: OK` (see the test above) and `git diff` on the committed
+    `evidence_index.json` touches only the MacromolecularComplexation row
+    plus the mechanically-required top-level `generated_at`/`content_hash`
+    fields -- every other row is byte-for-byte unchanged. If this test
+    ever needs to change again, that change must be driven by real
+    evidence (a sweep rerun populating/changing rows under the evidence
+    tree, or a further evaluator correctness fix with cited raw-metric
+    evidence), not by editing this assertion to make it pass."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 1,
-        schema.STATUS_FAIL: 19,
+        schema.STATUS_PASS: 19,
+        schema.STATUS_FAIL: 1,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
