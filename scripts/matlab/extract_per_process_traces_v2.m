@@ -205,20 +205,53 @@ for i = 1:numel(process_names)
             states_after.(snapshot_props{p}) = cell(n_ticks, 1);
         end
 
+        % fixed_tap_anchor_opts: only non-empty (enabling
+        % merge_event_observables enrichment inside evolve_state_with_tap)
+        % when the caller opted in via anchor_opts.capture_signal_container
+        % -- every other existing 'fixed'/'' caller keeps passing []
+        % exactly as before (fully backward-compatible; see
+        % default_anchor_opts).
+        fixed_tap_anchor_opts = [];
+        if isfield(anchor_opts, 'capture_signal_container') && anchor_opts.capture_signal_container
+            fixed_tap_anchor_opts = anchor_opts;
+        end
+
         % Optional event-window burn-in: advance the whole simulation tick_offset
         % ticks without snapshotting, so the subsequent n_ticks capture a window
         % where an otherwise-quiescent-at-birth process is active.
         for bt = 1:tick_offset
-            [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props, [], extraction_opts);
+            [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props, fixed_tap_anchor_opts, extraction_opts);
         end
 
         for t = 1:n_ticks
             try
-                [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, [], extraction_opts);
+                [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, fixed_tap_anchor_opts, extraction_opts);
                 for p = 1:numel(snapshot_props)
                     prop = snapshot_props{p};
                     states_before.(prop){t, 1} = before_tick.(prop);
                     states_after.(prop){t, 1} = after_tick.(prop);
+                end
+                if ~isempty(fixed_tap_anchor_opts)
+                    % merge_event_observables enrichment fields (e.g. for
+                    % HostInteraction/host: isBacteriumAdherent,
+                    % isTLRActivated_1..3, isNFkBActivated,
+                    % isInflammatoryResponseActivated) are NOT in
+                    % snapshot_props (they belong to the linked state
+                    % object, not the process's own snapshot properties),
+                    % so they are lazily discovered from before_tick's own
+                    % fieldnames and cell-array-initialized on tick 1 --
+                    % never a fixed/pre-enumerated list that could silently
+                    % drop a field a future signal_kind adds.
+                    merged_props = setdiff(fieldnames(before_tick), snapshot_props);
+                    for p = 1:numel(merged_props)
+                        prop = merged_props{p};
+                        if ~isfield(states_before, prop)
+                            states_before.(prop) = cell(n_ticks, 1);
+                            states_after.(prop) = cell(n_ticks, 1);
+                        end
+                        states_before.(prop){t, 1} = before_tick.(prop);
+                        states_after.(prop){t, 1} = after_tick.(prop);
+                    end
                 end
             catch err
                 ok = false;
@@ -295,6 +328,23 @@ for i = 1:numel(process_names)
         metadata.stride = int32(1);
         metadata.tick_start = int32(effective_tick_start + 1);
         metadata.tick_end = int32(effective_tick_start + n_ticks);
+        % Signal-container enrichment identity (mirrors the 'anchor' block
+        % below, minus window_anchor/onset_tick/max_search_ticks which only
+        % mean something for a SEARCH): written only when the caller opted
+        % into anchor_opts.capture_signal_container, so a fixed window
+        % that carries merge_event_observables fields (e.g. HostInteraction
+        % host.isBacteriumAdherent/isTLRActivated/isNFkBActivated/
+        % isInflammatoryResponseActivated) hash-binds to the exact
+        % signal_kind/signal_property/signal_field request it was
+        % generated for -- Python-side validation can then refuse a trace
+        % produced for a different request instead of trusting the path.
+        if anchor_opts.capture_signal_container
+            metadata.signal_kind = anchor_opts.signal_kind;
+            metadata.signal_property = anchor_opts.signal_property;
+            metadata.signal_field = anchor_opts.signal_field;
+            metadata.capture_signal_container = true;
+            metadata.event_observable_projection_version = int32(2);
+        end
     elseif strcmp(window_contract, 'anchor')
         % capture_anchor_window's own tick numbering already starts at
         % absolute tick 1 (no burn-in exists for 'anchor'; enforced above),
@@ -540,6 +590,22 @@ function opts = default_anchor_opts(opts)
 % value derived from the expected/desired outcome.
 if ~isfield(opts, 'max_search_ticks') || isempty(opts.max_search_ticks)
     opts.max_search_ticks = 50000;
+end
+% capture_signal_container (default false, backward-compatible): opt-in
+% flag allowing a window_contract='fixed' extraction to ALSO merge the
+% real per-tick signal_kind/signal_property/signal_field observable
+% projection (merge_event_observables) into the captured snapshot, without
+% performing an anchor SEARCH (capture_anchor_window is only ever invoked
+% for window_contract='anchor'; this flag only affects which observables a
+% fixed window snapshot carries). Exists for genuinely ALREADY-ACTIVE
+% signals (e.g. HostInteraction's host.isBacteriumAdherent, which a real
+% seed-0 run shows is TRUE from tick 1 onward -- see
+% docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md -- so a
+% false->true anchor SEARCH can never terminate and is the wrong strategy;
+% the correct extraction is a plain fixed window that is active by
+% construction, not a discovered transition).
+if ~isfield(opts, 'capture_signal_container') || isempty(opts.capture_signal_container)
+    opts.capture_signal_container = false;
 end
 if ~isfield(opts, 'signal_kind') || isempty(opts.signal_kind)
     opts.signal_kind = 'diameter_decrease';

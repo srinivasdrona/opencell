@@ -1,0 +1,142 @@
+{
+  "generated_by": "scripts/l21_active_window_audit.py",
+  "standard_manifest": "/mnt/e/opencell-worktrees/fix-l21-host-active/docs/phase_f/l2_2_design_a/oracle_population_manifest.json",
+  "process_count": 1,
+  "counts": {
+    "EXISTING_WINDOW_PASS": 1,
+    "CODE_GAP": 0,
+    "MISSING_ACTIVE_EXTRACTION": 0
+  },
+  "rows": [
+    {
+      "process": "HostInteraction",
+      "activity_predicate": "source-faithful host boolean deltas (adherence/TLR/NFkB/inflammatory-response)",
+      "scanned_candidate_count": 2,
+      "candidate_traces": [
+        {
+          "path": "/mnt/e/opencell-worktrees/fix-l21-host-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
+          "repo_relative_hint": "opencell-worktrees/fix-l21-host-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
+          "sha256": "5eaa308f2b7fe4dbd5e96c698cd7c5c978cd1d65bc28e680078346e76d4507d2",
+          "trace_family": "event_window",
+          "n_ticks": 100,
+          "rng_seed": 0,
+          "tick_offset": 0.0,
+          "states_after_keys": [
+            "boundEnzymes",
+            "enzymes",
+            "isBacteriumAdherent",
+            "isInflammatoryResponseActivated",
+            "isNFkBActivated",
+            "isTLRActivated_1",
+            "isTLRActivated_2",
+            "isTLRActivated_3",
+            "substrates"
+          ],
+          "first_active_tick": 0,
+          "first_active_absolute_tick": 0.0,
+          "active_tick_count": 100,
+          "first_active_detail": {
+            "observable": "isBacteriumAdherent",
+            "detail_path": "isBacteriumAdherent",
+            "index": 0,
+            "before": 0.0,
+            "after": 1.0
+          },
+          "source_manifest": null,
+          "duplicate_of": null
+        },
+        {
+          "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/HostInteraction_100ticks.mat",
+          "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2/HostInteraction_100ticks.mat",
+          "sha256": "a87006a356001ac060fcbe233af19dc7e21e863dcf4bf4d848b49147a5114f44",
+          "trace_family": "canonical_standard",
+          "n_ticks": 100,
+          "rng_seed": 0,
+          "tick_offset": null,
+          "states_after_keys": [
+            "boundEnzymes",
+            "enzymes",
+            "substrates"
+          ],
+          "first_active_tick": null,
+          "first_active_absolute_tick": null,
+          "active_tick_count": 0,
+          "first_active_detail": null,
+          "source_manifest": "direct_standard_fallback",
+          "duplicate_of": null
+        }
+      ],
+      "chosen_trace": {
+        "path": "/mnt/e/opencell-worktrees/fix-l21-host-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/fix-l21-host-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
+        "sha256": "5eaa308f2b7fe4dbd5e96c698cd7c5c978cd1d65bc28e680078346e76d4507d2",
+        "trace_family": "event_window",
+        "n_ticks": 100,
+        "rng_seed": 0,
+        "tick_offset": 0.0,
+        "states_after_keys": [
+          "boundEnzymes",
+          "enzymes",
+          "isBacteriumAdherent",
+          "isInflammatoryResponseActivated",
+          "isNFkBActivated",
+          "isTLRActivated_1",
+          "isTLRActivated_2",
+          "isTLRActivated_3",
+          "substrates"
+        ],
+        "first_active_tick": 0,
+        "first_active_absolute_tick": 0.0,
+        "active_tick_count": 100,
+        "first_active_detail": {
+          "observable": "isBacteriumAdherent",
+          "detail_path": "isBacteriumAdherent",
+          "index": 0,
+          "before": 0.0,
+          "after": 1.0
+        },
+        "source_manifest": null,
+        "duplicate_of": null
+      },
+      "bit_identity": {
+        "pass_all_compared_ticks": true,
+        "compared_surfaces": [
+          "substrates",
+          "enzymes",
+          "boundEnzymes",
+          "isBacteriumAdherent",
+          "isTLRActivated_1",
+          "isTLRActivated_2",
+          "isTLRActivated_3",
+          "isNFkBActivated",
+          "isInflammatoryResponseActivated"
+        ],
+        "first_mismatch_tick": null,
+        "first_mismatch_observable": null,
+        "first_mismatch_index": null,
+        "first_mismatch_oc_val": null,
+        "first_mismatch_karr_val": null,
+        "first_mismatch_diff": null,
+        "compared_tick_count": 100
+      },
+      "honest_replay": {
+        "karr_active_ticks": 100,
+        "oc_active_ticks": 100,
+        "oc_active_on_karr_active_ticks": 100,
+        "first_karr_active_tick": 0,
+        "first_karr_active_detail": {
+          "observable": "isBacteriumAdherent",
+          "detail_path": "isBacteriumAdherent",
+          "index": 0,
+          "before": 0.0,
+          "after": 1.0
+        },
+        "first_oc_active_tick": 0,
+        "first_measured_mismatch": null
+      },
+      "classification": "EXISTING_WINDOW_PASS",
+      "existing_trace_suffices": true,
+      "extraction_request": null
+    }
+  ]
+}
