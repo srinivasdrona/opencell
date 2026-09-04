@@ -54,6 +54,7 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 import _l2_2_design_a_runner_helpers as helpers  # noqa: E402
+
 from scripts.l22_extraction import macromol_active_window as maw  # noqa: E402
 
 PROCESS = "MacromolecularComplexation"
