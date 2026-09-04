@@ -544,6 +544,61 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     },
 }
 
+# --- Process-scoped oracle-root override registry ---------------------------
+#
+# `tests/vivarium/_l2_2_design_a_runner_helpers.py` supports an authoritative,
+# process-scoped `OPENCELL_L22_PROCESS_ORACLE_ROOT__<PROCESS>` environment-
+# variable override (see `process_oracle_root_env_var` /
+# `_resolve_process_oracle_root_override` there) that routes ONE named
+# process's Design-A oracle loader at an alternate, validated on-disk cohort
+# instead of the canonical `per_process_traces_v2*` layout -- used today by
+# MacromolecularComplexation's active-window cohort (see
+# `docs/phase_f/l2_2_design_a/MACROMOLECULARCOMPLEXATION_ACTIVE_WINDOW_PREREG.md`).
+#
+# This is DELIBERATELY a separate registry from `PROCESS_DEPENDENCY_FILES`
+# above, even though both feed `current_source_hashes`/`_current_source_
+# hashes`'s merged `source_hashes` dict: `PROCESS_DEPENDENCY_FILES` is
+# AST-audited (`tests/scripts/test_l22_evidence_ast_completeness.py`) against
+# a process's `oc_module` REAL runtime import graph -- the contract/validator
+# module below is never imported by `oc_module` (it is an evidence-generation-
+# time oracle-routing/validation concern, not a SUT runtime dependency), so
+# conflating the two would corrupt that audit's SUT-import semantics. Keeping
+# this registry separate means an edit to the active-window contract module
+# or its MATLAB driver correctly stales ONLY that process's evidence row
+# (same "stale-only-that-process" property every other named-hash entry in
+# this file has) without polluting the AST-completeness contract.
+ACTIVE_WINDOW_MACROMOL_CONTRACT_MODULE = (
+    REPO_ROOT / "scripts" / "l22_extraction" / "macromol_active_window.py"
+)
+ACTIVE_WINDOW_MACROMOL_MATLAB_DRIVER = (
+    REPO_ROOT / "scripts" / "matlab" / "extract_macromol_active_window_seeds.m"
+)
+
+# process name -> the OPENCELL_L22_PROCESS_ORACLE_ROOT__<PROCESS> env var this
+# process's Design-A row is routed through when set. Purely documentation/
+# lookup (the runner helpers module derives the same name mechanically from
+# `process_oracle_root_env_var`); kept here too so evidence-generation code
+# and provenance payloads can name the exact override in force without
+# importing the runner helpers module.
+PROCESS_ORACLE_ROOT_ENV_VAR: dict[str, str] = {
+    "MacromolecularComplexation": "OPENCELL_L22_PROCESS_ORACLE_ROOT__MACROMOLECULARCOMPLEXATION",
+}
+
+# process name -> {named contract/driver file -> Path}, hashed into
+# `source_hashes` (via `current_source_hashes`/`_current_source_hashes`)
+# whenever that process is evaluated, exactly like `PROCESS_DEPENDENCY_FILES`
+# and `HARNESS_DEPENDENCY_FILES` already are -- so a sentinel/row generated
+# against a stale contract module or MATLAB driver is flagged
+# `STALE_VS_TREE`/`STALE_SWEEP_PROVENANCE` the same way a stale `oc_module`
+# or shared harness file is.
+PROCESS_ORACLE_ROOT_CONTRACT_FILES: dict[str, dict[str, Path]] = {
+    "MacromolecularComplexation": {
+        "active_window_contract_module": ACTIVE_WINDOW_MACROMOL_CONTRACT_MODULE,
+        "active_window_matlab_driver": ACTIVE_WINDOW_MACROMOL_MATLAB_DRIVER,
+    },
+}
+
+
 # --- Harness-level shared dependency (F1: `l2_replay_common.py`) ------------
 #
 # `tests/vivarium/_l2_2_design_a_runner_helpers.py` (already hashed above as

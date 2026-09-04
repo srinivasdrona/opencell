@@ -247,6 +247,8 @@ def current_source_hashes(
     if process:
         for name, path in schema.PROCESS_DEPENDENCY_FILES.get(process, {}).items():
             hashes[name] = _sha256_file(path)
+        for name, path in schema.PROCESS_ORACLE_ROOT_CONTRACT_FILES.get(process, {}).items():
+            hashes[name] = _sha256_file(path)
     if harness_type:
         hashes.update(schema.harness_dependency_hashes(harness_type))
     return hashes
@@ -473,6 +475,7 @@ def build_sweep_provenance(
         for fname in schema.SWEEP_PROVENANCE_SIDECAR_FILES
         if (output_dir / fname).is_file()
     }
+    oracle_root_env_var = schema.PROCESS_ORACLE_ROOT_ENV_VAR.get(job.process)
     return {
         "schema_version": schema.SWEEP_PROVENANCE_SCHEMA_VERSION,
         "process": job.process,
@@ -487,6 +490,19 @@ def build_sweep_provenance(
         "evaluator_schema_version": vd.EVALUATOR_SCHEMA_VERSION,
         "result_schema_version": schema.RESULT_SCHEMA_VERSION,
         "written_at": datetime.now(UTC).isoformat(),
+        # Process-scoped oracle-root override provenance (informational,
+        # non-gating field; see schema.PROCESS_ORACLE_ROOT_ENV_VAR /
+        # PROCESS_ORACLE_ROOT_CONTRACT_FILES). Records the env var NAME this
+        # process is eligible to be routed through and, if it was actually
+        # set when this job ran, the exact root value that was consulted --
+        # so a reviewer can see, after the fact, whether a row was generated
+        # via the canonical layout or an authoritative override without
+        # needing to reconstruct the operator's shell environment.
+        "process_oracle_root_override": (
+            {"env_var": oracle_root_env_var, "value": os.environ.get(oracle_root_env_var)}
+            if oracle_root_env_var
+            else None
+        ),
     }
 
 

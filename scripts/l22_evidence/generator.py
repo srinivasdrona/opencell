@@ -254,6 +254,8 @@ def _current_source_hashes(entry: cat.ProcessEntry | None = None) -> dict[str, s
     if entry is not None:
         for name, path in schema.PROCESS_DEPENDENCY_FILES.get(entry.name, {}).items():
             hashes[name] = _sha256_file(path)
+        for name, path in schema.PROCESS_ORACLE_ROOT_CONTRACT_FILES.get(entry.name, {}).items():
+            hashes[name] = _sha256_file(path)
         hashes.update(schema.harness_dependency_hashes(entry.harness_type))
     return hashes
 
