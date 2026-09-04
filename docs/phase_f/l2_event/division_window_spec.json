@@ -1,0 +1,48 @@
+{
+  "$comment": "Single machine-loadable source of truth for division-window (event-anchor) capture sizes used by the Cytokinesis + FtsZPolymerization dual-tap extractor and every Python/MATLAB consumer that needs an authoritative M_ticks/tick_range_from_division value. Do NOT hardcode these numbers anywhere else -- read this file (via scripts/l2_event/division_window_spec.py in Python, or the MATLAB loader in scripts/matlab/division_window_spec.m) instead. PROCESS_CATALOG.yaml's Cytokinesis/FtsZPolymerization M_ticks/seed_window fields are kept in sync with this file by hand and checked for agreement by tests/scripts/test_division_window_spec.py -- if you change a value here, update PROCESS_CATALOG.yaml (and event_registry.yaml's prose) in the SAME commit. See decisions/dec-005-full-simulation-source-hash-binding.md for the source-identity binding this cohort now also requires, and STATUS_DUAL_CYT_WINDOW_FIX.md's 'Corrective pass (2026-09-04, post-Opus-review)' section for the full corrected narrative this file's rationale below summarizes.",
+  "schema_version": 2,
+  "corrective_note_2026_09_04": "Schema version 1 of this file (same day, earlier) attributed the seed-36 conventional-vs-dual span disagreement (3963/3964 inclusive vs 4075/4076 inclusive) to 'run-to-run whole-simulation nondeterminism' and treated the 35-trace M_ticks=4000 survey's max (3971) as corroborating margin evidence. BOTH claims are RETRACTED. Opus review identified the actual cause: the two runs resolved two DIFFERENT DNADamage.m source variants (the live genuine-l22-cytokinesis queue's worktree predates the signed-zero overlay commits; this worktree's karr_bootstrap.m includes them) -- a source-version confound, not stochastic nondeterminism, and not correctable by survivorship-bias reasoning either, because the 35-trace M_ticks=4000 cohort was ALSO produced under the pre-overlay source and is therefore evidence about a DIFFERENT model, not merely a truncated sample of the SAME model. See decisions/dec-005 for the full finding and evidence.",
+  "processes": {
+    "Cytokinesis": {
+      "m_ticks": 5000,
+      "tick_range_from_division": [-4999, 0],
+      "m_ticks_status": "PROVISIONAL -- evidence is n=1 under the DNADamage-signed-zero-overlay-active model (see evidence.n below). Not yet corroborated by a second independent seed under the same (patched) source. Do not treat 5000 as settled until at least one more seed's real span is observed under this source.",
+      "preregistered_at": "2026-09-04",
+      "preregistered_by": "agent/dual-cyt-window-fix-20260904 (E:\\opencell-worktrees\\fix-dual-cyt-window, base main f71cfbb)",
+      "rationale": "The prior M_ticks=4000 (reconciled 2026-08-05 from a seed-0 lower bound of 3871 ticks, itself produced under the PRE-overlay DNADamage.m -- see corrective_note above) was never exercised end-to-end against the true onset under the POST-overlay (signed-zero-normalized) DNADamage source until a fresh seed-36 dual-tap run on 2026-09-04, which uses this worktree's overlay-aware karr_bootstrap.m. That run completed a full ~32k-tick trajectory and failed closed: real onset_tick=27918, completion_tick=31993, inclusive onset-to-completion span=4076 ticks -- 76 ticks LARGER than the 4000-tick buffer, so onset_tick necessarily preceded the captured window's tick_start and the extractor correctly refused to emit an incomplete file (capture_dual_anchor_windows' 'onset_tick < tick_start_a' guard in scripts/matlab/extract_dual_division_window.m). This 4076-tick figure is the ONLY real data point available under the currently-active (overlay-patched) DNADamage source -- the 35-trace M_ticks=4000 survey (spans 3637-3971, scripts/l2_event/survey_cytokinesis_onset_span.py) is evidence about a DIFFERENT, pre-overlay model and is NOT used as corroborating evidence for this margin decision (see corrective_note and evidence.known_completed_trace_spans_m4000_cohort_DIFFERENT_SOURCE_NOT_COMPARABLE below). Given n=1 evidence, this preregistration deliberately uses a generous, round margin rather than a tightly-fitted one: 5000 gives a 924-tick (22.7%) margin over the single observed 4076-tick span. This is PROVISIONAL (see m_ticks_status) pending at least one more independent seed's real span under the same (patched) source -- see escalation_policy for what happens if a future seed exceeds 5000.",
+      "supersedes": {
+        "m_ticks": 4000,
+        "tick_range_from_division": [-3999, 0],
+        "reason": "4000-tick traces remain preserved on disk and are NOT deleted, but are non-authoritative for the M_ticks=5000 cohort for TWO independent reasons: (1) window_loader/launcher.validate_existing_event_window reject them outright on metadata.n_ticks mismatch (4000 != 5000); (2) they were produced under the PRE-overlay DNADamage.m source (decisions/dec-005 full-simulation-source-hash-binding) and are rejected on dnadamage_source_resolved_sha256 mismatch/absence even independent of the n_ticks check. Both must be re-extracted -- under the new M_ticks AND the current DNADamage source -- before counting toward the N=50 Cytokinesis event-window requirement."
+      },
+      "evidence": {
+        "n": 1,
+        "max_observed_span_ticks": 4076,
+        "max_observed_span_seed": 36,
+        "max_observed_span_run": "fresh dual-tap equivalence run, 2026-09-04 (pre-preregistration probe), onset_tick=27918 completion_tick=31993, run under this worktree's overlay-aware karr_bootstrap.m (patched DNADamage.m). Independently reproduced byte-for-byte identical onset/completion on the post-preregistration seed-36 re-run recorded in STATUS_DUAL_CYT_WINDOW_FIX.md -- the SAME code path (dual-tap extractor) is reproducible for a given seed; only cross-source-version comparisons showed disagreement.",
+        "margin_ticks": 924,
+        "margin_fraction_over_max_observed": 0.2267,
+        "known_completed_trace_spans_m4000_cohort_DIFFERENT_SOURCE_NOT_COMPARABLE": {
+          "note": "RETRACTED AS MARGIN EVIDENCE 2026-09-04 (see corrective_note): scripts/l2_event/survey_cytokinesis_onset_span.py output against E:\\opencell-worktrees\\genuine-l22-cytokinesis's 35 valid M_ticks=4000 traces. These traces were produced under the PRE-overlay (un-patched) DNADamage.m source (verified: that worktree's karr_bootstrap.m is unchanged since commit b8a27a5, before the signed-zero overlay commits d3e91e8/c2174bb/f7d4310 present in THIS worktree) -- a DIFFERENT model than the M_ticks=5000 cohort's overlay-patched source, not merely a differently-sized sample of the same one. Retained here for historical provenance only; do not use these numbers to justify or adjust M_ticks for the overlay-active cohort.",
+          "n_seeds_surveyed": 35,
+          "max_span_ticks": 3971,
+          "max_span_seed": 9,
+          "min_span_ticks": 3637,
+          "min_span_seed": 34
+        }
+      },
+      "escalation_policy": {
+        "trigger": "Any future observed real onset-to-completion span (INCLUSIVE convention: completion_tick - onset_tick + 1) that equals or exceeds the current m_ticks, for ANY seed under the CURRENT (overlay-patched) DNADamage source.",
+        "formula": "new_m_ticks = ceil(observed_span_inclusive * 1.227 / 1000) * 1000  -- i.e. at least a 22.7% margin over the new observed maximum, rounded UP to the next multiple of 1000.",
+        "rule": "The new m_ticks MUST be set in a NEW, SEPARATE preregistration commit -- never the same commit that discovered the overrun, and never a same-commit silent retry/tune. Discovering the overrun and preregistering the fix are two distinct, separately-reviewable actions.",
+        "invalidation": "Setting a new m_ticks under this policy invalidates ALL traces captured under the PRIOR m_ticks for the purposes of the authoritative cohort -- they are preserved on disk (never deleted) but become non-authoritative, exactly like the M_ticks=4000 -> 5000 transition this file already records, and must be re-extracted under the new m_ticks before counting toward N=50.",
+        "no_tuning_note": "This policy exists specifically to prevent the failure mode of nudging m_ticks upward by a small amount to make one seed pass -- the 1.227x-and-round-to-1000 formula is deliberately coarse-grained and margin-generous so that a real re-preregistration is a rare, deliberate, reviewed event, not a routine adjustment."
+      }
+    },
+    "FtsZPolymerization": {
+      "m_ticks": 200,
+      "tick_range_from_division": [-200, 0],
+      "note": "Unchanged by the 2026-09-04 Cytokinesis window preregistration (or its 2026-09-04 corrective pass). FtsZPolymerization's own window is sized against its own pre-division ring-assembly activity window, not the Cytokinesis onset-to-completion span; it has no analogous overrun evidence and this task's evidence explicitly leaves it at M_ticks=200. Not subject to the DNADamage source-hash-binding requirement independently (its own cohort validation path, ftsz_pre_division_evidence.validate_seed_window, is unchanged by dec-005), though its dual-tap-paired output IS cross-checked against Cytokinesis's dnadamage_source_resolved_sha256 by validate_dual_division_canary.py."
+    }
+  }
+}

@@ -33,6 +33,23 @@ to check on its own):
   ``mnrnd_provider_sha256`` (both came from the same single
   ``karr_bootstrap()`` call in one process, so any drift would indicate the
   two files were NOT actually produced by one dual-tap run).
+* Full-simulation source-hash binding (decisions/dec-005, 2026-09-04): both
+  files must report the identical ``dnadamage_source_resolved_sha256`` --
+  and each file's Cytokinesis-side validation independently requires that
+  hash to match the CURRENT worktree's karr_bootstrap.m resolution (see
+  ``scripts.l2_event.launcher.current_genuine_dnadamage_source``). DNADamage
+  participates in the shared 28-process scheduler every tick, so its
+  source version affects every other process's real trajectory -- a trace
+  produced under a different DNADamage source is not comparable evidence,
+  even for a process whose own source never changed.
+* Provisional-margin gate (Opus final review, 2026-09-04): Cytokinesis's
+  real inclusive onset-to-completion span (``window_anchor - onset_tick +
+  1``) must leave a STRICTLY POSITIVE margin against ``CYTOKINESIS_N_TICKS``
+  -- a zero-or-negative margin (``inclusive_span >= CYTOKINESIS_N_TICKS``)
+  fails closed here even though the MATLAB extractor's own capture
+  invariant (left unchanged) would have allowed exactly-M_ticks. See
+  ``scripts.l2_event.division_window_spec.check_inclusive_span_margin``/
+  ``ProvisionalMarginOverrunError``.
 
 Fail-closed: :func:`validate_dual_division_canary` never returns a
 combined-PASS verdict unless BOTH underlying validators independently
@@ -55,17 +72,26 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from scripts.l2_event import division_window_spec, launcher  # noqa: E402
 from scripts.l2_event import ftsz_pre_division_evidence as ftsz_evidence  # noqa: E402
-from scripts.l2_event import launcher  # noqa: E402
+from scripts.l2_event.division_window_spec import m_ticks_for  # noqa: E402
 from scripts.l2_event.survey_cytokinesis_onset_span import (  # noqa: E402
     REQUIRED_OBSERVABLES as CYTOKINESIS_REQUIRED_OBSERVABLES,
 )
 from scripts.l2_event.window_loader import _decode_char_metadata  # noqa: E402
 
 CYTOKINESIS_PROCESS = "Cytokinesis"
-CYTOKINESIS_N_TICKS = 4000
+# Single source of truth: docs/phase_f/l2_event/division_window_spec.json
+# (read via scripts.l2_event.division_window_spec). Do NOT hardcode this
+# value here -- see the 2026-09-04 Cytokinesis window preregistration fix
+# (STATUS_DUAL_CYT_WINDOW_FIX.md). Was a literal 4000 before that fix.
+CYTOKINESIS_N_TICKS = m_ticks_for(CYTOKINESIS_PROCESS)
 FTSZ_PROCESS = "FtsZPolymerization"
-FTSZ_N_TICKS = 200
+FTSZ_N_TICKS = m_ticks_for(FTSZ_PROCESS)
+# Full-simulation source-hash binding (decisions/dec-005, 2026-09-04): see
+# scripts/l2_event/prepare_cytokinesis_cohort.py's identical constant for
+# the full rationale. Computed once at import time.
+REQUIRED_DNADAMAGE_SOURCE_SHA256 = launcher.current_genuine_dnadamage_source()["patched_sha256_lf_normalized"]
 
 
 def _sha256_file(path: Path) -> str:
@@ -105,6 +131,7 @@ def cytokinesis_anchor_spec(seed: int) -> launcher.AnchorWindowSpec:
         n_ticks=CYTOKINESIS_N_TICKS,
         required_observables=CYTOKINESIS_REQUIRED_OBSERVABLES,
         scalar_finite_observables=launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES,
+        required_dnadamage_source_sha256=REQUIRED_DNADAMAGE_SOURCE_SHA256,
     )
 
 
@@ -130,6 +157,12 @@ class DualDivisionCanaryReport:
     provider_sha256_match: bool
     cytokinesis_provider_sha256: str | None
     ftsz_provider_sha256: str | None
+    dnadamage_source_match: bool
+    cytokinesis_dnadamage_source_sha256: str | None
+    ftsz_dnadamage_source_sha256: str | None
+    margin_ok: bool
+    cytokinesis_onset_tick: int | None
+    inclusive_span_ticks: int | None
     cytokinesis_sha256: str | None = None
     ftsz_sha256: str | None = None
     status: str = "FAIL"
@@ -219,6 +252,56 @@ def validate_dual_division_canary(
                 "single karr_bootstrap() call)"
             )
 
+    # Full-simulation source-hash binding (decisions/dec-005, 2026-09-04):
+    # both taps must report the SAME dnadamage_source_resolved_sha256 (proof
+    # they came from the same single karr_bootstrap() call's overlay
+    # resolution, exactly mirroring the mnrnd_provider_sha256 check above).
+    # Missing metadata on either side fails closed (never silently treated
+    # as "no check needed") -- a pre-fix trace lacking this metadata is
+    # exactly the failure mode this binding exists to catch.
+    dnadamage_match = False
+    cyt_dnadamage_sha = None
+    ftsz_dnadamage_sha = None
+    if cyt_path.exists() and ftsz_path.exists():
+        cyt_dnadamage_sha = _read_metadata_string(cyt_path, "dnadamage_source_resolved_sha256")
+        ftsz_dnadamage_sha = _read_metadata_string(ftsz_path, "dnadamage_source_resolved_sha256")
+        dnadamage_match = (
+            cyt_dnadamage_sha is not None and cyt_dnadamage_sha == ftsz_dnadamage_sha
+        )
+        if not dnadamage_match:
+            reasons.append(
+                f"dnadamage_source_resolved_sha256 mismatch or missing: cytokinesis={cyt_dnadamage_sha!r} "
+                f"ftsz={ftsz_dnadamage_sha!r} (both taps must have resolved the same DNADamage.m source "
+                "from the same single karr_bootstrap() call -- decisions/dec-005)"
+            )
+
+    # Provisional-margin gate (Opus final review, 2026-09-04): the real
+    # inclusive onset-to-completion span (completion - onset + 1) must
+    # leave a strictly positive margin against CYTOKINESIS_N_TICKS --
+    # a zero-or-negative margin fails closed here even though the MATLAB
+    # extractor's own capture invariant (unchanged) would have allowed
+    # exactly-M_ticks. Only computed when Cytokinesis's own file exists
+    # and independently validated (cyt_valid): a file that already fails
+    # cyt_valid may not even have a reliable onset_tick to read.
+    margin_ok = False
+    cyt_onset = None
+    inclusive_span: int | None = None
+    if cyt_path.exists():
+        cyt_onset = _read_metadata_int(cyt_path, "onset_tick")
+        if cyt_onset is not None and cyt_anchor is not None:
+            inclusive_span = cyt_anchor - cyt_onset + 1
+            try:
+                division_window_spec.check_inclusive_span_margin(cyt_onset, cyt_anchor, CYTOKINESIS_N_TICKS)
+                margin_ok = True
+            except division_window_spec.ProvisionalMarginOverrunError as exc:
+                margin_ok = False
+                reasons.append(f"provisional-margin gate: {exc}")
+        else:
+            reasons.append(
+                "provisional-margin gate: missing onset_tick or window_anchor metadata -- "
+                "cannot evaluate margin"
+            )
+
     status = (
         "PASS"
         if (
@@ -228,6 +311,8 @@ def validate_dual_division_canary(
             and distinct_content
             and same_completion
             and provider_match
+            and dnadamage_match
+            and margin_ok
         )
         else "FAIL"
     )
@@ -248,6 +333,12 @@ def validate_dual_division_canary(
         provider_sha256_match=provider_match,
         cytokinesis_provider_sha256=cyt_provider_sha,
         ftsz_provider_sha256=ftsz_provider_sha,
+        dnadamage_source_match=dnadamage_match,
+        cytokinesis_dnadamage_source_sha256=cyt_dnadamage_sha,
+        ftsz_dnadamage_source_sha256=ftsz_dnadamage_sha,
+        margin_ok=margin_ok,
+        cytokinesis_onset_tick=cyt_onset,
+        inclusive_span_ticks=inclusive_span,
         cytokinesis_sha256=cyt_sha,
         ftsz_sha256=ftsz_sha,
         status=status,

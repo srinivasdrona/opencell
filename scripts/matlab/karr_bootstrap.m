@@ -149,6 +149,16 @@ provider.identity_json = jsonencode(struct( ...
 end
 
 function overlay = add_worktree_source_overlays(repo_root, wcm_root, worktree_wcm_root)
+% CONCURRENCY POLICY (decisions/dec-005, 2026-09-04 review): the generated
+% overlay path below (<repo_root>/tmp/wcm_source_overlay/src/...) is
+% SHARED PER-WORKTREE, not per-PID or per-job. Running more than one
+% bulk-extraction MATLAB job concurrently in the SAME worktree is
+% UNSUPPORTED: every concurrent karr_bootstrap() call in that worktree
+% would race to (re)write this one file. ensure_dnadamage_signed_zero_overlay
+% writes it atomically (temp file + movefile) as defense-in-depth against
+% a torn READ, but that does not make concurrent same-worktree bulk jobs
+% supported -- use one worktree (or a distinct per-PID overlay path, not
+% yet implemented) per concurrent bulk worker.
 generated_overlay_root = fullfile(repo_root, 'tmp', 'wcm_source_overlay');
 generated_overlay_src = fullfile(generated_overlay_root, 'src');
 generated_dnadamage_path = fullfile(generated_overlay_src, ...
@@ -216,13 +226,33 @@ if overlay_required
     if ~exist(overlay_dir, 'dir')
         mkdir(overlay_dir);
     end
-    fid = fopen(overlay_path, 'w');
+    % Atomic write (item 6, 2026-09-04 Cytokinesis window fix review):
+    % write to a unique per-process temp file first, then movefile() to
+    % the final overlay_path, so a SECOND concurrent karr_bootstrap() call
+    % in the SAME worktree (this overlay path is shared per-worktree, not
+    % per-PID -- see this function's own docstring) can never observe a
+    % partially-written overlay file. The two writers would compute
+    % byte-identical content anyway (this is a pure function of the
+    % unchanging source_path bytes), so this is defense against a torn
+    % READ, not a content race; running more than one bulk-extraction
+    % MATLAB job per worktree concurrently remains unsupported regardless
+    % (decisions/dec-005) -- this hardening only prevents that
+    % unsupported case from corrupting a resolved-source read.
+    temp_overlay_path = fullfile(overlay_dir, ...
+        sprintf('.tmp-%d-%s-%s', feature('getpid'), datestr(now, 'yyyymmddTHHMMSSFFF'), 'DNADamage.m'));
+    fid = fopen(temp_overlay_path, 'w');
     if fid < 0
         error('karr_bootstrap:dnadamage_overlay_open_failed', ...
-            'Unable to open generated overlay path for writing: %s', overlay_path);
+            'Unable to open generated overlay temp path for writing: %s', temp_overlay_path);
     end
     cleanup_fid = onCleanup(@() fclose(fid)); %#ok<NASGU>
     fwrite(fid, patched_bytes, 'uint8');
+    clear cleanup_fid; % force-close before movefile so no handle is left open on the temp path
+    [move_ok, move_msg] = movefile(temp_overlay_path, overlay_path, 'f');
+    if ~move_ok
+        error('karr_bootstrap:dnadamage_overlay_move_failed', ...
+            'Unable to move generated overlay temp path %s to %s: %s', temp_overlay_path, overlay_path, move_msg);
+    end
 end
 
 overlay = struct( ...

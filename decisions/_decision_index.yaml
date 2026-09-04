@@ -49,3 +49,14 @@ decisions:
       - "Coordinator's re-run evidence_index.json sweep produces a disposition other than the predicted ordinary non-green fallthrough"
     superseded_by: null
 
+  - id: dec-005
+    title: "Full-simulation source-hash binding for Cytokinesis event-window traces"
+    file: decisions/dec-005-full-simulation-source-hash-binding.md
+    status: active
+    created: 2026-09-04
+    invalidation_triggers:
+      - "extract_per_process_traces_v2.m's single-process extractor is extended to write DNADamage source metadata unconditionally, closing its own narrower blind spot"
+      - "The live genuine-l22-cytokinesis (or any other) queue's worktree is updated to include the DNADamage signed-zero overlay commits"
+      - "A same-source isolation probe shows a real array divergence under matched DNADamage source hashes (would indicate a genuine dual-tap-vs-single-process bug, not a source confound)"
+    superseded_by: null
+
