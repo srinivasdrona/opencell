@@ -173,6 +173,32 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
       branch's DNADamage work) is preserved unchanged through this branch's
       merge with `main`.
 
+    A FIFTH change (MacromolecularComplexation's active-window closure; see
+    STATUS_L22_MACROMOL_AUTHORITY_PROMOTION.md) moves
+    MacromolecularComplexation FAIL -> PASS: the old row's
+    `SENTINEL_FAIL: PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE`/
+    `H12_OBSERVED_REGIME` FAIL was generated against the canonical EARLY
+    100-tick oracle cohort, whose `tick_offset=0` windows never reach the
+    naturally-occurring network-2 competitive branch at all (see
+    `decisions/dec-004-macromol-network2-closed-form-dominant-withdrawn.md`).
+    A new, source-faithful 50-seed ACTIVE-WINDOW cohort (each seed's real
+    scheduler-discovered first network-2-formation tick, captured same-pass,
+    genuine Statistics Toolbox provider) was extracted, validated, and
+    mirrored byte-for-byte into the canonical
+    `per_process_traces_v2_sNNN/` layout every other `design_a_per_tick`
+    process already uses (see
+    `scripts/l22_extraction/populate_canonical_macromol_traces.py`) -- the
+    shared runner/helpers/catalog files are completely unmodified. The
+    ordinary sweep against this cohort now reports a real mechanical
+    `PASS` (all 3 channels `SEED_NOISE`), replacing the old stale
+    SENTINEL_FAIL. NOTE: a separate, preregistered index-aware diagnostic
+    (`scripts/l22_evidence/macromol_network2_selection_diagnostic.py`,
+    NON-GATING for this row) found that literal per-seed network-2
+    selection identity (which of the two competing complexes 22/23 forms)
+    is NOT established -- see STATUS_L22_MACROMOL_AUTHORITY_PROMOTION.md
+    for the full, honest caveat; it does not affect this mechanical,
+    aggregate-distributional PASS.
+
     If this test ever needs to change again, that change must be driven by
     real evidence (a sweep rerun populating/changing rows under the evidence
     tree, a broader H12 artifact regeneration, or a further cited evaluator
@@ -185,8 +211,8 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 18,
-        schema.STATUS_FAIL: 2,
+        schema.STATUS_PASS: 19,
+        schema.STATUS_FAIL: 1,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
     fail_rows = {
@@ -195,26 +221,20 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         if row["mechanical_verdict"] == schema.STATUS_FAIL
     }
     assert set(fail_rows) == {
-        "MacromolecularComplexation",
         "DNASupercoiling",
     }
     assert any(
         "PRIMARY_INSUFFICIENT_SAMPLES" in reason for reason in fail_rows["DNASupercoiling"]
     )
-    for process in ("MacromolecularComplexation",):
-        assert any(
-            "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE" in reason
-            for reason in fail_rows[process]
-        )
-        assert any(
-            "H12_OBSERVED_REGIME" in reason for reason in fail_rows[process]
-        )
     pass_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_PASS}
     for process in ("ProteinFolding", "ProteinProcessingI", "ProteinProcessingII", "tRNAAminoacylation"):
         assert process in pass_rows, f"{process} expected real H12_CONFIRMED PASS"
     assert "DNADamage" in pass_rows, "DNADamage expected verified genuine-corpus PASS"
     assert "RibosomeAssembly" in pass_rows, "RibosomeAssembly expected bridged event-class PASS"
     assert "Replication" in pass_rows, "Replication expected current-tree N=50 PASS"
+    assert "MacromolecularComplexation" in pass_rows, (
+        "MacromolecularComplexation expected active-window-cohort mechanical PASS"
+    )
 
 
 def test_content_hash_is_deterministic_across_regenerations():
@@ -262,8 +282,8 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 18,
-        schema.STATUS_FAIL: 2,
+        schema.STATUS_PASS: 19,
+        schema.STATUS_FAIL: 1,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
