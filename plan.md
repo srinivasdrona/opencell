@@ -134,8 +134,13 @@ below:**
     fail-closed shared-ledger injection to the active audit, promotes the
     manifest to `EXISTING_WINDOW_PASS`, and reports 72 passed / 5 expected
     skips with no xfails. Trace and ledger are copied/hash-verified into the
-    main local evidence root. Await Opus review of the production and shared
-    harness changes before clean integration.
+    main local evidence root. Opus reproduced the exact replay but
+    **REJECTED integration**: source hashes mix raw/LF conventions and are
+    silently skipped when WCM path resolution fails; missing ledger sidecar
+    can pass through pytest skip; ledger SHA is not manifest-bound; and
+    motif candidates must be MATLAB `unique_subs` strand-major sorted before
+    randsample. Fix all, regenerate DNADamage L2.2 against current main
+    (never copy the stale branch bundle), and integrate only the scoped files.
   - TranscriptionalRegulation: process-local mcg16807, exact MathWorks
     weighted-randsample normalization, and chromosome occlusion exemption
     are committed; L1b/focused tests are green. Real MATLAB disproved an
