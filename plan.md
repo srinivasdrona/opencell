@@ -59,6 +59,44 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-04 23:05 IST) — supersedes earlier Sept-4 blocks
+below:**
+
+- Main is clean at local `d37eeb3`, two commits ahead of `origin/main`
+  (`2a8846f`). The Opus-accepted M=5000/source-bound Cytokinesis contract is
+  merged locally; **do not push yet**.
+- Current L2.2 audit is mechanically red at **20 FAIL /
+  2 MISSING_EVIDENCE** solely because every row's sweep provenance hashes
+  the entire `PROCESS_CATALOG.yaml`; changing only Cytokinesis M=4000→5000
+  invalidated 19 unrelated rows. Build a fail-closed per-process catalog
+  provenance contract and migrate unchanged evidence without rerunning
+  unrelated biology. Expected restored board: **19 PASS / 1 FAIL /
+  2 MISSING_EVIDENCE**, integrity OK.
+- Closed and published: ProteinProcessingII, ChromosomeCondensation,
+  ChromosomeSegregation L2.1, MacromolecularComplexation L2.2.
+- Cytokinesis/FtsZ dual extraction:
+  - Opus accepted the one-pass extractor and the corrected M=5000 contract.
+  - Seed 49 is destination-validated in both old cohorts (Cyt 35/50 old-M,
+    FtsZ 11/50).
+  - Same-source seed-36 conventional vs dual proof is 18/18 arrays
+    byte-identical at onset 27918 / completion 31993.
+  - Bulk remains blocked until the catalog-provenance migration is green,
+    then run a fresh source-bound seed-36 smoke. If green, launch three
+    disjoint ranges in three separate worktrees; any span >= M stops new
+    launches and triggers a separate preregistration.
+- Remaining source/fidelity blockers:
+  - DNASupercoiling: `PRIMARY_OVERACTIVE` (112 vs 65 pooled; 28 vs 7
+    clustered); own process RNG / residual legality source remains.
+  - ReplicationInitiation: tick-4 DnaA release mismatch; MATLAB ledger probe
+    failed on missing GLPK/parity bootstrap and produced an empty JSONL.
+  - DNADamage L2.1: own-process mcg16807 fixed; tick-4 shared chromosome RNG
+    mismatch remains. L2.2 stays PASS.
+  - TranscriptionalRegulation: site-level port is present in a dirty
+    worktree; correct mcg16807/init-sequence work is unfinished.
+  - Cytokinesis L2.1: correct RNG family and water request landed only on
+    its fix branch; frozen trace still first diverges at tick 228.
+  - HostInteraction: no event within 50,000 ticks; no active trace.
+
 **Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
 snapshot below:**
 
