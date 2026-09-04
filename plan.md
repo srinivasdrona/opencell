@@ -166,7 +166,13 @@ below:**
     Lehmer state (new live-verified codec), and production hardcoded
     `filamentLengthInNm=40.0` instead of the fixture's
     `39.130434782608695`. Loading the fixture value also closes the old
-    M4000 tick-228 divergence. Await independent Opus review/clean merge.
+    M4000 divergence. Opus confirmed both science fixes but **REJECTED the
+    branch/integration**: drop orphaned `karr_protein_decay_light.py`
+    changes; fail closed on missing filament fixture instead of 40.0
+    fallbacks; pass the full captured RNG state (not `[0]`); remove the
+    rotted Cytokinesis oracle allowlist/comment; update manifest/audit to
+    use the M5000 trace with segregated+RNG restoration; copy/hash the
+    gitignored trace; refresh anchors and integrate only curated files.
   - HostInteraction candidate `0a4642f`: source review proved adherence and
     the TLR1/2/6→NF-kB→inflammatory cascade are deterministic level signals,
     already true from fitted tick 1, not false→true events. The prior
