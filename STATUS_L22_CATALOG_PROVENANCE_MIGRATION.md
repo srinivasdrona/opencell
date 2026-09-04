@@ -5,6 +5,77 @@ Branch: `agent/l22-catalog-provenance-20260904` (worktree
 **Not pushed/merged to main** — returned for Opus review per task
 instruction.
 
+## 2026-09-05 corrective pass (Opus re-review blocker)
+
+The candidate above was **rejected** by Opus review with this blocker:
+the resolved per-process contract (`schema.resolve_catalog_process_contract`)
+silently omitted three fields actually read by code —
+`primary_projection` (an ORDERED list), `joint_check`, and event
+`seed_window.tick_range_from_division` — plus two secondary findings: the
+generator's alternate-catalog audit path (`--catalog`) did not thread
+through to the per-process contract hash, and the migration tool's
+`git show` text decoding did not pin `encoding="utf-8"`.
+
+**All five closed in this pass:**
+
+1. `resolve_catalog_process_contract` now includes `primary_projection`
+   (order preserved, default `[]`), `joint_check` (default `False`), and
+   `seed_window` (only the structured `tick_range_from_division`
+   sub-field; `seed_window.rationale` remains excluded free text; default
+   `None` for rows with no `seed_window` at all) — see schema.py's R6
+   section docstring for the full per-field justification (each verified
+   by direct inspection of the actual reading code).
+2. `tests/scripts/test_l22_evidence_catalog_contract.py`: 12 new tests
+   proving each of the three fields stales only its own process, list
+   order matters for `primary_projection`, omitted/explicit-default forms
+   resolve identically, comments/key-order still don't matter, plus 5 new
+   real-catalog sanity assertions — covering Replication, DNARepair,
+   DNADamage, MacromolecularComplexation, Cytokinesis, and
+   FtsZPolymerization by name (31 tests total in the file, up from 19).
+3. `generator._current_source_hashes`/`_check_sweep_provenance_staleness`/
+   `build_process_row`/`build_evidence_index`/`audit` now accept and
+   thread `catalog_path`/`registry_path` straight through to
+   `schema.process_contract_hashes` (mirroring `sweep.py`'s existing
+   threading); the CLI gained a `--registry` flag on `generate`/`audit`.
+   2 new tests in `test_l22_evidence_generator.py` prove an alternate
+   `catalog_path` is actually honored (function-level and
+   `build_process_row`-level).
+4. `migrate_catalog_provenance.py`'s `git_show_text` now passes
+   `subprocess.run(..., encoding="utf-8")` explicitly instead of relying
+   on `text=True`'s locale-dependent fallback. 2 new tests in
+   `test_l22_evidence_catalog_migration.py` commit a real non-ASCII byte
+   sequence (em dash + Greek alpha) to a synthetic throwaway repo and
+   prove both direct decoding correctness and an end-to-end migration run
+   against it (14 tests total in the file, up from 12).
+5. Because the resolved contract's key set changed for every process
+   (three new fields, even for rows that never set any of them), the 19
+   already-migrated rows' recorded `"catalog_entry"` hashes (computed
+   under the incomplete first-cut contract) were themselves now stale
+   under the corrected function. The tracked bundle's 19
+   `sweep_provenance.json` files (+ `evidence_index.json`) were reverted
+   to their pre-migration (whole-file-key) state via
+   `git checkout 9141632~1 -- <paths>`, and
+   `migrate_catalog_provenance.py --pre-ref f71cfbb --apply` was
+   re-run against the CORRECTED code — identical outcome (19
+   `MIGRATED`, `DNASupercoiling` still `SKIPPED_PRE_REF_CATALOG_MISMATCH`,
+   `Cytokinesis`/`FtsZPolymerization` still `NO_EVIDENCE`), confirming none
+   of the 19 rows' OWN resolved contracts (including the 3 new fields)
+   changed between `f71cfbb` and the current tree. Regenerated
+   `evidence_index.json` reads `integrity: OK`, `19 PASS / 1 FAIL
+   (DNASupercoiling) / 2 MISSING_EVIDENCE (Cytokinesis,
+   FtsZPolymerization)` — unchanged from before this pass.
+   `git diff HEAD` on `evidence_bundle/`/`evidence_index.json` touches
+   only each row's `"catalog_entry"`/`"event_registry_entry"` hash VALUE
+   (same key names — a value update, not a key migration),
+   `artifact_hashes["sweep_provenance.json"]`, and the index's
+   `content_hash`/`generated_at`; verified line-by-line (not just
+   `--stat`) that no `result.json`/`thresholds.json`/
+   `null_calibration.json`/`SUMMARY.json`/`analytical_check.json`/
+   `input_manifest.json`/`provenance.json` byte changed.
+
+See `docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md` Section 13.18 for
+the corrected field list and the full corrective-pass writeup.
+
 ## Problem
 
 The accepted, source-bound Cytokinesis `M_ticks: 4000 -> 5000` catalog
@@ -29,7 +100,11 @@ whole-file-staling DNADamage's and RibosomeAssembly's rows).
      default when the row omits it), `in_scope_L2_2`, `M_ticks`, `N_seeds`
      (resolved against `universals.N_seeds` when omitted),
      `primary_channel`, `closed_form_dominant`, `primary_distance`,
-     `event_channels`/`output_channels`/`input_channels`, `oc_module`.
+     `primary_projection` (an ORDERED list, corrected 2026-09-05),
+     `joint_check` (corrected 2026-09-05),
+     `event_channels`/`output_channels`/`input_channels`,
+     `seed_window.tick_range_from_division` (corrected 2026-09-05;
+     `seed_window.rationale` remains excluded free text), `oc_module`.
    - Registry: `in_scope_v4`, `adapter_id`, `adapter_status`,
      `event_timing_model`, `magnitude_gateable`, `required_n_seeds`.
    - Every field was verified by direct inspection of `verdict.py`,
@@ -37,7 +112,8 @@ whole-file-staling DNADamage's and RibosomeAssembly's rows).
      (`tests/vivarium/l2_2_design_a_runner.py`), and the L2.event runner
      (`scripts/l2_event/runner.py`) to actually be read. Free-text fields
      nothing reads (`notes`, `rationale_M`, `event_sweep_blocked_on`,
-     `seed_window`, `karr_artifact`, `deferred_reason`) are excluded.
+     `seed_window.rationale`, `karr_artifact`, `deferred_reason`) are
+     excluded.
    - Using RESOLVED values (not raw row bytes) means an edit to
      `universals.N_seeds`/a bucket's `harness_type` default correctly
      stales every process that relies on it, without needing to
@@ -160,11 +236,11 @@ accepted closure.
 
 ## Tests
 
-- **`tests/scripts/test_l22_evidence_catalog_contract.py`** (19 tests,
-  new): cross-process isolation for both `catalog_entry_hash` and
-  `event_registry_entry_hash` (a Cytokinesis-analog M_ticks edit never
-  changes Translation's/Macromol's hash), a process's own M/N/
-  primary_channel/harness_type change stales only that process,
+- **`tests/scripts/test_l22_evidence_catalog_contract.py`** (31 tests,
+  19 original + 12 added 2026-09-05): cross-process isolation for both
+  `catalog_entry_hash` and `event_registry_entry_hash` (a Cytokinesis-analog
+  M_ticks edit never changes Translation's/Macromol's hash), a process's
+  own M/N/primary_channel/harness_type change stales only that process,
   `universals.N_seeds`/a bucket's `harness_type` default change stales
   processes relying on it (never one that overrides explicitly),
   comment-only and YAML-reformatting/key-order edits change nothing,
@@ -172,21 +248,42 @@ accepted closure.
   `event_registry_entry` only for `event_class`, an explicit un-migrated-
   sentinel test (real `Metabolism` evidence with `catalog_entry` swapped
   back to the old whole-file `catalog` key is flagged non-green via the
-  F5 bidirectional extra-recorded-key check), plus real-catalog sanity
-  checks (every in-scope process resolves without raising, deterministic
-  across repeated calls).
-- **`tests/scripts/test_l22_evidence_catalog_migration.py`** (12 tests,
-  new): builds a REAL, synthetic, throwaway git repository per test
-  (never mocked) to exercise the actual `git show <ref>:<path>` code
-  path. Covers: happy-path migration of unrelated rows + refusal of a
-  genuinely-changed one (Cytokinesis-analog); never touches
-  `result.json`/other authority files; idempotency; atomic-write crash
-  recovery (simulated `os.replace` failure); wrong `--pre-ref` refuses
-  every row; non-catalog source-hash drift refuses; sidecar mutation
-  after generation refuses; event_class registry pre-ref mismatch
-  refuses independently of the catalog check; a sentinel `process` field
-  mismatch (copied from a different process's directory) refuses;
-  missing evidence reports `NO_EVIDENCE`; unknown process filter raises.
+  F5 bidirectional extra-recorded-key check), real-catalog sanity checks
+  (every in-scope process resolves without raising, deterministic across
+  repeated calls); **2026-09-05 additions**: `primary_projection` isolation
+  (DNARepair-only edit never staling Replication/DNADamage/Translation),
+  order-sensitivity (reordering Replication's components changes the hash
+  even with identical membership/length), omitted-vs-explicit-`[]`
+  consistency; `joint_check` isolation (MacromolecularComplexation-only)
+  and omitted-vs-explicit-`false` consistency; `seed_window.
+  tick_range_from_division` isolation (Cytokinesis-only edit never staling
+  FtsZPolymerization), `rationale` free-text exclusion,
+  omitted-resolves-to-`None`; plus 5 real-catalog sanity assertions on the
+  actual Replication/DNARepair/DNADamage/MacromolecularComplexation/
+  Cytokinesis/FtsZPolymerization/Translation rows.
+- **`tests/scripts/test_l22_evidence_catalog_migration.py`** (14 tests,
+  12 original + 2 added 2026-09-05): builds a REAL, synthetic, throwaway
+  git repository per test (never mocked) to exercise the actual
+  `git show <ref>:<path>` code path. Covers: happy-path migration of
+  unrelated rows + refusal of a genuinely-changed one (Cytokinesis-analog);
+  never touches `result.json`/other authority files; idempotency;
+  atomic-write crash recovery (simulated `os.replace` failure); wrong
+  `--pre-ref` refuses every row; non-catalog source-hash drift refuses;
+  sidecar mutation after generation refuses; event_class registry pre-ref
+  mismatch refuses independently of the catalog check; a sentinel
+  `process` field mismatch (copied from a different process's directory)
+  refuses; missing evidence reports `NO_EVIDENCE`; unknown process filter
+  raises; **2026-09-05 additions**: `git_show_text` correctly decodes a
+  real committed non-ASCII byte sequence (em dash + Greek alpha) as UTF-8
+  (direct round-trip proof against a raw, encoding-agnostic
+  `subprocess.run(..., text=False)` sha256, plus an end-to-end migration
+  run that succeeds despite the non-ASCII bytes).
+- **`tests/scripts/test_l22_evidence_generator.py`** (2 tests added
+  2026-09-05): `_current_source_hashes` and `build_process_row` honor an
+  explicit alternate `catalog_path` for the `"catalog_entry"` staleness
+  hash (proven both at the hash-value level and via a real PASS row
+  flipping to stale when audited against an altered catalog copy) rather
+  than silently defaulting to the real tracked `PROCESS_CATALOG.yaml`.
 - **Pre-existing suites**: fixed ~30 tests in
   `tests/scripts/test_l22_evidence_sweep.py` (generic sweep-mechanics
   tests that constructed `SweepJob`s with synthetic process names never
@@ -206,7 +303,8 @@ accepted closure.
 
 **Full-suite run** (`test_l22_evidence_{sweep,anticheat,generator,
 portability,catalog_contract,catalog_migration}.py` +
-`test_l2_2_strict_rubric.py`, 157 tests): **156 passed, 1 failed**. The
+`test_l2_2_strict_rubric.py`, 174 tests, re-run 2026-09-05 after the
+corrective pass): **173 passed, 1 failed**. The
 1 failure
 (`test_l22_evidence_anticheat.py::test_process_dependency_registry_matches_real_current_import_graph`)
 is a stale assertion about `schema.PROCESS_DEPENDENCY_FILES["DNADamage"]`
@@ -216,7 +314,7 @@ same method:
 `test_l22_evidence_ast_completeness.py::test_zero_uncovered_first_party_imports_across_real_in_scope_processes`
 (Replication registry gap).
 
-## Commits (this branch, 6, on top of `5cbf4b2`)
+## Commits (this branch, 9, on top of `5cbf4b2`)
 
 1. `e2a6c49` — `fix(l22-evidence): replace whole-catalog provenance with
    per-process contract hashes` — schema.py/generator.py/sweep.py +
@@ -234,6 +332,21 @@ same method:
 6. `8369662` — `test(l22-evidence): explicit test that a leftover old
    whole-catalog key is rejected` — direct anti-tamper proof of the
    post-migration fail-closed property.
+7. `f4f376f` — `fix(l22-evidence): R6 corrective pass -- field
+   completeness, catalog_path threading, encoding` (2026-09-05, Opus
+   re-review) — `primary_projection`/`joint_check`/`seed_window.
+   tick_range_from_division` added to the resolved contract;
+   `catalog_path`/`registry_path` threaded through
+   `generator.py`'s staleness-checking functions and CLI; `git_show_text`
+   pins `encoding="utf-8"`; 16 new tests across 3 test files.
+8. `85fd64b` — `data(l22-evidence): re-migrate bundle under corrected R6
+   catalog contract` (2026-09-05) — reverted the 19 migrated rows to
+   pre-migration state and re-ran the migration tool against the
+   corrected code; identical outcome (19 PASS / 1 FAIL /
+   2 MISSING_EVIDENCE).
+9. (this commit) — `docs(l22-evidence): correct Section 13.18 field list
+   + STATUS completeness claims` (2026-09-05) — EVIDENCE_INDEX_SPEC.md +
+   this file, reflecting the corrective pass.
 
 ## Not done / explicitly out of scope
 
@@ -244,13 +357,14 @@ same method:
   themselves (only how they are hashed for staleness).
 - Did not fix the 2 confirmed-pre-existing, unrelated test failures
   (DNADamage `PROCESS_DEPENDENCY_FILES` registry gap; Replication AST
-  import-completeness registry gap) — out of scope for this task.
-- Did not extend `generator.build_process_row`/`build_evidence_index` to
-  thread a `catalog_path`/`registry_path` override down into
-  `_current_source_hashes` (a separate, narrower, pre-existing gap:
-  `build_evidence_index(catalog_path=X)` already didn't thread `X` into
-  its OWN internal staleness check before this task, unrelated to the
-  whole-file-hash defect being fixed here). `sweep.current_source_hashes`
-  and `schema.process_contract_hashes` DO now accept `catalog_path`/
-  `registry_path` overrides (needed for the migration tool's own
-  correctness and its tests).
+  import-completeness registry gap) — out of scope for this task;
+  reconfirmed unrelated after the 2026-09-05 corrective pass too (both
+  still fail identically under `git stash` on this branch's own
+  unmodified baseline).
+- **CORRECTED 2026-09-05** (previously listed here as "not done", now
+  done): `generator._current_source_hashes`/`_check_sweep_provenance_
+  staleness`/`build_process_row`/`build_evidence_index`/`audit` now all
+  accept and thread `catalog_path`/`registry_path` straight through to
+  `schema.process_contract_hashes`, and the CLI gained a `--registry`
+  flag on `generate`/`audit` — see the corrective-pass section at the top
+  of this file and `EVIDENCE_INDEX_SPEC.md` Section 13.18.

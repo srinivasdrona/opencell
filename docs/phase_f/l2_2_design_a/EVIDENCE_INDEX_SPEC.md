@@ -2249,17 +2249,39 @@ CONTRACT hash, mirroring R2's `oc_module` fix exactly:
   bucket-level default when the process omits its own), `in_scope_L2_2`,
   `M_ticks`, `N_seeds` (RESOLVED against `universals.N_seeds` when
   omitted), `primary_channel`, `closed_form_dominant`, `primary_distance`,
-  `event_channels`/`output_channels`/`input_channels`, `oc_module` for the
+  `primary_projection` (an ORDERED list -- see below), `joint_check`,
+  `event_channels`/`output_channels`/`input_channels`,
+  `seed_window.tick_range_from_division` (see below), `oc_module` for the
   catalog; `in_scope_v4`/`adapter_id`/`adapter_status`/
   `event_timing_model`/`magnitude_gateable`/`required_n_seeds` for the
   registry -- every field verified by direct inspection to be actually
   read by `verdict.py`, `generator.py`, `event_bridge.py`, or the runner
   (`tests/vivarium/l2_2_design_a_runner.py` for the catalog;
   `scripts/l2_event/runner.py` for the registry). Free-text fields nothing
-  reads (`notes`, `rationale_M`, `event_sweep_blocked_on`, `seed_window`,
-  `karr_artifact`, `deferred_reason`) are deliberately EXCLUDED -- a
-  documentation-only edit to a process's own row must never stale its
-  evidence.
+  reads (`notes`, `rationale_M`, `event_sweep_blocked_on`,
+  `seed_window.rationale`, `karr_artifact`, `deferred_reason`) are
+  deliberately EXCLUDED -- a documentation-only edit to a process's own
+  row must never stale its evidence.
+  **CORRECTED 2026-09-05** (Opus re-review of this same fix): the first
+  cut of this function silently omitted `primary_projection`, `joint_check`,
+  and `seed_window.tick_range_from_division`, even though all three ARE
+  read by code (`tests/vivarium/l2_2_design_a_runner.py`'s
+  `_process_primary_projection()`/`_process_joint_check()` read the first
+  two directly; the third is the catalog's own machine-checkable mirror of
+  `docs/phase_f/l2_event/division_window_spec.json`, asserted equal by
+  `tests/scripts/test_extract_dual_division_window_static.py::
+  test_catalog_and_spec_agree_on_cytokinesis_m_ticks`, and of the
+  human-maintained `TICK_RANGE_FROM_DIVISION` constant gating
+  `scripts/l2_event/ftsz_pre_division_evidence.py::validate_seed_window`).
+  All three are now included; `primary_projection`'s list order is
+  preserved (never sorted -- it is real content, which dotted-path
+  component occupies which projection-vector slot), and only
+  `seed_window`'s structured `tick_range_from_division` sub-field is
+  included (`seed_window.rationale` remains excluded free text, same
+  treatment as `notes`/`rationale_M`). This required re-running the R6
+  migration (see below) since the resolved-contract hash VALUE changed for
+  every process (a new key set), even ones that never set any of the
+  three new fields.
 - **Using RESOLVED values (not raw row bytes) is deliberate**: a process
   that omits `N_seeds` inherits `universals.N_seeds`, and one that omits
   `harness_type` inherits `buckets.<bucket>.harness_type` -- editing
@@ -2292,6 +2314,34 @@ CONTRACT hash, mirroring R2's `oc_module` fix exactly:
   `SWEEP_PROVENANCE_SOURCE_FILES`/`EVENT_CLASS_SOURCE_FILES` entirely.
   Top-level `evidence_index.json["catalog_sha256"]` (whole-file, informational
   only -- see Section 1/7) is UNCHANGED; it was never gating.
+- **`generator.py` alternate-catalog threading (2026-09-05 follow-up).** A
+  narrower, pre-existing gap alongside the field-completeness fix above:
+  `generator._current_source_hashes` always resolved `"catalog_entry"`/
+  `"event_registry_entry"` against the DEFAULT `schema.CATALOG_PATH`/
+  `schema.L2_EVENT_REGISTRY_PATH`, ignoring any `catalog_path`/
+  `registry_path` a caller had passed to `build_evidence_index`/
+  `build_process_row`/`audit` -- so `generator.py audit --catalog
+  <alternate>.yaml` (a staging/what-if audit) computed every row's
+  contract-staleness hash against the REAL tracked file it was explicitly
+  trying to bypass, never the alternate one it loaded scope from.
+  `_current_source_hashes`/`_check_sweep_provenance_staleness`/
+  `build_process_row`/`build_evidence_index`/`audit` now all accept and
+  thread `catalog_path`/`registry_path` straight through to
+  `schema.process_contract_hashes`, mirroring the threading `sweep.
+  current_source_hashes`/`migrate_catalog_provenance.py` already had. The
+  CLI gained a `--registry` flag (alongside the pre-existing `--catalog`)
+  on both the `generate` and `audit` subcommands.
+- **`migrate_catalog_provenance.py` encoding fix.** `git_show_text` used
+  `subprocess.run(..., text=True)` without an explicit `encoding` --
+  `text=True` alone lets Python fall back to
+  `locale.getpreferredencoding()` (e.g. cp1252 on a default-locale Windows
+  host) instead of UTF-8, which git itself always uses regardless of host
+  locale. Now passes `encoding="utf-8"` explicitly, so a real non-ASCII
+  byte legitimately committed to `PROCESS_CATALOG.yaml`/
+  `event_registry.yaml` (e.g. an em dash or a Greek letter in a `notes`
+  field) round-trips correctly instead of raising `UnicodeDecodeError` or
+  silently mojibake-ing in a way that would make `_sha256_text` disagree
+  with the real git-object bytes.
 
 **Migration.** `scripts/l22_evidence/migrate_catalog_provenance.py` is a
 one-shot tool that rewrites EXISTING tracked `evidence_bundle/<Process>/
@@ -2336,12 +2386,35 @@ matching both `event_class` rows (DNADamage, RibosomeAssembly).
 `evidence_index.json` restores `generator.py audit` to `integrity: OK`,
 **19 PASS / 1 FAIL (DNASupercoiling) / 2 MISSING_EVIDENCE (Cytokinesis,
 FtsZPolymerization)** -- `git diff` on `evidence_bundle/` touches only the
-19 migrated `sweep_provenance.json` files' `source_hashes` field (21
-lines changed total: one key removed, one key added, per file except the
-2 `event_class` rows which also swap `l2_event_registry`/
-`event_registry_entry`); every `result.json`/`thresholds.json`/other
-authority/sidecar file, and every row's `mechanical_verdict`/`channel_
-verdicts`/raw evidence bytes, is byte-for-byte unchanged. See
+19 migrated `sweep_provenance.json` files' `source_hashes` field (one
+value changed per file -- the `"catalog_entry"` hash itself, recomputed
+under the corrected, now-complete resolved contract -- plus the 2
+`event_class` rows' `"event_registry_entry"`); every `result.json`/
+`thresholds.json`/other authority/sidecar file, and every row's
+`mechanical_verdict`/`channel_verdicts`/raw evidence bytes, is
+byte-for-byte unchanged. **Re-run 2026-09-05** (Opus re-review, after the
+`primary_projection`/`joint_check`/`seed_window.tick_range_from_division`
+field-completeness correction above): since the resolved contract's key
+set changed for every process, the 19 rows' previously-recorded
+`"catalog_entry"` values (computed under the incomplete first-cut
+contract) were themselves now stale under the corrected function. The
+tracked bundle's 19 `sweep_provenance.json` files were reverted to their
+pre-migration (whole-file-key) state and the migration was re-applied
+from the SAME verified `--pre-ref f71cfbb` against the CORRECTED code --
+identical outcome (19 `MIGRATED`, `DNASupercoiling` still
+`SKIPPED_PRE_REF_CATALOG_MISMATCH`, `Cytokinesis`/`FtsZPolymerization`
+still `NO_EVIDENCE`), confirming none of the 19 migrated rows' OWN
+resolved contracts (including the 3 newly-added fields) changed between
+`f71cfbb` and the current tree. Regenerated `evidence_index.json` reads
+`integrity: OK`, `19 PASS / 1 FAIL / 2 MISSING_EVIDENCE` again;
+`git diff HEAD` on `evidence_bundle/`/`evidence_index.json` touches only
+each row's `"catalog_entry"`/`"event_registry_entry"` hash VALUE (same
+keys as before -- this is a value update, not a key migration),
+`artifact_hashes["sweep_provenance.json"]`, and the index's
+`content_hash`/`generated_at` -- no `result.json`/`thresholds.json`/
+`null_calibration.json`/`SUMMARY.json`/`analytical_check.json`/
+`input_manifest.json`/`provenance.json` byte changed (verified via
+`git diff` line-by-line, not just `--stat`). See
 `STATUS_L22_CATALOG_PROVENANCE_MIGRATION.md` for the full before/after
 audit, exact migrated-row list, and test inventory.
 
@@ -2350,12 +2423,27 @@ process isolation for both the catalog and registry contract hash,
 own-row M/N/primary/harness_type changes staling only that process,
 universal/bucket-default changes staling processes that rely on them,
 comment/formatting/key-order invariance, unknown/missing/duplicate
-process fail-closed). `tests/scripts/test_l22_evidence_catalog_migration.py`
+process fail-closed; **2026-09-05**: dedicated coverage for
+`primary_projection` (order-sensitivity, cross-process isolation across
+Replication/DNARepair/DNADamage, omitted-vs-explicit-empty-list
+consistency), `joint_check` (isolation on MacromolecularComplexation,
+omitted-vs-explicit-`false` consistency), and
+`seed_window.tick_range_from_division` (isolation across Cytokinesis/
+FtsZPolymerization, `rationale` exclusion, omitted-resolves-to-`None`),
+plus real-catalog sanity assertions on the actual PROCESS_CATALOG.yaml
+values for all of Replication/DNARepair/DNADamage/
+MacromolecularComplexation/Cytokinesis/FtsZPolymerization/Translation).
+`tests/scripts/test_l22_evidence_catalog_migration.py`
 (happy-path migration + refusal of a genuinely-changed row using a real,
 synthetic throwaway git repo exercising the actual `git show` code path;
 idempotency; atomic-write crash recovery; wrong `--pre-ref`; non-catalog
 source/sidecar drift; event/design harness mismatch; unknown process
-filter).
+filter; **2026-09-05**: `git_show_text`'s UTF-8 encoding correctness
+against a real committed non-ASCII byte sequence, both directly and via a
+full migration run). `tests/scripts/test_l22_evidence_generator.py`
+(**2026-09-05**: `_current_source_hashes`/`build_process_row` honor an
+explicit alternate `catalog_path` for the `"catalog_entry"` staleness
+hash rather than silently defaulting to the real tracked catalog).
 
 ## 14. Files
 
