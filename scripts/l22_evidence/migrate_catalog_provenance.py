@@ -165,7 +165,16 @@ def git_show_text(ref: str, rel_path: str, *, repo_root: Path = REPO_ROOT) -> st
         else ["git", "-C", str(repo_root), "show", f"{ref}:{rel_path}"]
     )
     try:
-        result = subprocess.run(args, capture_output=True, text=True, check=True, timeout=30)
+        # `encoding="utf-8"` is explicit and mandatory here: `text=True`
+        # alone lets `subprocess` fall back to `locale.getpreferredencoding()`
+        # (e.g. cp1252 on a default-locale Windows host), which both
+        # mis-decodes any non-ASCII byte actually committed to the YAML
+        # (a UnicodeDecodeError, or worse, silent mojibake under
+        # `errors="replace"`-style fallbacks) and can never reproduce the
+        # UTF-8 bytes `_sha256_text`/`yaml.safe_load` below expect -- git
+        # itself stores/emits these files as UTF-8 regardless of host
+        # locale, so decoding as anything else is never correct.
+        result = subprocess.run(args, capture_output=True, text=True, encoding="utf-8", check=True, timeout=30)
     except subprocess.CalledProcessError as exc:
         raise MigrationError(
             f"git show {ref}:{rel_path} failed (exit {exc.returncode}): {(exc.stderr or '').strip()}"

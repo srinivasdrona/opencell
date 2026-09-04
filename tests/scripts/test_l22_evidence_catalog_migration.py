@@ -18,6 +18,7 @@ Run via `bin\\oc-pytest tests/scripts/test_l22_evidence_catalog_migration.py -v`
 
 from __future__ import annotations
 
+import hashlib
 import json
 import subprocess
 import sys
@@ -451,3 +452,74 @@ def test_unknown_process_filter_raises(tmp_path, repo_with_catalog):
             pre_ref=pre_ref, bundle_root=bundle_root, catalog_path=catalog_path, registry_path=registry_path,
             repo_root=repo_root, processes=["NotAProcess"],
         )
+
+
+# --- Encoding: git_show_text must read non-ASCII catalog bytes as UTF-8 -------
+
+
+@pytest.fixture
+def repo_with_non_ascii_catalog(tmp_path):
+    """A throwaway git repo whose catalog carries real non-ASCII bytes (an
+    em dash and Greek alpha, mirroring the kind of UTF-8 punctuation/symbol
+    the real tracked PROCESS_CATALOG.yaml's `notes` fields actually contain,
+    e.g. Karr-citation em dashes) in a field EXCLUDED from the resolved
+    contract (`notes`) -- proving `git_show_text` decodes it correctly
+    (never raising `UnicodeDecodeError`, never silently mojibake-ing it in
+    a way that changes the recorded whole-file hash) is what this test
+    targets, independent of whether the contract itself reads that field."""
+    catalog_v1_non_ascii = _CATALOG_V1.replace(
+        '  - name: ProcA\n    oc_module: ""',
+        '  - name: ProcA\n    notes: "Karr et al. 2012 \u2014 \u03b1-synuclein-style dash/Greek smoke test"\n    oc_module: ""',
+    )
+    assert catalog_v1_non_ascii != _CATALOG_V1
+    repo_root = tmp_path / "repo"
+    _init_repo(repo_root)
+    catalog_path = repo_root / "PROCESS_CATALOG.yaml"
+    registry_path = repo_root / "event_registry.yaml"
+    catalog_path.write_text(textwrap.dedent(catalog_v1_non_ascii), encoding="utf-8")
+    registry_path.write_text(textwrap.dedent(_REGISTRY_V1), encoding="utf-8")
+    pre_ref = _commit_all(repo_root, "v1 (non-ASCII notes)")
+
+    edited = catalog_v1_non_ascii.replace("M_ticks: 4000", "M_ticks: 5000")
+    assert edited != catalog_v1_non_ascii
+    catalog_path.write_text(textwrap.dedent(edited), encoding="utf-8")
+    _commit_all(repo_root, "v2: bump ProcEvent M_ticks")
+
+    return repo_root, pre_ref, catalog_path, registry_path
+
+
+def test_git_show_text_decodes_non_ascii_catalog_bytes_as_utf8(repo_with_non_ascii_catalog):
+    """`git show <ref>:<path>` must be read back as UTF-8 regardless of
+    host locale -- decoding a real committed em dash/Greek-alpha byte
+    sequence as anything else (e.g. a Windows cp1252 fallback) would either
+    raise `UnicodeDecodeError` or silently corrupt the text, which would in
+    turn make `_sha256_text` disagree with the actual git-object bytes."""
+    repo_root, pre_ref, catalog_path, registry_path = repo_with_non_ascii_catalog
+    text = mig.git_show_text(pre_ref, "PROCESS_CATALOG.yaml", repo_root=repo_root)
+    assert "\u2014" in text  # em dash
+    assert "\u03b1" in text  # Greek alpha
+
+    # The hash computed from the decoded text must match a direct,
+    # encoding-agnostic sha256 of the raw git object bytes (via `git show`
+    # with output captured as bytes, never text-decoded at all) --
+    # proving the UTF-8 round-trip is lossless, not merely non-crashing.
+    raw_bytes_result = subprocess.run(
+        ["git", "-C", str(repo_root), "show", f"{pre_ref}:PROCESS_CATALOG.yaml"],
+        capture_output=True, check=True,
+    )
+
+    assert mig._sha256_text(text) == hashlib.sha256(raw_bytes_result.stdout).hexdigest()
+
+
+def test_migration_succeeds_with_non_ascii_catalog_bytes(tmp_path, repo_with_non_ascii_catalog):
+    """End-to-end: a row unaffected by the non-ASCII `notes` edit (which is
+    excluded from the resolved contract) still migrates cleanly -- the
+    non-ASCII bytes must never cause a spurious pre-ref hash mismatch."""
+    repo_root, pre_ref, catalog_path, registry_path = repo_with_non_ascii_catalog
+    pre_catalog_hash, _ = _pre_ref_hashes(repo_root, pre_ref, catalog_path, registry_path)
+    bundle_root = tmp_path / "bundle"
+    _write_evidence_dir(bundle_root, "ProcB", m_ticks=100, n_seeds=50, harness_type="design_a_per_tick", catalog_hash=pre_catalog_hash)
+
+    plans = mig.plan_migration(pre_ref=pre_ref, bundle_root=bundle_root, catalog_path=catalog_path, registry_path=registry_path, repo_root=repo_root)
+    assert plans["ProcB"].status == mig.STATUS_WOULD_MIGRATE, plans["ProcB"].reason
+

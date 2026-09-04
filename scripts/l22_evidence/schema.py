@@ -651,10 +651,48 @@ def _sha256_module_file(path: Path) -> str | None:
 # for the catalog; `scripts/l2_event/runner.py` for the registry -- both
 # verified by direct inspection) are included. Free-text fields nothing
 # ever reads (`notes`, `rationale_M`, `event_sweep_blocked_on`,
-# `seed_window`, `karr_artifact`, `deferred_reason`) are deliberately
-# EXCLUDED -- including them would make routine documentation/provenance
-# updates to a process's own row stale its evidence for no scientific
-# reason, which is not what "affects evidence/verdict/scope" means.
+# `seed_window.rationale`, `karr_artifact`, `deferred_reason`) are
+# deliberately EXCLUDED -- including them would make routine
+# documentation/provenance updates to a process's own row stale its
+# evidence for no scientific reason, which is not what "affects
+# evidence/verdict/scope" means.
+#
+# CORRECTED 2026-09-05 (Opus re-review of this same R6 fix): the first
+# cut of this function silently omitted three fields that ARE read by
+# code, an omission that would have let a real, evidence-affecting edit
+# to any of them pass through without staling the process's evidence:
+#   - `primary_projection` (an ORDERED list of dotted chromosome-field
+#     paths) -- read directly by `tests/vivarium/l2_2_design_a_runner.py`'s
+#     `_process_primary_projection()` (`entry.get("primary_projection",
+#     ())`), which sizes/orders the per-tick projection vector and
+#     verifies every DNADamage mechanism-canary channel
+#     (`tests/scripts/test_dna_damage_mechanism_canary.py`); order is real
+#     content (which component occupies which vector slot), never
+#     incidental, so it is preserved (never sorted) below.
+#   - `joint_check` (bool) -- read directly by the SAME runner's
+#     `_process_joint_check()` (`entry.get("joint_check", False)`), which
+#     gates whether a non-gating cross-complex Spearman-correlation
+#     diagnostic block is computed/emitted for MacromolecularComplexation.
+#   - `seed_window.tick_range_from_division` (a `[lo, hi]` tick-offset
+#     pair, present only on the two division-anchored EVENT_CLASS rows,
+#     Cytokinesis/FtsZPolymerization) -- this is the catalog's own
+#     machine-checkable mirror of
+#     `docs/phase_f/l2_event/division_window_spec.json`
+#     (`tests/scripts/test_extract_dual_division_window_static.py::
+#     test_catalog_and_spec_agree_on_cytokinesis_m_ticks` asserts
+#     byte-for-byte agreement) and the human-maintained
+#     `TICK_RANGE_FROM_DIVISION` constant in
+#     `scripts/l2_event/ftsz_pre_division_evidence.py` that gates which
+#     event windows `validate_seed_window()` accepts -- a silent edit to
+#     this pair (as actually happened: Cytokinesis's window was
+#     reconciled from `[-3999, 0]` to `[-4999, 0]` in the same 2026-09-04
+#     change series that first exposed this whole R6 defect) changes
+#     which windows are valid without changing `M_ticks`, so it must
+#     independently stale evidence. ONLY `tick_range_from_division` is
+#     included -- `seed_window.rationale` is free text (excluded, same as
+#     `notes`/`rationale_M`), and a row with no `seed_window` at all
+#     (every non-division-anchored process) resolves to `None`, never a
+#     guessed/fabricated window.
 def _canonical_content_hash(payload: dict[str, Any]) -> str:
     """sha256 of `payload` serialized as canonical JSON (sorted keys, no
     whitespace) -- stable regardless of the dict's construction/insertion
@@ -699,6 +737,24 @@ def resolve_catalog_process_contract(process: str, catalog: dict[str, Any]) -> d
     bucket_meta = buckets.get(bucket, {}) or {}
     harness_type = raw.get("harness_type") or bucket_meta.get("harness_type")
     oc_module = str(raw.get("oc_module")) if raw.get("oc_module") else None
+    # `primary_projection` is ORDER-SENSITIVE (which dotted-path component
+    # occupies which projection-vector slot) -- kept as a `list()` of the
+    # raw sequence, never sorted/deduped. Default `()` mirrors the
+    # runner's own `entry.get("primary_projection", ())` fallback exactly.
+    primary_projection = [str(component) for component in (raw.get("primary_projection") or ())]
+    # `seed_window.tick_range_from_division` is the only structured
+    # (non-free-text) sub-field of `seed_window` -- see this module's R6
+    # docstring above. A row with no `seed_window` (every process except
+    # the two division-anchored EVENT_CLASS rows) resolves to `None`,
+    # never a guessed/fabricated window; `rationale` is deliberately never
+    # read here.
+    raw_seed_window = raw.get("seed_window") or {}
+    tick_range_from_division = raw_seed_window.get("tick_range_from_division")
+    seed_window = (
+        {"tick_range_from_division": list(tick_range_from_division)}
+        if tick_range_from_division is not None
+        else None
+    )
     return {
         "process": process,
         "bucket": bucket,
@@ -709,9 +765,12 @@ def resolve_catalog_process_contract(process: str, catalog: dict[str, Any]) -> d
         "primary_channel": raw.get("primary_channel"),
         "closed_form_dominant": str(raw.get("closed_form_dominant", "false")),
         "primary_distance": str(raw.get("primary_distance", "per_tick_vector_w1_mean")),
+        "primary_projection": primary_projection,
+        "joint_check": bool(raw.get("joint_check", False)),
         "event_channels": list(raw.get("event_channels") or ()),
         "output_channels": list(raw.get("output_channels") or ()),
         "input_channels": list(raw.get("input_channels") or ()),
+        "seed_window": seed_window,
         "oc_module": oc_module,
     }
 
