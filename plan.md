@@ -134,10 +134,15 @@ below:**
     per-tick shared state as an input oracle. Candidate `6a4dccc` now reports
     full **4000/4000 bit identity** after adding the shared chromosome draw
     ledger and fixing own-footprint plus cross-strand occlusion. Before
-    integration, Opus must verify the manifest/audit authority, trace/ledger
-    portability, shared `matlab_rng.py` restoration, duplicate `dec-005`
-    conflict, and remove scratch payload. The proposed N=10/M=4000
-    PIT/Uniform L2.2 prereg also requires independent power/null review.
+    integration, Opus **REJECTED** the claim: manifest used unsupported
+    `GENUINE` instead of `EXISTING_WINDOW_PASS` and stale active count 56
+    vs 70; source-hash checks silently skipped and mixed raw/LF hashing;
+    full-footprint double-strand, damage, and overlap accessibility branches
+    remain unimplemented; trace/ledger are unportable; duplicate `dec-005`
+    and missing RNG/ledger tests remain. Fix all and re-earn exact replay.
+    The proposed PIT L2.2 prereg is rejected as an OC self-test; redesign
+    around Karr realized winners under OC's conditional law / established
+    Karr-derived null before any new extraction.
   - Cytokinesis L2.1: correct RNG family and water request landed only on
     its fix branch. Candidate `3b424e7` now reports M5000 seed-36 full bit
     identity and manifest GENUINE. Root causes: MATLAB's scalar
