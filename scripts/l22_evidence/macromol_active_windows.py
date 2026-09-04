@@ -4,14 +4,29 @@ This module keeps the active-window closeout local to MacromolecularComplexation
 
 1. validate the genuine-provider active-window cohort under
    `data/m1_sources/karr_native/macromol_active_window/`;
-2. temporarily route ONLY MacromolecularComplexation's Design-A oracle loader
-   to that cohort in-process, without editing shared helper files;
-3. run the ordinary shared Design-A runner; and
-4. emit a portable process-local artifact that binds the cohort hashes, runner
+2. run the ordinary, UNMODIFIED shared Design-A runner, which finds this
+   process's seed data via the canonical, unmodified
+   `data/m1_sources/karr_native/per_process_traces_v2*/MacromolecularComplexation_100ticks.mat`
+   layout -- the SAME 50 accepted active-window traces are also committed
+   there (byte-for-byte identical, see
+   `scripts/l22_extraction/populate_canonical_macromol_traces.py`), so no
+   process-scoped env-var override or shared-loader edit is needed at all;
+3. emit a portable process-local artifact that binds the cohort hashes, runner
    source hashes, fixture/source/driver hashes, and the ordinary runner verdict.
 
 The resulting artifact is intentionally NOT consumed by the shared evidence
 index or generator until an explicit promotion step lands elsewhere.
+
+History: an earlier version of this module routed the shared Design-A
+oracle loader to `data_root` via a process-scoped
+`OPENCELL_L22_PROCESS_ORACLE_ROOT__MACROMOLECULARCOMPLEXATION` environment
+variable read inside `tests/vivarium/_l2_2_design_a_runner_helpers.py`.
+That edit to the shared, universally-hashed loader module correctly staled
+every OTHER `design_a_per_tick` process's `sweep_provenance.json` (the
+whole-file hash changed), which was rejected on review. This module (and
+the shared loader) have since been reverted to make the shared loader
+completely unmodified again; the canonical-path population described above
+is the replacement mechanism.
 """
 
 from __future__ import annotations
@@ -19,10 +34,7 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import sys
-from collections.abc import Iterator
-from contextlib import contextmanager
 from copy import deepcopy
 from datetime import UTC, datetime
 from pathlib import Path
@@ -33,7 +45,6 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.l22_extraction import macromol_active_window as maw  # noqa: E402
-from tests.vivarium import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 from tests.vivarium import l2_2_design_a_runner as runner  # noqa: E402
 
 PROCESS = maw.PROCESS_NAME
@@ -121,41 +132,6 @@ def _normalize_runner_payloads(raw_result: dict[str, Any], raw_summary: dict[str
     }
 
 
-@contextmanager
-def process_local_oracle_root(data_root: Path) -> Iterator[None]:
-    """Route ONLY MacromolecularComplexation's Design-A oracle loader to
-    `data_root` for the duration of this context.
-
-    Historically this monkeypatched `_v2_seed_mat_path` on every live module
-    instance of `_l2_2_design_a_runner_helpers` it could find in
-    `sys.modules`, because `tests/vivarium/l2_2_design_a_runner.py` inserts
-    its own directory onto `sys.path` and does a BARE
-    `import _l2_2_design_a_runner_helpers` -- a SECOND, independent module
-    object distinct from the package-qualified
-    `tests.vivarium._l2_2_design_a_runner_helpers` this script imports, so a
-    patch applied to only one of them silently never reached
-    `runner.run_design_a`'s real call path (see this closeout's STATUS doc
-    for the original root-cause writeup).
-
-    That workaround is no longer needed: `_l2_2_design_a_runner_helpers`
-    now implements a REAL, canonical, fail-closed process-scoped oracle-root
-    override (`process_oracle_root_env_var` /
-    `_resolve_process_oracle_root_override`), read directly from
-    `os.environ` inside `_v2_seed_mat_path`'s own call graph. Setting the
-    env var here reaches BOTH module objects identically, because the
-    routing lives in real function code, not a monkeypatched attribute --
-    there is no module-instance blind spot left to work around.
-    """
-    env_var = runner_helpers.process_oracle_root_env_var(PROCESS)
-    previous = os.environ.get(env_var)
-    os.environ[env_var] = str(data_root)
-    try:
-        yield
-    finally:
-        if previous is None:
-            os.environ.pop(env_var, None)
-        else:
-            os.environ[env_var] = previous
 
 
 def build_process_local_artifact(
@@ -178,14 +154,18 @@ def build_process_local_artifact(
     seed_trace_sha256 = {seed: window["sha256"] for seed, window in valid_windows.items()}
 
     run_output_dir.mkdir(parents=True, exist_ok=True)
-    with process_local_oracle_root(data_root):
-        runner_payload = runner.run_design_a(
-            process=PROCESS,
-            seeds=list(range(maw.REQUIRED_N_SEEDS)),
-            m_ticks=maw.REQUIRED_M_TICKS,
-            out_dir=run_output_dir,
-            bootstrap_B=bootstrap_B,
-        )
+    # The ordinary, UNMODIFIED shared runner resolves MacromolecularComplexation's
+    # oracle via the canonical `per_process_traces_v2*` layout, exactly like every
+    # other design_a_per_tick process -- no routing/monkeypatching needed here
+    # anymore, since the accepted 50 active-window seeds are ALSO committed there
+    # (see `scripts/l22_extraction/populate_canonical_macromol_traces.py`).
+    runner_payload = runner.run_design_a(
+        process=PROCESS,
+        seeds=list(range(maw.REQUIRED_N_SEEDS)),
+        m_ticks=maw.REQUIRED_M_TICKS,
+        out_dir=run_output_dir,
+        bootstrap_B=bootstrap_B,
+    )
 
     raw_summary = _load_json(run_output_dir / "SUMMARY.json")
     raw_thresholds = _load_json(run_output_dir / "thresholds.json")

@@ -2,7 +2,6 @@ from __future__ import annotations
 
 import filecmp
 import json
-import os
 import sys
 from functools import cache, lru_cache
 from pathlib import Path
@@ -232,111 +231,6 @@ def _karr_native_candidate_roots(process_name: str) -> tuple[Path, ...]:
         seen.add(key)
         unique.append(candidate)
     return tuple(unique)
-
-
-class ProcessOracleRootOverrideError(ValueError):
-    """Raised when a process-scoped `OPENCELL_L22_PROCESS_ORACLE_ROOT__<PROCESS>`
-    override is set but fails fail-closed acceptance (root missing, wrong-process
-    content, or an incomplete/partial seed cohort). This override is authoritative
-    when set: it is never treated as a soft hint that silently falls back to the
-    canonical root or to a legacy/padding loader on any failure."""
-
-
-# Registry of processes with a real, validated process-scoped oracle-root override
-# contract. Deliberately explicit and small (mirrors `PROCESS_DEPENDENCY_FILES`'
-# hand-maintained-registry precedent in `schema.py`) rather than accepting the
-# override env var for ANY process name: an env var set for an unregistered
-# process is a configuration mistake (typo, copy-paste from another process) and
-# must fail loudly rather than silently do nothing or silently apply generic
-# logic that was never validated for that process's on-disk contract.
-_PROCESS_ORACLE_ROOT_OVERRIDE_REGISTRY = frozenset({"MacromolecularComplexation"})
-
-
-def process_oracle_root_env_var(process_name: str) -> str:
-    """The advertised environment-variable name for a process-scoped, authoritative
-    Design-A oracle-root override, e.g.
-    `OPENCELL_L22_PROCESS_ORACLE_ROOT__MACROMOLECULARCOMPLEXATION`. Uppercases the
-    process name only (no other normalization), so the name is mechanically
-    derivable from the catalog `name` field alone -- see
-    `docs/phase_f/l2_2_design_a/MACROMOLECULARCOMPLEXATION_ACTIVE_WINDOW_PREREG.md`."""
-    return f"OPENCELL_L22_PROCESS_ORACLE_ROOT__{str(process_name).upper()}"
-
-
-def _resolve_process_oracle_root_override(process_name: str) -> Path | None:
-    """Read `process_oracle_root_env_var(process_name)`, if set. Returns `None` only
-    when the env var is entirely unset/empty (the normal, override-free path). Any
-    other failure (unregistered process, missing/non-directory root, incomplete or
-    wrong-process cohort) raises `ProcessOracleRootOverrideError` -- fail-closed,
-    never a silent fallback -- because the whole point of this override is that,
-    once set, it is authoritative."""
-    env_var = process_oracle_root_env_var(process_name)
-    raw = os.environ.get(env_var)
-    if not raw:
-        return None
-    if process_name not in _PROCESS_ORACLE_ROOT_OVERRIDE_REGISTRY:
-        raise ProcessOracleRootOverrideError(
-            f"{env_var} is set, but {process_name!r} has no registered process-scoped "
-            "oracle-root override contract (see "
-            "`_PROCESS_ORACLE_ROOT_OVERRIDE_REGISTRY`). Unset the override or register "
-            "and validate a contract for this process before using it."
-        )
-    root = Path(raw)
-    if not root.is_dir():
-        raise ProcessOracleRootOverrideError(
-            f"{env_var} is set to {raw!r}, but that path does not exist or is not a "
-            "directory. This override is authoritative when set: refusing to silently "
-            "fall back to the canonical oracle root."
-        )
-    return root
-
-
-def _v2_seed_mat_path_under_root(process_name: str, seed: int, root: Path) -> Path:
-    """The generic v2 on-disk layout (seed 0 unsuffixed, seed>0 zero-padded
-    `_sNNN/`), rooted at an arbitrary directory instead of `_karr_native_root()`.
-    Used to resolve seed paths under an authoritative process-scoped override root."""
-    if int(seed) == 0:
-        return root / "per_process_traces_v2" / f"{process_name}_100ticks.mat"
-    return root / f"per_process_traces_v2_s{int(seed):03d}" / f"{process_name}_100ticks.mat"
-
-
-def _validate_process_oracle_root_override(process_name: str, root: Path, *, max_seeds: int) -> None:
-    """Fail-closed acceptance of an authoritative process-scoped override root.
-
-    For `MacromolecularComplexation` (the only currently-registered process), every
-    one of `max_seeds` seeds must be present AND pass the FULL active-window
-    preregistration contract in `scripts.l22_extraction.macromol_active_window
-    .validate_seed_window` -- including the recorded `process_name` metadata field
-    (so a root pointed at a DIFFERENT process's cohort fails here), the driver/
-    fixture/vendored-source hash bindings, and the network-2 trigger-tick contract.
-    A partial cohort (any missing or invalid seed) raises rather than silently
-    proceeding with fewer seeds than the catalog requires -- there is no partial-
-    root acceptance path. Also rejects a root where one seed's file content is a
-    byte-for-byte duplicate of another seed's (a seed-relabeling/aliasing
-    laundering attempt), since it reuses the SAME `audit_active_window_evidence`
-    entry point the tracked standalone audit CLI uses (never a re-implementation
-    of that duplicate-hash detection here)."""
-    if process_name != "MacromolecularComplexation":
-        raise ProcessOracleRootOverrideError(
-            f"No oracle-root override validation contract implemented for {process_name!r}."
-        )
-    from scripts.l22_extraction import macromol_active_window as maw  # noqa: PLC0415
-
-    env_var = process_oracle_root_env_var(process_name)
-    if int(max_seeds) != maw.REQUIRED_N_SEEDS:
-        raise ProcessOracleRootOverrideError(
-            f"{env_var}={root}: requested max_seeds={max_seeds} does not match the "
-            f"preregistered active-window cohort size {maw.REQUIRED_N_SEEDS}; refusing to "
-            "validate a root against the wrong seed-count contract."
-        )
-    audit = maw.audit_active_window_evidence(data_roots=(root,))
-    if audit.status != "SUFFICIENT_ENSEMBLE":
-        raise ProcessOracleRootOverrideError(
-            f"{env_var}={root} failed fail-closed validation: this override is "
-            f"authoritative when set and must provide a COMPLETE, valid {max_seeds}-seed "
-            f"cohort, never a partial one. status={audit.status} "
-            f"missing_seeds={audit.missing_seeds} invalid_seeds={audit.invalid_seeds} "
-            f"duplicate_seeds={audit.duplicate_seeds} deficit={audit.deficit}"
-        )
 
 
 def _v2_canonical_seed0_mat_path(process_name: str) -> Path:
@@ -1187,37 +1081,33 @@ def _format_ensemble_oracle(
 
 
 def _load_v2_ensemble(process_name: str, max_seeds: int = 50) -> dict[str, Any] | None:
-    override_root = _resolve_process_oracle_root_override(process_name)
-    if override_root is not None:
-        # Authoritative process-scoped route: this is NOT a fallback candidate
-        # alongside the canonical root -- it is used exclusively, in full, or not
-        # at all (see `_validate_process_oracle_root_override`'s fail-closed
-        # partial-cohort rejection). No hardcoded cross-worktree path is ever
-        # consulted for a process reached via this route.
-        _validate_process_oracle_root_override(process_name, override_root, max_seeds=max_seeds)
-        seed_paths = [
-            _v2_seed_mat_path_under_root(process_name, seed, override_root)
-            for seed in range(int(max_seeds))
-        ]
-        before_channels, after_channels, _ = _load_seeded_mat_channels(
-            seed_paths, process_name=process_name
-        )
-        oracle = _format_ensemble_oracle(
-            process_name=process_name,
-            oracle_path=seed_paths[0],
-            seed_paths=seed_paths,
-            before_channels=before_channels,
-            after_channels=after_channels,
-        )
-        oracle["process_oracle_root_override"] = str(override_root)
-        oracle["process_oracle_root_override_env_var"] = process_oracle_root_env_var(process_name)
-        return oracle
-
     seed_paths = [
         _v2_seed_mat_path(process_name, seed)
         for seed in range(int(max_seeds))
         if _v2_seed_mat_path(process_name, seed).exists()
     ]
+    if (
+        process_name == "MacromolecularComplexation"
+        and _REPO_ROOT == _ACTUAL_REPO_ROOT
+        and len(seed_paths) < int(max_seeds)
+    ):
+        for candidate_root in (
+            Path("E:/opencell/data/m1_sources/karr_native"),
+            Path("/mnt/e/opencell/data/m1_sources/karr_native"),
+        ):
+            candidate_seed_paths = [
+                candidate_root
+                / f"per_process_traces_v2_s{seed:03d}"
+                / f"{process_name}_100ticks.mat"
+                for seed in range(int(max_seeds))
+                if (
+                    candidate_root
+                    / f"per_process_traces_v2_s{seed:03d}"
+                    / f"{process_name}_100ticks.mat"
+                ).exists()
+            ]
+            if len(candidate_seed_paths) > len(seed_paths):
+                seed_paths = candidate_seed_paths
     if not seed_paths:
         return None
     before_channels, after_channels, _ = _load_seeded_mat_channels(

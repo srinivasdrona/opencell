@@ -83,7 +83,6 @@ from __future__ import annotations
 import argparse
 import hashlib
 import json
-import os
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
@@ -276,40 +275,25 @@ class PerIndexStats:
         }
 
 
-def build_diagnostic(*, data_root: Path = maw.ACTIVE_WINDOW_ROOT) -> dict[str, Any]:
-    audit = maw.audit_active_window_evidence(data_roots=(data_root,))
-    if audit.status != "SUFFICIENT_ENSEMBLE":
-        raise ValueError(
-            f"active-window cohort at {data_root} is not a complete, valid 50-seed ensemble: "
-            f"status={audit.status} deficit={audit.deficit}"
-        )
+@dataclass(frozen=True)
+class AggregationResult:
+    per_index_stats: dict[int, PerIndexStats]
+    n_clean_index_swaps_total: int
+    max_marginal_rate_abs_diff: float
+    n_exact_identity_matches: int
+    fail_reasons: list[str]
+    verdict: str
 
-    env_var = runner_helpers.process_oracle_root_env_var(PROCESS)
-    previous_env = os.environ.get(env_var)
-    os.environ[env_var] = str(data_root)
-    try:
-        oracle = runner_helpers.load_karr_oracle(PROCESS)
-    finally:
-        if previous_env is None:
-            os.environ.pop(env_var, None)
-        else:
-            os.environ[env_var] = previous_env
 
-    sample_process = runner._process_sample_process(PROCESS)  # noqa: SLF001
-    wids_by_channel = runner._observable_wids(PROCESS, sample_process)  # noqa: SLF001
-
-    records: list[SeedSelectionRecord] = []
-    for seed_index, seed in enumerate(range(maw.REQUIRED_N_SEEDS)):
-        records.append(
-            compute_seed_selection_record(
-                seed,
-                data_root=data_root,
-                oracle=oracle,
-                seed_index=seed_index,
-                wids_by_channel=wids_by_channel,
-            )
-        )
-
+def aggregate_selection_records(records: list[SeedSelectionRecord]) -> AggregationResult:
+    """Pure aggregation/verdict logic over a list of per-seed selection
+    records, independent of how those records were produced (a real
+    50-seed cohort run, or synthetic records built directly for a test).
+    Applies the SAME preregistered thresholds `build_diagnostic` uses, so a
+    synthetic adversarial record set (e.g. a pure index swap with a
+    balanced marginal rate) exercises the identical verdict logic a real
+    run does -- see `test_aggregate_rejects_pure_complement_swap_even_with_
+    zero_marginal_difference` in the test suite for exactly this case."""
     per_index_stats = {idx: PerIndexStats(index=idx) for idx in NETWORK2_INDICES_0B}
     other_index = {NETWORK2_INDICES_0B[0]: NETWORK2_INDICES_0B[1], NETWORK2_INDICES_0B[1]: NETWORK2_INDICES_0B[0]}
     for record in records:
@@ -355,6 +339,61 @@ def build_diagnostic(*, data_root: Path = maw.ACTIVE_WINDOW_ROOT) -> dict[str, A
             )
 
     verdict = "FAIL" if fail_reasons else "PASS"
+    return AggregationResult(
+        per_index_stats=per_index_stats,
+        n_clean_index_swaps_total=n_clean_index_swaps_total,
+        max_marginal_rate_abs_diff=max_marginal_rate_abs_diff,
+        n_exact_identity_matches=n_exact_identity_matches,
+        fail_reasons=fail_reasons,
+        verdict=verdict,
+    )
+
+
+def build_diagnostic(*, data_root: Path = maw.ACTIVE_WINDOW_ROOT) -> dict[str, Any]:
+    audit = maw.audit_active_window_evidence(data_roots=(data_root,))
+    if audit.status != "SUFFICIENT_ENSEMBLE":
+        raise ValueError(
+            f"active-window cohort at {data_root} is not a complete, valid 50-seed ensemble: "
+            f"status={audit.status} deficit={audit.deficit}"
+        )
+
+    # The ordinary, UNMODIFIED shared Design-A oracle loader resolves
+    # MacromolecularComplexation via the canonical `per_process_traces_v2*`
+    # layout, exactly like every other design_a_per_tick process -- the
+    # accepted 50 active-window seeds are ALSO committed there (byte-for-byte
+    # identical to `data_root`; see
+    # `scripts/l22_extraction/populate_canonical_macromol_traces.py`), so no
+    # process-scoped env-var override or shared-loader edit is used here.
+    oracle = runner_helpers.load_karr_oracle(PROCESS)
+    if int(oracle.get("canonical_seed_count", 0)) != maw.REQUIRED_N_SEEDS:
+        raise ValueError(
+            f"canonical Design-A loader returned {oracle.get('canonical_seed_count')} seeds for "
+            f"{PROCESS!r}, expected {maw.REQUIRED_N_SEEDS}. Have the canonical "
+            "per_process_traces_v2*/MacromolecularComplexation_100ticks.mat copies been populated?"
+        )
+
+    sample_process = runner._process_sample_process(PROCESS)  # noqa: SLF001
+    wids_by_channel = runner._observable_wids(PROCESS, sample_process)  # noqa: SLF001
+
+    records: list[SeedSelectionRecord] = []
+    for seed_index, seed in enumerate(range(maw.REQUIRED_N_SEEDS)):
+        records.append(
+            compute_seed_selection_record(
+                seed,
+                data_root=data_root,
+                oracle=oracle,
+                seed_index=seed_index,
+                wids_by_channel=wids_by_channel,
+            )
+        )
+
+    aggregation = aggregate_selection_records(records)
+    per_index_stats = aggregation.per_index_stats
+    n_clean_index_swaps_total = aggregation.n_clean_index_swaps_total
+    max_marginal_rate_abs_diff = aggregation.max_marginal_rate_abs_diff
+    n_exact_identity_matches = aggregation.n_exact_identity_matches
+    fail_reasons = aggregation.fail_reasons
+    verdict = aggregation.verdict
 
     return {
         "artifact_kind": ARTIFACT_KIND,
