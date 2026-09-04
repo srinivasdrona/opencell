@@ -1,0 +1,1347 @@
+{
+  "artifact_kind": "macromol_active_window_process_local_design_a",
+  "artifact_version": "1.0.0",
+  "process": "MacromolecularComplexation",
+  "gating": "PROCESS_LOCAL ordinary Design-A verdict only; not consumed by the shared evidence index or generator without an explicit promotion step.",
+  "not_consumed_by": [
+    "scripts/l22_evidence/verdict.py",
+    "scripts/l22_evidence/generator.py",
+    "docs/phase_f/l2_2_design_a/evidence_index.json",
+    "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml"
+  ],
+  "generated_at": "2026-09-04T12:13:03.683305+00:00",
+  "generator_source_path": "scripts/l22_evidence/macromol_active_windows.py",
+  "generator_source_sha256_lf_normalized": "2f279552f1ef1fbcf526a69652db67ac9b16bd04caf892c6339aa573930634e5",
+  "runner_source_path": "tests/vivarium/l2_2_design_a_runner.py",
+  "runner_source_sha256_lf_normalized": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
+  "runner_helpers_source_path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
+  "runner_helpers_source_sha256_lf_normalized": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+  "active_window_root": "data/m1_sources/karr_native/macromol_active_window",
+  "active_window_driver_path": "scripts/matlab/extract_macromol_active_window_seeds.m",
+  "active_window_driver_sha256_lf_normalized": "099c42fe39de73986df486736688eee559de734b1c105eddfce86298ee0d9478",
+  "fixture_path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+  "fixture_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+  "vendored_source_path": "data/karr_vendored_source/MacromolecularComplexation.m",
+  "vendored_source_sha256_lf_normalized": "2e840ac13b65f0dbd027ef2a425dc3a7a7d23fbd505589eee0b30faedf02d087",
+  "audit": {
+    "process": "MacromolecularComplexation",
+    "status": "SUFFICIENT_ENSEMBLE",
+    "required_n_seeds": 50,
+    "required_m_ticks": 100,
+    "found_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "missing_seeds": [],
+    "invalid_seeds": [],
+    "duplicate_seeds": [],
+    "rejected_windows": [],
+    "deficit": 0,
+    "resumable_extraction_command": "",
+    "data_roots": [
+      "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window"
+    ],
+    "cohort_summary": {
+      "n_valid_seeds": 50,
+      "tick_start_min": 570,
+      "tick_start_max": 9044,
+      "first_e1_nonzero_tick_min": 501,
+      "first_e1_nonzero_tick_max": 8376,
+      "trigger_complex_counts_0b": {
+        "22": 31,
+        "23": 19
+      }
+    }
+  },
+  "seed_windows_verified": {
+    "0": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 0,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1142,
+      "tick_start": 1143,
+      "tick_end": 1242,
+      "trigger_tick": 1143,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 1136,
+      "search_max_ticks": 33000,
+      "sha256": "2bbbfdc48a50f28834ab03526c08a0b2f0e3093723da6774085afdf51a8ba375"
+    },
+    "1": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 1,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s001/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 3860,
+      "tick_start": 3861,
+      "tick_end": 3960,
+      "trigger_tick": 3861,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 2855,
+      "search_max_ticks": 33000,
+      "sha256": "4329015497cfe16573fadae2f546817ec97387c67f6d02cc72197af762c89821"
+    },
+    "2": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 2,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s002/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 3297,
+      "tick_start": 3298,
+      "tick_end": 3397,
+      "trigger_tick": 3298,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 2858,
+      "search_max_ticks": 33000,
+      "sha256": "272787109507022bd3f71485bb7e26e154bf45e3878f446ce48dbd2010ed0829"
+    },
+    "3": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 3,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s003/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1297,
+      "tick_start": 1298,
+      "tick_end": 1397,
+      "trigger_tick": 1298,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 1144,
+      "search_max_ticks": 33000,
+      "sha256": "c2f4d443af2c23a64315a6ab5e10d4dae3576f0cee7651faecd2d2e9d3de2d8a"
+    },
+    "4": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 4,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s004/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 4194,
+      "tick_start": 4195,
+      "tick_end": 4294,
+      "trigger_tick": 4195,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 4079,
+      "search_max_ticks": 33000,
+      "sha256": "5a67303763e0655ed05fe9d35b23ccab98f0d9fcdb6daba6b8b47a0962f8e320"
+    },
+    "5": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 5,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s005/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 661,
+      "tick_start": 662,
+      "tick_end": 761,
+      "trigger_tick": 662,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 501,
+      "search_max_ticks": 33000,
+      "sha256": "d96e9e73c1d212f870ff986402d09c8e4b92e40195600d7ed955d69747ff084d"
+    },
+    "6": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 6,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s006/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2056,
+      "tick_start": 2057,
+      "tick_end": 2156,
+      "trigger_tick": 2057,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 2041,
+      "search_max_ticks": 33000,
+      "sha256": "1587ec885ee7264f9f414a794d8ca7d9e32d1e9f27853c2866d4f0f641bdac4a"
+    },
+    "7": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 7,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s007/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 4734,
+      "tick_start": 4735,
+      "tick_end": 4834,
+      "trigger_tick": 4735,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 1923,
+      "search_max_ticks": 33000,
+      "sha256": "62bc04693d522c2ed26e84f05cbebf126de8b7e61263fd3ea5c0b932f439c05d"
+    },
+    "8": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 8,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s008/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 8541,
+      "tick_start": 8542,
+      "tick_end": 8641,
+      "trigger_tick": 8542,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 8376,
+      "search_max_ticks": 33000,
+      "sha256": "05e3b3335413f6c51d178534a1cc444c1a6aa1d4888d85ff3b5ebd6374c7fbca"
+    },
+    "9": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 9,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s009/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2690,
+      "tick_start": 2691,
+      "tick_end": 2790,
+      "trigger_tick": 2691,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 2616,
+      "search_max_ticks": 33000,
+      "sha256": "79613ff142627abbb02bb467a64572483dac45047fb56d1e43c78ced540cb9d8"
+    },
+    "10": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 10,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s010/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 6032,
+      "tick_start": 6033,
+      "tick_end": 6132,
+      "trigger_tick": 6033,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 5980,
+      "search_max_ticks": 33000,
+      "sha256": "c3bdaa19c4fda39948cb11522b245ad27ecb45c4aec7a21d01f77812325e9f5d"
+    },
+    "11": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 11,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s011/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 6395,
+      "tick_start": 6396,
+      "tick_end": 6495,
+      "trigger_tick": 6396,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 6357,
+      "search_max_ticks": 33000,
+      "sha256": "7c64a997a88e12565e816fbd47240cf6929811b8298864903db474f5307f49ab"
+    },
+    "12": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 12,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s012/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1017,
+      "tick_start": 1018,
+      "tick_end": 1117,
+      "trigger_tick": 1018,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 863,
+      "search_max_ticks": 33000,
+      "sha256": "63523852abdea642527a56fbbc1888b8ea532d6247dc6ab6a7057e58de99e304"
+    },
+    "13": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 13,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s013/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1294,
+      "tick_start": 1295,
+      "tick_end": 1394,
+      "trigger_tick": 1295,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 1251,
+      "search_max_ticks": 33000,
+      "sha256": "e8117c256dfaf6425062211347420ae0c6d969f4aec62dfb0a9b83413878d61d"
+    },
+    "14": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 14,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s014/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 3161,
+      "tick_start": 3162,
+      "tick_end": 3261,
+      "trigger_tick": 3162,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 3141,
+      "search_max_ticks": 33000,
+      "sha256": "9bdcb09446311940efa3fddede6771dc2f5c5f643b3069f732e1d9dbdb6bfb51"
+    },
+    "15": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 15,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s015/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2659,
+      "tick_start": 2660,
+      "tick_end": 2759,
+      "trigger_tick": 2660,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 1034,
+      "search_max_ticks": 33000,
+      "sha256": "58044fe879cae11494b37c3b61959fa76c3506bd4ca6e0b4a323c175e4eca222"
+    },
+    "16": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 16,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s016/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 7558,
+      "tick_start": 7559,
+      "tick_end": 7658,
+      "trigger_tick": 7559,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 7532,
+      "search_max_ticks": 33000,
+      "sha256": "49e0544932e43344347f55b1a546b73924252ba6aca4ef7db72d59524ed21c50"
+    },
+    "17": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 17,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s017/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 6658,
+      "tick_start": 6659,
+      "tick_end": 6758,
+      "trigger_tick": 6659,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 6609,
+      "search_max_ticks": 33000,
+      "sha256": "48ec0c111b47af816443399ebd7cc308dcd1515d8b4eff7578360e0dd1ebb93e"
+    },
+    "18": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 18,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s018/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1255,
+      "tick_start": 1256,
+      "tick_end": 1355,
+      "trigger_tick": 1256,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 1226,
+      "search_max_ticks": 33000,
+      "sha256": "f075113538346068d9dc33b896d35de5c571e5e75e5737c7c4e913f65c0ebf8d"
+    },
+    "19": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 19,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s019/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1277,
+      "tick_start": 1278,
+      "tick_end": 1377,
+      "trigger_tick": 1278,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 1264,
+      "search_max_ticks": 33000,
+      "sha256": "04013964453993c2e5f16bcf7780d4030e590a870dccafbd035e342d0dc76178"
+    },
+    "20": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 20,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s020/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2310,
+      "tick_start": 2311,
+      "tick_end": 2410,
+      "trigger_tick": 2311,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 1664,
+      "search_max_ticks": 33000,
+      "sha256": "a9e5ce41657daef76000c266fabaa80d00af552afc7c85c29136d6ea3983d131"
+    },
+    "21": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 21,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s021/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 4169,
+      "tick_start": 4170,
+      "tick_end": 4269,
+      "trigger_tick": 4170,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 4129,
+      "search_max_ticks": 33000,
+      "sha256": "3330e2719170600adaff4bc4733d075e0b40589fc10be4a3eb87a9c68e466371"
+    },
+    "22": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 22,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s022/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 8302,
+      "tick_start": 8303,
+      "tick_end": 8402,
+      "trigger_tick": 8303,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 8138,
+      "search_max_ticks": 33000,
+      "sha256": "7f0cf291130ba9dd0f46928ef8c1e6821066b3f26e4cdd0c68ec96571a8a9815"
+    },
+    "23": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 23,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s023/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 3935,
+      "tick_start": 3936,
+      "tick_end": 4035,
+      "trigger_tick": 3936,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 3903,
+      "search_max_ticks": 33000,
+      "sha256": "08603cae0572bd62768edd099781eba3afbbf148ea8f16acde0b3424f6233fc0"
+    },
+    "24": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 24,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s024/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1236,
+      "tick_start": 1237,
+      "tick_end": 1336,
+      "trigger_tick": 1237,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 1217,
+      "search_max_ticks": 33000,
+      "sha256": "5fe34ae4796ef8a6741835d922d1998831eaa254e23f5c0ad13f0a11c2f0d465"
+    },
+    "25": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 25,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s025/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2766,
+      "tick_start": 2767,
+      "tick_end": 2866,
+      "trigger_tick": 2767,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 2754,
+      "search_max_ticks": 33000,
+      "sha256": "fa24ce54924f65b75de0484ecaebe1f937bf7cec008f71476f7e588f784b6488"
+    },
+    "26": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 26,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s026/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 9043,
+      "tick_start": 9044,
+      "tick_end": 9143,
+      "trigger_tick": 9044,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 1424,
+      "search_max_ticks": 33000,
+      "sha256": "a54100bf4278d175ca9dcb419146e2e16a756cdf4dba8df62e7305d92a2b229f"
+    },
+    "27": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 27,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s027/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1609,
+      "tick_start": 1610,
+      "tick_end": 1709,
+      "trigger_tick": 1610,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 1556,
+      "search_max_ticks": 33000,
+      "sha256": "eb8bd888b7448b981f8950e4fd28e966a427a0d443ddeb99d0ffa57ef500ac18"
+    },
+    "28": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 28,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s028/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1699,
+      "tick_start": 1700,
+      "tick_end": 1799,
+      "trigger_tick": 1700,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 1618,
+      "search_max_ticks": 33000,
+      "sha256": "0f518bccf93ce9f4c52c89475fe6c888f0727783d9fe26cc19cedacb15c7afce"
+    },
+    "29": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 29,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s029/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 3740,
+      "tick_start": 3741,
+      "tick_end": 3840,
+      "trigger_tick": 3741,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 3708,
+      "search_max_ticks": 33000,
+      "sha256": "68169572cf59f5589584ed788ab0d234202b30f2d3ee298d2c6d7f1bae3c94a5"
+    },
+    "30": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 30,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s030/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1213,
+      "tick_start": 1214,
+      "tick_end": 1313,
+      "trigger_tick": 1214,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 722,
+      "search_max_ticks": 33000,
+      "sha256": "ae25eee2ac14bd05ba9c4d7146a6244cd8d6967d3b9f85eb94fe4c072aa9e7a8"
+    },
+    "31": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 31,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s031/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2385,
+      "tick_start": 2386,
+      "tick_end": 2485,
+      "trigger_tick": 2386,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 2348,
+      "search_max_ticks": 33000,
+      "sha256": "b3b1cc70f51aa02d5a5593e31a692c22652e5599b01fd7bc277127c7c111370a"
+    },
+    "32": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 32,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s032/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2932,
+      "tick_start": 2933,
+      "tick_end": 3032,
+      "trigger_tick": 2933,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 2537,
+      "search_max_ticks": 33000,
+      "sha256": "7386b9cc0a99fab5b824ffc022284732452c79956fdf197df15ac095ea38d9aa"
+    },
+    "33": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 33,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s033/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2672,
+      "tick_start": 2673,
+      "tick_end": 2772,
+      "trigger_tick": 2673,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 1833,
+      "search_max_ticks": 33000,
+      "sha256": "8304c66c567745081e02dae868300b86d5eff354562150f4bdd1000ed22dbd59"
+    },
+    "34": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 34,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s034/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 3731,
+      "tick_start": 3732,
+      "tick_end": 3831,
+      "trigger_tick": 3732,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 3716,
+      "search_max_ticks": 33000,
+      "sha256": "1d751982b5f8ae9c19f3fd673dad7f7296be5769bf0a217cd13f40efde27a90a"
+    },
+    "35": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 35,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s035/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 4868,
+      "tick_start": 4869,
+      "tick_end": 4968,
+      "trigger_tick": 4869,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 4862,
+      "search_max_ticks": 33000,
+      "sha256": "608fb04b85c6c71a91e4afc408fffd9e19e88c36d39e134c8d32dc511aba0422"
+    },
+    "36": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 36,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s036/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 3581,
+      "tick_start": 3582,
+      "tick_end": 3681,
+      "trigger_tick": 3582,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 3538,
+      "search_max_ticks": 33000,
+      "sha256": "63fa93abcd7c358f1ff4bcf816c58fbefc99a9b91a26895eaabbf462d7bc5ca7"
+    },
+    "37": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 37,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s037/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 4292,
+      "tick_start": 4293,
+      "tick_end": 4392,
+      "trigger_tick": 4293,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 4166,
+      "search_max_ticks": 33000,
+      "sha256": "41a32ecfa5d3e42e524b8ca5ff3b8ba01c7786131cb08dbd3178be45f62268d1"
+    },
+    "38": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 38,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s038/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 5453,
+      "tick_start": 5454,
+      "tick_end": 5553,
+      "trigger_tick": 5454,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 5409,
+      "search_max_ticks": 33000,
+      "sha256": "f5e32048370454a670bf4067a4cbe4be4fca2f500474e5ef5ecec33cbd229bf4"
+    },
+    "39": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 39,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s039/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2344,
+      "tick_start": 2345,
+      "tick_end": 2444,
+      "trigger_tick": 2345,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 2295,
+      "search_max_ticks": 33000,
+      "sha256": "9366920bd9ee853775a1abd785307f830b722b05b43a77bb3012de4fcedc8aa9"
+    },
+    "40": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 40,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s040/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1079,
+      "tick_start": 1080,
+      "tick_end": 1179,
+      "trigger_tick": 1080,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 849,
+      "search_max_ticks": 33000,
+      "sha256": "7c20ea56059f47d3e97aa02ede66d1cd3ca7d30cbb74f53c46697a895272cc9b"
+    },
+    "41": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 41,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s041/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 1552,
+      "tick_start": 1553,
+      "tick_end": 1652,
+      "trigger_tick": 1553,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 1494,
+      "search_max_ticks": 33000,
+      "sha256": "d7f064ba82382a270957fcd7a9df7a3a099b8401a31135fd15ce2b33e7aaab67"
+    },
+    "42": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 42,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s042/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 4050,
+      "tick_start": 4051,
+      "tick_end": 4150,
+      "trigger_tick": 4051,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 2955,
+      "search_max_ticks": 33000,
+      "sha256": "81519fb18b7f53d02f25fd839d22213c844d32542829df74aa70c62de6d1ef7a"
+    },
+    "43": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 43,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s043/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 2314,
+      "tick_start": 2315,
+      "tick_end": 2414,
+      "trigger_tick": 2315,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 1158,
+      "search_max_ticks": 33000,
+      "sha256": "63c171b98a4a93a09af0aea711cfc54f123f935c5aa5705e99863c7bf48ab454"
+    },
+    "44": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 44,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s044/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 3959,
+      "tick_start": 3960,
+      "tick_end": 4059,
+      "trigger_tick": 3960,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 3937,
+      "search_max_ticks": 33000,
+      "sha256": "c429568721e8f413ed50b876a8a7db9f696865c0aad787694ddfda425d5b561e"
+    },
+    "45": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 45,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s045/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 3772,
+      "tick_start": 3773,
+      "tick_end": 3872,
+      "trigger_tick": 3773,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 3740,
+      "search_max_ticks": 33000,
+      "sha256": "6165d1560bdc6b48aa7747f3787e91912c8ab268e38ea43f3e685b5dc07ef024"
+    },
+    "46": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 46,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s046/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 6291,
+      "tick_start": 6292,
+      "tick_end": 6391,
+      "trigger_tick": 6292,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 3931,
+      "search_max_ticks": 33000,
+      "sha256": "04f43de7a55aaec327811619a3fa1c44534ec42045b25c7c5c01c09fcdee61d2"
+    },
+    "47": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 47,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s047/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 569,
+      "tick_start": 570,
+      "tick_end": 669,
+      "trigger_tick": 570,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 560,
+      "search_max_ticks": 33000,
+      "sha256": "03e71ef11df7b4ffa57dd516819f607eae91dcc9d9a420450b4a9134c266311f"
+    },
+    "48": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 48,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s048/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 5633,
+      "tick_start": 5634,
+      "tick_end": 5733,
+      "trigger_tick": 5634,
+      "trigger_complex_indices_0b": [
+        23
+      ],
+      "first_e1_nonzero_tick": 5622,
+      "search_max_ticks": 33000,
+      "sha256": "9a77466ad8f56cb6ae3da21b85f6d283208384ddf479c484eca1326c49d99ee6"
+    },
+    "49": {
+      "process_name": "MacromolecularComplexation",
+      "seed": 49,
+      "path": "/mnt/e/opencell-worktrees/integrate-l22-macromol-clean/data/m1_sources/karr_native/macromol_active_window/per_process_traces_v2_s049/MacromolecularComplexation_100ticks.mat",
+      "n_ticks": 100,
+      "tick_offset": 5209,
+      "tick_start": 5210,
+      "tick_end": 5309,
+      "trigger_tick": 5210,
+      "trigger_complex_indices_0b": [
+        22
+      ],
+      "first_e1_nonzero_tick": 5096,
+      "search_max_ticks": 33000,
+      "sha256": "cfcede7f7accc6aed0e6aace02403036846c4c6835308fd360081c7baec3ee04"
+    }
+  },
+  "seed_trace_sha256": {
+    "0": "2bbbfdc48a50f28834ab03526c08a0b2f0e3093723da6774085afdf51a8ba375",
+    "1": "4329015497cfe16573fadae2f546817ec97387c67f6d02cc72197af762c89821",
+    "2": "272787109507022bd3f71485bb7e26e154bf45e3878f446ce48dbd2010ed0829",
+    "3": "c2f4d443af2c23a64315a6ab5e10d4dae3576f0cee7651faecd2d2e9d3de2d8a",
+    "4": "5a67303763e0655ed05fe9d35b23ccab98f0d9fcdb6daba6b8b47a0962f8e320",
+    "5": "d96e9e73c1d212f870ff986402d09c8e4b92e40195600d7ed955d69747ff084d",
+    "6": "1587ec885ee7264f9f414a794d8ca7d9e32d1e9f27853c2866d4f0f641bdac4a",
+    "7": "62bc04693d522c2ed26e84f05cbebf126de8b7e61263fd3ea5c0b932f439c05d",
+    "8": "05e3b3335413f6c51d178534a1cc444c1a6aa1d4888d85ff3b5ebd6374c7fbca",
+    "9": "79613ff142627abbb02bb467a64572483dac45047fb56d1e43c78ced540cb9d8",
+    "10": "c3bdaa19c4fda39948cb11522b245ad27ecb45c4aec7a21d01f77812325e9f5d",
+    "11": "7c64a997a88e12565e816fbd47240cf6929811b8298864903db474f5307f49ab",
+    "12": "63523852abdea642527a56fbbc1888b8ea532d6247dc6ab6a7057e58de99e304",
+    "13": "e8117c256dfaf6425062211347420ae0c6d969f4aec62dfb0a9b83413878d61d",
+    "14": "9bdcb09446311940efa3fddede6771dc2f5c5f643b3069f732e1d9dbdb6bfb51",
+    "15": "58044fe879cae11494b37c3b61959fa76c3506bd4ca6e0b4a323c175e4eca222",
+    "16": "49e0544932e43344347f55b1a546b73924252ba6aca4ef7db72d59524ed21c50",
+    "17": "48ec0c111b47af816443399ebd7cc308dcd1515d8b4eff7578360e0dd1ebb93e",
+    "18": "f075113538346068d9dc33b896d35de5c571e5e75e5737c7c4e913f65c0ebf8d",
+    "19": "04013964453993c2e5f16bcf7780d4030e590a870dccafbd035e342d0dc76178",
+    "20": "a9e5ce41657daef76000c266fabaa80d00af552afc7c85c29136d6ea3983d131",
+    "21": "3330e2719170600adaff4bc4733d075e0b40589fc10be4a3eb87a9c68e466371",
+    "22": "7f0cf291130ba9dd0f46928ef8c1e6821066b3f26e4cdd0c68ec96571a8a9815",
+    "23": "08603cae0572bd62768edd099781eba3afbbf148ea8f16acde0b3424f6233fc0",
+    "24": "5fe34ae4796ef8a6741835d922d1998831eaa254e23f5c0ad13f0a11c2f0d465",
+    "25": "fa24ce54924f65b75de0484ecaebe1f937bf7cec008f71476f7e588f784b6488",
+    "26": "a54100bf4278d175ca9dcb419146e2e16a756cdf4dba8df62e7305d92a2b229f",
+    "27": "eb8bd888b7448b981f8950e4fd28e966a427a0d443ddeb99d0ffa57ef500ac18",
+    "28": "0f518bccf93ce9f4c52c89475fe6c888f0727783d9fe26cc19cedacb15c7afce",
+    "29": "68169572cf59f5589584ed788ab0d234202b30f2d3ee298d2c6d7f1bae3c94a5",
+    "30": "ae25eee2ac14bd05ba9c4d7146a6244cd8d6967d3b9f85eb94fe4c072aa9e7a8",
+    "31": "b3b1cc70f51aa02d5a5593e31a692c22652e5599b01fd7bc277127c7c111370a",
+    "32": "7386b9cc0a99fab5b824ffc022284732452c79956fdf197df15ac095ea38d9aa",
+    "33": "8304c66c567745081e02dae868300b86d5eff354562150f4bdd1000ed22dbd59",
+    "34": "1d751982b5f8ae9c19f3fd673dad7f7296be5769bf0a217cd13f40efde27a90a",
+    "35": "608fb04b85c6c71a91e4afc408fffd9e19e88c36d39e134c8d32dc511aba0422",
+    "36": "63fa93abcd7c358f1ff4bcf816c58fbefc99a9b91a26895eaabbf462d7bc5ca7",
+    "37": "41a32ecfa5d3e42e524b8ca5ff3b8ba01c7786131cb08dbd3178be45f62268d1",
+    "38": "f5e32048370454a670bf4067a4cbe4be4fca2f500474e5ef5ecec33cbd229bf4",
+    "39": "9366920bd9ee853775a1abd785307f830b722b05b43a77bb3012de4fcedc8aa9",
+    "40": "7c20ea56059f47d3e97aa02ede66d1cd3ca7d30cbb74f53c46697a895272cc9b",
+    "41": "d7f064ba82382a270957fcd7a9df7a3a099b8401a31135fd15ce2b33e7aaab67",
+    "42": "81519fb18b7f53d02f25fd839d22213c844d32542829df74aa70c62de6d1ef7a",
+    "43": "63c171b98a4a93a09af0aea711cfc54f123f935c5aa5705e99863c7bf48ab454",
+    "44": "c429568721e8f413ed50b876a8a7db9f696865c0aad787694ddfda425d5b561e",
+    "45": "6165d1560bdc6b48aa7747f3787e91912c8ab268e38ea43f3e685b5dc07ef024",
+    "46": "04f43de7a55aaec327811619a3fa1c44534ec42045b25c7c5c01c09fcdee61d2",
+    "47": "03e71ef11df7b4ffa57dd516819f607eae91dcc9d9a420450b4a9134c266311f",
+    "48": "9a77466ad8f56cb6ae3da21b85f6d283208384ddf479c484eca1326c49d99ee6",
+    "49": "cfcede7f7accc6aed0e6aace02403036846c4c6835308fd360081c7baec3ee04"
+  },
+  "runner_output_dir": "docs/phase_f/l2_2_design_a/active_windows/MacromolecularComplexation_process_local_runner_output",
+  "runner_output_hashes": {
+    "result.json": "97f1676470478f3244d8728448fe4c475a4984ce5b6a02678910be4a810e7c28",
+    "SUMMARY.json": "16626d65899dea25b25745bdc31ac615d2c62d32bcdc2720893786c20b3cdc9f",
+    "thresholds.json": "bfda97ecfa2a3b496ebd796fe21d156d6f1ea19c8e7c88395037d326ba429cf0",
+    "null_calibration.json": "58ebaaf8fc3c604893a14402601a403ae74a32d11871e4ed54c6bb18ed6429bc",
+    "analytical_check.json": "851bafe04f1a87092a83b1f2f9ea2f84cb9cf2fcfcb2b45899ff5a6c10f22a86",
+    "input_manifest.json": "d80c606a5a4d4c1390887f0cefb28a34ce1bb7799bb380cd37ad5b0e468d8a6b",
+    "provenance.json": "c07620972e6894086f20fbdb45be0fe5858d69c5991c8d8df3c9a63c7cdb71e5"
+  },
+  "ordinary_design_a": {
+    "result": {
+      "process": "MacromolecularComplexation",
+      "verdict": "PASS",
+      "timestamp": "2026-09-04T12:13:03.211193+00:00",
+      "harness_version": "design_a_v1_3",
+      "seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
+      ],
+      "ticks": 100,
+      "n_observations_per_channel": 5000,
+      "bootstrap_B": 1000,
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "canonical_seed_count": 50,
+      "k_eng": {
+        "TRIVIAL_RNG": 2.0,
+        "ALGORITHMIC_SHALLOW": 2.0,
+        "ALGORITHMIC_DEEP": 3.0
+      },
+      "channels": {
+        "substrates": {
+          "verdict": "SEED_NOISE",
+          "w1_oc_vs_karr": 9.904761904761894e-05,
+          "w1_oc_vs_karr_ci95": [
+            1.6301239761904758,
+            2.1270832619047617
+          ],
+          "q95_null": 2.0839346666666665,
+          "threshold": 4.167869333333333,
+          "absolute_floor": 1.0,
+          "ks_stat": 3.809523809517046e-06,
+          "ks_pvalue": 1.0,
+          "n_nonzero_oc": 706719,
+          "n_nonzero_karr": 706719,
+          "samples_oc": {
+            "mean": 18.156913333333332,
+            "stddev": 61.6647477908617,
+            "skew": 7.134990128155585,
+            "kurtosis": 65.35741437145346,
+            "min": 0.0,
+            "max": 813.0
+          },
+          "samples_karr": {
+            "mean": 18.156913333333332,
+            "stddev": 61.66474636996805,
+            "skew": 7.134990581418156,
+            "kurtosis": 65.35742064603878,
+            "min": 0.0,
+            "max": 813.0
+          },
+          "is_primary": false,
+          "is_event_channel": false,
+          "aggregation": "per_tick_vector_w1_mean",
+          "per_sample_w1_summary": {
+            "mean": 9.904761904761894e-05,
+            "max": 0.019047619047619313,
+            "min": 0.0
+          }
+        },
+        "monomers": {
+          "verdict": "SEED_NOISE",
+          "w1_oc_vs_karr": 9.999999999999988e-05,
+          "w1_oc_vs_karr_ci95": [
+            1.6453553124999991,
+            2.1475162980769222
+          ],
+          "q95_null": 2.1037074038461534,
+          "threshold": 4.207414807692307,
+          "absolute_floor": 1.0,
+          "ks_stat": 3.846153846187583e-06,
+          "ks_pvalue": 1.0,
+          "n_nonzero_oc": 706404,
+          "n_nonzero_karr": 706404,
+          "samples_oc": {
+            "mean": 18.33081153846154,
+            "stddev": 61.93486063440317,
+            "skew": 7.1015729881622045,
+            "kurtosis": 64.73871881304416,
+            "min": 0.0,
+            "max": 813.0
+          },
+          "samples_karr": {
+            "mean": 18.33081153846154,
+            "stddev": 61.934859206103525,
+            "skew": 7.10157344005116,
+            "kurtosis": 64.73872503642468,
+            "min": 0.0,
+            "max": 813.0
+          },
+          "is_primary": false,
+          "is_event_channel": false,
+          "aggregation": "per_tick_vector_w1_mean",
+          "per_sample_w1_summary": {
+            "mean": 9.999999999999988e-05,
+            "max": 0.019230769230769496,
+            "min": 0.0
+          }
+        },
+        "complexs": {
+          "verdict": "SEED_NOISE",
+          "w1_oc_vs_karr": 0.0,
+          "w1_oc_vs_karr_ci95": [
+            0.002150884353741499,
+            0.002478911564625853
+          ],
+          "q95_null": 0.002453129251700683,
+          "threshold": 1.0,
+          "absolute_floor": 1.0,
+          "ks_stat": 0.0,
+          "ks_pvalue": 1.0,
+          "n_nonzero_oc": 1071,
+          "n_nonzero_karr": 1071,
+          "samples_oc": {
+            "mean": 0.0014598639455782312,
+            "stddev": 0.038251469510456465,
+            "skew": 26.260840835160085,
+            "kurtosis": 692.6799425604213,
+            "min": 0.0,
+            "max": 2.0
+          },
+          "samples_karr": {
+            "mean": 0.0014598639455782312,
+            "stddev": 0.038251469510456465,
+            "skew": 26.260840835160085,
+            "kurtosis": 692.6799425604213,
+            "min": 0.0,
+            "max": 2.0
+          },
+          "is_primary": true,
+          "is_event_channel": false,
+          "aggregation": "per_tick_vector_w1_mean",
+          "per_sample_w1_summary": {
+            "mean": 0.0,
+            "max": 0.0,
+            "min": 0.0
+          }
+        }
+      },
+      "joint_check": {
+        "enabled": true,
+        "verdict": null
+      },
+      "warnings": [],
+      "allocator_inputs_ref": "docs/phase_f/l2_2_design_a/active_windows/MacromolecularComplexation_process_local_runner_output/allocator_inputs.json",
+      "provenance_ref": "docs/phase_f/l2_2_design_a/active_windows/MacromolecularComplexation_process_local_runner_output/provenance.json"
+    },
+    "summary": {
+      "generated_at": "2026-09-04T12:13:03.211193+00:00",
+      "schema_version": "1.4",
+      "harness_version": "design_a_v1_3",
+      "k_eng": {
+        "TRIVIAL_RNG": 2.0,
+        "ALGORITHMIC_SHALLOW": 2.0,
+        "ALGORITHMIC_DEEP": 3.0
+      },
+      "processes": {
+        "MacromolecularComplexation": {
+          "verdict": "PASS",
+          "latest_run": "2026-09-04T12:13:03.211193+00:00",
+          "bucket": "ALGORITHMIC_SHALLOW",
+          "failed_channels": [],
+          "n_channels_gated": 3,
+          "n_event_deferred": 0,
+          "n_insufficient": 0,
+          "joint_verdict": "NOT_RUN",
+          "n_joint_fail_pairs": 0,
+          "warnings": []
+        }
+      },
+      "tally": {
+        "PASS": 1,
+        "FAIL": 0,
+        "BLOCKED": 0,
+        "SKIPPED": 0,
+        "NO_GATEABLE_CHANNELS": 0
+      }
+    },
+    "thresholds": {
+      "schema_version": "1.4",
+      "harness_version": "design_a_v1_3",
+      "process": "MacromolecularComplexation",
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "channels": {
+        "substrates": {
+          "q95_null": 2.0839346666666665,
+          "k_eng": 2.0,
+          "absolute_floor": 1.0,
+          "threshold": 4.167869333333333
+        },
+        "monomers": {
+          "q95_null": 2.1037074038461534,
+          "k_eng": 2.0,
+          "absolute_floor": 1.0,
+          "threshold": 4.207414807692307
+        },
+        "complexs": {
+          "q95_null": 0.002453129251700683,
+          "k_eng": 2.0,
+          "absolute_floor": 1.0,
+          "threshold": 1.0
+        }
+      }
+    },
+    "null_calibration": {
+      "generated_at": "2026-09-04T12:13:03.211193+00:00",
+      "process": "MacromolecularComplexation",
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "channels": {
+        "substrates": {
+          "bootstrap_B": 1000,
+          "n_karr_seeds": 50,
+          "n_ticks": 100,
+          "q95_null": 2.0839346666666665,
+          "bootstrap_values_summary": {
+            "mean": 1.863440375238095,
+            "stddev": 0.12963503793954076,
+            "min": 1.4424971428571427,
+            "max": 2.3060847619047613
+          }
+        },
+        "monomers": {
+          "bootstrap_B": 1000,
+          "n_karr_seeds": 50,
+          "n_ticks": 100,
+          "q95_null": 2.1037074038461534,
+          "bootstrap_values_summary": {
+            "mean": 1.8810118442307688,
+            "stddev": 0.13093075716577593,
+            "min": 1.4563711538461537,
+            "max": 2.328492307692307
+          }
+        },
+        "complexs": {
+          "bootstrap_B": 1000,
+          "n_karr_seeds": 50,
+          "n_ticks": 100,
+          "q95_null": 0.002453129251700683,
+          "bootstrap_values_summary": {
+            "mean": 0.0023200176870748325,
+            "stddev": 8.563626328020951e-05,
+            "min": 0.0020775510204081656,
+            "max": 0.0026095238095238124
+          }
+        }
+      },
+      "warnings": []
+    },
+    "analytical_check": {
+      "applicable": false,
+      "reason": "MacromolecularComplexation has no closed-form per-tick check"
+    },
+    "input_manifest": {
+      "generated_at": "2026-09-04T12:13:03.211193+00:00",
+      "inputs": [
+        {
+          "path": "data/m1_sources/karr_native/per_process_traces_v2_s000/MacromolecularComplexation_100ticks.mat",
+          "sha256": "2bbbfdc48a50f28834ab03526c08a0b2f0e3093723da6774085afdf51a8ba375"
+        },
+        {
+          "path": "tests/vivarium/l2_2_design_a_runner.py",
+          "sha256": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee"
+        },
+        {
+          "path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
+          "sha256": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93"
+        }
+      ],
+      "resolved_seeds": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12,
+        13,
+        14,
+        15,
+        16,
+        17,
+        18,
+        19,
+        20,
+        21,
+        22,
+        23,
+        24,
+        25,
+        26,
+        27,
+        28,
+        29,
+        30,
+        31,
+        32,
+        33,
+        34,
+        35,
+        36,
+        37,
+        38,
+        39,
+        40,
+        41,
+        42,
+        43,
+        44,
+        45,
+        46,
+        47,
+        48,
+        49
+      ],
+      "m_ticks": 100
+    },
+    "provenance": {
+      "generated_at": "2026-09-04T12:13:03.211193+00:00",
+      "git_sha": "unknown",
+      "python_version": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]",
+      "platform": "Linux-6.18.35.2-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+      "oracle_path": "data/m1_sources/karr_native/per_process_traces_v2_s000/MacromolecularComplexation_100ticks.mat",
+      "harness_version": "design_a_v1_3"
+    }
+  }
+}

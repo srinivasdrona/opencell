@@ -1,0 +1,1422 @@
+{
+  "artifact_kind": "macromol_network2_divergence_ledger",
+  "artifact_version": "1.0.0",
+  "process": "MacromolecularComplexation",
+  "generated_at": "2026-09-04T11:36:44.333962+00:00",
+  "generator_source_path": "scripts/l22_evidence/macromol_network2_divergence_ledger.py",
+  "generator_source_sha256_lf_normalized": "d650ffeba51fe238e5b63e2f04cd50be778a8237a800e74186b87dc76d21fb3e",
+  "fixture_path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+  "fixture_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+  "network2_indices_0b": [
+    22,
+    23
+  ],
+  "network2_complex_wids": [
+    "MG_041_062_429_PENTAMER",
+    "MG_041_069_429_PENTAMER"
+  ],
+  "network2_cluster_id": 2,
+  "network2_subunit_wids": [
+    "MG_041_MONOMER",
+    "MG_062_MONOMER",
+    "MG_069_MONOMER",
+    "MG_429_MONOMER"
+  ],
+  "network2_stoichiometry_matrix": [
+    [
+      1,
+      1
+    ],
+    [
+      2,
+      0
+    ],
+    [
+      0,
+      2
+    ],
+    [
+      2,
+      2
+    ]
+  ],
+  "n_seeds": 50,
+  "max_oc_vs_matlab_rate_abs_diff": 0.0,
+  "formula_matches_literal_matlab": true,
+  "n_repeated_before_state_groups": 43,
+  "n_repeated_before_state_groups_with_varying_oc_outcome": 2,
+  "theoretical_mean_p22": 0.5695127731686702,
+  "karr_empirical_rate_22": 0.62,
+  "oc_empirical_rate_22": 0.54,
+  "observed_match_rate": 0.48,
+  "expected_match_rate_if_independent": 0.5171639700101662,
+  "statistical_consistency_check": {
+    "method": "per-seed Bernoulli(oc_p22) Monte Carlo simulation",
+    "rng_seed": 12345,
+    "trials": 20000,
+    "karr_count": 31,
+    "karr_percentile_under_model": 0.80565,
+    "karr_consistent_at_95pct": true,
+    "oc_count": 27,
+    "oc_percentile_under_model": 0.3909,
+    "oc_consistent_at_95pct": true
+  },
+  "per_seed_ledger": [
+    {
+      "seed": 0,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        55.0,
+        39.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010371301191619975,
+        0.006552807656243784
+      ],
+      "literal_matlab_rates": [
+        0.010371301191619975,
+        0.006552807656243784
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.612812248186946,
+      "oc_p23": 0.387187751813054
+    },
+    {
+      "seed": 1,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        53.0,
+        36.0,
+        33.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.009596931463318628,
+        0.008064088243483014
+      ],
+      "literal_matlab_rates": [
+        0.009596931463318628,
+        0.008064088243483014
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5433962264150943,
+      "oc_p23": 0.45660377358490567
+    },
+    {
+      "seed": 2,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        56.0,
+        36.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.009740985827327998,
+        0.007223061250048
+      ],
+      "literal_matlab_rates": [
+        0.009740985827327998,
+        0.007223061250048
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5742135578201152,
+      "oc_p23": 0.42578644217988487
+    },
+    {
+      "seed": 3,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        56.0,
+        37.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.00988777778208032,
+        0.006940945543154992
+      ],
+      "literal_matlab_rates": [
+        0.00988777778208032,
+        0.006940945543154992
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5875536480686696,
+      "oc_p23": 0.4124463519313304
+    },
+    {
+      "seed": 4,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        56.0,
+        34.0,
+        33.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.008688718839808,
+        0.008185133924352002
+      ],
+      "literal_matlab_rates": [
+        0.008688718839808,
+        0.008185133924352002
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5149220489977728,
+      "oc_p23": 0.4850779510022273
+    },
+    {
+      "seed": 5,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        51.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010555478405973163,
+        0.008774926252716446
+      ],
+      "literal_matlab_rates": [
+        0.010555478405973163,
+        0.008774926252716446
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463392
+    },
+    {
+      "seed": 6,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        54.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.009857906401013389,
+        0.008195024265894347
+      ],
+      "literal_matlab_rates": [
+        0.009857906401013389,
+        0.008195024265894347
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536609,
+      "oc_p23": 0.4539442607463391
+    },
+    {
+      "seed": 7,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        80.0,
+        35.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.00565297997055461,
+        0.004434705103431003
+      ],
+      "literal_matlab_rates": [
+        0.00565297997055461,
+        0.004434705103431003
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5603842634949681,
+      "oc_p23": 0.439615736505032
+    },
+    {
+      "seed": 8,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        80.0,
+        39.0,
+        37.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.005061668679541159,
+        0.004555834597167551
+      ],
+      "literal_matlab_rates": [
+        0.005061668679541159,
+        0.004555834597167551
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5262975778546714,
+      "oc_p23": 0.47370242214532865
+    },
+    {
+      "seed": 9,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        52.0,
+        39.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.011050554730037227,
+        0.006981974421805243
+      ],
+      "literal_matlab_rates": [
+        0.011050554730037227,
+        0.006981974421805243
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.612812248186946,
+      "oc_p23": 0.3871877518130539
+    },
+    {
+      "seed": 10,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        72.0,
+        54.0,
+        36.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.007248709976257552,
+        0.0032216488783366895
+      ],
+      "literal_matlab_rates": [
+        0.007248709976257552,
+        0.0032216488783366895
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.6923076923076923,
+      "oc_p23": 0.30769230769230765
+    },
+    {
+      "seed": 11,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        83.0,
+        34.0,
+        39.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.003991263859834115,
+        0.005251481255023952
+      ],
+      "literal_matlab_rates": [
+        0.003991263859834115,
+        0.005251481255023952
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.4318266716473664,
+      "oc_p23": 0.5681733283526335
+    },
+    {
+      "seed": 12,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        54.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.009857906401013389,
+        0.008195024265894347
+      ],
+      "literal_matlab_rates": [
+        0.009857906401013389,
+        0.008195024265894347
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536609,
+      "oc_p23": 0.4539442607463391
+    },
+    {
+      "seed": 13,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": true,
+      "available_before": [
+        53.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010085267489711933,
+        0.0083840329218107
+      ],
+      "literal_matlab_rates": [
+        0.010085267489711933,
+        0.0083840329218107
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463392
+    },
+    {
+      "seed": 14,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        59.0,
+        37.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.009261191324041355,
+        0.006501099242077241
+      ],
+      "literal_matlab_rates": [
+        0.009261191324041355,
+        0.006501099242077241
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5875536480686695,
+      "oc_p23": 0.4124463519313305
+    },
+    {
+      "seed": 15,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        61.0,
+        34.0,
+        33.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.007779126889006796,
+        0.007328260538173356
+      ],
+      "literal_matlab_rates": [
+        0.007779126889006796,
+        0.007328260538173356
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5149220489977728,
+      "oc_p23": 0.4850779510022271
+    },
+    {
+      "seed": 16,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        61.0,
+        43.0,
+        46.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.005693885826051381,
+        0.006516096488872213
+      ],
+      "literal_matlab_rates": [
+        0.005693885826051381,
+        0.006516096488872213
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.46633039092055484,
+      "oc_p23": 0.5336696090794452
+    },
+    {
+      "seed": 17,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": true,
+      "available_before": [
+        53.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010085267489711933,
+        0.0083840329218107
+      ],
+      "literal_matlab_rates": [
+        0.010085267489711933,
+        0.0083840329218107
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463392
+    },
+    {
+      "seed": 18,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        53.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010085267489711933,
+        0.0083840329218107
+      ],
+      "literal_matlab_rates": [
+        0.010085267489711933,
+        0.0083840329218107
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463392
+    },
+    {
+      "seed": 19,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        57.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.00920628068921778,
+        0.007653318116209592
+      ],
+      "literal_matlab_rates": [
+        0.00920628068921778,
+        0.007653318116209592
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463392
+    },
+    {
+      "seed": 20,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        55.0,
+        37.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010105923829759998,
+        0.007094078013439999
+      ],
+      "literal_matlab_rates": [
+        0.010105923829759998,
+        0.007094078013439999
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5875536480686696,
+      "oc_p23": 0.41244635193133056
+    },
+    {
+      "seed": 21,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        65.0,
+        35.0,
+        36.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.0065164934235598885,
+        0.006894184062802951
+      ],
+      "literal_matlab_rates": [
+        0.0065164934235598885,
+        0.006894184062802951
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.485918286394288,
+      "oc_p23": 0.514081713605712
+    },
+    {
+      "seed": 22,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        75.0,
+        35.0,
+        32.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.006077778095310674,
+        0.005080526342529086
+      ],
+      "literal_matlab_rates": [
+        0.006077778095310674,
+        0.005080526342529086
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5446865273454868,
+      "oc_p23": 0.4553134726545131
+    },
+    {
+      "seed": 23,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": true,
+      "available_before": [
+        50.0,
+        45.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.012069940567016602,
+        0.005728006362915039
+      ],
+      "literal_matlab_rates": [
+        0.012069940567016602,
+        0.005728006362915039
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.6781647689216342,
+      "oc_p23": 0.3218352310783657
+    },
+    {
+      "seed": 24,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        51.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010555478405973163,
+        0.008774926252716446
+      ],
+      "literal_matlab_rates": [
+        0.010555478405973163,
+        0.008774926252716446
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463392
+    },
+    {
+      "seed": 25,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": true,
+      "available_before": [
+        57.0,
+        42.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010276937809210197,
+        0.005598717253203514
+      ],
+      "literal_matlab_rates": [
+        0.010276937809210197,
+        0.005598717253203514
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.6473394495412844,
+      "oc_p23": 0.3526605504587156
+    },
+    {
+      "seed": 26,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        81.0,
+        53.0,
+        50.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.004186315782352984,
+        0.0037258061430695826
+      ],
+      "literal_matlab_rates": [
+        0.004186315782352984,
+        0.0037258061430695826
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5291015257110567,
+      "oc_p23": 0.47089847428894327
+    },
+    {
+      "seed": 27,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": true,
+      "available_before": [
+        51.0,
+        39.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.011285837192453964,
+        0.007130630862556384
+      ],
+      "literal_matlab_rates": [
+        0.011285837192453964,
+        0.007130630862556384
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.612812248186946,
+      "oc_p23": 0.387187751813054
+    },
+    {
+      "seed": 28,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        67.0,
+        39.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.008044331578807426,
+        0.0050825789922642585
+      ],
+      "literal_matlab_rates": [
+        0.008044331578807426,
+        0.0050825789922642585
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.6128122481869459,
+      "oc_p23": 0.387187751813054
+    },
+    {
+      "seed": 29,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": true,
+      "available_before": [
+        59.0,
+        35.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.008960442216536175,
+        0.007029375485788787
+      ],
+      "literal_matlab_rates": [
+        0.008960442216536175,
+        0.007029375485788787
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.560384263494968,
+      "oc_p23": 0.439615736505032
+    },
+    {
+      "seed": 30,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        58.0,
+        34.0,
+        36.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.007396546878072036,
+        0.008292322451540969
+      ],
+      "literal_matlab_rates": [
+        0.007396546878072036,
+        0.008292322451540969
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.4714518760195758,
+      "oc_p23": 0.5285481239804242
+    },
+    {
+      "seed": 31,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        49.0,
+        34.0,
+        34.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.009722524699449725,
+        0.009722524699449725
+      ],
+      "literal_matlab_rates": [
+        0.009722524699449725,
+        0.009722524699449725
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5,
+      "oc_p23": 0.5
+    },
+    {
+      "seed": 32,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        55.0,
+        39.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010371301191619975,
+        0.006552807656243784
+      ],
+      "literal_matlab_rates": [
+        0.010371301191619975,
+        0.006552807656243784
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.612812248186946,
+      "oc_p23": 0.387187751813054
+    },
+    {
+      "seed": 33,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": true,
+      "available_before": [
+        50.0,
+        41.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.011743275237187436,
+        0.006713436944043502
+      ],
+      "literal_matlab_rates": [
+        0.011743275237187436,
+        0.006713436944043502
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.6362604087812264,
+      "oc_p23": 0.3637395912187737
+    },
+    {
+      "seed": 34,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        60.0,
+        41.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.009562136081363902,
+        0.005466515630095604
+      ],
+      "literal_matlab_rates": [
+        0.009562136081363902,
+        0.005466515630095604
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.6362604087812264,
+      "oc_p23": 0.36373959121877364
+    },
+    {
+      "seed": 35,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        62.0,
+        45.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.00956173023145118,
+        0.004537690248110905
+      ],
+      "literal_matlab_rates": [
+        0.00956173023145118,
+        0.004537690248110905
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.6781647689216344,
+      "oc_p23": 0.32183523107836565
+    },
+    {
+      "seed": 36,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        54.0,
+        36.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010182001393261635,
+        0.0075500797368244065
+      ],
+      "literal_matlab_rates": [
+        0.010182001393261635,
+        0.0075500797368244065
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5742135578201152,
+      "oc_p23": 0.42578644217988476
+    },
+    {
+      "seed": 37,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        47.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.011558231356210173,
+        0.009608529700102057
+      ],
+      "literal_matlab_rates": [
+        0.011558231356210173,
+        0.009608529700102057
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.45394426074633915
+    },
+    {
+      "seed": 38,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        70.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.006867726417345742,
+        0.0057092431549042024
+      ],
+      "literal_matlab_rates": [
+        0.006867726417345742,
+        0.0057092431549042024
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463391
+    },
+    {
+      "seed": 39,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        52.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010317781313701748,
+        0.00857732512324168
+      ],
+      "literal_matlab_rates": [
+        0.010317781313701748,
+        0.00857732512324168
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463392
+    },
+    {
+      "seed": 40,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        50.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010798376798217315,
+        0.00897685130024813
+      ],
+      "literal_matlab_rates": [
+        0.010798376798217315,
+        0.00897685130024813
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536609,
+      "oc_p23": 0.45394426074633915
+    },
+    {
+      "seed": 41,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        56.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.009418467681101184,
+        0.007829712319669755
+      ],
+      "literal_matlab_rates": [
+        0.009418467681101184,
+        0.007829712319669755
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463391
+    },
+    {
+      "seed": 42,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": true,
+      "available_before": [
+        52.0,
+        60.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.011962605507863065,
+        0.0031933510814045572
+      ],
+      "literal_matlab_rates": [
+        0.011962605507863065,
+        0.0031933510814045572
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.789300591975444,
+      "oc_p23": 0.21069940802455603
+    },
+    {
+      "seed": 43,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        67.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.007342916555361858,
+        0.006104275786940091
+      ],
+      "literal_matlab_rates": [
+        0.007342916555361858,
+        0.006104275786940091
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.45394426074633915
+    },
+    {
+      "seed": 44,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        22
+      ],
+      "match": false,
+      "available_before": [
+        58.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.008999030226944002,
+        0.007481027723263999
+      ],
+      "literal_matlab_rates": [
+        0.008999030226944002,
+        0.007481027723263999
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536609,
+      "oc_p23": 0.4539442607463391
+    },
+    {
+      "seed": 45,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        56.0,
+        39.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010153770446777344,
+        0.006415367126464844
+      ],
+      "literal_matlab_rates": [
+        0.010153770446777344,
+        0.006415367126464844
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.612812248186946,
+      "oc_p23": 0.387187751813054
+    },
+    {
+      "seed": 46,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        94.0,
+        40.0,
+        32.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.0046032162280021955,
+        0.002946058385921405
+      ],
+      "literal_matlab_rates": [
+        0.0046032162280021955,
+        0.002946058385921405
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.6097560975609756,
+      "oc_p23": 0.39024390243902435
+    },
+    {
+      "seed": 47,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        51.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010555478405973163,
+        0.008774926252716446
+      ],
+      "literal_matlab_rates": [
+        0.010555478405973163,
+        0.008774926252716446
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463392
+    },
+    {
+      "seed": 48,
+      "karr_selected_indices": [
+        23
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": true,
+      "available_before": [
+        60.0,
+        37.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.00906145389220912,
+        0.006360889109140223
+      ],
+      "literal_matlab_rates": [
+        0.00906145389220912,
+        0.006360889109140223
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5875536480686695,
+      "oc_p23": 0.4124463519313305
+    },
+    {
+      "seed": 49,
+      "karr_selected_indices": [
+        22
+      ],
+      "oc_selected_indices": [
+        23
+      ],
+      "match": false,
+      "available_before": [
+        52.0,
+        34.0,
+        31.0,
+        2.0
+      ],
+      "oc_internal_rates": [
+        0.010317781313701748,
+        0.00857732512324168
+      ],
+      "literal_matlab_rates": [
+        0.010317781313701748,
+        0.00857732512324168
+      ],
+      "oc_vs_matlab_rate_abs_diff": 0.0,
+      "oc_p22": 0.5460557392536608,
+      "oc_p23": 0.4539442607463392
+    }
+  ],
+  "findings": [
+    "OC's internal collision-theory rate computation matches the literal, independently re-derived MATLAB formula for every seed (max abs diff = 0.00e+00).",
+    "2 distinct before-state group(s) recur across >=2 seeds and show OC selecting DIFFERENT outcomes across those seeds -- consistent with genuine, seed-dependent stochastic sampling, not a deterministic/hardcoded draw.",
+    "Empirical selection counts (karr=31/50 percentile=0.806, oc=27/50 percentile=0.391) are BOTH within the 95% plausibility band of two independent per-seed Bernoulli(p_seed) draws -- the diagnostic's 26/50 clean-swap result is statistically consistent with genuine independent stochastic sampling from a correctly-computed shared rate model, not a code defect."
+  ],
+  "verdict": "NO_CODE_DIVERGENCE_FOUND"
+}

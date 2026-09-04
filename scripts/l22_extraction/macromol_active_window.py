@@ -18,14 +18,23 @@ early-window traces under a process-local root:
         ...
         per_process_traces_v2_s049/MacromolecularComplexation_100ticks.mat
 
-The existing Design-A runner consumes this cohort via the process-scoped
-environment override documented in
-`docs/phase_f/l2_2_design_a/MACROMOLECULARCOMPLEXATION_ACTIVE_WINDOW_PREREG.md`.
+The existing, UNMODIFIED Design-A runner consumes this cohort via the
+ordinary canonical `per_process_traces_v2_sNNN/` layout every other
+`design_a_per_tick` process uses -- the accepted seeds are ALSO committed,
+byte-for-byte identical, at
+`data/m1_sources/karr_native/per_process_traces_v2_s000/` through `_s049/`
+(see `scripts/l22_extraction/populate_canonical_macromol_traces.py`). No
+process-scoped environment-variable override or shared-loader edit is
+used; see
+`docs/phase_f/l2_2_design_a/MACROMOLECULARCOMPLEXATION_ACTIVE_WINDOW_PREREG.md`
+for the full history (an earlier iteration used such an override and was
+reverted on review because it staled every other process's evidence row).
 """
 
 from __future__ import annotations
 
 import argparse
+import hashlib
 import json
 import sys
 from dataclasses import dataclass
@@ -51,11 +60,13 @@ REQUIRED_N_SEEDS = 50
 SEARCH_MAX_TICKS = 33000
 NETWORK2_COMPLEX_INDICES_0B = (22, 23)
 ACTIVE_WINDOW_RULE = "first_network2_formation_tick"
-ACTIVE_WINDOW_RULE_VERSION = 1
+ACTIVE_WINDOW_RULE_VERSION = 2
 ACTIVE_WINDOW_ROOT = REPO_ROOT / "data" / "m1_sources" / "karr_native" / "macromol_active_window"
 DEFAULT_DATA_ROOTS = (ACTIVE_WINDOW_ROOT,)
 MATLAB_DRIVER = REPO_ROOT / "scripts" / "matlab" / "extract_macromol_active_window_seeds.m"
-RUNNER_OVERRIDE_ENV_VAR = "OPENCELL_L22_PROCESS_ORACLE_ROOT__MACROMOLECULARCOMPLEXATION"
+FIXTURE_PATH = REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "MacromolecularComplexation_flat.mat"
+VENDORED_SOURCE_PATH = REPO_ROOT / "data" / "karr_vendored_source" / "MacromolecularComplexation.m"
+ACTIVE_WINDOW_CAPTURE_MODE = "same_pass_tapped_scheduler_trigger_and_capture"
 
 _REQUIRED_METADATA_KEYS = (
     "process_name",
@@ -72,19 +83,49 @@ _REQUIRED_METADATA_KEYS = (
     "active_window_search_max_ticks",
     "active_window_search_stop_reason",
     "active_window_detection_mechanism",
+    "active_window_capture_mode",
+    "mnrnd_provider_kind",
+    "mnrnd_provider_matlab_release",
+    "mnrnd_provider_toolbox_version",
+    "mnrnd_provider_path_relative_to_matlabroot",
+    "mnrnd_provider_sha256",
+    "statistics_rng_provider_identity_json",
+    "active_window_driver_relpath",
+    "active_window_driver_sha256_lf_normalized",
+    "active_window_fixture_relpath",
+    "active_window_fixture_sha256",
+    "active_window_vendored_source_relpath",
+    "active_window_vendored_source_sha256_lf_normalized",
 )
-_REQUIRED_CHANNELS = ("substrates", "monomers", "complexs")
+_REQUIRED_CHANNELS = ("substrates", "complexs")
 _STRING_METADATA_KEYS = {
     "process_name",
     "timestamp",
     "active_window_rule",
     "active_window_search_stop_reason",
     "active_window_detection_mechanism",
+    "active_window_capture_mode",
+    "mnrnd_provider_kind",
+    "mnrnd_provider_matlab_release",
+    "mnrnd_provider_toolbox_version",
+    "mnrnd_provider_path_relative_to_matlabroot",
+    "mnrnd_provider_sha256",
+    "statistics_rng_provider_identity_json",
+    "active_window_driver_relpath",
+    "active_window_driver_sha256_lf_normalized",
+    "active_window_fixture_relpath",
+    "active_window_fixture_sha256",
+    "active_window_vendored_source_relpath",
+    "active_window_vendored_source_sha256_lf_normalized",
 }
 
 
 class MacromolActiveWindowError(ValueError):
     """Raised when one purported active-window seed file fails validation."""
+
+
+def _sha256_lf_normalized(path: Path) -> str:
+    return hashlib.sha256(path.read_bytes().replace(b"\r\n", b"\n").replace(b"\r", b"\n")).hexdigest()
 
 
 @dataclass(frozen=True)
@@ -158,6 +199,10 @@ def _seed_trace_path(seed: int, data_root: Path) -> Path:
     return data_root / subdir / f"{PROCESS_NAME}_{REQUIRED_M_TICKS}ticks.mat"
 
 
+def _relative_to_repo(path: Path) -> str:
+    return path.resolve().relative_to(REPO_ROOT.resolve()).as_posix()
+
+
 def _metadata_dict(handle: h5py.File) -> dict[str, Any]:
     if "metadata" not in handle:
         raise MacromolActiveWindowError("missing metadata group")
@@ -222,6 +267,12 @@ def validate_seed_window(seed: int, path: Path) -> SeedWindow:
     if not structural.ok:
         raise MacromolActiveWindowError("; ".join(structural.errors))
     assert structural.sha256 is not None
+    expected_driver_relpath = _relative_to_repo(MATLAB_DRIVER)
+    expected_fixture_relpath = _relative_to_repo(FIXTURE_PATH)
+    expected_vendored_relpath = _relative_to_repo(VENDORED_SOURCE_PATH)
+    expected_driver_hash = _sha256_lf_normalized(MATLAB_DRIVER)
+    expected_fixture_hash = sha256_file(FIXTURE_PATH)
+    expected_vendored_hash = _sha256_lf_normalized(VENDORED_SOURCE_PATH)
 
     with h5py.File(path, "r") as handle:
         metadata = _metadata_dict(handle)
@@ -255,6 +306,11 @@ def validate_seed_window(seed: int, path: Path) -> SeedWindow:
             raise MacromolActiveWindowError(
                 f"metadata.active_window_search_max_ticks={search_max_ticks} != {SEARCH_MAX_TICKS}"
             )
+        if metadata["active_window_capture_mode"] != ACTIVE_WINDOW_CAPTURE_MODE:
+            raise MacromolActiveWindowError(
+                "metadata.active_window_capture_mode does not match the same-pass capture contract "
+                f"({metadata['active_window_capture_mode']!r} != {ACTIVE_WINDOW_CAPTURE_MODE!r})"
+            )
         if stride != 1:
             raise MacromolActiveWindowError(f"metadata.stride={stride} != 1")
         if tick_start != tick_offset + 1:
@@ -273,6 +329,34 @@ def validate_seed_window(seed: int, path: Path) -> SeedWindow:
             raise MacromolActiveWindowError(
                 "metadata.active_window_trigger_complex_indices_0b includes non-network2 indices "
                 f"{trigger_complex_indices_0b}"
+            )
+        if metadata["mnrnd_provider_kind"] != "statistics_toolbox":
+            raise MacromolActiveWindowError(
+                "metadata.mnrnd_provider_kind is not the genuine Statistics Toolbox provider "
+                f"({metadata['mnrnd_provider_kind']!r})"
+            )
+        if metadata["active_window_driver_relpath"] != expected_driver_relpath:
+            raise MacromolActiveWindowError(
+                "metadata.active_window_driver_relpath drifted from the tracked extractor path "
+                f"({metadata['active_window_driver_relpath']!r} != {expected_driver_relpath!r})"
+            )
+        if metadata["active_window_driver_sha256_lf_normalized"] != expected_driver_hash:
+            raise MacromolActiveWindowError("metadata.active_window_driver_sha256_lf_normalized is stale/tampered")
+        if metadata["active_window_fixture_relpath"] != expected_fixture_relpath:
+            raise MacromolActiveWindowError(
+                "metadata.active_window_fixture_relpath drifted from the tracked fixture path "
+                f"({metadata['active_window_fixture_relpath']!r} != {expected_fixture_relpath!r})"
+            )
+        if metadata["active_window_fixture_sha256"] != expected_fixture_hash:
+            raise MacromolActiveWindowError("metadata.active_window_fixture_sha256 is stale/tampered")
+        if metadata["active_window_vendored_source_relpath"] != expected_vendored_relpath:
+            raise MacromolActiveWindowError(
+                "metadata.active_window_vendored_source_relpath drifted from the tracked vendored-source path "
+                f"({metadata['active_window_vendored_source_relpath']!r} != {expected_vendored_relpath!r})"
+            )
+        if metadata["active_window_vendored_source_sha256_lf_normalized"] != expected_vendored_hash:
+            raise MacromolActiveWindowError(
+                "metadata.active_window_vendored_source_sha256_lf_normalized is stale/tampered"
             )
         if first_e1_nonzero_int is not None and first_e1_nonzero_int > trigger_tick:
             raise MacromolActiveWindowError(
@@ -337,7 +421,9 @@ def resumable_extraction_command(missing_seeds: list[int], invalid_seeds: list[i
     return (
         f"{len(missing)} seed(s) with NO output file at all, "
         f"{len(invalid)} seed(s) with present-but-invalid output. "
-        f"Set `{RUNNER_OVERRIDE_ENV_VAR}` to `{ACTIVE_WINDOW_ROOT}` after extraction, then run:\n"
+        "After extraction, re-run "
+        "`scripts/l22_extraction/populate_canonical_macromol_traces.py` to refresh the canonical "
+        "per_process_traces_v2_sNNN/ copies, then:\n"
         f"matlab -batch \"addpath('scripts/matlab'); extract_macromol_active_window_seeds({start}, {end}, {force_vector});\""
     )
 

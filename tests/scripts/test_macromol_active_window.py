@@ -74,6 +74,43 @@ def _write_active_window(
             "active_window_detection_mechanism",
             data=_encode_char_metadata("synthetic unit-test fixture"),
         )
+        metadata.create_dataset(
+            "active_window_capture_mode",
+            data=_encode_char_metadata(maw.ACTIVE_WINDOW_CAPTURE_MODE),
+        )
+        metadata.create_dataset("mnrnd_provider_kind", data=_encode_char_metadata("statistics_toolbox"))
+        metadata.create_dataset("mnrnd_provider_matlab_release", data=_encode_char_metadata("R2026a"))
+        metadata.create_dataset("mnrnd_provider_toolbox_version", data=_encode_char_metadata("26.1"))
+        metadata.create_dataset(
+            "mnrnd_provider_path_relative_to_matlabroot",
+            data=_encode_char_metadata("toolbox/stats/stats/mnrnd.m"),
+        )
+        metadata.create_dataset("mnrnd_provider_sha256", data=_encode_char_metadata("provider-sha"))
+        metadata.create_dataset(
+            "statistics_rng_provider_identity_json",
+            data=_encode_char_metadata('{"kind":"statistics_toolbox"}'),
+        )
+        metadata.create_dataset(
+            "active_window_driver_relpath",
+            data=_encode_char_metadata(maw._relative_to_repo(maw.MATLAB_DRIVER)),  # noqa: SLF001
+        )
+        metadata.create_dataset(
+            "active_window_driver_sha256_lf_normalized",
+            data=_encode_char_metadata(maw._sha256_lf_normalized(maw.MATLAB_DRIVER)),  # noqa: SLF001
+        )
+        metadata.create_dataset(
+            "active_window_fixture_relpath",
+            data=_encode_char_metadata(maw._relative_to_repo(maw.FIXTURE_PATH)),  # noqa: SLF001
+        )
+        metadata.create_dataset("active_window_fixture_sha256", data=_encode_char_metadata(maw.sha256_file(maw.FIXTURE_PATH)))
+        metadata.create_dataset(
+            "active_window_vendored_source_relpath",
+            data=_encode_char_metadata(maw._relative_to_repo(maw.VENDORED_SOURCE_PATH)),  # noqa: SLF001
+        )
+        metadata.create_dataset(
+            "active_window_vendored_source_sha256_lf_normalized",
+            data=_encode_char_metadata(maw._sha256_lf_normalized(maw.VENDORED_SOURCE_PATH)),  # noqa: SLF001
+        )
         if first_e1_nonzero_tick is not None:
             metadata.create_dataset("active_window_first_e1_nonzero_tick", data=np.array([first_e1_nonzero_tick]))
         metadata.create_dataset("timestamp", data=_encode_char_metadata("2026-08-12 00:00:00"))

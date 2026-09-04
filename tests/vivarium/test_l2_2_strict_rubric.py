@@ -62,6 +62,17 @@ def test_committed_evidence_index_passes_integrity_audit():
     rebuilds the index from scratch from the catalog + evidence tree and
     diffs. This is the sole tamper/staleness defense; see generator.audit's
     docstring.
+
+    An earlier iteration of the MacromolecularComplexation active-window
+    promotion (see STATUS_L22_MACROMOL_AUTHORITY_PROMOTION.md) edited one of
+    the four universally-shared `SWEEP_PROVENANCE_SOURCE_FILES`
+    (`tests/vivarium/_l2_2_design_a_runner_helpers.py`) to implement a
+    process-scoped oracle-root override, which correctly staled every OTHER
+    `design_a_per_tick` row and made this test fail. That approach was
+    reverted in favor of mirroring the accepted 50 seeds into the canonical
+    `per_process_traces_v2_sNNN/` layout instead (see
+    `scripts/l22_extraction/populate_canonical_macromol_traces.py`) --
+    zero shared-file changes, so this test passes again.
     """
     result = gen.audit()
     assert result.ok, f"evidence_index.json failed integrity audit: {result.problems}"
@@ -69,37 +80,44 @@ def test_committed_evidence_index_passes_integrity_audit():
 
 def test_committed_evidence_index_is_honestly_non_green_today():
     """This task MUST report a truthful non-green index, never a fabricated
-    PASS. The tally hardcoded here has moved three times since this test was
-    first written (see the historical narrative that used to live in this
-    docstring, now superseded -- the full evaluator-only re-derivation
+    PASS. The tally hardcoded here has moved several times since this test
+    was first written (see the historical narrative that used to live in
+    this docstring, now superseded -- the full evaluator-only re-derivation
     history for the earlier moves is
     docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13.14, and for
     this move Section 13.15):
 
-    As of this commit (DNADamage's Sept-2 genuine literal-rate-law closure,
-    joining PPII's already-closed main-branch PASS) the tally is
-    PASS: 18, FAIL: 2, MISSING_EVIDENCE: 2, n_in_scope: 22:
-      - PASS (18): DNADamage, DNARepair, Metabolism, ProteinDecay,
-        ProteinFolding, ProteinModification, ProteinProcessingI,
-        ProteinProcessingII, ProteinTranslocation, RNADecay,
-        RNAModification, RNAProcessing, Replication, ReplicationInitiation,
-        RibosomeAssembly, Transcription, Translation, tRNAAminoacylation.
-      - FAIL (2): MacromolecularComplexation, DNASupercoiling.
+    As of this commit (MacromolecularComplexation's active-window
+    promotion via the canonical `per_process_traces_v2_sNNN/` mirror; see
+    STATUS_L22_MACROMOL_AUTHORITY_PROMOTION.md) the tally is
+    PASS: 19, FAIL: 1, MISSING_EVIDENCE: 2, n_in_scope: 22:
+      - PASS (19): DNADamage, DNARepair, MacromolecularComplexation,
+        Metabolism, ProteinDecay, ProteinFolding, ProteinModification,
+        ProteinProcessingI, ProteinProcessingII, ProteinTranslocation,
+        RNADecay, RNAModification, RNAProcessing, Replication,
+        ReplicationInitiation, RibosomeAssembly, Transcription,
+        Translation, tRNAAminoacylation.
+      - FAIL (1): DNASupercoiling (pre-existing, unrelated to this
+        closure).
       - MISSING_EVIDENCE (2): Cytokinesis, FtsZPolymerization.
 
-    This is a deliberate, evidence-driven set of mechanical re-derivations
-    (per this task's "if not provable, mark stale/non-green; if the raw
-    metrics support it, mark PASS -- never infer, never hand-edit" rule),
-    not a regression or a fabrication. If this test ever needs to change
-    again, that change must be driven by real evidence (a sweep rerun
-    populating/changing rows under the evidence tree, or a further
-    evaluator correctness fix with cited raw-metric evidence), not by
-    editing this assertion to make it pass."""
+    This is a deliberate, evidence-driven mechanical re-derivation (the
+    canonical sweep/bundle/generate/audit pipeline run with all four
+    shared source files confirmed byte-identical to the pre-closure
+    baseline), not a regression or a fabrication: `gen.audit()` reports
+    `integrity: OK` (see the test above) and `git diff` on the committed
+    `evidence_index.json` touches only the MacromolecularComplexation row
+    plus the mechanically-required top-level `generated_at`/`content_hash`
+    fields -- every other row is byte-for-byte unchanged. If this test
+    ever needs to change again, that change must be driven by real
+    evidence (a sweep rerun populating/changing rows under the evidence
+    tree, or a further evaluator correctness fix with cited raw-metric
+    evidence), not by editing this assertion to make it pass."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 18,
-        schema.STATUS_FAIL: 2,
+        schema.STATUS_PASS: 19,
+        schema.STATUS_FAIL: 1,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
 

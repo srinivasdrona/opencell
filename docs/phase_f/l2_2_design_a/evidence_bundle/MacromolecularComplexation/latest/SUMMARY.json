@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-31T13:13:23.235826+00:00",
+  "generated_at": "2026-09-04T12:46:50.652188+00:00",
   "schema_version": "1.4",
   "harness_version": "design_a_v1_3",
   "k_eng": {
@@ -10,7 +10,7 @@
   "processes": {
     "MacromolecularComplexation": {
       "verdict": "PASS",
-      "latest_run": "2026-07-31T13:13:23.235826+00:00",
+      "latest_run": "2026-09-04T12:46:50.652188+00:00",
       "bucket": "ALGORITHMIC_SHALLOW",
       "failed_channels": [],
       "n_channels_gated": 3,
@@ -18,9 +18,7 @@
       "n_insufficient": 0,
       "joint_verdict": "NOT_RUN",
       "n_joint_fail_pairs": 0,
-      "warnings": [
-        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
-      ]
+      "warnings": []
     }
   },
   "tally": {
