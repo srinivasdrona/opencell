@@ -1,6 +1,94 @@
 # STATUS: L2.1 Cytokinesis Active-Window CODE_GAP Fix
 
-## Update 2 (2026-09-03) — Stage-1 probe completed: Karr's real MATLAB run is NOT bit-reproducible run-to-run
+## Update 3 (2026-09-04, corrective pass) — Update 2's "not bit-reproducible run-to-run" conclusion is RETRACTED
+
+**Update 2 below (the Stage-1 probe's "Karr's real MATLAB run is NOT
+bit-reproducible run-to-run" finding, and every downstream conclusion
+built on it -- "Stage 2 is not viable", "CODE_GAP stands") is
+RETRACTED.** The actual, mechanical cause is the exact same one
+independently discovered and mechanically fixed in the sibling
+`E:\opencell-worktrees\fix-dual-cyt-window` worktree's
+`decisions/dec-005-full-simulation-source-hash-binding.md`: the two runs
+being compared resolved two DIFFERENT `DNADamage.m` source variants, not
+genuine run-to-run stochastic nondeterminism.
+
+**Evidence, independently re-derived in THIS worktree's own git history**
+(not merely cited from the sibling worktree):
+
+- The accepted genuine trace this Stage-1 probe was compared against,
+  `data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat`,
+  was extracted **2026-08-05** (`PROCESS_CATALOG.yaml`'s own "v3.9
+  (2026-08-05): Canary D CLOSED" note) -- **before** the DNADamage
+  signed-zero-normalization overlay existed on `main` at all
+  (`d3e91e8`/`c2174bb`, both dated **2026-08-18**; `f7d4310`, dated
+  **2026-09-02**; `git log --oneline --format="%H %ad %s" --date=short --
+  scripts/matlab/karr_bootstrap.m`, this worktree, verified directly
+  above this edit).
+- The Stage-1 probe itself was built and run on **2026-09-03**
+  (`b9c54b4`, `git log` on `scripts/matlab/probe_cytokinesis_randstream_state.m`),
+  **after** this branch's merge of `main` at `77a1215` (same day,
+  2026-09-03) -- a merge that already included all three DNADamage
+  overlay commits. `karr_bootstrap()` (which the probe calls unchanged,
+  per its own "Reuses the shared karr_bootstrap() entry point ...
+  unchanged" doc comment) therefore transparently applied the
+  signed-zero-normalized overlay to the probe's fresh full-simulation
+  run -- a DIFFERENT DNADamage.m source than the one that produced the
+  accepted 2026-08-05 trace being compared against.
+- DNADamage is one of the 28 processes in Karr's shared per-tick
+  scheduler (`calcResourceRequirements_Current`/`evolveState` runs for
+  EVERY process every tick, not just DNADamage itself -- see
+  `evolve_state_with_tap`'s per-process loop in
+  `extract_per_process_traces_v2.m`), so its source version affects every
+  OTHER process's real trajectory too, including Cytokinesis's and
+  FtsZRing's, even though neither process's own source ever changed. A
+  chromosome-segregation completion time (or any other process's
+  trajectory) shifting between two runs under two different upstream
+  source variants is a "two runs used different model code" confound,
+  not evidence that Karr's MATLAB simulation is non-reproducible.
+- The dual-cyt-window worktree's own decisive same-source isolation
+  probe (`decisions/dec-005`, §6b of that worktree's
+  `STATUS_DUAL_CYT_WINDOW_FIX.md`) already independently confirmed the
+  mechanism directly: with DNADamage source held constant, a
+  conventional single-process extraction and a dual-tap extraction of
+  the SAME seed (36) produced numerically identical onset (27918),
+  completion/anchor (31993), and **18/18** `states_before`/`states_after`
+  arrays byte-for-byte identical (9 observables x 2 sections, every tick,
+  full shape and content). That result is direct, independently-obtained
+  evidence that Karr's own MATLAB simulation IS bit-reproducible
+  run-to-run once source identity is held constant -- the opposite of
+  Update 2's conclusion.
+
+**What this means for the tick-228 residual divergence (still below, in
+Update 1):** the tick-228 divergence itself is unaffected by this
+retraction -- it was found by replaying OC against the accepted trace's
+own frozen, recorded `states_before`/`states_after` values, never against
+a fresh MATLAB re-run, and remains a real, unresolved discrepancy.
+What is retracted is only the *conclusion* that a fresh MATLAB re-run
+cannot in principle serve as an independent reference for it, and the
+consequent abandonment of Stage 2 investigation. A fresh, hash-bound,
+same-source re-run (this worktree's `karr_bootstrap()` already resolves
+the overlay-patched DNADamage.m consistently -- verified above) is a
+methodologically sound path forward and is no longer foreclosed.
+
+**Corrective action taken this session:** rather than re-running the old
+Stage-1 probe a second time (which would only re-demonstrate the same
+non-comparison against a source-mismatched trace), this session extended
+the AUTHORITATIVE extractor itself
+(`scripts/matlab/extract_per_process_traces_v2.m`) to capture the target
+process's `randStream` state at both tap points for every tick, and to
+bind DNADamage source-hash-binding metadata (dec-005, ported
+process-local into this worktree) unconditionally into every fixed/anchor
+trace's metadata -- see commit `153d726`. This makes any FUTURE
+full-simulation extraction (fixed or anchor window, any process,
+including Cytokinesis) simultaneously (a) hash-bound so a future
+source-confound like this one is mechanically caught (not
+re-discovered by hand), and (b) carrying a genuine per-tick RNG-state
+ledger sufficient to restore/verify an isolated OC replay's stream state
+exactly. The task's M5000 seed-36 active-window closure work continues
+below/in later updates using this extended extractor, never the old
+Stage-1 probe.
+
+## Update 2 (2026-09-03) — SUPERSEDED, see Update 3 above — Stage-1 probe completed: Karr's real MATLAB run is NOT bit-reproducible run-to-run
 
 The Stage-1 randStream probe (`scripts/matlab/probe_cytokinesis_randstream_state.m`,
 launched via the shared `with_matlab_slot.ps1`, ran for ~2.5 hours after
@@ -90,6 +178,11 @@ frozen realization. Every other avenue investigated in Update 1 below
 (structural/algorithmic review of the OC port, the `_Mcg16807` shim's
 correctness, the water-request fix) remains valid and closed.
 
+**RETRACTED 2026-09-04 (see Update 3 above): the classification below and
+its "not bit-reproducible run-to-run" premise are superseded.** Left
+verbatim (not deleted/edited in place) for provenance -- this is exactly
+the reasoning Update 3 corrects, not a claim that still stands.
+
 **Final classification for this session: CODE_GAP stands** (not promoted
 to GENUINE — full 4000-tick bit-identity is not achieved). This is
 reported as a **precise, source-proven, evidence-backed blocker** per the
@@ -141,15 +234,21 @@ terminal CODE_GAP waiver. This session:
    implications" below) that shares the same 4-slot pool.
 
 **Operational handoff — SUPERSEDED, probe completed (see "Update 2" above
-for the result and conclusion):**
+for the original result/conclusion, and "Update 3" for the retraction):**
 
 - The probe ran to completion (~2.5 hours after acquiring slot 3) and
   produced `tmp/cytokinesis_randstream_probe_s000.json` (committed as
-  evidence). Its result is analyzed and interpreted in "Update 2" above —
-  do NOT re-run this probe expecting a different/corrective result; the
-  finding is that Karr's own MATLAB simulation is not bit-reproducible
-  run-to-run, which a re-run would only re-demonstrate (at the cost of
-  another multi-hour MATLAB slot), not resolve.
+  evidence, kept for provenance). **Corrected 2026-09-04 (Update 3):** the
+  probe's result is real, but the comparison it was interpreted against
+  (the 2026-08-05 accepted `Cytokinesis_4000ticks.mat` trace) used a
+  DIFFERENT DNADamage.m source variant than the probe's own run resolved
+  -- so the "not bit-reproducible run-to-run" conclusion built on that
+  comparison does not follow. Do NOT re-run this OLD probe script
+  expecting a corrective result on its own -- it still cannot fix the
+  underlying source mismatch by itself. Instead, use the now-extended
+  `extract_per_process_traces_v2.m` (commit `153d726`, hash-bound +
+  per-tick randStream-state-capturing) for any future full-simulation
+  re-run needed to close this gap.
 - Do NOT re-launch a duplicate probe job before checking
   `Get-Process -Id <pid-from-a-later-session>` / the shared slot lock
   directory (`C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\matlab-slots\`)
