@@ -119,13 +119,13 @@ below:**
     L2.2 prereg exists but must wait for L2.1 closure and review.
   - Cytokinesis L2.1: correct RNG family and water request landed only on
     its fix branch. A source-bound M=5000 seed-36 extraction with per-tick
-    process randStream state is live: parent `matlab.exe` PID `6428`, child
-    `MATLAB.exe` PID `13556`, worktree
-    `E:\opencell-worktrees\fix-l21-cytokinesis-active`, log
-    `artifacts\matlab_jobs\l21_seed36_m5000_randstream_20260904_233639_21024.log`.
-    On completion run
-    `bin\oc-pytest.cmd tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound -q`;
-    this is the exact promotion/next-divergence gate.
+    process randStream state completed. The promotion gate reached tick 894
+    then failed before biology comparison because the extractor/test reduced
+    MATLAB's vector `RandStream.State` to scalar `36`; it could not derive
+    the exit state `1363919953` through the Lehmer recurrence. Fix the
+    full-state serialization/codec against live MATLAB set/get round-trips,
+    then rerun the same M5000 replay; do not classify tick 894 as a process
+    divergence yet.
   - HostInteraction candidate `0a4642f`: source review proved adherence and
     the TLR1/2/6→NF-kB→inflammatory cascade are deterministic level signals,
     already true from fitted tick 1, not false→true events. The prior
