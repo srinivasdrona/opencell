@@ -119,9 +119,12 @@ below:**
     used `len(candidates) > n_sites`, skipping MATLAB's mandatory
     `randsample(n,n,false)` draw; changing to `>=` gives zero divergence
     across all 32 reactions and the full 20-tick seed-2000 replay passes.
-    L2.2 stays PASS (OC84 vs Karr99). The active-window audit still lacks
-    shared-RNG ledger injection and therefore leaves the manifest CODE_GAP;
-    add the same fail-closed ledger support there, promote, then review.
+    L2.2 stays PASS (OC84 vs Karr99). Candidate `966fb98` adds reusable,
+    fail-closed shared-ledger injection to the active audit, promotes the
+    manifest to `EXISTING_WINDOW_PASS`, and reports 72 passed / 5 expected
+    skips with no xfails. Trace and ledger are copied/hash-verified into the
+    main local evidence root. Await Opus review of the production and shared
+    harness changes before clean integration.
   - TranscriptionalRegulation: process-local mcg16807, exact MathWorks
     weighted-randsample normalization, and chromosome occlusion exemption
     are committed; L1b/focused tests are green. Real MATLAB disproved an
