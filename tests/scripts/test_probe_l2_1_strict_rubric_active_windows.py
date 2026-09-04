@@ -36,7 +36,7 @@ EXPECTED_ACTIVE_WINDOW_VERDICTS = {
     "TranscriptionalRegulation": active_windows.CLASS_CODE_GAP,
     "Cytokinesis": active_windows.CLASS_CODE_GAP,
     "DNADamage": active_windows.CLASS_CODE_GAP,
-    "HostInteraction": active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
+    "HostInteraction": "GENUINE",
 }
 
 

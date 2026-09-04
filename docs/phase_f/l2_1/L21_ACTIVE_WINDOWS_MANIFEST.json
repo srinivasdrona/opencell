@@ -1,10 +1,10 @@
 {
   "generated_by": "scripts/l21_active_window_audit.py selective-audit aggregation",
-  "pytest_replay_command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_dna_repair_l2_replay.py::test_karr_dna_repair_l2_replay_identity_per_tick tests/vivarium/test_karr_metabolism_l2_replay.py::test_karr_metabolism_l2_replay_identity_per_tick tests/vivarium/test_karr_protein_decay_l2_replay.py::test_karr_protein_decay_l2_replay_identity_per_tick tests/vivarium/test_karr_replication_l2_replay.py::test_karr_replication_l2_replay_identity_per_tick tests/vivarium/test_karr_rna_modification_l2_replay.py::test_karr_rna_modification_l2_event_replay tests/vivarium/test_karr_ribosome_assembly_l2_replay.py::test_karr_ribosome_assembly_l2_event_replay",
+  "pytest_replay_command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_dna_repair_l2_replay.py::test_karr_dna_repair_l2_replay_identity_per_tick tests/vivarium/test_karr_metabolism_l2_replay.py::test_karr_metabolism_l2_replay_identity_per_tick tests/vivarium/test_karr_protein_decay_l2_replay.py::test_karr_protein_decay_l2_replay_identity_per_tick tests/vivarium/test_karr_replication_l2_replay.py::test_karr_replication_l2_replay_identity_per_tick tests/vivarium/test_karr_rna_modification_l2_replay.py::test_karr_rna_modification_l2_event_replay tests/vivarium/test_karr_ribosome_assembly_l2_replay.py::test_karr_ribosome_assembly_l2_event_replay tests/vivarium/test_karr_host_interaction_l2_replay.py::test_karr_host_interaction_l2_event_replay",
   "counts": {
-    "EXISTING_WINDOW_PASS": 7,
+    "EXISTING_WINDOW_PASS": 8,
     "CODE_GAP": 3,
-    "MISSING_ACTIVE_EXTRACTION": 1
+    "MISSING_ACTIVE_EXTRACTION": 0
   },
   "rows": [
     {
@@ -477,29 +477,41 @@
     },
     {
       "process": "HostInteraction",
-      "classification": "MISSING_ACTIVE_EXTRACTION",
-      "existing_trace_suffices": false,
-      "activity_predicate": "projected Karr replay observables delta on accepted trace surface",
+      "classification": "EXISTING_WINDOW_PASS",
+      "existing_trace_suffices": true,
+      "activity_predicate": "source-faithful host boolean deltas (adherence/TLR/NFkB/inflammatory-response)",
       "source": {
-        "path": "/mnt/e/opencell/data/m1_sources/karr_native/per_process_traces_v2/HostInteraction_100ticks.mat",
-        "repo_relative_hint": "opencell/data/m1_sources/karr_native/per_process_traces_v2/HostInteraction_100ticks.mat",
-        "sha256": "a87006a356001ac060fcbe233af19dc7e21e863dcf4bf4d848b49147a5114f44",
-        "trace_family": "canonical_standard",
-        "source_manifest": "direct_standard_fallback"
+        "path": "/mnt/e/opencell-worktrees/fix-l21-host-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
+        "repo_relative_hint": "opencell-worktrees/fix-l21-host-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
+        "sha256": "5eaa308f2b7fe4dbd5e96c698cd7c5c978cd1d65bc28e680078346e76d4507d2",
+        "trace_family": "event_window",
+        "source_manifest": "local_event_window"
       },
       "trace_window": {
         "n_ticks": 100,
-        "tick_offset": null,
-        "first_active_local_tick": null,
-        "first_active_absolute_tick": null,
-        "active_tick_count": 0,
-        "first_active_detail": null
+        "tick_offset": 0.0,
+        "first_active_local_tick": 0,
+        "first_active_absolute_tick": 0.0,
+        "active_tick_count": 100,
+        "first_active_detail": {
+          "observable": "isBacteriumAdherent",
+          "detail_path": "isBacteriumAdherent",
+          "index": 0,
+          "before": 0.0,
+          "after": 1.0
+        }
       },
       "mechanical_scan": {
-        "scanned_candidate_count": 1,
-        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process HostInteraction --candidate-limit 1 --skip-replay --write-json <temp>"
+        "scanned_candidate_count": 2,
+        "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process HostInteraction --write-json <temp>"
       },
-      "extraction_request": "Request a host-conditioned HostInteraction active window; baseline no-host traces are inactive by construction."
+      "replay_evidence": {
+        "type": "pytest_exact_bit_identity_plus_audit_tool_honest_replay",
+        "nodeid": "tests/vivarium/test_karr_host_interaction_l2_replay.py::test_karr_host_interaction_l2_event_replay[event_seed_0]",
+        "outcome": "passed",
+        "command": "bin\\\\oc-pytest.cmd -q \"tests/vivarium/test_karr_host_interaction_l2_replay.py::test_karr_host_interaction_l2_event_replay[event_seed_0]\"",
+        "caveat": "Promoted MISSING_ACTIVE_EXTRACTION -> GENUINE (2026-09-04). Root cause of the prior 50,000-tick seed-0 false->true anchor-search failure: host.isBacteriumAdherent (and isTLRActivated/isNFkBActivated/isInflammatoryResponseActivated) are NOT a discrete event in the unperturbed model -- a genuine full-Simulation seed-0 canary (tmp/probe_host_interaction_canary.m) shows all 4 Host booleans are TRUE from tick 1 onward, because Karr's fitted initial condition already carries nonzero copy numbers (11-33) for every one of the 8 terminalOrganelle/4 adhesin/3 tlr12Ligand/1 tlr26Ligand/5 antigen enzyme WIDs HostInteraction.m reads; a false->true SEARCH can structurally never terminate for a signal that is already true before the search starts. Extracted a genuine FIXED window (window_contract='fixed', tick_offset=0, n_ticks=100, seed=0) instead of an anchor search, via a new anchor_opts.capture_signal_container opt-in flag (scripts/matlab/extract_per_process_traces_v2.m) that merges the real per-tick host boolean surface into a plain fixed-window capture. Also replaced the entire OC process (opencell/vivarium/karr_host_interaction.py) -- the prior 'Karr-light v1' revision was a fabricated continuous adhesion-fraction + stochastic Poisson bind/unbind model (CODE_DEVIATES per docs/phase_f/audits/HostInteraction_semantic_audit.md HI-S4-01/HI-S4-02/HI-S5-02) that never modeled TLR/NF-kB/inflammatory response at all -- with a literal port of HostInteraction.m's boolean cascade (all(terminalOrganelle)&&all(adhesin); TLR1/2/6; NFkB; inflammatory), reading raw enzyme copy numbers, zero RNG (matches PROCESS_CATALOG.yaml bucket=DETERMINISTIC/rationale_M='no RNG', unchanged). The process-local nodeid genuinely passes bit-identical across all 100 ticks for all 9 compared surfaces (substrates/enzymes/boundEnzymes pass-through plus all 6 host booleans). The audit tool's own internal replay (scripts/l21_active_window_audit.py) independently confirms pass_all_compared_ticks=true: classification=EXISTING_WINDOW_PASS, honest_replay.oc_active_on_karr_active_ticks=100/100 (was 0/0 pre-fix, MISSING_ACTIVE_EXTRACTION). 'Activity' detection for this process required a dedicated LEVEL_TRUTH_ACTIVITY_PROCESSES path (l21_active_window_audit.py) since the generic before!=after mismatch heuristic structurally cannot detect a constantly-true LEVEL signal -- HostInteraction's real activity predicate is 'value is non-degenerately True', not 'value changed this tick'. See docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md for the full decision record."
+      }
     },
     {
       "process": "RNAModification",

@@ -194,6 +194,11 @@ CUSTOM_VECTOR_SURFACES: dict[str, dict[str, tuple[str, ...]]] = {
     },
     "HostInteraction": {
         "isBacteriumAdherent": ("cell", "host_attached"),
+        "isTLRActivated_1": ("cell", "host_tlr1_activated"),
+        "isTLRActivated_2": ("cell", "host_tlr2_activated"),
+        "isTLRActivated_3": ("cell", "host_tlr6_activated"),
+        "isNFkBActivated": ("cell", "host_nfkb_activated"),
+        "isInflammatoryResponseActivated": ("cell", "host_inflammatory_response_activated"),
     },
     "RibosomeAssembly": {
         "RNAs": ("rna", "counts"),
@@ -614,19 +619,6 @@ def _project_custom_observable(
                     flattened.append(float(per_tf.get(tu_wid, 0.0)))
             return np.asarray(flattened, dtype=np.float64)
 
-    if process_name == "HostInteraction":
-        if observable == "isBacteriumAdherent":
-            attached = bool(_deep_get(state, ("cell", "host_attached")))
-            return np.asarray([1.0 if attached else 0.0], dtype=np.float64)
-        if observable in {
-            "isTLRActivated_1",
-            "isTLRActivated_2",
-            "isTLRActivated_3",
-            "isNFkBActivated",
-            "isInflammatoryResponseActivated",
-        }:
-            return np.zeros(len(wids), dtype=np.float64)
-
     path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
     if path is None:
         raise KeyError(f"No custom projection path for {process_name}:{observable}")
@@ -711,21 +703,62 @@ def _chromosome_activity_detail(process_name: str, trace: h5py.File, tick: int) 
     return None
 
 
+# Processes whose real signal is a LEVEL (state-truth) recomputed fresh
+# every tick from current input copy numbers, not a discrete pulse/event
+# that flips within a single tick's own before/after tap. For these,
+# before != after (the generic CUSTOM_ACTIVITY_OBSERVABLES mismatch check
+# below) can structurally never fire even when the process is genuinely,
+# non-trivially active -- HostInteraction's host.isBacteriumAdherent (and
+# the TLR/NF-kB/inflammatory cascade it gates) is TRUE from tick 1 of a
+# genuine seed-0 run onward (Karr's fitted initial condition already
+# carries nonzero copy numbers for every required enzyme -- see
+# tmp/probe_host_interaction_canary.m's empirical canary output), so it
+# never "changes" tick-to-tick in an unperturbed run. "Activity" for these
+# processes means the (real, per-tick, input-dependent) boolean surface is
+# non-degenerately True, never that it flipped from the previous tick.
+LEVEL_TRUTH_ACTIVITY_PROCESSES = frozenset({"HostInteraction"})
+
+
+def _level_truth_activity_detail(
+    process_name: str,
+    trace: h5py.File,
+    tick: int,
+) -> TraceDiffDetail | None:
+    for observable in CUSTOM_ACTIVITY_OBSERVABLES.get(process_name, ()):
+        after = _read_numeric_vector(trace, "states_after", observable, tick)
+        if after is None:
+            continue
+        if bool(np.any(after != 0)):
+            return TraceDiffDetail(
+                observable=observable,
+                detail_path=observable,
+                index=0,
+                before=0.0,
+                after=1.0,
+            )
+    return None
+
+
 def _trace_activity_detail(process_name: str, ctx: Any, tick: int) -> TraceDiffDetail | None:
     trace = ctx.trace
     chrom_detail = _chromosome_activity_detail(process_name, trace, tick)
     if chrom_detail is not None:
         return chrom_detail
 
-    custom_order = CUSTOM_ACTIVITY_OBSERVABLES.get(process_name, ())
-    for observable in custom_order:
-        before = _read_numeric_vector(trace, "states_before", observable, tick)
-        after = _read_numeric_vector(trace, "states_after", observable, tick)
-        if before is None or after is None:
-            continue
-        detail = _first_vector_mismatch(observable, before, after)
+    if process_name in LEVEL_TRUTH_ACTIVITY_PROCESSES:
+        detail = _level_truth_activity_detail(process_name, trace, tick)
         if detail is not None:
             return detail
+    else:
+        custom_order = CUSTOM_ACTIVITY_OBSERVABLES.get(process_name, ())
+        for observable in custom_order:
+            before = _read_numeric_vector(trace, "states_before", observable, tick)
+            after = _read_numeric_vector(trace, "states_after", observable, tick)
+            if before is None or after is None:
+                continue
+            detail = _first_vector_mismatch(observable, before, after)
+            if detail is not None:
+                return detail
 
     for observable in _default_activity_observables(process_name):
         before = _project_trace_vector(ctx, "states_before", observable, tick)
@@ -740,6 +773,8 @@ def _scan_activity_without_context(process_name: str, trace: h5py.File, tick: in
     chrom_detail = _chromosome_activity_detail(process_name, trace, tick)
     if chrom_detail is not None:
         return chrom_detail
+    if process_name in LEVEL_TRUTH_ACTIVITY_PROCESSES:
+        return _level_truth_activity_detail(process_name, trace, tick)
     for observable in CUSTOM_ACTIVITY_OBSERVABLES.get(process_name, ()):
         before = _read_numeric_vector(trace, "states_before", observable, tick)
         after = _read_numeric_vector(trace, "states_after", observable, tick)

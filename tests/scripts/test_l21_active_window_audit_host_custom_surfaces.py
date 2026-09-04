@@ -37,21 +37,32 @@ def test_host_bacterium_adherent_projection_reads_host_attached():
     assert np.array_equal(projected, np.asarray([1.0], dtype=np.float64))
 
 
-def test_host_missing_signaling_surfaces_fail_closed_as_zero_vectors():
-    for observable in (
-        "isTLRActivated_1",
-        "isTLRActivated_2",
-        "isTLRActivated_3",
-        "isNFkBActivated",
-        "isInflammatoryResponseActivated",
-    ):
-        projected = active_windows._project_custom_observable(  # type: ignore[attr-defined]
-            state={"cell": {"host_attached": True}},
-            observable=observable,
-            process_name="HostInteraction",
-            wids=[observable],
-        )
-        assert np.array_equal(projected, np.asarray([0.0], dtype=np.float64))
+def test_host_missing_signaling_surfaces_project_real_cell_state() -> None:
+    """isTLRActivated_1..3/isNFkBActivated/isInflammatoryResponseActivated used
+    to fail closed as zero vectors (stub, see prior version of this test) --
+    a prior "Karr-light v1" revision of KarrHostInteractionProcess never
+    modeled these outputs at all. Now that the literal boolean-cascade port
+    (opencell/vivarium/karr_host_interaction.py) writes them to
+    cell.host_tlr1_activated/host_tlr2_activated/host_tlr6_activated/
+    host_nfkb_activated/host_inflammatory_response_activated, projection
+    must read the REAL value from state, not a hardcoded stub."""
+    observable_to_cell_key = {
+        "isTLRActivated_1": "host_tlr1_activated",
+        "isTLRActivated_2": "host_tlr2_activated",
+        "isTLRActivated_3": "host_tlr6_activated",
+        "isNFkBActivated": "host_nfkb_activated",
+        "isInflammatoryResponseActivated": "host_inflammatory_response_activated",
+    }
+    for observable, cell_key in observable_to_cell_key.items():
+        for value in (True, False):
+            projected = active_windows._project_custom_observable(  # type: ignore[attr-defined]
+                state={"cell": {"host_attached": True, cell_key: value}},
+                observable=observable,
+                process_name="HostInteraction",
+                wids=[observable],
+            )
+            expected = np.asarray([1.0 if value else 0.0], dtype=np.float64)
+            assert np.array_equal(projected, expected)
 
 
 def test_tr_bound_tfs_projection_sums_tf_binding_rows():
