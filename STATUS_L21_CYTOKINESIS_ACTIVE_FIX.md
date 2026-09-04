@@ -1,5 +1,111 @@
 # STATUS: L2.1 Cytokinesis Active-Window CODE_GAP Fix
 
+## Update 5 (2026-09-05, new session) — M5000 seed-36 promotion GREEN; Cytokinesis L2.1 promoted to GENUINE
+
+**Operational handoff (read this first if resuming):** no live background
+jobs pending. The M5000 seed-36 extraction (launched end of Update 4)
+completed cleanly (`data/m1_sources/karr_native/per_process_traces_v2_event_s036/
+Cytokinesis_5000ticks.mat`, gitignored, 39MB, onset_tick=27918/
+window_anchor=31993 confirmed by the trace's own metadata) and is present
+in this worktree. The promotion test
+(`tests/vivarium/test_karr_cytokinesis_l2_replay.py::
+test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound`) **PASSES**.
+Commits this session: `afe6522` (new codec module + 26 regression tests),
+`2ebee9f` (wire codec into production RNG + fix filamentLengthInNm),
+`79f1286` (provenance log). No MATLAB job is running; no slot is held.
+
+**Two independent, distinct root causes found and fixed, both required
+for GREEN:**
+
+1. **mcg16807 `State` encode/decode (the task's headline bug).** The
+   promotion test previously failed at tick=894: `steps_between(36,
+   1363919953)` was unreachable within 1e6 raw Lehmer steps. Root cause,
+   live-verified 2026-09-05 (`scripts/tools/run_matlab_slot.ps1`, real
+   `E:\MATLAB\bin\matlab.exe`, R2026a-class MATLAB statistics toolbox):
+   the raw HDF5 `randStreamState` payload is genuinely a 1x1 scalar
+   double at every tick (the "reduced from a vector" hypothesis in the
+   task prompt is REFUTED -- confirmed directly at ticks 0/893/894/895),
+   but MATLAB's real `RandStream('mcg16807').State` getter/setter does
+   NOT expose the raw Lehmer recurrence value -- it exposes a
+   value-domain-encoded representation (16-bit half-word swap,
+   conditionally XORed with `0x80008000`). Once decoded, `steps_between
+   (36, 1363919953) == 49` exactly (and `steps_between(1363919953,
+   62833153) == 8` for the following tick) -- matching the trace exactly.
+   A fresh, from-scratch, neutral/process-local codec was built and
+   independently live-verified (NOT imported from
+   `opencell/util/chromcond_mcg_rand.py`, which is
+   ChromosomeCondensation-scoped by that module's own design) at
+   `opencell/util/mcg16807_state_codec.py`, with a 60-consecutive-draw
+   live transcript reproduced with 0 mismatches
+   (`tests/util/test_mcg16807_state_codec.py`, 26 tests). Wired into
+   `KarrCytokinesisProcess._MatlabCytokinesisRNG` (which previously wrapped
+   `karr_protein_decay_light._Mcg16807`, deliberately left untouched to
+   avoid invalidating other processes' accepted evidence) and into
+   `analyze_cytokinesis_randstream_probe.py`'s `steps_between`/
+   `scalar_state`.
+2. **`filamentLengthInNm` naked literal (found by continuing past the
+   codec repair to the first genuine observable divergence, task step
+   4).** With the codec fixed, the RNG ledger passed the ENTIRE M5000
+   active window, but a NEW failure appeared: a ring-witness mismatch on
+   `geometry.pinchedDiameter` at M4000-seed-0's tick=263 and
+   M5000-seed-36's tick=924 (same exact input value at both ticks,
+   `2.840467121583285e-07` -- a late/near-terminal pinching-cycle value,
+   confirming this is deterministic and RNG-independent). Root cause:
+   `KarrCytokinesisProcess.defaults["filament_length_nm"]` was hardcoded
+   to the literature default `40.0` (Anderson 2004) and NEVER overridden
+   from the FtsZRing fixture, unlike every other Cytokinesis fixture
+   constant. The real per-fixture value
+   (`data/karr_fixtures/per_process/FtsZRing.json`:
+   `fixture/filamentLengthInNm = 39.130434782608695`, i.e.
+   `numFtsZSubunitsPerFilament/numFtsZSubunitsPerNm = 9/0.23`) differs by
+   ~2.2%. Recomputing `calcNextPinchedDiameter` offline (no MATLAB rerun
+   needed -- purely deterministic given the trace's own captured
+   `pinchedDiameter` input) with the correct fixture value reproduces
+   Karr's real recorded output **bit-for-bit** (`diff=0.0`) at BOTH ticks.
+   Fixed by loading `filamentLengthInNm` from the FtsZRing fixture in
+   `_load_state_fixtures` (with `defaults["filament_length_nm"]` now an
+   optional `None`-default test-only override, never the load-bearing
+   value) -- see commit `2ebee9f`.
+
+**Consequence:** this ALSO retroactively resolves the pre-existing,
+previously-accepted M4000 seed-0 "tick-228"-class residual divergence
+documented in Updates 1-4 below (that investigation's "precise,
+source-proven blocker" framing is superseded by this session's findings --
+left verbatim below for provenance, not deleted).
+`test_karr_cytokinesis_l2_event_replay[event_seed_0]` now also PASSES.
+
+**Verification this session (all commands via `bin\oc-pytest.cmd`,
+WSL venv):**
+```
+tests/util/test_mcg16807_state_codec.py                              26 passed
+tests/scripts/test_analyze_cytokinesis_randstream_probe.py            7 passed
+tests/vivarium/test_karr_cytokinesis.py                               11 passed
+tests/vivarium/test_karr_cytokinesis_l2_replay.py                      8 passed  <- includes M5000 promotion GREEN
+tests/integration/test_l1b_verify_wiring.py::test_all_28_rows_run_without_exception   1 passed
+tests/scripts/test_extract_per_process_traces_v2_static.py
+  + tests/scripts/test_l2_event_launcher.py                          103 passed
+tests/vivarium/test_l2_1_strict_rubric.py                             28 passed
+tests/scripts/test_probe_l2_1_strict_rubric_active_windows.py         14 passed
+ruff check <all touched files>                                        All checks passed!
+```
+
+**Final L2.1 classification: GENUINE.** Full bit-identity RNG ledger
+(entry state / draw count / exit state, every tick) AND ring-witness
+observable match, across the ENTIRE M5000 seed-36 active window
+(onset=27918, anchor=31993), source-hash-bound (dec-005 DNADamage
+binding present in the trace's metadata), fail-closed
+(`parse_captured_state` rejects malformed/multi-element/out-of-range
+captures rather than silently coercing them). No hardcoded tick-specific
+branches or oracle leakage in production code (Rule 8, re-verified by
+the pre-existing `test_rng_no_oracle_file_io_in_production_module`,
+still passing unmodified).
+
+**What this session explicitly did NOT do:** touch
+`opencell/util/chromcond_mcg_rand.py` or `karr_protein_decay_light.py`
+(both deliberately left untouched -- see above); merge any other
+worktree's branch; push to a shared branch (local commits only, per
+this repo's standing policy).
+
 ## Update 4 (2026-09-04, same session) — extended extractor + randStream ledger built; source-bound M5000 seed-36 extraction IN PROGRESS (background)
 
 **Operational handoff (read this first if resuming):**

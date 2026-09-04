@@ -96,7 +96,19 @@ below:**
   binding slots where Karr exposes 34 chromosome-site/strand promoter slots;
   Cytokinesis first diverges at active tick 226
   (`ftsZRing_numEdgesOneStraight`, OC 6 vs Karr 9). These are mandatory
-  source-fidelity fixes under the no-known-gap rule. DNADamage seeds 0 and 1
+  source-fidelity fixes under the no-known-gap rule. **UPDATE 2026-09-05
+  (`E:\opencell-worktrees\fix-l21-cytokinesis-active`, branch
+  `agent/l21-cytokinesis-active-fix-20260903`, commits `afe6522`/`2ebee9f`):
+  Cytokinesis CODE_GAP RESOLVED, promoted to GENUINE.** Two independent
+  root causes: (1) MATLAB's real `RandStream('mcg16807').State` is a
+  value-domain-encoded representation of the raw Lehmer state, not the raw
+  value itself (live-MATLAB-verified; new
+  `opencell/util/mcg16807_state_codec.py`); (2) `filamentLengthInNm` was a
+  naked literal `40.0` never overridden from the FtsZRing fixture (real
+  value `39.130434782608695`). M5000 seed-36 promotion test passes with
+  full bit-identity across the whole active window; see
+  `STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md` Update 5 for full detail. DNADamage
+  seeds 0 and 1
   are both zero-activity and remain unpromoted; inventory the accepted
   DNADamage L2.2 corpus before extracting another seed. HostInteraction and
   ChromosomeSegregation were relaunched as PIDs `27484` and `26372`, queued
