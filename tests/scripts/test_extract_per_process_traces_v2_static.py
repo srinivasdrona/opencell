@@ -208,6 +208,27 @@ def test_chromosome_object_excluded_only_for_diameter_decrease_anchor():
     assert "chromosome" not in boolean_case_body
 
 
+def test_boolean_transition_host_witnesses_are_flattened_from_real_host_state():
+    """Static proof for HostInteraction anchor extraction: when the
+    generic boolean-transition path is pointed at the real `host`
+    container, it must flatten the source-written host booleans into the
+    trace snapshot rather than exposing the raw host object."""
+    source = _read_source()
+    boolean_case_match = re.search(
+        r"case 'boolean_transition'\n(.*?)\n\s*otherwise\n",
+        source,
+        re.DOTALL,
+    )
+    assert boolean_case_match is not None, "could not locate the 'boolean_transition' case body"
+    boolean_case_body = boolean_case_match.group(1)
+    assert "if strcmp(container_name, 'host')" in boolean_case_body
+    assert "isBacteriumAdherent" in boolean_case_body
+    assert "isNFkBActivated" in boolean_case_body
+    assert "isInflammatoryResponseActivated" in boolean_case_body
+    assert "isTLRActivated" in boolean_case_body
+    assert "sprintf('isTLRActivated_%d', k)" in boolean_case_body
+
+
 def test_genuine_mnrnd_provider_metadata_written_for_fixed_and_anchor_not_legacy():
     """Static proof of the provider-migration contract: the extractor
     must persist the genuine-provider metadata for BOTH 'fixed' and
@@ -258,13 +279,22 @@ def test_dnadamage_overlay_provenance_is_written_into_trace_metadata():
     assert "if strcmp(canonical_name, 'DNADamage')" in source
 
 
+def test_pick_snapshot_properties_includes_transcriptional_regulation_binding_surfaces():
+    """Static proof that the generic snapshot-property whitelist exposes
+    the real TranscriptionalRegulation binding witnesses needed for long
+    active-window traces."""
+    source = _read_source()
+    assert "'boundTFs'" in source
+    assert "'tfBoundPromoters'" in source
+
+
 def test_extraction_opts_override_surface_is_wired_into_real_scheduler_path():
     """DNADamage stimulus cohorts rely on a real extractor-side override
     surface, not a filename-only relabel. Statically prove that
     `extract_per_process_traces_v2` now accepts `extraction_opts`,
-    persists the identity metadata, and applies per-process substrate
-    overrides both before `calcResourceRequirements_Current()` and again
-    after allocation injection but before `evolveState()`."""
+    persists the identity metadata, patches the REAL metabolite/setCounts
+    state for DNADamage, and still reapplies the process-local substrate
+    override inside the scheduler."""
     source = _read_source()
 
     assert (
@@ -275,11 +305,23 @@ def test_extraction_opts_override_surface_is_wired_into_real_scheduler_path():
     assert "metadata.condition_label = extraction_opts.condition_label;" in source
     assert "metadata.extraction_identity_json = extraction_opts.metadata_identity_json;" in source
     assert "function opts = default_extraction_opts(opts)" in source
+    assert "function [sim, applied] = apply_condition_overrides(sim, proc, canonical_name, extraction_opts)" in source
     assert "function mod = apply_process_substrate_overrides(mod, extraction_opts)" in source
 
-    # The override must influence both the request calculation pass and the
-    # actual evolveState pass; a single application site would still leave
-    # one of the two MATLAB paths seeing the old quiescent state.
+    assert "if ~strcmp(canonical_name, 'DNADamage')" in source
+    assert "mets = sim.state_metabolite;" in source
+    assert "proc.substrateMetaboliteGlobalCompartmentIndexs(local_idx)" in source
+    assert "Condition.objectCompartmentIndexs" in source
+    assert "mets.setCounts = mets.setCounts(keep, :);" in source
+    assert "mets.counts(object_compartment_idx) = double(value);" in source
+    assert "metadata.condition_override_metabolite_wids" in source
+    assert "metadata.condition_override_values" in source
+    assert "metadata.condition_override_object_compartment_indexs" in source
+
+    # The scheduler still reapplies the local process substrate override
+    # before both calcResourceRequirements_Current() and evolveState() so
+    # the conditioned value survives allocation injection inside the same
+    # tick.
     assert source.count("mod = apply_process_substrate_overrides(mod, extraction_opts);") == 2
     assert "r = mod.calcResourceRequirements_Current();" in source
     assert "mod.substrates(lidx, :) = allocation;" in source

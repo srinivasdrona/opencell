@@ -75,14 +75,28 @@ def test_v6_chromosome_segregation_complex_seed_gate_and_effect() -> None:
     assert required_complex_wid in process.required_complex_enzyme_wids
     assert complex_seed > 0.0
 
+    length = process.sequence_len
+    fully_replicated = {
+        "positions": [0, 0, 0, 0],
+        "strands": [0, 1, 2, 3],
+        "values": [length, length, length, length],
+        "shape": process.chromosome_shape,
+    }
+    # Real tick-99 anchor linkingNumbers values (data/m1_sources/karr_native/
+    # per_process_traces_v2_event_s000/ChromosomeSegregation_100ticks.mat):
+    # within tolerance of equilibrium_superhelical_density for all 4 strands.
+    fully_supercoiled = {
+        "positions": [0, 0, 0, 0],
+        "strands": [0, 1, 2, 3],
+        "values": [52013, 52013, 52026, 52026],
+        "shape": process.chromosome_shape,
+    }
+
     process_state = {
         "chromosome": {
-            "replication_state": "complete",
-            "supercoiled": True,
-            "segregation_progress": 0.0,
-            "daughter_pole_positions": {"left": 0.0, "right": 0.0},
-            "segregation_complete": False,
-            "cell_cycle_event": "none",
+            "segregated": False,
+            "polymerizedRegions": fully_replicated,
+            "linkingNumbers": fully_supercoiled,
         },
         "protein": state["protein"],
         "complex": state["complex"],
@@ -101,14 +115,14 @@ def test_v6_chromosome_segregation_complex_seed_gate_and_effect() -> None:
         },
     }
     update = process.next_update(1.0, process_state)
-    assert float(update["chromosome"].get("segregation_progress", 0.0)) > 0.0
+    assert update["chromosome"].get("segregated") is True
 
     no_complex_state = dict(process_state)
     no_complex_counts = dict(state["complex"]["counts"])
     no_complex_counts[required_complex_wid] = 0.0
     no_complex_state["complex"] = {"counts": no_complex_counts}
     update_without_complex = process.next_update(1.0, no_complex_state)
-    assert "segregation_progress" not in update_without_complex["chromosome"]
+    assert "segregated" not in update_without_complex["chromosome"]
 
 
 @pytest.mark.slow

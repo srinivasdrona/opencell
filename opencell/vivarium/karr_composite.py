@@ -2256,6 +2256,7 @@ def build_karr_chassis_v5(
             "smc_bound_count": float(condensation_proc.trace_anchor_bound),
             "condensation_level": float(condensation_proc.default_condensation_level),
             "forks_passing": False,
+            "segregated": False,
             "segregation_progress": 0.0,
             "segregation_complete": False,
             "daughter_pole_positions": {"left": 0.0, "right": 0.0},
