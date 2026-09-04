@@ -2,9 +2,9 @@
   "artifact_kind": "macromol_network2_selection_diagnostic",
   "artifact_version": "1.0.0",
   "process": "MacromolecularComplexation",
-  "generated_at": "2026-09-04T09:03:52.094995+00:00",
+  "generated_at": "2026-09-04T14:10:04.414978+00:00",
   "generator_source_path": "scripts/l22_evidence/macromol_network2_selection_diagnostic.py",
-  "generator_source_sha256_lf_normalized": "3feb53d48bca97d1ab7a3dbff04504304b2d29cfcd8ed0b0231990eac0e655c1",
+  "generator_source_sha256_lf_normalized": "fd01c31e19d223de964de5e95d9ce63a1b07abd7de5a829eb23a5c22b3554c0d",
   "gating": "NON_GATING for the shared L2.2 evidence_index.json row (never consumed by scripts/l22_evidence/verdict.py or generator.py); AUTHORITATIVE for any claim of literal network-2 (complexs indices 22/23) selection fidelity.",
   "network2_indices_0b": [
     22,

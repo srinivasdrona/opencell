@@ -7,6 +7,7 @@ Run via `bin\\oc-pytest tests/scripts/test_macromol_network2_selection_diagnosti
 from __future__ import annotations
 
 import copy
+import json
 import sys
 from pathlib import Path
 
@@ -30,6 +31,25 @@ def test_preregistered_thresholds_are_pinned():
 
 def test_network2_indices_match_the_active_window_contract():
     assert diag.NETWORK2_INDICES_0B == maw.NETWORK2_COMPLEX_INDICES_0B == (22, 23)
+
+
+def test_tracked_diagnostic_artifact_self_validates():
+    """Loads the TRACKED, committed
+    `docs/phase_f/l2_2_design_a/active_windows/
+    MacromolecularComplexation_network2_selection_diagnostic.json` directly
+    from disk (never a fresh `build_diagnostic()` run) and asserts
+    `validate_diagnostic_artifact` accepts it. This is the regression guard
+    against future generator drift: if `macromol_network2_selection_
+    diagnostic.py` is edited without regenerating and re-committing this
+    artifact, `generator_source_sha256_lf_normalized` stops matching the
+    current file and this test fails, catching the staleness before it
+    ships. Does not alter, re-run, or reclassify the artifact -- purely a
+    load-and-validate check of what is actually committed."""
+    tracked_path = _REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "active_windows" / (
+        "MacromolecularComplexation_network2_selection_diagnostic.json"
+    )
+    payload = json.loads(tracked_path.read_text(encoding="utf-8"))
+    assert diag.validate_diagnostic_artifact(payload) is None
 
 
 @pytest.fixture(scope="module")
