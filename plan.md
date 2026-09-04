@@ -78,6 +78,10 @@ below:**
   gate edit could remain falsely green. Add them, plumb alternate catalog/
   registry paths through generator audit, force UTF-8 `git show`, rerun the
   same fail-closed migration, and re-review before merging.
+  Corrective candidate `e6f428c` now includes all three fields, alternate
+  catalog/registry path threading, UTF-8 migration, and reruns the verified
+  `f71cfbb` migration to **19/1/2 integrity OK** (173/174 targeted tests;
+  one reproduced baseline failure). Await final Opus review.
 - Closed and published: ProteinProcessingII, ChromosomeCondensation,
   ChromosomeSegregation L2.1, MacromolecularComplexation L2.2.
 - Cytokinesis/FtsZ dual extraction:
