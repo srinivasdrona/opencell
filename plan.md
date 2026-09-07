@@ -278,6 +278,28 @@ context it carries:**
     rotted Cytokinesis oracle allowlist/comment; update manifest/audit to
     use the M5000 trace with segregated+RNG restoration; copy/hash the
     gitignored trace; refresh anchors and integrate only curated files.
+    **All six fixed on `agent/l21-cytokinesis-active-fix-20260903` at
+    `88545de`/`75e4977`** (worktree
+    `E:\opencell-worktrees\fix-l21-cytokinesis-active`): restored
+    `karr_protein_decay_light.py` to HEAD (git-restored, not hand-edited);
+    fail-closed filament fixture + full-payload codec parsing verified
+    intact; removed the hardcoded `l2-event-cytokinesis-20260805`
+    cross-worktree fallback from `_special_candidates`; added
+    `PREFERRED_TRACE_MATCH` so audit/manifest evidence is pinned to the
+    M5000 seed-36 trace (not the numerically-earlier seed-0 M4000 trace);
+    wired a fail-closed dec-005 DNADamage source-hash-binding check into
+    both the audit tool and the M5000 promotion pytest node directly;
+    refreshed all 11 stale `data/schemas/per_process_wiring/Cytokinesis.yaml`
+    line anchors (L1b `check_oc_anchors_resolve` now PASSES for
+    Cytokinesis). Mechanically promoted
+    `docs/phase_f/l2_1/L21_ACTIVE_WINDOWS_MANIFEST.json`'s Cytokinesis row
+    CODE_GAP -> EXISTING_WINDOW_PASS via new
+    `scripts/l21_promote_cytokinesis_manifest.py` (never hand-edited);
+    post-merge `verify_active_window_manifest_row` re-check independently
+    confirms `VERIFIED_EXISTING_WINDOW_PASS`. 69/69 cytokinesis+codec+probe
+    tests pass; full 28-process L1b sweep 26/28 (2 pre-existing, unrelated
+    DNADamage/ProteinDecay `check_oc_anchors_resolve` failures, out of
+    scope); ruff clean. **Awaiting Opus re-review before merge to main.**
   - HostInteraction candidate `0a4642f`: source review proved adherence and
     the TLR1/2/6→NF-kB→inflammatory cascade are deterministic level signals,
     already true from fitted tick 1, not false→true events. The prior
