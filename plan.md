@@ -104,11 +104,16 @@ below:**
     unportable artifacts, and a rejected L2.2 prereg. Corrective worktree is
     dirty and must re-earn the claim.
   - Cytokinesis: production RNG/geometry fixes are scientifically accepted;
-    curated integration still needs audit/manifest support, fail-closed
-    fixture behavior, trace portability, and branch cleanup.
-  - HostInteraction: literal deterministic port is accepted, but fitted
-    level-only evidence was vacuous. Negative/partial source-legal condition
-    traces have been extracted; audit/manifest evidence must be completed.
+    corrective branch `75e4977` now restores dead shared-file changes,
+    enforces fixture/RNG fail-closed behavior, mechanically promotes the
+    M5000 manifest via source-bound audit, refreshes anchors, and reports
+    69/69 tests green. Await final Opus re-review/curated integration.
+  - HostInteraction: literal deterministic port plus five source-legal
+    knockout/partial-condition traces now discriminate the full six-boolean
+    cascade and make a constant-True stub fail. Candidate `1c3383f` fixes
+    all audit semantics, binds condition traces/hashes, moves MATLAB drivers,
+    cleans tmp scope, and reports 58 passed/1 skip plus manifest 11/11.
+    Await final Opus re-review.
 - No sub-agents or MATLAB processes were alive at session resume. Use at
   most **three host-wide MATLAB sessions**, one worktree per concurrent job.
 
