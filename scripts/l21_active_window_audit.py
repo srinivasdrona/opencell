@@ -564,10 +564,22 @@ def _overlay_custom_observable(
         return
 
     if process_name == "HostInteraction":
+        # Seed ALL SIX host booleans from their genuine states_before trace
+        # values (not just isBacteriumAdherent) -- CUSTOM_COMPARE_OBSERVABLES
+        # calls this overlay once per observable in the 6-tuple, and each
+        # call must actually write its own field. Under-seeding the other
+        # five (leaving them at the ports_schema False default regardless
+        # of the real trace value) previously produced a correct-looking
+        # aggregate only by accident (this per-tick harness rebuilds state
+        # from scratch every tick, so a False default happened to coincide
+        # with a valid diff baseline); it is honest and correct to seed the
+        # real value here regardless of that coincidence.
+        value = bool(float(vector[0])) if vector.size else False
+        surface_path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
+        if surface_path is not None:
+            _deep_set(state, surface_path, value)
         if observable == "isBacteriumAdherent":
-            attached = bool(float(vector[0])) if vector.size else False
-            _deep_set(state, ("cell", "host_attached"), attached)
-            _deep_set(state, ("cell", "host_adhesion_strength"), 1.0 if attached else 0.0)
+            _deep_set(state, ("cell", "host_adhesion_strength"), 1.0 if value else 0.0)
         return
 
     path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
@@ -729,11 +741,24 @@ def _level_truth_activity_detail(
         if after is None:
             continue
         if bool(np.any(after != 0)):
+            # Report the REAL states_before value for this observable/tick,
+            # not a hardcoded 0.0. For a genuine constant-True level signal
+            # (e.g. HostInteraction's positive-control window, TRUE from
+            # tick 0 onward), the honest detail is before=1.0/after=1.0 --
+            # no transition ever occurred, and fabricating a before=0.0
+            # placeholder would misrepresent a level as an edge. Activity
+            # here is defined by "after is non-degenerately true", not by
+            # before != after (see LEVEL_TRUTH_ACTIVITY_PROCESSES docstring
+            # above), so reading the real before value never changes
+            # whether this tick counts as active -- it only makes the
+            # reported detail truthful.
+            before = _read_numeric_vector(trace, "states_before", observable, tick)
+            before_value = float(before[0]) if before is not None and before.size else 0.0
             return TraceDiffDetail(
                 observable=observable,
                 detail_path=observable,
                 index=0,
-                before=0.0,
+                before=before_value,
                 after=1.0,
             )
     return None
@@ -1226,6 +1251,35 @@ def _honest_replay(
                 oc_active_this_tick = _chromosome_tokens_active(
                     process_name, before_chromosome_store, after_chromosome_store
                 ) or _recursive_update_nontrivial(non_chromosome_update)
+            elif process_name in LEVEL_TRUTH_ACTIVITY_PROCESSES:
+                # A level-truth process recomputes its real signal fresh
+                # every tick from CURRENT input state and only emits a delta
+                # for fields that changed from the (now correctly seeded --
+                # see _overlay_custom_observable) incoming value. Once the
+                # incoming state is honestly seeded to match ground truth,
+                # a genuinely-active-but-unchanging level signal produces an
+                # EMPTY update dict on every tick after the first (nothing
+                # changed, because it was already true) -- so
+                # `_recursive_update_nontrivial(update)` structurally
+                # under-reports activity for this process family, exactly
+                # as it structurally under-reports the Karr-side ground
+                # truth (see LEVEL_TRUTH_ACTIVITY_PROCESSES docstring
+                # above). The correct OC-side activity signal mirrors the
+                # Karr-side one: project the CURRENT (post-update, i.e.
+                # post-next_update) value of each declared custom-vector
+                # surface directly from state and check non-degenerate
+                # truth, not whether anything changed this tick.
+                oc_active_this_tick = False
+                for observable in CUSTOM_COMPARE_OBSERVABLES.get(process_name, ()):
+                    projected = _project_custom_observable(
+                        state=state,
+                        observable=observable,
+                        process_name=process_name,
+                        wids=wids_by_surface[observable],
+                    )
+                    if bool(np.any(projected != 0)):
+                        oc_active_this_tick = True
+                        break
             else:
                 oc_active_this_tick = _recursive_update_nontrivial(update)
 

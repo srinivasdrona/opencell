@@ -15,7 +15,7 @@
 % isInflammatoryResponseActivated plus the raw enzyme copy numbers for the
 % terminalOrganelle/adhesin/tlr-ligand/antigen index sets at ticks
 % 0 (pre-evolve), 1, 2, 5, 10, 20, 50, 100.
-repo_root = fileparts(fileparts(mfilename('fullpath')));
+repo_root = fileparts(fileparts(fileparts(mfilename('fullpath'))));
 cd(repo_root);
 addpath(fullfile(repo_root, 'scripts', 'matlab'));
 

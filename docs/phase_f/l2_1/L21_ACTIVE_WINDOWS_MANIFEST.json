@@ -497,8 +497,105 @@
           "observable": "isBacteriumAdherent",
           "detail_path": "isBacteriumAdherent",
           "index": 0,
-          "before": 0.0,
+          "before": 1.0,
           "after": 1.0
+        }
+      },
+      "discriminating_conditions": {
+        "type": "source_legal_input_side_enzyme_knockout_windows",
+        "preregistration": "docs/phase_f/l2_1/HOSTINTERACTION_CONDITION_PREREGISTRATION.md",
+        "caveat": "Opus review (2026-09-05) correctly rejected the positive-control-only evidence above as degenerate: a trace where all 6 host booleans are constant-True cannot distinguish this literal port from a hardcoded constant-True stub. These 5 conditions were preregistered (predictions written BEFORE extraction) as genuine, source-legal enzyme-count overrides applied to Karr's own process-local `this.enzymes` (never touching Karr's own output booleans directly), extracted via the same genuine fitted seed-0 Simulation/scheduler as the positive control (scripts/matlab/extract_host_interaction_active_window.m, extraction_opts.per_process_enzyme_overrides.HostInteraction). Every condition matches its preregistered prediction bit-exact, and the literal OC port reproduces every condition's genuine MATLAB result bit-exact on all 6 host booleans. A constant-True stub fails every one of these 5 conditions on at least one field (see docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md section 11).",
+        "conditions": [
+          {
+            "id": "NEG_ADHERENCE",
+            "override": "MG_218_MONOMER=0",
+            "source": {
+              "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_neg_adherence_s000/HostInteraction_5ticks.mat",
+              "sha256": "d0003f61daad027d0b8635d9485ae62f20eb68874517c421067bf10693f89209"
+            },
+            "predicted_and_actual": {
+              "host_attached": false,
+              "host_tlr1_activated": false,
+              "host_tlr2_activated": false,
+              "host_tlr6_activated": false,
+              "host_nfkb_activated": false,
+              "host_inflammatory_response_activated": false
+            }
+          },
+          {
+            "id": "PARTIAL_ADHERENT_NO_SIGNAL",
+            "override": "MG_075_MONOMER=0, MG_149_MONOMER=0, MG_309_MONOMER=0, MG_412_MONOMER=0, MG_410_411_412_PENTAMER=0",
+            "source": {
+              "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_partial_adherent_no_signal_s000/HostInteraction_5ticks.mat",
+              "sha256": "d589057ed07b3a1744560d7fae889eea547442f2c2d04c2db4795105101982b0"
+            },
+            "predicted_and_actual": {
+              "host_attached": true,
+              "host_tlr1_activated": false,
+              "host_tlr2_activated": false,
+              "host_tlr6_activated": false,
+              "host_nfkb_activated": false,
+              "host_inflammatory_response_activated": false
+            }
+          },
+          {
+            "id": "TLR12_PATH",
+            "override": "MG_309_MONOMER=0",
+            "source": {
+              "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_tlr12_path_s000/HostInteraction_5ticks.mat",
+              "sha256": "9926f3f23a4aa221ca43d65433e01969390c6a370867aa6bedd159b43b32f891"
+            },
+            "predicted_and_actual": {
+              "host_attached": true,
+              "host_tlr1_activated": true,
+              "host_tlr2_activated": true,
+              "host_tlr6_activated": false,
+              "host_nfkb_activated": true,
+              "host_inflammatory_response_activated": true
+            }
+          },
+          {
+            "id": "TLR26_PATH",
+            "override": "MG_149_MONOMER=0, MG_412_MONOMER=0, MG_410_411_412_PENTAMER=0",
+            "source": {
+              "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_tlr26_path_s000/HostInteraction_5ticks.mat",
+              "sha256": "ea000bb2e9f1d08d533b7f41d86853082fe8af8fffac9512a3bfa8b4d57d6155"
+            },
+            "predicted_and_actual": {
+              "host_attached": true,
+              "host_tlr1_activated": false,
+              "host_tlr2_activated": true,
+              "host_tlr6_activated": true,
+              "host_nfkb_activated": true,
+              "host_inflammatory_response_activated": true
+            }
+          },
+          {
+            "id": "ANTIGEN_ONLY",
+            "override": "MG_149_MONOMER=0, MG_309_MONOMER=0, MG_412_MONOMER=0, MG_410_411_412_PENTAMER=0",
+            "source": {
+              "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_antigen_only_s000/HostInteraction_5ticks.mat",
+              "sha256": "5ad7872b8ed1c1bb2446e0e90007759b73314297ba265107cd6d03c6daa5b606"
+            },
+            "predicted_and_actual": {
+              "host_attached": true,
+              "host_tlr1_activated": false,
+              "host_tlr2_activated": false,
+              "host_tlr6_activated": false,
+              "host_nfkb_activated": false,
+              "host_inflammatory_response_activated": true
+            }
+          }
+        ],
+        "replay_evidence": {
+          "type": "pytest_exact_bit_identity_all_six_booleans_plus_anti_cheat_stub_control",
+          "nodeids": [
+            "tests/vivarium/test_karr_host_interaction_discriminating_conditions.py::test_genuine_condition_matches_preregistered_prediction",
+            "tests/vivarium/test_karr_host_interaction_discriminating_conditions.py::test_literal_port_reproduces_genuine_condition_bit_exact",
+            "tests/vivarium/test_karr_host_interaction_discriminating_conditions.py::test_constant_true_stub_fails_every_negative_or_partial_condition"
+          ],
+          "outcome": "passed",
+          "command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_host_interaction_discriminating_conditions.py"
         }
       },
       "mechanical_scan": {
@@ -510,7 +607,7 @@
         "nodeid": "tests/vivarium/test_karr_host_interaction_l2_replay.py::test_karr_host_interaction_l2_event_replay[event_seed_0]",
         "outcome": "passed",
         "command": "bin\\\\oc-pytest.cmd -q \"tests/vivarium/test_karr_host_interaction_l2_replay.py::test_karr_host_interaction_l2_event_replay[event_seed_0]\"",
-        "caveat": "Promoted MISSING_ACTIVE_EXTRACTION -> GENUINE (2026-09-04). Root cause of the prior 50,000-tick seed-0 false->true anchor-search failure: host.isBacteriumAdherent (and isTLRActivated/isNFkBActivated/isInflammatoryResponseActivated) are NOT a discrete event in the unperturbed model -- a genuine full-Simulation seed-0 canary (tmp/probe_host_interaction_canary.m) shows all 4 Host booleans are TRUE from tick 1 onward, because Karr's fitted initial condition already carries nonzero copy numbers (11-33) for every one of the 8 terminalOrganelle/4 adhesin/3 tlr12Ligand/1 tlr26Ligand/5 antigen enzyme WIDs HostInteraction.m reads; a false->true SEARCH can structurally never terminate for a signal that is already true before the search starts. Extracted a genuine FIXED window (window_contract='fixed', tick_offset=0, n_ticks=100, seed=0) instead of an anchor search, via a new anchor_opts.capture_signal_container opt-in flag (scripts/matlab/extract_per_process_traces_v2.m) that merges the real per-tick host boolean surface into a plain fixed-window capture. Also replaced the entire OC process (opencell/vivarium/karr_host_interaction.py) -- the prior 'Karr-light v1' revision was a fabricated continuous adhesion-fraction + stochastic Poisson bind/unbind model (CODE_DEVIATES per docs/phase_f/audits/HostInteraction_semantic_audit.md HI-S4-01/HI-S4-02/HI-S5-02) that never modeled TLR/NF-kB/inflammatory response at all -- with a literal port of HostInteraction.m's boolean cascade (all(terminalOrganelle)&&all(adhesin); TLR1/2/6; NFkB; inflammatory), reading raw enzyme copy numbers, zero RNG (matches PROCESS_CATALOG.yaml bucket=DETERMINISTIC/rationale_M='no RNG', unchanged). The process-local nodeid genuinely passes bit-identical across all 100 ticks for all 9 compared surfaces (substrates/enzymes/boundEnzymes pass-through plus all 6 host booleans). The audit tool's own internal replay (scripts/l21_active_window_audit.py) independently confirms pass_all_compared_ticks=true: classification=EXISTING_WINDOW_PASS, honest_replay.oc_active_on_karr_active_ticks=100/100 (was 0/0 pre-fix, MISSING_ACTIVE_EXTRACTION). 'Activity' detection for this process required a dedicated LEVEL_TRUTH_ACTIVITY_PROCESSES path (l21_active_window_audit.py) since the generic before!=after mismatch heuristic structurally cannot detect a constantly-true LEVEL signal -- HostInteraction's real activity predicate is 'value is non-degenerately True', not 'value changed this tick'. See docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md for the full decision record."
+        "caveat": "Promoted MISSING_ACTIVE_EXTRACTION -> GENUINE (2026-09-04); discriminating-conditions closure (2026-09-05+, see discriminating_conditions above) closed the follow-on Opus finding that the positive-control-only evidence was degenerate. Root cause of the prior 50,000-tick seed-0 false->true anchor-search failure: host.isBacteriumAdherent (and isTLRActivated/isNFkBActivated/isInflammatoryResponseActivated) are NOT a discrete event in the unperturbed model -- a genuine full-Simulation seed-0 canary (scripts/matlab/probe_host_interaction_canary.m) shows all 4 Host booleans are TRUE from tick 1 onward, because Karr's fitted initial condition already carries nonzero copy numbers (11-33) for every one of the 8 terminalOrganelle/4 adhesin/3 tlr12Ligand/1 tlr26Ligand/5 antigen enzyme WIDs HostInteraction.m reads; a false->true SEARCH can structurally never terminate for a signal that is already true before the search starts. Extracted a genuine FIXED window (window_contract='fixed', tick_offset=0, n_ticks=100, seed=0) instead of an anchor search, via a new anchor_opts.capture_signal_container opt-in flag (scripts/matlab/extract_per_process_traces_v2.m) that merges the real per-tick host boolean surface into a plain fixed-window capture. Also replaced the entire OC process (opencell/vivarium/karr_host_interaction.py) -- the prior 'Karr-light v1' revision was a fabricated continuous adhesion-fraction + stochastic Poisson bind/unbind model (CODE_DEVIATES per docs/phase_f/audits/HostInteraction_semantic_audit.md HI-S4-01/HI-S4-02/HI-S5-02) that never modeled TLR/NF-kB/inflammatory response at all -- with a literal port of HostInteraction.m's boolean cascade (all(terminalOrganelle)&&all(adhesin); TLR1/2/6; NFkB; inflammatory), reading enzyme copy numbers from the shared protein.counts store (verified equivalent to Karr's own unpartitioned this.enzymes for this zero-request process), zero RNG (matches PROCESS_CATALOG.yaml bucket=DETERMINISTIC/rationale_M='no RNG', unchanged). The process-local nodeid genuinely passes bit-identical across all 100 ticks for all 9 compared surfaces (substrates/enzymes/boundEnzymes pass-through plus all 6 host booleans). The audit tool's own internal replay (scripts/l21_active_window_audit.py) independently confirms pass_all_compared_ticks=true: classification=EXISTING_WINDOW_PASS, honest_replay.oc_active_on_karr_active_ticks=100/100 (was 0/0 pre-fix, MISSING_ACTIVE_EXTRACTION). 'Activity' detection for this process required a dedicated LEVEL_TRUTH_ACTIVITY_PROCESSES path on BOTH sides of the replay (l21_active_window_audit.py) since the generic before!=after mismatch heuristic structurally cannot detect a constantly-true LEVEL signal, and the naive OC-side 'was the update dict non-empty' heuristic structurally under-reports activity once the incoming state is honestly seeded to the real per-tick value (a level signal that is already correct emits no delta) -- HostInteraction's real activity predicate on both sides is 'the projected value is non-degenerately True', not 'value changed this tick' / 'update dict is non-empty'. See docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md for the full decision record."
       }
     },
     {

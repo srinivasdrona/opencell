@@ -59,6 +59,64 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-08 ~00:45 IST) — supersedes the 2026-09-04
+~23:50 IST block below (HostInteraction discriminating-conditions
+closure, resolves Opus review blockers):**
+
+- Same worktree/branch as below
+  (`E:\opencell-worktrees\fix-l21-host-active`,
+  `agent/l21-host-active-fix-20260904`). **Still not pushed/merged.**
+- Opus review (2026-09-05) correctly rejected the 2026-09-04 closure as
+  degenerate: the positive-control trace alone (all 6 host booleans
+  constant-True) cannot distinguish this literal port from a hardcoded
+  constant-True stub. Preregistered 5 genuine, source-legal, INPUT-SIDE
+  enzyme-knockout conditions BEFORE extracting them
+  (`docs/phase_f/l2_1/HOSTINTERACTION_CONDITION_PREREGISTRATION.md`),
+  extracted them via a new `extraction_opts.per_process_enzyme_overrides`
+  surface on `extract_per_process_traces_v2.m`, and closed the loop: all 5
+  matched their predictions bit-exact, the literal OC port reproduces all
+  5 bit-exact on all 6 booleans, and a constant-True stub fails every one
+  of them on >=1 field (`tests/vivarium/test_karr_host_interaction_discriminating_conditions.py`,
+  15 new tests). Full after-the-fact writeup:
+  `docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md` section 11.
+- Found and fixed 2 real bugs in `scripts/l21_active_window_audit.py`
+  while wiring these conditions in: (1) only 1 of 6 host booleans was
+  seeded from genuine trace values before replay (the other 5 silently
+  defaulted to `False`); (2) the level-truth activity detail hardcoded
+  `before=0.0` regardless of the real trace value, fabricating a false
+  "just turned on" narrative for a signal that is genuinely constant-True
+  the whole window. Fixing (1) exposed a 3rd, adjacent bug: the OC-side
+  "was the update dict non-empty" activity heuristic collapsed to 0 once
+  booleans were correctly seeded (a correctly-seeded, genuinely-active
+  level signal emits no delta), so added a symmetric OC-side
+  `LEVEL_TRUTH_ACTIVITY_PROCESSES` projection check. Net effect on the
+  manifest verdict: unchanged (`EXISTING_WINDOW_PASS`,
+  `honest_replay.oc_active_on_karr_active_ticks=100/100`), now computed
+  and reported honestly instead of by accidental coincidence.
+- Verified (not a bug, documentation-only fix) the free-enzyme-vs-
+  protein-counts topology question: Karr's `this.enzymes` for this
+  zero-request process is never partitioned by the allocator, so it
+  already reflects the raw unpartitioned global copy number — matching
+  OC's `protein.counts` shared-pool convention used identically by 45+
+  other process bindings in `karr_composite.py`. Documented explicitly in
+  `data/schemas/per_process_wiring/HostInteraction.yaml`'s
+  `known_deviations`.
+- `L21_ACTIVE_WINDOWS_MANIFEST.json`'s HostInteraction row now carries a
+  `discriminating_conditions` block (5 conditions, sha256-bound genuine
+  sources, 3 pytest nodeids) plus the corrected honest
+  `trace_window.first_active_detail` (`before=1.0`, was fabricated `0.0`).
+- Moved the 2 MATLAB drivers from `tmp/` to `scripts/matlab/` (tracked,
+  reproducible) and deleted superseded one-off `tmp/` inspection scripts.
+- Full verification green: `l21_active_window_audit.py --process
+  HostInteraction` unchanged verdict; 58 passed/1 skipped across all
+  HostInteraction-related pytest suites; the full 11-process manifest
+  checkpoint test (11 passed) confirms no regression to any other
+  process's row; `l1b_verify_wiring.py --process HostInteraction` PASS;
+  ruff clean. Full STATUS: `STATUS_L21_HOSTINTERACTION_FIX.md`
+  ("Discriminating-conditions round" section).
+- **Not yet re-reviewed by Opus** — this closes the specific blockers
+  from the 2026-09-05 review; returning for re-review next.
+
 **Current status (2026-09-04 ~23:50 IST) — supersedes the 23:05 IST block
 below (HostInteraction L2.1 closure):**
 

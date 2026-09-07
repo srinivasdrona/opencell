@@ -492,6 +492,7 @@ for i = 1:nProcesses
     mod = processes{i};
     mod.copyFromState();
     mod = apply_process_substrate_overrides(mod, extraction_opts);
+    mod = apply_process_enzyme_overrides(mod, extraction_opts);
     r = mod.calcResourceRequirements_Current();
     gidx = mod.substrateMetaboliteGlobalCompartmentIndexs;
     lidx = mod.substrateMetaboliteLocalIndexs;
@@ -538,6 +539,7 @@ for i = 1:nProcesses
     mod.copyFromState();
     mod.substrates(lidx, :) = allocation;
     mod = apply_process_substrate_overrides(mod, extraction_opts);
+    mod = apply_process_enzyme_overrides(mod, extraction_opts);
     if proc_idx == rna_decay_idx && isprop(mod, 'RNAs')
         % Guard against negative RNA counts propagating into weighted sampling.
         mod.RNAs = max(0, mod.RNAs);
@@ -639,6 +641,25 @@ end
 if ~isfield(opts, 'per_process_substrate_overrides') || isempty(opts.per_process_substrate_overrides)
     opts.per_process_substrate_overrides = struct();
 end
+% per_process_enzyme_overrides (default empty struct, backward-compatible):
+% same shape as per_process_substrate_overrides (struct keyed by process
+% name, then enzyme WholeCellModelID, each leaf a nonnegative scalar) but
+% applied to the process-local `this.enzymes` vector instead of
+% `this.substrates`. Unlike per_process_substrate_overrides (whose
+% metabolite-pool sibling apply_condition_overrides is DNADamage-only,
+% because that path mutates the SHARED global metabolite pool), this is
+% NOT process-restricted: apply_process_enzyme_overrides only ever
+% mutates the target process's own process-local `this.enzymes` copy
+% (populated fresh from the global protein pool by that same tick's
+% copyFromState() call, and never written back by copyToState() since no
+% process in this codebase's covered set writes to this.enzymes) -- so it
+% can never corrupt shared state for any other process, by construction.
+% Exists to extract genuine, source-legal input-side enzyme-knockout
+% windows (e.g. HostInteraction's terminalOrganelle/adhesin/ligand/antigen
+% index sets) without ever touching Karr's own booleans/outputs directly.
+if ~isfield(opts, 'per_process_enzyme_overrides') || isempty(opts.per_process_enzyme_overrides)
+    opts.per_process_enzyme_overrides = struct();
+end
 end
 
 function [sim, applied] = apply_condition_overrides(sim, proc, canonical_name, extraction_opts)
@@ -733,6 +754,70 @@ for i = 1:numel(override_fields)
             process_short_name(mod), wid);
     end
     mod.substrates(idx, :) = double(override_values.(wid));
+end
+end
+
+function mod = apply_process_enzyme_overrides(mod, extraction_opts)
+% apply_process_enzyme_overrides  Apply any requested per-process enzyme
+% (this.enzymes) overrides to the REAL process-local enzyme vector, every
+% tick, right after copyFromState() has re-populated it from the global
+% protein pool -- so a requested knockout (value 0) or restoration holds
+% for the ENTIRE captured window, not just the first tick. Mirrors
+% apply_process_substrate_overrides exactly, but for `this.enzymes`
+% instead of `this.substrates`; NOT restricted to any single process (see
+% default_extraction_opts for why this is safe: process-local, never
+% copyToState()'d back to the shared pool by any process this extractor
+% covers).
+if ~isfield(extraction_opts, 'per_process_enzyme_overrides') || isempty(fieldnames(extraction_opts.per_process_enzyme_overrides))
+    return;
+end
+override_values = select_process_enzyme_overrides(extraction_opts.per_process_enzyme_overrides, mod);
+if isempty(override_values)
+    return;
+end
+if ~isprop(mod, 'enzymes') || ~isprop(mod, 'enzymeWholeCellModelIDs')
+    error('extract_per_process_traces_v2:missing_enzyme_override_surface', ...
+        'process %s has no enzymes/enzymeWholeCellModelIDs surface required for per-process enzyme overrides', ...
+        process_short_name(mod));
+end
+
+enzyme_wids = matlab_cellstr(mod.enzymeWholeCellModelIDs);
+override_fields = fieldnames(override_values);
+for i = 1:numel(override_fields)
+    wid = override_fields{i};
+    value = override_values.(wid);
+    if ~isnumeric(value) || ~isscalar(value) || ~isfinite(value) || value < 0
+        error('extract_per_process_traces_v2:invalid_enzyme_override_value', ...
+            'per_process_enzyme_overrides.%s must be a finite nonnegative scalar', wid);
+    end
+    idx = find(strcmp(enzyme_wids, wid), 1);
+    if isempty(idx)
+        error('extract_per_process_traces_v2:unknown_override_enzyme', ...
+            'process %s does not expose override enzyme WID ''%s'' on its local enzyme vector', ...
+            process_short_name(mod), wid);
+    end
+    mod.enzymes(idx, :) = double(value);
+end
+end
+
+function override_values = select_process_enzyme_overrides(per_process_overrides, mod)
+% select_process_enzyme_overrides  Same name-normalized process lookup as
+% select_process_substrate_overrides, over per_process_enzyme_overrides.
+override_values = [];
+process_tokens = { ...
+    normalize_name_token(process_short_name(mod)), ...
+    normalize_name_token(mod.wholeCellModelID) ...
+};
+if isprop(mod, 'name')
+    process_tokens{end + 1} = normalize_name_token(mod.name); %#ok<AGROW>
+end
+override_names = fieldnames(per_process_overrides);
+for i = 1:numel(override_names)
+    name = override_names{i};
+    if any(strcmp(process_tokens, normalize_name_token(name)))
+        override_values = per_process_overrides.(name);
+        return;
+    end
 end
 end
 

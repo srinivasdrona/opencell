@@ -325,11 +325,76 @@ def test_extraction_opts_override_surface_is_wired_into_real_scheduler_path():
     assert source.count("mod = apply_process_substrate_overrides(mod, extraction_opts);") == 2
     assert "r = mod.calcResourceRequirements_Current();" in source
     assert "mod.substrates(lidx, :) = allocation;" in source
-    assert "[sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, [], extraction_opts);" in source
+    # The fixed/'' capture loop passes `fixed_tap_anchor_opts` (empty
+    # unless the caller opted into anchor_opts.capture_signal_container --
+    # see default_anchor_opts), never an unconditional `[]`, so a fixed
+    # window can also carry the real per-tick signal-container projection
+    # without ever performing an anchor SEARCH (capture_anchor_window is
+    # only invoked for window_contract='anchor').
+    assert "fixed_tap_anchor_opts = [];" in source
+    assert "anchor_opts.capture_signal_container" in source
+    assert (
+        "[sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props, fixed_tap_anchor_opts, extraction_opts);"
+        in source
+    )
+    assert (
+        "[sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, fixed_tap_anchor_opts, extraction_opts);"
+        in source
+    )
     assert (
         "[sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts, extraction_opts);"
         in source
     )
+
+
+def test_per_process_enzyme_overrides_wired_at_both_copyfromstate_sites():
+    """Static proof for the enzyme-knockout override surface (used to
+    extract HostInteraction's discriminating condition windows -- see
+    docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md): a
+    process-local `this.enzymes` override, applied fresh every tick right
+    after copyFromState() repopulates it from the global protein pool, at
+    BOTH copyFromState() call sites (the resource-requirements loop and
+    the real evolveState() loop) -- same shape and same non-restriction as
+    apply_process_substrate_overrides, but never touching the shared
+    global pool (unlike apply_condition_overrides, which is DNADamage-
+    only precisely because it mutates shared metabolite state)."""
+    source = _read_source()
+
+    assert "function mod = apply_process_enzyme_overrides(mod, extraction_opts)" in source
+    assert "function override_values = select_process_enzyme_overrides(per_process_overrides, mod)" in source
+    assert "per_process_enzyme_overrides" in source
+    assert "opts.per_process_enzyme_overrides = struct();" in source
+
+    # Called immediately after copyFromState() at both call sites, mirroring
+    # apply_process_substrate_overrides's own two call sites exactly.
+    assert source.count("mod = apply_process_enzyme_overrides(mod, extraction_opts);") == 2
+
+    first_site_match = re.search(
+        r"mod\.copyFromState\(\);\n\s*mod = apply_process_substrate_overrides\(mod, extraction_opts\);\n"
+        r"\s*mod = apply_process_enzyme_overrides\(mod, extraction_opts\);\n"
+        r"\s*r = mod\.calcResourceRequirements_Current\(\);",
+        source,
+    )
+    assert first_site_match is not None, "enzyme override not wired into the resource-requirements loop"
+
+    second_site_match = re.search(
+        r"mod\.substrates\(lidx, :\) = allocation;\n"
+        r"\s*mod = apply_process_substrate_overrides\(mod, extraction_opts\);\n"
+        r"\s*mod = apply_process_enzyme_overrides\(mod, extraction_opts\);\n",
+        source,
+    )
+    assert second_site_match is not None, "enzyme override not wired into the real evolveState() scheduler loop"
+
+    # Never restricted to a single process (unlike apply_condition_overrides,
+    # whose DNADamage-only guard is `if ~strcmp(canonical_name, 'DNADamage')`).
+    enzyme_fn_match = re.search(
+        r"function mod = apply_process_enzyme_overrides\(mod, extraction_opts\)\n(.*?)\nend\n",
+        source,
+        re.DOTALL,
+    )
+    assert enzyme_fn_match is not None
+    assert "canonical_name" not in enzyme_fn_match.group(1)
+    assert "DNADamage" not in enzyme_fn_match.group(1)
 
 
 def _octave_executable() -> str | None:
