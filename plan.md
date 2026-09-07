@@ -117,7 +117,13 @@ below:**
     cascade and make a constant-True stub fail. Candidate `1c3383f` fixes
     all audit semantics, binds condition traces/hashes, moves MATLAB drivers,
     cleans tmp scope, and reports 58 passed/1 skip plus manifest 11/11.
-    Await final Opus re-review.
+    Opus **REJECTED three evidence/infrastructure blockers**: enzyme
+    overrides are copied back into shared global protein state; the removed
+    oracle dependency remains on the stale allowlist; and the manifest
+    records five condition hashes/nodeids without mechanically verifying
+    them (off-worktree they silently skip). Restore overridden enzymes before
+    copyToState or otherwise contain the condition, remove the allowlist
+    entry, and make every condition hash/nodeid/before-after fail-closed.
 - No sub-agents or MATLAB processes were alive at session resume. Use at
   most **three host-wide MATLAB sessions**, one worktree per concurrent job.
 
