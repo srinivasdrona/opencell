@@ -51,9 +51,6 @@ _BANNED_IMPORTS: frozenset[str] = frozenset({"h5py"})
 # process config, then drop the entry. Do NOT add new entries without a
 # documented justification reviewed against this comment.
 _ALLOWLIST: frozenset[str] = frozenset({
-    # Reads metadata/n_ticks ONLY (a scalar). Used to size internal counters.
-    # Should be migrated to a non-oracle source (config or fixture).
-    "karr_cytokinesis.py",
     # Reads states_before/boundEnzymes[0] at __init__ time as a "trace anchor"
     # for default condensation level. This is borderline — the per-tick
     # update path does NOT consult the oracle, but the init-time read still

@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import sys
 from pathlib import Path
@@ -18,7 +19,7 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
-from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
+from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess, _MatlabCytokinesisRNG
 
 
 def _enzyme_counts(
@@ -184,6 +185,43 @@ def _total_ftsz_subunits(process: KarrCytokinesisProcess, state: dict[str, Any])
     for wid in monomer_wids:
         total += int(round(state["enzymes"].get(wid, 0.0))) + int(round(state["boundEnzymes"].get(wid, 0.0)))
     return total
+
+
+def test_water_request_matches_karr_literal_formula_unconditionally() -> None:
+    """`_water_request` must literally reproduce Karr's
+    `Cytokinesis.calcResourceRequirements_Current`:
+
+        result(substrateIndexs_water) = ...
+            numFtsZSubunitsPerFilament * enzymes(enzymeIndexs_ftsZ_GTP_polymer);
+
+    Karr's method has no segregation, `geometry.pinched`, or ring-size
+    guard -- it runs every tick as part of the pre-`evolveState`
+    resource-request phase. Assert the request tracks the free
+    `ftsZ_GTP_polymer` enzyme pool directly (via `numFtsZSubunitsPerFilament`,
+    the fixed constant from the FtsZRing fixture -- never a naked literal)
+    even when unsegregated, pinched, or with an empty ring.
+    """
+    process = KarrCytokinesisProcess({})
+    gtp_polymer_wid = process.fixture_enzyme_wids[process.enzyme_index_ftsz_gtp_polymer]
+
+    for segregated in (True, False):
+        for pinched_diameter in (process.initial_pinched_diameter, 0.0):
+            for enzyme_count in (0.0, 5.0, 41.0):
+                state = _base_state(
+                    process,
+                    segregated=segregated,
+                    pinched_diameter=pinched_diameter,
+                    num_edges_one_straight=0,
+                    num_edges_two_straight=0,
+                    enzymes={gtp_polymer_wid: enzyme_count},
+                )
+                update = process.next_update(1.0, state)
+                expected = process.num_ftsz_subunits_per_filament * int(enzyme_count)
+                requested = update["requests"][process.name][process.water_wid]
+                assert requested == pytest.approx(float(expected)), (
+                    f"segregated={segregated} pinched_diameter={pinched_diameter} "
+                    f"enzyme_count={enzyme_count}"
+                )
 
 
 def test_process_instantiates_with_faithful_surface() -> None:
@@ -451,3 +489,143 @@ def test_division_completes_when_pinched_diameter_reaches_zero() -> None:
         0.0,
         abs_tol=1.0e-12,
     )
+
+
+# --- Regression: L2.1 active-window CODE_GAP (2026-09-03) ------------------
+#
+# Root cause: `KarrCytokinesisProcess.__init__` seeded `self._rng` with
+# `np.random.default_rng(seed)` (NumPy's PCG64), but Karr's actual
+# `Process.randStream` (data/m1_sources/WholeCell/src/+edu/+stanford/+covert/
+# +cell/+sim/Process.m:283: `this.randStream =
+# edu.stanford.covert.util.RandStream('mcg16807')`) is a Park-Miller
+# "Minimal Standard" multiplicative-congruential (Lehmer) generator --
+# an entirely different bit stream from the same seed. Fixed by seeding
+# `_MatlabCytokinesisRNG` with a MATLAB-faithful mcg16807 Lehmer stream.
+# Evidence: at the accepted genuine event trace's first active tick (226 of
+# `Cytokinesis_4000ticks.mat`), `ftsZRing.numEdgesOneStraight` went 0 -> 9 in
+# Karr; the wrong-RNG-family port produced 6, the fixed port reproduces 9
+# exactly (and reproduces tick 227's (3, 19) too) -- see
+# `STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md` for the full per-tick ledger.
+#
+# Update (M5000 seed-36 promotion, 2026-09-05): `_MatlabCytokinesisRNG` no
+# longer wraps `karr_protein_decay_light._Mcg16807` (whose `get_state`/
+# `set_state` expose the RAW Lehmer value, not the value-domain-encoded
+# representation MATLAB's real `RandStream('mcg16807').State` actually
+# exposes -- see `opencell/util/mcg16807_state_codec.py`). It now tracks the
+# encoded state directly via that codec, matching live MATLAB exactly (see
+# `test_rng_first_draw_matches_live_matlab_mcg16807_reference` below).
+
+
+def test_rng_provider_is_mcg16807_not_numpy_default_rng() -> None:
+    """Anti-regression: `process._rng` must be the MATLAB-faithful
+    mcg16807 Lehmer generator (`opencell/util/mcg16807_state_codec.py`),
+    never `np.random.Generator`/PCG64. A silent revert to
+    `np.random.default_rng` would pass every existing deterministic
+    (rate=0/1) unit test in this file -- those never inspect RNG
+    *identity*, only aggregate conservation -- while re-opening the exact
+    L2.1 active-window CODE_GAP this test guards against.
+    """
+    process = KarrCytokinesisProcess({"rng_seed": 0})
+
+    assert isinstance(process._rng, _MatlabCytokinesisRNG)
+    assert isinstance(process._rng.get_state(), int)  # Lehmer state is a plain int, never PCG64
+    assert not hasattr(process._rng, "bit_generator")  # np.random.Generator marker
+
+
+def test_rng_first_draw_matches_live_matlab_mcg16807_reference() -> None:
+    """Pin the exact first `.random()` value for `rng_seed=0` against a
+    LIVE MATLAB reference (not a generic Park & Miller "Minimal Standard"
+    textbook test vector -- see the M5000 seed-36 promotion fix,
+    STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md, for why the two differ). Real
+    `RandStream('mcg16807','Seed',uint32(0))` reports
+    `State==931316785` immediately after construction (NOT the naive
+    "seed 0 -> raw state 1" mapping the textbook vector implies), and its
+    first `rand()` draw is `0.21895918632809036` with resulting
+    `State==1523096582` -- live-verified 2026-09-05 in this worktree via
+    `scripts/tools/run_matlab_slot.ps1` (`tmp/probe_mcg16807_seed0_first_draw.m`).
+    A change to this value signals either a seed-mapping regression or a
+    reversion to a different (non-Karr-faithful) generator family.
+    """
+    process = KarrCytokinesisProcess({"rng_seed": 0})
+    first_draw = process._rng.random()
+    assert first_draw == pytest.approx(0.21895918632809036, rel=0.0, abs=1.0e-15)
+    assert process._rng.get_state() == 1523096582
+
+
+def test_rng_no_oracle_file_io_in_production_module() -> None:
+    """Anti-cheat (Rule 8, docs/prompts/FIX_TEMPLATE_L2_REPLAY.md): the
+    production module must never open, parse, or otherwise read any L2
+    oracle trace (`*_100ticks.mat`, `*_4000ticks.mat`, per-tick
+    `states_before`/`states_after`). The only file I/O in
+    `karr_cytokinesis.py` may target canonical model fixtures
+    (`Cytokinesis_flat.mat`, `FtsZRing.json`, `CellGeometry.json`) loaded
+    once at `__init__` time -- never a per-tick oracle path.
+    """
+    source = Path(_REPO_ROOT / "opencell" / "vivarium" / "karr_cytokinesis.py").read_text(
+        encoding="utf-8"
+    )
+    forbidden_patterns = ("_100ticks", "_4000ticks", "states_before", "states_after", "h5py")
+    for pattern in forbidden_patterns:
+        assert pattern not in source, f"L2.1 Rule 8 violation: found oracle marker {pattern!r}"
+
+
+def _load_real_ftsz_ring_payload() -> dict[str, Any]:
+    real_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "FtsZRing.json"
+    return json.loads(real_path.read_text(encoding="utf-8"))
+
+
+def _write_ftsz_ring_variant(tmp_path: Path, scalars: dict[str, Any]) -> Path:
+    payload = _load_real_ftsz_ring_payload()
+    payload["scalars"] = scalars
+    variant_path = tmp_path / "FtsZRing_variant.json"
+    variant_path.write_text(json.dumps(payload), encoding="utf-8")
+    return variant_path
+
+
+def test_missing_filament_length_fixture_keys_hard_fails(tmp_path: Path) -> None:
+    """Neither `fixture/filamentLengthInNm` nor
+    `fixture/numFtsZSubunitsPerNm` present in the FtsZRing fixture must
+    hard-fail construction -- there is no permitted 40.0nm literature
+    fallback (Anderson 2004) for a missing fixture value."""
+    real_scalars = dict(_load_real_ftsz_ring_payload()["scalars"])
+    del real_scalars["fixture/filamentLengthInNm"]
+    del real_scalars["fixture/numFtsZSubunitsPerNm"]
+    variant_path = _write_ftsz_ring_variant(tmp_path, real_scalars)
+
+    with pytest.raises(ValueError, match="filamentLengthInNm"):
+        KarrCytokinesisProcess({"ftsz_ring_fixture_path": str(variant_path)})
+
+
+@pytest.mark.parametrize("malformed_value", ["not-a-number", None, float("nan"), 0.0, -5.0])
+def test_malformed_filament_length_in_nm_hard_fails(tmp_path: Path, malformed_value: Any) -> None:
+    """A present-but-malformed (non-numeric, NaN, zero, or negative)
+    `fixture/filamentLengthInNm` must hard-fail, never silently coerce to
+    the 40.0nm literature default."""
+    real_scalars = dict(_load_real_ftsz_ring_payload()["scalars"])
+    real_scalars["fixture/filamentLengthInNm"] = malformed_value
+    variant_path = _write_ftsz_ring_variant(tmp_path, real_scalars)
+
+    with pytest.raises(ValueError, match="filamentLengthInNm"):
+        KarrCytokinesisProcess({"ftsz_ring_fixture_path": str(variant_path)})
+
+
+@pytest.mark.parametrize("malformed_value", ["not-a-number", None, float("nan"), 0.0, -0.23])
+def test_malformed_num_ftsz_subunits_per_nm_hard_fails(tmp_path: Path, malformed_value: Any) -> None:
+    """When `fixture/filamentLengthInNm` is absent but
+    `fixture/numFtsZSubunitsPerNm` is present and malformed, construction
+    must still hard-fail rather than falling back to 40.0nm."""
+    real_scalars = dict(_load_real_ftsz_ring_payload()["scalars"])
+    del real_scalars["fixture/filamentLengthInNm"]
+    real_scalars["fixture/numFtsZSubunitsPerNm"] = malformed_value
+    variant_path = _write_ftsz_ring_variant(tmp_path, real_scalars)
+
+    with pytest.raises(ValueError, match="numFtsZSubunitsPerNm"):
+        KarrCytokinesisProcess({"ftsz_ring_fixture_path": str(variant_path)})
+
+
+def test_real_fixture_derives_correct_filament_length_not_literature_default() -> None:
+    """Anti-regression for the ~2.2% naked-literal bug: the real fixture
+    value is 9/0.23nm, distinct from the literature default of 40.0nm."""
+    process = KarrCytokinesisProcess({})
+    assert process.default_filament_length_nm == pytest.approx(39.130434782608695, rel=0.0, abs=1.0e-12)
+    assert process.default_filament_length_nm != pytest.approx(40.0)

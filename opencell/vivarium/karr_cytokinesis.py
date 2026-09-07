@@ -24,6 +24,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.util.mcg16807_state_codec import draw_and_advance, seed_state
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/Cytokinesis_flat.mat"
 _DEFAULT_FTSZ_RING_FIXTURE_PATH = "data/karr_fixtures/per_process/FtsZRing.json"
 _DEFAULT_GEOMETRY_FIXTURE_PATH = "data/karr_fixtures/per_process/CellGeometry.json"
@@ -74,6 +76,21 @@ def _safe_float(value: object, default: float = 0.0) -> float:
     return float(numeric)
 
 
+def _require_positive_float(value: object, *, field: str) -> float:
+    """Parse ``value`` as a finite, strictly positive float or hard-fail.
+
+    No silent fallback is permitted here: a missing or malformed fixture
+    value must raise, never coerce to a hardcoded literature default.
+    """
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field} is not numeric: {value!r}") from exc
+    if not math.isfinite(numeric) or numeric <= 0.0:
+        raise ValueError(f"{field} must be a finite, positive number, got {value!r}")
+    return numeric
+
+
 def _safe_count(value: object) -> int:
     numeric = _safe_float(value, default=0.0)
     rounded = float(np.rint(numeric))
@@ -112,6 +129,68 @@ def _delta_dict(wids: list[str], before: np.ndarray, after: np.ndarray) -> dict[
     return out
 
 
+class _MatlabCytokinesisRNG:
+    """Adapter exposing the scalar ``.random()`` draw Cytokinesis uses.
+
+    Karr's ``Cytokinesis.evolveState`` draws exclusively via scalar
+    ``this.randStream.rand()`` calls (one draw per candidate edge, per
+    binding/dissociation/hydrolysis attempt -- see Cytokinesis.m
+    evolveState). Every process's ``this.randStream`` is constructed as
+    ``edu.stanford.covert.util.RandStream('mcg16807')``
+    (``data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/
+    Process.m:283``) -- a Lehmer/Park-Miller multiplicative congruential
+    generator, NOT the Mersenne Twister (``mt19937ar``) MATLAB's *default*
+    stream uses. Every process is seeded independently with the same
+    simulation-level seed (``Process.seedRandStream`` ->
+    ``this.randStream.reset(this.seed)``, called identically for every
+    process in ``Simulation.seedRandStream``, Simulation.m:454-459), so this
+    process's dedicated stream is seeded the same numeric value directly
+    (no per-process offset).
+
+    Root-cause correction (M5000 seed-36 promotion, tick=894): this class
+    previously wrapped ``karr_protein_decay_light._Mcg16807``, whose
+    ``get_state``/``set_state`` expose/consume the RAW Lehmer recurrence
+    value directly. Live MATLAB's real ``RandStream('mcg16807').State`` is
+    NOT that raw value -- it is a value-domain-encoded representation of it
+    (see ``opencell/util/mcg16807_state_codec.py`` for the transform and its
+    live-MATLAB derivation/verification). Reusing the raw-state shim meant
+    ``get_state()``/``set_state()`` round-tripped internally consistently
+    with themselves but never matched a REAL captured
+    ``randStreamState`` value from a real captured M-tick trace (the
+    tick=894 ledger failure: entry/exit states 36 -> 1363919953 are
+    unreachable under a raw, undecoded recurrence). This class now tracks
+    the state internally in the SAME encoded representation MATLAB itself
+    exposes, so ``get_state()``/``set_state()`` are directly comparable
+    to/settable-from a genuine captured trace value with no additional
+    transform needed by callers (e.g. the L2.1 randStream ledger).
+    ``karr_protein_decay_light._Mcg16807`` (used by ProteinDecay and other
+    processes) is deliberately left untouched -- this is a Cytokinesis-local
+    fix, not a shared-shim change, to avoid invalidating other processes'
+    already-accepted evidence provenance.
+    """
+
+    def __init__(self, seed: int) -> None:
+        self._state = seed_state(int(seed))
+        self.draw_count = 0
+
+    def random(self) -> float:
+        self.draw_count += 1
+        value, self._state = draw_and_advance(self._state)
+        return float(value)
+
+    def get_state(self) -> int:
+        """Current MATLAB-exposed (encoded) mcg16807 state -- numerically
+        identical to a genuine ``randStream.state`` capture. Used by the
+        L2.1 active-window ledger to compare/restore against a real
+        per-tick ``randStreamState`` capture."""
+        return int(self._state)
+
+    def set_state(self, state: int) -> None:
+        """Force the stream's state to an explicit captured (encoded)
+        value -- e.g. a real ``randStreamState`` reading."""
+        self._state = int(state)
+
+
 class KarrCytokinesisProcess(Process):
     """Faithful port of Karr ``Process_Cytokinesis.evolveState``."""
 
@@ -126,7 +205,7 @@ class KarrCytokinesisProcess(Process):
         "min_segregation_progress": 1.0,
         "gating_tolerance": 1.0e-9,
         # Canonical FtsZRing.m constant; override in tests if needed.
-        "filament_length_nm": 40.0,
+        "filament_length_nm": None,
         "rate_filament_binding_membrane": None,
         "rate_filament_dissociation": None,
         "rate_ftsz_gtp_hydrolysis": None,
@@ -139,7 +218,7 @@ class KarrCytokinesisProcess(Process):
             ftsz_ring_path=self.parameters["ftsz_ring_fixture_path"],
             geometry_path=self.parameters["geometry_fixture_path"],
         )
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        self._rng = _MatlabCytokinesisRNG(int(self.parameters["rng_seed"]))
 
         binding_override = self.parameters.get("rate_filament_binding_membrane")
         dissociation_override = self.parameters.get("rate_filament_dissociation")
@@ -152,10 +231,13 @@ class KarrCytokinesisProcess(Process):
         if hydrolysis_override is not None:
             self.rate_ftsz_gtp_hydrolysis = float(hydrolysis_override)
 
+        filament_length_override = self.parameters.get("filament_length_nm")
+        if filament_length_override is not None:
+            self.default_filament_length_nm = float(filament_length_override)
+
         self.gtp_wid = str(self.parameters["gtp_wid"])
         self.min_segregation_progress = float(self.parameters["min_segregation_progress"])
         self.gating_tolerance = float(self.parameters["gating_tolerance"])
-        self.default_filament_length_nm = float(self.parameters["filament_length_nm"])
 
         self._substrate_wids = list(self.fixture_substrate_wids)
 
@@ -206,6 +288,31 @@ class KarrCytokinesisProcess(Process):
         self.initial_num_residual_bent = _safe_count(
             ftsz_scalars.get("fixture/numResidualBent", 0)
         )
+
+        # FtsZRing.m: `filamentLengthInNm = numFtsZSubunitsPerFilament /
+        # numFtsZSubunitsPerNm`, a per-fixture constant (real value
+        # 9/0.23 = 39.130434782608695nm) -- NOT the literature default of
+        # 40nm [Anderson 2004]. No fallback literal is permitted here: a
+        # missing or malformed fixture value must hard-fail rather than
+        # silently substitute a value that does not match Karr's real
+        # trace (see `_require_positive_float`).
+        if "fixture/filamentLengthInNm" in ftsz_scalars:
+            self.default_filament_length_nm = _require_positive_float(
+                ftsz_scalars["fixture/filamentLengthInNm"],
+                field="FtsZRing fixture 'fixture/filamentLengthInNm'",
+            )
+        elif "fixture/numFtsZSubunitsPerNm" in ftsz_scalars:
+            num_subunits_per_nm = _require_positive_float(
+                ftsz_scalars["fixture/numFtsZSubunitsPerNm"],
+                field="FtsZRing fixture 'fixture/numFtsZSubunitsPerNm'",
+            )
+            self.default_filament_length_nm = self.num_ftsz_subunits_per_filament / num_subunits_per_nm
+        else:
+            raise ValueError(
+                "FtsZRing fixture is missing both 'fixture/filamentLengthInNm' "
+                "and 'fixture/numFtsZSubunitsPerNm'; filament_length_nm cannot "
+                "be derived without a silent 40.0nm fallback"
+            )
 
         self.initial_width = _safe_float(geometry_scalars.get("fixture/width", 0.0))
         self.initial_pinched_diameter = _safe_float(
@@ -342,7 +449,7 @@ class KarrCytokinesisProcess(Process):
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         water_allocated = self._allocated_count(allocated_state, self.water_wid)
-        water_requested = self._water_request(ring, geometry, chromosome_state)
+        water_requested = self._water_request(ring, current_enzymes)
 
         substrate_delta = {wid: 0.0 for wid in self.fixture_substrate_wids}
         segregated = self._segregated(chromosome_state)
@@ -485,22 +592,25 @@ class KarrCytokinesisProcess(Process):
     def _water_request(
         self,
         ring: dict[str, Any],
-        geometry: dict[str, Any],
-        chromosome_state: dict[str, Any],
+        enzymes: np.ndarray,
     ) -> int:
-        if not self._segregated(chromosome_state) or geometry["pinched"] or ring["numEdges"] <= 0:
-            return 0
-        potential_hydrolysis_edges = 0
-        if ring["numEdgesTwoBent"] == 0:
-            potential_hydrolysis_edges = ring["numEdges"]
-        elif (
-            ring["numEdgesTwoBent"] + ring["numEdgesTwoStraight"] == ring["numEdges"]
-            and ring["numEdgesTwoStraight"] > 0
-            and ring["numResidualBent"] == 0
-        ):
-            potential_hydrolysis_edges = ring["numEdgesTwoStraight"]
+        """Karr's literal ``Cytokinesis.calcResourceRequirements_Current``::
 
-        return 2 * ring["numFtsZSubunitsPerFilament"] * max(0, potential_hydrolysis_edges)
+            result(substrateIndexs_water) = ...
+                numFtsZSubunitsPerFilament * enzymes(enzymeIndexs_ftsZ_GTP_polymer);
+
+        Source: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/
+        +sim/+process/Cytokinesis.m (``calcResourceRequirements_Current``).
+        Unconditional: Karr's method has no segregation/pinched/ring-size
+        guard -- it is called every tick during the pre-``evolveState``
+        resource-request phase, using ``numFtsZSubunitsPerFilament`` (a
+        fixed constant loaded from the ``FtsZRing`` fixture) and the
+        *current* free ``ftsZ_GTP_polymer`` enzyme count, regardless of
+        whether the chromosome has segregated yet.
+        """
+        return int(ring["numFtsZSubunitsPerFilament"]) * int(
+            enzymes[self.enzyme_index_ftsz_gtp_polymer]
+        )
 
     def _phase_bind_first_and_second_straight(
         self,

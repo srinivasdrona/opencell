@@ -34,7 +34,7 @@ EXPECTED_ACTIVE_WINDOW_VERDICTS = {
     "RibosomeAssembly": "GENUINE",
     "ChromosomeSegregation": "GENUINE",
     "TranscriptionalRegulation": active_windows.CLASS_CODE_GAP,
-    "Cytokinesis": active_windows.CLASS_CODE_GAP,
+    "Cytokinesis": "GENUINE",
     "DNADamage": active_windows.CLASS_CODE_GAP,
     "HostInteraction": active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
 }

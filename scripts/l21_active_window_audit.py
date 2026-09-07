@@ -42,6 +42,10 @@ from l2_replay_common import (  # type: ignore
 )
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, _read_matlab_dataset
+from scripts.l2_event.launcher import (
+    _read_dnadamage_source_metadata,
+    current_genuine_dnadamage_source,
+)
 
 TARGET_PROCESSES = (
     "DNARepair",
@@ -56,6 +60,15 @@ TARGET_PROCESSES = (
     "RNAModification",
     "RibosomeAssembly",
 )
+
+# Processes whose accepted EXISTING_WINDOW_PASS manifest row MUST carry a
+# dec-005 DNADamage source-hash binding (extract_per_process_traces_v2.m
+# writes this metadata unconditionally as of commit 153d726; only traces
+# extracted with that extractor version or later have it). Currently just
+# Cytokinesis's M5000 seed-36 promotion (STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md
+# Update 5) -- a missing or mismatched binding hard-fails verification,
+# it is never silently skipped.
+PROCESSES_REQUIRING_DNADAMAGE_SOURCE_BINDING = frozenset({"Cytokinesis"})
 
 CLASS_EXISTING_WINDOW_PASS = "EXISTING_WINDOW_PASS"
 CLASS_CODE_GAP = "CODE_GAP"
@@ -93,6 +106,12 @@ DIRECT_SPECIAL_TRACES: dict[str, tuple[Path, ...]] = {
         _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "ChromosomeSegregation_100ticks.mat",
     ),
     "Cytokinesis": (
+        # M5000 seed-36 (STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md Update 5): the
+        # task-mandated promotion trace -- extracted with the randStream-
+        # state-capturing, dec-005 DNADamage-source-hash-bound extractor
+        # (commit 153d726+), listed FIRST so `_choose_earliest_active`'s
+        # duplicate-hash bookkeeping sees it before the older seed-0 trace.
+        _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s036" / "Cytokinesis_5000ticks.mat",
         _REPO_ROOT / "data" / "m1_sources" / "karr_native" / "per_process_traces_v2_event_s000" / "Cytokinesis_4000ticks.mat",
     ),
     "RNAModification": (
@@ -900,18 +919,22 @@ def _event_candidates_from_manifest(manifest_path: Path) -> list[tuple[Path, str
 def _special_candidates(process_name: str) -> list[tuple[Path, str | None, str | None]]:
     candidates: list[tuple[Path, str | None, str | None]] = []
     if process_name == "Cytokinesis":
+        # Repo-relative only (main-safe): `DIRECT_SPECIAL_TRACES` already
+        # covers every accepted Cytokinesis trace (seed-0 M4000, seed-36
+        # M5000). The prior fallback here re-derived candidates by
+        # prefixing `CYTOKINESIS_EVENT_MANIFEST` rows with a hardcoded
+        # absolute path into a long-abandoned session worktree
+        # (`/mnt/e/opencell-worktrees/l2-event-cytokinesis-20260805`) --
+        # that path never resolves on a fresh clone/main checkout, so it
+        # was dead weight at best and a silent-mismatch risk at worst
+        # (candidate_sha vs. recorded_sha would never even be reached
+        # since the path itself never exists outside this one session).
+        # `CYTOKINESIS_EVENT_MANIFEST` remains the tracked, hand-auditable
+        # hash-provenance record for both traces (see the file itself);
+        # it is no longer read here to synthesize a second, worktree-bound
+        # candidate path.
         for path in DIRECT_SPECIAL_TRACES.get(process_name, ()):
             candidates.append((path, None, "local_event_window"))
-        payload = _load_json(CYTOKINESIS_EVENT_MANIFEST)
-        for row in payload.get("inputs", []):
-            rel = row["path"]
-            candidates.append(
-                (
-                    Path("/mnt/e/opencell-worktrees/l2-event-cytokinesis-20260805") / rel,
-                    row.get("sha256"),
-                    CYTOKINESIS_EVENT_MANIFEST.name,
-                )
-            )
         return candidates
     if process_name == "RibosomeAssembly":
         payload = _load_json(RIBOSOME_EVENT_MANIFEST)
@@ -1277,20 +1300,93 @@ def _honest_replay(
         return bit_result, honest_result
 
 
+def _dnadamage_source_binding_status(process_name: str, trace_path: Path) -> dict[str, Any] | None:
+    """Fail-closed dec-005 DNADamage source-hash-binding check for a chosen
+    trace. Returns ``None`` for every process NOT in
+    ``PROCESSES_REQUIRING_DNADAMAGE_SOURCE_BINDING`` (a genuine no-op, not a
+    skip -- those processes never had this requirement). For a process that
+    DOES require it, this ALWAYS returns a dict with a ``verified`` bool and
+    either the matched sha or an explicit ``reason`` -- a missing capture,
+    an unreadable trace, or a resolved-identity mismatch against the
+    current repo's ``DNADamage.m`` are all surfaced here, never silently
+    treated as passing."""
+    if process_name not in PROCESSES_REQUIRING_DNADAMAGE_SOURCE_BINDING:
+        return None
+    try:
+        trace_meta = _read_dnadamage_source_metadata(trace_path)
+    except (OSError, ValueError, KeyError) as exc:
+        return {
+            "verified": False,
+            "reason": (
+                f"failed to read dec-005 DNADamage source-hash-binding metadata from "
+                f"{trace_path}: {type(exc).__name__}: {exc}"
+            ),
+        }
+    resolved = trace_meta.get("dnadamage_source_resolved_sha256")
+    if resolved is None:
+        return {
+            "verified": False,
+            "reason": (
+                "trace metadata.dnadamage_source_resolved_sha256 is missing -- this trace predates "
+                "the dec-005 source-hash-binding extractor (commit 153d726) and cannot serve as "
+                "authoritative evidence for a process that requires this binding"
+            ),
+        }
+    try:
+        expected = current_genuine_dnadamage_source()
+    except (OSError, ValueError, KeyError) as exc:
+        return {
+            "verified": False,
+            "reason": f"could not recompute the current genuine DNADamage source identity: {type(exc).__name__}: {exc}",
+        }
+    # `current_genuine_dnadamage_source()` (main API, kept as-is) returns
+    # `source_sha256_lf_normalized`/`patched_sha256_lf_normalized` plus
+    # `overlay_required`, not a precomputed "resolved" key -- the resolved
+    # value is whichever of the two the overlay flag selects (see that
+    # function's own docstring).
+    expected_resolved = (
+        expected.get("patched_sha256_lf_normalized")
+        if expected.get("overlay_required")
+        else expected.get("source_sha256_lf_normalized")
+    )
+    if resolved != expected_resolved:
+        return {
+            "verified": False,
+            "reason": (
+                f"trace metadata.dnadamage_source_resolved_sha256={resolved!r} != current repo "
+                f"resolved identity {expected_resolved!r} -- this trace's whole-simulation trajectory "
+                "resolved a different DNADamage.m source variant than the current worktree requires"
+            ),
+        }
+    return {
+        "verified": True,
+        "trace_resolved_sha256": resolved,
+        "current_resolved_sha256": expected_resolved,
+        "overlay_required": expected.get("overlay_required"),
+    }
+
+
 def _classify_live_trace_candidate(
     process_name: str,
     candidate: TraceCandidate,
     *,
     progress: bool = False,
-) -> tuple[BitIdentityResult | None, HonestReplayResult | None, str]:
+) -> tuple[BitIdentityResult | None, HonestReplayResult | None, str, dict[str, Any] | None]:
     if candidate.first_active_tick is None:
-        return None, None, CLASS_MISSING_ACTIVE_EXTRACTION
+        return None, None, CLASS_MISSING_ACTIVE_EXTRACTION, None
+    dnadamage_binding = _dnadamage_source_binding_status(process_name, Path(candidate.path))
     bit_identity, honest = _honest_replay(process_name=process_name, trace_path=Path(candidate.path), progress=progress)
     if honest.oc_active_on_karr_active_ticks == 0:
-        return bit_identity, honest, CLASS_CODE_GAP
+        return bit_identity, honest, CLASS_CODE_GAP, dnadamage_binding
+    if dnadamage_binding is not None and not dnadamage_binding["verified"]:
+        # Fail closed: a trace whose dec-005 DNADamage source-hash binding
+        # is missing or mismatched is never promoted to
+        # EXISTING_WINDOW_PASS regardless of its bit-identity outcome --
+        # the binding check is never silently skipped.
+        return bit_identity, honest, CLASS_CODE_GAP, dnadamage_binding
     if bit_identity.pass_all_compared_ticks:
-        return bit_identity, honest, CLASS_EXISTING_WINDOW_PASS
-    return bit_identity, honest, CLASS_CODE_GAP
+        return bit_identity, honest, CLASS_EXISTING_WINDOW_PASS, dnadamage_binding
+    return bit_identity, honest, CLASS_CODE_GAP, dnadamage_binding
 
 
 def _manifest_scalars_match(recorded: Any, actual: Any) -> bool:
@@ -1405,6 +1501,7 @@ def verify_active_window_manifest_row(
         "bit_identity": None,
         "honest_replay": None,
         "replay_verification": None,
+        "dnadamage_source_binding": None,
     }
     if not manifest_path.exists():
         result["failure_reason"] = f"manifest file not found: {manifest_path.as_posix()}"
@@ -1517,12 +1614,13 @@ def verify_active_window_manifest_row(
         result["verification_status"] = MANIFEST_VERIFY_EXISTING_WINDOW_PASS
         return result
 
-    bit_identity, honest_replay, fresh_classification = _classify_live_trace_candidate(
+    bit_identity, honest_replay, fresh_classification, dnadamage_binding = _classify_live_trace_candidate(
         process_name,
         live_candidate,
         progress=progress,
     )
     result["fresh_classification"] = fresh_classification
+    result["dnadamage_source_binding"] = dnadamage_binding
     if bit_identity is not None:
         result["bit_identity"] = asdict(bit_identity)
     if honest_replay is not None:
@@ -1552,6 +1650,57 @@ def _choose_earliest_active(candidates: list[TraceCandidate]) -> TraceCandidate 
     return active[0]
 
 
+# Processes whose L2.1 manifest evidence must be anchored on one specific,
+# task-mandated trace rather than whichever candidate happens to have the
+# numerically-earliest active tick. Currently just Cytokinesis's M5000
+# seed-36 promotion trace (STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md Update 5):
+# it is the only Cytokinesis trace with per-tick randStream-state capture
+# and a dec-005 DNADamage source-hash binding, both required for GENUINE
+# promotion -- the older seed-0 M4000 trace's tick=226 onset is numerically
+# earlier and would otherwise win `_choose_earliest_active`'s sort, silently
+# substituting weaker (unbound, uncaptured) evidence for the mandated trace.
+PREFERRED_TRACE_MATCH: dict[str, tuple[int, int]] = {
+    # process_name -> (rng_seed, n_ticks) of the exact required trace.
+    "Cytokinesis": (36, 5000),
+}
+
+
+def _choose_preferred_or_earliest_active(
+    process_name: str,
+    candidates: list[TraceCandidate],
+) -> TraceCandidate | None:
+    preferred = PREFERRED_TRACE_MATCH.get(process_name)
+    if preferred is not None:
+        wanted_seed, wanted_n_ticks = preferred
+        for candidate in candidates:
+            if candidate.rng_seed == wanted_seed and candidate.n_ticks == wanted_n_ticks:
+                if candidate.first_active_tick is None:
+                    # The mandated trace IS present in this scan but shows no
+                    # active tick. Hard-fail here rather than falling through
+                    # to `_choose_earliest_active`, which would silently
+                    # substitute a weaker (unbound/uncaptured) candidate --
+                    # exactly the "present but inactive" substitution this
+                    # function's docstring/comment above already claims never
+                    # happens. A present-but-inactive mandated trace almost
+                    # always means the extraction/window parameters are wrong
+                    # (e.g. onset tick miscalculated), not that no mandated
+                    # evidence exists; that must be investigated and fixed,
+                    # never silently papered over with a different trace.
+                    raise RuntimeError(
+                        f"{process_name}: mandated preferred trace (rng_seed={wanted_seed}, "
+                        f"n_ticks={wanted_n_ticks}) at {candidate.path} is present but has "
+                        "first_active_tick=None (no observed activity). Refusing to silently "
+                        "fall back to the generic earliest-active heuristic and substitute a "
+                        "different, weaker trace. Fix the mandated trace/extraction or the "
+                        "PREFERRED_TRACE_MATCH entry."
+                    )
+                return candidate
+        # Falls through to the generic heuristic only if the mandated
+        # trace is genuinely absent from this scan -- never silently
+        # substitutes another trace when the mandated one IS present.
+    return _choose_earliest_active(candidates)
+
+
 def _classify_process(
     process_name: str,
     *,
@@ -1560,7 +1709,7 @@ def _classify_process(
     skip_replay: bool = False,
 ) -> dict[str, Any]:
     candidates = _find_trace_candidates(process_name, progress=progress, candidate_limit=candidate_limit)
-    chosen = _choose_earliest_active(candidates)
+    chosen = _choose_preferred_or_earliest_active(process_name, candidates)
 
     row: dict[str, Any] = {
         "process": process_name,
@@ -1573,6 +1722,7 @@ def _classify_process(
         "classification": None,
         "existing_trace_suffices": False,
         "extraction_request": None,
+        "dnadamage_source_binding": None,
     }
 
     if chosen is None:
@@ -1592,7 +1742,7 @@ def _classify_process(
             file=sys.stderr,
             flush=True,
         )
-    bit_identity, honest, classification = _classify_live_trace_candidate(
+    bit_identity, honest, classification, dnadamage_binding = _classify_live_trace_candidate(
         process_name,
         chosen,
         progress=progress,
@@ -1602,6 +1752,7 @@ def _classify_process(
     row["honest_replay"] = None if honest is None else asdict(honest)
     row["existing_trace_suffices"] = True
     row["classification"] = classification
+    row["dnadamage_source_binding"] = dnadamage_binding
 
     if row["classification"] == CLASS_CODE_GAP:
         row["code_gap_anchor"] = {

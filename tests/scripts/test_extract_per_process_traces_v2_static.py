@@ -270,13 +270,72 @@ def test_genuine_mnrnd_provider_metadata_written_for_fixed_and_anchor_not_legacy
 
 
 def test_dnadamage_overlay_provenance_is_written_into_trace_metadata():
+    """dec-005 (source-hash binding), ported process-local into this
+    worktree pending the catalog-provenance migration landing on main
+    (see decisions/dec-005-full-simulation-source-hash-binding.md in
+    E:\\opencell-worktrees\\fix-dual-cyt-window). DNADamage is one of the
+    28 processes in Karr's shared per-tick scheduler, so its resolved
+    source identity must be bound into EVERY fixed/anchor trace -- not
+    gated on `canonical_name == 'DNADamage'` (that narrower gate was the
+    dec-005-named blind spot for this single-process extractor; this
+    proves it is now closed for any target process, Cytokinesis
+    included)."""
     source = _read_source()
 
     assert source.count("metadata.dnadamage_source_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized;") == 1
     assert source.count("metadata.dnadamage_source_patched_sha256 = dnadamage_overlay.patched_sha256_lf_normalized;") == 1
     assert source.count("metadata.dnadamage_source_resolved_sha256 = dnadamage_overlay.resolved_sha256_lf_normalized;") == 1
     assert source.count("metadata.dnadamage_source_resolved_path = dnadamage_overlay.resolved_path;") == 1
-    assert "if strcmp(canonical_name, 'DNADamage')" in source
+    assert source.count("metadata.dnadamage_overlay_required = logical(dnadamage_overlay.overlay_required);") == 1
+    # The narrower single-process gate must be gone -- these assignments
+    # must no longer be nested inside `if strcmp(canonical_name, 'DNADamage')`.
+    assert "if strcmp(canonical_name, 'DNADamage')" not in source
+
+    # All five assignments must live inside the SAME fixed/anchor guard as
+    # the genuine-mnrnd-provider metadata (no separate/duplicated guard).
+    guard_match = re.search(
+        r"if strcmp\(window_contract, 'fixed'\) \|\| strcmp\(window_contract, 'anchor'\)\n"
+        r"(.*?)\n\s*end\n",
+        source,
+        re.DOTALL,
+    )
+    assert guard_match is not None, "could not locate the fixed/anchor metadata guard block"
+    guard_body = guard_match.group(1)
+    assert "metadata.dnadamage_source_resolved_sha256" in guard_body
+    assert "metadata.dnadamage_overlay_required" in guard_body
+
+
+def test_rand_stream_state_captured_at_both_tap_points():
+    """Task requirement: capture the target process's own randStream
+    state in states_before (and states_after, for audit) per tick, so a
+    fresh source-bound event-window trace carries a hash-bound,
+    per-tick RNG-state ledger sufficient to restore/verify an isolated OC
+    replay's stream state exactly (never inferred)."""
+    source = _read_source()
+
+    assert source.count("function state_vec = capture_rand_stream_state(mod)") == 1
+    assert "state_vec = double(mod.randStream.state(:));" in source
+    assert source.count("before_tick.randStreamState = capture_rand_stream_state(mod);") == 1
+    assert source.count("after_tick.randStreamState = capture_rand_stream_state(mod);") == 1
+
+    # Both capture call sites must sit inside evolve_state_with_tap's
+    # `if proc_idx == target_idx` taps, immediately alongside the existing
+    # snapshot_from_process/merge_event_observables calls -- never
+    # elsewhere, and never gated on anchor_opts (so both the fixed and
+    # anchor window paths get the same per-tick RNG-state witness). Uses
+    # plain substring position ordering (never gets confused by nested
+    # `if ~isempty(anchor_opts) ... end` blocks the way a naive "first
+    # standalone end" regex would).
+    idx_before_snapshot = source.index("before_tick = snapshot_from_process(mod, snapshot_props);")
+    idx_before_capture = source.index("before_tick.randStreamState = capture_rand_stream_state(mod);")
+    idx_evolve_state = source.index("mod.evolveState();")
+    idx_after_snapshot = source.index("after_tick = snapshot_from_process(mod, snapshot_props);")
+    idx_after_capture = source.index("after_tick.randStreamState = capture_rand_stream_state(mod);")
+
+    assert idx_before_snapshot < idx_before_capture < idx_evolve_state < idx_after_snapshot < idx_after_capture, (
+        "randStreamState capture call sites are not correctly ordered around "
+        "evolveState() relative to the existing before/after snapshot calls"
+    )
 
 
 def test_pick_snapshot_properties_includes_transcriptional_regulation_binding_surfaces():
