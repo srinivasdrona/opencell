@@ -481,9 +481,9 @@
       "existing_trace_suffices": true,
       "activity_predicate": "source-faithful host boolean deltas (adherence/TLR/NFkB/inflammatory-response)",
       "source": {
-        "path": "/mnt/e/opencell-worktrees/fix-l21-host-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
-        "repo_relative_hint": "opencell-worktrees/fix-l21-host-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
-        "sha256": "5eaa308f2b7fe4dbd5e96c698cd7c5c978cd1d65bc28e680078346e76d4507d2",
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
+        "repo_relative_hint": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat",
+        "sha256": "8d2a2c6ed6f38cf2da5aa683d4370b8e11a6096463b7ec814ad08e588b0c093e",
         "trace_family": "event_window",
         "source_manifest": "local_event_window"
       },
@@ -511,7 +511,7 @@
             "override": "MG_218_MONOMER=0",
             "source": {
               "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_neg_adherence_s000/HostInteraction_5ticks.mat",
-              "sha256": "d0003f61daad027d0b8635d9485ae62f20eb68874517c421067bf10693f89209"
+              "sha256": "e109c356ccded30798a15ee674657184eef9f0ff341e15f4bf9b6bb187fc0540"
             },
             "predicted_and_actual": {
               "host_attached": false,
@@ -527,7 +527,7 @@
             "override": "MG_075_MONOMER=0, MG_149_MONOMER=0, MG_309_MONOMER=0, MG_412_MONOMER=0, MG_410_411_412_PENTAMER=0",
             "source": {
               "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_partial_adherent_no_signal_s000/HostInteraction_5ticks.mat",
-              "sha256": "d589057ed07b3a1744560d7fae889eea547442f2c2d04c2db4795105101982b0"
+              "sha256": "d56d822640cabb1622d9d8545af4ae409284bac9f873bff9da72778081473f6f"
             },
             "predicted_and_actual": {
               "host_attached": true,
@@ -543,7 +543,7 @@
             "override": "MG_309_MONOMER=0",
             "source": {
               "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_tlr12_path_s000/HostInteraction_5ticks.mat",
-              "sha256": "9926f3f23a4aa221ca43d65433e01969390c6a370867aa6bedd159b43b32f891"
+              "sha256": "d6fbaffa1ebdbb1d2fbfcad59742724c88b0a11532f7e8c436d7073dd0b779ef"
             },
             "predicted_and_actual": {
               "host_attached": true,
@@ -559,7 +559,7 @@
             "override": "MG_149_MONOMER=0, MG_412_MONOMER=0, MG_410_411_412_PENTAMER=0",
             "source": {
               "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_tlr26_path_s000/HostInteraction_5ticks.mat",
-              "sha256": "ea000bb2e9f1d08d533b7f41d86853082fe8af8fffac9512a3bfa8b4d57d6155"
+              "sha256": "fcb1154c1f661cd93a3c2f13735621de6ffeb3ed6cc0c97a2e59e93b75d674e8"
             },
             "predicted_and_actual": {
               "host_attached": true,
@@ -575,7 +575,7 @@
             "override": "MG_149_MONOMER=0, MG_309_MONOMER=0, MG_412_MONOMER=0, MG_410_411_412_PENTAMER=0",
             "source": {
               "path": "data/m1_sources/karr_native/per_process_traces_v2_host_condition_antigen_only_s000/HostInteraction_5ticks.mat",
-              "sha256": "5ad7872b8ed1c1bb2446e0e90007759b73314297ba265107cd6d03c6daa5b606"
+              "sha256": "f44509c5d8d1f5598244489781c016057cf4555a8eb3006b49ec2f47f9964d1a"
             },
             "predicted_and_actual": {
               "host_attached": true,

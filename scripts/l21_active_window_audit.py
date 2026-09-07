@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 import math
+import re
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
@@ -1430,6 +1431,51 @@ def _trace_window_mismatch_reason(row: dict[str, Any], candidate: TraceCandidate
     return None
 
 
+_SKIPPED_SUMMARY_RE = re.compile(r"(\d+)\s+skipped")
+
+
+def _run_pytest_nodeid(nodeid: str) -> dict[str, Any]:
+    """Run one pytest nodeid in a subprocess and report pass/fail, treating
+    a SKIPPED outcome as a failure (not a pass). pytest's own exit code is
+    0 for both "all passed" and "all skipped" (skips never fail a run by
+    default), so `returncode == 0` alone cannot distinguish genuine
+    evidence from a silently-skipped claim -- e.g. a manifest row claiming
+    EXISTING_WINDOW_PASS whose backing trace artifact is missing (gitignored
+    data not present in a fresh clone) would have its replay test skip
+    cleanly, and a returncode-only check would wrongly report the row as
+    re-verified. Any nonzero "N skipped" in the summary line is therefore
+    treated as a hard failure here."""
+    completed = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", nodeid],
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    stdout_tail = "\n".join(line for line in completed.stdout.strip().splitlines()[-20:] if line)
+    stderr_tail = "\n".join(line for line in completed.stderr.strip().splitlines()[-20:] if line)
+    skip_match = _SKIPPED_SUMMARY_RE.search(completed.stdout)
+    skipped_count = int(skip_match.group(1)) if skip_match else 0
+    passed = completed.returncode == 0 and skipped_count == 0
+    result = {
+        "passed": passed,
+        "nodeid": nodeid,
+        "returncode": completed.returncode,
+        "skipped_count": skipped_count,
+        "stdout_tail": stdout_tail,
+        "stderr_tail": stderr_tail,
+        "command": f"{sys.executable} -m pytest -q {nodeid}",
+    }
+    if not passed and skipped_count > 0 and completed.returncode == 0:
+        result["error"] = (
+            f"{skipped_count} test(s) SKIPPED (not passed) for nodeid {nodeid!r} -- a skip is "
+            "treated as a verification failure, since a manifest row claiming genuine evidence "
+            "whose backing test silently skips (e.g. missing artifact) must not be reported as "
+            "re-verified"
+        )
+    return result
+
+
 def _rerun_manifest_replay_nodeid(row: dict[str, Any]) -> dict[str, Any]:
     replay_evidence = row.get("replay_evidence")
     if not isinstance(replay_evidence, dict):
@@ -1451,24 +1497,176 @@ def _rerun_manifest_replay_nodeid(row: dict[str, Any]) -> dict[str, Any]:
             "stderr_tail": "",
             "error": "manifest row replay_evidence.nodeid must be a non-empty string",
         }
+    return _run_pytest_nodeid(nodeid)
 
-    completed = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", nodeid],
-        cwd=_REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    stdout_tail = "\n".join(line for line in completed.stdout.strip().splitlines()[-20:] if line)
-    stderr_tail = "\n".join(line for line in completed.stderr.strip().splitlines()[-20:] if line)
-    return {
-        "passed": completed.returncode == 0,
-        "nodeid": nodeid,
-        "returncode": completed.returncode,
-        "stdout_tail": stdout_tail,
-        "stderr_tail": stderr_tail,
-        "command": f"{sys.executable} -m pytest -q {nodeid}",
+
+# Reverse of CUSTOM_VECTOR_SURFACES[<process>]: maps the OC store field name
+# (e.g. "host_attached") back to the trace observable name (e.g.
+# "isBacteriumAdherent") used to read a genuine states_after value. Built
+# generically so any future process using the same discriminating_conditions
+# evidence shape (not just HostInteraction) is covered without new code.
+def _oc_field_to_observable(process_name: str) -> dict[str, str]:
+    surfaces = CUSTOM_VECTOR_SURFACES.get(process_name, {})
+    out: dict[str, str] = {}
+    for observable, path in surfaces.items():
+        if len(path) == 2 and path[0] == "cell":
+            out[path[1]] = observable
+    return out
+
+
+def verify_discriminating_conditions(
+    row: dict[str, Any],
+    manifest_path: Path,
+    process_name: str,
+) -> dict[str, Any]:
+    """Independently re-verify a manifest row's `discriminating_conditions`
+    evidence block (see docs/phase_f/l2_1/HOSTINTERACTION_CONDITION_PREREGISTRATION.md
+    for what this evidence proves and why the positive-control-only window
+    was rejected as degenerate). For EVERY condition entry, this:
+
+      1. Locates the condition's source trace (repo-relative path,
+         resolved against _REPO_ROOT so this works identically from any
+         worktree/checkout -- see the "main-relative manifest paths" note
+         on the top-level `source` object).
+      2. Verifies the recorded sha256 against the actual file bytes.
+      3. Re-reads the genuine states_after host-boolean values directly
+         from the trace (tick 0) and compares them field-by-field against
+         the manifest's recorded `predicted_and_actual` dict -- catching a
+         hand-typed manifest value that silently drifted from the real
+         trace data.
+      4. Re-runs EVERY nodeid in `discriminating_conditions.replay_evidence.
+         nodeids` (not just one) via `_run_pytest_nodeid`, which treats a
+         SKIPPED outcome as a failure.
+
+    Returns a dict with an overall "passed" bool and a per-condition
+    breakdown, fail-closed: any missing field, missing file, sha mismatch,
+    value mismatch, or skipped/failed nodeid makes the whole result fail.
+    """
+    result: dict[str, Any] = {
+        "passed": False,
+        "conditions": [],
+        "nodeid_results": [],
+        "failure_reason": None,
     }
+    block = row.get("discriminating_conditions")
+    if not isinstance(block, dict):
+        result["failure_reason"] = "manifest row missing discriminating_conditions object"
+        return result
+
+    conditions = block.get("conditions")
+    if not isinstance(conditions, list) or not conditions:
+        result["failure_reason"] = "discriminating_conditions.conditions must be a non-empty list"
+        return result
+
+    field_to_observable = _oc_field_to_observable(process_name)
+    if not field_to_observable:
+        result["failure_reason"] = f"no CUSTOM_VECTOR_SURFACES cell-field mapping registered for {process_name}"
+        return result
+
+    all_conditions_ok = True
+    for condition in conditions:
+        condition_id = condition.get("id") if isinstance(condition, dict) else None
+        entry: dict[str, Any] = {"id": condition_id, "ok": False, "failure_reason": None}
+        source = condition.get("source") if isinstance(condition, dict) else None
+        predicted_and_actual = condition.get("predicted_and_actual") if isinstance(condition, dict) else None
+        if not isinstance(source, dict) or not isinstance(predicted_and_actual, dict) or not condition_id:
+            entry["failure_reason"] = "condition entry missing id/source/predicted_and_actual"
+            result["conditions"].append(entry)
+            all_conditions_ok = False
+            continue
+
+        raw_path = source.get("path")
+        recorded_sha256 = source.get("sha256")
+        if not raw_path or not recorded_sha256:
+            entry["failure_reason"] = "condition source must have non-empty path and sha256"
+            result["conditions"].append(entry)
+            all_conditions_ok = False
+            continue
+
+        source_path = Path(raw_path)
+        if not source_path.is_absolute():
+            source_path = (_REPO_ROOT / source_path).resolve()
+        entry["source_path"] = source_path.as_posix()
+        if not source_path.exists():
+            entry["failure_reason"] = f"condition source trace missing: {source_path.as_posix()}"
+            result["conditions"].append(entry)
+            all_conditions_ok = False
+            continue
+
+        actual_sha256 = _sha256(source_path)
+        entry["source_actual_sha256"] = actual_sha256
+        if actual_sha256 != recorded_sha256:
+            entry["failure_reason"] = (
+                f"condition source sha256 mismatch: recorded={recorded_sha256} actual={actual_sha256}"
+            )
+            result["conditions"].append(entry)
+            all_conditions_ok = False
+            continue
+
+        try:
+            with h5py.File(source_path, "r") as trace:
+                actual_values: dict[str, bool] = {}
+                for field, observable in field_to_observable.items():
+                    vec = _read_numeric_vector(trace, "states_after", observable, 0)
+                    if vec is None or vec.size == 0:
+                        entry["failure_reason"] = f"trace missing states_after/{observable} at tick 0"
+                        break
+                    actual_values[field] = bool(float(vec[0]))
+                else:
+                    mismatches = {
+                        field: {"recorded": predicted_and_actual.get(field), "actual": actual_values.get(field)}
+                        for field in field_to_observable
+                        if bool(predicted_and_actual.get(field)) != actual_values.get(field)
+                    }
+                    if mismatches:
+                        entry["failure_reason"] = f"predicted_and_actual mismatch vs genuine trace: {mismatches}"
+                    else:
+                        entry["ok"] = True
+        except OSError as exc:
+            entry["failure_reason"] = f"failed to read trace: {exc}"
+
+        result["conditions"].append(entry)
+        if not entry["ok"]:
+            all_conditions_ok = False
+
+    replay_evidence = block.get("replay_evidence")
+    nodeids = replay_evidence.get("nodeids") if isinstance(replay_evidence, dict) else None
+    if not isinstance(nodeids, list) or not nodeids:
+        result["failure_reason"] = (
+            result["failure_reason"] or "discriminating_conditions.replay_evidence.nodeids must be a non-empty list"
+        )
+        return result
+
+    if not all_conditions_ok:
+        # Already know the overall result is a fail -- skip the (relatively
+        # expensive, one pytest subprocess per nodeid) reruns below. This
+        # keeps tamper/missing-condition detection cheap and fast; the
+        # nodeid reruns only run when the cheap per-condition checks above
+        # already passed.
+        result["passed"] = False
+        failing_conditions = [c["id"] for c in result["conditions"] if not c["ok"]]
+        result["failure_reason"] = (
+            f"discriminating_conditions verification failed before nodeid reruns: "
+            f"failing_conditions={failing_conditions}"
+        )
+        return result
+
+    all_nodeids_ok = True
+    for nodeid in nodeids:
+        nodeid_result = _run_pytest_nodeid(nodeid)
+        result["nodeid_results"].append(nodeid_result)
+        if not nodeid_result["passed"]:
+            all_nodeids_ok = False
+
+    result["passed"] = all_conditions_ok and all_nodeids_ok
+    if not result["passed"] and result["failure_reason"] is None:
+        failing_conditions = [c["id"] for c in result["conditions"] if not c["ok"]]
+        failing_nodeids = [r["nodeid"] for r in result["nodeid_results"] if not r["passed"]]
+        result["failure_reason"] = (
+            f"discriminating_conditions verification failed: "
+            f"failing_conditions={failing_conditions} failing_nodeids={failing_nodeids}"
+        )
+    return result
 
 
 def verify_active_window_manifest_row(
@@ -1494,6 +1692,7 @@ def verify_active_window_manifest_row(
         "bit_identity": None,
         "honest_replay": None,
         "replay_verification": None,
+        "discriminating_conditions_verification": None,
     }
     if not manifest_path.exists():
         result["failure_reason"] = f"manifest file not found: {manifest_path.as_posix()}"
@@ -1602,6 +1801,15 @@ def verify_active_window_manifest_row(
                     f"recorded={recorded_classification} fresh={result['fresh_classification']}"
                 )
             return result
+
+        if isinstance(row.get("discriminating_conditions"), dict):
+            discriminating_verification = verify_discriminating_conditions(row, manifest_path, process_name)
+            result["discriminating_conditions_verification"] = discriminating_verification
+            if not discriminating_verification["passed"]:
+                result["fresh_classification"] = CLASS_CODE_GAP
+                result["failure_reason"] = discriminating_verification["failure_reason"]
+                return result
+
         result["verified"] = True
         result["verification_status"] = MANIFEST_VERIFY_EXISTING_WINDOW_PASS
         return result

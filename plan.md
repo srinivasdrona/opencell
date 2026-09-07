@@ -59,6 +59,56 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-08 ~04:00 IST) — supersedes the 2026-09-08
+~00:45 IST block below (HostInteraction containment/verifier-depth
+closure, second Opus review round):**
+
+- Same worktree/branch
+  (`E:\opencell-worktrees\fix-l21-host-active`,
+  `agent/l21-host-active-fix-20260904`). **Still not pushed/merged.**
+- Opus rejected the discriminating-conditions round on 4 further
+  blockers, all now closed (full writeup:
+  `docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md` section
+  12; `STATUS_L21_HOSTINTERACTION_FIX.md` "Containment + verifier-depth
+  round"):
+  1. **Real bug found and fixed**: `Process.m`'s `copyToState()`
+     unconditionally writes `this.enzymes`/`this.boundEnzymes` back into
+     the SHARED global state -- the enzyme-override machinery added last
+     round would have corrupted the global monomer/complex pool for
+     every other process once an override was active. Fixed via a
+     capture/restore pair (`apply_process_enzyme_overrides` /
+     `restore_process_enzyme_overrides`) bracketing every
+     `copyToState()` call site, PLUS a runtime containment assertion
+     that fails loud on any leak. All 6 traces regenerated from scratch
+     via `run_matlab_slot.ps1`; zero containment errors (genuine runtime
+     proof).
+  2. Removed `karr_host_interaction.py` from the L2 oracle-dependency
+     legacy allowlist (stale entry describing the OLD fabricated model;
+     current literal port has zero oracle dependency).
+  3. Extended the manifest verifier
+     (`verify_discriminating_conditions` in
+     `scripts/l21_active_window_audit.py`) to independently re-validate
+     every condition's sha256+values and re-run ALL 3 nodeids, and fixed
+     a real "skip silently counts as re-verified" gap (pytest returncode
+     0 for both pass and skip). 12 new tamper/missing/skip tests.
+     **Side effect (found, NOT fixed, out of scope, routed onward)**:
+     this uniformly-applied fix also exposes that `ChromosomeSegregation`'s
+     manifest row has the identical latent defect (cross-worktree
+     absolute path + skip-masked-as-pass) -- verified via `git stash`
+     that this is pre-existing, not introduced by this session. Needs
+     routing to the `fix-l21-chromseg-active` worktree/track.
+  4. Manifest paths made main-relative; all 6 traces copied
+     (sha256-verified) into
+     `E:\opencell-worktrees\main-integrate\data\m1_sources\karr_native\...`
+     so the orchestrator's integration worktree carries this evidence
+     locally.
+- HostInteraction-focused verification all green (see STATUS for full
+  list); `test_current_tree_active_window_manifest_checkpoint
+  [HostInteraction]` PASSED; `[ChromosomeSegregation]` now correctly
+  FAILS in a full-suite run (pre-existing, out of scope, routed above --
+  do not "fix" this by reverting the skip-detection logic, it is correct).
+- **Not yet re-reviewed by Opus** -- returning for re-review next.
+
 **Current status (2026-09-08 ~00:45 IST) — supersedes the 2026-09-04
 ~23:50 IST block below (HostInteraction discriminating-conditions
 closure, resolves Opus review blockers):**

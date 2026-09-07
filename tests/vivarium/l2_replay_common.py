@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import copy
 import inspect
+import json
 import os
 import re
 import sys
@@ -115,6 +116,46 @@ def resolve_trace_path(process_name: str) -> Path:
         f"Missing {process_name} 100-tick oracle at expected locations: "
         + ", ".join(str(path) for path in candidates)
     )
+
+
+_L21_ACTIVE_WINDOWS_MANIFEST_PATH = _REPO_ROOT / "docs" / "phase_f" / "l2_1" / "L21_ACTIVE_WINDOWS_MANIFEST.json"
+
+
+def _l21_manifest_classification(process_name: str) -> str | None:
+    try:
+        payload = json.loads(_L21_ACTIVE_WINDOWS_MANIFEST_PATH.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    for row in payload.get("rows", []):
+        if row.get("process") == process_name:
+            return row.get("classification")
+    return None
+
+
+def skip_or_fail_missing_artifact(path: Path, process_name: str, description: str) -> None:
+    """Skip cleanly if this process carries no genuine-evidence claim, but
+    FAIL (never skip) when `docs/phase_f/l2_1/L21_ACTIVE_WINDOWS_MANIFEST.json`
+    records `classification == "EXISTING_WINDOW_PASS"` for `process_name` --
+    a manifest row claiming genuine evidence exists must never be satisfied
+    by a silently-skipped test just because the backing artifact (gitignored
+    data, e.g. a fresh clone that hasn't re-run the MATLAB extraction) is
+    absent. pytest.skip() would let CI report success while the claimed
+    evidence is actually missing; pytest.fail() makes that impossible.
+    Skipping remains legitimate for any process/row NOT claiming
+    EXISTING_WINDOW_PASS (e.g. MISSING_ACTIVE_EXTRACTION, CODE_GAP, or no
+    row at all)."""
+    classification = _l21_manifest_classification(process_name)
+    message = f"{description}: {path}"
+    if classification == "EXISTING_WINDOW_PASS":
+        pytest.fail(
+            f"{message} -- FAILING (not skipping): "
+            f"{_L21_ACTIVE_WINDOWS_MANIFEST_PATH.as_posix()} records "
+            f"classification=EXISTING_WINDOW_PASS for {process_name!r}, so this artifact "
+            "MUST exist. A skip here would let CI silently pass while the claimed genuine "
+            "evidence is actually missing. Regenerate the trace via its committed MATLAB "
+            "driver, or correct the manifest row if the EXISTING_WINDOW_PASS claim is stale."
+        )
+    pytest.skip(message)
 
 
 def resolve_per_process_fixture_path(process_name: str) -> Path:

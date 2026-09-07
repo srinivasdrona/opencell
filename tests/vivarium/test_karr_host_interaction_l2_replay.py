@@ -32,6 +32,7 @@ from l2_replay_common import (
     project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
+    skip_or_fail_missing_artifact,
 )
 from l2_replay_common import (
     assert_delta_integral as _assert_delta_integral_shared,
@@ -264,7 +265,7 @@ def test_karr_host_interaction_l2_event_replay(rng_seed: int) -> None:
     (see docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md)."""
     trace_path = _resolve_event_trace_path(rng_seed)
     if not trace_path.exists():
-        pytest.skip(f"Event-window trace not found: {trace_path}")
+        skip_or_fail_missing_artifact(trace_path, "HostInteraction", "Event-window trace not found")
 
     with h5py.File(trace_path, "r") as trace:
         n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])

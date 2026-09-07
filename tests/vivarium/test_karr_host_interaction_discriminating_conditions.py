@@ -48,7 +48,11 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
-from l2_replay_common import cell_vector, load_fixture_channel_wids  # noqa: E402
+from l2_replay_common import (  # noqa: E402
+    cell_vector,
+    load_fixture_channel_wids,
+    skip_or_fail_missing_artifact,
+)
 
 from opencell.vivarium.karr_host_interaction import KarrHostInteractionProcess  # noqa: E402
 
@@ -108,10 +112,12 @@ def _load_condition(condition_id: str) -> tuple[np.ndarray, dict[str, bool]]:
     host booleans at tick 0), read directly from the genuine MATLAB trace."""
     path = _condition_trace_path(condition_id)
     if not path.exists():
-        pytest.skip(
-            f"Discriminating condition trace not found: {path}. Regenerate via "
+        skip_or_fail_missing_artifact(
+            path,
+            "HostInteraction",
+            f"Discriminating condition trace not found for {condition_id!r}. Regenerate via "
             "scripts/matlab/extract_host_interaction_active_window.m (MATLAB required; "
-            "gitignored data artifact, not committed)."
+            "gitignored data artifact, not committed)",
         )
     with h5py.File(path, "r") as trace:
         enzymes_before = cell_vector(trace, "states_before", "enzymes", 0)

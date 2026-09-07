@@ -366,3 +366,211 @@ Final verification (all green, re-run after every fix above):
   beyond the existing seed 0; all 5 conditions came from ONE MATLAB
   session run of the one committed driver script.
 
+## 12. Second Opus rejection round (2026-09-08): containment, allowlist, verifier-depth, path-portability
+
+A second Opus review pass on the §11 closure rejected 4 further blockers.
+Each is closed below; this section is append-only, same as §11.
+
+### 12.1 `per_process_enzyme_overrides` shared-state containment (real bug found)
+
+`scripts/matlab/extract_per_process_traces_v2.m`'s prior comment claimed
+the enzyme override was "never written back by copyToState() since no
+process in this codebase's covered set writes to this.enzymes" — this was
+**never verified against `Process.m` and was wrong**. Direct inspection of
+`data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/Process.m`'s
+`copyToState()` shows it unconditionally writes `this.enzymes`/
+`this.boundEnzymes` back into the shared global
+`this.metabolite.counts`/`this.rna.counts`/`this.monomer.counts`/
+`this.complex.counts` state whenever `this.enzymes` is non-empty. Since
+HostInteraction's enzyme vector is non-empty (15 WIDs) and gets
+overridden (e.g. `MG_218_MONOMER=0` for `NEG_ADHERENCE`), the prior code
+would have written the OVERRIDDEN (zeroed) values back into the SHARED
+global monomer/complex pool at every tick an override was active —
+corrupting state visible to every other process evaluated later in the
+same tick's random process order, and to every subsequent tick, for the
+remainder of that extraction run. This was a genuine correctness bug, not
+a documentation-only issue.
+
+**Fix**: `apply_process_enzyme_overrides` now returns an
+`override_snapshot` (the genuine pre-override `enzymes`/`boundEnzymes`
+values, captured before any mutation) alongside the mutated `mod`. A new
+`restore_process_enzyme_overrides(mod, override_snapshot)` puts those
+genuine values back, called after
+`evolveState()`/`calcResourceRequirements_Current()` and the
+states_before/states_after snapshots, but **strictly BEFORE**
+`copyToState()` — this ordering is the entire containment guarantee: the
+override is visible only to the target's own per-tick computation, never
+to `copyToState()`, never to any other process, never to a later tick.
+
+A **runtime containment assertion** was added directly in
+`evolve_state_with_tap`: when an override is active on the target process
+this tick, it captures the genuine global `monomer.counts`/`complex.counts`
+for the overridden WIDs (via `mod.monomer`/`mod.complex`, handle
+references to the SAME shared state objects every process reads) both
+immediately before `evolveState()` and immediately after `copyToState()`,
+and raises a MATLAB error (`extract_per_process_traces_v2:
+enzyme_override_leaked_to_global_state`) if they ever differ. This is not
+a one-off test script — it runs automatically on every future extraction
+that uses `per_process_enzyme_overrides`, for every tick, fail-closed.
+
+**Genuine runtime proof**: all 6 HostInteraction traces (positive control
++ 5 conditions) were regenerated from scratch (old files deleted, not
+just re-verified) via
+`scripts/tools/run_matlab_slot.ps1 -MatlabCommand "... extract_host_interaction_active_window"`,
+and the run completed with all 6 `[trace_v2] saved: ...` lines and zero
+containment errors — proving the containment assertion is genuinely
+exercised (not merely present in source) and holds for every condition.
+Re-running `tests/vivarium/test_karr_host_interaction_discriminating_conditions.py`
+and `tests/vivarium/test_karr_host_interaction_l2_replay.py` against the
+regenerated traces reconfirmed all predictions/bit-exactness unchanged
+(same values, new sha256s since MATLAB run timestamps differ).
+
+Static proof (`tests/scripts/test_extract_per_process_traces_v2_static.py`):
+`test_per_process_enzyme_overrides_wired_at_both_copyfromstate_sites` was
+updated for the new `[mod, override_snapshot] = ...` signature and now
+also asserts the pre-override snapshot is captured before the mutation
+loop. A NEW test,
+`test_per_process_enzyme_overrides_are_contained_before_copytostate`,
+**requires** (not merely describes) that `restore_process_enzyme_overrides`
+runs after `evolveState()` and strictly before `copyToState()`, and that
+the runtime containment assertion exists and is gated correctly — this
+inverts the prior test's stance from "documents why this is assumed safe"
+to "fails if containment is ever removed."
+
+### 12.2 `karr_host_interaction.py` removed from the L2 oracle-dependency legacy allowlist
+
+`tests/vivarium/test_l2_no_oracle_dependency.py`'s `_ALLOWLIST` still
+carried `karr_host_interaction.py` with a stale comment describing the
+OLD "Karr-light v1" model's init-time oracle-rate-calibration pattern
+(`_extract_trace_rates`). The CURRENT literal port
+(`opencell/vivarium/karr_host_interaction.py`) reads only
+`data/karr_fixtures/per_process/HostInteraction_flat.mat` (a non-oracle
+input-spec fixture) via `scipy.io.loadmat`, never imports `h5py`, and
+contains none of the banned oracle-path string tokens — the allowlist
+entry was stale technical-debt bookkeeping left over from the prior
+closure round, not an active violation. Removed the entry;
+`test_l2_process_source_does_not_depend_on_replay_oracle[karr_host_interaction.py]`
+now PASSes on its own merits (no longer needs the allowlist carve-out).
+Confirmed via full-suite run that the only 2 remaining failures
+(`karr_cytokinesis.py`, `karr_dna_damage.py` — both ALSO allowlisted but
+apparently already fixed upstream without their allowlist entries being
+removed) are pre-existing and reproduce identically on the pre-my-change
+baseline (verified via `git stash`), unrelated to this change.
+
+### 12.3 Manifest verifier depth: per-condition sha/value validation, all 3 nodeids, skip-as-failure
+
+The §11 closure's `verify_active_window_manifest_row` only re-ran ONE
+pytest nodeid (`replay_evidence.nodeid`) and trusted `returncode == 0`
+alone to mean "passed" — but pytest's exit code is 0 for both a fully
+PASSED run and a fully SKIPPED run, so a manifest row claiming
+`EXISTING_WINDOW_PASS` whose backing test silently skips (e.g. a missing
+gitignored artifact after a fresh clone) would have been wrongly reported
+as re-verified. The `discriminating_conditions` block's own 5 conditions
+and 3 nodeids were never independently checked at all.
+
+**Fix**: `_run_pytest_nodeid` (new, replaces the old inline subprocess
+call) parses the pytest summary line for `N skipped` and treats any
+`N > 0` as `passed=False` regardless of return code. A new
+`verify_discriminating_conditions(row, manifest_path, process_name)`:
+validates every condition's `source.sha256` against the actual file bytes;
+re-reads the genuine `states_after` host-boolean values directly from
+each condition's trace and compares them field-by-field against the
+manifest's recorded `predicted_and_actual` dict (catching a hand-typed
+value that silently drifted from the real data); and re-runs **every**
+nodeid in `replay_evidence.nodeids` (all 3, not just one) via
+`_run_pytest_nodeid`. `verify_active_window_manifest_row` now calls this
+whenever a row carries a `discriminating_conditions` block, folding its
+result into the overall verification (fail-closed). For speed, a cheap
+per-condition failure short-circuits before the (subprocess-per-nodeid)
+reruns, since the overall result is already determined.
+
+New test file
+`tests/scripts/test_l21_host_interaction_discriminating_conditions_verifier.py`
+(12 tests) proves this fail-closed under every scenario: tampered
+condition sha256, tampered `predicted_and_actual` value, missing
+condition source file, empty/missing nodeids list, missing
+`discriminating_conditions` block entirely (must not silently claim the
+extension ran), a genuinely SKIPPED pytest nodeid reported as
+`passed=False` (built from a real throwaway skip-only test file, not
+mocked), a genuinely PASSED nodeid still correctly reported as
+`passed=True` (negative control against over-firing), and the
+`skip_or_fail_missing_artifact` helper's fail-vs-skip branching for an
+`EXISTING_WINDOW_PASS` process, a non-PASS process, and an unknown
+process name.
+
+**`tests/vivarium/l2_replay_common.py`** gained
+`skip_or_fail_missing_artifact(path, process_name, description)`: skips
+cleanly if the manifest carries no `EXISTING_WINDOW_PASS` claim for
+`process_name`, but calls `pytest.fail()` (never `pytest.skip()`) when it
+does — used by both `test_karr_host_interaction_l2_event_replay` (event-
+window trace missing) and
+`test_karr_host_interaction_discriminating_conditions.py`'s
+`_load_condition` (condition trace missing). This closes "event/condition
+tests fail (not skip) when row is EXISTING_WINDOW_PASS and artifacts
+missing."
+
+**Side effect (found, not introduced, and deliberately NOT fixed here,
+out of scope)**: applying the corrected skip-vs-pass detection uniformly
+(it lives in the SHARED `_rerun_manifest_replay_nodeid`/`_run_pytest_nodeid`
+path used by every process's row, not something that could be scoped to
+HostInteraction alone without being incoherent) exposes that
+`ChromosomeSegregation`'s manifest row has the identical latent defect:
+its `source.path` is an absolute path into a DIFFERENT worktree
+(`E:\opencell-worktrees\fix-l21-chromseg-active\...`), and its replay
+nodeid (`tests/vivarium/test_karr_chromosome_segregation_l2_replay.py::
+test_karr_chromosome_segregation_l2_event_replay[event_seed_0]`) silently
+SKIPS when run from THIS worktree (the trace isn't locally present here).
+The OLD `returncode == 0` check reported this as re-verified; the fixed
+code correctly reports `ACTIVE_WINDOW_MANIFEST_INVALID`. Verified via
+`git stash` that this test PASSED (wrongly) on the pre-fix baseline and
+FAILS (correctly) only after the fix — i.e. this is a genuine pre-existing
+defect on a process this task does not own, newly exposed rather than
+newly introduced. `tests/scripts/test_probe_l2_1_strict_rubric_active_
+windows.py::test_current_tree_active_window_manifest_checkpoint
+[ChromosomeSegregation]` will now fail in a full-suite run until that
+row's evidence is made main-relative/locally-copied the same way
+HostInteraction's was in §12.4 below; routed to the ChromosomeSegregation
+track (`fix-l21-chromseg-active` worktree) rather than fixed here. The
+`[HostInteraction]` parametrization of the same test passes cleanly.
+
+### 12.4 Main-relative manifest paths + main-integrate local copies
+
+The HostInteraction row's `source.path`/`repo_relative_hint` (main
+trace_window) previously embedded this worktree's absolute path
+(`/mnt/e/opencell-worktrees/fix-l21-host-active/...`) — this only
+resolves correctly from THIS worktree, and would break once merged
+elsewhere (exactly the defect found in ChromosomeSegregation's row
+above). Changed to a repo-relative path
+(`data/m1_sources/karr_native/per_process_traces_v2_event_s000/
+HostInteraction_100ticks.mat`); `_resolve_manifest_source_path` already
+resolves non-absolute paths against `_REPO_ROOT` of wherever the script
+currently runs, so this now works identically from any worktree/checkout
+as long as the data file is present in THAT worktree's local `data/`
+tree. The 5 `discriminating_conditions.conditions[].source.path` entries
+were already written repo-relative from the start.
+
+All 6 traces (positive control + 5 conditions, freshly regenerated per
+§12.1) were copied byte-for-byte into
+`E:\opencell-worktrees\main-integrate\data\m1_sources\karr_native\...`
+(verified identical sha256 via `Get-FileHash`) so the orchestrator's
+integration worktree carries this evidence locally without needing a
+fresh MATLAB run. These copies are gitignored data (not committed here or
+in main-integrate), matching the existing convention for all other
+per-process trace evidence in this repo.
+
+Re-ran the full HostInteraction-focused suite after all fixes above:
+`bin\oc-py.cmd scripts/l21_active_window_audit.py --process HostInteraction`
+→ unchanged `EXISTING_WINDOW_PASS`; `verify_active_window_manifest_row`
+→ `VERIFIED_EXISTING_WINDOW_PASS` with
+`discriminating_conditions_verification.passed=true` (all 5 conditions'
+sha256+values re-validated, all 3 nodeids re-run genuinely, zero skips);
+`tests/scripts/test_probe_l2_1_strict_rubric_active_windows.py::
+test_current_tree_active_window_manifest_checkpoint[HostInteraction]` →
+PASSED; full HostInteraction-focused pytest suite (74 tests across 7
+files) → all passed except the same 1 pre-existing, unrelated
+allocator-oracle skip (`test_l25_host_interaction_plus_terminal_organelle.py`,
+documented as a genuine unresolved MATLAB tick-coverage limitation, not
+something this change may fix) — zero skips attributable to this closure's
+own evidence. `l1b_verify_wiring.py` → 27/28 (same pre-existing, unrelated
+`DNADamage` failure). `ruff check` on all changed Python files → clean.
+

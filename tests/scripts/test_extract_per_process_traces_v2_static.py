@@ -55,6 +55,20 @@ def _read_source() -> str:
     return EXTRACTOR_PATH.read_text(encoding="utf-8")
 
 
+def _function_body(source: str, signature_line: str) -> str:
+    """Return the body of the top-level function whose exact signature
+    line is `signature_line`, delimited by the START of the NEXT
+    top-level `function ` declaration (or end of file) -- NOT by the
+    first bare `end` line, which would false-match on the function's own
+    internal `for`/`if`/`while` block terminators (this file nests those
+    freely inside every function)."""
+    start = source.index(signature_line)
+    body_start = start + len(signature_line)
+    next_fn = re.search(r"\nfunction ", source[body_start:])
+    body_end = body_start + next_fn.start() if next_fn else len(source)
+    return source[body_start:body_end]
+
+
 def _strip_comments_and_strings(source: str) -> str:
     """Best-effort removal of `%`-comments and single-quoted string
     literals so keyword/pattern counts below aren't confused by the word
@@ -355,46 +369,127 @@ def test_per_process_enzyme_overrides_wired_at_both_copyfromstate_sites():
     after copyFromState() repopulates it from the global protein pool, at
     BOTH copyFromState() call sites (the resource-requirements loop and
     the real evolveState() loop) -- same shape and same non-restriction as
-    apply_process_substrate_overrides, but never touching the shared
-    global pool (unlike apply_condition_overrides, which is DNADamage-
-    only precisely because it mutates shared metabolite state)."""
+    apply_process_substrate_overrides."""
     source = _read_source()
 
-    assert "function mod = apply_process_enzyme_overrides(mod, extraction_opts)" in source
+    assert "function [mod, override_snapshot] = apply_process_enzyme_overrides(mod, extraction_opts)" in source
+    assert "function mod = restore_process_enzyme_overrides(mod, override_snapshot)" in source
     assert "function override_values = select_process_enzyme_overrides(per_process_overrides, mod)" in source
     assert "per_process_enzyme_overrides" in source
     assert "opts.per_process_enzyme_overrides = struct();" in source
 
     # Called immediately after copyFromState() at both call sites, mirroring
     # apply_process_substrate_overrides's own two call sites exactly.
-    assert source.count("mod = apply_process_enzyme_overrides(mod, extraction_opts);") == 2
+    assert source.count("[mod, enzyme_override_snapshot] = apply_process_enzyme_overrides(mod, extraction_opts);") == 2
 
     first_site_match = re.search(
         r"mod\.copyFromState\(\);\n\s*mod = apply_process_substrate_overrides\(mod, extraction_opts\);\n"
-        r"\s*mod = apply_process_enzyme_overrides\(mod, extraction_opts\);\n"
+        r"\s*\[mod, enzyme_override_snapshot\] = apply_process_enzyme_overrides\(mod, extraction_opts\);\n"
         r"\s*r = mod\.calcResourceRequirements_Current\(\);",
         source,
     )
     assert first_site_match is not None, "enzyme override not wired into the resource-requirements loop"
+    # And the loop-1 restore call must follow calcResourceRequirements_Current()
+    # (hygiene restore; no copyToState() in this loop, see loop body comment).
+    assert re.search(
+        r"r = mod\.calcResourceRequirements_Current\(\);\n"
+        r"(?:.*\n)*?"
+        r"\s*mod = restore_process_enzyme_overrides\(mod, enzyme_override_snapshot\);",
+        source,
+    ), "loop-1 restore call must follow calcResourceRequirements_Current()"
 
     second_site_match = re.search(
         r"mod\.substrates\(lidx, :\) = allocation;\n"
         r"\s*mod = apply_process_substrate_overrides\(mod, extraction_opts\);\n"
-        r"\s*mod = apply_process_enzyme_overrides\(mod, extraction_opts\);\n",
+        r"\s*\[mod, enzyme_override_snapshot\] = apply_process_enzyme_overrides\(mod, extraction_opts\);\n",
         source,
     )
     assert second_site_match is not None, "enzyme override not wired into the real evolveState() scheduler loop"
 
     # Never restricted to a single process (unlike apply_condition_overrides,
     # whose DNADamage-only guard is `if ~strcmp(canonical_name, 'DNADamage')`).
-    enzyme_fn_match = re.search(
-        r"function mod = apply_process_enzyme_overrides\(mod, extraction_opts\)\n(.*?)\nend\n",
-        source,
-        re.DOTALL,
+    enzyme_fn_body = _function_body(
+        source, "function [mod, override_snapshot] = apply_process_enzyme_overrides(mod, extraction_opts)"
     )
-    assert enzyme_fn_match is not None
-    assert "canonical_name" not in enzyme_fn_match.group(1)
-    assert "DNADamage" not in enzyme_fn_match.group(1)
+    assert "canonical_name" not in enzyme_fn_body
+    assert "DNADamage" not in enzyme_fn_body
+
+    # The pre-override genuine values must be captured BEFORE the override
+    # loop mutates mod.enzymes, so restore can undo it exactly.
+    snapshot_idx = enzyme_fn_body.index(
+        "override_snapshot = struct('enzymes', mod.enzymes, 'boundEnzymes', mod.boundEnzymes);"
+    )
+    mutation_idx = enzyme_fn_body.index("mod.enzymes(idx, :) = double(value);")
+    assert snapshot_idx < mutation_idx, "pre-override snapshot must be captured before the override mutates mod.enzymes"
+
+
+def test_per_process_enzyme_overrides_are_contained_before_copytostate():
+    """CONTAINMENT (2026-09-08, Opus review fix): Process.m's copyToState()
+    unconditionally writes this.enzymes/this.boundEnzymes back into the
+    SHARED global metabolite/rna/monomer/complex state whenever
+    this.enzymes is non-empty (verified directly against
+    data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/
+    Process.m's copyToState method). A prior revision of this codepath
+    incorrectly assumed enzyme overrides were "never written back by
+    copyToState()" and left the override in place across the copyToState()
+    call -- this would have corrupted the shared global protein pool for
+    every other process and every later tick, not just the target
+    process's own evolveState() read.
+
+    This test REQUIRES (not merely describes) that:
+      1. restore_process_enzyme_overrides() is called after evolveState()
+         and strictly BEFORE copyToState() in the real evolveState loop.
+      2. A runtime containment assertion (comparing the shared global
+         monomer/complex counts for the overridden WIDs before and after
+         copyToState(), raising a MATLAB error on any mismatch) is present
+         and gated on an override actually being active this tick.
+    A regression that removes either of these must FAIL this test."""
+    source = _read_source()
+
+    body = _function_body(
+        source,
+        "function [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, anchor_opts, extraction_opts)",
+    )
+
+    evolve_idx = body.index("mod.evolveState();")
+    # evolve_state_with_tap's SECOND (real, per-tick) loop is the one with
+    # the copyToState() containment obligation; its own restore call is
+    # necessarily the LAST occurrence in this function body (the first
+    # loop's restore call, over calcResourceRequirements_Current(), comes
+    # textually earlier and has no copyToState() call at all).
+    assert body.count("mod = restore_process_enzyme_overrides(mod, enzyme_override_snapshot);") == 2, (
+        "expected exactly 2 restore call sites: the resource-requirements loop "
+        "(hygiene only, no copyToState()) and the real evolveState() loop (containment-critical)"
+    )
+    restore_idx = body.rindex("mod = restore_process_enzyme_overrides(mod, enzyme_override_snapshot);")
+    copy_to_state_idx = body.index("mod.copyToState();")
+    assert evolve_idx < restore_idx < copy_to_state_idx, (
+        "restore_process_enzyme_overrides must run after evolveState() and strictly "
+        "before copyToState() -- this ordering is the entire containment guarantee"
+    )
+
+    # The runtime containment assertion itself: gated on an override being
+    # active, comparing genuine global monomer/complex counts captured
+    # before evolveState()/restore/copyToState() against the same after
+    # copyToState(), raising a MATLAB error (fail-closed, not a warning or
+    # log line) on any mismatch.
+    assert "enzyme_containment_check = ~isempty(enzyme_override_snapshot);" in body
+    assert "global_monomer_before = mod.monomer.counts(monomer_gidx);" in body
+    assert "global_complex_before = mod.complex.counts(complex_gidx);" in body
+    assert "global_monomer_after = mod.monomer.counts(monomer_gidx);" in body
+    assert "global_complex_after = mod.complex.counts(complex_gidx);" in body
+    assert "extract_per_process_traces_v2:enzyme_override_leaked_to_global_state" in body
+
+    before_capture_idx = body.index("global_monomer_before = mod.monomer.counts(monomer_gidx);")
+    after_capture_idx = body.index("global_monomer_after = mod.monomer.counts(monomer_gidx);")
+    assert evolve_idx > before_capture_idx, "global 'before' snapshot must be captured before evolveState()"
+    assert after_capture_idx > copy_to_state_idx, "global 'after' snapshot must be captured after copyToState()"
+
+    # restore_process_enzyme_overrides itself must actually write both
+    # vectors back from the captured snapshot (not a no-op stub).
+    restore_fn_body = _function_body(source, "function mod = restore_process_enzyme_overrides(mod, override_snapshot)")
+    assert "mod.enzymes = override_snapshot.enzymes;" in restore_fn_body
+    assert "mod.boundEnzymes = override_snapshot.boundEnzymes;" in restore_fn_body
 
 
 def _octave_executable() -> str | None:

@@ -64,10 +64,6 @@ _ALLOWLIST: frozenset[str] = frozenset({
     # oracle skew toward replay fidelity. Migrate to a non-oracle calibration
     # fixture.
     "karr_dna_damage.py",
-    # Same pattern as karr_dna_damage.py: init-time _extract_trace_rates to
-    # set bind/unbind rates. L2.1 GREEN. Borderline; migrate to non-oracle
-    # calibration source.
-    "karr_host_interaction.py",
 })
 
 

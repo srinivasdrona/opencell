@@ -1,13 +1,15 @@
-# STATUS — HostInteraction L2.1 Active Window Closure (2026-09-04, discriminating-conditions closure 2026-09-05+)
+# STATUS — HostInteraction L2.1 Active Window Closure (2026-09-04, discriminating-conditions closure 2026-09-05+, containment/verifier-depth closure 2026-09-08)
 
 ## Task
 Close HostInteraction's `MISSING_ACTIVE_EXTRACTION` L2.1 gap (the sole
 missing active window in `docs/phase_f/l2_1/L21_ACTIVE_WINDOWS_MANIFEST.json`)
 and any literal source gap discovered along the way, without fabricating an
 event, without raising `max_search_ticks` blindly, and without launching
-extra seeds speculatively. Follow-on round: close all Opus review blockers
+extra seeds speculatively. Follow-on rounds: close all Opus review blockers
 against the initial positive-control-only closure (see "Discriminating
-conditions round" below).
+conditions round" below), then a second round closing containment,
+allowlist, verifier-depth, and path-portability blockers (see "Containment
++ verifier-depth round" below).
 
 ## Result: CLOSED. `EXISTING_WINDOW_PASS`.
 
@@ -202,6 +204,75 @@ Preregistered predictions (written before extraction):
 - `bin\oc-py.cmd scripts/l1b_verify_wiring.py --process HostInteraction` →
   PASS.
 - `ruff check` on all changed Python files → clean.
+
+## Containment + verifier-depth round (2026-09-08, closes second Opus review)
+
+Full writeup: `docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md`
+section 12. Four blockers closed:
+
+1. **`per_process_enzyme_overrides` shared-state containment (real bug
+   found)**: `Process.m`'s `copyToState()` unconditionally writes
+   `this.enzymes`/`this.boundEnzymes` back into the SHARED global
+   metabolite/rna/monomer/complex state -- a prior, never-verified
+   comment claimed the opposite. Fixed by capturing the genuine
+   pre-override values and restoring them AFTER `evolveState()` but
+   BEFORE `copyToState()` (`apply_process_enzyme_overrides` /
+   `restore_process_enzyme_overrides`), plus a runtime containment
+   assertion in `evolve_state_with_tap` that compares the shared global
+   monomer/complex counts for overridden WIDs before/after `copyToState()`
+   every tick an override is active, erroring fail-closed on any
+   mismatch. All 6 traces were regenerated from scratch (old files
+   deleted) via `run_matlab_slot.ps1` and the run completed cleanly with
+   zero containment errors -- genuine runtime proof, not just a static
+   check. Static test `test_per_process_enzyme_overrides_are_contained_
+   before_copytostate` (new) requires this ordering/assertion exist.
+2. **`karr_host_interaction.py` removed from the L2 oracle-dependency
+   allowlist** (`tests/vivarium/test_l2_no_oracle_dependency.py`): the
+   entry described the OLD "Karr-light v1" model; the current literal
+   port reads only a non-oracle fixture and has zero banned tokens.
+   Confirmed the 2 remaining allowlist-related failures
+   (`karr_cytokinesis.py`, `karr_dna_damage.py`) are pre-existing (same
+   on `git stash` baseline), unrelated.
+3. **Manifest verifier depth**: new `verify_discriminating_conditions`
+   validates every condition's sha256 + re-reads genuine trace values
+   against `predicted_and_actual`, and re-runs ALL 3 nodeids (was 1); new
+   `_run_pytest_nodeid` treats any `N skipped` in the pytest summary as
+   `passed=False` regardless of return code (closes "skip silently counts
+   as re-verified"). New `skip_or_fail_missing_artifact` helper makes
+   `test_karr_host_interaction_l2_event_replay` and the discriminating-
+   condition tests FAIL (not skip) when the manifest claims
+   `EXISTING_WINDOW_PASS` and the backing artifact is missing. 12 new
+   tamper/missing/skip tests in
+   `tests/scripts/test_l21_host_interaction_discriminating_conditions_verifier.py`.
+   **Side effect found (not fixed here, out of scope)**: this exposed
+   that `ChromosomeSegregation`'s manifest row has the identical latent
+   defect (cross-worktree absolute path + skip-masked-as-pass); routed to
+   its own track rather than fixed here (see decision doc §12.3 for the
+   `git stash`-verified before/after proof this is pre-existing).
+4. **Main-relative manifest paths + main-integrate local copies**:
+   HostInteraction's `source.path` changed from this worktree's absolute
+   path to repo-relative; all 6 regenerated traces copied byte-for-byte
+   (sha256-verified) into
+   `E:\opencell-worktrees\main-integrate\data\m1_sources\karr_native\...`.
+
+### Verification (all green, this round)
+- `bin\oc-py.cmd scripts/l21_active_window_audit.py --process HostInteraction`
+  → unchanged `EXISTING_WINDOW_PASS`.
+- `verify_active_window_manifest_row` → `VERIFIED_EXISTING_WINDOW_PASS`
+  with `discriminating_conditions_verification.passed=true` (5 conditions
+  re-validated, 3 nodeids re-run genuinely).
+- HostInteraction-focused pytest suite (7 files, ~74 tests) → all passed
+  except the same 1 pre-existing, unrelated allocator-oracle skip; zero
+  skips attributable to this closure.
+- `test_current_tree_active_window_manifest_checkpoint[HostInteraction]`
+  → PASSED (full 11-process sweep shows 1 unrelated, pre-existing,
+  newly-EXPOSED-not-introduced `ChromosomeSegregation` failure -- see
+  above).
+- `scripts/l1b_verify_wiring.py --process HostInteraction` → PASS; full
+  suite 27/28 (same pre-existing, unrelated `DNADamage` failure).
+- `ruff check` on all changed Python files → clean.
+- No merge/push -- commits remain local to
+  `agent/l21-host-active-fix-20260904`.
 
 ## Commits
 See `git log agent/l21-host-active-fix-20260904` for the chunked, green
