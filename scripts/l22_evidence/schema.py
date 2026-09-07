@@ -20,8 +20,11 @@ _REPO_ROOT_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT_BOOTSTRAP))
 
-from scripts.l22_evidence.catalog import CATALOG_PATH, REPO_ROOT  # noqa: E402
-from scripts.l22_evidence.catalog import DEFAULT_N_SEEDS  # noqa: E402
+from scripts.l22_evidence.catalog import (  # noqa: E402
+    CATALOG_PATH,
+    DEFAULT_N_SEEDS,  # noqa: E402
+    REPO_ROOT,
+)
 from scripts.l22_extraction import derive_scope as _ds  # noqa: E402  (reuse the one YAML loader)
 
 SCHEMA_VERSION = 1

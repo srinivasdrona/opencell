@@ -57,11 +57,12 @@ import shutil
 import subprocess
 import sys
 import time
+from collections.abc import Callable
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
 
 _REPO_ROOT_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT_BOOTSTRAP) not in sys.path:

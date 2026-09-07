@@ -82,8 +82,10 @@ if str(_REPO_ROOT_BOOTSTRAP) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT_BOOTSTRAP))
 
 from scripts.l22_evidence import catalog as cat  # noqa: E402
-from scripts.l22_evidence import schema  # noqa: E402
-from scripts.l22_evidence import sweep  # noqa: E402
+from scripts.l22_evidence import (
+    schema,  # noqa: E402
+    sweep,  # noqa: E402
+)
 from scripts.l22_evidence.populate import _resolve_worktree_gitdir  # noqa: E402
 from scripts.l22_extraction import derive_scope as _ds  # noqa: E402
 
