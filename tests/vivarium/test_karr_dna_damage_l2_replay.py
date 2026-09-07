@@ -22,6 +22,7 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
+from chromosome_rand_stream_ledger import load_chromosome_rand_stream_ledger
 from l2_replay_common import (
     apply_count_update,
     build_state_template,
@@ -45,6 +46,7 @@ from l2_replay_common import (
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet
 from opencell.vivarium.karr_dna_damage import _RADIATION_GATE, KarrDNADamageProcess
+from opencell.vivarium.karr_dna_damage_rng import KarrLedgerReplayStream
 
 _TRACE_PROCESS_NAME = "DNADamage"
 _OBSERVABLES = ("substrates", "enzymes", "boundEnzymes")
@@ -186,10 +188,26 @@ def _assert_sparse_field_valid(triplet: SparseTriplet, shape: tuple[int, int], *
     assert np.all(triplet.values >= 0), f"tick={tick} field={field} has negative values"
 
 
-def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
+def _load_chromosome_rand_stream_ledger(trace_path: Path) -> list[list[float]] | None:
+    return load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+
+
+def _run_replay(
+    trace: h5py.File,
+    n_ticks: int,
+    rng_seed: int,
+    *,
+    chromosome_rand_stream_ledger: list[list[float]] | None = None,
+) -> None:
         if "metadata" in trace and "rng_seed" in trace["metadata"]:
             recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
             assert int(rng_seed) == recorded_seed
+
+        if chromosome_rand_stream_ledger is not None:
+            assert len(chromosome_rand_stream_ledger) == n_ticks, (
+                f"chromosome_rand_stream_state ledger has {len(chromosome_rand_stream_ledger)} ticks, "
+                f"trace has n_ticks={n_ticks}"
+            )
 
         # Quiet-process guard: do not skip. Karr trace may be no-op across all
         # mutated observables, but we still want to assert OC's next_update is
@@ -240,8 +258,28 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
                 _overlay_chromosome_state(state, before_store)
             refresh_allocator_views(process, state)
 
+            ledger_stream = None
+            if chromosome_rand_stream_ledger is not None:
+                ledger_stream = KarrLedgerReplayStream(
+                    chromosome_rand_stream_ledger[tick], tick_label=f"tick{tick}"
+                )
+                # Karr's real site-sampling draws for THIS tick come from
+                # the shared Chromosome.randStream at exactly the
+                # position captured in states_before/after -- not from a
+                # freshly-seeded stand-in carried over from the previous
+                # tick (that stream cannot be advanced correctly across
+                # ticks anyway, since ~27 OTHER processes' draws happen
+                # in between; see STATUS_L21_DNADAMAGE_ACTIVE_FIX.md).
+                # `_reaction_order_rng` (DNADamage's OWN, genuinely
+                # isolated stream) is left untouched and continues to
+                # advance tick-over-tick as Karr's real one does.
+                process._site_sampling_rng = ledger_stream  # noqa: SLF001
+
             update = process.next_update(1.0, state)
             _apply_update(state, update, process)
+
+            if ledger_stream is not None:
+                ledger_stream.assert_fully_consumed()
 
             for observable in _OBSERVABLES:
                 karr_after = cell_vector(trace, "states_after", observable, tick)
@@ -348,8 +386,8 @@ def _resolve_event_trace_path(seed: int) -> Path | None:
 
 @pytest.mark.parametrize(
     "rng_seed",
-    [0, 1, 2, 3, 4, 2000],
-    ids=[f"event_seed_{i}" for i in range(5)] + ["event_seed_2000"],
+    [0, 1, 2, 3, 4],
+    ids=[f"event_seed_{i}" for i in range(5)],
 )
 def test_karr_dna_damage_l2_event_replay(rng_seed: int) -> None:
     """L2 replay on a UVB-mechanism-conditioned fixed active window. DNADamage is
@@ -392,4 +430,59 @@ def test_karr_dna_damage_l2_event_replay(rng_seed: int) -> None:
                 f"Per-observable counts: {mutated_tick_counts}."
             )
 
-        _run_replay(trace, n_ticks, int(rng_seed))
+        chromosome_rand_stream_ledger = _load_chromosome_rand_stream_ledger(trace_path)
+        _run_replay(trace, n_ticks, int(rng_seed), chromosome_rand_stream_ledger=chromosome_rand_stream_ledger)
+
+
+def test_karr_dna_damage_l2_event_replay_seed2000_chromosome_ledger() -> None:
+    """Ledger-driven (bit-exact input-state-restored) L2.1 replay for the
+    canonical seed2000 20-tick UVB-mechanism event window -- the specific
+    trace this task's shared-Chromosome-stream RNG closure targets. See
+    `_load_chromosome_rand_stream_ledger`/`KarrLedgerReplayStream` for the
+    mechanism and STATUS_L21_DNADAMAGE_ACTIVE_FIX.md for the full account.
+
+    Closed 2026-09-05: a per-reaction side-by-side ledger diff against
+    live MATLAB (scripts/matlab/instrument_dnadamage_tick4_per_reaction.m)
+    isolated tick4's one-draw shortfall to a single, precise bug in
+    `_sample_literal_motif_sites`'s final-selection guard (`if
+    len(candidates) > n_sites` instead of `>=` -- Karr's real
+    Chromosome.m::sampleAccessibleSites always calls
+    `randomlySelectNRows` once accumulated candidates reach the target,
+    including the exact-match case). Fixed in karr_dna_damage.py, with a
+    dedicated regression test
+    (test_sample_literal_motif_sites_draws_final_select_when_candidates_exactly_equal_n_sites
+    in test_karr_dna_damage.py) plus an inversion test. This test now
+    asserts genuine bit identity for the full 20-tick seed2000 window."""
+    rng_seed = 2000
+    trace_path = _resolve_event_trace_path(rng_seed)
+    if trace_path is None:
+        pytest.skip("canonical seed2000 DNADamage event trace not found in this checkout")
+
+    chromosome_rand_stream_ledger = _load_chromosome_rand_stream_ledger(trace_path)
+    if chromosome_rand_stream_ledger is None:
+        # Hard-fail, never skip: unlike the OTHER seeds' shared parametrized
+        # test above (where a missing ledger sidecar is the documented,
+        # unaffected pre-ledger baseline for traces this closure never
+        # targeted), THIS trace's entire purpose -- and the L21_ACTIVE_
+        # WINDOWS_MANIFEST.json DNADamage row's EXISTING_WINDOW_PASS
+        # classification -- rests on ledger-driven bit identity. The trace
+        # itself being present with its companion ledger sidecar absent is
+        # an inconsistent, broken evidence state (e.g. the gitignored
+        # sidecar was deleted/never regenerated alongside the trace), not a
+        # legitimate "data tree not checked out" skip: silently skipping
+        # here would let `l21_active_window_audit._rerun_manifest_replay_
+        # nodeid`'s exit-code-0 check re-run this exact nodeid and mistake
+        # a skip for genuine re-verification of an EXISTING_WINDOW_PASS
+        # promotion, never actually replaying anything.
+        pytest.fail(
+            "canonical seed2000 DNADamage trace is present but its companion "
+            "chromosome_rand_stream_state ledger sidecar "
+            f"({trace_path.with_suffix('').with_suffix('.chromosome_rand_stream_ledger.json')}) "
+            "is missing -- refusing to silently skip the one test this manifest row's "
+            "EXISTING_WINDOW_PASS classification depends on"
+        )
+
+    with h5py.File(trace_path, "r") as trace:
+        n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+        assert n_ticks == 20
+        _run_replay(trace, n_ticks, rng_seed, chromosome_rand_stream_ledger=chromosome_rand_stream_ledger)

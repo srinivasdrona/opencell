@@ -35,7 +35,7 @@ EXPECTED_ACTIVE_WINDOW_VERDICTS = {
     "ChromosomeSegregation": "GENUINE",
     "TranscriptionalRegulation": active_windows.CLASS_CODE_GAP,
     "Cytokinesis": active_windows.CLASS_CODE_GAP,
-    "DNADamage": active_windows.CLASS_CODE_GAP,
+    "DNADamage": "GENUINE",
     "HostInteraction": active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
 }
 

@@ -23,6 +23,7 @@ from vivarium.core.process import Process
 from opencell.m_gen_constants import GENOME_LENGTH_BP as _DEFAULT_SEQUENCE_LENGTH_NT
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
 from opencell.vivarium.chromosome_views import current_damage_sites
+from opencell.vivarium.karr_dna_damage_rng import KarrMcg16807Stream
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/DNADamage_flat.mat"
 # Chromosome state's own per-process-style fixture. Carries the WholeCellKB
@@ -190,7 +191,30 @@ class KarrDNADamageProcess(Process):
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
-        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
+        # Literal Karr RNG: every process AND every state object gets its
+        # own `RandStream('mcg16807')`, reset with the identical scalar
+        # `simulation.seed` (Process.m::seedRandStream,
+        # CellState.m -- no per-object offset). `_reaction_order_rng`
+        # stands in for DNADamage's own stream (used for exactly one
+        # `randperm` per tick, in `evolveState`) -- this pathway is
+        # genuinely isolated and can be made bit-identical.
+        # `_site_sampling_rng` stands in for `this.chromosome.randStream`,
+        # which Karr actually shares and advances across most of the 28
+        # processes; an isolated single-process replay cannot reproduce
+        # its exact draw position (see karr_dna_damage_rng.py's module
+        # docstring), so this stream is structurally faithful (every
+        # formula it implements is Karr's literal formula) but not
+        # bit-identical to Karr's real interleaved draw sequence.
+        seed_param = int(self.parameters["rng_seed"])
+        # KarrMcg16807Stream fails closed on seed<=0 (see its docstring);
+        # `rng_seed: 0` is this codebase's widespread "no seed specified"
+        # default (used by numpy's `default_rng`, which accepts 0 fine),
+        # so substitute a fixed valid seed only for that sentinel case --
+        # any explicit nonzero seed (e.g. the genuine seed2000 replay)
+        # passes through unchanged.
+        effective_seed = seed_param if seed_param > 0 else 1
+        self._reaction_order_rng = KarrMcg16807Stream(effective_seed)
+        self._site_sampling_rng = KarrMcg16807Stream(effective_seed)
         self.damage_kinds = list(_DAMAGE_KINDS)
         self._tick_index = 0
         self.chromosome_length = int(_DEFAULT_SEQUENCE_LENGTH_NT)
@@ -656,12 +680,15 @@ class KarrDNADamageProcess(Process):
         return max(0.0, float(substrates_state.get(wid, 0.0)))
 
     def _reaction_order(self, n_reactions: int) -> np.ndarray:
+        """Literal Karr `DNADamage.m::evolveState`:
+        `randomOrder = this.randStream.randperm(numel(reactionWholeCellModelIDs))`
+        -- DNADamage's own, genuinely-isolated per-tick RNG draw. Karr's
+        `randperm` is 1-based; OC's reaction arrays are 0-based, so every
+        returned index is shifted down by one."""
         if n_reactions <= 0:
             return np.asarray([], dtype=np.int64)
-        permutation = getattr(self._rng, "permutation", None)
-        if callable(permutation):
-            return np.asarray(permutation(int(n_reactions)), dtype=np.int64).reshape(-1)
-        return np.arange(n_reactions, dtype=np.int64)
+        order_1based = self._reaction_order_rng.randperm(int(n_reactions))
+        return np.asarray([idx - 1 for idx in order_1based], dtype=np.int64)
 
     def _reaction_id(self, reaction_index: int) -> str:
         if 0 <= int(reaction_index) < len(self.reaction_ids):
@@ -705,14 +732,20 @@ class KarrDNADamageProcess(Process):
         return "oxidative"
 
     def _stochastic_round(self, value: float) -> int:
-        """Karr `randStream.stochasticRound`: floor(value) + Bernoulli(frac)."""
-        if value <= 0.0:
-            return 0
-        base = int(np.floor(value))
-        frac = float(value - base)
-        if frac <= 0.0:
-            return base
-        return base + int(self._rng.random() < frac)
+        """Literal Karr `RandStream.stochasticRound`
+        (`+util/RandStream.m`): `roundUp = rand(size(value)) <
+        mod(value, 1); value(roundUp) = ceil(...); value(~roundUp) =
+        floor(...)`. The draw is consumed UNCONDITIONALLY -- even for
+        `value <= 0` or an exact integer -- so this must never
+        special-case those inputs to skip the draw (that would
+        desynchronize every subsequent draw from Karr's real sequence;
+        see the inversion test
+        `test_inversion_skipping_draw_for_nonpositive_value_desyncs_stream`
+        in `tests/vivarium/test_karr_dna_damage_rng.py`). Delegates to the
+        site-sampling stream, since Karr's `stochasticRound` calls here
+        are always made through `this.chromosome.randStream`, not
+        DNADamage's own stream (see `karr_dna_damage_rng.py` docstring)."""
+        return self._site_sampling_rng.stochastic_round(float(value))
 
     def _selection_probability(
         self,
@@ -839,14 +872,49 @@ class KarrDNADamageProcess(Process):
             candidates = self._reaction_candidate_coords(chromosome_state, reaction_index)
             if not candidates:
                 return []
+            # Karr: `positionsStrands = find(vulnerableMotif ==
+            # this.(vulnerableMotifType) & vulnerableMotif ==
+            # this.damagedSites_nonRedundant)` -- MATLAB's single-output
+            # `find` on a `[dnaLength x nCompartments]`-shaped array
+            # returns results in ascending COLUMN-MAJOR linear-index
+            # order, i.e. the SAME (strand, position) linear ordering as
+            # `SparseMat.unique_subs`/`sort_subs` (strand's weight
+            # `dnaLength` dominates position's weight `1` -- see
+            # `_sample_literal_motif_sites`'s docstring for the verified
+            # derivation). `_reaction_candidate_coords` instead returns
+            # candidates in whatever order the underlying sparse triplet
+            # happens to store them -- sort by (strand, position) so the
+            # index<->candidate mapping `randsample`/`randomlySelectNRows`
+            # consumes below matches Karr's real `find`-ordered input.
+            candidates = sorted(candidates, key=lambda coord: (coord[1], coord[0]))
             n_sites = self._stochastic_round(len(candidates) * selection_probability)
             if max_reactions is not None:
                 n_sites = min(n_sites, int(max_reactions))
             if n_sites <= 0:
                 return []
-            order = self._reaction_order(len(candidates)).tolist()
+            # Karr: `positionsStrands = this.randStream.randomlySelectNRows(
+            # positionsStrands, maxDamages)` -- site-sampling stream, not
+            # DNADamage's own reaction-order stream. Chromosome.m's
+            # `setSiteDamaged` calls `randomlySelectNRows` UNCONDITIONALLY
+            # once any candidates exist (no "skip if already exactly the
+            # right count" branch in the real source) -- this call is
+            # already unconditional here (no `if len(candidates) >
+            # n_sites` guard), unlike the string-motif branch below,
+            # which had exactly that bug (see _sample_literal_motif_sites).
             limit = min(n_sites, len(candidates))
-            return [candidates[int(order[idx])] for idx in range(limit)]
+            order_1based = self._site_sampling_rng.randsample_without_replacement(len(candidates), limit)
+            # Karr: `RandStream.randomlySelectNRows` is `rndIdxs =
+            # sort(randsample(this.randStream, size(mat, 1), nRndRows,
+            # false)); mat = mat(rndIdxs, :)` (+edu/+stanford/+covert/
+            # +util/RandStream.m:249-252) -- the selected 1-based row
+            # indices are sorted ASCENDING before indexing into the
+            # candidate matrix, not left in raw `randsample` draw order.
+            # This does not change WHICH candidates get selected (a pure
+            # reordering), but it does change the returned list's order,
+            # which downstream damage-site processing consumes
+            # positionally -- must match Karr's real row order exactly.
+            order_1based = sorted(order_1based)
+            return [candidates[idx - 1] for idx in order_1based]
 
         # Karr Chromosome.m::sampleAccessibleSites string-motif branch:
         # `nGC = sum(seq=='G'|seq=='C')`;
@@ -918,9 +986,13 @@ class KarrDNADamageProcess(Process):
             iterations += 1
             deficit = n_sites - len(accumulated)
             n_more = max(2 * deficit, deficit + 10)
-            positions = self._rng.integers(0, dna_length, size=n_more, dtype=np.int64)
-            strands = self._rng.integers(0, n_strands, size=n_more, dtype=np.int64)
-            for position, strand in zip(positions.tolist(), strands.tolist(), strict=False):
+            # Karr: `positions = ceil(dnaLength * rand(nMoreSites,1))`,
+            # THEN (as a separate, subsequent vector draw, not
+            # interleaved) `strands = ceil(nStrands * rand(nMoreSites,1))`
+            # -- both 1-based; OC's 0-based coordinates subtract 1.
+            positions = [self._site_sampling_rng.randi(dna_length) - 1 for _ in range(n_more)]
+            strands = [self._site_sampling_rng.randi(n_strands) - 1 for _ in range(n_more)]
+            for position, strand in zip(positions, strands, strict=False):
                 coord = (int(position), int(strand))
                 if coord in accumulated:
                     continue
@@ -938,11 +1010,58 @@ class KarrDNADamageProcess(Process):
                     continue
                 accumulated[coord] = None
 
-        candidates = list(accumulated.keys())
-        if len(candidates) > n_sites:
-            order = np.asarray(self._rng.permutation(len(candidates)), dtype=np.int64)
-            candidates = [candidates[int(idx)] for idx in order[: int(n_sites)].tolist()]
-        candidates.sort(key=lambda coord: (coord[0], coord[1]))
+        # Karr: `positionsStrands = edu.stanford.covert.util.SparseMat.
+        # unique_subs([positionsStrands; positions(idxs) strands(idxs)],
+        # [dnaLength this.nCompartments])` is called on the ACCUMULATED
+        # list every loop iteration (not once at the end). `unique_subs`
+        # (and the final `sort_subs` below) both linearize `[position
+        # strand]` rows via `(subs-1)*[1 cumprod(siz(1:end-1))]'` --
+        # verified directly against `SparseMat.m` -- i.e. weight vector
+        # `[1, dnaLength]` for `siz=[dnaLength, nCompartments]`: STRAND's
+        # weight (`dnaLength`) dominates POSITION's (`1`), so both
+        # functions sort primarily by STRAND, then by POSITION (not the
+        # reverse). `accumulated`'s Python dict instead preserves
+        # DISCOVERY order (whatever order the random draws happened to
+        # find each candidate) -- NOT the order Karr's `unique_subs` hands
+        # to `randomlySelectNRows`/`randsample`. Sort by (strand,
+        # position) BEFORE selecting so the index<->candidate mapping
+        # `randsample` consumes matches Karr's real one exactly: this
+        # affects WHICH physical sites get selected whenever
+        # `len(candidates) > n_sites` (a genuine subset draw), not merely
+        # how many raw draws are consumed.
+        candidates = sorted(accumulated.keys(), key=lambda coord: (coord[1], coord[0]))
+        if len(candidates) >= n_sites:
+            # Karr: `if size(positionsStrands,1) >= nSites:
+            # positionsStrands = this.randStream.randomlySelectNRows(
+            # positionsStrands, nSites); break; end` -- the real
+            # Chromosome.m::sampleAccessibleSites loop calls
+            # `randomlySelectNRows` UNCONDITIONALLY whenever accumulated
+            # candidates reach (>=) the target, including the EXACT-match
+            # case (`len(candidates) == n_sites`). `randsample(stream, n,
+            # n, false)` with `n==k` still consumes `n` real draws (a
+            # full `randperm(n)`, since randsample.m's `4*k>n` branch
+            # fires for any k>=1 when k==n) even though the output is
+            # merely a reordering of the same candidates. A prior version
+            # of this code used `if len(candidates) > n_sites` (strictly
+            # greater), which silently SKIPPED this mandatory draw
+            # whenever the search found exactly the requested number of
+            # sites on its first sufficient round -- desynchronizing the
+            # shared site-sampling stream from Karr's real one for every
+            # subsequent draw in the same tick. Caught via a per-reaction
+            # side-by-side ledger diff against live MATLAB
+            # (scripts/matlab/instrument_dnadamage_tick4_per_reaction.m):
+            # seed2000 tick4's DNADamage_THYTHY_cyclobutane_THYTHY_UVB_radiation
+            # reaction found exactly 1 candidate needing exactly 1 site,
+            # and real MATLAB still drew `randperm(1)` (1 raw draw) for
+            # the trivial "selection".
+            order_1based = self._site_sampling_rng.randsample_without_replacement(len(candidates), n_sites)
+            candidates = [candidates[idx - 1] for idx in order_1based]
+        # Karr's final `sort_subs` call (`if nSites > 1`) uses the
+        # IDENTICAL (strand, position) linear-index weight vector as
+        # `unique_subs` above (verified: `sort_subs`'s default
+        # `colSortOrder` produces the same weight vector by
+        # construction) -- not (position, strand).
+        candidates.sort(key=lambda coord: (coord[1], coord[0]))
         return candidates
 
     def _window_accessible(

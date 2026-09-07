@@ -220,6 +220,31 @@ for i = 1:numel(process_names)
                     states_before.(prop){t, 1} = before_tick.(prop);
                     states_after.(prop){t, 1} = after_tick.(prop);
                 end
+                % Additive, diagnostic-only fields beyond snapshot_props (e.g.
+                % `chromosome_rand_stream_state`, merged in by
+                % `merge_chromosome_rand_stream_state`) are NOT part of the
+                % fixed snapshot_props contract above and would otherwise be
+                % silently dropped -- copy them dynamically, allocating their
+                % cell arrays lazily on first sight (the fixed-window branch,
+                % unlike capture_anchor_window below, iterates a hard-coded
+                % snapshot_props list rather than fieldnames(...), so this
+                % loop exists specifically to not lose extra fields here).
+                extra_before_fields = setdiff(fieldnames(before_tick), snapshot_props);
+                for e = 1:numel(extra_before_fields)
+                    fn = extra_before_fields{e};
+                    if ~isfield(states_before, fn)
+                        states_before.(fn) = cell(n_ticks, 1);
+                    end
+                    states_before.(fn){t, 1} = before_tick.(fn);
+                end
+                extra_after_fields = setdiff(fieldnames(after_tick), snapshot_props);
+                for e = 1:numel(extra_after_fields)
+                    fn = extra_after_fields{e};
+                    if ~isfield(states_after, fn)
+                        states_after.(fn) = cell(n_ticks, 1);
+                    end
+                    states_after.(fn){t, 1} = after_tick.(fn);
+                end
             catch err
                 ok = false;
                 error_message = sprintf('tick %d failed:\n%s', t, getReport(err, 'extended', 'hyperlinks', 'off'));
@@ -498,6 +523,7 @@ for i = 1:nProcesses
         if ~isempty(anchor_opts)
             before_tick = merge_event_observables(before_tick, mod, anchor_opts);
         end
+        before_tick = merge_chromosome_rand_stream_state(before_tick, mod);
     end
 
     mod.evolveState();
@@ -507,6 +533,7 @@ for i = 1:nProcesses
         if ~isempty(anchor_opts)
             after_tick = merge_event_observables(after_tick, mod, anchor_opts);
         end
+        after_tick = merge_chromosome_rand_stream_state(after_tick, mod);
     end
 
     mod.copyToState();
@@ -707,6 +734,67 @@ for i = 1:numel(raw)
         item = char(item);
     end
     out{i} = char(item);
+end
+end
+
+function snapshot = merge_chromosome_rand_stream_state(snapshot, mod)
+% merge_chromosome_rand_stream_state  Capture the exact, opaque MATLAB
+% `.State` scalar of the SHARED Chromosome state object's `randStream`
+% (`this.chromosome.randStream.state`, delegating through to the builtin
+% `RandStream('mcg16807').State` -- see
+% `+edu/+stanford/+covert/+util/RandStream.m` lines 273-278) at a
+% DNADamage tap point (immediately before/after its own `evolveState()`
+% call). This is INPUT STATE, not answer leakage: it records which exact
+% position in Karr's real shared chromosome RNG stream this tick's
+% DNADamage.evolveState()->Chromosome.setSiteDamaged() draws would come
+% from, the same way `states_before`/`states_after` already record
+% substrate/enzyme/chromosome COUNTS as input state for this tick. No
+% oracle answer (a damage-event outcome) is captured here -- only a raw
+% RNG-generator position, from which the Python harness's OWN ported
+% site-sampling algorithm (already independently verified byte-for-byte
+% against real MATLAB, see karr_dna_damage_rng.py) computes its own
+% result.
+%
+% This state value is NOT invertible into this project's own
+% `KarrMcg16807Stream._state` representation via any simple closed-form
+% formula found by this project's derivation (see
+% STATUS_L21_DNADAMAGE_ACTIVE_FIX.md's chromosome-randStream-state
+% investigation): reading `.State` immediately after `reset(seed)`
+% reports the raw seed, not the internally-scaled register, and
+% intermediate `.State` reads do not follow the `seed*65536 mod M` /
+% `16807*x mod M` formula either (empirically probed and refuted;
+% `scripts/matlab/probe_l21_chromosome_randstream_state.m`). It IS,
+% however, provably sufficient to seed a FRESH MATLAB `RandStream`
+% object's `.State` property and continue drawing bit-identically from
+% that exact point (`reconstruction_ok=true` for all probed seeds) --
+% i.e. it is real, restorable RNG state, just not one this project
+% chooses to decode a closed-form Python formula for. The companion
+% offline reconstruction step (`scripts/matlab/
+% reconstruct_chromosome_draw_ledger.m`) uses MATLAB itself,
+% non-destructively (a scratch clone, never the live simulation's real
+% stream), to turn the `state_before[t]`/`state_after[t]` pair into the
+% exact ordered list of raw scalar `rand()` draws DNADamage's real
+% evolveState() consumed for tick t -- the "exact consumed-draw ledger"
+% fallback this task's directive explicitly allows when direct state
+% serialization into this project's own representation is not
+% tractable.
+%
+% Guarded/additive: if `mod` has no `chromosome` property, or the
+% property or its `randStream` is unavailable for any reason, this
+% function no-ops rather than failing the whole tick (this capture is
+% strictly additional evidence, never required for the pre-existing
+% states_before/states_after fields this extractor already produces).
+if ~isprop(mod, 'chromosome')
+    return;
+end
+try
+    chrom = mod.chromosome;
+    if isempty(chrom) || ~isprop(chrom, 'randStream') || isempty(chrom.randStream)
+        return;
+    end
+    snapshot.chromosome_rand_stream_state = double(chrom.randStream.state);
+catch
+    % Never fail a real tick over this diagnostic-only capture.
 end
 end
 
