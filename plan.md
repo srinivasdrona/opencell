@@ -97,14 +97,15 @@ earlier blocks below:**
     finish and return a clean review candidate.
 - L2.2:
   - DNASupercoiling branch `agent/l22-dnas-20260812` at `8951cca`
-    reports the Opus-flagged audit-boundary gap closed. Live-MATLAB probes
-    identified three literal divergences: Karr's own `excludeRegions`
-    indexing bug was not reproduced, m6AD methylation marks were not
-    excluded, and circular blocked regions were pre-split too early.
-    The committed N=200 rerun reports 0/20,000 audit-boundary breaches and
-    PASS (OC/Karr pooled 64/65, active seeds 58/58, clustered seeds 6/7);
-    focused tests report 64 passed. This is awaiting independent Opus
-    re-review; do not integrate before acceptance.
+    was **REJECTED** by Opus after the 0/20,000-breach rerun. The new
+    `_matlab_exclude_regions` port omitted `Chromosome.joinSplitRegions`
+    lines 2811-2817, which normalize an origin-wrapping last exclusion and
+    rewrite the exact `excLens(end)` value used by Karr's indexing bug.
+    The current over-consumption-only boundary telemetry cannot detect this
+    under-consumption class. Port that clause literally, add a live-MATLAB
+    discriminating cross-check and a true `_binding_blocked_regions`
+    inversion for the unsplit-boundary fix, then rerun N=200 once before
+    another Opus review.
   - Cytokinesis/FtsZ dual extraction has exactly three live MATLAB
     sessions: worker A seed 0, worker B seed 17, worker C seed 34.
     Status files remain `RUNNING`; keep the host-wide cap at three and
