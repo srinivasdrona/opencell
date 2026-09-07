@@ -59,6 +59,48 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-08 00:10 IST) — supersedes all earlier blocks
+below:**
+
+- Local `main` is clean at `6121f5e`, **33 commits ahead** of
+  `origin/main` (`2a8846f`). The Opus-accepted per-process catalog
+  provenance migration is merged. Fresh audit: **19 PASS / 1 FAIL /
+  2 MISSING_EVIDENCE**, integrity OK. Migration dry-run reports
+  19 `ALREADY_MIGRATED`, DNAS correctly refused, Cytokinesis/FtsZ no
+  evidence. Run the final targeted migration suite, then push.
+- Published/closed in the local main history: ProteinProcessingII,
+  ChromosomeCondensation, ChromosomeSegregation L2.1,
+  MacromolecularComplexation L2.2, one-pass dual division extractor, and
+  provisional source-bound Cytokinesis M=5000 contract.
+- L2.2:
+  - DNASupercoiling candidate `4325cfd` is a frozen-gate PASS
+    (63/65 pooled, 57/58 active seeds, 6/7 clustered) awaiting final Opus
+    review and clean integration. Acceptance yields **20 PASS / 0 FAIL /
+    2 MISSING**.
+  - Cytokinesis and FtsZ remain the only missing rows. Before bulk, run one
+    fresh source-bound seed-36 M=5000 smoke from merged main. On green,
+    launch three disjoint ranges in three worktrees; any span >= M stops new
+    launches and triggers a separate preregistration.
+- L2.1:
+  - ReplicationInitiation: process RNG exact across 689 draws; source bugs
+    fixed; first mismatch tick 40 on shared chromosome RNG. Per-tick shared
+    state closure remains.
+  - DNADamage: full 20-tick process replay green, but final Opus blockers
+    remain in source/ledger hash enforcement, missing-sidecar fail-open
+    behavior, MATLAB `unique_subs` candidate order, and clean integration.
+  - TranscriptionalRegulation: 4000-tick replay was green but Opus found an
+    invalid manifest, inert source hashes, missing accessibility branches,
+    unportable artifacts, and a rejected L2.2 prereg. Corrective worktree is
+    dirty and must re-earn the claim.
+  - Cytokinesis: production RNG/geometry fixes are scientifically accepted;
+    curated integration still needs audit/manifest support, fail-closed
+    fixture behavior, trace portability, and branch cleanup.
+  - HostInteraction: literal deterministic port is accepted, but fitted
+    level-only evidence was vacuous. Negative/partial source-legal condition
+    traces have been extracted; audit/manifest evidence must be completed.
+- No sub-agents or MATLAB processes were alive at session resume. Use at
+  most **three host-wide MATLAB sessions**, one worktree per concurrent job.
+
 **Current status (2026-09-04, L2.2 catalog-provenance migration DONE) —
 supersedes the 23:05 IST block below:**
 
