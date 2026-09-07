@@ -7,6 +7,7 @@ import copy
 import hashlib
 import json
 import math
+import re
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
@@ -42,6 +43,7 @@ from l2_replay_common import (  # type: ignore
 )
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, _read_matlab_dataset
+from opencell.vivarium.karr_dna_damage_rng import KarrLedgerReplayStream
 
 TARGET_PROCESSES = (
     "DNARepair",
@@ -1152,7 +1154,32 @@ def _honest_replay(
                 )
             refresh_allocator_views(process, state)
 
+            ledger_stream = None
+            if spec.chromosome_rand_stream_ledger_attr is not None and ctx.chromosome_rand_stream_ledger is not None:
+                # Restore Karr's REAL shared-Chromosome-stream input state
+                # for this tick's site-sampling draws (see
+                # chromosome_rand_stream_ledger.py /
+                # scripts/matlab/reconstruct_chromosome_draw_ledger.m) --
+                # input-state restoration, not answer leakage, same as
+                # states_before already restoring substrate/enzyme/
+                # chromosome counts. Reset every tick (never carried
+                # tick-over-tick): the real shared stream's position
+                # between this process's own ticks is determined by ~27
+                # OTHER processes' draws in between, which this
+                # single-process replay cannot itself reproduce.
+                ledger_stream = KarrLedgerReplayStream(
+                    ctx.chromosome_rand_stream_ledger[tick], tick_label=f"{process_name}-tick{tick}"
+                )
+                setattr(process, spec.chromosome_rand_stream_ledger_attr, ledger_stream)
+
             update = process.next_update(1.0, state)
+
+            if ledger_stream is not None:
+                # Fail closed: raises if OC consumed more (mid-call, via
+                # KarrLedgerReplayStream.rand()) or fewer (here) raw draws
+                # than Karr's real shared stream did for this tick --
+                # never silently absorbed or padded.
+                ledger_stream.assert_fully_consumed()
 
             for _label, deltas in collect_count_delta_dicts(update):
                 for value in deltas.values():
@@ -1341,6 +1368,80 @@ def _trace_window_mismatch_reason(row: dict[str, Any], candidate: TraceCandidate
     return None
 
 
+_PYTEST_SUMMARY_OUTCOME_RE = re.compile(
+    r"(?P<count>\d+)\s+(?P<outcome>passed|failed|error|errors|skipped|xfailed|xpassed|deselected)"
+)
+
+
+def _parse_pytest_summary_counts(stdout: str) -> dict[str, int]:
+    """Parse pytest's final summary-line outcome counts (e.g. `1 passed
+    in 0.42s`, `1 skipped in 0.01s`, `1 failed, 2 passed in 3.00s`) into
+    a dict. Only scans the LAST few non-empty lines of stdout -- where
+    pytest emits this summary both in verbose mode (`===== 1 passed in
+    0.42s =====`, delimited with `==`) and in `-q` quiet mode (a bare `1
+    passed in 0.42s`, with NO `==` delimiters at all -- the format this
+    module's own subprocess invocation actually uses) -- rather than
+    every line, to avoid matching incidental digits+word pairs anywhere
+    earlier in test output/tracebacks."""
+    counts: dict[str, int] = {}
+    tail_lines = [line for line in stdout.strip().splitlines() if line.strip()][-5:]
+    for line in tail_lines:
+        for match in _PYTEST_SUMMARY_OUTCOME_RE.finditer(line):
+            outcome = match.group("outcome")
+            counts[outcome] = counts.get(outcome, 0) + int(match.group("count"))
+    return counts
+
+
+def _verify_manifest_ledger_binding(row: dict[str, Any], source_path: Path) -> str | None:
+    """If a manifest row declares a `chromosome_rand_stream_ledger` object
+    (this row's OWN pinned sha256 for its companion per-tick raw-draw
+    ledger sidecar file -- distinct from the ledger's internally
+    self-reported source-file hashes, which only bind it to specific
+    Chromosome.m/RandStream.m/DNADamage.m revisions, not to any specific
+    set of recorded draws), verify the ACTUAL sidecar file living next to
+    `source_path` (same trace-stem naming convention as
+    `chromosome_rand_stream_ledger.load_chromosome_rand_stream_ledger`:
+    `<trace stem>.chromosome_rand_stream_ledger.json`) matches that
+    pinned hash exactly. Returns a failure_reason string on any
+    mismatch/missing-file/malformed declaration; returns None only when
+    the row declares no such object at all (every process/row other than
+    DNADamage) or the declared hash matches the live file exactly.
+
+    This closes a residual tamper vector none of the ledger loader's OWN
+    internal checks can: `load_chromosome_rand_stream_ledger` verifies
+    the ledger's DECLARED source-file hashes and its `trace_sha256`
+    binding to the trace, but (before this check existed) nothing pinned
+    the ledger file's OWN content against a value recorded independently
+    of the ledger file itself -- a maliciously or accidentally
+    regenerated ledger with a correct `trace_sha256` and correct declared
+    source hashes, but fabricated per-tick draws, would otherwise pass
+    every existing loader check and still be accepted as verifying
+    evidence for this manifest row's promotion."""
+    declared = row.get("chromosome_rand_stream_ledger")
+    if declared is None:
+        return None
+    if not isinstance(declared, dict):
+        return "manifest row chromosome_rand_stream_ledger must be an object"
+    declared_sha256 = declared.get("sha256")
+    if not declared_sha256 or not isinstance(declared_sha256, str):
+        return "manifest row chromosome_rand_stream_ledger.sha256 must be a non-empty string"
+    ledger_path = source_path.with_suffix("").with_suffix(".chromosome_rand_stream_ledger.json")
+    if not ledger_path.exists():
+        return (
+            f"manifest row declares chromosome_rand_stream_ledger.sha256={declared_sha256!r} but "
+            f"the companion ledger sidecar is missing at {ledger_path.as_posix()} -- refusing to "
+            "treat this row's promotion as verified without its pinned ledger evidence present"
+        )
+    actual_sha256 = _sha256(ledger_path)
+    if actual_sha256 != declared_sha256:
+        return (
+            f"manifest row chromosome_rand_stream_ledger.sha256 mismatch: declared={declared_sha256} "
+            f"actual={actual_sha256} at {ledger_path.as_posix()} -- refusing to trust a ledger "
+            "sidecar that differs from the one this manifest row's promotion was verified against"
+        )
+    return None
+
+
 def _rerun_manifest_replay_nodeid(row: dict[str, Any]) -> dict[str, Any]:
     replay_evidence = row.get("replay_evidence")
     if not isinstance(replay_evidence, dict):
@@ -1372,13 +1473,42 @@ def _rerun_manifest_replay_nodeid(row: dict[str, Any]) -> dict[str, Any]:
     )
     stdout_tail = "\n".join(line for line in completed.stdout.strip().splitlines()[-20:] if line)
     stderr_tail = "\n".join(line for line in completed.stderr.strip().splitlines()[-20:] if line)
+
+    # Nested-audit skip detection: pytest exits 0 both when every collected
+    # test genuinely PASSED and when every collected test was SKIPPED (or
+    # deselected/xfailed) with zero failures -- `returncode == 0` alone
+    # cannot distinguish "this evidence was re-verified" from "this
+    # evidence was silently not run at all" (e.g. a companion data/ledger
+    # sidecar the nodeid depends on went missing between promotion and
+    # this re-verification). Parse the actual outcome counts and require
+    # at least one genuine `passed` with no other outcome present.
+    summary_counts = _parse_pytest_summary_counts(completed.stdout)
+    passed_count = summary_counts.get("passed", 0)
+    non_passing_counts = {k: v for k, v in summary_counts.items() if k != "passed" and v > 0}
+    passed = completed.returncode == 0 and passed_count >= 1 and not non_passing_counts
+    error: str | None = None
+    if not passed:
+        if completed.returncode == 0 and passed_count == 0:
+            error = (
+                f"pytest nodeid {nodeid} exited 0 but recorded no PASSED outcome "
+                f"(summary counts={summary_counts!r}) -- a skipped/xfailed/deselected nested "
+                "test must never be accepted as re-verifying this row's evidence"
+            )
+        elif completed.returncode == 0 and passed_count >= 1 and non_passing_counts:
+            error = (
+                f"pytest nodeid {nodeid} recorded both a PASSED outcome and a non-passing "
+                f"outcome in the same run (summary counts={summary_counts!r}) -- treating as "
+                "unverified rather than trusting a partial/ambiguous result"
+            )
     return {
-        "passed": completed.returncode == 0,
+        "passed": passed,
         "nodeid": nodeid,
         "returncode": completed.returncode,
+        "summary_counts": summary_counts,
         "stdout_tail": stdout_tail,
         "stderr_tail": stderr_tail,
         "command": f"{sys.executable} -m pytest -q {nodeid}",
+        "error": error,
     }
 
 
@@ -1498,6 +1628,11 @@ def verify_active_window_manifest_row(
         return result
 
     if recorded_classification == CLASS_EXISTING_WINDOW_PASS:
+        ledger_binding_error = _verify_manifest_ledger_binding(row, source_path)
+        if ledger_binding_error is not None:
+            result["fresh_classification"] = CLASS_CODE_GAP
+            result["failure_reason"] = ledger_binding_error
+            return result
         replay_verification = _rerun_manifest_replay_nodeid(row)
         result["replay_verification"] = replay_verification
         result["fresh_classification"] = (

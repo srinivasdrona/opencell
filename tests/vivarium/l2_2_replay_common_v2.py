@@ -27,6 +27,7 @@ _HELPER_DIR = Path(__file__).resolve().parent
 if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
+from chromosome_rand_stream_ledger import load_chromosome_rand_stream_ledger
 from l2_replay_common import (
     apply_count_update,
     assert_delta_integral,
@@ -154,6 +155,21 @@ class _ProcessSpec:
     hidden_read_surface: tuple[str, ...] = ()
     requires_hints_for_honest_mode: bool = False
     oracle_type: str = ORACLE_DISTRIBUTIONAL
+    chromosome_rand_stream_ledger_attr: str | None = None
+    """When set (currently only DNADamage's `_site_sampling_rng`), names
+    the process attribute that should be replaced with a fresh
+    `KarrLedgerReplayStream` each tick when a companion
+    chromosome_rand_stream_state ledger sidecar exists for the trace
+    being replayed (see `chromosome_rand_stream_ledger.py` and
+    `scripts/matlab/reconstruct_chromosome_draw_ledger.m`). This restores
+    Karr's REAL shared-Chromosome-stream input state for this process's
+    site-sampling draws instead of the freshly-seeded stand-in stream --
+    input-state restoration, not answer leakage, the same way
+    `states_before` already restores substrate/enzyme/chromosome counts.
+    No behavior change for any other process (this field is None for
+    every other `_ProcessSpec` entry, and the ledger loader itself
+    returns None -- falling back to the pre-existing stand-in stream,
+    unchanged -- for any trace lacking the companion sidecar file)."""
 
 
 @dataclass
@@ -167,6 +183,13 @@ class _ProcessContext:
     process_wid_to_master_idx: dict[str, dict[str, int]] = field(default_factory=dict)
     master_idx_to_process_wid: dict[str, dict[int, str]] = field(default_factory=dict)
     process_idx_to_master_idx: dict[str, dict[int, int]] = field(default_factory=dict)
+    chromosome_rand_stream_ledger: list[list[float]] | None = None
+    """Populated by `_build_context` iff `spec.chromosome_rand_stream_ledger_attr`
+    is set AND a companion ledger sidecar exists for this trace file (see
+    `chromosome_rand_stream_ledger.load_chromosome_rand_stream_ledger`,
+    which fails closed -- raises -- on a tampered/hash-mismatched/
+    malformed sidecar rather than returning a partial/guessed ledger; it
+    returns None only when the sidecar file is simply absent)."""
 
 
 _PROCESS_SPECS: dict[str, _ProcessSpec] = {
@@ -449,6 +472,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
             "boundEnzymes": "enzyme_wids",
         },
         hidden_read_surface=("chromosome",),
+        chromosome_rand_stream_ledger_attr="_site_sampling_rng",
     ),
     "ProteinProcessingI": _ProcessSpec(
         process_cls=KarrProteinProcessingIProcess,
@@ -903,6 +927,18 @@ def _build_context(
             )
         wids_by_observable[observable] = runtime_wids
 
+    chromosome_rand_stream_ledger: list[list[float]] | None = None
+    if spec.chromosome_rand_stream_ledger_attr is not None:
+        trace_path = Path(handle.filename).resolve()
+        chromosome_rand_stream_ledger = load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+        if chromosome_rand_stream_ledger is not None and len(chromosome_rand_stream_ledger) != n_ticks:
+            pytest.fail(
+                "L2.2.v2 precondition failed (chromosome_rand_stream_state ledger tick-count "
+                f"mismatch): process={name}, ledger_ticks={len(chromosome_rand_stream_ledger)}, "
+                f"trace_n_ticks={n_ticks} -- refusing to replay with a ledger that does not "
+                "cover every tick of this trace"
+            )
+
     return _ProcessContext(
         name=name,
         spec=spec,
@@ -910,6 +946,7 @@ def _build_context(
         trace=handle,
         n_ticks=n_ticks,
         wids_by_observable=wids_by_observable,
+        chromosome_rand_stream_ledger=chromosome_rand_stream_ledger,
     )
 
 

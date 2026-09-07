@@ -22,6 +22,7 @@ if "opencell" in sys.modules:
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet
 from opencell.vivarium.chromosome_views import current_damage_sites
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
+from opencell.vivarium.karr_dna_damage_rng import KarrMcg16807Stream
 
 _SPARSE_FIELDS = (
     "damagedBases",
@@ -209,16 +210,67 @@ def test_selection_probability_is_literal_stepsize_reactionbounds_and_radiation_
 
 
 def test_stochastic_round_is_unbiased() -> None:
-    """Karr randStream.stochasticRound: floor(x) + Bernoulli(frac(x)),
-    E[stochasticRound(x)] == x exactly."""
+    """Literal Karr `RandStream.stochasticRound` (`+util/RandStream.m`):
+    `roundUp = rand < mod(value,1); value = roundUp ? ceil(value) :
+    floor(value)`, drawn UNCONDITIONALLY for every call (never
+    special-cased for value<=0 or an exact integer -- Karr's real
+    algorithm never skips this draw; see
+    `opencell/vivarium/karr_dna_damage_rng.py`). E[stochasticRound(x)] ==
+    x exactly."""
     process = KarrDNADamageProcess({"rng_seed": 42})
     value = 2.3
     draws = [process._stochastic_round(value) for _ in range(20_000)]
     assert set(draws) <= {2, 3}
     assert np.mean(draws) == pytest.approx(value, abs=0.02)
     assert process._stochastic_round(0.0) == 0
-    assert process._stochastic_round(-1.0) == 0
+    # mod(-1.0, 1) == 0 (MATLAB/Python floor-mod), so roundUp is always
+    # False here -- the literal result is floor(-1.0) == -1, not the old
+    # buggy value<=0 special case's 0.
+    assert process._stochastic_round(-1.0) == -1
     assert process._stochastic_round(5.0) == 5
+
+
+def test_process_uses_mcg16807_streams_not_pcg64() -> None:
+    """Regression/inversion: KarrDNADamageProcess must construct its two
+    RNG streams as KarrMcg16807Stream instances (opencell/vivarium/
+    karr_dna_damage_rng.py), never numpy's PCG64-backed
+    ``np.random.default_rng``/``Generator``. Restoring the old
+    ``self._rng = np.random.default_rng(seed)`` line (or any
+    ``np.random.Generator`` field) would silently desynchronize every
+    draw from Karr's real mcg16807 sequence -- this test fails closed
+    against that regression at the process-construction level, distinct
+    from the RNG-module-level inversion tests in
+    test_karr_dna_damage_rng.py."""
+    process = KarrDNADamageProcess({"rng_seed": 2000})
+    assert isinstance(process._reaction_order_rng, KarrMcg16807Stream)
+    assert isinstance(process._site_sampling_rng, KarrMcg16807Stream)
+    assert not isinstance(process._reaction_order_rng, np.random.Generator)
+    assert not isinstance(process._site_sampling_rng, np.random.Generator)
+    for name in vars(process):
+        value = getattr(process, name)
+        assert not isinstance(value, np.random.Generator), (
+            f"process attribute {name!r} is a PCG64-backed np.random.Generator; "
+            "DNADamage RNG must route exclusively through KarrMcg16807Stream"
+        )
+
+
+def test_process_rng_streams_are_seed_reproducible_and_seed_distinct() -> None:
+    """Two processes constructed with the same explicit seed must draw an
+    identical reaction order (mcg16807 is fully deterministic given a
+    seed -- unlike PCG64's OS-entropy-seeded default, which this
+    reproducibility guards against reintroducing). Two processes with
+    different seeds must (with overwhelming probability) diverge --
+    guards against a regression where the seed parameter is silently
+    ignored and a fixed/default seed is always used internally."""
+    same_a = KarrDNADamageProcess({"rng_seed": 2000})
+    same_b = KarrDNADamageProcess({"rng_seed": 2000})
+    order_a = same_a._reaction_order(int(same_a.reaction_bounds.shape[0]))
+    order_b = same_b._reaction_order(int(same_b.reaction_bounds.shape[0]))
+    assert list(order_a) == list(order_b)
+
+    other = KarrDNADamageProcess({"rng_seed": 4001})
+    order_other = other._reaction_order(int(other.reaction_bounds.shape[0]))
+    assert list(order_other) != list(order_a)
 
 
 def test_n_accessible_sites_subtracts_footprints_and_damaged_nnz() -> None:
@@ -587,3 +639,206 @@ def test_no_kind_rate_override_mechanism_exists() -> None:
     # resurrect a rate-override code path.
     legacy_caller_process = KarrDNADamageProcess({"kind_rates_per_s": {"uv_like": 3.0}})
     assert not hasattr(legacy_caller_process, "kind_rates_per_s")
+
+
+def test_sample_literal_motif_sites_draws_final_select_when_candidates_exactly_equal_n_sites() -> None:
+    """Regression for a real-MATLAB-verified off-by-one draw bug (found
+    2026-09-05 via a per-reaction side-by-side ledger diff against live
+    MATLAB, scripts/matlab/instrument_dnadamage_tick4_per_reaction.m;
+    seed2000 tick4's DNADamage_THYTHY_cyclobutane_THYTHY_UVB_radiation
+    reaction diverged by exactly 1 draw).
+
+    Karr's real Chromosome.m::sampleAccessibleSites always calls
+    `this.randStream.randomlySelectNRows(positionsStrands, nSites)`
+    UNCONDITIONALLY once accumulated candidates reach (>=) nSites --
+    including the EXACT-match case where the search happens to find
+    precisely nSites candidates on its first sufficient round.
+    `randsample(stream, n, n, false)` with n==k still consumes n real
+    draws (randsample.m's `4*k>n` branch fires for any k>=1 when k==n,
+    doing a full `randperm(n)`) even though the output is merely a
+    reordering of the same candidates. A prior version of
+    `_sample_literal_motif_sites` used `if len(candidates) > n_sites`
+    (strictly greater), which silently skipped this mandatory draw for
+    the exact-match case.
+
+    This test forces exactly that case: an all-'A' synthetic sequence and
+    an always-accessible monkeypatch (bypassing the accessibility/
+    occupancy filters, whose real behavior is exercised by the L2.1
+    replay tests) mean every drawn (position, strand) pair is accepted;
+    a hand-crafted KarrLedgerReplayStream maps every one of the first
+    round's `n_more=11` position/strand draws to the SAME (0, 0)
+    coordinate (raw draw 1e-12 -> ceil(dna_length*1e-12)==1 for any
+    realistic genome length), so exactly ONE unique candidate
+    accumulates -- exactly equal to n_sites=1. The ledger provides
+    EXACTLY 22 (11 position + 11 strand) + 1 (final select) = 23 raw
+    draws; `assert_fully_consumed()` only passes if the mandatory final
+    select draw was actually consumed.
+    """
+    from opencell.vivarium.karr_dna_damage_rng import KarrLedgerReplayStream
+
+    process = KarrDNADamageProcess({"rng_seed": 2000})
+    process._window_accessible = lambda *args, **kwargs: True  # type: ignore[method-assign]
+    dna_length = int(process.sequence_length_nt)
+    process._chromosome_positive_sequence = np.full(dna_length, ord("A"), dtype=np.uint8)
+
+    state = _base_state()
+    chromosome_store = process._resolve_chromosome_store(state["chromosome"])
+
+    # 11 position draws + 11 strand draws, all mapping to (1-based) 1 ->
+    # 0-based (0, 0) via ceil(dna_length * 1e-12) == 1 for any dna_length
+    # this project's genome uses (comfortably < 1e12 bp); then exactly 1
+    # more draw for the mandatory final randomlySelectNRows/randsample
+    # select step (randperm(1) internally calls rand_vector(1)).
+    n_more = 11  # Chromosome.m: max(2*deficit, deficit+10) for deficit=1
+    draws = [1e-12] * (2 * n_more) + [0.5]
+    ledger_stream = KarrLedgerReplayStream(draws, tick_label="unit-test")
+    process._site_sampling_rng = ledger_stream
+
+    result = process._sample_literal_motif_sites(
+        motif="A",
+        n_sites=1,
+        chromosome_store=chromosome_store,
+        chromosome_state=state["chromosome"],
+        occupied_positions=set(),
+    )
+
+    assert result == [(0, 0)]
+    ledger_stream.assert_fully_consumed()
+
+
+def test_inversion_skip_final_select_on_exact_match_desyncs_stream() -> None:
+    """Inversion: the prior (buggy) `if len(candidates) > n_sites` guard
+    must NOT leave the site-sampling stream at the same position the
+    fixed `>=` version does -- i.e. the two behaviors are observably
+    different, so a future regression back to `>` would be caught by
+    `test_sample_literal_motif_sites_draws_final_select_when_candidates_exactly_equal_n_sites`
+    above failing (leftover ledger draws -> assert_fully_consumed raises)
+    rather than silently passing."""
+    from opencell.vivarium.karr_dna_damage_rng import KarrLedgerReplayStream
+
+    process = KarrDNADamageProcess({"rng_seed": 2000})
+    process._window_accessible = lambda *args, **kwargs: True  # type: ignore[method-assign]
+    dna_length = int(process.sequence_length_nt)
+    process._chromosome_positive_sequence = np.full(dna_length, ord("A"), dtype=np.uint8)
+
+    state = _base_state()
+    chromosome_store = process._resolve_chromosome_store(state["chromosome"])
+
+    n_more = 11
+    draws = [1e-12] * (2 * n_more) + [0.5]
+    ledger_stream = KarrLedgerReplayStream(draws, tick_label="unit-test-inversion")
+    process._site_sampling_rng = ledger_stream
+
+    process._sample_literal_motif_sites(
+        motif="A",
+        n_sites=1,
+        chromosome_store=chromosome_store,
+        chromosome_state=state["chromosome"],
+        occupied_positions=set(),
+    )
+    # The fixed implementation consumes ALL 23 draws (including the
+    # mandatory final select); a buggy `> n_sites` implementation would
+    # stop at 22, leaving the last draw unconsumed.
+    assert ledger_stream._index == 23
+
+
+def test_sample_literal_motif_sites_sorts_candidates_by_strand_then_position_before_randsample() -> None:
+    """Regression for a real-source-verified candidate-ordering bug (n>k
+    case): `_sample_literal_motif_sites` must sort accumulated candidates
+    by (strand, position) -- NOT raw discovery order -- before calling
+    `randsample_without_replacement`, matching Karr's real
+    `Chromosome.m::sampleAccessibleSites`, whose accumulated
+    `positionsStrands` list is re-sorted EVERY loop iteration by
+    `edu.stanford.covert.util.SparseMat.unique_subs(subs, [dnaLength
+    this.nCompartments])`.
+
+    Read directly from `SparseMat.m` (no web, no guessing):
+    `unique_subs`'s (and the final `sort_subs`'s) linear-index weight
+    vector is `(subs-1)*[1 cumprod(siz(1:end-1))]'` for `subs=[position
+    strand]`, `siz=[dnaLength, nCompartments]` -- i.e. weight `[1,
+    dnaLength]`. STRAND's weight (`dnaLength`) dominates POSITION's
+    (`1`), so the real sort key is (strand, position) ascending, not
+    (position, strand). This matters only for a genuine `n>k` selection
+    (more candidates found than requested): the specific physical sites
+    `randsample`'s index output maps to depend on the order the
+    candidate list was in when `randsample` was called.
+
+    This test forces exactly that case: three distinct (position,
+    strand) candidates are discovered in DISCOVERY order A, B, C (via a
+    scripted `KarrLedgerReplayStream`, all-'A' synthetic sequence, and
+    an always-accessible monkeypatch), with `n_sites=1` (so this is a
+    genuine `n=3 > k=1` selection, `4*k=4 > n=3`, i.e. `randsample`'s
+    prefix-of-randperm branch). B and C sort BEFORE A under (strand,
+    position) but AFTER A under raw discovery order. The final
+    `randperm(3)` draws are scripted so the smallest key lands on index
+    0 of whichever list `randsample` was actually given: if the fix is
+    correct (sorted-before-select), the selected candidate is B (the
+    correct, source-verified behavior); the pre-fix (discovery-order)
+    behavior would instead have selected A."""
+    from opencell.vivarium.karr_dna_damage_rng import KarrLedgerReplayStream
+
+    process = KarrDNADamageProcess({"rng_seed": 2000})
+    process._window_accessible = lambda *args, **kwargs: True  # type: ignore[method-assign]
+    dna_length = int(process.sequence_length_nt)
+    n_strands = int(process.chromosome_shape[1])
+    assert n_strands >= 2
+    process._chromosome_positive_sequence = np.full(dna_length, ord("A"), dtype=np.uint8)
+    # Candidate A sits on strand=2 (1-based) -> 0-based strand=1, an ODD
+    # (reverse) strand: `_sample_literal_motif_sites` complements
+    # reverse-strand bases via `_BASE_COMPLEMENT_LUT` before comparing to
+    # `motif` (dsDNA partner-strand semantics -- see this function's own
+    # docstring). Store the RAW (positive-strand) base at A's position
+    # (0-based 4) as 'T' -- `_BASE_COMPLEMENT_LUT[ord('T')] == ord('A')`
+    # -- so it reads back as 'A' on the reverse strand and is a genuine
+    # motif match, matching all three candidates (B/C on strand 0
+    # forward, A on strand 1 reverse) rather than spuriously excluding A
+    # via an unintended complement mismatch.
+    process._chromosome_positive_sequence[4] = ord("T")
+
+    state = _base_state()
+    chromosome_store = process._resolve_chromosome_store(state["chromosome"])
+
+    def rand_for_one_based(value: int, denominator: int) -> float:
+        """A rand() value r such that ceil(denominator * r) == value
+        exactly, for ANY positive integer denominator (avoids hardcoding
+        this project's actual genome length/strand count)."""
+        return (value - 0.5) / denominator
+
+    # 11 (position, strand) 1-based draw pairs (deficit=1 -> n_more=11,
+    # same as the sibling exact-match tests above). Discovery order:
+    # A=(pos=5,strand=2) first, B=(pos=2,strand=1) second,
+    # C=(pos=8,strand=1) third; remaining 8 pairs repeat A (deduped by
+    # the accumulator, contributing no new candidates).
+    pos_1based = [5, 2, 8] + [5] * 8
+    strand_1based = [2, 1, 1] + [2] * 8
+    assert len(pos_1based) == 11
+    assert len(strand_1based) == 11
+
+    position_draws = [rand_for_one_based(p, dna_length) for p in pos_1based]
+    strand_draws = [rand_for_one_based(s, n_strands) for s in strand_1based]
+    # Final `randsample_without_replacement(3, 1)` -> `4*1=4 > 3` ->
+    # `randperm(3)[:1]`: 3 keys, smallest key's (0-based) index wins.
+    # key[0] is smallest -> randperm(3) puts index 0 first -> selects
+    # whichever candidate is at position 0 of the list `randsample` was
+    # actually handed.
+    randperm_keys = [0.1, 0.9, 0.5]
+
+    draws = position_draws + strand_draws + randperm_keys
+    ledger_stream = KarrLedgerReplayStream(draws, tick_label="unit-test-sort-order")
+    process._site_sampling_rng = ledger_stream
+
+    result = process._sample_literal_motif_sites(
+        motif="A",
+        n_sites=1,
+        chromosome_store=chromosome_store,
+        chromosome_state=state["chromosome"],
+        occupied_positions=set(),
+    )
+
+    # 0-based candidates: A=(4,1), B=(1,0), C=(7,0). Sorted by (strand,
+    # position): B=(1,0) [key=(0,1)] < C=(7,0) [key=(0,7)] < A=(4,1)
+    # [key=(1,4)] -- B is selected. A buggy discovery-order
+    # implementation would instead select A=(4,1) (first discovered).
+    assert result == [(1, 0)]
+    ledger_stream.assert_fully_consumed()
+
