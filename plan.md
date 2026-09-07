@@ -94,7 +94,13 @@ below:**
 - L2.1:
   - ReplicationInitiation: process RNG exact across 689 draws; source bugs
     fixed; first mismatch tick 40 on shared chromosome RNG. Per-tick shared
-    state closure remains.
+    state closure is now exact for all 200 ticks after fixing the
+    second-copy site mask against MATLAB's true double-stranded-region
+    endpoint formula. Aggregate replay now first differs at tick 55, but
+    site-level analysis localizes the actual first error to tick 41: an
+    ATP/ADP DnaA type-identity swap with total monomer conservation intact.
+    Trace the exact bind/polymerize/activate/inactivate transition that
+    creates the swap and continue to full identity.
   - DNADamage: full 20-tick process replay green, but final Opus blockers
     were corrected at `a81a172`: portable raw-byte source hashes hard-fail
     unresolved paths; ledger SHA is manifest-bound; missing ledgers fail
