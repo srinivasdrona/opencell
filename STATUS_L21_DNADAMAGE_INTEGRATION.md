@@ -256,4 +256,22 @@ never copied.
 ## Provenance
 
 Logged to `opencell/provenance/llm_interactions.jsonl` after the
-integration commit (see commit history below for the exact linked SHA).
+integration commit (`c330fe5`), and separately unioned the candidate
+branch's own 10 DNADamage-tagged provenance entries (Sessions 1-5:
+mcg16807 RNG port through the ledger-injection/promotion closure) into
+this branch's log, deduped by `event_id` -- append-only, content-
+addressed, zero duplicates after merge (320 unique ids). This preserves
+the candidate's own methodology audit trail rather than dropping it
+during integration.
+
+## Final commits on this branch (relative to `main` @ `82b26ca`)
+
+1. `c330fe5` -- fix(l21-dnadamage): curated integration (scoped files +
+   two latent fixes + manifest edit + L2.2 regen)
+2. `b97ca96` -- chore(l21-dnadamage): log LLM interaction provenance for
+   curated integration c330fe5
+3. `97356e5` -- chore(l21-dnadamage): union candidate DNADamage
+   provenance entries by event_id
+
+Working tree is clean; branch has **not** been pushed or merged into
+`main`.
