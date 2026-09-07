@@ -841,4 +841,3 @@ def test_sample_literal_motif_sites_sorts_candidates_by_strand_then_position_bef
     # implementation would instead select A=(4,1) (first discovered).
     assert result == [(1, 0)]
     ledger_stream.assert_fully_consumed()
-

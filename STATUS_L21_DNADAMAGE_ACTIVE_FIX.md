@@ -1251,5 +1251,3 @@ reverted. Logged to `opencell/provenance/llm_interactions.jsonl`
 
 **Not pushed/merged to main this session**, per the branch's standing
 instruction — ready for re-review.
-
-

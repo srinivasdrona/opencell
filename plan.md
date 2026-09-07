@@ -59,89 +59,60 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-08 00:10 IST) — supersedes all earlier blocks
-below:**
+**Current status (2026-09-08, post-compaction recovery) — supersedes all
+earlier blocks below:**
 
-- Local `main` is clean at `6121f5e`, **33 commits ahead** of
-  `origin/main` (`2a8846f`). The Opus-accepted per-process catalog
-  provenance migration is merged. Fresh audit: **19 PASS / 1 FAIL /
-  2 MISSING_EVIDENCE**, integrity OK. Migration dry-run reports
-  19 `ALREADY_MIGRATED`, DNAS correctly refused, Cytokinesis/FtsZ no
-  evidence. Run the final targeted migration suite, then push.
-- Published/closed in the local main history: ProteinProcessingII,
-  ChromosomeCondensation, ChromosomeSegregation L2.1,
-  MacromolecularComplexation L2.2, one-pass dual division extractor, and
-  provisional source-bound Cytokinesis M=5000 contract.
+- Local `main` is at `d204321`, **12 commits ahead** of `origin/main`
+  (`752b252`). DNADamage's Opus-accepted clean integration is merged.
+  Its canonical seed-2000 trace and chromosome-ledger sidecar are present
+  in `main-integrate` with SHA-256 `7be78871...52f0` and
+  `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
+  data-dependent skips, active rubric 14/14, L1b 19/19, and L2.2
+  **19 PASS / 1 FAIL / 2 MISSING_EVIDENCE**, integrity OK. Remove the two
+  merge-introduced EOF blank lines, commit the handoff/cleanup, then push.
+- L2.1 review/integration queue:
+  - ReplicationInitiation branch `agent/l21-repinit-20260817` at `8ee75f0`
+    reports full 200-tick bit identity after fixing the two-strand
+    supercoiling extent. Focused 29/29 and L1b pass. A fresh N=50/M=200
+    L2.2 sweep is still live in WSL; the worktree is intentionally dirty
+    with sweep outputs and extensive untracked diagnostics. Do not merge
+    wholesale; obtain Opus review, then build a curated current-main
+    integration.
+  - HostInteraction branch `agent/l21-host-active-fix-20260904` at
+    `36c92ec` reports the second Opus blocker round closed: condition
+    enzyme overrides are contained across `copyToState`, the stale oracle
+    allowlist entry is removed, and every discriminating-condition hash,
+    value, and nodeid is verified fail-closed. All six gitignored traces
+    are copied into `main-integrate`. Send for final Opus re-review before
+    integration.
+  - Cytokinesis clean integration branch `integrate/l21-cytokinesis-clean`
+    at `27237c9` reports a mechanically promoted M5000 replay and clean
+    scoped integration. Send for final Opus review, then reconcile its
+    Cytokinesis manifest row with DNADamage's already-merged row; expected
+    combined board is 9 EWP / 1 CODE_GAP / 1 MISSING.
+  - TranscriptionalRegulation branch
+    `agent/l21-txreg-active-fix-20260903` has committed blocker fixes at
+    `2b431cc`, but additional verifier/code/test changes are still
+    uncommitted and its active-rubric run is live. Wait for the agent to
+    finish and return a clean review candidate.
 - L2.2:
-  - DNASupercoiling candidate `4325cfd` reproduces frozen-gate PASS counts
-    (63/65 pooled, 57/58 active seeds, 6/7 clustered), but Opus **REJECTED
-    closure**: 95/5000 sampled ticks (19/50 reviewed seeds) consume beyond
-    the independently audited MATLAB process-draw boundary, often ~2x
-    (`seed0 tick81: 35 vs 19`). Those ticks are projection-silent
-    (`linkingNumbers.delta_nnz=0` on both sides), so the PASS numbers are
-    reproducible but the underlying state/candidate divergence remains.
-    Root-cause the first breach (seed0 tick81) and emit audit-boundary
-    telemetry before integration. No N=200 rerun is required unless the
-    fix changes the measured tensors.
-  - Cytokinesis and FtsZ remain the only missing rows. Before bulk, run one
-    fresh source-bound seed-36 M=5000 smoke from merged main. **Smoke PASS**:
-    onset 27918, completion 31993, inclusive span 4076, margin OK; both
-    Cytokinesis/FtsZ validators pass and both bind DNADamage source
-    `86d8b3c2...27e7e`. Launching three one-seed-at-a-time, fail-closed
-    workers in separate worktrees for ranges 0-16, 17-33, and 34-49
-    (seed36 preloaded/skipped). Any span >= M or validator failure stops that
-    worker immediately and blocks promotion pending a new preregistration.
-- L2.1:
-  - ReplicationInitiation: process RNG exact across 689 draws; source bugs
-    fixed; first mismatch tick 40 on shared chromosome RNG. Per-tick shared
-    state closure is now exact for all 200 ticks after fixing the
-    second-copy site mask against MATLAB's true double-stranded-region
-    endpoint formula. Aggregate replay now first differs at tick 55, but
-    site-level analysis localizes the actual first error to tick 41: an
-    ATP/ADP DnaA type-identity swap with total monomer conservation intact.
-    Trace the exact bind/polymerize/activate/inactivate transition that
-    creates the swap and continue to full identity.
-  - DNADamage: full 20-tick process replay green, but final Opus blockers
-    were corrected at `a81a172`: portable raw-byte source hashes hard-fail
-    unresolved paths; ledger SHA is manifest-bound; missing ledgers fail
-    and nested audit detects skips; candidates follow MATLAB `unique_subs`
-    strand-major order. Reported gates: 101 passed/5 expected skips,
-    canonical replay + manifest `VERIFIED_EXISTING_WINDOW_PASS`, active
-    14/14, L1b 19/19, L2.2 PASS OC84/Karr99. Final Opus re-review
-    **ACCEPTED curated integration**. Include two nonblocking but real
-    cleanups before merge: sort non-string selected indices like MATLAB
-    `sort(rndIdxs)`, and scope data-absence skips only to data-dependent
-    tests. Regenerate the DNADamage bundle on current main under
-    per-process catalog provenance; preserve board 19/1/2.
-  - TranscriptionalRegulation: 4000-tick replay was green but Opus found an
-    invalid manifest, inert source hashes, missing accessibility branches,
-    unportable artifacts, and a rejected L2.2 prereg. Corrective worktree is
-    dirty and must re-earn the claim.
-  - Cytokinesis: production RNG/geometry fixes are scientifically accepted;
-    corrective branch `75e4977` now restores dead shared-file changes,
-    enforces fixture/RNG fail-closed behavior, mechanically promotes the
-    M5000 manifest via source-bound audit, refreshes anchors, and reports
-    69/69 tests green. Opus re-review still **REJECTED the stale branch
-    scope**: dead `karr_protein_decay_light` changes remain, a banned-token
-    docstring masks the stale Cytokinesis oracle allowlist, strict-rubric
-    expected verdict is not updated, and wholesale manifest/audit/launcher
-    files would regress current main. Build a current-main clean integration,
-    remove the allowlist honestly, preserve all newer rows/hunks, and rerun
-    mechanical manifest promotion before one final review.
-  - HostInteraction: literal deterministic port plus five source-legal
-    knockout/partial-condition traces now discriminate the full six-boolean
-    cascade and make a constant-True stub fail. Candidate `1c3383f` fixes
-    all audit semantics, binds condition traces/hashes, moves MATLAB drivers,
-    cleans tmp scope, and reports 58 passed/1 skip plus manifest 11/11.
-    Opus **REJECTED three evidence/infrastructure blockers**: enzyme
-    overrides are copied back into shared global protein state; the removed
-    oracle dependency remains on the stale allowlist; and the manifest
-    records five condition hashes/nodeids without mechanically verifying
-    them (off-worktree they silently skip). Restore overridden enzymes before
-    copyToState or otherwise contain the condition, remove the allowlist
-    entry, and make every condition hash/nodeid/before-after fail-closed.
-- No sub-agents or MATLAB processes were alive at session resume. Use at
-  most **three host-wide MATLAB sessions**, one worktree per concurrent job.
+  - DNASupercoiling corrective agent is still active in
+    `wave-l22-dnas`; a corrected N=200 audit-boundary-closure evaluation is
+    live in WSL. Do not accept the prior PASS candidate until the agent
+    returns with the seed-0 tick-81 draw-boundary root cause and reviewable
+    committed evidence.
+  - Cytokinesis/FtsZ dual extraction has exactly three live MATLAB
+    sessions: worker A seed 0, worker B seed 17, worker C seed 34.
+    Status files remain `RUNNING`; keep the host-wide cap at three and
+    resume only incomplete seeds after any worker exits.
+- Operational traps:
+  - MATLAB scratch tags must use underscores, not hyphens.
+  - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
+    the three-session cap manually.
+  - Dual traces must bind the resolved DNADamage source/overlay hash, and
+    M5000 fails closed if any inclusive Cytokinesis span reaches `M`.
+  - Gitignored accepted traces must be copied into `main-integrate` before
+    any source worktree is removed.
 
 **Current status (2026-09-04, L2.2 catalog-provenance migration DONE) —
 supersedes the 23:05 IST block below:**
