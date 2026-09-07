@@ -111,7 +111,13 @@ below:**
     corrective branch `75e4977` now restores dead shared-file changes,
     enforces fixture/RNG fail-closed behavior, mechanically promotes the
     M5000 manifest via source-bound audit, refreshes anchors, and reports
-    69/69 tests green. Await final Opus re-review/curated integration.
+    69/69 tests green. Opus re-review still **REJECTED the stale branch
+    scope**: dead `karr_protein_decay_light` changes remain, a banned-token
+    docstring masks the stale Cytokinesis oracle allowlist, strict-rubric
+    expected verdict is not updated, and wholesale manifest/audit/launcher
+    files would regress current main. Build a current-main clean integration,
+    remove the allowlist honestly, preserve all newer rows/hunks, and rerun
+    mechanical manifest promotion before one final review.
   - HostInteraction: literal deterministic port plus five source-legal
     knockout/partial-condition traces now discriminate the full six-boolean
     cascade and make a constant-True stub fail. Candidate `1c3383f` fixes
