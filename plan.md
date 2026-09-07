@@ -72,12 +72,18 @@ earlier blocks below:**
   merge-introduced EOF blank lines, commit the handoff/cleanup, then push.
 - L2.1 review/integration queue:
   - ReplicationInitiation branch `agent/l21-repinit-20260817` at `8ee75f0`
-    reports full 200-tick bit identity after fixing the two-strand
-    supercoiling extent. Focused 29/29 and L1b pass. A fresh N=50/M=200
-    L2.2 sweep is still live in WSL; the worktree is intentionally dirty
-    with sweep outputs and extensive untracked diagnostics. Do not merge
-    wholesale; obtain Opus review, then build a curated current-main
-    integration.
+    was **REJECTED** by Opus despite a genuine ledger-restored 200-tick
+    exact replay. The claimed second non-ledger PASS was false because the
+    diagnostic auto-loaded the sidecar; with ledger loading disabled the
+    replay still first differs at tick 41. Current main also rejects the
+    branch sidecar because it lacks the required DNADamage source binding,
+    and taking the branch's shared ledger/audit files wholesale would
+    regress DNADamage's already-merged fixes. Correct the claim, regenerate
+    the sidecar with current-main provenance, renumber the colliding
+    `dec-005`, and build only surgical shared-file hunks preserving both
+    DNADamage and RepInit ledger dispatch. The fresh N=50/M=200 L2.2 sweep
+    reports PASS but must be regenerated/bound after the corrected
+    integration candidate.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` reports the second Opus blocker round closed: condition
     enzyme overrides are contained across `copyToState`, the stale oracle
