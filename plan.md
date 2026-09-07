@@ -96,11 +96,15 @@ earlier blocks below:**
     uncommitted and its active-rubric run is live. Wait for the agent to
     finish and return a clean review candidate.
 - L2.2:
-  - DNASupercoiling corrective agent is still active in
-    `wave-l22-dnas`; a corrected N=200 audit-boundary-closure evaluation is
-    live in WSL. Do not accept the prior PASS candidate until the agent
-    returns with the seed-0 tick-81 draw-boundary root cause and reviewable
-    committed evidence.
+  - DNASupercoiling branch `agent/l22-dnas-20260812` at `8951cca`
+    reports the Opus-flagged audit-boundary gap closed. Live-MATLAB probes
+    identified three literal divergences: Karr's own `excludeRegions`
+    indexing bug was not reproduced, m6AD methylation marks were not
+    excluded, and circular blocked regions were pre-split too early.
+    The committed N=200 rerun reports 0/20,000 audit-boundary breaches and
+    PASS (OC/Karr pooled 64/65, active seeds 58/58, clustered seeds 6/7);
+    focused tests report 64 passed. This is awaiting independent Opus
+    re-review; do not integrate before acceptance.
   - Cytokinesis/FtsZ dual extraction has exactly three live MATLAB
     sessions: worker A seed 0, worker B seed 17, worker C seed 34.
     Status files remain `RUNNING`; keep the host-wide cap at three and
