@@ -272,7 +272,13 @@ context it carries:**
     and missing RNG/ledger tests remain. Fix all and re-earn exact replay.
     The proposed PIT L2.2 prereg is rejected as an OC self-test; redesign
     around Karr realized winners under OC's conditional law / established
-    Karr-derived null before any new extraction.
+    Karr-derived null before any new extraction. Corrective candidate
+    `2b431cc` reports all six closed: active audit no longer uses the dead
+    130-slot projection, manifest is `EXISTING_WINDOW_PASS` with 70 active
+    ticks, source/ledger hashes fail closed, full double-strand/damage/
+    overlap accessibility is implemented, dec-006 is registered, and
+    4000/4000 replay is re-earned. Revised no-cohort L2.2 pilot uses Karr
+    realized winners (45 events, KS p=0.30). Await final Opus review.
   - Cytokinesis L2.1: correct RNG family and water request landed only on
     its fix branch. Candidate `3b424e7` now reports M5000 seed-36 full bit
     identity and manifest GENUINE. Root causes: MATLAB's scalar
