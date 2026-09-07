@@ -73,10 +73,16 @@ below:**
   MacromolecularComplexation L2.2, one-pass dual division extractor, and
   provisional source-bound Cytokinesis M=5000 contract.
 - L2.2:
-  - DNASupercoiling candidate `4325cfd` is a frozen-gate PASS
-    (63/65 pooled, 57/58 active seeds, 6/7 clustered) awaiting final Opus
-    review and clean integration. Acceptance yields **20 PASS / 0 FAIL /
-    2 MISSING**.
+  - DNASupercoiling candidate `4325cfd` reproduces frozen-gate PASS counts
+    (63/65 pooled, 57/58 active seeds, 6/7 clustered), but Opus **REJECTED
+    closure**: 95/5000 sampled ticks (19/50 reviewed seeds) consume beyond
+    the independently audited MATLAB process-draw boundary, often ~2x
+    (`seed0 tick81: 35 vs 19`). Those ticks are projection-silent
+    (`linkingNumbers.delta_nnz=0` on both sides), so the PASS numbers are
+    reproducible but the underlying state/candidate divergence remains.
+    Root-cause the first breach (seed0 tick81) and emit audit-boundary
+    telemetry before integration. No N=200 rerun is required unless the
+    fix changes the measured tensors.
   - Cytokinesis and FtsZ remain the only missing rows. Before bulk, run one
     fresh source-bound seed-36 M=5000 smoke from merged main. On green,
     launch three disjoint ranges in three worktrees; any span >= M stops new
