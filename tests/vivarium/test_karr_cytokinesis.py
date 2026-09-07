@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import math
 import sys
 from pathlib import Path
@@ -566,3 +567,65 @@ def test_rng_no_oracle_file_io_in_production_module() -> None:
     forbidden_patterns = ("_100ticks", "_4000ticks", "states_before", "states_after", "h5py")
     for pattern in forbidden_patterns:
         assert pattern not in source, f"L2.1 Rule 8 violation: found oracle marker {pattern!r}"
+
+
+def _load_real_ftsz_ring_payload() -> dict[str, Any]:
+    real_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "FtsZRing.json"
+    return json.loads(real_path.read_text(encoding="utf-8"))
+
+
+def _write_ftsz_ring_variant(tmp_path: Path, scalars: dict[str, Any]) -> Path:
+    payload = _load_real_ftsz_ring_payload()
+    payload["scalars"] = scalars
+    variant_path = tmp_path / "FtsZRing_variant.json"
+    variant_path.write_text(json.dumps(payload), encoding="utf-8")
+    return variant_path
+
+
+def test_missing_filament_length_fixture_keys_hard_fails(tmp_path: Path) -> None:
+    """Neither `fixture/filamentLengthInNm` nor
+    `fixture/numFtsZSubunitsPerNm` present in the FtsZRing fixture must
+    hard-fail construction -- there is no permitted 40.0nm literature
+    fallback (Anderson 2004) for a missing fixture value."""
+    real_scalars = dict(_load_real_ftsz_ring_payload()["scalars"])
+    del real_scalars["fixture/filamentLengthInNm"]
+    del real_scalars["fixture/numFtsZSubunitsPerNm"]
+    variant_path = _write_ftsz_ring_variant(tmp_path, real_scalars)
+
+    with pytest.raises(ValueError, match="filamentLengthInNm"):
+        KarrCytokinesisProcess({"ftsz_ring_fixture_path": str(variant_path)})
+
+
+@pytest.mark.parametrize("malformed_value", ["not-a-number", None, float("nan"), 0.0, -5.0])
+def test_malformed_filament_length_in_nm_hard_fails(tmp_path: Path, malformed_value: Any) -> None:
+    """A present-but-malformed (non-numeric, NaN, zero, or negative)
+    `fixture/filamentLengthInNm` must hard-fail, never silently coerce to
+    the 40.0nm literature default."""
+    real_scalars = dict(_load_real_ftsz_ring_payload()["scalars"])
+    real_scalars["fixture/filamentLengthInNm"] = malformed_value
+    variant_path = _write_ftsz_ring_variant(tmp_path, real_scalars)
+
+    with pytest.raises(ValueError, match="filamentLengthInNm"):
+        KarrCytokinesisProcess({"ftsz_ring_fixture_path": str(variant_path)})
+
+
+@pytest.mark.parametrize("malformed_value", ["not-a-number", None, float("nan"), 0.0, -0.23])
+def test_malformed_num_ftsz_subunits_per_nm_hard_fails(tmp_path: Path, malformed_value: Any) -> None:
+    """When `fixture/filamentLengthInNm` is absent but
+    `fixture/numFtsZSubunitsPerNm` is present and malformed, construction
+    must still hard-fail rather than falling back to 40.0nm."""
+    real_scalars = dict(_load_real_ftsz_ring_payload()["scalars"])
+    del real_scalars["fixture/filamentLengthInNm"]
+    real_scalars["fixture/numFtsZSubunitsPerNm"] = malformed_value
+    variant_path = _write_ftsz_ring_variant(tmp_path, real_scalars)
+
+    with pytest.raises(ValueError, match="numFtsZSubunitsPerNm"):
+        KarrCytokinesisProcess({"ftsz_ring_fixture_path": str(variant_path)})
+
+
+def test_real_fixture_derives_correct_filament_length_not_literature_default() -> None:
+    """Anti-regression for the ~2.2% naked-literal bug: the real fixture
+    value is 9/0.23nm, distinct from the literature default of 40.0nm."""
+    process = KarrCytokinesisProcess({})
+    assert process.default_filament_length_nm == pytest.approx(39.130434782608695, rel=0.0, abs=1.0e-12)
+    assert process.default_filament_length_nm != pytest.approx(40.0)

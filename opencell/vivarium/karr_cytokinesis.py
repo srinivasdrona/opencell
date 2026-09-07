@@ -76,6 +76,21 @@ def _safe_float(value: object, default: float = 0.0) -> float:
     return float(numeric)
 
 
+def _require_positive_float(value: object, *, field: str) -> float:
+    """Parse ``value`` as a finite, strictly positive float or hard-fail.
+
+    No silent fallback is permitted here: a missing or malformed fixture
+    value must raise, never coerce to a hardcoded literature default.
+    """
+    try:
+        numeric = float(value)
+    except (TypeError, ValueError) as exc:
+        raise ValueError(f"{field} is not numeric: {value!r}") from exc
+    if not math.isfinite(numeric) or numeric <= 0.0:
+        raise ValueError(f"{field} must be a finite, positive number, got {value!r}")
+    return numeric
+
+
 def _safe_count(value: object) -> int:
     numeric = _safe_float(value, default=0.0)
     rounded = float(np.rint(numeric))
@@ -275,25 +290,29 @@ class KarrCytokinesisProcess(Process):
         )
 
         # FtsZRing.m: `filamentLengthInNm = numFtsZSubunitsPerFilament /
-        # numFtsZSubunitsPerNm` (a genuine constant per this project's own
-        # fixture, NOT the literature default of 40nm [Anderson 2004] -- the
-        # real fixture value, 9/0.23 = 39.130434782608695nm, differs from
-        # 40.0 by ~2.2% and was previously hardcoded as a naked literal here,
-        # producing a real (non-RNG) `calcNextPinchedDiameter` divergence
-        # from Karr's real trace (M5000 seed-36 promotion, tick=924/M4000
-        # seed-0, tick=263 -- both bit-identical once this fixture value is
-        # used instead of the naive 40.0 default).
+        # numFtsZSubunitsPerNm`, a per-fixture constant (real value
+        # 9/0.23 = 39.130434782608695nm) -- NOT the literature default of
+        # 40nm [Anderson 2004]. No fallback literal is permitted here: a
+        # missing or malformed fixture value must hard-fail rather than
+        # silently substitute a value that does not match Karr's real
+        # trace (see `_require_positive_float`).
         if "fixture/filamentLengthInNm" in ftsz_scalars:
-            self.default_filament_length_nm = _safe_float(
-                ftsz_scalars["fixture/filamentLengthInNm"], default=40.0
+            self.default_filament_length_nm = _require_positive_float(
+                ftsz_scalars["fixture/filamentLengthInNm"],
+                field="FtsZRing fixture 'fixture/filamentLengthInNm'",
             )
         elif "fixture/numFtsZSubunitsPerNm" in ftsz_scalars:
-            num_subunits_per_nm = _safe_float(ftsz_scalars["fixture/numFtsZSubunitsPerNm"], default=0.0)
-            self.default_filament_length_nm = (
-                self.num_ftsz_subunits_per_filament / num_subunits_per_nm if num_subunits_per_nm > 0.0 else 40.0
+            num_subunits_per_nm = _require_positive_float(
+                ftsz_scalars["fixture/numFtsZSubunitsPerNm"],
+                field="FtsZRing fixture 'fixture/numFtsZSubunitsPerNm'",
             )
+            self.default_filament_length_nm = self.num_ftsz_subunits_per_filament / num_subunits_per_nm
         else:
-            self.default_filament_length_nm = 40.0
+            raise ValueError(
+                "FtsZRing fixture is missing both 'fixture/filamentLengthInNm' "
+                "and 'fixture/numFtsZSubunitsPerNm'; filament_length_nm cannot "
+                "be derived without a silent 40.0nm fallback"
+            )
 
         self.initial_width = _safe_float(geometry_scalars.get("fixture/width", 0.0))
         self.initial_pinched_diameter = _safe_float(

@@ -1,5 +1,109 @@
 # STATUS: L2.1 Cytokinesis Active-Window CODE_GAP Fix
 
+## Update 6 (2026-09-08) — Opus integration blockers resolved; manifest mechanically promoted to GENUINE
+
+Opus reviewed Update 5's branch/integration and **REJECTED** it (see
+`plan.md`'s "route Cytokinesis integration blockers" entry, commit
+`245c00c`) while **confirming both underlying science fixes** (mcg16807
+codec, `filamentLengthInNm` fixture). Six concrete blockers were raised;
+all six are fixed in this update:
+
+1. **Orphaned `karr_protein_decay_light.py` changes.** A staged diff had
+   removed `_Mcg16807.get_state`/`.set_state` from that module, directly
+   contradicting `karr_cytokinesis.py`'s own docstring claim that
+   `karr_protein_decay_light._Mcg16807` was "deliberately left untouched."
+   Reverted with `git restore --staged --worktree` back to the HEAD
+   (`3b424e7`) version -- no functional change to that file in this
+   branch at all, exactly as documented.
+2. **Fail-closed fixture filament, no `40.0` fallback.** Already applied
+   as dirty work at task start (`_require_positive_float`); verified
+   intact and covered by 4 new regression tests
+   (`tests/vivarium/test_karr_cytokinesis.py`).
+3. **Full captured RNG payload, never `[0]`-truncated.** Already applied
+   (`_karr_randstream_state` now passes the whole cell array to
+   `parse_captured_state`); verified intact, 5 new regression tests
+   (`tests/vivarium/test_karr_cytokinesis_l2_replay.py`).
+4. **Removed the rotted Cytokinesis oracle path indirection.**
+   `scripts/l21_active_window_audit.py`'s `_special_candidates` built a
+   second Cytokinesis candidate set by prefixing
+   `docs/phase_f/l2_event/evidence_bundle/Cytokinesis/input_manifest.json`
+   rows with a hardcoded absolute path into a long-abandoned session
+   worktree (`/mnt/e/opencell-worktrees/l2-event-cytokinesis-20260805`) --
+   dead weight that never resolves outside one machine's one session, not
+   main-safe. Removed; `DIRECT_SPECIAL_TRACES` (repo-relative, main-safe)
+   is now the sole candidate source, extended to include the M5000
+   seed-36 trace alongside the existing seed-0 trace.
+5. **Manifest/audit now anchored on the M5000 trace with
+   segregated+RNG restoration.** `_choose_earliest_active`'s "numerically
+   earliest active tick" heuristic would otherwise always prefer the
+   older, RNG-capture-less seed-0 M4000 trace (tick=226) over the
+   task-mandated seed-36 M5000 trace (tick=894/onset=27918) -- silently
+   substituting weaker evidence. Added `PREFERRED_TRACE_MATCH` +
+   `_choose_preferred_or_earliest_active` so Cytokinesis's audit/manifest
+   evidence is explicitly pinned to the M5000/seed-36 trace whenever it is
+   present. `docs/phase_f/l2_event/evidence_bundle/Cytokinesis/
+   input_manifest.json` now records both traces' repo-relative paths and
+   sha256 (M5000: `b0c919e8089d...eeeb0`).
+6. **dec-005 DNADamage source-hash binding: traced, hashed, and never
+   skipped.** Wired the already-imported
+   `_read_dnadamage_source_metadata`/`current_genuine_dnadamage_source`
+   into a new `_dnadamage_source_binding_status` helper, called from
+   `_classify_live_trace_candidate` for every process in
+   `PROCESSES_REQUIRING_DNADAMAGE_SOURCE_BINDING` (`{"Cytokinesis"}`):
+   fail-closed -- a missing capture or a resolved-hash mismatch against
+   the CURRENT repo's `DNADamage.m` forces `CODE_GAP` regardless of
+   bit-identity outcome, never silently skipped or silently passed. The
+   same check was also added directly inside
+   `test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound` itself
+   (the promotion-gate test's docstring already claimed
+   "dnadamage-source-hash-bound" but the assertion was missing -- now
+   present), so future re-runs of that single pytest node re-verify the
+   binding without depending on the audit tool at all.
+
+**"Refresh anchors."** `data/schemas/per_process_wiring/Cytokinesis.yaml`'s
+`integration_touchpoints`/`source_anchors`/`consume_stoichiometry`/
+`produce_stoichiometry`/`deviations` line-number anchors into
+`opencell/vivarium/karr_cytokinesis.py` predated this session's
+`_require_positive_float` insertion (and earlier edits) and no longer
+resolved via AST (`check_oc_anchors_resolve` FAILED with 11 unresolved
+symbols). Recomputed every affected anchor against the file's current AST
+line numbers; `bin\oc-py.cmd scripts/l1b_verify_wiring.py --process
+Cytokinesis` now PASSES (was FAIL). Full 28-process L1b sweep: 26/28 PASS
+(pre-existing, unrelated `DNADamage`/`ProteinDecay` `check_oc_anchors_resolve`
+failures are untouched by this branch and out of scope for this task).
+
+**Mechanical manifest promotion.** Wrote
+`scripts/l21_promote_cytokinesis_manifest.py` -- combines a fresh
+`run_audit(target_processes=("Cytokinesis",))` mechanical scan (trace
+discovery, sha256, dec-005 binding) with a fresh live run of the M5000
+promotion-gate pytest node, and REPLACES (never hand-types) the
+Cytokinesis row in `docs/phase_f/l2_1/L21_ACTIVE_WINDOWS_MANIFEST.json`.
+Result: `classification: EXISTING_WINDOW_PASS` (was `CODE_GAP`),
+`dnadamage_source_binding.verified: true`, manifest counts now
+`7 EXISTING_WINDOW_PASS / 1 CODE_GAP / 3 MISSING_ACTIVE_EXTRACTION` (was
+`6/2/3`). Cytokinesis L2.1 is now **GENUINE**.
+
+**Verification this update (all via `bin\oc-pytest.cmd` /
+`bin\oc-py.cmd`):**
+
+```
+tests/vivarium/test_karr_cytokinesis.py -q                          -> 69 passed (combined w/ l2_replay/codec/probe suites)
+tests/vivarium/test_karr_cytokinesis_l2_replay.py -q                -> included above, all pass incl. M5000 node
+tests/util/test_mcg16807_state_codec.py -q                          -> included above
+tests/scripts/test_analyze_cytokinesis_randstream_probe.py -q       -> included above
+scripts/l1b_verify_wiring.py --process Cytokinesis                  -> PASS (1/1)
+scripts/l1b_verify_wiring.py (full 28-process sweep)                -> 26/28 PASS (DNADamage/ProteinDecay pre-existing, unrelated)
+scripts/l21_promote_cytokinesis_manifest.py                          -> EXISTING_WINDOW_PASS (mechanical)
+ruff check <all touched .py files>                                   -> All checks passed
+```
+
+`tests/vivarium/test_karr_protein_decay_light.py` has one pre-existing
+failure (`test_...atp...`, an allocator-request-key assertion unrelated to
+`_Mcg16807`/`get_state`/`set_state`) that predates this branch entirely
+(reproduces identically against the untouched HEAD `3b424e7` version of
+that file) -- a separate, already-known ProteinDecay allocator-key-drift
+issue (see `swarm/PROMPT_track_a3_l4_l6_keys.md`), out of scope here.
+
 ## Update 5 (2026-09-05, new session) — M5000 seed-36 promotion GREEN; Cytokinesis L2.1 promoted to GENUINE
 
 **Operational handoff (read this first if resuming):** no live background
@@ -67,11 +171,23 @@ for GREEN:**
    optional `None`-default test-only override, never the load-bearing
    value) -- see commit `2ebee9f`.
 
-**Consequence:** this ALSO retroactively resolves the pre-existing,
-previously-accepted M4000 seed-0 "tick-228"-class residual divergence
-documented in Updates 1-4 below (that investigation's "precise,
-source-proven blocker" framing is superseded by this session's findings --
-left verbatim below for provenance, not deleted).
+**Consequence, precisely attributed (two distinct fixes, two distinct
+first-divergence ticks):** the mcg16807 codec fix (root cause 1) is what
+closes the pre-existing M4000 seed-0 "tick-228"-class residual divergence
+documented in Updates 1-4 below -- tick 228's `ftsZRing.numEdgesOneStraight`
+mismatch (`oc=2, karr=1`) was a downstream symptom of the undecoded-state
+RNG draw-count bug, not a separate defect. The `filamentLengthInNm`
+fixture fix (root cause 2) is independent and unrelated to RNG draws; it
+first becomes observable strictly LATER in the same trajectory, at
+`geometry.pinchedDiameter` tick=263 for M4000 seed-0 and the
+corresponding tick=924 for M5000 seed-36 (both the same deterministic,
+RNG-independent late/near-terminal pinching-cycle value). Both fixes are
+independently required for either trace to replay fully: the codec fix
+alone gets M4000 seed-0's ring-witness check past tick 228 but not past
+tick 263; the filament-length fix alone does not touch tick 228 at all.
+(That investigation's original "precise, source-proven blocker" framing
+is superseded by this session's findings -- left verbatim below for
+provenance, not deleted.)
 `test_karr_cytokinesis_l2_event_replay[event_seed_0]` now also PASSES.
 
 **Verification this session (all commands via `bin\oc-pytest.cmd`,

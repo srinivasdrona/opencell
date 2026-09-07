@@ -52,6 +52,10 @@ from scripts.l2_event.analyze_cytokinesis_randstream_probe import (  # noqa: E40
 from scripts.l2_event.analyze_cytokinesis_randstream_probe import (  # noqa: E402
     steps_between as _rand_steps_between,
 )
+from scripts.l2_event.launcher import (  # noqa: E402
+    _read_dnadamage_source_metadata,
+    current_genuine_dnadamage_source,
+)
 
 _TRACE_PROCESS_NAME = "Cytokinesis"
 _OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes')
@@ -135,10 +139,13 @@ def _has_randstream_capture(trace: h5py.File) -> bool:
 
 def _karr_randstream_state(trace: h5py.File, group: str, tick: int) -> int:
     """Read Karr's real captured `this.randStream.state` (a scalar
-    Lehmer/mcg16807 state) for one tap point of one tick, as a plain
-    Python int -- the exact representation `_Mcg16807.get_state()`/
-    `.set_state()` use (see karr_protein_decay_light.py)."""
-    return _rand_scalar_state(cell_vector(trace, group, "randStreamState", tick)[0])
+    Lehmer/mcg16807 state, MATLAB-encoded representation) for one tap
+    point of one tick, as a plain Python int -- passes the FULL captured
+    payload (never a truncated `[0]` slice) to the fail-closed
+    `parse_captured_state` codec parser so a malformed or genuinely
+    multi-element capture raises loudly instead of silently taking the
+    first word."""
+    return _rand_scalar_state(cell_vector(trace, group, "randStreamState", tick))
 
 
 def _assert_randstream_ledger(
@@ -483,6 +490,30 @@ def test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound(rng_seed: int) 
             "promotion-gate trace; re-extract with the current extract_per_process_traces_v2.m."
         )
 
+        # dec-005 DNADamage source-hash binding: fail closed, never skipped.
+        # DNADamage runs in Karr's shared per-tick scheduler for every
+        # process, so this trace's whole-simulation trajectory (and thus
+        # every OTHER process's tick-by-tick output, Cytokinesis included)
+        # depended on which DNADamage.m variant was resolved at extraction
+        # time. A trace lacking this metadata predates dec-005 and cannot
+        # serve as promotion-gate evidence; a trace whose resolved hash
+        # disagrees with the CURRENT repo's DNADamage.m was extracted
+        # against a different source variant than this worktree requires.
+        dnadamage_meta = _read_dnadamage_source_metadata(trace_path)
+        resolved_sha256 = dnadamage_meta["dnadamage_source_resolved_sha256"]
+        assert resolved_sha256 is not None, (
+            f"{trace_path} lacks metadata.dnadamage_source_resolved_sha256 -- it predates the "
+            "dec-005 source-hash-binding extractor (commit 153d726) and cannot serve as the "
+            "M5000 promotion-gate trace"
+        )
+        current_dnadamage_source = current_genuine_dnadamage_source()
+        assert resolved_sha256 == current_dnadamage_source["resolved_sha256"], (
+            f"{trace_path}: metadata.dnadamage_source_resolved_sha256={resolved_sha256!r} != "
+            f"current repo resolved identity {current_dnadamage_source['resolved_sha256']!r} -- "
+            "this trace's whole-simulation trajectory resolved a different DNADamage.m source "
+            "variant than the current worktree requires"
+        )
+
         mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
         mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
         if sum(mutated_tick_counts.values()) == 0:
@@ -646,3 +677,69 @@ def test_randstream_ledger_noop_for_trace_without_capture(tmp_path: Path) -> Non
         # Deliberately wrong relative to nothing (no captured ground truth
         # exists) -- must not raise, since _has_randstream_capture is False.
         _assert_randstream_ledger(trace, 0, process, rng.draw_count, rng.get_state())
+
+
+# ---------------------------------------------------------------------------
+# Task step 3: `_karr_randstream_state` must pass the FULL captured
+# `randStreamState` payload to the codec's `parse_captured_state`, never a
+# pre-truncated `[0]` slice -- a genuinely multi-element or malformed
+# capture must hard-fail loudly rather than silently reading only the
+# first word.
+# ---------------------------------------------------------------------------
+
+def _write_raw_randstream_cell(path: Path, group: str, *, raw_value: np.ndarray) -> None:
+    """Write a single-tick `<group>/randStreamState` cell containing an
+    arbitrary (possibly multi-element or malformed) raw array, for
+    exercising `_karr_randstream_state`'s fail-closed parsing directly."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with h5py.File(path, "w") as handle:
+        grp = handle.create_group(group)
+        ds = grp.create_dataset(
+            "randStreamState", shape=(1, 1), dtype=h5py.special_dtype(ref=h5py.Reference)
+        )
+        val = handle.create_dataset("_raw_val", data=np.asarray(raw_value, dtype=np.float64))
+        ds[0, 0] = val.ref
+
+
+def test_karr_randstream_state_hard_fails_on_multi_element_capture(tmp_path: Path) -> None:
+    """A genuinely multi-element captured state (e.g. a stale/legacy or
+    corrupted capture, or a different generator's vector state) must
+    raise -- NOT be silently truncated to its first word via an
+    upstream `[0]` slice before reaching the codec's own multi-element
+    guard."""
+    path = tmp_path / "multiword.mat"
+    _write_raw_randstream_cell(path, "states_before", raw_value=np.array([12345.0, 999.0]))
+    with h5py.File(path, "r") as trace, pytest.raises(ValueError, match="elements"):
+        _karr_randstream_state(trace, "states_before", 0)
+
+
+def test_karr_randstream_state_hard_fails_on_nan_capture(tmp_path: Path) -> None:
+    path = tmp_path / "nan_state.mat"
+    _write_raw_randstream_cell(path, "states_before", raw_value=np.array([float("nan")]))
+    with h5py.File(path, "r") as trace, pytest.raises(ValueError, match="non-finite"):
+        _karr_randstream_state(trace, "states_before", 0)
+
+
+def test_karr_randstream_state_hard_fails_on_non_integer_capture(tmp_path: Path) -> None:
+    path = tmp_path / "non_integer_state.mat"
+    _write_raw_randstream_cell(path, "states_before", raw_value=np.array([123.5]))
+    with h5py.File(path, "r") as trace, pytest.raises(ValueError, match="integer"):
+        _karr_randstream_state(trace, "states_before", 0)
+
+
+def test_karr_randstream_state_hard_fails_on_out_of_range_capture(tmp_path: Path) -> None:
+    path = tmp_path / "out_of_range_state.mat"
+    _write_raw_randstream_cell(path, "states_before", raw_value=np.array([0.0]))
+    with h5py.File(path, "r") as trace, pytest.raises(ValueError, match="out of range"):
+        _karr_randstream_state(trace, "states_before", 0)
+
+
+def test_karr_randstream_state_accepts_genuine_single_element_capture(tmp_path: Path) -> None:
+    """Anti-regression: a genuine well-formed single-element capture must
+    still parse successfully through the full (non-truncated) payload
+    path."""
+    path = tmp_path / "well_formed_state.mat"
+    _write_raw_randstream_cell(path, "states_before", raw_value=np.array([1363919953.0]))
+    with h5py.File(path, "r") as trace:
+        assert _karr_randstream_state(trace, "states_before", 0) == 1363919953
+
