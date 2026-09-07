@@ -84,9 +84,13 @@ below:**
     telemetry before integration. No N=200 rerun is required unless the
     fix changes the measured tensors.
   - Cytokinesis and FtsZ remain the only missing rows. Before bulk, run one
-    fresh source-bound seed-36 M=5000 smoke from merged main. On green,
-    launch three disjoint ranges in three worktrees; any span >= M stops new
-    launches and triggers a separate preregistration.
+    fresh source-bound seed-36 M=5000 smoke from merged main. **Smoke PASS**:
+    onset 27918, completion 31993, inclusive span 4076, margin OK; both
+    Cytokinesis/FtsZ validators pass and both bind DNADamage source
+    `86d8b3c2...27e7e`. Launching three one-seed-at-a-time, fail-closed
+    workers in separate worktrees for ranges 0-16, 17-33, and 34-49
+    (seed36 preloaded/skipped). Any span >= M or validator failure stops that
+    worker immediately and blocks promotion pending a new preregistration.
 - L2.1:
   - ReplicationInitiation: process RNG exact across 689 draws; source bugs
     fixed; first mismatch tick 40 on shared chromosome RNG. Per-tick shared
