@@ -97,8 +97,12 @@ below:**
     and nested audit detects skips; candidates follow MATLAB `unique_subs`
     strand-major order. Reported gates: 101 passed/5 expected skips,
     canonical replay + manifest `VERIFIED_EXISTING_WINDOW_PASS`, active
-    14/14, L1b 19/19, L2.2 PASS OC84/Karr99. Await final Opus review and
-    clean integration.
+    14/14, L1b 19/19, L2.2 PASS OC84/Karr99. Final Opus re-review
+    **ACCEPTED curated integration**. Include two nonblocking but real
+    cleanups before merge: sort non-string selected indices like MATLAB
+    `sort(rndIdxs)`, and scope data-absence skips only to data-dependent
+    tests. Regenerate the DNADamage bundle on current main under
+    per-process catalog provenance; preserve board 19/1/2.
   - TranscriptionalRegulation: 4000-tick replay was green but Opus found an
     invalid manifest, inert source hashes, missing accessibility branches,
     unportable artifacts, and a rejected L2.2 prereg. Corrective worktree is
@@ -248,9 +252,9 @@ context it carries:**
     silently skipped when WCM path resolution fails; missing ledger sidecar
     can pass through pytest skip; ledger SHA is not manifest-bound; and
     motif candidates must be MATLAB `unique_subs` strand-major sorted before
-    randsample. Corrective commit `a81a172` reports all five closed; re-review
-    must confirm before regenerating DNADamage L2.2 against current main
-    (never copy the stale branch bundle) and integrating only scoped files.
+    randsample. Corrective commit `a81a172` reports all five closed and Opus
+    accepted curated integration; regenerate DNADamage L2.2 against current
+    main (never copy the stale branch bundle) and integrate only scoped files.
   - TranscriptionalRegulation: process-local mcg16807, exact MathWorks
     weighted-randsample normalization, and chromosome occlusion exemption
     are committed; L1b/focused tests are green. Real MATLAB disproved an
