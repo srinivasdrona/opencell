@@ -86,9 +86,12 @@ function extract_dual_division_window(seed, opts)
 % Usage (from repo root):
 %   matlab -batch "addpath(genpath('scripts/matlab')); extract_dual_division_window(49)"
 %
-% opts (optional, default struct()): only field supported is
-% max_search_ticks (default 50000, matches extract_per_process_traces_v2.m's
-% default_anchor_opts()).
+% opts (optional, default struct()): max_search_ticks (default read from
+% docs/phase_f/l2_event/division_window_spec.json's selection_contract via
+% division_window_selection_contract().max_search_ticks -- 100000 as of
+% the 2026-09-08 division-censor-contract preregistration; NEVER a
+% hardcoded literal here, so a future contract revision changes every
+% caller's default in one place) and force_reattempt (default false).
 
 if nargin < 1 || isempty(seed)
     error('extract_dual_division_window:missing_seed', 'seed is required');
@@ -97,7 +100,7 @@ if nargin < 2 || isempty(opts)
     opts = struct();
 end
 if ~isfield(opts, 'max_search_ticks') || isempty(opts.max_search_ticks)
-    opts.max_search_ticks = 50000;
+    opts.max_search_ticks = division_window_selection_contract().max_search_ticks;
 end
 if ~isfield(opts, 'force_reattempt') || isempty(opts.force_reattempt)
     opts.force_reattempt = false;

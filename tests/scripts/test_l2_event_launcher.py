@@ -876,6 +876,121 @@ def test_plan_regenerate_invalid_for_anchor_missing_identity_metadata(tmp_path):
     assert plan.decisions[0].action == "regenerate_invalid"
 
 
+# ---------------------------------------------------------------------------
+# max_search_ticks monotone-minimum validation (division-censor-contract
+# horizon fix, 2026-09-09, Opus re-review): recorded metadata.max_search_ticks
+# must be >= spec.n_ticks, never an exact match against spec.max_search_ticks.
+# ---------------------------------------------------------------------------
+
+
+def test_anchor_trace_recorded_at_a_smaller_horizon_than_spec_still_validates(tmp_path):
+    """The core horizon-plumbing fix: a COMPLETED trace captured under the
+    OLD default max_search_ticks=50000 must still validate/skip_valid
+    against a spec now requesting the selection contract's
+    max_search_ticks=100000 -- a genuine completion's timing does not
+    depend on the search ceiling used to find it. Locks in Opus's own
+    accepted accounting (existing seeds 0-5/17/34-47, all recorded at
+    50000, remain valid/selectable under the new 100000-horizon spec)."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis",
+        seed=20,
+        n_ticks=4,
+        max_search_ticks=100000,  # the NEW selection-contract horizon
+        required_observables=("pinchedDiameter",),
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=20,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=50000,  # recorded at the OLD, smaller default
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert ok, reason
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "skip_valid"
+
+
+def test_anchor_trace_stamped_exactly_the_selection_contract_horizon_validates(tmp_path):
+    """Live/synthetic test (Opus re-review requirement): a COMPLETED trace
+    whose recorded metadata.max_search_ticks IS the selection contract's
+    100000 horizon validates and is selectable -- proving future
+    extractions stamped at the new horizon work identically to legacy
+    ones stamped at the old default."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis", seed=21, n_ticks=4, max_search_ticks=100000, required_observables=("pinchedDiameter",)
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=21,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=100000,
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert ok, reason
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "skip_valid"
+
+
+def test_anchor_trace_recorded_max_search_ticks_smaller_than_n_ticks_is_rejected(tmp_path):
+    """The monotone-minimum floor is not vacuous: a trace whose recorded
+    max_search_ticks is smaller than n_ticks itself (an impossible/
+    malformed state -- the search ceiling could never have captured a
+    full window) must still regenerate_invalid, never skip_valid."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis", seed=22, n_ticks=4, max_search_ticks=100000, required_observables=("pinchedDiameter",)
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=22,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=2,  # smaller than n_ticks=4 -- impossible/malformed
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert not ok
+    assert "max_search_ticks" in reason
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+
+
 def test_plan_regenerate_invalid_for_anchor_stale_projection_version(tmp_path):
     """Performance/sufficiency patch: a trace written under the OLD
     EVENT_OBSERVABLE_PROJECTION_VERSION (1 -- full chromosome object, no

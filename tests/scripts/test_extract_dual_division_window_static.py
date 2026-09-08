@@ -443,7 +443,11 @@ def test_driver_force_seeds_rechecks_deletion_before_reextracting():
     source = _read(DRIVER_PATH)
     assert "delete_if_exists(cyt_out_path);" in source
     assert "delete_if_exists(ftsz_out_path);" in source
-    assert "if exist(cyt_out_path, 'file') == 2 || exist(ftsz_out_path, 'file') == 2" in source
+    assert "delete_if_exists(attempt_record_path);" in source
+    assert (
+        "if exist(cyt_out_path, 'file') == 2 || exist(ftsz_out_path, 'file') == 2 || "
+        "exist(attempt_record_path, 'file') == 2"
+    ) in source
 
 
 def test_driver_aggregates_and_throws_on_any_seed_failure():
@@ -454,9 +458,58 @@ def test_driver_aggregates_and_throws_on_any_seed_failure():
 
 def test_driver_calls_the_dual_extractor_not_the_single_process_one():
     source = _read(DRIVER_PATH)
-    assert "extract_dual_division_window(uint32(s));" in source
+    assert "extract_dual_division_window(uint32(s), opts);" in source
     assert "extract_per_process_traces_v2(" not in source
     assert "extract_ftsz_pre_division_window_seeds(" not in source
+
+
+def test_driver_accepts_and_passes_through_an_opts_argument():
+    """Opts passthrough (division-censor-contract, 2026-09-09 Opus
+    re-review): a sanctioned batch run must be able to request an
+    explicit max_search_ticks/force_reattempt (e.g. the contract's
+    100000-tick horizon) for every seed in the range, not just rely on
+    extract_dual_division_window's own internal default."""
+    source = _read(DRIVER_PATH)
+    assert "function extract_dual_division_window_seeds(seed_start, seed_end, force_seeds, opts)" in source
+    assert "if nargin < 4 || isempty(opts)\n    opts = struct();\nend" in source
+
+
+def test_driver_attempt_record_name_read_from_selection_contract_not_hardcoded():
+    source = _read(DRIVER_PATH)
+    assert "attempt_record_name = division_window_selection_contract().attempt_record_filename;" in source
+    assert "attempt_record_path = fullfile(out_root, attempt_record_name);" in source
+
+
+def test_force_seeds_clearing_attempt_record_means_no_completed_or_censored_record_permanently_blocks_reextraction():
+    """Inversion (division-censor-contract, 2026-09-09, Opus re-review):
+    neither a stale COMPLETED nor a stale RIGHT_CENSORED attempt record
+    can permanently block a sanctioned re-extraction, because
+    force_seeds's recheck (this file) deletes attempt_record_path
+    BEFORE extract_dual_division_window.m ever runs again -- so that
+    file's own guards (censored_attempt_exists for a RIGHT_CENSORED
+    record without opts.force_reattempt=true, or
+    attempt_record_status_conflict for any record whose status/trace-file
+    presence is inconsistent) can never fire against a force_seeds
+    request; they can only ever fire on a NON-forced re-run, which is
+    the deliberately conservative default this task requires (silent
+    re-attempt is refused, but an EXPLICIT force_seeds request always
+    succeeds in clearing prior state first)."""
+    driver_source = _read(DRIVER_PATH)
+    extractor_source = _read(EXTRACTOR_PATH)
+    # The driver's force branch deletes all three paths (proven by
+    # test_driver_force_seeds_rechecks_deletion_before_reextracting)
+    # BEFORE calling extract_dual_division_window at all.
+    force_block_idx = driver_source.index("if force_this")
+    call_idx = driver_source.index("extract_dual_division_window(uint32(s), opts);")
+    assert force_block_idx < call_idx
+    delete_attempt_idx = driver_source.index("delete_if_exists(attempt_record_path);")
+    assert force_block_idx < delete_attempt_idx < call_idx
+    # The extractor's own guards this clears are exactly the two named
+    # above -- confirms they exist (so this inversion is meaningful, not
+    # vacuous) and are gated on an attempt record actually being present.
+    assert "extract_dual_division_window:censored_attempt_exists" in extractor_source
+    assert "extract_dual_division_window:attempt_record_status_conflict" in extractor_source
+    assert "existing_attempt = read_division_window_attempt_record(attempt_record_path);" in extractor_source
 
 
 # ---------------------------------------------------------------------------
@@ -523,6 +576,19 @@ def test_existing_censored_attempt_record_blocks_silent_reattempt():
 def test_attempt_record_filename_read_from_selection_contract_not_hardcoded():
     source = _read(EXTRACTOR_PATH)
     assert "division_window_selection_contract().attempt_record_filename" in source
+
+
+def test_default_max_search_ticks_read_from_selection_contract_never_hardcoded():
+    """Horizon-plumbing fix (division-censor-contract, 2026-09-09, Opus
+    re-review): the extractor's own default max_search_ticks must come
+    from division_window_selection_contract().max_search_ticks, never a
+    literal (the prior 50000 default silently diverged from the
+    preregistered 100000 selection-contract horizon)."""
+    source = _read(EXTRACTOR_PATH)
+    assert (
+        "opts.max_search_ticks = division_window_selection_contract().max_search_ticks;"
+    ) in source
+    assert "opts.max_search_ticks = 50000;" not in source
 
 
 def test_driver_treats_right_censored_as_distinct_from_failed():

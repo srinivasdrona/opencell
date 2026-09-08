@@ -1134,11 +1134,19 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
     ``tick_start``/``tick_end`` must match the corrected absolute-tick
     formula (``tick_start == tick_offset + 1``, ``tick_end == tick_offset +
     n_ticks``) exactly, and an ``AnchorWindowSpec``'s
-    ``signal_kind``/``signal_property``/``signal_field``/
-    ``max_search_ticks``/observable-projection-schema-version must match
-    the on-disk trace's own persisted anchor-config metadata -- so a trace
-    produced for a DIFFERENT fixed-offset or anchor-signal request can
-    never ``skip_valid`` against this one. Independently of window kind,
+    ``signal_kind``/``signal_property``/``signal_field``/observable-
+    projection-schema-version must match the on-disk trace's own
+    persisted anchor-config metadata exactly -- so a trace produced for a
+    DIFFERENT fixed-offset or anchor-signal request can never
+    ``skip_valid`` against this one. ``max_search_ticks`` is the one
+    exception to exact-match identity (division-censor-contract horizon
+    fix, 2026-09-09, Opus re-review): it is checked as a MONOTONE MINIMUM
+    against ``spec.n_ticks`` (``recorded >= n_ticks``), never an exact
+    match against ``spec.max_search_ticks`` -- see the check's own inline
+    rationale for why a completed trace's real completion tick is
+    independent of the search ceiling that was configured when it was
+    captured, so a smaller recorded budget is not weaker evidence.
+    Independently of window kind,
     the trace must also carry genuine-provider metadata whose kind,
     MATLAB release, Statistics Toolbox version, provider path relative to
     ``matlabroot``, and LF-normalized provider SHA-256 all match the
@@ -1350,10 +1358,28 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
             return False, (
                 f"metadata.signal_field={anchor_meta['signal_field']!r} != expected {spec.signal_field!r}"
             )
-        if anchor_meta["max_search_ticks"] != int(spec.max_search_ticks):
+        if anchor_meta["max_search_ticks"] is None or anchor_meta["max_search_ticks"] < int(spec.n_ticks):
             return False, (
-                f"metadata.max_search_ticks={anchor_meta['max_search_ticks']!r} != expected "
-                f"{spec.max_search_ticks!r}"
+                f"metadata.max_search_ticks={anchor_meta['max_search_ticks']!r} is smaller than "
+                f"n_ticks={spec.n_ticks!r} -- the search ceiling recorded at capture time was too "
+                "small to have possibly captured a full window at all (an impossible/malformed "
+                "trace, not merely a different horizon). Division-censor-contract horizon fix "
+                "(2026-09-09, Opus re-review): max_search_ticks IS trace identity (the real search "
+                "ceiling used at capture time is always recorded and auditable), but for a COMPLETED "
+                "anchor trace it is a MONOTONE MINIMUM against n_ticks, never an exact-match against "
+                "spec.max_search_ticks (which may legitimately differ across the trace's lifetime as "
+                "the selection contract's censoring horizon evolves -- see "
+                "docs/phase_f/l2_event/division_window_spec.json's selection_contract."
+                "max_search_ticks_validation_policy). Rationale: a genuine completion tick is a "
+                "deterministic property of (seed, DNADamage source) -- it does not depend on how "
+                "large a search ceiling was configured, so a SMALLER recorded budget is neither "
+                "weaker nor stronger evidence than a LARGER one, as long as it was at least large "
+                "enough to have captured the observed completion (n_ticks is the loosest such floor "
+                "this function can check without re-deriving the trace's own onset/completion ticks "
+                "twice). A RIGHT_CENSORED claim's validity against the LARGER selection-contract "
+                "censoring horizon (100000) is a SEPARATE, additional gate enforced by "
+                "scripts.l2_event.division_cohort_selector -- never here, because a censored "
+                "attempt has no trace file (hence no metadata) for this function to even inspect."
             )
         if anchor_meta["event_observable_projection_version"] != EVENT_OBSERVABLE_PROJECTION_VERSION:
             return False, (

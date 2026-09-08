@@ -38,7 +38,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.l2_event import evidence, launcher  # noqa: E402
-from scripts.l2_event.division_window_spec import m_ticks_for  # noqa: E402
+from scripts.l2_event.division_window_spec import (  # noqa: E402
+    m_ticks_for,
+    selection_horizon_max_search_ticks,
+)
 from scripts.l2_event.survey_cytokinesis_onset_span import (  # noqa: E402
     REQUIRED_N_SEEDS,
     REQUIRED_OBSERVABLES,
@@ -63,6 +66,15 @@ AUTHORITATIVE_N_TICKS = m_ticks_for(PROCESS)
 # silently treating an unresolvable source tree as "no check needed".
 _EXPECTED_DNADAMAGE_SOURCE = launcher.current_genuine_dnadamage_source()
 REQUIRED_DNADAMAGE_SOURCE_SHA256 = _EXPECTED_DNADAMAGE_SOURCE["patched_sha256_lf_normalized"]
+# Division-censor-contract (2026-09-08, wired 2026-09-09 per Opus
+# re-review): the selection contract's common censoring horizon. Safe to
+# use uniformly for both fresh-extraction planning and validating
+# existing (possibly smaller-recorded-horizon) traces -- see
+# launcher.validate_existing_event_window's monotone-minimum policy on
+# max_search_ticks (checked against spec.n_ticks, never spec.max_search_ticks
+# exactly) and scripts.l2_event.validate_dual_division_canary.
+# REQUIRED_MAX_SEARCH_TICKS for the identical wiring/rationale.
+REQUIRED_MAX_SEARCH_TICKS = selection_horizon_max_search_ticks()
 _TRACE_NAME_RE = re.compile(r"^Cytokinesis_(\d+)ticks\.mat$")
 _EVENT_SEED_DIR_RE = re.compile(r"per_process_traces_v2_event_s(\d+)$")
 _STANDARD_SEED_DIR_RE = re.compile(r"per_process_traces_v2_s(\d+)$")
@@ -82,6 +94,7 @@ def _anchor_spec(seed: int, *, n_ticks: int = AUTHORITATIVE_N_TICKS) -> launcher
         process=PROCESS,
         seed=seed,
         n_ticks=n_ticks,
+        max_search_ticks=REQUIRED_MAX_SEARCH_TICKS,
         required_observables=REQUIRED_OBSERVABLES,
         scalar_finite_observables=launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES,
         required_dnadamage_source_sha256=REQUIRED_DNADAMAGE_SOURCE_SHA256,

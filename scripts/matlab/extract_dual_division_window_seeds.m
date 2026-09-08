@@ -1,4 +1,4 @@
-function extract_dual_division_window_seeds(seed_start, seed_end, force_seeds)
+function extract_dual_division_window_seeds(seed_start, seed_end, force_seeds, opts)
 % extract_dual_division_window_seeds  Resumable one-pass dual-tap
 % Cytokinesis + FtsZPolymerization division-window extraction across a
 % seed range.
@@ -18,6 +18,7 @@ function extract_dual_division_window_seeds(seed_start, seed_end, force_seeds)
 %
 % Usage (from repo root):
 %   matlab -batch "addpath(genpath('scripts/matlab')); extract_dual_division_window_seeds(49, 49)"
+%   matlab -batch "addpath(genpath('scripts/matlab')); extract_dual_division_window_seeds(6, 6, [], struct('max_search_ticks', 100000))"
 %
 % Resumable: for each seed s in [seed_start, seed_end] NOT listed in
 % force_seeds, extraction is skipped if BOTH
@@ -37,6 +38,25 @@ function extract_dual_division_window_seeds(seed_start, seed_end, force_seeds)
 % to remove a file without raising) -- a seed whose stale files survive a
 % requested delete is recorded as failed, never as a silent DONE.
 %
+% Division-censor-contract (2026-09-08, fixed 2026-09-09 per Opus
+% re-review): a forced re-extraction must ALSO delete that seed's
+% division_window_attempt.json sidecar (if present) alongside both .mat
+% files, and the post-delete recheck must confirm ALL THREE paths are
+% gone -- a stale RIGHT_CENSORED attempt record surviving a force_seeds
+% request would otherwise make extract_dual_division_window.m's own
+% censored_attempt_exists guard refuse the very re-extraction this driver
+% was asked to perform, permanently blocking a sanctioned re-attempt.
+%
+% opts (optional, default struct(), passed through unmodified to every
+% extract_dual_division_window call this driver makes): lets a sanctioned
+% batch run at an explicit horizon (e.g. struct('max_search_ticks', 100000)
+% for the division-censor-contract's required censoring horizon) or with
+% force_reattempt=true (to retry a seed whose PRIOR attempt already
+% produced a RIGHT_CENSORED record -- see extract_dual_division_window.m's
+% own opts.force_reattempt guard). When omitted, each call falls back to
+% extract_dual_division_window's own default (division_window_selection_
+% contract().max_search_ticks).
+%
 % No MATLAB/Octave process is invoked by importing or reading this file --
 % it only runs when explicitly executed via `run(...)` / `-batch`.
 
@@ -49,6 +69,9 @@ end
 if nargin < 3 || isempty(force_seeds)
     force_seeds = [];
 end
+if nargin < 4 || isempty(opts)
+    opts = struct();
+end
 
 this_file = mfilename('fullpath');
 matlab_dir = fileparts(this_file);
@@ -58,6 +81,7 @@ addpath(fullfile(repo_root, 'scripts', 'matlab'));
 
 cyt_n_ticks = division_window_spec('Cytokinesis');
 ftsz_n_ticks = division_window_spec('FtsZPolymerization');
+attempt_record_name = division_window_selection_contract().attempt_record_filename;
 
 fprintf('[dual-extract-seeds] seeds %d..%d, processes=Cytokinesis+FtsZPolymerization, force_seeds=[%s]\n', ...
     seed_start, seed_end, strjoin(arrayfun(@(x) sprintf('%d', x), force_seeds, 'UniformOutput', false), ', '));
@@ -70,6 +94,7 @@ for s = seed_start:seed_end
     out_root = fullfile(repo_root, 'data', 'm1_sources', 'karr_native', out_subdir);
     cyt_out_path = fullfile(out_root, sprintf('Cytokinesis_%dticks.mat', cyt_n_ticks));
     ftsz_out_path = fullfile(out_root, sprintf('FtsZPolymerization_%dticks.mat', ftsz_n_ticks));
+    attempt_record_path = fullfile(out_root, attempt_record_name);
 
     force_this = ismember(s, force_seeds);
     both_exist = exist(cyt_out_path, 'file') == 2 && exist(ftsz_out_path, 'file') == 2;
@@ -81,7 +106,8 @@ for s = seed_start:seed_end
         fprintf('[dual-extract-seeds] seed %d: force_seeds requested, deleting any existing outputs and re-extracting\n', s);
         delete_if_exists(cyt_out_path);
         delete_if_exists(ftsz_out_path);
-        if exist(cyt_out_path, 'file') == 2 || exist(ftsz_out_path, 'file') == 2
+        delete_if_exists(attempt_record_path);
+        if exist(cyt_out_path, 'file') == 2 || exist(ftsz_out_path, 'file') == 2 || exist(attempt_record_path, 'file') == 2
             fprintf('[dual-extract-seeds] seed %d FAILED: force_seeds delete did not remove existing output(s)\n', s);
             failed_seeds{end + 1} = sprintf('seed %d: force_seeds delete did not remove existing output(s)', s); %#ok<AGROW>
             continue;
@@ -90,7 +116,7 @@ for s = seed_start:seed_end
 
     fprintf('[dual-extract-seeds] seed %d/%d: one-pass dual-tap extraction...\n', s, seed_end);
     try
-        extract_dual_division_window(uint32(s));
+        extract_dual_division_window(uint32(s), opts);
         fprintf('[dual-extract-seeds] seed %d DONE\n', s);
     catch ME
         if strcmp(ME.identifier, 'extract_dual_division_window:right_censored')
