@@ -330,6 +330,55 @@ def test_write_sweep_report_is_compact_and_records_tally(tmp_path):
     assert "channels" not in json.dumps(payload)
 
 
+def test_write_sweep_report_process_scoped_rerun_preserves_other_processes(tmp_path):
+    """Regression test (l21-repinit integration blocker): a process-scoped
+    `sweep.py run --processes <one>` invocation's `write_sweep_report`
+    call must MERGE its own single result into any existing report at
+    `path`, never truncate the other, already-recorded processes' rows.
+    Reproduces the exact failure mode that made a prior RepInit
+    integration candidate's `sweep_report.json` collapse from 17 jobs to
+    1 -- see plan.md's RepInit integration blockers and
+    STATUS_L21_REPINIT_SEPT2.md."""
+    report_path = tmp_path / "report.json"
+
+    full_jobs = [
+        _make_job(tmp_path, process=name)
+        for name in ("Metabolism", "ProteinDecay", "ReplicationInitiation", "DNARepair")
+    ]
+    full_results = sweep.run_sweep(full_jobs, max_workers=2, command_builder=_fake_ok_command)
+    first_payload = sweep.write_sweep_report(full_results, report_path)
+    assert first_payload["n_jobs"] == 4
+    assert {row["process"] for row in first_payload["jobs"]} == {
+        "Metabolism",
+        "ProteinDecay",
+        "ReplicationInitiation",
+        "DNARepair",
+    }
+
+    # Process-scoped rerun: ONLY ReplicationInitiation this time.
+    scoped_jobs = [_make_job(tmp_path, process="ReplicationInitiation")]
+    scoped_results = sweep.run_sweep(scoped_jobs, max_workers=1, command_builder=_fake_ok_command)
+    second_payload = sweep.write_sweep_report(scoped_results, report_path)
+
+    assert second_payload["n_jobs"] == 4, (
+        "process-scoped write_sweep_report must preserve every other process's row, "
+        f"not truncate to just the {len(scoped_results)} process(es) just run"
+    )
+    assert {row["process"] for row in second_payload["jobs"]} == {
+        "Metabolism",
+        "ProteinDecay",
+        "ReplicationInitiation",
+        "DNARepair",
+    }
+    on_disk = json.loads(report_path.read_text(encoding="utf-8"))
+    assert on_disk == second_payload
+    # Every process untouched by the scoped rerun keeps its exact prior row.
+    first_by_process = {row["process"]: row for row in first_payload["jobs"]}
+    second_by_process = {row["process"]: row for row in second_payload["jobs"]}
+    for name in ("Metabolism", "ProteinDecay", "DNARepair"):
+        assert second_by_process[name] == first_by_process[name]
+
+
 # --- status_snapshot / write_status_snapshot (read-only interim progress) ------
 
 

@@ -291,6 +291,16 @@ def load_chromosome_rand_stream_ledger(trace_path: Path, *, repo_root: Path) -> 
     ledgers: list[list[float]] = []
     for entry in per_tick:
         draws = entry.get("draws")
+        if isinstance(draws, (int, float)) and not isinstance(draws, bool) and entry.get("n_draws") == 1:
+            # MATLAB's `jsonencode` collapses a length-1 numeric array to
+            # a bare scalar (not a 1-element array) -- a known, documented
+            # jsonencode quirk (e.g. `jsonencode([1.5])` produces `1.5`,
+            # not `[1.5]`), not a malformed ledger. Safe to normalize back
+            # into a 1-element list ONLY when this entry's own recorded
+            # `n_draws` confirms exactly one draw was captured for this
+            # tick; any other bare-scalar `draws` value (n_draws != 1)
+            # falls through to the hard failure below unchanged.
+            draws = [float(draws)]
         if not isinstance(draws, list):
             raise ChromosomeRandStreamLedgerError(
                 f"chromosome_rand_stream_state ledger {ledger_path} tick {entry.get('tick')!r} "

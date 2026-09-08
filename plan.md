@@ -122,10 +122,11 @@ earlier blocks below:**
     identity. Curated commit `9f983fd` now reports all of that complete:
     tracked sweep report/status match main and 53/53 tests pass, the false
     claims are superseded, the strengthened exact-replay assertion is
-    present, and the board is honestly 18/2/2 integrity OK. Await final
-    lightweight Opus review before integration. Separately redesign M-aware
-    trace paths and exact metadata/filename tick checks before regenerating
-    RepInit L2.2.
+    present, and the board is honestly 18/2/2 integrity OK. Final Opus
+    review **ACCEPTED RepInit L2.1** and the clean split. The merge target's
+    truncated sweep report and shadow evidence root were removed before
+    this merge. Separately redesign M-aware trace paths and exact metadata/
+    filename tick checks before regenerating RepInit L2.2.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` is **ACCEPTED** by final Opus review: condition
     enzyme overrides are contained across `copyToState`, the stale oracle

@@ -299,18 +299,35 @@ for i = 1:numel(process_names)
         metadata.mnrnd_provider_path_relative_to_matlabroot = mnrnd_provider.provider_path_relative_to_matlabroot;
         metadata.mnrnd_provider_sha256 = mnrnd_provider.sha256_lf_normalized;
         metadata.statistics_rng_provider_identity_json = mnrnd_provider.identity_json;
-        % DNADamage source-hash binding (dec-005): DNADamage runs in Karr's
-        % shared per-tick scheduler for every process, so its resolved
-        % source identity affects every other process's real trajectory.
-        % Written unconditionally (not gated on canonical_name=='DNADamage')
-        % so any fixed/anchor trace can be validated against the exact
-        % upstream source identity its trajectory resolved against.
-        metadata.dnadamage_source_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized;
-        metadata.dnadamage_source_patched_sha256 = dnadamage_overlay.patched_sha256_lf_normalized;
-        metadata.dnadamage_source_resolved_sha256 = dnadamage_overlay.resolved_sha256_lf_normalized;
-        metadata.dnadamage_source_resolved_path = dnadamage_overlay.resolved_path;
-        metadata.dnadamage_overlay_required = logical(dnadamage_overlay.overlay_required);
     end
+
+    % DNADamage source-hash binding (dec-005; dec-006: decisions/dec-006-
+    % shared-chromosome-randstream-input-oracle.md "Related Decisions"):
+    % DNADamage runs in Karr's shared per-tick scheduler for EVERY process
+    % and EVERY window_contract, so its resolved source identity affects
+    % every other process's real trajectory, not just fixed/anchor event
+    % windows. Written UNCONDITIONALLY (not gated on canonical_name==
+    % 'DNADamage' and not gated on window_contract) so ANY extracted
+    % trace -- including a plain window_contract='' trace like
+    % ReplicationInitiation's canonical extraction -- can be validated
+    % against the exact upstream DNADamage.m source identity its
+    % trajectory resolved against; this also lets a companion
+    % chromosome_rand_stream_state ledger (dec-006) cross-check its own
+    % recorded dnadamage_source_sha256 against ANY trace's metadata, not
+    % only a DNADamage trace's. karr_bootstrap() already computes
+    % dnadamage_overlay unconditionally on every call (see this loop's
+    % own `[sim, mnrnd_provider, dnadamage_overlay] = karr_bootstrap();`
+    % above); this is a pure additive relocation of an already-computed
+    % value into every trace's metadata, not a new computation, and does
+    % not change any existing DNADamage('fixed'/'anchor') trace's already-
+    % recorded values (same dnadamage_overlay fields, same values, now
+    % also written for every OTHER process/window_contract combination
+    % that previously got none of these fields at all).
+    metadata.dnadamage_source_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized;
+    metadata.dnadamage_source_patched_sha256 = dnadamage_overlay.patched_sha256_lf_normalized;
+    metadata.dnadamage_source_resolved_sha256 = dnadamage_overlay.resolved_sha256_lf_normalized;
+    metadata.dnadamage_source_resolved_path = dnadamage_overlay.resolved_path;
+    metadata.dnadamage_overlay_required = logical(dnadamage_overlay.overlay_required);
 
     if ~isempty(extraction_opts.condition_label)
         metadata.condition_label = extraction_opts.condition_label;

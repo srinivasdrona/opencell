@@ -44,10 +44,28 @@ from l2_replay_common import (  # type: ignore
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, _read_matlab_dataset
 from opencell.vivarium.karr_dna_damage_rng import KarrLedgerReplayStream
+from opencell.vivarium.karr_replication_initiation import (  # type: ignore
+    _ReplicationInitiationChromosomeLedgerRandStream,
+)
 from scripts.l2_event.launcher import (
     _read_dnadamage_source_metadata,
     current_genuine_dnadamage_source,
 )
+
+# Per-process shared-Chromosome-randStream ledger-replay stream registry
+# (DEC-005/DEC-006: decisions/dec-005-full-simulation-source-hash-binding.md,
+# decisions/dec-006-shared-chromosome-randstream-input-oracle.md). Every
+# `_ProcessSpec.chromosome_rand_stream_ledger_attr` entry in
+# `l2_2_replay_common_v2._PROCESS_SPECS` MUST have a corresponding entry
+# here -- `_honest_replay` looks this up by `process_name` (fail-closed
+# `KeyError` below, not a silent default) rather than hardcoding a single
+# stream class for every process, since DNADamage's site-sampling draws
+# and ReplicationInitiation's chromosome-owned binding/release draws are
+# different call shapes over the SAME shared stream.
+_CHROMOSOME_LEDGER_STREAM_CLS: dict[str, type] = {
+    "DNADamage": KarrLedgerReplayStream,
+    "ReplicationInitiation": _ReplicationInitiationChromosomeLedgerRandStream,
+}
 
 TARGET_PROCESSES = (
     "DNARepair",
@@ -1154,12 +1172,18 @@ def _honest_replay(
     trace_path: Path,
     *,
     progress: bool = False,
+    disable_chromosome_rand_stream_ledger: bool = False,
 ) -> tuple[BitIdentityResult, HonestReplayResult]:
     with h5py.File(trace_path, "r") as handle:
         metadata = handle["metadata"]
         rng_seed_raw = _metadata_scalar(metadata, "rng_seed")
         rng_seed = int(rng_seed_raw) if isinstance(rng_seed_raw, int) else 0
-        ctx = _build_context(name=process_name, rng_seed=rng_seed, handle=handle)
+        ctx = _build_context(
+            name=process_name,
+            rng_seed=rng_seed,
+            handle=handle,
+            disable_chromosome_rand_stream_ledger=disable_chromosome_rand_stream_ledger,
+        )
         process = ctx.process
         spec = ctx.spec
 
@@ -1240,8 +1264,8 @@ def _honest_replay(
             ledger_stream = None
             if spec.chromosome_rand_stream_ledger_attr is not None and ctx.chromosome_rand_stream_ledger is not None:
                 # Restore Karr's REAL shared-Chromosome-stream input state
-                # for this tick's site-sampling draws (see
-                # chromosome_rand_stream_ledger.py /
+                # for this tick's chromosome-owned site-sampling/release
+                # draws (see chromosome_rand_stream_ledger.py /
                 # scripts/matlab/reconstruct_chromosome_draw_ledger.m) --
                 # input-state restoration, not answer leakage, same as
                 # states_before already restoring substrate/enzyme/
@@ -1250,7 +1274,21 @@ def _honest_replay(
                 # between this process's own ticks is determined by ~27
                 # OTHER processes' draws in between, which this
                 # single-process replay cannot itself reproduce.
-                ledger_stream = KarrLedgerReplayStream(
+                # Per-process stream class fail-closed lookup (never a
+                # silent default): a `_ProcessSpec.chromosome_rand_stream_
+                # ledger_attr` entry with no matching
+                # `_CHROMOSOME_LEDGER_STREAM_CLS` registry entry is a
+                # programming error, not a runtime fallback.
+                try:
+                    ledger_cls = _CHROMOSOME_LEDGER_STREAM_CLS[process_name]
+                except KeyError as exc:
+                    raise KeyError(
+                        f"process {process_name!r} declares chromosome_rand_stream_ledger_attr="
+                        f"{spec.chromosome_rand_stream_ledger_attr!r} but has no registered "
+                        "_CHROMOSOME_LEDGER_STREAM_CLS entry -- add one before enabling ledger "
+                        "replay for this process"
+                    ) from exc
+                ledger_stream = ledger_cls(
                     ctx.chromosome_rand_stream_ledger[tick], tick_label=f"{process_name}-tick{tick}"
                 )
                 setattr(process, spec.chromosome_rand_stream_ledger_attr, ledger_stream)
@@ -1259,8 +1297,8 @@ def _honest_replay(
 
             if ledger_stream is not None:
                 # Fail closed: raises if OC consumed more (mid-call, via
-                # KarrLedgerReplayStream.rand()) or fewer (here) raw draws
-                # than Karr's real shared stream did for this tick --
+                # the ledger stream's draw primitive) or fewer (here) raw
+                # draws than Karr's real shared stream did for this tick --
                 # never silently absorbed or padded.
                 ledger_stream.assert_fully_consumed()
 
