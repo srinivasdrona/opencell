@@ -62,12 +62,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-08, post-compaction recovery) — supersedes all
 earlier blocks below:**
 
-- Local `main` is published at `023f19f`. DNADamage and Cytokinesis L2.1
-  are merged; the committed Cytokinesis post-merge gate passed 184 tests,
-  L1b 28/28, oracle-dependency 38/38, and L2.2 remains 19/1/2 integrity
-  OK. DNADamage's canonical seed-2000 trace and chromosome-ledger sidecar
-  are present
-  Its canonical seed-2000 trace and chromosome-ledger sidecar are present
+- Local `main` is clean and published at `831b9b2`. DNADamage,
+  Cytokinesis, and HostInteraction L2.1 are merged. The authoritative L2.1
+  manifest is **10 EWP / 1 CODE_GAP / 0 MISSING**. Host's final integrated
+  regression passed 148 tests/6 expected data-absence skips; Cytokinesis's
+  passed 184 tests. L1b is 28/28, oracle-dependency 38/38, and L2.2 remains
+  19/1/2 integrity OK. DNADamage's canonical seed-2000 trace and
+  chromosome-ledger sidecar are present
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
   data-dependent skips and active rubric 14/14.
@@ -90,14 +91,16 @@ earlier blocks below:**
     enzyme overrides are contained across `copyToState`, the stale oracle
     allowlist entry is removed, and every discriminating-condition hash,
     value, and nodeid is verified fail-closed. All six gitignored traces
-    are copied into `main-integrate`. Its merge is staged on current main:
+    are copied into `main-integrate`. Its merge is published on current main:
     DNADamage/Cytokinesis shared-file hunks are preserved, the robust
     skip-detecting pytest runner is shared by replay and condition
     verification, and the manifest is 10 EWP / 1 CODE_GAP / 0 MISSING.
-    A new invariant test binds top-level counts/replay command to the rows.
+    A new invariant test binds top-level counts/replay command to the rows;
+    the new `l21_evidence_common.py` isolates L2.1 missing-evidence policy
+    from the shared L2.2 replay harness, avoiding a 19-row provenance
+    invalidation.
     Final regression is green: 148 passed/6 expected data-absence skips,
     L1b 28/28, oracle-dependency 38/38, and L2.2 19/1/2 integrity OK.
-    Log the Opus acceptance, commit, and push.
   - Cytokinesis clean integration branch `integrate/l21-cytokinesis-clean`
     at `27237c9` is **ACCEPTED** by final Opus review. Its merge into main is
     published: the four shared-file conflicts were resolved by union,
@@ -128,9 +131,11 @@ earlier blocks below:**
     inversion for the unsplit-boundary fix, then rerun N=200 once before
     another Opus review.
   - Cytokinesis/FtsZ dual extraction has exactly three live MATLAB
-    sessions: worker A seed 0, worker B seed 17, worker C seed 34.
-    Status files remain `RUNNING`; keep the host-wide cap at three and
-    resume only incomplete seeds after any worker exits.
+    sessions. Worker A completed seeds 0-1 and is running seed 2; worker B
+    completed seed 17 and is running seed 18; worker C completed seed 34
+    (with seed 36 preloaded) and is running seed 35. Current emitted pairs:
+    A=2, B=1, C=2. Keep the host-wide cap at three and resume only
+    incomplete seeds after any worker exits.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
