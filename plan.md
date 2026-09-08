@@ -182,8 +182,9 @@ earlier blocks below:**
     event root separately retains the L2.1 single-process trace
     `b0c919e8...eeeb0`. Never overwrite or silently mix those two artifacts.
   - Candidate cohort correction is implemented on
-    `fix/division-censor-contract` (6 commits from `701b991`) and awaits
-    independent review: `N=50` means the first 50 **completed event windows**
+    `fix/division-censor-contract` (6 commits from `701b991`). Opus accepts
+    the statistical design but **REJECTED** the implementation: `N=50`
+    means the first 50 **completed event windows**
     from a deterministic ascending attempted-seed stream starting at seed 0.
     Every seed is attempted exactly once at a common
     `max_search_ticks=100000`; each attempt atomically records either a
@@ -198,7 +199,14 @@ earlier blocks below:**
     seeds 17 and 34-46 are premature until gaps 6-16 and 18-33 have attempt
     records. Seed 6/18 censor outcomes still need mechanically bound
     backfill. Reported gate: 136 targeted tests, Ruff clean, L2.2 19/1/2
-    preserved. Keep the host-wide cap at three.
+    preserved. Required fixes: plumb 100k through validator/spec/driver
+    (accept recorded horizons >= required), delete attempt records during
+    force re-extraction, hard-fail cross-root contradictions, source-bind
+    RIGHT_CENSORED records, and make source/hash contradictions block
+    selection. Formal estimand: Cytokinesis behavior conditional on
+    completion within 100k ticks under the bound source; completion fraction
+    stays descriptive and N may never adapt downward. Keep the host-wide
+    cap at three.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
