@@ -111,7 +111,16 @@ earlier blocks below:**
     200/200 under the input ledger; L2.2 is deliberately demoted to FAIL
     (`STALE_SWEEP_PROVENANCE`) because the current 100-vs-200 canonical
     filename convention cannot support a genuine M=200 ensemble without
-    identity collision. Await Opus re-review; do not relabel it green.
+    identity collision. Opus **ACCEPTS the L2.1 code with a clean split**
+    but rejects the whole branch: tracked `sweep_status.json` says
+    DNASupercoiling NOT_STARTED while `sweep_report.json` says RAN_EXIT_0
+    (52/53 sweep tests, not the claimed 53/53). Curate onto current main:
+    land exact-replay code/tests/decision plus `evidence_index.json`'s
+    honest RepInit PASS->FAIL demotion (expected board 18/2/2); hold both
+    inconsistent sweep summary files; correct STATUS/plan/provenance claims;
+    add a regression assertion for the reproduced 200-tick observable
+    identity. Separately redesign M-aware trace paths and exact metadata/
+    filename tick checks before regenerating RepInit L2.2.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` is **ACCEPTED** by final Opus review: condition
     enzyme overrides are contained across `copyToState`, the stale oracle
