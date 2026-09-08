@@ -1,198 +1,220 @@
-# STATUS: Division-window cohort-censoring contract (Opus re-review fixes)
+# STATUS: Division-window cohort-censoring contract (second Opus re-review fixes)
 
 Branch `fix/division-censor-contract`, worktree
 `E:\opencell-worktrees\fix-division-censor-contract`, base `701b991`.
-Not merged/pushed to main. This revises the prior candidate after Opus
-accepted the statistical design but REJECTED implementation blockers; all
-seven review items are addressed below.
+Not merged/pushed to main. This revises the previous candidate after
+Opus's SECOND implementation re-review rejected three remaining
+blockers; all six review items are addressed below.
 
-## 1. Horizon plumbing (FIXED)
+## 1. Horizon predicate: recorded >= window_anchor, not recorded >= n_ticks (FIXED)
 
-* **The real bug**: the prior candidate preregistered
-  `selection_contract.max_search_ticks=100000` but never wired it into
-  anything that runs — `cytokinesis_anchor_spec`/`_anchor_spec` still used
-  the launcher's old `DEFAULT_MAX_SEARCH_TICKS=50000` default, and the
-  MATLAB extractor's own default was a literal `50000`. The contract was
-  "on paper" only.
-* **Design decision (documented in spec + code)**: `max_search_ticks` is
-  trace identity, but for a **COMPLETED** anchor trace,
-  `launcher.validate_existing_event_window` now checks it as a **monotone
-  minimum against `spec.n_ticks`** (`recorded >= n_ticks`), never an exact
-  match against `spec.max_search_ticks`. Rationale: a genuine completion
-  tick is deterministic given (seed, source) — it does not depend on the
-  search ceiling configured at capture time, so a smaller recorded budget
-  (the legacy 50000 every currently-banked seed carries) is neither
-  weaker nor stronger evidence, as long as it was large enough to have
-  captured the observed completion. This is the ONLY reading consistent
-  with Opus's own accepted accounting (seeds 0-5/17/34-47 remain valid
-  COMPLETED evidence) — flagging this interpretation explicitly for
-  confirmation in re-review, since "recorded >= required" is open to a
-  stricter reading that would invalidate every currently-banked seed;
-  `docs/phase_f/l2_event/division_window_spec.json`'s new
-  `max_search_ticks_validation_policy` field documents the chosen design
-  and rationale in full.
-* `cytokinesis_anchor_spec` (`validate_dual_division_canary.py`) and
-  `_anchor_spec` (`prepare_cytokinesis_cohort.py`) now both use
-  `selection_horizon_max_search_ticks()` (100000) — safe under the
-  monotone-minimum policy.
-* `extract_dual_division_window.m`'s default now reads
-  `division_window_selection_contract().max_search_ticks`, never a
-  literal. `extract_dual_division_window_seeds.m` gained a 4th `opts`
-  parameter, passed through unmodified to every extraction call, so a
-  sanctioned batch run can request an explicit horizon/force_reattempt.
-* Live/synthetic tests added: a COMPLETED trace stamped exactly 100000
-  validates and is selectable
-  (`test_matched_pair_stamped_at_the_selection_contract_horizon_still_passes`,
-  `test_anchor_trace_stamped_exactly_the_selection_contract_horizon_validates`),
-  alongside the legacy-50000 case
-  (`test_anchor_trace_recorded_at_a_smaller_horizon_than_spec_still_validates`,
-  `test_matched_pair_at_legacy_50000_horizon_still_passes_alongside_100000_spec`),
-  and the floor is not vacuous
-  (`test_anchor_trace_recorded_max_search_ticks_smaller_than_n_ticks_is_rejected`).
+* **The real bug**: the first fix round's monotone-minimum check compared
+  a COMPLETED trace's recorded `max_search_ticks` against the process's
+  own `n_ticks` (e.g. 5000 for Cytokinesis) — far too loose. It would have
+  silently accepted impossible metadata such as `max_search_ticks=6000`
+  paired with `window_anchor=31993` (a search ceiling that could never
+  have observed that completion).
+* **Fix**: `launcher.validate_existing_event_window` now requires
+  `metadata.max_search_ticks >= metadata.window_anchor` (both non-null)
+  for a COMPLETED anchor trace — the tightest floor directly available
+  from the trace's own already-loaded metadata, and the correct
+  structural invariant (the real capture loop can never observe a
+  completion strictly beyond the search ceiling it was actually bounded
+  by). This still preserves monotone validity of every currently-banked
+  50000-recorded completion (`50000 >= window_anchor` trivially, since
+  `window_anchor` never exceeds a few tens of thousands of ticks) while
+  correctly rejecting the impossible `max=6000/anchor=31993` case.
+* `docs/phase_f/l2_event/division_window_spec.json`'s
+  `max_search_ticks_validation_policy` prose updated to describe this
+  corrected policy explicitly, including why the first round's `n_ticks`
+  floor was too loose.
+* New tests added to `test_l2_event_launcher.py`: the exact
+  `max=6000/anchor=31993` impossible-metadata fixture Opus named
+  (`test_anchor_trace_realistic_impossible_horizon_max6000_anchor31993_is_rejected`),
+  the general "clears n_ticks but still impossible" gap
+  (`test_anchor_trace_max_search_ticks_above_n_ticks_but_below_window_anchor_is_rejected`),
+  the boundary case (`recorded == window_anchor` validates), and the
+  original smaller-than-both-floors rejection, updated to check the new
+  message wording.
+* **All 21 currently-banked COMPLETED pairs (seeds 0-5, 17, 34-47) were
+  re-validated end-to-end this session under the corrected check via
+  `validate_dual_division_canary` — 21/21 PASS** (run natively against
+  the real `dual_division_cohort_current` root; see verification section
+  below for the exact output). RIGHT_CENSORED's exact/full `>=100000`
+  requirement (a separate, unrelated check in
+  `division_cohort_selector`) is unchanged.
 
-## 2. Force re-extraction (FIXED)
+## 2. Default root execution (FIXED)
 
-* `extract_dual_division_window_seeds.m`'s `force_seeds` branch now
-  deletes `division_window_attempt.json` alongside both `.mat` files, and
-  the post-delete existence recheck includes all three paths.
-* Inversion test
-  (`test_force_seeds_clearing_attempt_record_means_no_completed_or_censored_record_permanently_blocks_reextraction`)
-  proves a stale COMPLETED or RIGHT_CENSORED record can never permanently
-  block a sanctioned re-extraction: the driver's force branch always
-  deletes the attempt record *before* re-invoking the extractor, so its
-  `censored_attempt_exists`/`attempt_record_status_conflict` guards can
-  only ever fire on a *non-forced* re-run (the deliberately conservative
-  default).
+* **The real bug**: `authoritative_karr_native_root()`'s three candidates
+  (this checkout, and the MAIN CHECKOUT's Windows/WSL paths) never
+  actually matched where the real consolidated data lives — the
+  dedicated root is under a SIBLING WORKTREE named `main-integrate`, not
+  the main checkout (`E:\opencell`) itself. Every default invocation
+  therefore silently fell through to `autodiscover_karr_native_roots`'s
+  full ~93-sibling-worktree scan, which (before this round's other fixes)
+  could traceback on a documented-superseded/legacy trace pair in an
+  unrelated worktree.
+* **Fix**: added a portable, drive-letter-independent candidate —
+  `repo_root.parent / "main-integrate" / data/m1_sources/karr_native/
+  dual_division_cohort_current` — which correctly resolves regardless of
+  which worktree this code runs from or which drive letter the checkout
+  lives on. Verified: `authoritative_karr_native_root()` now resolves to
+  the real `.../main-integrate/data/m1_sources/karr_native/
+  dual_division_cohort_current` path in this environment.
+* `default_search_roots()` now returns the authoritative root ONLY (or an
+  empty list if it cannot be found anywhere) — it NEVER appends the
+  broader sibling-worktree scan by default. A new `broad_search_roots()`
+  function offers that broader scan as an explicit opt-in for callers who
+  want it (e.g. a one-off manual consolidation audit).
+* `main()`'s CLI now fails closed with an actionable stderr message
+  (naming `--search-root` as the required override) when the
+  authoritative root cannot be found anywhere, instead of silently
+  broadening the scan.
+* `discover_ledger` gained an `authoritative_root` parameter: a
+  NON-authoritative root's resolution failure (invalid/superseded trace,
+  any other exception) is now caught and reported in a new
+  `rejected_root_traces` list, never fatal; the SAME failure in the
+  authoritative root itself remains fatal. `resolve_seed_attempt` itself
+  was also hardened to convert raw `OSError`/`ValueError`/`KeyError` from
+  `validate_dual_division_canary` (e.g. a non-HDF5 garbage file) into
+  `CohortContractError` rather than letting it escape as a bare
+  traceback, at both call sites (sidecar cross-check and trace-only
+  backfill).
+* Added `--search-root` passthrough to
+  `ftsz_pre_division_evidence.py --use-cohort-selector`.
+* **Real no-arg CLI proof, this exact machine layout**: ran
+  `python scripts/l2_event/division_cohort_selector.py` with zero
+  arguments. Result: a clean JSON report (6 completed, 16 premature, 26
+  gaps, 0 rejected_root_traces) and exit code 2 — **no traceback**. Full
+  captured output is in `DIVISION_WINDOW_MIGRATION.md`'s "Real no-arg CLI
+  proof" section. (Run natively for I/O speed against the real E: drive
+  data — behaviorally identical to the canonical WSL path; the WSL
+  invocation was independently confirmed not to traceback either, only
+  slower due to cross-filesystem HDF5 reads.)
+* New portable/fast automated tests (not depending on the real machine's
+  data): multi-root agreement/dedup, a genuine two-valid-records
+  contradiction (still fatal), non-authoritative-root invalid trace
+  (rejected, not fatal), authoritative-root invalid trace (still fatal),
+  sibling-`main-integrate` resolution, `default_search_roots` never
+  broadening by default, and mocked no-arg CLI report/exit2 + fail-closed
+  proofs.
 
-## 3. Multi-root / source integrity (FIXED)
+## 3. Record identity cross-check (FIXED)
 
-* `division_cohort_selector.discover_ledger` now inspects **every**
-  search root for **every** seed (never "first root wins") and raises
-  `CohortContractError` immediately if two roots disagree on any identity
-  field (status, onset/completion tick, both trace hashes,
-  DNADamage/mnrnd identity) for the same seed.
-* New `authoritative_karr_native_root()` resolves the dedicated
-  `dual_division_cohort_current` root (documented in the spec's new
-  `authoritative_operational_root` field); `default_search_roots()` lists
-  it first (preference, never exclusivity — every other root is still
-  searched and cross-checked).
-* RIGHT_CENSORED records must now bind the CURRENT run's genuine
-  `dnadamage_source_resolved_sha256` and `mnrnd_provider_sha256` (spec's
-  new `censor_record_required_identity_fields`) — a mismatch reclassifies
-  the seed as an invalid/unresolved gap, exactly like a horizon mismatch,
-  and can never advance the contiguous prefix.
-* `selection_satisfied` is now `False` whenever `source_hash_mismatches`
-  or `duplicate_trace_hashes` is nonempty, even if the raw completed
-  count already reached `required_completed_windows`.
-* New tests: multi-root agreement/dedup, multi-root contradiction
-  hard-fail, wrong-DNADamage-identity censor, wrong-mnrnd-identity
-  censor, correct-identity positive control, `selection_satisfied` false
-  under source-hash-mismatch/duplicate-hash even with enough raw
-  completions, authoritative-root resolution/ordering.
+* **The real bug**: when an attempt JSON existed alongside COMPLETED
+  trace files, `resolve_seed_attempt` only confirmed the trace pair
+  independently validated PASS — it then returned an `AttemptRecord`
+  built from the SIDECAR's own self-claimed fields (onset/completion
+  ticks, both trace hashes, source/provider identity), never
+  cross-checked against what `validate_dual_division_canary` actually
+  measured from the real files. A copied/tampered sidecar (or one written
+  for a different seed's trace pair) could smuggle a false claim past the
+  PASS gate.
+* **Fix**: every sidecar identity field with a directly measurable
+  counterpart (`max_search_ticks` — now also read from the trace's own
+  metadata via `_read_metadata_int`, `mnrnd_provider_sha256`,
+  `dnadamage_source_resolved_sha256`, `onset_tick`, `completion_tick`,
+  `cytokinesis_trace_sha256`, `ftsz_trace_sha256`) is cross-checked
+  against the MEASURED value; any disagreement raises
+  `CohortContractError` naming both the claimed and measured values. The
+  returned `AttemptRecord` always carries the MEASURED values, never the
+  sidecar's raw claims. Cross-root agreement checks
+  (`discover_ledger`/`_records_agree`) therefore now only ever compare
+  measured values.
+* `_IDENTITY_FIELDS` (the cross-root agreement field list) also gained
+  `max_search_ticks`, which the first round's list had omitted — a gap
+  that let a mismatched `max_search_ticks` between two roots' RIGHT_
+  CENSORED records slip past the contradiction check entirely.
+* New tests: a tampered-sidecar-over-garbage-trace scenario (proves the
+  malformed-trace defense fires first), a tampered `onset_tick` over a
+  REAL, PASS-validating HDF5 fixture pair (the genuine inversion — proves
+  the identity cross-check itself fires), and a positive control (a
+  correct sidecar is accepted and the record carries measured values).
 
-## 4. Tightened spec wording (FIXED)
+## 4. Docs/STATUS accounting corrected by discovery (FIXED)
 
-`division_window_spec.json` bumped to schema v4. New fields, all with
-dedicated fail-closed Python accessors and MATLAB loader checks:
+* Re-surveyed the real `dual_division_cohort_current` root this session:
+  **22 seed directories** — **21 COMPLETED pairs** (0-5, 17, 34-47) plus
+  **1 RIGHT_CENSORED** (seed 18, backfilled the prior round). Of the 21
+  COMPLETED pairs, 6 (seeds 0-5) are the contiguous-selectable prefix and
+  **15** (17, 34-47) are premature — the prior round's STATUS/migration
+  doc incorrectly said "21" premature; corrected throughout.
+  `docs/phase_f/l2_event/DIVISION_WINDOW_MIGRATION.md` rewritten again
+  with the corrected breakdown, explicitly labeled as a dated snapshot,
+  and now includes the real captured `division_cohort_selector.py`
+  no-arg CLI JSON output as the generated-by-the-auditor evidence for
+  these counts (rather than a hand-computed table only).
 
-* `formal_estimand`: *"Cytokinesis process-local behavior conditional on
-  division completion within 100000 ticks under source S, over the first
-  50 completions of the ascending attempt stream from seed 0."* (locked
-  in verbatim by `test_real_repo_spec_has_the_exact_formal_estimand_text`).
-* `stopping_rule`: non-adaptive — the attempted stream cannot be
-  truncated, and `required_completed_windows` cannot be lowered, based on
-  observed completion/censoring incidence; only a fresh, separately
-  reviewed preregistration commit may change either.
-* `completion_fraction_role`: explicitly descriptive/non-gating.
-* `max_search_ticks_validation_policy` / `censor_record_required_identity_fields`
-  / `censor_record_identity_binding_note` / `authoritative_operational_root`
-  (see items 1 and 3 above).
+## 5. Non-forced batch skips (not hard-errors on) an existing valid RIGHT_CENSORED record (FIXED)
 
-## 5. Migration doc counts (FIXED — now dynamic, not hardcoded)
+* **The gap**: a RIGHT_CENSORED seed has neither trace file, so the
+  driver's existing `both_exist` skip check never fired for it; the
+  now-non-forced re-run would fall through to calling
+  `extract_dual_division_window` again, which (per the first round's
+  fix) raises `extract_dual_division_window:censored_attempt_exists` —
+  and the driver's catch-block only specially handled the NEW
+  `:right_censored` identifier, so this OTHER identifier fell into
+  `failed_seeds`, incorrectly turning "already honestly censored" into
+  an aggregate-throw-worthy defect.
+* **Fix**: `extract_dual_division_window_seeds.m` now checks for an
+  existing valid RIGHT_CENSORED record BEFORE ever calling the extractor
+  (skip + report into a new `already_censored_seeds` bucket, never
+  counted toward `censored_seeds` this-run or `failed_seeds`), with a
+  belt-and-braces catch-block handler for
+  `:censored_attempt_exists` doing the same if the pre-check is ever
+  bypassed. New static tests confirm the pre-check precedes the
+  extractor call and never touches `failed_seeds`, the catch-block
+  fallback behaves identically, and the new bucket is declared.
 
-* Real state re-surveyed this session: `dual_division_cohort_current`
-  (the authoritative root) now has **21** seed directories — 20 completed
-  pairs (0-5, 17, 34-47; **seed 47 completed since the last review**) plus
-  seed 18 (backfilled `RIGHT_CENSORED`, see item 6). Contiguous-prefix
-  accounting is unchanged in shape: 6 contiguous selected (0-5), 21
-  premature (17, 34-47), 25 never-attempted gaps (7-16, 19-33).
-* `docs/phase_f/l2_event/DIVISION_WINDOW_MIGRATION.md` rewritten to
-  present these as a dated, re-verifiable **snapshot** with the exact CLI
-  invocation to get a live, hash-and-identity-verified answer
-  (`division_cohort_selector.py --search-root .../dual_division_cohort_current`),
-  never a frozen claim.
-* Operational honesty note included: a live, fully-validated run of that
-  CLI against cross-filesystem (WSL↔NTFS) search roots was observed to
-  take longer than practical to wait out interactively in this session;
-  the doc flags this as an environment/DrvFS characteristic, not a code
-  bug, and recommends running it from native WSL against a
-  native-filesystem copy.
+## 6. Verification re-run
 
-## 6. Seed 6 / seed 18 (no fabrication; seed 18 genuinely backfilled)
-
-* **Seed 6**: `bulk-division-a/artifacts/seed6_100k_probe.status` reads
-  `RUNNING seed=6 max_search_ticks=100000` — confirmed still actively
-  running (log still appending) as of this session. **Not touched.**
-  Left as an open, in-progress item with the exact follow-up commands in
-  the migration doc.
-* **Seed 18**: `bulk-division-b/artifacts/seed18_100k_probe.log` contains
-  the real extractor error text for a genuine `max_search_ticks=100000`
-  attempt. This session independently re-verified — not merely trusted —
-  that (a) the log's referenced DNADamage overlay file still exists on
-  disk and its LF-normalized SHA-256 is byte-identical to this worktree's
-  CURRENT dec-005-resolved patched source, and (b) the log's mnrnd
-  provider path/release/toolbox-version matches the current genuine
-  provider. New `scripts/l2_event/backfill_right_censored_from_log.py`
-  (16 tests, fully mocked/portable — never depends on a real WCM/MATLAB
-  install) mechanizes this exact verification chain and refuses
-  (`BackfillEvidenceError`) if any check fails. **Seed 18 has been
-  backfilled for real** this session:
-  `dual_division_cohort_current/per_process_traces_v2_event_s018/division_window_attempt.json`
-  now exists (`status=RIGHT_CENSORED`, both hashes verified, no trace
-  files present — mutual exclusivity intact).
-
-## 7. Test/lint/provenance re-run
-
-* Targeted suite (division/cohort/spec/extractor/validator/backfill):
-  **260 passed** (`test_division_cohort_selector.py` 31,
+* Targeted suite: **275 passed** (up from 267 last round — 8 net new
+  tests this round after accounting for the removed/renamed
+  `n_ticks`-floor test): `test_division_cohort_selector.py` 40,
   `test_division_window_spec.py` 27,
   `test_division_window_selection_contract_static.py` 6,
-  `test_extract_dual_division_window_static.py` 39,
+  `test_extract_dual_division_window_static.py` 40,
   `test_prepare_cytokinesis_cohort.py` 5,
   `test_ftsz_pre_division_evidence.py` 26,
   `test_validate_dual_division_canary.py` 17,
-  `test_l2_event_launcher.py` 95,
-  `test_backfill_right_censored_from_log.py` 16 — new this round).
+  `test_l2_event_launcher.py` 98, `test_backfill_right_censored_from_log.py` 16.
+* **Live dedicated-root audit, all 21 validators**: ran
+  `validate_dual_division_canary` against every one of the 21 real
+  banked COMPLETED pairs (seeds 0-5, 17, 34-47) in
+  `dual_division_cohort_current`, natively, under the corrected
+  `window_anchor`-based horizon check — **21/21 PASS**, zero reasons.
+* **No-arg CLI, real machine layout**: clean JSON report + exit code 2,
+  no traceback (see item 2 and `DIVISION_WINDOW_MIGRATION.md`).
 * L2.2 evidence portability (`test_l22_evidence_portability.py`): **7
-  passed**, confirming the required **19 PASS / 1 FAIL / 2
-  MISSING_EVIDENCE** Design-A tally remains intact.
+  passed**, the required **19 PASS / 1 FAIL / 2 MISSING_EVIDENCE**
+  Design-A tally remains intact (`PROCESS_CATALOG.yaml` still untouched).
 * Full `l2_event`/`division`/`cytokinesis`/`ftsz`/`backfill`-scoped sweep:
-  **382 passed, 17 skipped**, 1 pre-existing unrelated failure
-  (`test_shared_evidence_index_is_known_stale_for_ribosome_assembly_after_this_promotion`
-  — reconfirmed present and identical at base `701b991` before this
-  branch's changes).
+  **385 passed, 17 skipped**, the same 1 pre-existing unrelated failure
+  reconfirmed present at base `701b991`
+  (`test_shared_evidence_index_is_known_stale_for_ribosome_assembly_after_this_promotion`).
 * `ruff check` on every new/modified Python file: clean.
-* `python -c "import json"` / catalog untouched (still not edited, for
-  the same 19/1/2-hash-coupling reason as the prior round).
 * Provenance logged (`opencell/provenance/llm_interactions.jsonl`) at the
   same commit as this STATUS update.
+* Seed 6's live 100000-tick attempt (`bulk-division-a/artifacts/
+  seed6_100k_probe.status`) reconfirmed still `RUNNING` at the end of
+  this session — untouched throughout.
 
-## Open items for Opus re-review
+## Open items carried forward
 
-1. **Confirm the monotone-minimum interpretation** (item 1): this
-   candidate reads "recorded >= required" as "recorded max_search_ticks
-   >= the process's own n_ticks", not "recorded >= the 100000 selection
-   horizon", because the latter reading invalidates every currently-
-   banked COMPLETED seed and contradicts Opus's own accepted 6-contiguous/
-   21-premature accounting. If a stricter reading was intended, the 20
-   legacy-horizon seeds would need real re-extraction at 100000, not
-   backfill-acceptance.
-2. Seed 6 remains genuinely unresolved (still running) — no code or
+1. Seed 6 remains genuinely unresolved (still running) — no code or
    documentation change can close this; it requires the live process to
    finish.
-3. A bulk sidecar-backfill pass for the 20 already-completed seeds
+2. A bulk sidecar-backfill pass for the 21 already-completed seeds
    (writing real `division_window_attempt.json` files next to their
-   existing trace pairs) is designed but not executed in this branch,
-   since it would write into shared worker worktrees / the shared
-   consolidated root outside a narrowly-scoped code-fix branch — flagged
-   as a separate, larger operational action in the migration doc.
+   existing trace pairs, now that the identity-cross-check machinery to
+   do so safely exists) remains designed but not executed in this
+   branch, since it would write into shared worker worktrees / the
+   shared consolidated root outside a narrowly-scoped code-fix branch.
+3. `premature_seeds` does not itself distinguish COMPLETED from
+   RIGHT_CENSORED within the premature bucket (seed 18 appears there
+   alongside 17/34-47) — `completed_seeds`/`censored_seeds` (both scoped
+   to the contiguous prefix only) provide the status breakdown instead.
+   Not changed this round since no review item asked for it; flagged
+   here in case a future round wants a `premature_completed_seeds`/
+   `premature_censored_seeds` split for clarity.

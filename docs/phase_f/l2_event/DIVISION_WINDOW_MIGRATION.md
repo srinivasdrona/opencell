@@ -31,11 +31,22 @@ This performs full HDF5 validation (hashing every trace, cross-checking
 source/provider identity, checking the contiguous-attempt/censor-horizon/
 identity-binding rules) against the **authoritative operational root**
 (`dual_division_cohort_current` — see `authoritative_karr_native_root()`
-and the spec's `authoritative_operational_root` field). It also
-automatically searches every sibling worker worktree
-(`default_search_roots()`) and **hard-fails** (`CohortContractError`) if
-any two roots disagree about the same seed — never silently trusts
-whichever root is listed first.
+and the spec's `authoritative_operational_root` field). Second Opus
+re-review (2026-09-09): by default this NEVER also scans every sibling
+worker worktree (`default_search_roots()` returns the authoritative root
+ONLY, or an empty list if it cannot be found anywhere, in which case the
+CLI fails closed with an actionable message asking for an explicit
+`--search-root` rather than silently broadening the scan). A caller that
+explicitly wants the broader scan may pass multiple `--search-root`
+arguments, or call `division_cohort_selector.broad_search_roots()`
+directly. When multiple roots ARE searched (whether via explicit
+`--search-root` or `broad_search_roots()`), every root is inspected for
+every seed and any two roots' VALID records that disagree hard-fail
+(`CohortContractError`) — a non-authoritative root's INVALID/superseded
+trace (no explanatory attempt record, or any other resolution failure) is
+instead caught and reported in the audit's `rejected_root_traces` list,
+never fatal; the same failure in the authoritative root itself remains
+fatal.
 
 Operational note (this session): running this command with search roots
 that reach across the WSL↔NTFS filesystem boundary (`/mnt/e/...` against
@@ -43,19 +54,62 @@ an `E:` drive) was observed to take longer than a reasonable interactive
 wait in this environment, likely DrvFS overhead on ~27 MB-per-seed HDF5
 reads. Run it from **native WSL against a native-filesystem copy**, or
 budget for a multi-minute wait, before treating a long-running invocation
-as a bug.
+as a bug. A real, unmodified no-arg invocation (`python scripts/l2_event/
+division_cohort_selector.py`, no flags) was run against this exact
+machine layout this session (see "Real no-arg CLI proof" below) and
+completed cleanly with a real report and exit code 2 — no traceback.
 
-## Fast filesystem-existence snapshot (this session, 2026-09-09 ~02:25 IST)
+## Fast filesystem-existence snapshot (this session, 2026-09-09 ~03:xx IST, second Opus re-review round)
 
 Directory listing only (`Get-ChildItem`, no content read) of the
 authoritative root
 (`main-integrate/data/m1_sources/karr_native/dual_division_cohort_current`):
+**22 seed directories** total.
 
 | Seeds | Contents |
 |---|---|
-| 0, 1, 2, 3, 4, 5, 17, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 | `Cytokinesis_5000ticks.mat` + `FtsZPolymerization_200ticks.mat` (20 seeds — seed 47 completed and banked since the last review pass) |
-| 18 | `division_window_attempt.json` only (RIGHT_CENSORED — backfilled this session, see below) |
-| 6 | absent (see "Seed 6" below — a live 100000-tick attempt is still running elsewhere as of this snapshot) |
+| 0, 1, 2, 3, 4, 5, 17, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44, 45, 46, 47 | `Cytokinesis_5000ticks.mat` + `FtsZPolymerization_200ticks.mat` — **21 COMPLETED pairs** |
+| 18 | `division_window_attempt.json` only — **1 RIGHT_CENSORED** (backfilled last session, see below) |
+| 6 | absent — a live 100000-tick attempt is still running elsewhere as of this snapshot (see "Seed 6" below) |
+
+Breaking the 21 COMPLETED pairs down by contiguity role: seeds 0-5 (6
+seeds) are the CONTIGUOUS prefix (currently selectable); seeds 17, 34-47
+(15 seeds) are PREMATURE completions (real evidence, preserved, not yet
+selectable because seeds 6-16/19-33 are still unattempted gaps). Seed 18
+is a separate, PREMATURE **censored** observation (also blocked by the
+same gap, but contributes zero toward `required_completed_windows`
+regardless of gap status).
+
+### Real no-arg CLI proof (this session, native Windows Python against the real E: drive data — behaviorally identical to the canonical WSL path, used here only for I/O speed)
+
+```
+$ python scripts/l2_event/division_cohort_selector.py
+{
+  "attempted_count": 6, "completed_count": 6, "completion_fraction": 1.0,
+  "contiguous_prefix_end": 5, "next_seed_to_attempt": 6,
+  "completed_seeds": [0, 1, 2, 3, 4, 5],
+  "censored_seeds": [], "invalid_censor_seeds": [],
+  "gap_seeds": [6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 19, 20, 21, 22, 23,
+                24, 25, 26, 27, 28, 29, 30, 31, 32, 33],
+  "premature_seeds": [17, 18, 34, 35, 36, 37, 38, 39, 40, 41, 42, 43, 44,
+                       45, 46, 47],
+  "rejected_root_traces": [],
+  "selected_seeds": [0, 1, 2, 3, 4, 5], "selection_satisfied": false,
+  "source_hash_mismatches": [], "duplicate_trace_hashes": []
+}
+next_seed_to_attempt=6 completed=6 required=50 selection_satisfied=False ...
+$ echo $?
+2
+```
+
+No traceback, a real report, exit code 2 (matches `main()`'s documented
+`0 if selection_satisfied else 2` convention) — the exact proof the
+second Opus re-review requested ("Prove selector no-arg execution returns
+a report/exit2, not traceback, in this machine layout"). `premature_seeds`
+includes seed 18 (censored) alongside 17/34-47 (completed) because that
+field does not itself distinguish status within the premature bucket —
+see `censored_seeds`/`completed_seeds` (both scoped to the contiguous
+prefix only) for the status breakdown.
 
 Mechanically, per `division_cohort_selector`'s contiguity rule (verified
 against this exact shape by
@@ -63,12 +117,13 @@ against this exact shape by
 the contiguous prefix from `candidate_seed_start=0` still ends at seed 5
 (seed 6 has no record of any kind), so `next_seed_to_attempt=6`, and only
 seeds 0-5 (6 completions) count toward `required_completed_windows=50`
-today. Seeds 17, 34-47 (21 seeds) are genuine `COMPLETED` evidence,
+today. Seeds 17, 34-47 (15 seeds) are genuine `COMPLETED` evidence,
 preserved and never invalidated, but remain "premature" — not yet
 selectable — until seeds 6-16 and 19-33 are attempted in ascending order.
-Seed 18 is now `RIGHT_CENSORED` (see below) rather than a gap, but a
-single censored seed inside a still-open gap range does not by itself
-close the gap around it.
+Seed 18 is `RIGHT_CENSORED` (backfilled last session, see below) rather
+than a gap, but a single censored seed inside a still-open gap range does
+not by itself close the gap around it — it too is "premature" until seeds
+6-16 are attempted.
 
 **Run the command above for the current, hash-and-identity-verified
 count** — do not treat "6" as a permanent number; it changes every time a
@@ -76,14 +131,19 @@ gap seed is attempted.
 
 ## Outstanding backfill (honest — nothing fabricated)
 
-### 1. Seeds 0-5, 17, 34-47 (20 completed pairs): mechanically backfillable
+### 1. Seeds 0-5, 17, 34-47 (21 completed pairs): mechanically backfillable
 
 Every one of these seeds has a real, on-disk, dual-tap-produced trace pair
 that `scripts.l2_event.validate_dual_division_canary.validate_dual_division_canary`
 independently validates (hash, source-binding, margin-gate, same-
 completion-tick cross-check, and — since the 2026-09-09 horizon-plumbing
-fix — a monotone-minimum `max_search_ticks >= n_ticks` check that no
-longer breaks on these seeds' legacy 50000-tick recorded horizon).
+fix, tightened in the second re-review round — a monotone-minimum
+`max_search_ticks >= window.window_anchor` check, never the looser
+`n_ticks` floor a first fix attempt used, and never an exact match
+against the contract's 100000 horizon) that no longer breaks on these
+seeds' legacy 50000-tick recorded horizon. All 21 were independently
+re-validated end-to-end this session under the corrected check (see
+STATUS_DIVISION_CENSOR_CONTRACT.md) — 21/21 PASS.
 `division_cohort_selector.resolve_seed_attempt` synthesizes a
 `backfilled=True` `COMPLETED` `AttemptRecord` for these automatically,
 read-only, without writing anything or rewriting any trace bytes.
@@ -96,7 +156,7 @@ into a small standalone Python backfill script analogous to
 `scripts/l2_event/backfill_right_censored_from_log.py`'s design — compute
 both trace hashes and write the JSON sidecar, refusing if one already
 exists (mirroring that script's overwrite-refusal contract). Not done in
-this branch for these 20 seeds because they live in shared worker
+this branch for these 21 seeds because they live in shared worker
 worktrees or the shared consolidated root, and a bulk sidecar-writing pass
 across all of them is a separate, larger, independently-reviewable
 operational action from the code fix this branch delivers.
@@ -167,8 +227,11 @@ Error using extract_dual_division_window (line 207)
 seed 18: division-completion signal did not fire within max_search_ticks=100000 ticks -- refusing to fabricate a window_anchor; either raise anchor_opts.max_search_ticks or this seed genuinely does not complete in that many ticks
 ```
 
-This session independently re-verified (not merely trusted) two source
-identity claims:
+This session (this backfill was performed in the immediately prior
+implementation round, 2026-09-09, and independently re-confirmed still
+present and intact at the start of this second re-review round)
+independently re-verified (not merely trusted) two source identity
+claims:
 
 * the log's own `[karr_bootstrap] using generated DNADamage overlay:
   E:\opencell-worktrees\bulk-division-b\tmp\wcm_source_overlay\src` line
@@ -207,9 +270,9 @@ an existing record without `--force`.
 | Category | Seeds | Count |
 |---|---|---|
 | Contiguous, mechanically backfillable COMPLETED | 0-5 | 6 |
-| Premature COMPLETED (real traces, pending gap-fill) | 17, 34-47 | 21 |
+| Premature COMPLETED (real traces, pending gap-fill) | 17, 34-47 | 15 |
 | Genuine gaps, never attempted | 7-16, 19-33 | 25 |
-| Backfilled RIGHT_CENSORED (mechanically source-bound) | 18 | 1 |
+| Backfilled RIGHT_CENSORED (mechanically source-bound, premature) | 18 | 1 |
 | In progress (do not touch) | 6 | 1 |
 | **Total accounted for** | 0-47 | **48** |
 
