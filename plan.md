@@ -166,7 +166,13 @@ earlier blocks below:**
     accessibility mask before checking Karr's winner. Fix those, build a
     surgical integration on current main without downgrading the other ten
     L2.1 rows, regenerate/re-pin the ledger and pilot provenance, and
-    return for another Opus review before N=10 extraction.
+    return for another Opus review before N=10 extraction. Corrected branch
+    `integrate/l21-txreg-clean` is clean at `209a951`: source-derived damage
+    shifts, unified ledger, explicit PIT failure, regenerated trace/ledger,
+    mechanical promoter, and 11 EWP/0/0 candidate are committed; L2.2 stays
+    18/2/2 after the now-published RepInit demotion. Await Opus re-review
+    against current main `0dca05c`, especially shared ledger/`dec-006` union
+    and preservation of RepInit/DNADamage/Cytokinesis/Host behavior.
 - L2.2:
   - DNASupercoiling branch `agent/l22-dnas-20260812` at `4556d27` is
     **ACCEPTED** by final Opus review: both MATLAB origin-wrap helpers,
