@@ -114,6 +114,10 @@ _REQUIRED_SELECTION_CONTRACT_KEYS = (
     "selection_order",
     "attempt_record_filename",
     "attempt_status_values",
+    "formal_estimand",
+    "stopping_rule",
+    "censor_record_required_identity_fields",
+    "authoritative_operational_root",
 )
 
 
@@ -178,6 +182,40 @@ def attempt_record_filename(*, spec_path: Path = SPEC_PATH) -> str:
 
 def attempt_status_values(*, spec_path: Path = SPEC_PATH) -> tuple[str, ...]:
     return tuple(str(v) for v in selection_contract(spec_path=spec_path)["attempt_status_values"])
+
+
+def formal_estimand(*, spec_path: Path = SPEC_PATH) -> str:
+    """The exact, preregistered estimand text (Opus re-review, 2026-09-09
+    tightened wording): what quantity the Cytokinesis/FtsZPolymerization
+    dual-tap cohort actually estimates. Machine-loadable so tooling/docs
+    can quote it verbatim rather than paraphrase it differently in
+    different places."""
+    return str(selection_contract(spec_path=spec_path)["formal_estimand"])
+
+
+def stopping_rule(*, spec_path: Path = SPEC_PATH) -> str:
+    """The preregistered non-adaptive stopping-rule text: the attempted
+    stream cannot be truncated, and required_completed_windows cannot be
+    lowered, based on observed completion/censoring incidence."""
+    return str(selection_contract(spec_path=spec_path)["stopping_rule"])
+
+
+def censor_record_required_identity_fields(*, spec_path: Path = SPEC_PATH) -> tuple[str, ...]:
+    """The ``AttemptRecord`` field names a RIGHT_CENSORED record must bind
+    to the CURRENT run's identity (e.g. ``dnadamage_source_resolved_sha256``,
+    ``mnrnd_provider_sha256``) for that censor to advance the contiguous
+    attempted prefix (see ``scripts.l2_event.division_cohort_selector``).
+    A censor record missing, or mismatching, any of these fields is
+    reclassified as an invalid/unresolved gap, never silently accepted."""
+    return tuple(str(v) for v in selection_contract(spec_path=spec_path)["censor_record_required_identity_fields"])
+
+
+def authoritative_operational_root(*, spec_path: Path = SPEC_PATH) -> str:
+    """The dedicated, homogeneous banking root name (a subdirectory of
+    ``data/m1_sources/karr_native/``) every dual-tap extraction should
+    ultimately be consolidated into -- see
+    ``scripts.l2_event.division_cohort_selector.authoritative_karr_native_root``."""
+    return str(selection_contract(spec_path=spec_path)["authoritative_operational_root"])
 
 
 class ProvisionalMarginOverrunError(DivisionWindowSpecError):

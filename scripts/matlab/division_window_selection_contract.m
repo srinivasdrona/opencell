@@ -52,7 +52,9 @@ end
 
 contract = doc.selection_contract;
 required_fields = {'applies_to', 'candidate_seed_start', 'required_completed_windows', ...
-    'max_search_ticks', 'selection_order', 'attempt_record_filename', 'attempt_status_values'};
+    'max_search_ticks', 'selection_order', 'attempt_record_filename', 'attempt_status_values', ...
+    'formal_estimand', 'stopping_rule', 'censor_record_required_identity_fields', ...
+    'authoritative_operational_root'};
 for i = 1:numel(required_fields)
     field_name = required_fields{i};
     if ~isfield(contract, field_name)

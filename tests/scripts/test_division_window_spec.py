@@ -35,8 +35,11 @@ from scripts.l2_event.division_window_spec import (  # noqa: E402
     SelectionContractError,
     attempt_record_filename,
     attempt_status_values,
+    authoritative_operational_root,
     candidate_seed_start,
+    censor_record_required_identity_fields,
     check_inclusive_span_margin,
+    formal_estimand,
     load_spec,
     m_ticks_for,
     process_spec,
@@ -45,6 +48,7 @@ from scripts.l2_event.division_window_spec import (  # noqa: E402
     selection_contract_applies_to,
     selection_horizon_max_search_ticks,
     selection_order,
+    stopping_rule,
     tick_range_from_division_for,
 )
 
@@ -236,9 +240,9 @@ def test_selection_contract_applies_to_both_dual_tap_processes():
     assert not selection_contract_applies_to("SomeUnrelatedProcess")
 
 
-def test_selection_contract_schema_version_bumped_to_3():
+def test_selection_contract_schema_version_bumped_to_4():
     doc = load_spec()
-    assert doc["schema_version"] == 3
+    assert doc["schema_version"] == 4
 
 
 def test_missing_selection_contract_block_raises(tmp_path):
@@ -305,6 +309,10 @@ def test_selection_contract_is_isolated_from_a_custom_spec_path(tmp_path):
                     "selection_order": "ascending_seed",
                     "attempt_record_filename": "attempt.json",
                     "attempt_status_values": ["COMPLETED", "RIGHT_CENSORED"],
+                    "formal_estimand": "test estimand",
+                    "stopping_rule": "test stopping rule",
+                    "censor_record_required_identity_fields": ["dnadamage_source_resolved_sha256"],
+                    "authoritative_operational_root": "test_root",
                 },
             }
         ),
@@ -317,3 +325,35 @@ def test_selection_contract_is_isolated_from_a_custom_spec_path(tmp_path):
     assert candidate_seed_start() == 0
     assert required_completed_windows() == 50
     assert selection_horizon_max_search_ticks() == 100000
+
+
+# ---------------------------------------------------------------------------
+# Opus re-review (2026-09-09): tightened spec wording -- formal estimand,
+# non-adaptive stopping rule, censor-record identity binding, authoritative
+# operational root, all machine-loadable.
+# ---------------------------------------------------------------------------
+
+
+def test_real_repo_spec_has_the_exact_formal_estimand_text():
+    assert formal_estimand() == (
+        "Cytokinesis process-local behavior conditional on division completion "
+        "within 100000 ticks under source S, over the first 50 completions of "
+        "the ascending attempt stream from seed 0."
+    )
+
+
+def test_real_repo_spec_stopping_rule_is_non_adaptive():
+    rule = stopping_rule()
+    assert "cannot be truncated" in rule
+    assert "cannot be lowered" in rule
+    assert "Non-adaptive" in rule
+
+
+def test_real_repo_spec_censor_record_required_identity_fields():
+    fields = censor_record_required_identity_fields()
+    assert "dnadamage_source_resolved_sha256" in fields
+    assert "mnrnd_provider_sha256" in fields
+
+
+def test_real_repo_spec_authoritative_operational_root():
+    assert authoritative_operational_root() == "dual_division_cohort_current"

@@ -103,7 +103,9 @@ def test_loader_checks_every_required_field_the_python_accessor_requires():
     contract = selection_contract()
     for key in contract:
         if key in ("preregistered_at", "preregistered_by", "rationale", "$comment", "horizon_vs_existing_traces",
-                    "known_censored_seeds_pending_backfill"):
+                    "known_censored_seeds_pending_backfill", "completion_fraction_role",
+                    "max_search_ticks_validation_policy", "censor_record_identity_binding_note",
+                    "authoritative_operational_root_note"):
             continue
         assert f"'{key}'" in source, f"loader never references required field {key!r}"
 
