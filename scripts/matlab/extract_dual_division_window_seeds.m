@@ -63,6 +63,7 @@ fprintf('[dual-extract-seeds] seeds %d..%d, processes=Cytokinesis+FtsZPolymeriza
     seed_start, seed_end, strjoin(arrayfun(@(x) sprintf('%d', x), force_seeds, 'UniformOutput', false), ', '));
 
 failed_seeds = {};
+censored_seeds = {};
 
 for s = seed_start:seed_end
     out_subdir = sprintf('per_process_traces_v2_event_s%03d', s);
@@ -92,12 +93,27 @@ for s = seed_start:seed_end
         extract_dual_division_window(uint32(s));
         fprintf('[dual-extract-seeds] seed %d DONE\n', s);
     catch ME
-        fprintf('[dual-extract-seeds] seed %d FAILED: %s\n', s, ME.message);
-        failed_seeds{end + 1} = sprintf('seed %d: %s', s, ME.message); %#ok<AGROW>
+        if strcmp(ME.identifier, 'extract_dual_division_window:right_censored')
+            % Right-censoring (division-censor-contract, 2026-09-08) is a
+            % genuine, expected, per-seed outcome under this contract --
+            % NEVER folded into failed_seeds (which would make the
+            % driver's aggregate-then-throw at the end incorrectly treat
+            % an honest censor as an extraction defect requiring
+            % investigation). extract_dual_division_window itself already
+            % wrote this seed's division_window_attempt.json before
+            % raising; this driver only needs to keep the ascending scan
+            % moving to the next seed.
+            fprintf('[dual-extract-seeds] seed %d RIGHT_CENSORED: %s\n', s, ME.message);
+            censored_seeds{end + 1} = sprintf('seed %d: %s', s, ME.message); %#ok<AGROW>
+        else
+            fprintf('[dual-extract-seeds] seed %d FAILED: %s\n', s, ME.message);
+            failed_seeds{end + 1} = sprintf('seed %d: %s', s, ME.message); %#ok<AGROW>
+        end
     end
 end
 
-fprintf('[dual-extract-seeds] all requested seeds processed (%d..%d).\n', seed_start, seed_end);
+fprintf('[dual-extract-seeds] all requested seeds processed (%d..%d); %d censored.\n', ...
+    seed_start, seed_end, numel(censored_seeds));
 
 if ~isempty(failed_seeds)
     error('extract_dual_division_window_seeds:extraction_failed', ...

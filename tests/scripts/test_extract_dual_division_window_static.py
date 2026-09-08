@@ -234,7 +234,7 @@ def test_completion_detected_solely_from_process_a():
     body = _function_body(
         source,
         "function [states_before_a, states_after_a, tick_start_a, completion_tick, onset_tick, ...\n"
-        "          states_before_b, states_after_b, tick_start_b, ok, error_message] = ...\n"
+        "          states_before_b, states_after_b, tick_start_b, ok, error_message, censored] = ...\n"
         "    capture_dual_anchor_windows(sim, idx_a, props_a, n_ticks_a, idx_b, props_b, n_ticks_b, anchor_opts)\n",
     )
     assert "before_val = before_a.pinchedDiameter;" in body
@@ -402,11 +402,16 @@ def test_no_output_canonicalized_on_capture_failure():
     """Every failure path inside capture_dual_anchor_windows sets ok=false
     and returns BEFORE any buffer replay/metadata/save/movefile code runs
     -- proven here by asserting the main function raises immediately on
-    `~ok` before any metadata struct is built."""
+    `~ok` before any metadata struct is built. The right-censored branch
+    (division-censor-contract, 2026-09-08) also returns/raises before any
+    metadata struct is built -- it only writes the dedicated attempt
+    record, never a trace file."""
     source = _read(EXTRACTOR_PATH)
-    guard_idx = source.index("if ~ok\n    error('extract_dual_division_window:capture_failed'")
+    guard_idx = source.index("if ~ok\n    if censored\n")
     first_metadata_idx = source.index("cyt_metadata = struct(")
     assert guard_idx < first_metadata_idx
+    assert "error('extract_dual_division_window:capture_failed'" in source
+    assert "error('extract_dual_division_window:right_censored'" in source
 
 
 def test_verify_temp_output_checked_before_movefile_reads_from_disk_not_memory():
@@ -452,6 +457,84 @@ def test_driver_calls_the_dual_extractor_not_the_single_process_one():
     assert "extract_dual_division_window(uint32(s));" in source
     assert "extract_per_process_traces_v2(" not in source
     assert "extract_ftsz_pre_division_window_seeds(" not in source
+
+
+# ---------------------------------------------------------------------------
+# Division-censor-contract (2026-09-08): right-censoring and attempt records
+# ---------------------------------------------------------------------------
+
+
+def test_capture_function_censored_output_set_only_on_no_completion_signal():
+    source = _read(EXTRACTOR_PATH)
+    body = _function_body(
+        source,
+        "function [states_before_a, states_after_a, tick_start_a, completion_tick, onset_tick, ...\n"
+        "          states_before_b, states_after_b, tick_start_b, ok, error_message, censored] = ...\n"
+        "    capture_dual_anchor_windows(sim, idx_a, props_a, n_ticks_a, idx_b, props_b, n_ticks_b, anchor_opts)\n",
+    )
+    assert "censored = false;" in body
+    # censored = true must appear exactly once, immediately guarded by the
+    # isempty(completion_tick) branch (the sole right-censoring outcome).
+    assert body.count("censored = true;") == 1
+    no_completion_idx = body.index("if isempty(completion_tick)")
+    censored_true_idx = body.index("censored = true;")
+    next_if_idx = body.index("if completion_tick < n_ticks_a")
+    assert no_completion_idx < censored_true_idx < next_if_idx
+
+
+def test_extractor_writes_right_censored_attempt_record_never_a_trace_file():
+    source = _read(EXTRACTOR_PATH)
+    assert "write_division_window_attempt_record(out_root, attempt_record_path, seed, 'RIGHT_CENSORED'" in source
+    assert "error('extract_dual_division_window:right_censored'" in source
+    # The RIGHT_CENSORED branch must appear strictly before the atomic
+    # trace-file write section (temp paths / movefile) -- a censored seed
+    # never reaches that code.
+    censored_write_idx = source.index("write_division_window_attempt_record(out_root, attempt_record_path, seed, 'RIGHT_CENSORED'")
+    temp_write_idx = source.index("token = dual_tap_temp_token();")
+    assert censored_write_idx < temp_write_idx
+
+
+def test_extractor_writes_completed_attempt_record_after_both_movefiles():
+    source = _read(EXTRACTOR_PATH)
+    movefile_cyt_idx = source.index("movefile(cyt_tmp_path, cyt_out_path);")
+    movefile_ftsz_idx = source.index("movefile(ftsz_tmp_path, ftsz_out_path);")
+    completed_write_idx = source.index("write_division_window_attempt_record(out_root, attempt_record_path, seed, 'COMPLETED'")
+    assert movefile_cyt_idx < movefile_ftsz_idx < completed_write_idx
+
+
+def test_attempt_record_writer_enforces_mutual_exclusivity():
+    source = _read(EXTRACTOR_PATH)
+    body = _function_body(
+        source,
+        "function write_division_window_attempt_record(out_root, attempt_record_path, seed, status, fields)\n",
+    )
+    assert "attempt_record_completed_missing_hash" in body
+    assert "attempt_record_censored_has_hash" in body
+    assert "attempt_record_unknown_status" in body
+
+
+def test_existing_censored_attempt_record_blocks_silent_reattempt():
+    source = _read(EXTRACTOR_PATH)
+    assert "extract_dual_division_window:censored_attempt_exists" in source
+    assert "opts.force_reattempt" in source
+    assert "read_division_window_attempt_record(attempt_record_path)" in source
+
+
+def test_attempt_record_filename_read_from_selection_contract_not_hardcoded():
+    source = _read(EXTRACTOR_PATH)
+    assert "division_window_selection_contract().attempt_record_filename" in source
+
+
+def test_driver_treats_right_censored_as_distinct_from_failed():
+    source = _read(DRIVER_PATH)
+    assert "extract_dual_division_window:right_censored" in source
+    assert "censored_seeds{end + 1}" in source
+    # A right-censored seed must never be added to failed_seeds (which
+    # would make the aggregate-then-throw treat an honest censor as a
+    # defect requiring investigation).
+    censor_branch = _function_body(source, "if strcmp(ME.identifier, 'extract_dual_division_window:right_censored')\n")
+    censor_branch_head = censor_branch.split("else")[0]
+    assert "failed_seeds{end + 1}" not in censor_branch_head
 
 
 # ---------------------------------------------------------------------------
