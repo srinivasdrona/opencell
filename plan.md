@@ -149,11 +149,13 @@ earlier blocks below:**
     17, then failed closed on seed 18 because no division-completion signal
     occurred by the existing `max_search_ticks=50000`; no seed-18 files
     were emitted. Do not skip/resample seed 18, because that would condition
-    the cohort on successful division. Use the freed third slot for one
-    non-counting seed-18 diagnostic at a globally-declared 100,000-tick
-    horizon; only after that result decide whether the gate needs a larger
-    common search horizon or an explicit right-censoring/completion-rate
-    design. Keep the host-wide cap at three.
+    the cohort on successful division. A pre-overlay seed-18 trace completed
+    at tick 28454, but is not comparable under dec-005 source binding. The
+    freed third slot now runs one non-counting seed-18 diagnostic at a
+    100,000-tick horizon (`dual-b-seed18-100k`, MATLAB PID 26424/22664);
+    only after that result decide whether the gate needs a larger common
+    search horizon or an explicit right-censoring/completion-rate design.
+    Keep the host-wide cap at three.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
