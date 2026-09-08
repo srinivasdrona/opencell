@@ -85,7 +85,14 @@ earlier blocks below:**
     `dec-005`, and build only surgical shared-file hunks preserving both
     DNADamage and RepInit ledger dispatch. The fresh N=50/M=200 L2.2 sweep
     reports PASS but must be regenerated/bound after the corrected
-    integration candidate.
+    integration candidate. Clean branch `integrate/l21-repinit-clean` at
+    `78ad334` now reports those corrections complete on main `b1b16d9`:
+    the claim is explicitly limited to ledger-restored 200/200 identity,
+    the genuine no-ledger diagnostic reports its expected mismatch,
+    current-main raw-hash/DNADamage bindings are retained, `dec-006` is
+    unique, shared files are surgical, and fresh L2.2 evidence is bound to
+    the candidate SHA. Await Opus re-review and current-main compatibility
+    reconciliation before integration.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` is **ACCEPTED** by final Opus review: condition
     enzyme overrides are contained across `copyToState`, the stale oracle
