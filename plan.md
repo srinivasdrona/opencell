@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-09 00:22 IST) — supersedes all
 earlier blocks below:**
 
-- Local `main` is clean and published at `35710f7`. DNADamage,
+- Local `main` is clean and published at `7367402`. DNADamage,
   Cytokinesis, and HostInteraction L2.1 are merged. The authoritative L2.1
   manifest is **10 EWP / 1 CODE_GAP / 0 MISSING**. Host's final integrated
   regression passed 148 tests/6 expected data-absence skips; Cytokinesis's
@@ -144,16 +144,18 @@ earlier blocks below:**
     L2.1 rows, regenerate/re-pin the ledger and pilot provenance, and
     return for another Opus review before N=10 extraction.
 - L2.2:
-  - DNASupercoiling branch `agent/l22-dnas-20260812` at `8951cca`
-    was **REJECTED** by Opus after the 0/20,000-breach rerun. The new
-    `_matlab_exclude_regions` port omitted `Chromosome.joinSplitRegions`
-    lines 2811-2817, which normalize an origin-wrapping last exclusion and
-    rewrite the exact `excLens(end)` value used by Karr's indexing bug.
-    The current over-consumption-only boundary telemetry cannot detect this
-    under-consumption class. Port that clause literally, add a live-MATLAB
-    discriminating cross-check and a true `_binding_blocked_regions`
-    inversion for the unsplit-boundary fix, then rerun N=200 once before
-    another Opus review.
+  - DNASupercoiling branch `agent/l22-dnas-20260812` at `4556d27` is
+    **ACCEPTED** by final Opus review: both MATLAB origin-wrap helpers,
+    m6AD exclusion, unsplit footprints, RNG boundaries, corpus
+    position-level divergences, and the N=200 PASS were independently
+    reproduced (including 140,000 differential cases with zero mismatch).
+    A direct merge was deliberately aborted because the branch changes the
+    shared Design-A helper and `chromosome_store`, which mechanically stales
+    19 evidence rows plus four store-dependent rows. DNAS tests pass 39/39;
+    the two chassis failures reproduce on pre-merge main. Build a clean
+    integration that confines DNAS-only helper changes or ships a
+    fail-closed provenance migration plus reruns for genuinely affected
+    processes; never land a 1 PASS / 19 FAIL board.
   - Cytokinesis/FtsZ dual extraction: completed patched-source pairs are
     seeds 0-5, 17, and 34-46; worker C is running seed 47. Seeds 6 and 18
     failed closed with no completion by 50,000 ticks; seed 18 also failed a
@@ -174,8 +176,9 @@ earlier blocks below:**
     correctly carries paired-dual Cyt SHA `f04ea79e...3cc80`; the standard
     event root separately retains the L2.1 single-process trace
     `b0c919e8...eeeb0`. Never overwrite or silently mix those two artifacts.
-  - Candidate cohort correction, to preregister and independently review
-    before relaunch: `N=50` means the first 50 **completed event windows**
+  - Candidate cohort correction is implemented on
+    `fix/division-censor-contract` (6 commits from `701b991`) and awaits
+    independent review: `N=50` means the first 50 **completed event windows**
     from a deterministic ascending attempted-seed stream starting at seed 0.
     Every seed is attempted exactly once at a common
     `max_search_ticks=100000`; each attempt atomically records either a
@@ -186,7 +189,11 @@ earlier blocks below:**
     and separately exposes patched-model completion/censoring incidence.
     Existing completed traces with completion <50,000 remain valid under
     the larger horizon; only a censor claim requires the full 100,000 ticks.
-    Keep the host-wide cap at three.
+    The auditor currently selects only contiguous-valid seeds 0-5; banked
+    seeds 17 and 34-46 are premature until gaps 6-16 and 18-33 have attempt
+    records. Seed 6/18 censor outcomes still need mechanically bound
+    backfill. Reported gate: 136 targeted tests, Ruff clean, L2.2 19/1/2
+    preserved. Keep the host-wide cap at three.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
