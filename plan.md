@@ -215,7 +215,14 @@ earlier blocks below:**
     selection. Formal estimand: Cytokinesis behavior conditional on
     completion within 100k ticks under the bound source; completion fraction
     stays descriptive and N may never adapt downward. Keep the host-wide
-    cap at three.
+    cap at three. Corrective branch is now at `32ee156`, reporting 267
+    targeted tests green, cross-root/source integrity fixed, force retry
+    repaired, seed-18 censor mechanically backfilled, and 100k plumbed.
+    One semantic point remains for Opus: COMPLETED traces produced under a
+    smaller horizon are valid if they completed before that recorded
+    horizon, whereas RIGHT_CENSORED claims must prove the full 100k. The
+    branch currently checks completed traces using `recorded >= n_ticks`;
+    do not integrate until Opus confirms or corrects that exact invariant.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
