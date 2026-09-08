@@ -88,6 +88,7 @@ fprintf('[dual-extract-seeds] seeds %d..%d, processes=Cytokinesis+FtsZPolymeriza
 
 failed_seeds = {};
 censored_seeds = {};
+already_censored_seeds = {};
 
 for s = seed_start:seed_end
     out_subdir = sprintf('per_process_traces_v2_event_s%03d', s);
@@ -101,6 +102,32 @@ for s = seed_start:seed_end
     if both_exist && ~force_this
         fprintf('[dual-extract-seeds] seed %d already present, skip:\n  %s\n  %s\n', s, cyt_out_path, ftsz_out_path);
         continue;
+    end
+    if ~force_this && exist(attempt_record_path, 'file') == 2
+        % Existing valid RIGHT_CENSORED record (division-censor-contract,
+        % 2026-09-09, Opus second re-review): a non-forced batch must
+        % SKIP and REPORT this seed, never silently re-attempt it (that
+        % remains extract_dual_division_window's own
+        % opts.force_reattempt=true guard) and never treat it as an
+        % aggregate-throw-worthy failure either -- an already-censored
+        % seed is neither newly-censored-this-run (censored_seeds) nor a
+        % defect (failed_seeds); it is simply already accounted for.
+        % Read only the 'status' field here (not the full record) --
+        % this driver does not need to re-validate the sidecar's
+        % identity/mutual-exclusivity contract, only decide whether to
+        % skip; scripts.l2_event.division_cohort_selector is the
+        % authority for full validation.
+        try
+            existing_status = jsondecode(fileread(attempt_record_path)).status;
+        catch
+            existing_status = '';
+        end
+        if strcmp(existing_status, 'RIGHT_CENSORED')
+            fprintf('[dual-extract-seeds] seed %d already RIGHT_CENSORED, skip (not counted): %s\n', ...
+                s, attempt_record_path);
+            already_censored_seeds{end + 1} = sprintf('seed %d: %s', s, attempt_record_path); %#ok<AGROW>
+            continue;
+        end
     end
     if force_this
         fprintf('[dual-extract-seeds] seed %d: force_seeds requested, deleting any existing outputs and re-extracting\n', s);
@@ -131,6 +158,16 @@ for s = seed_start:seed_end
             % moving to the next seed.
             fprintf('[dual-extract-seeds] seed %d RIGHT_CENSORED: %s\n', s, ME.message);
             censored_seeds{end + 1} = sprintf('seed %d: %s', s, ME.message); %#ok<AGROW>
+        elseif strcmp(ME.identifier, 'extract_dual_division_window:censored_attempt_exists')
+            % Belt-and-braces: the pre-check above should already have
+            % skipped this seed before ever calling the extractor, but if
+            % a race/edge case reaches this guard anyway (e.g. force_seeds
+            % handling above did not apply to this seed and the pre-check
+            % somehow missed a malformed-but-parseable record), treat it
+            % identically -- skip/report, never aggregate-throw.
+            fprintf('[dual-extract-seeds] seed %d already RIGHT_CENSORED (guard fired in extractor), skip (not counted): %s\n', ...
+                s, ME.message);
+            already_censored_seeds{end + 1} = sprintf('seed %d: %s', s, ME.message); %#ok<AGROW>
         else
             fprintf('[dual-extract-seeds] seed %d FAILED: %s\n', s, ME.message);
             failed_seeds{end + 1} = sprintf('seed %d: %s', s, ME.message); %#ok<AGROW>
@@ -138,8 +175,8 @@ for s = seed_start:seed_end
     end
 end
 
-fprintf('[dual-extract-seeds] all requested seeds processed (%d..%d); %d censored.\n', ...
-    seed_start, seed_end, numel(censored_seeds));
+fprintf('[dual-extract-seeds] all requested seeds processed (%d..%d); %d censored this run, %d already censored (skipped).\n', ...
+    seed_start, seed_end, numel(censored_seeds), numel(already_censored_seeds));
 
 if ~isempty(failed_seeds)
     error('extract_dual_division_window_seeds:extraction_failed', ...

@@ -512,6 +512,48 @@ def test_force_seeds_clearing_attempt_record_means_no_completed_or_censored_reco
     assert "existing_attempt = read_division_window_attempt_record(attempt_record_path);" in extractor_source
 
 
+def test_driver_skips_and_reports_a_non_forced_existing_right_censored_seed_without_calling_extractor():
+    """Opus second re-review (2026-09-09, item 5): a non-forced batch
+    encountering an existing valid RIGHT_CENSORED record must skip and
+    report it, never call the extractor at all (so it can never even
+    reach a hard error), and never count it toward censored_seeds
+    (this-run) or failed_seeds (aggregate-throw)."""
+    source = _read(DRIVER_PATH)
+    already_censored_idx = source.index("already_censored_seeds{end + 1}")
+    call_idx = source.index("extract_dual_division_window(uint32(s), opts);")
+    # The pre-check (and its already_censored_seeds append + continue)
+    # appears BEFORE the extractor call in the seed loop.
+    assert already_censored_idx < call_idx
+    assert "continue;" in source[already_censored_idx : already_censored_idx + 200]
+    # Never folded into failed_seeds within the pre-check's own block
+    # (the SEPARATE force_this branch below it legitimately has its own
+    # unrelated failed_seeds append for a different failure mode).
+    precheck_start = source.index("if ~force_this && exist(attempt_record_path")
+    force_block_start = source.index("if force_this")
+    pre_check_block = source[precheck_start:force_block_start]
+    assert "failed_seeds{end + 1}" not in pre_check_block
+    assert "already_censored_seeds{end + 1}" in pre_check_block
+
+
+def test_driver_belt_and_braces_catch_for_censored_attempt_exists_also_skips_not_fails():
+    """The catch-block fallback for extract_dual_division_window:
+    censored_attempt_exists (in case the pre-check above is ever bypassed)
+    must ALSO append to already_censored_seeds, never failed_seeds."""
+    source = _read(DRIVER_PATH)
+    catch_branch = _function_body(
+        source, "elseif strcmp(ME.identifier, 'extract_dual_division_window:censored_attempt_exists')\n"
+    )
+    # Body up to the next elseif/else keeps this branch isolated.
+    branch_head = catch_branch.split("else")[0]
+    assert "already_censored_seeds{end + 1}" in branch_head
+    assert "failed_seeds{end + 1}" not in branch_head
+
+
+def test_driver_declares_already_censored_seeds_bucket_initialized_empty():
+    source = _read(DRIVER_PATH)
+    assert "already_censored_seeds = {};" in source
+
+
 # ---------------------------------------------------------------------------
 # Division-censor-contract (2026-09-08): right-censoring and attempt records
 # ---------------------------------------------------------------------------
