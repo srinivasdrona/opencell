@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-09 00:22 IST) — supersedes all
 earlier blocks below:**
 
-- Local `main` is clean and published at `7367402`. DNADamage,
+- Local `main` is clean and published at `d27e365`. DNADamage,
   Cytokinesis, and HostInteraction L2.1 are merged. The authoritative L2.1
   manifest is **10 EWP / 1 CODE_GAP / 0 MISSING**. Host's final integrated
   regression passed 148 tests/6 expected data-absence skips; Cytokinesis's
@@ -72,17 +72,14 @@ earlier blocks below:**
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
   data-dependent skips and active rubric 14/14.
-- Agent-runtime recovery: only `division-censor-contract`
-  (`0678eca0-b5d5-42ee-8e30-3e62ac4c1126`) remains live. The runtime
-  auto-cleared the DNAS Opus reviewer and the TxReg/RepInit implementers
-  before they returned final messages; this was not a deliberate stop.
-  Their filesystem work survived:
-  - DNAS is committed at `4556d27`; relaunch the final Opus review.
-  - TxReg clean worktree has substantial uncommitted corrections; relaunch
-    a continuation agent in that same worktree.
-  - RepInit current-main worktree has substantial uncommitted corrections;
-    relaunch a continuation agent in that same worktree.
-  Never discard or restart these worktrees from scratch.
+- Live/active review lanes after runtime recovery:
+  - DNAS accepted candidate `4556d27` is in a provenance-safe integration
+    lane (`dnas-provenance-integration`).
+  - TxReg continuation is active in its preserved dirty worktree.
+  - RepInit rebuild completed cleanly at `7889449`; Opus re-review is active.
+  - Division censoring implementation completed; Opus review is active.
+  The earlier agents were runtime-cleared, not deliberately stopped; their
+  worktrees were preserved and resumed rather than recreated.
 - L2.1 review/integration queue:
   - ReplicationInitiation branch `agent/l21-repinit-20260817` at `8ee75f0`
     was **REJECTED** by Opus despite a genuine ledger-restored 200-tick
@@ -172,15 +169,15 @@ earlier blocks below:**
     not comparable under dec-005). Seed 6 is now running the matching
     100,000-tick diagnostic (`dual-a-seed6-100k`). Do not skip/resample
     censored seeds or resume uncontrolled ranges.
-  - All 19 completed pairs (0-5, 17, 34-45) have been independently run
-    through the combined validator: 19/19 PASS for both Cytokinesis and
+  - All 21 completed pairs (0-5, 17, 34-47) have been independently run
+    through the combined validator: 21/21 PASS for both Cytokinesis and
     FtsZ, same completion anchor, distinct files/content, genuine provider,
     and current DNADamage source binding. Observed Cytokinesis inclusive
     spans range 3737-4076 ticks; no M=5000 margin trigger fired. These
     traces are banked regardless of the pending cohort-selection redesign.
     The homogeneous paired copies are consolidated under
     `data/m1_sources/karr_native/dual_division_cohort_current/` and
-    revalidated 19/19 there. Use this explicit root for the cohort: seed 36
+    revalidated there. Use this explicit root for the cohort: seed 36
     correctly carries paired-dual Cyt SHA `f04ea79e...3cc80`; the standard
     event root separately retains the L2.1 single-process trace
     `b0c919e8...eeeb0`. Never overwrite or silently mix those two artifacts.
