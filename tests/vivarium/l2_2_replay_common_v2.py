@@ -156,20 +156,25 @@ class _ProcessSpec:
     requires_hints_for_honest_mode: bool = False
     oracle_type: str = ORACLE_DISTRIBUTIONAL
     chromosome_rand_stream_ledger_attr: str | None = None
-    """When set (currently only DNADamage's `_site_sampling_rng`), names
-    the process attribute that should be replaced with a fresh
-    `KarrLedgerReplayStream` each tick when a companion
-    chromosome_rand_stream_state ledger sidecar exists for the trace
-    being replayed (see `chromosome_rand_stream_ledger.py` and
+    """When set (currently DNADamage's `_site_sampling_rng` and
+    ReplicationInitiation's `_chromosome_rng` -- see
+    `scripts/l21_active_window_audit.py`'s
+    `_CHROMOSOME_LEDGER_STREAM_CLS` registry for which per-process
+    `<Process>ChromosomeLedgerRandStream`/`KarrLedgerReplayStream`
+    subclass each process uses), names the process attribute that
+    should be replaced with a fresh ledger-replay stream each tick when
+    a companion chromosome_rand_stream_state ledger sidecar exists for
+    the trace being replayed (see `chromosome_rand_stream_ledger.py` and
     `scripts/matlab/reconstruct_chromosome_draw_ledger.m`). This restores
     Karr's REAL shared-Chromosome-stream input state for this process's
-    site-sampling draws instead of the freshly-seeded stand-in stream --
-    input-state restoration, not answer leakage, the same way
-    `states_before` already restores substrate/enzyme/chromosome counts.
-    No behavior change for any other process (this field is None for
-    every other `_ProcessSpec` entry, and the ledger loader itself
-    returns None -- falling back to the pre-existing stand-in stream,
-    unchanged -- for any trace lacking the companion sidecar file)."""
+    site-sampling/chromosome-owned draws instead of the freshly-seeded
+    stand-in stream -- input-state restoration, not answer leakage, the
+    same way `states_before` already restores substrate/enzyme/
+    chromosome counts (DEC-005/DEC-006). No behavior change for any
+    other process (this field is None for every other `_ProcessSpec`
+    entry, and the ledger loader itself returns None -- falling back to
+    the pre-existing stand-in stream, unchanged -- for any trace lacking
+    the companion sidecar file)."""
 
 
 @dataclass
@@ -416,6 +421,7 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
         },
         trace_after_hint_observables=("enzymes", "boundEnzymes"),
         hidden_read_surface=("chromosome",),
+        chromosome_rand_stream_ledger_attr="_chromosome_rng",
     ),
     "DNARepair": _ProcessSpec(
         process_cls=KarrDNARepairProcess,
@@ -883,6 +889,7 @@ def _build_context(
     rng_seed: int,
     handle: h5py.File,
     process_config_override: dict[str, Any] | None = None,
+    disable_chromosome_rand_stream_ledger: bool = False,
 ) -> _ProcessContext:
     spec = _PROCESS_SPECS[name]
     n_ticks = int(np.asarray(handle["metadata/n_ticks"][()]).reshape(-1)[0])
@@ -928,7 +935,18 @@ def _build_context(
         wids_by_observable[observable] = runtime_wids
 
     chromosome_rand_stream_ledger: list[list[float]] | None = None
-    if spec.chromosome_rand_stream_ledger_attr is not None:
+    if spec.chromosome_rand_stream_ledger_attr is not None and not disable_chromosome_rand_stream_ledger:
+        # `disable_chromosome_rand_stream_ledger=True` (explicit,
+        # opt-in, default False -- zero behavior change for every
+        # existing caller) makes this an EXPLICIT, honest non-ledger
+        # diagnostic run: the sidecar is never even looked up, so the
+        # replay genuinely exercises the pre-existing freshly-seeded
+        # stand-in stream, not a silently-loaded ledger. Added after an
+        # Opus review found that `scripts/diagnose_repinit_l21.py`'s
+        # default behavior (auto-loading an adjacent sidecar whenever
+        # present) had been mistaken for an independent non-ledger
+        # confirmation when it was not -- see STATUS_L21_REPINIT_SEPT2.md
+        # "Session N+5" and `--no-ledger` in diagnose_repinit_l21.py.
         trace_path = Path(handle.filename).resolve()
         chromosome_rand_stream_ledger = load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
         if chromosome_rand_stream_ledger is not None and len(chromosome_rand_stream_ledger) != n_ticks:

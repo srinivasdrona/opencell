@@ -24,12 +24,12 @@ integration_touchpoints:
       symbol: "KarrReplicationInitiationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "288-288"
+        lines: "527-743"
         note: "Main update path emits the request dict and reads from substrates_allocated[self.name]."
         symbol: "KarrReplicationInitiationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_replication_initiation.py"
-          lines: "605-694"
+          lines: "1349-1439"
           note: "Trace-hint replay branch emits the same request keys."
           symbol: KarrReplicationInitiationProcess._next_update_from_trace_hint
       note: "No dedicated request-calculator module exists in the OC port."
@@ -47,18 +47,18 @@ integration_touchpoints:
       symbol: "KarrReplicationInitiationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "288-288"
+        lines: "527-743"
         note: "Per-tick update path with allocated substrate reads and chromosome/protein writeback."
         symbol: "KarrReplicationInitiationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_replication_initiation.py"
-          lines: "740-777"
+          lines: "1484-1546"
           note: "ATP activation and water-limited hydrolysis deltas."
           symbol: KarrReplicationInitiationProcess._activate_free_dnaa
         - path: "opencell/vivarium/karr_replication_initiation.py"
-          lines: "779-938"
-          note: "Polymerization, binding, release, and reactivation helpers."
-          symbol: KarrReplicationInitiationProcess._polymerize_dnaa_atp
+          lines: "2571-2662"
+          note: "Aggregate binding+polymerization helper (source-faithful, ordered R1-4/R5/9mer/8mer bind then polymerize), matching MATLAB's combined bindProteinToChromosome + polymerize semantics."
+          symbol: KarrReplicationInitiationProcess._bind_and_polymerize_dnaa_atp
       note: "Replay-friendly trace-hint handling keeps the wiring aligned with the MATLAB step order."
     status: "implemented"
     note: "The MATLAB evolveState sequence is preserved, but the OC port is reorganized around next_update and trace hints."
@@ -75,7 +75,7 @@ integration_touchpoints:
       symbol: "KarrReplicationInitiationProcess"
       source:
         path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "61-956"
+        lines: "212-2611"
         note: "No LP-bound builder or flux-bound helper exists in this module. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrReplicationInitiationProcess"
       note: OC does not implement this Karr method.
@@ -123,7 +123,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "740-747"
+      lines: "1484-1494"
       note: "Activation helper subtracts allocated ATP."
       symbol: KarrReplicationInitiationProcess._activate_free_dnaa
     kind: expression
@@ -137,7 +137,7 @@ consume_stoichiometry:
       symbol: releaseDnaAAxP
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "923-938"
+      lines: "2884-2912"
       note: "Reactivation helper updates protein pools only and does not emit ATP substrate decrement."
       symbol: KarrReplicationInitiationProcess._reactivate_free_dnaa_adp
     note: "MATLAB decrements ATP in reactivation; OC does not. See known_deviations."
@@ -152,7 +152,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "749-777"
+      lines: "1495-1546"
       note: "Hydrolysis helper uses free-DnaA-ATP binomial dissociation with H2O clipping; this is not MATLAB's polymer-indexed formula."
       symbol: KarrReplicationInitiationProcess._inactivate_free_dnaa_atp
     note: "MATLAB enforces polymer-indexed hydrolysis demand; OC uses free-pool event sampling instead (CODE_DEVIATES)."
@@ -168,7 +168,7 @@ produce_stoichiometry:
       symbol: releaseDnaAAxP
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "774-777"
+      lines: "1495-1546"
       note: "Hydrolysis product written directly to substrates; OC reactivation helper does not emit substrate ADP."
       symbol: KarrReplicationInitiationProcess._inactivate_free_dnaa_atp
     note: "MATLAB ADP production is reactivation-coupled; OC ADP production is hydrolysis-coupled. See known_deviations."
@@ -183,7 +183,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "774-777"
+      lines: "1495-1546"
       note: "Hydrolysis product written directly to substrates."
       symbol: KarrReplicationInitiationProcess._inactivate_free_dnaa_atp
     kind: expression
@@ -197,7 +197,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "774-777"
+      lines: "1495-1546"
       note: "Hydrolysis product written directly to substrates."
       symbol: KarrReplicationInitiationProcess._inactivate_free_dnaa_atp
     kind: expression
@@ -242,7 +242,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_replication_initiation.py"
-        lines: "288-441"
+        lines: "527-743"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrReplicationInitiationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -303,47 +303,47 @@ source_anchors:
   oc_blocks:
     process_bootstrap:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "61-218"
+      lines: "212-466"
       note: "Class definition, fixture load, and default chromosome bootstrap."
       symbol: KarrReplicationInitiationProcess
     ports_schema:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "229-286"
+      lines: "610-668"
       note: "Ports including requests and substrates_allocated."
       symbol: KarrReplicationInitiationProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "288-441"
+      lines: "527-743"
       note: "Main per-tick update path and request emission."
       symbol: KarrReplicationInitiationProcess.next_update
     chromosome_helpers:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "443-594"
+      lines: "745-1179"
       note: "Chromosome-store resolution, hemimethylation checks, and complex encoding."
       symbol: KarrReplicationInitiationProcess._resolve_chromosome_store
     trace_hint_update:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "605-694"
+      lines: "1349-1439"
       note: "Replay-friendly trace-hint path and request emission."
       symbol: KarrReplicationInitiationProcess._next_update_from_trace_hint
     substrate_activation_hydrolysis:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "740-777"
+      lines: "1484-1546"
       note: "ATP activation and water-limited hydrolysis deltas."
       symbol: KarrReplicationInitiationProcess._activate_free_dnaa
     binding_polymerization:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "779-883"
-      note: "OriC polymerization and free-site binding."
-      symbol: KarrReplicationInitiationProcess._polymerize_dnaa_atp
+      lines: "2571-2662"
+      note: "OriC polymerization and free-site binding, via the source-faithful aggregate bind+polymerize helper (ordered R1-4/R5/9mer/8mer)."
+      symbol: KarrReplicationInitiationProcess._bind_and_polymerize_dnaa_atp
     release_reactivation:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "885-938"
-      note: "Release and membrane-regeneration helpers."
-      symbol: KarrReplicationInitiationProcess._release_dnaa_atp
+      lines: "2844-2912"
+      note: "Release (aggregate ATP/ADP semantics) and membrane-regeneration helpers."
+      symbol: KarrReplicationInitiationProcess._release_dnaa_axp
     initiation_trigger:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "946-951"
+      lines: "2981-2992"
       note: "Replication initiation predicate."
       symbol: KarrReplicationInitiationProcess._check_initiation_trigger
 provenance:
@@ -379,13 +379,13 @@ deviations:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_replication_initiation.py"
-      lines: "288-441"
+      lines: "527-743"
       note: "No LP-bound helper exists in the OC port; request/update logic lives directly in next_update."
       symbol: KarrReplicationInitiationProcess.next_update
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC emits and consumes allocator state inside next_update instead of a dedicated request-calculator class."
-    - "OC initialization is fixture/bootstrap based and does not reproduce MATLAB's final-conditions or theory steady-state solve."
+    - "OC's _initialize_state_based_on_final_conditions (karr_replication_initiation.py:951-1072) now ports MATLAB's initializeStateBasedOnFinalConditions (ReplicationInitiation.m:393-417) faithfully for the prewarm/init path (oriC gating, 9mer/8mer split, ordered R1-4/R5/9mer/8mer binding); MATLAB's separate theory-based steady-state solve (initializeStateBasedOnTheory / cubic-root helper, ReplicationInitiation.m:426-492) is still not reproduced."
     - "MATLAB's calcFluxBounds slot is absent for this process, so the schema-required row entry is marked not_implemented."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
     - "MATLAB reactivation consumes ATP and produces ADP (ATP -> ADP), but OC reactivation updates protein pools only and emits no ATP/ADP substrate deltas."

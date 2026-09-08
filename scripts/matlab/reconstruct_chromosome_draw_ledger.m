@@ -3,10 +3,17 @@ function report = reconstruct_chromosome_draw_ledger(trace_mat_path, output_json
 %
 % Offline, non-destructive reconstruction of the exact ordered sequence
 % of raw scalar `rand()` draws Karr's SHARED `Chromosome.randStream`
-% produced during one DNADamage tick's own `evolveState()` call, using
-% ONLY the `chromosome_rand_stream_state` before/after pair already
+% produced during one target-process tick's own `evolveState()` call,
+% using ONLY the `chromosome_rand_stream_state` before/after pair already
 % captured in `states_before`/`states_after` by
 % `extract_per_process_traces_v2.m::merge_chromosome_rand_stream_state`.
+% Process-agnostic: used by DNADamage's own L2.1 lane and by
+% ReplicationInitiation's (see DEC-005/DEC-006), and handles a QUIESCENT
+% tick (`state_before(t) == state_after(t)`, i.e. zero chromosome draws
+% that tick -- common for processes whose own coarse candidate-set
+% gating means many ticks have no chromosome-site contention at all)
+% WITHOUT attempting to draw a full LCG period to "walk back" to an
+% identical state by chance.
 %
 % Method: for each tick t, construct a SCRATCH `RandStream('mcg16807')`
 % (never the live simulation's real stream -- this never touches
@@ -62,8 +69,27 @@ for t = 1:n_ticks
     state_after(t) = double(state_after_cell{t});
 end
 
+n_quiescent = 0;
 per_tick = struct([]);
 for t = 1:n_ticks
+    if isequal(state_before(t), state_after(t))
+        % Quiescent tick: the target process made zero chromosome-owned
+        % draws this tick (its own coarse candidate-set gating never
+        % reached the shared randStream at all). Recording zero draws
+        % here is the exact, literal fact of what happened -- NOT an
+        % assumption or a fallback; a genuinely-nonzero-but-cyclically-
+        % returning-to-the-same-state walk over an LCG with modulus
+        % 2^31-1 would require ~2^31 draws, far beyond
+        % max_draws_per_tick, so this is unambiguous.
+        n_quiescent = n_quiescent + 1;
+        per_tick(t).tick = t; %#ok<AGROW>
+        per_tick(t).state_before = state_before(t); %#ok<AGROW>
+        per_tick(t).state_after = state_after(t); %#ok<AGROW>
+        per_tick(t).n_draws = 0; %#ok<AGROW>
+        per_tick(t).draws = zeros(1, 0); %#ok<AGROW>
+        continue;
+    end
+
     clone = RandStream('mcg16807');
     clone.State = state_before(t);
     draws = zeros(1, 0);
@@ -119,6 +145,7 @@ end
 report.matlab_release = version('-release');
 report.generated_at = datestr(now, 'yyyy-mm-dd HH:MM:SS');
 report.n_ticks = n_ticks;
+report.n_quiescent_ticks = n_quiescent;
 report.max_draws_per_tick = max_draws_per_tick;
 report.per_tick = per_tick;
 
@@ -133,8 +160,8 @@ if fid == -1
 end
 cleanup_fid = onCleanup(@() fclose(fid)); %#ok<NASGU>
 fwrite(fid, jsonencode(report), 'char');
-fprintf('[reconstruct_chromosome_draw_ledger] wrote %s (%d ticks, draw counts: %s)\n', ...
-    output_json_path, n_ticks, mat2str([per_tick.n_draws]));
+fprintf('[reconstruct_chromosome_draw_ledger] wrote %s (%d ticks, %d quiescent, total draws=%d)\n', ...
+    output_json_path, n_ticks, n_quiescent, sum([per_tick.n_draws]));
 end
 
 function hash_hex = sha256_of_file(path_value)

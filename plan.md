@@ -121,6 +121,19 @@ earlier blocks below:**
     add a regression assertion for the reproduced 200-tick observable
     identity. Separately redesign M-aware trace paths and exact metadata/
     filename tick checks before regenerating RepInit L2.2.
+    **Curation complete**, branch reset onto current main and rebuilt
+    clean: tracked `sweep_report.json`/`sweep_status.json` restored to
+    current-main bytes (excluded from this integration; merge-fix code
+    and its test kept); `evidence_index.json`'s RepInit demotion lands in
+    the same commit as the source change (verified stale on both
+    `oc_module` hash and the canonical oracle `.mat` hash, board 18 PASS/2
+    FAIL/2 MISSING, audit integrity OK); full-200-tick bit-identity test
+    now asserts `pass_all_compared_ticks`/`first_mismatch_*` directly and
+    drops the nonexistent-script citation; Session N+7's false 53/53/
+    no-regressions claims corrected in STATUS with a superseding
+    provenance record (never rewriting the original). 53/53 sweep tests
+    pass with the restored tracked pair. Ready for a final lightweight
+    Opus integration review.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` is **ACCEPTED** by final Opus review: condition
     enzyme overrides are contained across `copyToState`, the stale oracle
