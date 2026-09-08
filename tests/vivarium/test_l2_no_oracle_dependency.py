@@ -51,19 +51,11 @@ _BANNED_IMPORTS: frozenset[str] = frozenset({"h5py"})
 # process config, then drop the entry. Do NOT add new entries without a
 # documented justification reviewed against this comment.
 _ALLOWLIST: frozenset[str] = frozenset({
-    # Reads metadata/n_ticks ONLY (a scalar). Used to size internal counters.
-    # Should be migrated to a non-oracle source (config or fixture).
-    "karr_cytokinesis.py",
     # Reads states_before/boundEnzymes[0] at __init__ time as a "trace anchor"
     # for default condensation level. This is borderline — the per-tick
     # update path does NOT consult the oracle, but the init-time read still
     # violates SUT/oracle separation. Currently L2.1 RED; refactor when fixing.
     "karr_chromosome_condensation.py",
-    # Reads trace ONLY at __init__ to calibrate per-kind damage rates (one read,
-    # no per-tick oracle access). L2.1 GREEN. Borderline: rates inferred from
-    # oracle skew toward replay fidelity. Migrate to a non-oracle calibration
-    # fixture.
-    "karr_dna_damage.py",
     # Same pattern as karr_dna_damage.py: init-time _extract_trace_rates to
     # set bind/unbind rates. L2.1 GREEN. Borderline; migrate to non-oracle
     # calibration source.

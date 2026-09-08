@@ -1008,6 +1008,47 @@ def _read_anchor_signal_metadata(path: Path) -> dict[str, Any]:
     return result
 
 
+def _read_dnadamage_source_metadata(path: Path) -> dict[str, Any]:
+    """Read the dec-005 source-hash-binding metadata
+    ``extract_per_process_traces_v2.m`` now writes unconditionally into
+    every 'fixed'/'anchor' trace's metadata (``dnadamage_source_original_
+    sha256``/``dnadamage_source_patched_sha256``/``dnadamage_source_
+    resolved_sha256``/``dnadamage_source_resolved_path``/``dnadamage_
+    overlay_required``). Any key absent from ``metadata`` maps to ``None``
+    (never raises for a missing key -- matches a pre-dec-005 trace written
+    before this metadata existed); an unreadable/corrupt file DOES raise
+    ``OSError``/``ValueError``/``KeyError``, consistent with the sibling
+    ``_read_mnrnd_provider_metadata``/``_read_anchor_signal_metadata``
+    helpers' corrupt-file handling.
+    """
+    import h5py
+
+    result: dict[str, Any] = {
+        "dnadamage_source_original_sha256": None,
+        "dnadamage_source_patched_sha256": None,
+        "dnadamage_source_resolved_sha256": None,
+        "dnadamage_source_resolved_path": None,
+        "dnadamage_overlay_required": None,
+    }
+    with h5py.File(path, "r") as handle:
+        metadata = handle.get("metadata")
+        if metadata is None:
+            return result
+        for str_key in (
+            "dnadamage_source_original_sha256",
+            "dnadamage_source_patched_sha256",
+            "dnadamage_source_resolved_sha256",
+            "dnadamage_source_resolved_path",
+        ):
+            if str_key in metadata:
+                result[str_key] = _decode_char_metadata(metadata[str_key][()])
+        if "dnadamage_overlay_required" in metadata:
+            value, problem = _read_optional_scalar(metadata, "dnadamage_overlay_required")
+            if problem is None and value is not None:
+                result["dnadamage_overlay_required"] = bool(value)
+    return result
+
+
 @dataclass
 class WindowDecision:
     process: str

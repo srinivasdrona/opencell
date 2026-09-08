@@ -85,17 +85,23 @@ earlier blocks below:**
     reports PASS but must be regenerated/bound after the corrected
     integration candidate.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
-    `36c92ec` reports the second Opus blocker round closed: condition
+    `36c92ec` is **ACCEPTED** by final Opus review: condition
     enzyme overrides are contained across `copyToState`, the stale oracle
     allowlist entry is removed, and every discriminating-condition hash,
     value, and nodeid is verified fail-closed. All six gitignored traces
-    are copied into `main-integrate`. Send for final Opus re-review before
-    integration.
+    are copied into `main-integrate`. Integrate after the Cytokinesis merge,
+    preserving DNADamage/Cytokinesis shared-file hunks and recomputing the
+    manifest counts/replay command from rows.
   - Cytokinesis clean integration branch `integrate/l21-cytokinesis-clean`
-    at `27237c9` reports a mechanically promoted M5000 replay and clean
-    scoped integration. Send for final Opus review, then reconcile its
-    Cytokinesis manifest row with DNADamage's already-merged row; expected
-    combined board is 9 EWP / 1 CODE_GAP / 1 MISSING.
+    at `27237c9` is **ACCEPTED** by final Opus review. Its merge into main is
+    staged: the four shared-file conflicts were resolved by union,
+    preserving DNADamage's ledger/skip-detection paths; provenance was
+    deduplicated by `event_id`. The promoter was strengthened to reject
+    sibling-worktree trace paths and rerun successfully with a repo-relative
+    M5000 source. The merged manifest is now 9 EWP / 1 CODE_GAP / 1 MISSING.
+    Merge-time cleanup also removed DNADamage's now-stale oracle allowlist
+    entry and refreshed its shifted L1b source anchors. Commit, rerun the
+    full post-merge gate from committed HEAD, then push.
   - TranscriptionalRegulation branch
     `agent/l21-txreg-active-fix-20260903` has committed blocker fixes at
     `2b431cc`, but additional verifier/code/test changes are still

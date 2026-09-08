@@ -24,12 +24,12 @@ integration_touchpoints:
       symbol: "KarrCytokinesisProcess.next_update"
       source:
         path: "opencell/vivarium/karr_cytokinesis.py"
-        lines: "330-330"
+        lines: "437-437"
         note: "Embedded request emission and state update share one OC method."
         symbol: "KarrCytokinesisProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_cytokinesis.py"
-          lines: "485-503"
+          lines: "592-613"
           note: "_water_request gate used by next_update."
           symbol: KarrCytokinesisProcess._water_request
       note: "OC embeds allocator request emission inside the per-tick update instead of a dedicated request-calculator class."
@@ -48,16 +48,16 @@ integration_touchpoints:
       symbol: "KarrCytokinesisProcess.next_update"
       source:
         path: "opencell/vivarium/karr_cytokinesis.py"
-        lines: "330-330"
+        lines: "437-437"
         note: "Per-tick update entrypoint."
         symbol: "KarrCytokinesisProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_cytokinesis.py"
-          lines: "505-614"
+          lines: "615-723"
           note: "Binding, unbinding, hydrolysis, and dissociation phase helpers."
           symbol: KarrCytokinesisProcess._phase_bind_first_and_second_straight
         - path: "opencell/vivarium/karr_cytokinesis.py"
-          lines: "621-675"
+          lines: "731-735"
           note: "Geometry helpers for edge counts and pinched-diameter evolution."
           symbol: KarrCytokinesisProcess._division_progress
       note: "The OC update keeps the MATLAB phase ordering but packages it inside next_update."
@@ -76,7 +76,7 @@ integration_touchpoints:
       symbol: "KarrCytokinesisProcess"
       source:
         path: "opencell/vivarium/karr_cytokinesis.py"
-        lines: "115-675"
+        lines: "194-785"
         note: "The current OC port is a process updater and does not define a flux-bounds path. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrCytokinesisProcess"
       note: "No OC flux-bounds correspondence was found. OC does not implement this Karr method."
@@ -120,7 +120,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "555-583"
+      lines: "665-707"
       note: "_phase_hydrolyze_and_bend subtracts water during each successful hydrolysis event."
       symbol: KarrCytokinesisProcess._phase_hydrolyze_and_bend
     note: "The symbolic `nHydrolyzedEdges` stands for the count of successful hydrolysis events in the tick."
@@ -136,7 +136,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "555-583"
+      lines: "665-707"
       note: "_phase_hydrolyze_and_bend adds phosphate during each successful hydrolysis event."
       symbol: KarrCytokinesisProcess._phase_hydrolyze_and_bend
     kind: expression
@@ -150,7 +150,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "555-583"
+      lines: "665-707"
       note: "_phase_hydrolyze_and_bend adds hydrogen during each successful hydrolysis event."
       symbol: KarrCytokinesisProcess._phase_hydrolyze_and_bend
     kind: expression
@@ -230,32 +230,32 @@ source_anchors:
   oc_blocks:
     fixture_loading:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "135-188"
+      lines: "214-242"
       note: "Loads the Cytokinesis fixture MAT and the ring/geometry JSON fixtures."
       symbol: KarrCytokinesisProcess.__init__
     ports_schema:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "215-328"
+      lines: "322-435"
       note: "Declares cell, chromosome, geometry, ring, substrate, and allocator-facing ports."
       symbol: KarrCytokinesisProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "330-410"
+      lines: "437-517"
       note: "Embedded request emission plus per-tick state update."
       symbol: KarrCytokinesisProcess.next_update
     gating_and_request_helpers:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "412-503"
+      lines: "519-613"
       note: "Geometry/ring reconstruction, allocator read, and water request gate."
       symbol: KarrCytokinesisProcess._geometry_state
     phase_updates:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "505-614"
+      lines: "615-723"
       note: "Binding, unbinding, hydrolysis, and dissociation phase helpers."
       symbol: KarrCytokinesisProcess._phase_bind_first_and_second_straight
     geometry_helpers:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "621-675"
+      lines: "725-785"
       note: "Pinched-diameter and edge-count helpers."
       symbol: KarrCytokinesisProcess._division_progress
 provenance:
@@ -290,7 +290,7 @@ deviations:
       symbol: Cytokinesis
     oc_anchor:
       path: "opencell/vivarium/karr_cytokinesis.py"
-      lines: "115-678"
+      lines: "194-785"
       note: "The current OC port is a process updater and does not expose a flux-bounds path."
       symbol: KarrCytokinesisProcess
   shared_pool_projection_merges_compartments: false

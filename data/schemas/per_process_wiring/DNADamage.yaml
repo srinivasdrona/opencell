@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "KarrDNADamageProcess.calcResourceRequirements_Current"
       source:
         path: "opencell/vivarium/karr_dna_damage.py"
-        lines: "365-365"
+        lines: "577-577"
         note: "OC implements calcResourceRequirements_Current inline (no separate RequestCalculator class): returns max(0, -reaction_small_molecule_stoich @ calcExpectedReactionRates()), mirroring the MATLAB request formula."
         symbol: "KarrDNADamageProcess.calcResourceRequirements_Current"
       note: "Implemented. Note the current composite maps karr_dna_damage only to `chromosome`, so this request path is not exercised in that composition (see deviations)."
@@ -43,18 +43,18 @@ integration_touchpoints:
       symbol: "KarrDNADamageProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_damage.py"
-        lines: "287-287"
+        lines: "447-447"
         note: "Current OC per-tick update: Poisson lesion sampling, chromosome damage writeback, and replication-stall flagging."
         symbol: "KarrDNADamageProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_dna_damage.py"
-          lines: "243-253"
+          lines: "386-445"
           note: "Direct radiation-gated substrate reads from `states[\"substrates\"]`."
           symbol: KarrDNADamageProcess.ports_schema
         - path: "opencell/vivarium/karr_dna_damage.py"
-          lines: "267-292"
+          lines: "447-576"
           note: "Chromosome update construction and stall flag emission."
-          symbol: KarrDNADamageProcess.ports_schema
+          symbol: KarrDNADamageProcess.next_update
       note: "The OC port intentionally stops at lesion creation and advisory stall signaling."
     status: "implemented"
     note: "Repair chemistry and full reaction stoichiometry are deferred in the current OC port."
@@ -71,7 +71,7 @@ integration_touchpoints:
       symbol: "KarrDNADamageProcess"
       source:
         path: "opencell/vivarium/karr_dna_damage.py"
-        lines: "111-483"
+        lines: "177-1377"
         note: "Module has no flux-bound helper or LP-bound wiring. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrDNADamageProcess"
       note: OC does not implement this Karr method.
@@ -119,7 +119,7 @@ consume_stoichiometry:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit metabolite stoichiometry writeback."
       symbol: KarrDNADamageProcess.ports_schema
     kind: expression
@@ -133,7 +133,7 @@ consume_stoichiometry:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit metabolite stoichiometry writeback."
       symbol: KarrDNADamageProcess.ports_schema
     kind: expression
@@ -147,7 +147,7 @@ consume_stoichiometry:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit metabolite stoichiometry writeback."
       symbol: KarrDNADamageProcess.ports_schema
     kind: per_reaction
@@ -162,7 +162,7 @@ produce_stoichiometry:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit substrate stoichiometry deltas."
       symbol: KarrDNADamageProcess.ports_schema
     kind: expression
@@ -176,7 +176,7 @@ produce_stoichiometry:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit substrate stoichiometry deltas."
       symbol: KarrDNADamageProcess.ports_schema
     kind: expression
@@ -190,7 +190,7 @@ produce_stoichiometry:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit substrate stoichiometry deltas."
       symbol: KarrDNADamageProcess.ports_schema
     kind: expression
@@ -204,7 +204,7 @@ produce_stoichiometry:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit substrate stoichiometry deltas."
       symbol: KarrDNADamageProcess.ports_schema
     kind: expression
@@ -218,7 +218,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit substrate stoichiometry deltas."
       symbol: KarrDNADamageProcess.ports_schema
     kind: expression
@@ -232,7 +232,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit substrate stoichiometry deltas."
       symbol: KarrDNADamageProcess.ports_schema
     kind: expression
@@ -246,7 +246,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_LifeCycle
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "386-445"
       note: "Current OC does not emit substrate stoichiometry deltas."
       symbol: KarrDNADamageProcess.ports_schema
     kind: expression
@@ -326,7 +326,7 @@ unit_conversion_chain:
       constants: ["timestep_s"]
       anchor:
         path: "opencell/vivarium/karr_dna_damage.py"
-        lines: "228-259"
+        lines: "386-445"
         note: "Current OC computes `lam = rate_per_s * dt` before Poisson sampling."
         symbol: KarrDNADamageProcess.ports_schema
   note: "The DNADamage rate table is already in per-second units; process-local OC code converts to per-tick event counts by multiplying with tick duration and sampling Poisson events, but the current karr_composite topology maps DNADamage only to chromosome."
@@ -366,29 +366,29 @@ source_anchors:
       symbol: <module>
     class_init_and_fixture_loading:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "111-177"
+      lines: "177-385"
       note: "Class defaults, fixture loading, and substrate/enzyme observables."
       symbol: KarrDNADamageProcess
     ports_schema:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "179-226"
+      lines: "271-445"
       note: "Current OC state surface: chromosome plus flat substrates/enzymes/boundEnzymes."
       symbol: KarrDNADamageProcess._load_schema_observables
     next_update:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "228-294"
+      lines: "447-576"
       note: "Per-tick damage creation, direct substrate gating, and chromosome writeback."
-      symbol: KarrDNADamageProcess.ports_schema
+      symbol: KarrDNADamageProcess.next_update
     sequence_length_loader:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "432-449"
+      lines: "1360-1377"
       note: "Sequence length inferred from the fixture when present."
-      symbol: KarrDNADamageProcess.calcNumberVulnerableSites
-    trace_rate_loader:
+      symbol: KarrDNADamageProcess._load_sequence_length_from_fixture
+    expected_reaction_rates:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "451-483"
-      note: "Optional trace-derived per-kind rate calibration."
-      symbol: KarrDNADamageProcess.calcNumberVulnerableSites
+      lines: "589-605"
+      note: "Source-backed per-reaction expected-rate calculation."
+      symbol: KarrDNADamageProcess.calcExpectedReactionRates
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/DNADamage_flat.mat"
@@ -418,7 +418,7 @@ deviations:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_dna_damage.py"
-      lines: "111-294"
+      lines: "177-1377"
       note: "Current OC port has no flux-bound helper or LP-bound wiring."
       symbol: KarrDNADamageProcess
   shared_pool_projection_merges_compartments: false
@@ -432,6 +432,5 @@ deviations:
     - "shared_pool_projection_merges_compartments is false: next_update writes only chromosome-damage and requests, never a shared `substrates` delta, so there is no compartment-merging projection to perform."
     - "MATLAB engages allocator request/grant through calcResourceRequirements_Current and Simulation.evolveState allocation injection; current OC remains allocator-bypassed."
     - "Repair chemistry, lesion-specific arrays, and any downstream DNARepair coupling are deferred to a later port."
-    - "Trace-derived kind rates are optional; when the trace file is unavailable, the OC port falls back to configured per-kind rates."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "Known deviations are kept explicit so the row does not imply full MATLAB parity where the current OC implementation is intentionally narrower."

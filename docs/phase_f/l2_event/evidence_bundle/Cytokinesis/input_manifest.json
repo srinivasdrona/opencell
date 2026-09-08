@@ -7,6 +7,15 @@
       "sha256": "de09b63ccd190c4e767bcf0eabe174065e880fa56d411ab4452fb51caa9cf1bd",
       "tick_offset": 0.0,
       "trace_kind": "event_window"
+    },
+    {
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s036/Cytokinesis_5000ticks.mat",
+      "seed": 36,
+      "sha256": "b0c919e8089da0ae2813b9301c167d24a6c766bce7dde83bbf621d3ade3eeeb0",
+      "tick_offset": 0.0,
+      "trace_kind": "event_window",
+      "note": "M5000 seed-36 promotion trace (STATUS_L21_CYTOKINESIS_ACTIVE_FIX.md Update 5): onset_tick=27918, window_anchor=31993, extracted with the randStream-state-capturing and dec-005 DNADamage source-hash-bound extractor (commit 153d726+). Task-mandated promotion evidence -- preferred over the seed-0 M4000 trace, which predates per-tick randStream capture."
     }
   ],
   "process": "Cytokinesis",

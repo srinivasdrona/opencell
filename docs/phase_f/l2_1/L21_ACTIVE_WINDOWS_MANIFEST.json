@@ -1,9 +1,9 @@
 {
   "generated_by": "scripts/l21_active_window_audit.py selective-audit aggregation",
-  "pytest_replay_command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_dna_repair_l2_replay.py::test_karr_dna_repair_l2_replay_identity_per_tick tests/vivarium/test_karr_metabolism_l2_replay.py::test_karr_metabolism_l2_replay_identity_per_tick tests/vivarium/test_karr_protein_decay_l2_replay.py::test_karr_protein_decay_l2_replay_identity_per_tick tests/vivarium/test_karr_replication_l2_replay.py::test_karr_replication_l2_replay_identity_per_tick tests/vivarium/test_karr_rna_modification_l2_replay.py::test_karr_rna_modification_l2_event_replay tests/vivarium/test_karr_ribosome_assembly_l2_replay.py::test_karr_ribosome_assembly_l2_event_replay",
+  "pytest_replay_command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_dna_repair_l2_replay.py::test_karr_dna_repair_l2_replay_identity_per_tick tests/vivarium/test_karr_metabolism_l2_replay.py::test_karr_metabolism_l2_replay_identity_per_tick tests/vivarium/test_karr_protein_decay_l2_replay.py::test_karr_protein_decay_l2_replay_identity_per_tick tests/vivarium/test_karr_replication_l2_replay.py::test_karr_replication_l2_replay_identity_per_tick tests/vivarium/test_karr_chromosome_segregation_l2_replay.py::test_karr_chromosome_segregation_l2_event_replay[event_seed_0] tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound[event_seed_36_m5000] tests/vivarium/test_karr_dna_damage_l2_replay.py::test_karr_dna_damage_l2_event_replay_seed2000_chromosome_ledger tests/vivarium/test_karr_rna_modification_l2_replay.py::test_karr_rna_modification_l2_event_replay tests/vivarium/test_karr_ribosome_assembly_l2_replay.py::test_karr_ribosome_assembly_l2_event_replay",
   "counts": {
-    "EXISTING_WINDOW_PASS": 8,
-    "CODE_GAP": 2,
+    "EXISTING_WINDOW_PASS": 9,
+    "CODE_GAP": 1,
     "MISSING_ACTIVE_EXTRACTION": 1
   },
   "rows": [
@@ -289,99 +289,45 @@
     },
     {
       "process": "Cytokinesis",
-      "classification": "CODE_GAP",
+      "classification": "EXISTING_WINDOW_PASS",
       "existing_trace_suffices": true,
       "activity_predicate": "event-window scalar deltas: chromosome_segregated/pinchedDiameter/ftsZ ring channels",
       "source": {
-        "path": "/mnt/e/opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
-        "repo_relative_hint": "opencell-worktrees/genuine-l21-active/data/m1_sources/karr_native/per_process_traces_v2_event_s000/Cytokinesis_4000ticks.mat",
-        "sha256": "c53fd34994f2d049fbfadf77ec5d4319fdc5bccd2cfd97c75d393705e99bec96",
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_event_s036/Cytokinesis_5000ticks.mat",
+        "repo_relative_hint": "data/m1_sources/karr_native/per_process_traces_v2_event_s036/Cytokinesis_5000ticks.mat",
+        "sha256": "b0c919e8089da0ae2813b9301c167d24a6c766bce7dde83bbf621d3ade3eeeb0",
         "trace_family": "event_window",
         "source_manifest": "local_event_window"
       },
       "trace_window": {
-        "n_ticks": 4000,
+        "n_ticks": 5000,
         "tick_offset": 0.0,
-        "first_active_local_tick": 226,
-        "first_active_absolute_tick": 226.0,
-        "active_tick_count": 2114,
+        "first_active_local_tick": 894,
+        "first_active_absolute_tick": 894.0,
+        "active_tick_count": 2137,
         "first_active_detail": {
           "observable": "ftsZRing_numEdgesOneStraight",
           "detail_path": "ftsZRing_numEdgesOneStraight",
           "index": 0,
           "before": 0.0,
-          "after": 9.0
+          "after": 6.0
         }
       },
       "mechanical_scan": {
-        "scanned_candidate_count": 1,
+        "scanned_candidate_count": 2,
         "command": "bin\\\\oc-py.cmd scripts/l21_active_window_audit.py --process Cytokinesis --write-json <temp>"
       },
       "replay_evidence": {
-        "type": "pytest+audit_tool_honest_replay",
-        "nodeid": "tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay[event_seed_0]",
-        "outcome": "code_gap",
-        "command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay[event_seed_0]"
+        "type": "pytest",
+        "nodeid": "tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound[event_seed_36_m5000]",
+        "outcome": "passed",
+        "command": "bin\\\\oc-pytest.cmd -q tests/vivarium/test_karr_cytokinesis_l2_replay.py::test_karr_cytokinesis_l2_event_replay_m5000_randstream_bound[event_seed_36_m5000]"
       },
-      "code_gap_evidence": {
-        "bit_identity": {
-          "pass_all_compared_ticks": false,
-          "compared_surfaces": [
-            "substrates",
-            "enzymes",
-            "boundEnzymes",
-            "pinchedDiameter",
-            "ftsZRing_numEdgesOneStraight",
-            "ftsZRing_numEdgesTwoStraight",
-            "ftsZRing_numEdgesTwoBent",
-            "ftsZRing_numResidualBent"
-          ],
-          "first_mismatch_tick": 226,
-          "first_mismatch_observable": "ftsZRing_numEdgesOneStraight",
-          "first_mismatch_index": 0,
-          "first_mismatch_oc_val": 0.0,
-          "first_mismatch_karr_val": 9.0,
-          "first_mismatch_diff": -9.0,
-          "compared_tick_count": 4000
-        },
-        "honest_replay": {
-          "karr_active_ticks": 2114,
-          "oc_active_ticks": 4000,
-          "oc_active_on_karr_active_ticks": 2114,
-          "first_karr_active_tick": 226,
-          "first_karr_active_detail": {
-            "observable": "ftsZRing_numEdgesOneStraight",
-            "detail_path": "ftsZRing_numEdgesOneStraight",
-            "index": 0,
-            "before": 0.0,
-            "after": 9.0
-          },
-          "first_oc_active_tick": 0,
-          "first_measured_mismatch": {
-            "observable": "ftsZRing_numEdgesOneStraight",
-            "detail_path": "ftsZRing_numEdgesOneStraight",
-            "index": 0,
-            "before": 0.0,
-            "after": 9.0
-          }
-        },
-        "code_gap_anchor": {
-          "first_karr_active_tick": 226,
-          "first_karr_active_detail": {
-            "observable": "ftsZRing_numEdgesOneStraight",
-            "detail_path": "ftsZRing_numEdgesOneStraight",
-            "index": 0,
-            "before": 0.0,
-            "after": 9.0
-          },
-          "first_measured_mismatch": {
-            "observable": "ftsZRing_numEdgesOneStraight",
-            "detail_path": "ftsZRing_numEdgesOneStraight",
-            "index": 0,
-            "before": 0.0,
-            "after": 9.0
-          }
-        }
+      "dnadamage_source_binding": {
+        "verified": true,
+        "trace_resolved_sha256": "86d8b3c2d2ed42df03e1b9ea14f06efc4b645a4e6aeaa3ef938b9ea41ad27e7e",
+        "current_resolved_sha256": "86d8b3c2d2ed42df03e1b9ea14f06efc4b645a4e6aeaa3ef938b9ea41ad27e7e",
+        "overlay_required": true
       }
     },
     {

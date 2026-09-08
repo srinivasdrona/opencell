@@ -288,12 +288,17 @@ for i = 1:numel(process_names)
         metadata.mnrnd_provider_path_relative_to_matlabroot = mnrnd_provider.provider_path_relative_to_matlabroot;
         metadata.mnrnd_provider_sha256 = mnrnd_provider.sha256_lf_normalized;
         metadata.statistics_rng_provider_identity_json = mnrnd_provider.identity_json;
-        if strcmp(canonical_name, 'DNADamage')
-            metadata.dnadamage_source_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized;
-            metadata.dnadamage_source_patched_sha256 = dnadamage_overlay.patched_sha256_lf_normalized;
-            metadata.dnadamage_source_resolved_sha256 = dnadamage_overlay.resolved_sha256_lf_normalized;
-            metadata.dnadamage_source_resolved_path = dnadamage_overlay.resolved_path;
-        end
+        % DNADamage source-hash binding (dec-005): DNADamage runs in Karr's
+        % shared per-tick scheduler for every process, so its resolved
+        % source identity affects every other process's real trajectory.
+        % Written unconditionally (not gated on canonical_name=='DNADamage')
+        % so any fixed/anchor trace can be validated against the exact
+        % upstream source identity its trajectory resolved against.
+        metadata.dnadamage_source_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized;
+        metadata.dnadamage_source_patched_sha256 = dnadamage_overlay.patched_sha256_lf_normalized;
+        metadata.dnadamage_source_resolved_sha256 = dnadamage_overlay.resolved_sha256_lf_normalized;
+        metadata.dnadamage_source_resolved_path = dnadamage_overlay.resolved_path;
+        metadata.dnadamage_overlay_required = logical(dnadamage_overlay.overlay_required);
     end
 
     if ~isempty(extraction_opts.condition_label)
@@ -379,6 +384,25 @@ if ~isempty(failed_processes)
         numel(failed_processes), numel(process_names), strjoin(failed_processes, '\n'));
 end
 
+end
+
+function state_vec = capture_rand_stream_state(mod)
+% capture_rand_stream_state  Read the process's own randStream state for
+% per-tick RNG-state audit. this.randStream is
+% edu.stanford.covert.util.RandStream, a thin wrapper whose dependent
+% `state` property returns the wrapped built-in MATLAB RandStream's State
+% (data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+util/RandStream.m:273-274);
+% for 'mcg16807' (Process.m:283) this is the Lehmer/Park-Miller
+% generator's own scalar integer state, never a MATLAB object/handle.
+% Captured at both tap points (before and after evolveState()) so a
+% per-tick entry/exit ledger can recompute the draw count between two
+% consecutive ticks. Returned as a double column vector so it round-trips
+% losslessly through -v7.3 HDF5 / h5py without object deserialization.
+if ~isprop(mod, 'randStream') || isempty(mod.randStream)
+    error('extract_per_process_traces_v2:missing_rand_stream', ...
+        'process has no ''randStream'' property (required for hash-bound per-tick RNG state capture)');
+end
+state_vec = double(mod.randStream.state(:));
 end
 
 function props = pick_snapshot_properties(proc)
@@ -524,6 +548,7 @@ for i = 1:nProcesses
             before_tick = merge_event_observables(before_tick, mod, anchor_opts);
         end
         before_tick = merge_chromosome_rand_stream_state(before_tick, mod);
+        before_tick.randStreamState = capture_rand_stream_state(mod);
     end
 
     mod.evolveState();
@@ -534,6 +559,7 @@ for i = 1:nProcesses
             after_tick = merge_event_observables(after_tick, mod, anchor_opts);
         end
         after_tick = merge_chromosome_rand_stream_state(after_tick, mod);
+        after_tick.randStreamState = capture_rand_stream_state(mod);
     end
 
     mod.copyToState();
