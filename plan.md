@@ -112,13 +112,16 @@ earlier blocks below:**
     Merge-time cleanup also removed DNADamage's now-stale oracle allowlist
     entry and refreshed its shifted L1b source anchors.
   - TranscriptionalRegulation branch
-    `agent/l21-txreg-active-fix-20260903` at `81d5691` reports all second
-    Opus-round blockers closed: 4000/4000 exact replay, complete
-    accessibility semantics, portable trace+ledger copies in both main
-    checkouts, corrected `dec-006`, and a rewritten non-circular L2.2 PIT
-    preregistration with a powered shuffled-weight positive control.
-    Await independent Opus re-review before any integration or N=10
-    extraction.
+    `agent/l21-txreg-active-fix-20260903` at `81d5691` was **REJECTED**
+    by Opus despite a reproduced genuine 4000/4000 replay. Three
+    `isRegionAccessible` damage-adjacency shifts are inverted
+    (`intrastrandCrossLinks5`, `strandBreaks5`, `strandBreaks3`); the
+    TxReg ledger lacks current-main DNADamage source binding and scalar-draw
+    compatibility; and the L2.2 PIT gate silently skips the all-false
+    accessibility mask before checking Karr's winner. Fix those, build a
+    surgical integration on current main without downgrading the other ten
+    L2.1 rows, regenerate/re-pin the ledger and pilot provenance, and
+    return for another Opus review before N=10 extraction.
 - L2.2:
   - DNASupercoiling branch `agent/l22-dnas-20260812` at `8951cca`
     was **REJECTED** by Opus after the 0/20,000-breach rerun. The new
