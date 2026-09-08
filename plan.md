@@ -157,6 +157,12 @@ earlier blocks below:**
     and current DNADamage source binding. Observed Cytokinesis inclusive
     spans range 3737-4076 ticks; no M=5000 margin trigger fired. These
     traces are banked regardless of the pending cohort-selection redesign.
+    The homogeneous paired copies are consolidated under
+    `data/m1_sources/karr_native/dual_division_cohort_current/` and
+    revalidated 19/19 there. Use this explicit root for the cohort: seed 36
+    correctly carries paired-dual Cyt SHA `f04ea79e...3cc80`; the standard
+    event root separately retains the L2.1 single-process trace
+    `b0c919e8...eeeb0`. Never overwrite or silently mix those two artifacts.
   - Candidate cohort correction, to preregister and independently review
     before relaunch: `N=50` means the first 50 **completed event windows**
     from a deterministic ascending attempted-seed stream starting at seed 0.
