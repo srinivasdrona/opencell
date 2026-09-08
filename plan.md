@@ -144,11 +144,16 @@ earlier blocks below:**
     inversion for the unsplit-boundary fix, then rerun N=200 once before
     another Opus review.
   - Cytokinesis/FtsZ dual extraction has exactly three live MATLAB
-    sessions. Worker A completed seeds 0-1 and is running seed 2; worker B
-    completed seed 17 and is running seed 18; worker C completed seed 34
-    (with seed 36 preloaded) and is running seed 35. Current emitted pairs:
-    A=2, B=1, C=2. Keep the host-wide cap at three and resume only
-    incomplete seeds after any worker exits.
+    sessions. Worker A completed seeds 0-1 and is running seed 2. Worker C
+    completed seeds 34-36 and is running seed 37. Worker B completed seed
+    17, then failed closed on seed 18 because no division-completion signal
+    occurred by the existing `max_search_ticks=50000`; no seed-18 files
+    were emitted. Do not skip/resample seed 18, because that would condition
+    the cohort on successful division. Use the freed third slot for one
+    non-counting seed-18 diagnostic at a globally-declared 100,000-tick
+    horizon; only after that result decide whether the gate needs a larger
+    common search horizon or an explicit right-censoring/completion-rate
+    design. Keep the host-wide cap at three.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
