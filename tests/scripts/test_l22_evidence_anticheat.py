@@ -1160,10 +1160,17 @@ def test_process_dependency_registry_matches_real_current_import_graph():
             "karr_trna_aminoacylation_module": schema.KARR_TRNA_AMINOACYLATION_MODULE
         }, name
     assert set(schema.PROCESS_DEPENDENCY_FILES["ProteinTranslocation"]) == {"util_module", "util_matlab_rng_module"}
+    # R7: DNASupercoiling additionally registers its own extracted
+    # tick-runner sibling module (`_l2_2_dnas_runner_helpers.py`) as a
+    # process-specific dependency -- see that module's and
+    # `schema.runner_helpers_generic_hash`'s docstrings for the full
+    # rationale (the shared `_l2_2_design_a_runner_helpers.py` must stay
+    # byte-identical to main for every OTHER process).
     assert set(schema.PROCESS_DEPENDENCY_FILES["DNASupercoiling"]) == {
         "chromosome_store_module",
         "m_gen_constants_module",
         "state_init_module",
+        "dnas_runner_helpers_module",
     }
     assert set(schema.PROCESS_DEPENDENCY_FILES["DNADamage"]) == {
         "chromosome_store_module",

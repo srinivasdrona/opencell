@@ -270,6 +270,12 @@ def _current_source_hashes(
     this function always hashed the default `schema.CATALOG_PATH` regardless
     of the `catalog_path` a caller passed to `build_evidence_index`)."""
     hashes = {name: _sha256_file(path) for name, path in schema.shared_source_files_for_harness(entry.harness_type if entry else None).items()}
+    if "helpers" in hashes:
+        # R7: per-process-redacted generic hash, not a plain whole-file
+        # hash -- see `schema.runner_helpers_generic_hash`'s docstring.
+        hashes["helpers"] = schema.runner_helpers_generic_hash()
+    if entry is not None and entry.harness_type == "design_a_per_tick":
+        hashes["tick_runner"] = schema.tick_runner_entry_hash(entry.name)
     if entry is not None and entry.oc_module:
         hashes["oc_module"] = _sha256_file(cat.REPO_ROOT / entry.oc_module)
     if entry is not None:

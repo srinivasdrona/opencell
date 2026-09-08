@@ -12,7 +12,7 @@
   "sidecar_hashes": {
     "SUMMARY.json": "777059a6ef6c1b9338ac522c49e6d9bbd760bac69d5e14858fbd6ac4b663c3be",
     "analytical_check.json": "d40b24b7383e02c3833fabb799ed0d2e28709559cf7c34245fa9331fefeda6f7",
-    "input_manifest.json": "74be31bcefd2c0ddd312ca9fb2e7e5bb188d5a184f062c266c0bb2fc674e0d3a",
+    "input_manifest.json": "9d138f94ee2b5d2d12a6bf0879a535ea4121d22c89e8bceee44477f4ce77c245",
     "null_calibration.json": "2aca0217ad429edace31f95967fb806fc8b3f7eb3db9355a710f427e076fe05c",
     "provenance.json": "aa7a8a3c2f747893d4dd153d6f797bcf43eb05e107cfe763c2d950d69a7495f8",
     "result.json": "432459b5c95282c072350cf0b8806364640e6cd2a92dd1f26e2999ccfd6d1d2f",
@@ -20,14 +20,15 @@
   },
   "source_hashes": {
     "catalog_entry": "c4c35f6992e8d3ab6e9a049902f51827f8d8dcebb45cb11270c0b5fafae43a42",
-    "chromosome_store_module": "7e4a5f758e64c7b28a5029a451219ea041952701527b40643cc6f6aa83a7744f",
-    "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+    "chromosome_store_module": "de00a57b8a881a247b4af536b152b3ec452eccb53f193f601eeb0192d3639dad",
+    "helpers": "3e4ab46805be76f9696ba59edef3884a4824e728653a3bea44f9bae6d9af85b0",
     "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
     "m_gen_constants_module": "bbfea3ac477e4a3eb93edcfae355350c9d5b8c1501ea574ef9b83acfaebce8ae",
     "oc_module": "0c428c473ded2967b52e97a8aff813a693e3d1f549f48c869c1265718c68c103",
     "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
     "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
     "state_init_module": "6f1ff7401f505cfcc68d89d912d2af35776adb08643069e176e922ac912b50ec",
+    "tick_runner": "115ac61dcb710f0d90f20e4270328ec6b2e7864cb4587ada2dabc66fa2078114",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
   "written_at": "2026-08-06T13:10:18.942404+00:00"

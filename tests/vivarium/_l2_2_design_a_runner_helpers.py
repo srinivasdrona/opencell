@@ -3464,63 +3464,9 @@ def _dna_supercoiling_process(seed: int) -> KarrDNASupercoilingProcess:
         return KarrDNASupercoilingProcess({"rng_seed": int(seed)})
 
 
-def _run_dna_supercoiling_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
-    """Run one OpenCell DNASupercoiling tick from a prepared state snapshot."""
-    process = _dna_supercoiling_process(_sample_seed(seed, tick))
-    runtime_state = build_state_template(process)
-    substrate_wids = list(state["substrate_wids"])
-    enzyme_wids = list(state["enzyme_wids"])
-
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="enzymes",
-        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
-        wids=enzyme_wids,
-    )
-    if "oracle_before_bound_enzymes" in state:
-        overlay_observable_into_state(
-            process=process,
-            state=runtime_state,
-            observable="boundEnzymes",
-            vector=np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64),
-            wids=enzyme_wids,
-        )
-
-    # CRITICAL: overlay Karr's actual chromosome state, not a fixture default
-    # (Beat 4 failure mode F3).
-    chrom_store_before: ChromosomeStore = state["oracle_before_chromosome_store"]
-    _overlay_chromosome_into_state(runtime_state, chrom_store_before)
-
-    refresh_allocator_views(process, runtime_state)
-    with forbid_sut_oracle_file_io():
-        update = process.next_update(1.0, runtime_state)
-    apply_count_update(runtime_state, update)
-
-    chrom_update = update.get("chromosome", {}) if isinstance(update, dict) else {}
-    chrom_after_store = _apply_chromosome_update(chrom_store_before, chrom_update)
-
-    return {
-        "substrates": np.asarray(
-            project_observable_from_state(
-                process=process,
-                state=runtime_state,
-                observable="substrates",
-                wids=substrate_wids,
-                bound_enzymes_before=None,
-            ),
-            dtype=np.float64,
-        ),
-        "chromosome_after_store": chrom_after_store,
-        "sample_seed": _sample_seed(seed, tick),
-    }
+from _l2_2_dnas_runner_helpers import (  # noqa: E402
+    run_dna_supercoiling_tick as _run_dna_supercoiling_tick,
+)
 
 
 # ---- Replication ------------------------------------------------------

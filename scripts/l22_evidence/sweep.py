@@ -263,6 +263,16 @@ def current_source_hashes(
         name: _sha256_file(path)
         for name, path in schema.shared_source_files_for_harness(harness_type).items()
     }
+    if "helpers" in hashes:
+        # R7: `"helpers"` is no longer a plain whole-file hash (that coupled
+        # every process's staleness to every OTHER process's own per-process
+        # tick-runner function body inside the same shared file -- see
+        # `schema.runner_helpers_generic_hash`'s docstring for the full
+        # DNASupercoiling incident this fixes). The per-process complement,
+        # `"tick_runner"`, is added right below.
+        hashes["helpers"] = schema.runner_helpers_generic_hash()
+    if process and harness_type == "design_a_per_tick":
+        hashes["tick_runner"] = schema.tick_runner_entry_hash(process)
     if oc_module:
         hashes["oc_module"] = _sha256_file(REPO_ROOT / oc_module)
     if process:

@@ -12,7 +12,7 @@
   "sidecar_hashes": {
     "SUMMARY.json": "310f03c5300e93ce791c2c80cfc5facb9a2651e97fecb149d57f16e755a44657",
     "analytical_check.json": "3141f86a582c7d209a199137ca1795b7d7e9cc0cad1a673eda28079ee33b1c4b",
-    "input_manifest.json": "b5a513bbb713ed0991fd0c9b160b7d130686a8c1b56d30c9b3313384e5c4c9c5",
+    "input_manifest.json": "68375ca11cc129801209346fa4605cedc537e9d37f87285d3eccf7179ca834c3",
     "null_calibration.json": "6385b3cc1294aed0469612340f220158f9162af79f5a98378dc2e1fe4f7785e6",
     "provenance.json": "04a08ade7c81dc9c1842cfad468880e05674df0f3af35a8fd1506977c2c954cf",
     "result.json": "a08d49851349d90d09a8e6d4e2e4171dff4801835a4a191586bb0a07da9eb67d",
@@ -20,12 +20,13 @@
   },
   "source_hashes": {
     "catalog_entry": "4ac690fb87f0b790ead499ceaeef9a68d21f5248ecf4af2e8bf3463287815cc1",
-    "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+    "helpers": "3e4ab46805be76f9696ba59edef3884a4824e728653a3bea44f9bae6d9af85b0",
     "karr_trna_aminoacylation_module": "d200500fa920a176e06af094b8575bc9cd5b2e5964cf05d780eb39d16bae1a14",
     "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
     "oc_module": "9b4f9eebdf010369d5f73c936498a0ce23d1fb0951be20e91b8087b9c6d3a586",
     "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
     "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
+    "tick_runner": "1f473637ee71dd42ea645b3345a660bd80dbca9bd41d1d1aff446214211bec95",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
   "written_at": "2026-08-06T11:31:40.253471+00:00"
