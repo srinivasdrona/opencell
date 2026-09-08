@@ -506,10 +506,17 @@ below:**
     full before-state seeding, classify activity from projected true levels,
     add a source-legal negative/knockout condition so cascade gates are
     discriminated, copy the gitignored trace to main, and move two
-    load-bearing MATLAB drivers out of `tmp/` before     re-review. Corrective commits `33ff755`/`bcc179b` now report a literal
+    load-bearing MATLAB drivers out of `tmp/` before         re-review. Corrective commits `33ff755`/`bcc179b` closed the prior
     `joinSplitRegions` origin-wrap port, a live-MATLAB discriminating probe,
     a true boundary-footprint inversion, and both 0/20,000 over-consumption
-    and 0/20,000 under-consumption on the rerun. Await second Opus review.
+    and 0/20,000 under-consumption on the rerun. Second Opus review still
+    **REJECTED**: `_matlab_exclude_regions` omits
+    `joinSplitOverOriCRegions` at both MATLAB call sites. Live MATLAB and
+    seeds 0-3 show 7/325 accessible-region divergences and 6/400 changed
+    `complexBoundSites` positions, invisible to the current linking-number
+    projection and draw-count telemetry. Port both calls plus final modulo
+    normalization, commit the MATLAB probes, add the production-path
+    inversion, and rerun N=200 before a third review.
 
 **Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
 snapshot below:**
