@@ -56,10 +56,6 @@ _ALLOWLIST: frozenset[str] = frozenset({
     # update path does NOT consult the oracle, but the init-time read still
     # violates SUT/oracle separation. Currently L2.1 RED; refactor when fixing.
     "karr_chromosome_condensation.py",
-    # Same pattern as karr_dna_damage.py: init-time _extract_trace_rates to
-    # set bind/unbind rates. L2.1 GREEN. Borderline; migrate to non-oracle
-    # calibration source.
-    "karr_host_interaction.py",
 })
 
 

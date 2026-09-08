@@ -37,6 +37,7 @@ data/m1_sources/karr_native/per_process_traces/
 data/m1_sources/karr_native/per_process_traces_v2/
 data/m1_sources/karr_native/per_process_traces_v2_s*/
 data/m1_sources/karr_native/per_process_traces_v2_event_s*/
+data/m1_sources/karr_native/per_process_traces_v2_host_condition_*/
 data/m1_sources/karr_native/*.mat
 data/m1_sources/karr_native/h12_perturbation_traces/
 data/m1_sources/karr_native/genuine_signedzero_*/

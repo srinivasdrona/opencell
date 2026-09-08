@@ -9,6 +9,7 @@ from __future__ import annotations
 import copy
 import json
 import sys
+from collections import Counter
 from pathlib import Path
 
 import pytest
@@ -36,7 +37,7 @@ EXPECTED_ACTIVE_WINDOW_VERDICTS = {
     "TranscriptionalRegulation": active_windows.CLASS_CODE_GAP,
     "Cytokinesis": "GENUINE",
     "DNADamage": "GENUINE",
-    "HostInteraction": active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
+    "HostInteraction": "GENUINE",
 }
 
 
@@ -60,6 +61,29 @@ def _write_single_row_manifest(tmp_path: Path, process_name: str) -> Path:
     manifest_path = tmp_path / "single_row_active_window_manifest.json"
     manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     return manifest_path
+
+
+def test_current_manifest_summary_matches_rows() -> None:
+    payload = _load_manifest_payload()
+    actual_counts = Counter(row["classification"] for row in payload["rows"])
+    expected_counts = {
+        classification: actual_counts.get(classification, 0)
+        for classification in (
+            active_windows.CLASS_EXISTING_WINDOW_PASS,
+            active_windows.CLASS_CODE_GAP,
+            active_windows.CLASS_MISSING_ACTIVE_EXTRACTION,
+        )
+    }
+    assert payload["counts"] == expected_counts
+
+    expected_nodeids = [
+        row["replay_evidence"]["nodeid"]
+        for row in payload["rows"]
+        if row["classification"] == active_windows.CLASS_EXISTING_WINDOW_PASS
+    ]
+    assert payload["pytest_replay_command"] == (
+        "bin\\\\oc-pytest.cmd -q " + " ".join(expected_nodeids)
+    )
 
 
 def test_no_manifest_path_matches_the_original_default_logic():

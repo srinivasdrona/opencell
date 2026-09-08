@@ -205,16 +205,27 @@ for i = 1:numel(process_names)
             states_after.(snapshot_props{p}) = cell(n_ticks, 1);
         end
 
+        % fixed_tap_anchor_opts: only non-empty (enabling
+        % merge_event_observables enrichment inside evolve_state_with_tap)
+        % when the caller opted in via anchor_opts.capture_signal_container
+        % -- every other existing 'fixed'/'' caller keeps passing []
+        % exactly as before (fully backward-compatible; see
+        % default_anchor_opts).
+        fixed_tap_anchor_opts = [];
+        if isfield(anchor_opts, 'capture_signal_container') && anchor_opts.capture_signal_container
+            fixed_tap_anchor_opts = anchor_opts;
+        end
+
         % Optional event-window burn-in: advance the whole simulation tick_offset
         % ticks without snapshotting, so the subsequent n_ticks capture a window
         % where an otherwise-quiescent-at-birth process is active.
         for bt = 1:tick_offset
-            [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props, [], extraction_opts);
+            [sim, ~, ~] = evolve_state_with_tap(sim, target_idx, snapshot_props, fixed_tap_anchor_opts, extraction_opts);
         end
 
         for t = 1:n_ticks
             try
-                [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, [], extraction_opts);
+                [sim, before_tick, after_tick] = evolve_state_with_tap(sim, target_idx, snapshot_props, fixed_tap_anchor_opts, extraction_opts);
                 for p = 1:numel(snapshot_props)
                     prop = snapshot_props{p};
                     states_before.(prop){t, 1} = before_tick.(prop);
@@ -325,6 +336,23 @@ for i = 1:numel(process_names)
         metadata.stride = int32(1);
         metadata.tick_start = int32(effective_tick_start + 1);
         metadata.tick_end = int32(effective_tick_start + n_ticks);
+        % Signal-container enrichment identity (mirrors the 'anchor' block
+        % below, minus window_anchor/onset_tick/max_search_ticks which only
+        % mean something for a SEARCH): written only when the caller opted
+        % into anchor_opts.capture_signal_container, so a fixed window
+        % that carries merge_event_observables fields (e.g. HostInteraction
+        % host.isBacteriumAdherent/isTLRActivated/isNFkBActivated/
+        % isInflammatoryResponseActivated) hash-binds to the exact
+        % signal_kind/signal_property/signal_field request it was
+        % generated for -- Python-side validation can then refuse a trace
+        % produced for a different request instead of trusting the path.
+        if anchor_opts.capture_signal_container
+            metadata.signal_kind = anchor_opts.signal_kind;
+            metadata.signal_property = anchor_opts.signal_property;
+            metadata.signal_field = anchor_opts.signal_field;
+            metadata.capture_signal_container = true;
+            metadata.event_observable_projection_version = int32(2);
+        end
     elseif strcmp(window_contract, 'anchor')
         % capture_anchor_window's own tick numbering already starts at
         % absolute tick 1 (no burn-in exists for 'anchor'; enforced above),
@@ -491,7 +519,14 @@ for i = 1:nProcesses
     mod = processes{i};
     mod.copyFromState();
     mod = apply_process_substrate_overrides(mod, extraction_opts);
+    [mod, enzyme_override_snapshot] = apply_process_enzyme_overrides(mod, extraction_opts);
     r = mod.calcResourceRequirements_Current();
+    % No copyToState() call in this loop (it only computes `requirements`
+    % for the allocator), so there is no global-state leak vector here --
+    % restoring is still done for hygiene/invariant simplicity (mod.enzymes
+    % always reflects genuine global state outside the apply/restore
+    % bracket), not because leaving it overridden would be unsafe.
+    mod = restore_process_enzyme_overrides(mod, enzyme_override_snapshot);
     gidx = mod.substrateMetaboliteGlobalCompartmentIndexs;
     lidx = mod.substrateMetaboliteLocalIndexs;
     if ~isempty(gidx) && ~isempty(lidx)
@@ -537,6 +572,7 @@ for i = 1:nProcesses
     mod.copyFromState();
     mod.substrates(lidx, :) = allocation;
     mod = apply_process_substrate_overrides(mod, extraction_opts);
+    [mod, enzyme_override_snapshot] = apply_process_enzyme_overrides(mod, extraction_opts);
     if proc_idx == rna_decay_idx && isprop(mod, 'RNAs')
         % Guard against negative RNA counts propagating into weighted sampling.
         mod.RNAs = max(0, mod.RNAs);
@@ -551,6 +587,21 @@ for i = 1:nProcesses
         before_tick.randStreamState = capture_rand_stream_state(mod);
     end
 
+    % Containment pre-check (only meaningful/cheap when an override is
+    % active on this process this tick): capture the SHARED global
+    % monomer/complex counts for exactly the enzyme WIDs this process's
+    % copyToState() will write, BEFORE evolveState()/restore/copyToState()
+    % run. mod.monomer/mod.complex are handle references to the same
+    % global state objects every process shares, so this reads the
+    % genuine global values, not a process-local copy.
+    enzyme_containment_check = ~isempty(enzyme_override_snapshot);
+    if enzyme_containment_check
+        monomer_gidx = mod.enzymeMonomerGlobalCompartmentIndexs;
+        complex_gidx = mod.enzymeComplexGlobalCompartmentIndexs;
+        global_monomer_before = mod.monomer.counts(monomer_gidx);
+        global_complex_before = mod.complex.counts(complex_gidx);
+    end
+
     mod.evolveState();
 
     if proc_idx == target_idx
@@ -562,8 +613,34 @@ for i = 1:nProcesses
         after_tick.randStreamState = capture_rand_stream_state(mod);
     end
 
+    % CONTAINMENT: restore this.enzymes/this.boundEnzymes to their genuine
+    % pre-override values BEFORE copyToState() runs. Process.m's
+    % copyToState() unconditionally writes this.enzymes/this.boundEnzymes
+    % back into the shared global metabolite/rna/monomer/complex state
+    % whenever this.enzymes is non-empty -- leaving the override in place
+    % here would corrupt the shared pool for every other process and every
+    % later tick, not just the target's own evolveState() read. This
+    % restore call is what makes the override strictly LOCAL to the
+    % calcResourceRequirements_Current()/evolveState() call and the
+    % states_before/states_after snapshots above.
+    mod = restore_process_enzyme_overrides(mod, enzyme_override_snapshot);
+
     mod.copyToState();
     mets.counts(gidx) = counts + mod.substrates(lidx, :) - allocation;
+
+    if enzyme_containment_check
+        global_monomer_after = mod.monomer.counts(monomer_gidx);
+        global_complex_after = mod.complex.counts(complex_gidx);
+        if ~isequal(global_monomer_before, global_monomer_after) || ...
+                ~isequal(global_complex_before, global_complex_after)
+            error('extract_per_process_traces_v2:enzyme_override_leaked_to_global_state', ...
+                ['per_process_enzyme_overrides for %s leaked into the shared global ' ...
+                 'monomer/complex pool at this tick -- containment violated. This must ' ...
+                 'never happen; restore_process_enzyme_overrides is supposed to make the ' ...
+                 'override invisible to copyToState().'], ...
+                process_short_name(mod));
+        end
+    end
 
     if ~isempty(mod.simulationStateSideEffects)
         mod.simulationStateSideEffects.updateSimulationState(sim);
@@ -593,6 +670,22 @@ function opts = default_anchor_opts(opts)
 % value derived from the expected/desired outcome.
 if ~isfield(opts, 'max_search_ticks') || isempty(opts.max_search_ticks)
     opts.max_search_ticks = 50000;
+end
+% capture_signal_container (default false, backward-compatible): opt-in
+% flag allowing a window_contract='fixed' extraction to ALSO merge the
+% real per-tick signal_kind/signal_property/signal_field observable
+% projection (merge_event_observables) into the captured snapshot, without
+% performing an anchor SEARCH (capture_anchor_window is only ever invoked
+% for window_contract='anchor'; this flag only affects which observables a
+% fixed window snapshot carries). Exists for genuinely ALREADY-ACTIVE
+% signals (e.g. HostInteraction's host.isBacteriumAdherent, which a real
+% seed-0 run shows is TRUE from tick 1 onward -- see
+% docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md -- so a
+% false->true anchor SEARCH can never terminate and is the wrong strategy;
+% the correct extraction is a plain fixed window that is active by
+% construction, not a discovered transition).
+if ~isfield(opts, 'capture_signal_container') || isempty(opts.capture_signal_container)
+    opts.capture_signal_container = false;
 end
 if ~isfield(opts, 'signal_kind') || isempty(opts.signal_kind)
     opts.signal_kind = 'diameter_decrease';
@@ -625,6 +718,39 @@ if ~isfield(opts, 'metadata_identity_json') || isempty(opts.metadata_identity_js
 end
 if ~isfield(opts, 'per_process_substrate_overrides') || isempty(opts.per_process_substrate_overrides)
     opts.per_process_substrate_overrides = struct();
+end
+% per_process_enzyme_overrides (default empty struct, backward-compatible):
+% same shape as per_process_substrate_overrides (struct keyed by process
+% name, then enzyme WholeCellModelID, each leaf a nonnegative scalar) but
+% applied to the process-local `this.enzymes` vector instead of
+% `this.substrates`. NOT process-restricted (any process key is
+% accepted). CONTAINMENT (2026-09-08 fix): Process.m's copyToState()
+% unconditionally writes `this.enzymes`/`this.boundEnzymes` back into the
+% SHARED global metabolite/rna/monomer/complex state whenever
+% `this.enzymes` is non-empty -- an earlier revision of this comment
+% incorrectly claimed "never written back by copyToState()", which was
+% never verified against Process.m and was WRONG. The override is
+% therefore contained by apply_process_enzyme_overrides/
+% restore_process_enzyme_overrides operating as a matched pair around
+% every copyToState() call site: apply captures the genuine pre-override
+% enzymes/boundEnzymes and applies the override; restore (called AFTER
+% evolveState()/calcResourceRequirements_Current() but BEFORE
+% copyToState()) puts the genuine captured values back, so the override
+% is visible ONLY to the target process's own calcResourceRequirements_
+% Current()/evolveState() call and the states_before/states_after
+% snapshots taken in between -- never to copyToState(), never to any
+% other process, never to a later tick. See the runtime containment
+% assertion in evolve_state_with_tap (asserts the shared global
+% monomer/complex counts for every overridden WID are bit-identical
+% before and after the target's copyToState() call, every tick an
+% override is active) and
+% tests/vivarium/test_karr_host_interaction_enzyme_override_containment.py
+% for the corresponding Python-side static/behavioral proof.
+% Exists to extract genuine, source-legal input-side enzyme-knockout
+% windows (e.g. HostInteraction's terminalOrganelle/adhesin/ligand/antigen
+% index sets) without ever touching Karr's own booleans/outputs directly.
+if ~isfield(opts, 'per_process_enzyme_overrides') || isempty(opts.per_process_enzyme_overrides)
+    opts.per_process_enzyme_overrides = struct();
 end
 end
 
@@ -720,6 +846,102 @@ for i = 1:numel(override_fields)
             process_short_name(mod), wid);
     end
     mod.substrates(idx, :) = double(override_values.(wid));
+end
+end
+
+function [mod, override_snapshot] = apply_process_enzyme_overrides(mod, extraction_opts)
+% apply_process_enzyme_overrides  Apply any requested per-process enzyme
+% (this.enzymes) overrides to the REAL process-local enzyme vector, every
+% tick, right after copyFromState() has re-populated it from the global
+% protein pool -- so a requested knockout (value 0) or restoration holds
+% for the ENTIRE captured window, not just the first tick. Mirrors
+% apply_process_substrate_overrides exactly, but for `this.enzymes`
+% instead of `this.substrates`; NOT restricted to any single process.
+%
+% Returns override_snapshot = [] when nothing was applied (no matching
+% process key, or the opt is empty), or a struct('enzymes', ...,
+% 'boundEnzymes', ...) capturing the GENUINE pre-override values of both
+% vectors when an override was applied. The caller MUST pass this
+% snapshot to restore_process_enzyme_overrides() after
+% evolveState()/calcResourceRequirements_Current() but strictly BEFORE
+% copyToState() -- see the CONTAINMENT note on per_process_enzyme_overrides
+% in default_extraction_opts for why this pairing is mandatory (Process.m's
+% copyToState() unconditionally writes this.enzymes/this.boundEnzymes back
+% into the shared global state).
+if ~isfield(extraction_opts, 'per_process_enzyme_overrides') || isempty(fieldnames(extraction_opts.per_process_enzyme_overrides))
+    override_snapshot = [];
+    return;
+end
+override_values = select_process_enzyme_overrides(extraction_opts.per_process_enzyme_overrides, mod);
+if isempty(override_values)
+    override_snapshot = [];
+    return;
+end
+if ~isprop(mod, 'enzymes') || ~isprop(mod, 'enzymeWholeCellModelIDs')
+    error('extract_per_process_traces_v2:missing_enzyme_override_surface', ...
+        'process %s has no enzymes/enzymeWholeCellModelIDs surface required for per-process enzyme overrides', ...
+        process_short_name(mod));
+end
+
+% Capture the GENUINE pre-override values BEFORE mutating anything, so
+% restore_process_enzyme_overrides can undo this exactly.
+override_snapshot = struct('enzymes', mod.enzymes, 'boundEnzymes', mod.boundEnzymes);
+
+enzyme_wids = matlab_cellstr(mod.enzymeWholeCellModelIDs);
+override_fields = fieldnames(override_values);
+for i = 1:numel(override_fields)
+    wid = override_fields{i};
+    value = override_values.(wid);
+    if ~isnumeric(value) || ~isscalar(value) || ~isfinite(value) || value < 0
+        error('extract_per_process_traces_v2:invalid_enzyme_override_value', ...
+            'per_process_enzyme_overrides.%s must be a finite nonnegative scalar', wid);
+    end
+    idx = find(strcmp(enzyme_wids, wid), 1);
+    if isempty(idx)
+        error('extract_per_process_traces_v2:unknown_override_enzyme', ...
+            'process %s does not expose override enzyme WID ''%s'' on its local enzyme vector', ...
+            process_short_name(mod), wid);
+    end
+    mod.enzymes(idx, :) = double(value);
+end
+end
+
+function mod = restore_process_enzyme_overrides(mod, override_snapshot)
+% restore_process_enzyme_overrides  Undo any per_process_enzyme_overrides
+% mutation applied by apply_process_enzyme_overrides(), restoring
+% `this.enzymes`/`this.boundEnzymes` to their genuine pre-override values.
+% MUST be called after the target's own calcResourceRequirements_Current()/
+% evolveState() and states_before/states_after snapshots, and strictly
+% BEFORE copyToState() -- this is the containment boundary that keeps the
+% override invisible to the shared global metabolite/rna/monomer/complex
+% state (see the CONTAINMENT note in default_extraction_opts). A no-op
+% when override_snapshot is [] (no override was applied to this process
+% this tick).
+if isempty(override_snapshot)
+    return;
+end
+mod.enzymes = override_snapshot.enzymes;
+mod.boundEnzymes = override_snapshot.boundEnzymes;
+end
+
+function override_values = select_process_enzyme_overrides(per_process_overrides, mod)
+% select_process_enzyme_overrides  Same name-normalized process lookup as
+% select_process_substrate_overrides, over per_process_enzyme_overrides.
+override_values = [];
+process_tokens = { ...
+    normalize_name_token(process_short_name(mod)), ...
+    normalize_name_token(mod.wholeCellModelID) ...
+};
+if isprop(mod, 'name')
+    process_tokens{end + 1} = normalize_name_token(mod.name); %#ok<AGROW>
+end
+override_names = fieldnames(per_process_overrides);
+for i = 1:numel(override_names)
+    name = override_names{i};
+    if any(strcmp(process_tokens, normalize_name_token(name)))
+        override_values = per_process_overrides.(name);
+        return;
+    end
 end
 end
 

@@ -215,6 +215,11 @@ CUSTOM_VECTOR_SURFACES: dict[str, dict[str, tuple[str, ...]]] = {
     },
     "HostInteraction": {
         "isBacteriumAdherent": ("cell", "host_attached"),
+        "isTLRActivated_1": ("cell", "host_tlr1_activated"),
+        "isTLRActivated_2": ("cell", "host_tlr2_activated"),
+        "isTLRActivated_3": ("cell", "host_tlr6_activated"),
+        "isNFkBActivated": ("cell", "host_nfkb_activated"),
+        "isInflammatoryResponseActivated": ("cell", "host_inflammatory_response_activated"),
     },
     "RibosomeAssembly": {
         "RNAs": ("rna", "counts"),
@@ -580,10 +585,22 @@ def _overlay_custom_observable(
         return
 
     if process_name == "HostInteraction":
+        # Seed ALL SIX host booleans from their genuine states_before trace
+        # values (not just isBacteriumAdherent) -- CUSTOM_COMPARE_OBSERVABLES
+        # calls this overlay once per observable in the 6-tuple, and each
+        # call must actually write its own field. Under-seeding the other
+        # five (leaving them at the ports_schema False default regardless
+        # of the real trace value) previously produced a correct-looking
+        # aggregate only by accident (this per-tick harness rebuilds state
+        # from scratch every tick, so a False default happened to coincide
+        # with a valid diff baseline); it is honest and correct to seed the
+        # real value here regardless of that coincidence.
+        value = bool(float(vector[0])) if vector.size else False
+        surface_path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
+        if surface_path is not None:
+            _deep_set(state, surface_path, value)
         if observable == "isBacteriumAdherent":
-            attached = bool(float(vector[0])) if vector.size else False
-            _deep_set(state, ("cell", "host_attached"), attached)
-            _deep_set(state, ("cell", "host_adhesion_strength"), 1.0 if attached else 0.0)
+            _deep_set(state, ("cell", "host_adhesion_strength"), 1.0 if value else 0.0)
         return
 
     path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
@@ -634,19 +651,6 @@ def _project_custom_observable(
                 for tu_wid in tu_wids:
                     flattened.append(float(per_tf.get(tu_wid, 0.0)))
             return np.asarray(flattened, dtype=np.float64)
-
-    if process_name == "HostInteraction":
-        if observable == "isBacteriumAdherent":
-            attached = bool(_deep_get(state, ("cell", "host_attached")))
-            return np.asarray([1.0 if attached else 0.0], dtype=np.float64)
-        if observable in {
-            "isTLRActivated_1",
-            "isTLRActivated_2",
-            "isTLRActivated_3",
-            "isNFkBActivated",
-            "isInflammatoryResponseActivated",
-        }:
-            return np.zeros(len(wids), dtype=np.float64)
 
     path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
     if path is None:
@@ -732,21 +736,75 @@ def _chromosome_activity_detail(process_name: str, trace: h5py.File, tick: int) 
     return None
 
 
+# Processes whose real signal is a LEVEL (state-truth) recomputed fresh
+# every tick from current input copy numbers, not a discrete pulse/event
+# that flips within a single tick's own before/after tap. For these,
+# before != after (the generic CUSTOM_ACTIVITY_OBSERVABLES mismatch check
+# below) can structurally never fire even when the process is genuinely,
+# non-trivially active -- HostInteraction's host.isBacteriumAdherent (and
+# the TLR/NF-kB/inflammatory cascade it gates) is TRUE from tick 1 of a
+# genuine seed-0 run onward (Karr's fitted initial condition already
+# carries nonzero copy numbers for every required enzyme -- see
+# tmp/probe_host_interaction_canary.m's empirical canary output), so it
+# never "changes" tick-to-tick in an unperturbed run. "Activity" for these
+# processes means the (real, per-tick, input-dependent) boolean surface is
+# non-degenerately True, never that it flipped from the previous tick.
+LEVEL_TRUTH_ACTIVITY_PROCESSES = frozenset({"HostInteraction"})
+
+
+def _level_truth_activity_detail(
+    process_name: str,
+    trace: h5py.File,
+    tick: int,
+) -> TraceDiffDetail | None:
+    for observable in CUSTOM_ACTIVITY_OBSERVABLES.get(process_name, ()):
+        after = _read_numeric_vector(trace, "states_after", observable, tick)
+        if after is None:
+            continue
+        if bool(np.any(after != 0)):
+            # Report the REAL states_before value for this observable/tick,
+            # not a hardcoded 0.0. For a genuine constant-True level signal
+            # (e.g. HostInteraction's positive-control window, TRUE from
+            # tick 0 onward), the honest detail is before=1.0/after=1.0 --
+            # no transition ever occurred, and fabricating a before=0.0
+            # placeholder would misrepresent a level as an edge. Activity
+            # here is defined by "after is non-degenerately true", not by
+            # before != after (see LEVEL_TRUTH_ACTIVITY_PROCESSES docstring
+            # above), so reading the real before value never changes
+            # whether this tick counts as active -- it only makes the
+            # reported detail truthful.
+            before = _read_numeric_vector(trace, "states_before", observable, tick)
+            before_value = float(before[0]) if before is not None and before.size else 0.0
+            return TraceDiffDetail(
+                observable=observable,
+                detail_path=observable,
+                index=0,
+                before=before_value,
+                after=1.0,
+            )
+    return None
+
+
 def _trace_activity_detail(process_name: str, ctx: Any, tick: int) -> TraceDiffDetail | None:
     trace = ctx.trace
     chrom_detail = _chromosome_activity_detail(process_name, trace, tick)
     if chrom_detail is not None:
         return chrom_detail
 
-    custom_order = CUSTOM_ACTIVITY_OBSERVABLES.get(process_name, ())
-    for observable in custom_order:
-        before = _read_numeric_vector(trace, "states_before", observable, tick)
-        after = _read_numeric_vector(trace, "states_after", observable, tick)
-        if before is None or after is None:
-            continue
-        detail = _first_vector_mismatch(observable, before, after)
+    if process_name in LEVEL_TRUTH_ACTIVITY_PROCESSES:
+        detail = _level_truth_activity_detail(process_name, trace, tick)
         if detail is not None:
             return detail
+    else:
+        custom_order = CUSTOM_ACTIVITY_OBSERVABLES.get(process_name, ())
+        for observable in custom_order:
+            before = _read_numeric_vector(trace, "states_before", observable, tick)
+            after = _read_numeric_vector(trace, "states_after", observable, tick)
+            if before is None or after is None:
+                continue
+            detail = _first_vector_mismatch(observable, before, after)
+            if detail is not None:
+                return detail
 
     for observable in _default_activity_observables(process_name):
         before = _project_trace_vector(ctx, "states_before", observable, tick)
@@ -761,6 +819,8 @@ def _scan_activity_without_context(process_name: str, trace: h5py.File, tick: in
     chrom_detail = _chromosome_activity_detail(process_name, trace, tick)
     if chrom_detail is not None:
         return chrom_detail
+    if process_name in LEVEL_TRUTH_ACTIVITY_PROCESSES:
+        return _level_truth_activity_detail(process_name, trace, tick)
     for observable in CUSTOM_ACTIVITY_OBSERVABLES.get(process_name, ()):
         before = _read_numeric_vector(trace, "states_before", observable, tick)
         after = _read_numeric_vector(trace, "states_after", observable, tick)
@@ -1241,6 +1301,35 @@ def _honest_replay(
                 oc_active_this_tick = _chromosome_tokens_active(
                     process_name, before_chromosome_store, after_chromosome_store
                 ) or _recursive_update_nontrivial(non_chromosome_update)
+            elif process_name in LEVEL_TRUTH_ACTIVITY_PROCESSES:
+                # A level-truth process recomputes its real signal fresh
+                # every tick from CURRENT input state and only emits a delta
+                # for fields that changed from the (now correctly seeded --
+                # see _overlay_custom_observable) incoming value. Once the
+                # incoming state is honestly seeded to match ground truth,
+                # a genuinely-active-but-unchanging level signal produces an
+                # EMPTY update dict on every tick after the first (nothing
+                # changed, because it was already true) -- so
+                # `_recursive_update_nontrivial(update)` structurally
+                # under-reports activity for this process family, exactly
+                # as it structurally under-reports the Karr-side ground
+                # truth (see LEVEL_TRUTH_ACTIVITY_PROCESSES docstring
+                # above). The correct OC-side activity signal mirrors the
+                # Karr-side one: project the CURRENT (post-update, i.e.
+                # post-next_update) value of each declared custom-vector
+                # surface directly from state and check non-degenerate
+                # truth, not whether anything changed this tick.
+                oc_active_this_tick = False
+                for observable in CUSTOM_COMPARE_OBSERVABLES.get(process_name, ()):
+                    projected = _project_custom_observable(
+                        state=state,
+                        observable=observable,
+                        process_name=process_name,
+                        wids=wids_by_surface[observable],
+                    )
+                    if bool(np.any(projected != 0)):
+                        oc_active_this_tick = True
+                        break
             else:
                 oc_active_this_tick = _recursive_update_nontrivial(update)
 
@@ -1538,6 +1627,51 @@ def _verify_manifest_ledger_binding(row: dict[str, Any], source_path: Path) -> s
     return None
 
 
+def _run_pytest_nodeid(nodeid: str) -> dict[str, Any]:
+    """Run one pytest nodeid and require at least one unambiguous pass."""
+    completed = subprocess.run(
+        [sys.executable, "-m", "pytest", "-q", nodeid],
+        cwd=_REPO_ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    stdout_tail = "\n".join(line for line in completed.stdout.strip().splitlines()[-20:] if line)
+    stderr_tail = "\n".join(line for line in completed.stderr.strip().splitlines()[-20:] if line)
+    summary_counts = _parse_pytest_summary_counts(completed.stdout)
+    passed_count = summary_counts.get("passed", 0)
+    non_passing_counts = {
+        key: count
+        for key, count in summary_counts.items()
+        if key != "passed" and count > 0
+    }
+    passed = completed.returncode == 0 and passed_count >= 1 and not non_passing_counts
+    error: str | None = None
+    if not passed:
+        if completed.returncode == 0 and passed_count == 0:
+            error = (
+                f"pytest nodeid {nodeid} exited 0 but recorded no PASSED outcome "
+                f"(summary counts={summary_counts!r}) -- SKIPPED, XFAILED, or DESELECTED "
+                "evidence must not be accepted as re-verified"
+            )
+        elif completed.returncode == 0 and non_passing_counts:
+            error = (
+                f"pytest nodeid {nodeid} recorded both passing and non-passing outcomes "
+                f"(summary counts={summary_counts!r}) -- treating it as unverified"
+            )
+    return {
+        "passed": passed,
+        "nodeid": nodeid,
+        "returncode": completed.returncode,
+        "skipped_count": summary_counts.get("skipped", 0),
+        "summary_counts": summary_counts,
+        "stdout_tail": stdout_tail,
+        "stderr_tail": stderr_tail,
+        "command": f"{sys.executable} -m pytest -q {nodeid}",
+        "error": error,
+    }
+
+
 def _rerun_manifest_replay_nodeid(row: dict[str, Any]) -> dict[str, Any]:
     replay_evidence = row.get("replay_evidence")
     if not isinstance(replay_evidence, dict):
@@ -1559,53 +1693,175 @@ def _rerun_manifest_replay_nodeid(row: dict[str, Any]) -> dict[str, Any]:
             "stderr_tail": "",
             "error": "manifest row replay_evidence.nodeid must be a non-empty string",
         }
+    return _run_pytest_nodeid(nodeid)
 
-    completed = subprocess.run(
-        [sys.executable, "-m", "pytest", "-q", nodeid],
-        cwd=_REPO_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
-    stdout_tail = "\n".join(line for line in completed.stdout.strip().splitlines()[-20:] if line)
-    stderr_tail = "\n".join(line for line in completed.stderr.strip().splitlines()[-20:] if line)
+# Reverse of CUSTOM_VECTOR_SURFACES[<process>]: maps the OC store field name
+# (e.g. "host_attached") back to the trace observable name (e.g.
+# "isBacteriumAdherent") used to read a genuine states_after value. Built
+# generically so any future process using the same discriminating_conditions
+# evidence shape (not just HostInteraction) is covered without new code.
+def _oc_field_to_observable(process_name: str) -> dict[str, str]:
+    surfaces = CUSTOM_VECTOR_SURFACES.get(process_name, {})
+    out: dict[str, str] = {}
+    for observable, path in surfaces.items():
+        if len(path) == 2 and path[0] == "cell":
+            out[path[1]] = observable
+    return out
 
-    # Nested-audit skip detection: pytest exits 0 both when every collected
-    # test genuinely PASSED and when every collected test was SKIPPED (or
-    # deselected/xfailed) with zero failures -- `returncode == 0` alone
-    # cannot distinguish "this evidence was re-verified" from "this
-    # evidence was silently not run at all" (e.g. a companion data/ledger
-    # sidecar the nodeid depends on went missing between promotion and
-    # this re-verification). Parse the actual outcome counts and require
-    # at least one genuine `passed` with no other outcome present.
-    summary_counts = _parse_pytest_summary_counts(completed.stdout)
-    passed_count = summary_counts.get("passed", 0)
-    non_passing_counts = {k: v for k, v in summary_counts.items() if k != "passed" and v > 0}
-    passed = completed.returncode == 0 and passed_count >= 1 and not non_passing_counts
-    error: str | None = None
-    if not passed:
-        if completed.returncode == 0 and passed_count == 0:
-            error = (
-                f"pytest nodeid {nodeid} exited 0 but recorded no PASSED outcome "
-                f"(summary counts={summary_counts!r}) -- a skipped/xfailed/deselected nested "
-                "test must never be accepted as re-verifying this row's evidence"
-            )
-        elif completed.returncode == 0 and passed_count >= 1 and non_passing_counts:
-            error = (
-                f"pytest nodeid {nodeid} recorded both a PASSED outcome and a non-passing "
-                f"outcome in the same run (summary counts={summary_counts!r}) -- treating as "
-                "unverified rather than trusting a partial/ambiguous result"
-            )
-    return {
-        "passed": passed,
-        "nodeid": nodeid,
-        "returncode": completed.returncode,
-        "summary_counts": summary_counts,
-        "stdout_tail": stdout_tail,
-        "stderr_tail": stderr_tail,
-        "command": f"{sys.executable} -m pytest -q {nodeid}",
-        "error": error,
+
+def verify_discriminating_conditions(
+    row: dict[str, Any],
+    manifest_path: Path,
+    process_name: str,
+) -> dict[str, Any]:
+    """Independently re-verify a manifest row's `discriminating_conditions`
+    evidence block (see docs/phase_f/l2_1/HOSTINTERACTION_CONDITION_PREREGISTRATION.md
+    for what this evidence proves and why the positive-control-only window
+    was rejected as degenerate). For EVERY condition entry, this:
+
+      1. Locates the condition's source trace (repo-relative path,
+         resolved against _REPO_ROOT so this works identically from any
+         worktree/checkout -- see the "main-relative manifest paths" note
+         on the top-level `source` object).
+      2. Verifies the recorded sha256 against the actual file bytes.
+      3. Re-reads the genuine states_after host-boolean values directly
+         from the trace (tick 0) and compares them field-by-field against
+         the manifest's recorded `predicted_and_actual` dict -- catching a
+         hand-typed manifest value that silently drifted from the real
+         trace data.
+      4. Re-runs EVERY nodeid in `discriminating_conditions.replay_evidence.
+         nodeids` (not just one) via `_run_pytest_nodeid`, which treats a
+         SKIPPED outcome as a failure.
+
+    Returns a dict with an overall "passed" bool and a per-condition
+    breakdown, fail-closed: any missing field, missing file, sha mismatch,
+    value mismatch, or skipped/failed nodeid makes the whole result fail.
+    """
+    result: dict[str, Any] = {
+        "passed": False,
+        "conditions": [],
+        "nodeid_results": [],
+        "failure_reason": None,
     }
+    block = row.get("discriminating_conditions")
+    if not isinstance(block, dict):
+        result["failure_reason"] = "manifest row missing discriminating_conditions object"
+        return result
+
+    conditions = block.get("conditions")
+    if not isinstance(conditions, list) or not conditions:
+        result["failure_reason"] = "discriminating_conditions.conditions must be a non-empty list"
+        return result
+
+    field_to_observable = _oc_field_to_observable(process_name)
+    if not field_to_observable:
+        result["failure_reason"] = f"no CUSTOM_VECTOR_SURFACES cell-field mapping registered for {process_name}"
+        return result
+
+    all_conditions_ok = True
+    for condition in conditions:
+        condition_id = condition.get("id") if isinstance(condition, dict) else None
+        entry: dict[str, Any] = {"id": condition_id, "ok": False, "failure_reason": None}
+        source = condition.get("source") if isinstance(condition, dict) else None
+        predicted_and_actual = condition.get("predicted_and_actual") if isinstance(condition, dict) else None
+        if not isinstance(source, dict) or not isinstance(predicted_and_actual, dict) or not condition_id:
+            entry["failure_reason"] = "condition entry missing id/source/predicted_and_actual"
+            result["conditions"].append(entry)
+            all_conditions_ok = False
+            continue
+
+        raw_path = source.get("path")
+        recorded_sha256 = source.get("sha256")
+        if not raw_path or not recorded_sha256:
+            entry["failure_reason"] = "condition source must have non-empty path and sha256"
+            result["conditions"].append(entry)
+            all_conditions_ok = False
+            continue
+
+        source_path = Path(raw_path)
+        if not source_path.is_absolute():
+            source_path = (_REPO_ROOT / source_path).resolve()
+        entry["source_path"] = source_path.as_posix()
+        if not source_path.exists():
+            entry["failure_reason"] = f"condition source trace missing: {source_path.as_posix()}"
+            result["conditions"].append(entry)
+            all_conditions_ok = False
+            continue
+
+        actual_sha256 = _sha256(source_path)
+        entry["source_actual_sha256"] = actual_sha256
+        if actual_sha256 != recorded_sha256:
+            entry["failure_reason"] = (
+                f"condition source sha256 mismatch: recorded={recorded_sha256} actual={actual_sha256}"
+            )
+            result["conditions"].append(entry)
+            all_conditions_ok = False
+            continue
+
+        try:
+            with h5py.File(source_path, "r") as trace:
+                actual_values: dict[str, bool] = {}
+                for field, observable in field_to_observable.items():
+                    vec = _read_numeric_vector(trace, "states_after", observable, 0)
+                    if vec is None or vec.size == 0:
+                        entry["failure_reason"] = f"trace missing states_after/{observable} at tick 0"
+                        break
+                    actual_values[field] = bool(float(vec[0]))
+                else:
+                    mismatches = {
+                        field: {"recorded": predicted_and_actual.get(field), "actual": actual_values.get(field)}
+                        for field in field_to_observable
+                        if bool(predicted_and_actual.get(field)) != actual_values.get(field)
+                    }
+                    if mismatches:
+                        entry["failure_reason"] = f"predicted_and_actual mismatch vs genuine trace: {mismatches}"
+                    else:
+                        entry["ok"] = True
+        except OSError as exc:
+            entry["failure_reason"] = f"failed to read trace: {exc}"
+
+        result["conditions"].append(entry)
+        if not entry["ok"]:
+            all_conditions_ok = False
+
+    replay_evidence = block.get("replay_evidence")
+    nodeids = replay_evidence.get("nodeids") if isinstance(replay_evidence, dict) else None
+    if not isinstance(nodeids, list) or not nodeids:
+        result["failure_reason"] = (
+            result["failure_reason"] or "discriminating_conditions.replay_evidence.nodeids must be a non-empty list"
+        )
+        return result
+
+    if not all_conditions_ok:
+        # Already know the overall result is a fail -- skip the (relatively
+        # expensive, one pytest subprocess per nodeid) reruns below. This
+        # keeps tamper/missing-condition detection cheap and fast; the
+        # nodeid reruns only run when the cheap per-condition checks above
+        # already passed.
+        result["passed"] = False
+        failing_conditions = [c["id"] for c in result["conditions"] if not c["ok"]]
+        result["failure_reason"] = (
+            f"discriminating_conditions verification failed before nodeid reruns: "
+            f"failing_conditions={failing_conditions}"
+        )
+        return result
+
+    all_nodeids_ok = True
+    for nodeid in nodeids:
+        nodeid_result = _run_pytest_nodeid(nodeid)
+        result["nodeid_results"].append(nodeid_result)
+        if not nodeid_result["passed"]:
+            all_nodeids_ok = False
+
+    result["passed"] = all_conditions_ok and all_nodeids_ok
+    if not result["passed"] and result["failure_reason"] is None:
+        failing_conditions = [c["id"] for c in result["conditions"] if not c["ok"]]
+        failing_nodeids = [r["nodeid"] for r in result["nodeid_results"] if not r["passed"]]
+        result["failure_reason"] = (
+            f"discriminating_conditions verification failed: "
+            f"failing_conditions={failing_conditions} failing_nodeids={failing_nodeids}"
+        )
+    return result
 
 
 def verify_active_window_manifest_row(
@@ -1632,6 +1888,7 @@ def verify_active_window_manifest_row(
         "honest_replay": None,
         "replay_verification": None,
         "dnadamage_source_binding": None,
+        "discriminating_conditions_verification": None,
     }
     if not manifest_path.exists():
         result["failure_reason"] = f"manifest file not found: {manifest_path.as_posix()}"
@@ -1745,6 +2002,15 @@ def verify_active_window_manifest_row(
                     f"recorded={recorded_classification} fresh={result['fresh_classification']}"
                 )
             return result
+
+        if isinstance(row.get("discriminating_conditions"), dict):
+            discriminating_verification = verify_discriminating_conditions(row, manifest_path, process_name)
+            result["discriminating_conditions_verification"] = discriminating_verification
+            if not discriminating_verification["passed"]:
+                result["fresh_classification"] = CLASS_CODE_GAP
+                result["failure_reason"] = discriminating_verification["failure_reason"]
+                return result
+
         result["verified"] = True
         result["verification_status"] = MANIFEST_VERIFY_EXISTING_WINDOW_PASS
         return result

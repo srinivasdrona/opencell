@@ -25,11 +25,11 @@ function probe_cytokinesis_randstream_state(seed, tick_start, local_from, local_
 % target process's own evolveState() call, plus a chromosome.segregated
 % read at the same two points. The duplicated block's provenance (SHA256
 % of scripts/matlab/extract_per_process_traces_v2.m at duplication time:
-% 045cbdcf0639f835759aaa0cafc1dd343f96e8c37c9e65e7d4a91366667a537c --
-% re-synced during the 2026-09-08 main integration after the authoritative
-% extractor combined process-local randStreamState capture with the shared
-% chromosome rand-stream capture required by DNADamage; the duplicated
-% scheduler/allocation loop and process tap points were manually re-diffed)
+% 5f0f3654dc279ab78e938b5332bfb78bd60ff25e5647924acbe5a08f59644444 --
+% re-synced during the 2026-09-08 HostInteraction integration after the
+% authoritative extractor combined process-local and shared-chromosome RNG
+% capture with contained enzyme overrides. This probe rejects overrides, so
+% its no-override scheduler path and process tap points remain equivalent)
 % is recorded in the
 % output JSON's metadata so future drift between the two copies is
 % mechanically detectable (re-hash and compare).
@@ -91,7 +91,7 @@ capture_from_abs = tick_start + local_from;
 capture_to_abs = tick_start + local_to;
 run_to_abs = capture_to_abs + 1; % one extra tick of margin beyond the requested window
 
-this_file_hash_note = '045cbdcf0639f835759aaa0cafc1dd343f96e8c37c9e65e7d4a91366667a537c';
+this_file_hash_note = '5f0f3654dc279ab78e938b5332bfb78bd60ff25e5647924acbe5a08f59644444';
 
 fprintf('[probe] bootstrapping Karr simulation (seed=%d)\n', seed);
 [sim, mnrnd_provider, ~] = karr_bootstrap();

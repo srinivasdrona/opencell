@@ -62,14 +62,15 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-08, post-compaction recovery) — supersedes all
 earlier blocks below:**
 
-- Local `main` is at `d204321`, **12 commits ahead** of `origin/main`
-  (`752b252`). DNADamage's Opus-accepted clean integration is merged.
+- Local `main` is published at `023f19f`. DNADamage and Cytokinesis L2.1
+  are merged; the committed Cytokinesis post-merge gate passed 184 tests,
+  L1b 28/28, oracle-dependency 38/38, and L2.2 remains 19/1/2 integrity
+  OK. DNADamage's canonical seed-2000 trace and chromosome-ledger sidecar
+  are present
   Its canonical seed-2000 trace and chromosome-ledger sidecar are present
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
-  data-dependent skips, active rubric 14/14, L1b 19/19, and L2.2
-  **19 PASS / 1 FAIL / 2 MISSING_EVIDENCE**, integrity OK. Remove the two
-  merge-introduced EOF blank lines, commit the handoff/cleanup, then push.
+  data-dependent skips and active rubric 14/14.
 - L2.1 review/integration queue:
   - ReplicationInitiation branch `agent/l21-repinit-20260817` at `8ee75f0`
     was **REJECTED** by Opus despite a genuine ledger-restored 200-tick
@@ -89,24 +90,32 @@ earlier blocks below:**
     enzyme overrides are contained across `copyToState`, the stale oracle
     allowlist entry is removed, and every discriminating-condition hash,
     value, and nodeid is verified fail-closed. All six gitignored traces
-    are copied into `main-integrate`. Integrate after the Cytokinesis merge,
-    preserving DNADamage/Cytokinesis shared-file hunks and recomputing the
-    manifest counts/replay command from rows.
+    are copied into `main-integrate`. Its merge is staged on current main:
+    DNADamage/Cytokinesis shared-file hunks are preserved, the robust
+    skip-detecting pytest runner is shared by replay and condition
+    verification, and the manifest is 10 EWP / 1 CODE_GAP / 0 MISSING.
+    A new invariant test binds top-level counts/replay command to the rows.
+    Final regression is green: 148 passed/6 expected data-absence skips,
+    L1b 28/28, oracle-dependency 38/38, and L2.2 19/1/2 integrity OK.
+    Log the Opus acceptance, commit, and push.
   - Cytokinesis clean integration branch `integrate/l21-cytokinesis-clean`
     at `27237c9` is **ACCEPTED** by final Opus review. Its merge into main is
-    staged: the four shared-file conflicts were resolved by union,
+    published: the four shared-file conflicts were resolved by union,
     preserving DNADamage's ledger/skip-detection paths; provenance was
     deduplicated by `event_id`. The promoter was strengthened to reject
     sibling-worktree trace paths and rerun successfully with a repo-relative
-    M5000 source. The merged manifest is now 9 EWP / 1 CODE_GAP / 1 MISSING.
+    M5000 source. Its manifest promotion produced 9 EWP / 1 CODE_GAP /
+    1 MISSING.
     Merge-time cleanup also removed DNADamage's now-stale oracle allowlist
-    entry and refreshed its shifted L1b source anchors. Commit, rerun the
-    full post-merge gate from committed HEAD, then push.
+    entry and refreshed its shifted L1b source anchors.
   - TranscriptionalRegulation branch
-    `agent/l21-txreg-active-fix-20260903` has committed blocker fixes at
-    `2b431cc`, but additional verifier/code/test changes are still
-    uncommitted and its active-rubric run is live. Wait for the agent to
-    finish and return a clean review candidate.
+    `agent/l21-txreg-active-fix-20260903` at `81d5691` reports all second
+    Opus-round blockers closed: 4000/4000 exact replay, complete
+    accessibility semantics, portable trace+ledger copies in both main
+    checkouts, corrected `dec-006`, and a rewritten non-circular L2.2 PIT
+    preregistration with a powered shuffled-weight positive control.
+    Await independent Opus re-review before any integration or N=10
+    extraction.
 - L2.2:
   - DNASupercoiling branch `agent/l22-dnas-20260812` at `8951cca`
     was **REJECTED** by Opus after the 0/20,000-breach rerun. The new
@@ -184,6 +193,162 @@ supersedes the 23:05 IST block below:**
 **Current status (2026-09-04 23:05 IST) — superseded by the block above;
 kept for the still-open Cytokinesis/FtsZ dual-extraction and other-process
 context it carries:**
+
+**Historical Host candidate status (pre-final review; superseded by the
+current block above):**
+
+- Same worktree/branch
+  (`E:\opencell-worktrees\fix-l21-host-active`,
+  `agent/l21-host-active-fix-20260904`). **Still not pushed/merged.**
+- Opus rejected the discriminating-conditions round on 4 further
+  blockers, all now closed (full writeup:
+  `docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md` section
+  12; `STATUS_L21_HOSTINTERACTION_FIX.md` "Containment + verifier-depth
+  round"):
+  1. **Real bug found and fixed**: `Process.m`'s `copyToState()`
+     unconditionally writes `this.enzymes`/`this.boundEnzymes` back into
+     the SHARED global state -- the enzyme-override machinery added last
+     round would have corrupted the global monomer/complex pool for
+     every other process once an override was active. Fixed via a
+     capture/restore pair (`apply_process_enzyme_overrides` /
+     `restore_process_enzyme_overrides`) bracketing every
+     `copyToState()` call site, PLUS a runtime containment assertion
+     that fails loud on any leak. All 6 traces regenerated from scratch
+     via `run_matlab_slot.ps1`; zero containment errors (genuine runtime
+     proof).
+  2. Removed `karr_host_interaction.py` from the L2 oracle-dependency
+     legacy allowlist (stale entry describing the OLD fabricated model;
+     current literal port has zero oracle dependency).
+  3. Extended the manifest verifier
+     (`verify_discriminating_conditions` in
+     `scripts/l21_active_window_audit.py`) to independently re-validate
+     every condition's sha256+values and re-run ALL 3 nodeids, and fixed
+     a real "skip silently counts as re-verified" gap (pytest returncode
+     0 for both pass and skip). 12 new tamper/missing/skip tests.
+     **Side effect (found, NOT fixed, out of scope, routed onward)**:
+     this uniformly-applied fix also exposes that `ChromosomeSegregation`'s
+     manifest row has the identical latent defect (cross-worktree
+     absolute path + skip-masked-as-pass) -- verified via `git stash`
+     that this is pre-existing, not introduced by this session. Needs
+     routing to the `fix-l21-chromseg-active` worktree/track.
+  4. Manifest paths made main-relative; all 6 traces copied
+     (sha256-verified) into
+     `E:\opencell-worktrees\main-integrate\data\m1_sources\karr_native\...`
+     so the orchestrator's integration worktree carries this evidence
+     locally.
+- HostInteraction-focused verification all green (see STATUS for full
+  list); `test_current_tree_active_window_manifest_checkpoint
+  [HostInteraction]` PASSED; `[ChromosomeSegregation]` now correctly
+  FAILS in a full-suite run (pre-existing, out of scope, routed above --
+  do not "fix" this by reverting the skip-detection logic, it is correct).
+- **Not yet re-reviewed by Opus** -- returning for re-review next.
+
+**Current status (2026-09-08 ~00:45 IST) — supersedes the 2026-09-04
+~23:50 IST block below (HostInteraction discriminating-conditions
+closure, resolves Opus review blockers):**
+
+- Same worktree/branch as below
+  (`E:\opencell-worktrees\fix-l21-host-active`,
+  `agent/l21-host-active-fix-20260904`). **Still not pushed/merged.**
+- Opus review (2026-09-05) correctly rejected the 2026-09-04 closure as
+  degenerate: the positive-control trace alone (all 6 host booleans
+  constant-True) cannot distinguish this literal port from a hardcoded
+  constant-True stub. Preregistered 5 genuine, source-legal, INPUT-SIDE
+  enzyme-knockout conditions BEFORE extracting them
+  (`docs/phase_f/l2_1/HOSTINTERACTION_CONDITION_PREREGISTRATION.md`),
+  extracted them via a new `extraction_opts.per_process_enzyme_overrides`
+  surface on `extract_per_process_traces_v2.m`, and closed the loop: all 5
+  matched their predictions bit-exact, the literal OC port reproduces all
+  5 bit-exact on all 6 booleans, and a constant-True stub fails every one
+  of them on >=1 field (`tests/vivarium/test_karr_host_interaction_discriminating_conditions.py`,
+  15 new tests). Full after-the-fact writeup:
+  `docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md` section 11.
+- Found and fixed 2 real bugs in `scripts/l21_active_window_audit.py`
+  while wiring these conditions in: (1) only 1 of 6 host booleans was
+  seeded from genuine trace values before replay (the other 5 silently
+  defaulted to `False`); (2) the level-truth activity detail hardcoded
+  `before=0.0` regardless of the real trace value, fabricating a false
+  "just turned on" narrative for a signal that is genuinely constant-True
+  the whole window. Fixing (1) exposed a 3rd, adjacent bug: the OC-side
+  "was the update dict non-empty" activity heuristic collapsed to 0 once
+  booleans were correctly seeded (a correctly-seeded, genuinely-active
+  level signal emits no delta), so added a symmetric OC-side
+  `LEVEL_TRUTH_ACTIVITY_PROCESSES` projection check. Net effect on the
+  manifest verdict: unchanged (`EXISTING_WINDOW_PASS`,
+  `honest_replay.oc_active_on_karr_active_ticks=100/100`), now computed
+  and reported honestly instead of by accidental coincidence.
+- Verified (not a bug, documentation-only fix) the free-enzyme-vs-
+  protein-counts topology question: Karr's `this.enzymes` for this
+  zero-request process is never partitioned by the allocator, so it
+  already reflects the raw unpartitioned global copy number — matching
+  OC's `protein.counts` shared-pool convention used identically by 45+
+  other process bindings in `karr_composite.py`. Documented explicitly in
+  `data/schemas/per_process_wiring/HostInteraction.yaml`'s
+  `known_deviations`.
+- `L21_ACTIVE_WINDOWS_MANIFEST.json`'s HostInteraction row now carries a
+  `discriminating_conditions` block (5 conditions, sha256-bound genuine
+  sources, 3 pytest nodeids) plus the corrected honest
+  `trace_window.first_active_detail` (`before=1.0`, was fabricated `0.0`).
+- Moved the 2 MATLAB drivers from `tmp/` to `scripts/matlab/` (tracked,
+  reproducible) and deleted superseded one-off `tmp/` inspection scripts.
+- Full verification green: `l21_active_window_audit.py --process
+  HostInteraction` unchanged verdict; 58 passed/1 skipped across all
+  HostInteraction-related pytest suites; the full 11-process manifest
+  checkpoint test (11 passed) confirms no regression to any other
+  process's row; `l1b_verify_wiring.py --process HostInteraction` PASS;
+  ruff clean. Full STATUS: `STATUS_L21_HOSTINTERACTION_FIX.md`
+  ("Discriminating-conditions round" section).
+- **Not yet re-reviewed by Opus** — this closes the specific blockers
+  from the 2026-09-05 review; returning for re-review next.
+
+**Current status (2026-09-04 ~23:50 IST) — supersedes the 23:05 IST block
+below (HostInteraction L2.1 closure):**
+
+- Worked in worktree `E:\opencell-worktrees\fix-l21-host-active`, branch
+  `agent/l21-host-active-fix-20260904`, off local main `5cbf4b2`. **Not
+  pushed/merged** — orchestrator merges after review.
+- HostInteraction was the sole `MISSING_ACTIVE_EXTRACTION` L2.1 row. Root
+  cause of the prior 50,000-tick seed-0 false→true anchor-search failure:
+  `host.isBacteriumAdherent` (and everything it gates: TLR1/2/6, NF-kB,
+  inflammatory response) is **not a discrete event** in the unperturbed
+  model — a genuine full-Simulation seed-0 canary
+  (`tmp/probe_host_interaction_canary.m`) proved all 4 Host booleans are
+  TRUE from tick 1 onward, because Karr's fitted initial condition already
+  carries nonzero copy numbers (11-33) for every one of the 13 enzyme WIDs
+  `HostInteraction.m` reads. A false→true SEARCH can never terminate for a
+  signal already true before the search starts — the 50k-tick failure was
+  the honest, correct negative result for that (wrong) search strategy.
+- Extracted a genuine FIXED window (not anchor) via a new opt-in
+  `anchor_opts.capture_signal_container` flag on
+  `scripts/matlab/extract_per_process_traces_v2.m`
+  (`data/m1_sources/karr_native/per_process_traces_v2_event_s000/HostInteraction_100ticks.mat`,
+  sha256 `5eaa308f...`, gitignored, reproducible via
+  `tmp/l21_host_interaction_fixed_active_window.m`).
+- **Replaced the OC process entirely**: the prior `opencell/vivarium/
+  karr_host_interaction.py` ("Karr-light v1") was a fabricated continuous
+  adhesion-fraction + stochastic Poisson bind/unbind model that never
+  modeled TLR/NF-kB/inflammatory response at all (`CODE_DEVIATES` per
+  `docs/phase_f/audits/HostInteraction_semantic_audit.md` HI-S4-01/02/S5-02).
+  New version is a literal port of `HostInteraction.m`'s boolean cascade
+  (all()/any() nonzero-count semantics over the same 5 fixture index
+  sets), zero RNG (matches `PROCESS_CATALOG.yaml` bucket=DETERMINISTIC,
+  unchanged/correct).
+- `l21_active_window_audit.py --process HostInteraction` →
+  `EXISTING_WINDOW_PASS`, bit-identical across all 100 ticks / 9 compared
+  surfaces (incl. all 6 host booleans). Manifest row promoted; independent
+  `verify_active_window_manifest_row` re-check →
+  `VERIFIED_EXISTING_WINDOW_PASS`. L1b: `HostInteraction` row updated
+  (line anchors + notes) and now PASSes; full L1b suite 27/28 (only
+  pre-existing, unrelated `DNADamage` fails). Ruff clean.
+- Full decision record: `docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md`.
+- Live processes: none running; MATLAB slot released after each job.
+  `data/m1_sources/WholeCell` in this worktree is a **junction** (not a
+  symlink — junctions don't need admin rights) to `E:\opencell-mirrors\WholeCell`,
+  created fresh for this worktree (worktrees don't inherit the main
+  checkout's WholeCell symlink).
+
+**Current status (2026-09-04 23:05 IST) — supersedes earlier Sept-4 blocks
+below:**
 
 - Main is clean at local `d37eeb3`, two commits ahead of `origin/main`
   (`2a8846f`). The Opus-accepted M=5000/source-bound Cytokinesis contract is
@@ -336,7 +501,10 @@ context it carries:**
     full before-state seeding, classify activity from projected true levels,
     add a source-legal negative/knockout condition so cascade gates are
     discriminated, copy the gitignored trace to main, and move two
-    load-bearing MATLAB drivers out of `tmp/` before re-review.
+    load-bearing MATLAB drivers out of `tmp/` before     re-review. Corrective commits `33ff755`/`bcc179b` now report a literal
+    `joinSplitRegions` origin-wrap port, a live-MATLAB discriminating probe,
+    a true boundary-footprint inversion, and both 0/20,000 over-consumption
+    and 0/20,000 under-consumption on the rerun. Await second Opus review.
 
 **Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
 snapshot below:**

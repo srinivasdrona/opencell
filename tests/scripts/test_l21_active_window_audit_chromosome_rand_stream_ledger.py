@@ -112,7 +112,7 @@ def test_valid_ledger_seed2000_achieves_bit_identity_and_existing_window_pass() 
     candidate = active_windows._summarize_trace_candidate(
         "DNADamage", _CANONICAL_TRACE, known_sha=None, source_manifest=None
     )
-    _, _, classification = active_windows._classify_live_trace_candidate("DNADamage", candidate)
+    _, _, classification, _ = active_windows._classify_live_trace_candidate("DNADamage", candidate)
     assert classification == active_windows.CLASS_EXISTING_WINDOW_PASS
 
 
