@@ -143,18 +143,26 @@ earlier blocks below:**
     discriminating cross-check and a true `_binding_blocked_regions`
     inversion for the unsplit-boundary fix, then rerun N=200 once before
     another Opus review.
-  - Cytokinesis/FtsZ dual extraction has exactly three live MATLAB
-    sessions. Worker A completed seeds 0-1 and is running seed 2. Worker C
-    completed seeds 34-36 and is running seed 37. Worker B completed seed
-    17, then failed closed on seed 18 because no division-completion signal
-    occurred by the existing `max_search_ticks=50000`; no seed-18 files
-    were emitted. Do not skip/resample seed 18, because that would condition
-    the cohort on successful division. A pre-overlay seed-18 trace completed
-    at tick 28454, but is not comparable under dec-005 source binding. The
-    freed third slot now runs one non-counting seed-18 diagnostic at a
-    100,000-tick horizon (`dual-b-seed18-100k`, MATLAB PID 26424/22664);
-    only after that result decide whether the gate needs a larger common
-    search horizon or an explicit right-censoring/completion-rate design.
+  - Cytokinesis/FtsZ dual extraction: completed patched-source pairs are
+    seeds 0-5, 17, and 34-45; worker C is running seed 46. Seeds 6 and 18
+    failed closed with no completion by 50,000 ticks; seed 18 also failed a
+    non-counting 100,000-tick diagnostic, proving genuine right-censoring
+    under the patched source (its pre-overlay completion at tick 28454 is
+    not comparable under dec-005). Seed 6 is now running the matching
+    100,000-tick diagnostic (`dual-a-seed6-100k`). Do not skip/resample
+    censored seeds or resume uncontrolled ranges.
+  - Candidate cohort correction, to preregister and independently review
+    before relaunch: `N=50` means the first 50 **completed event windows**
+    from a deterministic ascending attempted-seed stream starting at seed 0.
+    Every seed is attempted exactly once at a common
+    `max_search_ticks=100000`; each attempt atomically records either a
+    paired completed window or a source-bound RIGHT_CENSORED record. Censored
+    attempts never count toward N and are never omitted; candidate seeds
+    extend beyond 49 until 50 completions exist. This preserves a
+    process-local division-conditioned gate without outcome cherry-picking
+    and separately exposes patched-model completion/censoring incidence.
+    Existing completed traces with completion <50,000 remain valid under
+    the larger horizon; only a censor claim requires the full 100,000 ticks.
     Keep the host-wide cap at three.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
