@@ -59,10 +59,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-08, post-compaction recovery) — supersedes all
+**Current status (2026-09-09 00:22 IST) — supersedes all
 earlier blocks below:**
 
-- Local `main` is clean and published at `831b9b2`. DNADamage,
+- Local `main` is clean and published at `35710f7`. DNADamage,
   Cytokinesis, and HostInteraction L2.1 are merged. The authoritative L2.1
   manifest is **10 EWP / 1 CODE_GAP / 0 MISSING**. Host's final integrated
   regression passed 148 tests/6 expected data-absence skips; Cytokinesis's
@@ -72,6 +72,17 @@ earlier blocks below:**
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
   data-dependent skips and active rubric 14/14.
+- Agent-runtime recovery: only `division-censor-contract`
+  (`0678eca0-b5d5-42ee-8e30-3e62ac4c1126`) remains live. The runtime
+  auto-cleared the DNAS Opus reviewer and the TxReg/RepInit implementers
+  before they returned final messages; this was not a deliberate stop.
+  Their filesystem work survived:
+  - DNAS is committed at `4556d27`; relaunch the final Opus review.
+  - TxReg clean worktree has substantial uncommitted corrections; relaunch
+    a continuation agent in that same worktree.
+  - RepInit current-main worktree has substantial uncommitted corrections;
+    relaunch a continuation agent in that same worktree.
+  Never discard or restart these worktrees from scratch.
 - L2.1 review/integration queue:
   - ReplicationInitiation branch `agent/l21-repinit-20260817` at `8ee75f0`
     was **REJECTED** by Opus despite a genuine ledger-restored 200-tick
@@ -144,7 +155,7 @@ earlier blocks below:**
     inversion for the unsplit-boundary fix, then rerun N=200 once before
     another Opus review.
   - Cytokinesis/FtsZ dual extraction: completed patched-source pairs are
-    seeds 0-5, 17, and 34-45; worker C is running seed 46. Seeds 6 and 18
+    seeds 0-5, 17, and 34-46; worker C is running seed 47. Seeds 6 and 18
     failed closed with no completion by 50,000 ticks; seed 18 also failed a
     non-counting 100,000-tick diagnostic, proving genuine right-censoring
     under the patched source (its pre-overlay completion at tick 28454 is
