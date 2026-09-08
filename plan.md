@@ -151,6 +151,12 @@ earlier blocks below:**
     not comparable under dec-005). Seed 6 is now running the matching
     100,000-tick diagnostic (`dual-a-seed6-100k`). Do not skip/resample
     censored seeds or resume uncontrolled ranges.
+  - All 19 completed pairs (0-5, 17, 34-45) have been independently run
+    through the combined validator: 19/19 PASS for both Cytokinesis and
+    FtsZ, same completion anchor, distinct files/content, genuine provider,
+    and current DNADamage source binding. Observed Cytokinesis inclusive
+    spans range 3737-4076 ticks; no M=5000 margin trigger fired. These
+    traces are banked regardless of the pending cohort-selection redesign.
   - Candidate cohort correction, to preregister and independently review
     before relaunch: `N=50` means the first 50 **completed event windows**
     from a deterministic ascending attempted-seed stream starting at seed 0.
