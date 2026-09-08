@@ -107,6 +107,14 @@ earlier blocks below:**
     DNADamage fields/current taps, re-extract and re-pin RepInit, preserve
     all sweep rows, and restore the real 100-tick canonical trace that was
     accidentally replaced by a 200-tick file before another Opus review.
+    Replacement branch `integrate/l21-repinit-current` is now clean at
+    `7889449`: extractor parsing/API, ledger union, canonical 100-tick
+    restoration, regenerated 200-tick ledger, sweep-report preservation,
+    and honest ledger/no-ledger claims are committed. L2.1 remains genuine
+    200/200 under the input ledger; L2.2 is deliberately demoted to FAIL
+    (`STALE_SWEEP_PROVENANCE`) because the current 100-vs-200 canonical
+    filename convention cannot support a genuine M=200 ensemble without
+    identity collision. Await Opus re-review; do not relabel it green.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` is **ACCEPTED** by final Opus review: condition
     enzyme overrides are contained across `copyToState`, the stale oracle
