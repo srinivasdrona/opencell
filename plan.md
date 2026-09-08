@@ -86,13 +86,16 @@ earlier blocks below:**
     DNADamage and RepInit ledger dispatch. The fresh N=50/M=200 L2.2 sweep
     reports PASS but must be regenerated/bound after the corrected
     integration candidate. Clean branch `integrate/l21-repinit-clean` at
-    `78ad334` now reports those corrections complete on main `b1b16d9`:
-    the claim is explicitly limited to ledger-restored 200/200 identity,
-    the genuine no-ledger diagnostic reports its expected mismatch,
-    current-main raw-hash/DNADamage bindings are retained, `dec-006` is
-    unique, shared files are surgical, and fresh L2.2 evidence is bound to
-    the candidate SHA. Await Opus re-review and current-main compatibility
-    reconciliation before integration.
+    `78ad334` corrected the claim, ledger source binding, `dec-006`, and
+    fresh L2.2 evidence, but Opus **REJECTED** its shared integration
+    surface: the extractor has a MATLAB-illegal nested function, changes
+    both public signatures, omits `dnadamage_overlay_required`, and lacks
+    accepted Cytokinesis/Host logic. Its `sweep_report.json` also truncates
+    17 jobs to one and predates `sweep_status.json`. Rebuild from current
+    main: keep probes standalone, preserve the extractor API/all five
+    DNADamage fields/current taps, re-extract and re-pin RepInit, preserve
+    all sweep rows, and restore the real 100-tick canonical trace that was
+    accidentally replaced by a 200-tick file before another Opus review.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` is **ACCEPTED** by final Opus review: condition
     enzyme overrides are contained across `copyToState`, the stale oracle
