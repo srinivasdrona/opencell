@@ -1080,7 +1080,7 @@ def _format_ensemble_oracle(
     raise ValueError(f"Unsupported Design-A process {process_name!r}.")
 
 
-def _load_v2_ensemble(process_name: str, max_seeds: int = 50) -> dict[str, Any] | None:
+def _load_v2_ensemble(process_name: str, max_seeds: int = 200) -> dict[str, Any] | None:
     seed_paths = [
         _v2_seed_mat_path(process_name, seed)
         for seed in range(int(max_seeds))
