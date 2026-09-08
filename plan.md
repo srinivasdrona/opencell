@@ -119,8 +119,13 @@ earlier blocks below:**
     honest RepInit PASS->FAIL demotion (expected board 18/2/2); hold both
     inconsistent sweep summary files; correct STATUS/plan/provenance claims;
     add a regression assertion for the reproduced 200-tick observable
-    identity. Separately redesign M-aware trace paths and exact metadata/
-    filename tick checks before regenerating RepInit L2.2.
+    identity. Curated commit `9f983fd` now reports all of that complete:
+    tracked sweep report/status match main and 53/53 tests pass, the false
+    claims are superseded, the strengthened exact-replay assertion is
+    present, and the board is honestly 18/2/2 integrity OK. Await final
+    lightweight Opus review before integration. Separately redesign M-aware
+    trace paths and exact metadata/filename tick checks before regenerating
+    RepInit L2.2.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` is **ACCEPTED** by final Opus review: condition
     enzyme overrides are contained across `copyToState`, the stale oracle
