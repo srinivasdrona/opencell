@@ -573,4 +573,3 @@ documented as a genuine unresolved MATLAB tick-coverage limitation, not
 something this change may fix) — zero skips attributable to this closure's
 own evidence. `l1b_verify_wiring.py` → 27/28 (same pre-existing, unrelated
 `DNADamage` failure). `ruff check` on all changed Python files → clean.
-
