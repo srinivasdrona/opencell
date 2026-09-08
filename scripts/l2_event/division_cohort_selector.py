@@ -55,9 +55,11 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
+from scripts.l2_event import launcher  # noqa: E402
 from scripts.l2_event.division_window_spec import (  # noqa: E402
     attempt_record_filename,
     candidate_seed_start,
+    censor_record_required_identity_fields,
     required_completed_windows,
     selection_horizon_max_search_ticks,
 )
@@ -235,14 +237,99 @@ def resolve_seed_attempt(
     )
 
 
+AUTHORITATIVE_ROOT_SUBDIR = "dual_division_cohort_current"
+# Fallback main-checkout candidates (module-level, not inlined, so tests
+# can monkeypatch them to keep authoritative_karr_native_root's "not found
+# anywhere" behavior deterministic regardless of what happens to exist on
+# the local dev machine's E:\opencell checkout).
+MAIN_CHECKOUT_KARR_NATIVE_ROOT_WINDOWS = Path("E:/opencell/data/m1_sources/karr_native")
+MAIN_CHECKOUT_KARR_NATIVE_ROOT_WSL = Path("/mnt/e/opencell/data/m1_sources/karr_native")
+
+
+def authoritative_karr_native_root(*, repo_root: Path = REPO_ROOT) -> Path:
+    """The dedicated, homogeneous ``dual_division_cohort_current`` banking
+    root (division-censor-contract, 2026-09-08; named authoritative per
+    Opus's 2026-09-09 re-review) every dual-tap Cytokinesis+
+    FtsZPolymerization extraction should ultimately be consolidated into.
+    Checked in the same (worktree, main-checkout-Windows-path,
+    main-checkout-WSL-path) priority order
+    ``ftsz_pre_division_evidence.DEFAULT_DATA_ROOTS`` already uses; returns
+    the first candidate that exists, or the worktree-relative candidate
+    (the canonical target a future consolidation would create) if none do
+    yet. Preferred FIRST by :func:`default_search_roots`, never treated as
+    the ONLY valid root -- see :func:`discover_ledger`'s multi-root,
+    never-first-wins contradiction check."""
+    candidates = (
+        repo_root / "data" / "m1_sources" / "karr_native" / AUTHORITATIVE_ROOT_SUBDIR,
+        MAIN_CHECKOUT_KARR_NATIVE_ROOT_WINDOWS / AUTHORITATIVE_ROOT_SUBDIR,
+        MAIN_CHECKOUT_KARR_NATIVE_ROOT_WSL / AUTHORITATIVE_ROOT_SUBDIR,
+    )
+    for candidate in candidates:
+        if candidate.exists():
+            return candidate
+    return candidates[0]
+
+
+def default_search_roots(*, repo_root: Path = REPO_ROOT) -> list[Path]:
+    """Autodiscovery order: the authoritative dedicated root FIRST (see
+    :func:`authoritative_karr_native_root`), then every root
+    ``prepare_cytokinesis_cohort.autodiscover_karr_native_roots`` already
+    finds (this worktree's own scattered karr_native root, the main
+    checkout, and sibling worktrees) -- reused, not re-derived. Listing
+    the authoritative root first is a preference for where a CONSOLIDATED
+    record should be found/written, never an exclusivity rule: every root
+    is still searched, and :func:`discover_ledger` hard-fails on any
+    cross-root contradiction rather than silently trusting whichever root
+    happens to be listed first."""
+    roots: list[Path] = []
+    authoritative = authoritative_karr_native_root(repo_root=repo_root)
+    if authoritative.exists() and authoritative not in roots:
+        roots.append(authoritative)
+    for root in autodiscover_karr_native_roots(repo_root=repo_root):
+        if root not in roots:
+            roots.append(root)
+    return roots
+
+
+# Fields that define an AttemptRecord's real identity -- two records for
+# the SAME seed found under different roots must agree on every one of
+# these, or discover_ledger raises CohortContractError rather than
+# silently preferring one root over another (Opus re-review, 2026-09-09:
+# "never first-wins").
+_IDENTITY_FIELDS = (
+    "status",
+    "onset_tick",
+    "completion_tick",
+    "cytokinesis_trace_sha256",
+    "ftsz_trace_sha256",
+    "dnadamage_source_resolved_sha256",
+    "mnrnd_provider_sha256",
+)
+
+
+def _records_agree(a: AttemptRecord, b: AttemptRecord) -> bool:
+    return all(getattr(a, field_name) == getattr(b, field_name) for field_name in _IDENTITY_FIELDS)
+
+
 def discover_ledger(
     search_roots: list[Path], *, max_seed_scan: int = 10_000
 ) -> dict[int, AttemptRecord]:
-    """Build ``{seed: AttemptRecord}`` across every search root, first
-    root wins per seed (mirrors ``prepare_cytokinesis_cohort.py``'s own
-    root-priority convention). Never scans past the highest seed number
-    any root's ``per_process_traces_v2_event_s*`` directory actually
-    names (bounded additionally by ``max_seed_scan`` as a sanity cap)."""
+    """Build ``{seed: AttemptRecord}`` across every search root.
+
+    Multi-root integrity (Opus re-review, 2026-09-09): EVERY root is
+    inspected for EVERY seed -- never "first root wins". If more than one
+    root has a record for the same seed, they must agree on every
+    identity field (:data:`_IDENTITY_FIELDS`); any disagreement raises
+    :class:`CohortContractError` immediately (a hard mechanical
+    contradiction between two worktrees' claims about the same seed is
+    never silently resolved by picking one). Agreeing duplicates are
+    deduplicated (the authoritative root's copy is kept when present,
+    else the first search order match) -- this is not "first-wins" in the
+    unsafe sense, because agreement was verified first.
+
+    Never scans past the highest seed number any root's
+    ``per_process_traces_v2_event_s*`` directory actually names (bounded
+    additionally by ``max_seed_scan`` as a sanity cap)."""
     seed_numbers: set[int] = set()
     for root in search_roots:
         if not root.exists():
@@ -256,11 +343,23 @@ def discover_ledger(
 
     ledger: dict[int, AttemptRecord] = {}
     for seed in sorted(seed_numbers):
+        records_by_root: list[tuple[Path, AttemptRecord]] = []
         for root in search_roots:
             record = resolve_seed_attempt(seed, karr_native_root=root)
             if record is not None:
-                ledger[seed] = record
-                break
+                records_by_root.append((root, record))
+        if not records_by_root:
+            continue
+        canonical_root, canonical_record = records_by_root[0]
+        for other_root, other_record in records_by_root[1:]:
+            if not _records_agree(canonical_record, other_record):
+                raise CohortContractError(
+                    f"seed {seed}: contradictory attempt records across roots -- "
+                    f"{canonical_root} reports {canonical_record.to_json()} but "
+                    f"{other_root} reports {other_record.to_json()}. Never resolved by "
+                    "first-wins; investigate and reconcile by hand before re-running."
+                )
+        ledger[seed] = canonical_record
     return ledger
 
 
@@ -308,6 +407,21 @@ class CohortAudit:
         }
 
 
+def _current_censor_identity_values() -> dict[str, str]:
+    """The CURRENT run's genuine identity values for every field
+    :func:`~scripts.l2_event.division_window_spec.censor_record_required_identity_fields`
+    names. Computed lazily (only when a RIGHT_CENSORED record actually
+    needs checking) so importing this module, or auditing a ledger with
+    no censored seeds, never requires a real WCM source tree or MATLAB
+    installation to be present."""
+    dnadamage = launcher.current_genuine_dnadamage_source()["patched_sha256_lf_normalized"]
+    mnrnd_provider = launcher.current_genuine_mnrnd_provider()["sha256_lf_normalized"]
+    return {
+        "dnadamage_source_resolved_sha256": dnadamage,
+        "mnrnd_provider_sha256": mnrnd_provider,
+    }
+
+
 def audit_cohort(
     search_roots: list[Path] | None = None,
     *,
@@ -324,17 +438,26 @@ def audit_cohort(
     horizon = selection_horizon_max_search_ticks()
 
     if ledger is None:
-        roots = search_roots if search_roots is not None else autodiscover_karr_native_roots()
+        roots = search_roots if search_roots is not None else default_search_roots()
         ledger = discover_ledger(roots)
 
     # Reclassify any RIGHT_CENSORED record whose own max_search_ticks does
-    # not match the required horizon as NOT attempted (contract-invalid
-    # censor -- see module docstring's horizon requirement). It is
-    # reported separately, never silently dropped.
+    # not match the required horizon, OR whose required identity fields
+    # (dnadamage_source_resolved_sha256/mnrnd_provider_sha256) do not bind
+    # the CURRENT run's genuine values, as NOT attempted (contract-invalid
+    # censor -- see module docstring's horizon/identity requirements). It
+    # is reported separately, never silently dropped. Identity values are
+    # only computed if at least one RIGHT_CENSORED record exists to check
+    # (lazy -- see _current_censor_identity_values).
     invalid_censor_seeds: list[dict[str, Any]] = []
     effective_ledger: dict[int, AttemptRecord] = {}
+    current_identity: dict[str, str] | None = None
+    required_identity_fields = censor_record_required_identity_fields()
     for seed, record in ledger.items():
-        if record.status == RIGHT_CENSORED and record.max_search_ticks != horizon:
+        if record.status != RIGHT_CENSORED:
+            effective_ledger[seed] = record
+            continue
+        if record.max_search_ticks != horizon:
             invalid_censor_seeds.append(
                 {
                     "seed": seed,
@@ -343,6 +466,30 @@ def audit_cohort(
                     "reason": "RIGHT_CENSORED record's own horizon does not match the required "
                     "selection-contract horizon -- does not prove non-completion over the full "
                     "horizon, must be re-attempted",
+                }
+            )
+            continue
+        if current_identity is None:
+            current_identity = _current_censor_identity_values()
+        identity_mismatch = None
+        for identity_field in required_identity_fields:
+            recorded_value = getattr(record, identity_field, None)
+            expected_value = current_identity.get(identity_field)
+            if recorded_value is None or recorded_value != expected_value:
+                identity_mismatch = (identity_field, recorded_value, expected_value)
+                break
+        if identity_mismatch is not None:
+            field_name, recorded_value, expected_value = identity_mismatch
+            invalid_censor_seeds.append(
+                {
+                    "seed": seed,
+                    "identity_field": field_name,
+                    "recorded_value": recorded_value,
+                    "required_value": expected_value,
+                    "reason": f"RIGHT_CENSORED record's {field_name} does not bind the current "
+                    "run's genuine identity -- a censored claim produced under a different "
+                    "source/provider is not comparable evidence about the current model and "
+                    "must never advance the contiguous attempted-seed prefix",
                 }
             )
             continue
@@ -413,7 +560,16 @@ def audit_cohort(
                 seen_ftsz[record.ftsz_trace_sha256] = seed
 
     selected_seeds = completed_seeds[:required]
-    selection_satisfied = len(selected_seeds) >= required
+    # Opus re-review (2026-09-09): selection can never be satisfied while
+    # ANY cross-seed integrity finding is outstanding, even if the raw
+    # completed count already reached required_completed_windows -- a
+    # cohort with mixed DNADamage source identity or aliased/duplicated
+    # trace content is not a valid N=50 ensemble regardless of count.
+    selection_satisfied = (
+        len(selected_seeds) >= required
+        and not source_hash_mismatches
+        and not duplicate_trace_hashes
+    )
     attempted_count = len(attempted_seeds)
     completed_count = len(completed_seeds)
     completion_fraction = (completed_count / attempted_count) if attempted_count else 0.0
@@ -447,11 +603,12 @@ def main(argv: list[str] | None = None) -> int:
         action="append",
         type=Path,
         default=None,
-        help="Optional additional karr_native root(s) to audit. Defaults to autodiscovery "
-        "(this worktree, the main checkout, and sibling worktrees).",
+        help="Optional additional karr_native root(s) to audit. Defaults to the authoritative "
+        "dual_division_cohort_current root followed by autodiscovery (this worktree, the main "
+        "checkout, and sibling worktrees) -- see default_search_roots().",
     )
     args = parser.parse_args(argv)
-    roots = [p.resolve() for p in args.search_root] if args.search_root else autodiscover_karr_native_roots()
+    roots = [p.resolve() for p in args.search_root] if args.search_root else default_search_roots()
     audit = audit_cohort(roots)
     print(json.dumps(audit.to_json(), indent=2, sort_keys=True))
     print(
