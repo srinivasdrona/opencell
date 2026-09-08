@@ -78,5 +78,3 @@ decisions:
       - "The ledger sidecar format changes incompatibly with tests/vivarium/chromosome_rand_stream_ledger.py's loader (main) without a corresponding regeneration"
       - "A new process is found to consume the shared Chromosome.randStream and needs its own <Process>ChromosomeLedgerRandStream subclass registered"
     superseded_by: null
-
-

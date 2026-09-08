@@ -62,12 +62,14 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-09 00:22 IST) — supersedes all
 earlier blocks below:**
 
-- Local `main` is clean and published at `d27e365`. DNADamage,
+- Local `main` has the accepted RepInit split committed at `42adebb`
+  (pending push). DNADamage,
   Cytokinesis, and HostInteraction L2.1 are merged. The authoritative L2.1
   manifest is **10 EWP / 1 CODE_GAP / 0 MISSING**. Host's final integrated
   regression passed 148 tests/6 expected data-absence skips; Cytokinesis's
   passed 184 tests. L1b is 28/28, oracle-dependency 38/38, and L2.2 remains
-  19/1/2 integrity OK. DNADamage's canonical seed-2000 trace and
+  **18/2/2 integrity OK** after the honest RepInit L2.2 demotion.
+  DNADamage's canonical seed-2000 trace and
   chromosome-ledger sidecar are present
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
@@ -76,7 +78,8 @@ earlier blocks below:**
   - DNAS accepted candidate `4556d27` is in a provenance-safe integration
     lane (`dnas-provenance-integration`).
   - TxReg continuation is active in its preserved dirty worktree.
-  - RepInit rebuild completed cleanly at `7889449`; Opus re-review is active.
+  - RepInit L2.1 split is accepted, merged, and pending push; exact 200-tick
+    replay passed non-skipped in main.
   - Division censoring implementation completed; Opus review is active.
   The earlier agents were runtime-cleared, not deliberately stopped; their
   worktrees were preserved and resumed rather than recreated.
@@ -125,7 +128,8 @@ earlier blocks below:**
     present, and the board is honestly 18/2/2 integrity OK. Final Opus
     review **ACCEPTED RepInit L2.1** and the clean split. The merge target's
     truncated sweep report and shadow evidence root were removed before
-    this merge. Separately redesign M-aware trace paths and exact metadata/
+    merge; main exact replay passed and the split is committed at
+    `42adebb`. Separately redesign M-aware trace paths and exact metadata/
     filename tick checks before regenerating RepInit L2.2.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` is **ACCEPTED** by final Opus review: condition
