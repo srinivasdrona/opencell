@@ -28,6 +28,7 @@ checks existence before ever attempting to parse a trace.
 
 from __future__ import annotations
 
+import importlib
 import json
 import sys
 from pathlib import Path
@@ -101,6 +102,19 @@ def _current_censor_identity() -> tuple[str, str]:
     dnadamage = launcher.current_genuine_dnadamage_source()["patched_sha256_lf_normalized"]
     mnrnd = launcher.current_genuine_mnrnd_provider()["sha256_lf_normalized"]
     return dnadamage, mnrnd
+
+
+def _import_validate_dual_division_canary_test_helpers():
+    """Import test_validate_dual_division_canary.py's module by inserting
+    its directory onto sys.path (tests/scripts has no __init__.py, so it
+    is not a proper package importable via a dotted path) so this file
+    can reuse its real HDF5 fixture-writer helpers
+    (_write_cytokinesis_trace/_write_ftsz_trace) without duplicating ~80
+    lines of fixture-construction logic."""
+    tests_scripts_dir = Path(__file__).resolve().parent
+    if str(tests_scripts_dir) not in sys.path:
+        sys.path.insert(0, str(tests_scripts_dir))
+    return importlib.import_module("test_validate_dual_division_canary")
 
 
 def _record(seed: int, status: str, *, max_search_ticks=None, dnadamage_sha=None,
@@ -432,16 +446,60 @@ def test_multi_root_agreement_never_first_wins_blindly_but_dedupes_when_consiste
         out_dir.mkdir(parents=True)
         (out_dir / attempt_record_filename()).write_text(record_json, encoding="utf-8")
 
-    ledger = discover_ledger([root_a, root_b])
+    ledger, rejected = discover_ledger([root_a, root_b])
     assert 6 in ledger
     assert ledger[6].status == RIGHT_CENSORED
 
 
-def test_multi_root_contradiction_hard_fails_never_first_wins(tmp_path):
-    """Two roots reporting DIFFERENT outcomes for the SAME seed (one says
-    RIGHT_CENSORED, the other has a COMPLETED trace pair) must raise
-    CohortContractError -- the selector must never silently trust
-    whichever root happens to be listed/searched first."""
+def test_multi_root_contradiction_between_two_valid_records_hard_fails(tmp_path):
+    """Two roots BOTH producing a valid, individually-parseable
+    RIGHT_CENSORED record for the SAME seed, but disagreeing on an
+    identity field (max_search_ticks), must raise CohortContractError --
+    the selector must never silently trust whichever root happens to be
+    listed/searched first, and this must remain fatal regardless of
+    whether either root is the authoritative one."""
+    root_a = tmp_path / "root_a"
+    root_b = tmp_path / "root_b"
+    horizon = selection_horizon_max_search_ticks()
+    dnadamage_sha, mnrnd_sha = _current_censor_identity()
+
+    out_dir_a = event_window_dir(9, karr_native_root=root_a)
+    out_dir_a.mkdir(parents=True)
+    (out_dir_a / attempt_record_filename()).write_text(
+        json.dumps(
+            {
+                "status": RIGHT_CENSORED,
+                "max_search_ticks": horizon,
+                "dnadamage_source_resolved_sha256": dnadamage_sha,
+                "mnrnd_provider_sha256": mnrnd_sha,
+            }
+        ),
+        encoding="utf-8",
+    )
+    out_dir_b = event_window_dir(9, karr_native_root=root_b)
+    out_dir_b.mkdir(parents=True)
+    (out_dir_b / attempt_record_filename()).write_text(
+        json.dumps(
+            {
+                "status": RIGHT_CENSORED,
+                "max_search_ticks": 50000,  # disagrees with root_a's horizon
+                "dnadamage_source_resolved_sha256": dnadamage_sha,
+                "mnrnd_provider_sha256": mnrnd_sha,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(CohortContractError, match="contradictory attempt records"):
+        discover_ledger([root_a, root_b])
+
+
+def test_non_authoritative_root_invalid_trace_is_rejected_not_fatal(tmp_path):
+    """Second Opus re-review: a NON-authoritative root's invalid/
+    superseded trace pair (no attempt record to explain it, fails combined
+    validation) must be reported in rejected_root_traces, never raised --
+    while a sibling (non-authoritative, in this call) root's genuinely
+    valid RIGHT_CENSORED record for the same seed is still used."""
     root_a = tmp_path / "root_a"
     root_b = tmp_path / "root_b"
     horizon = selection_horizon_max_search_ticks()
@@ -463,15 +521,28 @@ def test_multi_root_contradiction_hard_fails_never_first_wins(tmp_path):
 
     # root_b has a stray (garbage-content, non-HDF5) "trace pair" for the
     # same seed with NO attempt record -- resolve_seed_attempt would
-    # normally attempt real HDF5 validation here and raise on garbage
-    # content; that's still a legitimate contradiction (root_a claims
-    # censored, root_b claims something else entirely), so the test only
-    # needs discover_ledger to surface SOME hard failure, not necessarily
-    # CohortContractError specifically, when roots disagree this badly.
+    # normally raise on garbage content when validating it as a candidate
+    # COMPLETED backfill; with neither root marked authoritative, this
+    # must be caught and reported, never propagated.
     _write_completed_pair_and_record(root_b, 9)
 
-    with pytest.raises(Exception):  # noqa: B017 - either CohortContractError or a validation error
-        discover_ledger([root_a, root_b])
+    ledger, rejected = discover_ledger([root_a, root_b])
+    assert 9 in ledger
+    assert ledger[9].status == RIGHT_CENSORED
+    assert any(row["seed"] == 9 and str(root_b) in row["root"] for row in rejected)
+
+
+def test_authoritative_root_invalid_trace_remains_fatal(tmp_path):
+    """The SAME garbage-trace scenario above, but with the garbage root
+    marked as the authoritative root, must still raise -- a broken trace
+    in the curated, dedicated root is a real problem worth a hard stop,
+    never silently downgraded to a report."""
+    root_a = tmp_path / "root_a"
+    root_b = tmp_path / "root_b"
+    _write_completed_pair_and_record(root_b, 9)
+
+    with pytest.raises(Exception):  # noqa: B017 - either CohortContractError or a raw validation error
+        discover_ledger([root_a, root_b], authoritative_root=root_b)
 
 
 # ---------------------------------------------------------------------------
@@ -601,3 +672,268 @@ def test_default_search_roots_omits_authoritative_root_when_absent_anywhere(tmp_
     fake_repo_root.mkdir(parents=True)
     roots = default_search_roots(repo_root=fake_repo_root)
     assert all(r.name != "dual_division_cohort_current" for r in roots)
+
+
+def test_authoritative_root_resolves_via_sibling_main_integrate_worktree(tmp_path, monkeypatch):
+    """The core item-2 fix: authoritative_karr_native_root() must find the
+    REAL operational location -- a sibling worktree named main-integrate
+    -- via a portable, drive-letter-independent lookup
+    (repo_root.parent / 'main-integrate' / ...), not just the checkout's
+    own path or the (usually irrelevant) main-checkout Windows/WSL
+    fallbacks."""
+    import scripts.l2_event.division_cohort_selector as selector_module
+
+    monkeypatch.setattr(
+        selector_module, "MAIN_CHECKOUT_KARR_NATIVE_ROOT_WINDOWS", tmp_path / "no-such-windows-root"
+    )
+    monkeypatch.setattr(selector_module, "MAIN_CHECKOUT_KARR_NATIVE_ROOT_WSL", tmp_path / "no-such-wsl-root")
+
+    worktrees_root = tmp_path / "opencell-worktrees"
+    this_worktree = worktrees_root / "some-fix-worktree"
+    this_worktree.mkdir(parents=True)
+    main_integrate_authoritative = (
+        worktrees_root / "main-integrate" / "data" / "m1_sources" / "karr_native" / "dual_division_cohort_current"
+    )
+    main_integrate_authoritative.mkdir(parents=True)
+
+    resolved = authoritative_karr_native_root(repo_root=this_worktree)
+    assert resolved == main_integrate_authoritative
+
+
+def test_default_search_roots_returns_only_authoritative_root_never_broad_scan(tmp_path):
+    """Second Opus re-review: default_search_roots() must NEVER append
+    autodiscover_karr_native_roots()'s broader sibling-worktree scan --
+    exactly one entry (the authoritative root) when found, zero when not."""
+    fake_repo_root = tmp_path / "repo"
+    authoritative = fake_repo_root / "data" / "m1_sources" / "karr_native" / "dual_division_cohort_current"
+    authoritative.mkdir(parents=True)
+    # Create sibling worktrees with their own karr_native dirs, which the
+    # OLD (pre-fix) default_search_roots would have appended.
+    sibling_root = fake_repo_root.parent / "some-other-worktree" / "data" / "m1_sources" / "karr_native"
+    sibling_root.mkdir(parents=True)
+
+    roots = default_search_roots(repo_root=fake_repo_root)
+    assert roots == [authoritative]
+
+
+# ---------------------------------------------------------------------------
+# No-arg CLI: report/exit2, never a traceback (Opus second re-review,
+# 2026-09-09). Fast/portable version using a synthetic authoritative root
+# (monkeypatched); the REAL machine-layout proof (this session's actual
+# dual_division_cohort_current, 22 seed dirs) was run manually and is
+# documented in STATUS_DIVISION_CENSOR_CONTRACT.md -- not codified as an
+# automated test because it requires real ~27MB-per-seed HDF5 validation
+# and takes several minutes even natively, let alone cross-filesystem.
+# ---------------------------------------------------------------------------
+
+
+def test_cli_no_arg_execution_returns_report_and_exit_code_never_traceback(tmp_path, monkeypatch, capsys):
+    import scripts.l2_event.division_cohort_selector as selector_module
+
+    fake_repo_root = tmp_path / "repo"
+    authoritative = fake_repo_root / "data" / "m1_sources" / "karr_native" / "dual_division_cohort_current"
+    authoritative.mkdir(parents=True)
+    # One valid RIGHT_CENSORED record present (cheap to construct -- no
+    # real HDF5 trace needed) -- enough to prove the CLI reaches a real
+    # report, not just an empty/absent-root early exit.
+    horizon = selection_horizon_max_search_ticks()
+    dnadamage_sha, mnrnd_sha = _current_censor_identity()
+    seed0_dir = event_window_dir(0, karr_native_root=authoritative)
+    seed0_dir.mkdir(parents=True)
+    (seed0_dir / attempt_record_filename()).write_text(
+        json.dumps(
+            {
+                "status": RIGHT_CENSORED,
+                "max_search_ticks": horizon,
+                "dnadamage_source_resolved_sha256": dnadamage_sha,
+                "mnrnd_provider_sha256": mnrnd_sha,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    # authoritative_karr_native_root/default_search_roots are called as
+    # bare module-level names from main() -- monkeypatching them directly
+    # (rather than the REPO_ROOT constant, which is only read once at
+    # each function's OWN default-argument-binding time, not at call
+    # time) is what actually redirects main()'s real-discovery path here.
+    monkeypatch.setattr(selector_module, "authoritative_karr_native_root", lambda **_: authoritative)
+    monkeypatch.setattr(selector_module, "default_search_roots", lambda **_: [authoritative])
+
+    rc = selector_module.main([])
+    assert rc == 2  # selection not satisfied (only 0/50 completions, and it's censored not completed)
+    out = capsys.readouterr().out
+    assert '"candidate_seed_start": 0' in out
+    assert "next_seed_to_attempt=" in out
+
+
+def test_cli_fails_closed_with_actionable_message_when_authoritative_root_not_found(tmp_path, monkeypatch, capsys):
+    import scripts.l2_event.division_cohort_selector as selector_module
+
+    nonexistent = tmp_path / "does_not_exist" / "dual_division_cohort_current"
+    monkeypatch.setattr(selector_module, "authoritative_karr_native_root", lambda **_: nonexistent)
+    monkeypatch.setattr(selector_module, "default_search_roots", lambda **_: [])
+
+    rc = selector_module.main([])
+    assert rc == 2
+    err = capsys.readouterr().err
+    assert "--search-root" in err
+    assert "ERROR" in err
+
+
+# ---------------------------------------------------------------------------
+# Record identity cross-check (Opus second re-review, 2026-09-09): a
+# COMPLETED sidecar's self-claimed identity fields are cross-checked
+# against MEASURED validate_dual_division_canary results, never trusted
+# at face value.
+# ---------------------------------------------------------------------------
+
+
+def test_completed_sidecar_with_tampered_onset_tick_raises(tmp_path):
+    root = tmp_path / "root"
+    _write_completed_pair_and_record(root, 10)
+    out_dir = event_window_dir(10, karr_native_root=root)
+    # _write_completed_pair_and_record already wrote non-HDF5 garbage
+    # trace files with no sidecar -- write a TAMPERED sidecar claiming a
+    # COMPLETED status with a fabricated onset_tick. Since the trace
+    # files here are garbage (not real HDF5), validate_dual_division_canary
+    # cannot even open them (raises OSError internally); resolve_seed_attempt
+    # converts that into CohortContractError rather than letting a raw
+    # OSError escape -- this proves malformed-trace defense fires before
+    # the identity cross-check is ever reached; the dedicated
+    # PASS-but-tampered-sidecar scenario is covered by the real fixture
+    # test below.
+    (out_dir / attempt_record_filename()).write_text(
+        json.dumps({"status": COMPLETED, "onset_tick": 999999}), encoding="utf-8"
+    )
+    with pytest.raises(CohortContractError, match="could not even be attempted"):
+        resolve_seed_attempt(10, karr_native_root=root)
+
+
+def test_completed_sidecar_identity_mismatch_against_real_valid_trace_raises(tmp_path, monkeypatch):
+    """The real inversion: a genuinely PASS-validating trace pair (real
+    HDF5 fixtures, matched onset/anchor/hashes) paired with a sidecar
+    that claims a WRONG onset_tick -- a copied/tampered sidecar, or one
+    written for a different seed's trace pair entirely. Must raise
+    CohortContractError, never silently trust the sidecar's claim."""
+
+    from scripts.l2_event import launcher as launcher_module
+    from scripts.l2_event.validate_dual_division_canary import CYTOKINESIS_N_TICKS, FTSZ_N_TICKS
+
+    # Fake a local genuine MATLAB provider so the real fixture's provider
+    # identity resolves deterministically (mirrors
+    # test_validate_dual_division_canary.py's own fixture pattern).
+    matlab_root = tmp_path / "MATLAB"
+    for name in launcher_module.STATISTICS_RNG_FUNCTIONS:
+        provider_path = launcher_module.genuine_statistics_rng_path(name, matlab_root=matlab_root)
+        provider_path.parent.mkdir(parents=True, exist_ok=True)
+        provider_path.write_text(f"% fake genuine {name} provider\n", encoding="utf-8", newline="\n")
+    (matlab_root / launcher_module.STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH).parent.mkdir(
+        parents=True, exist_ok=True
+    )
+    (matlab_root / launcher_module.STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH).write_text(
+        "% Statistics and Machine Learning Toolbox\n% Version 26.1 (R2026a) 12-Jan-2026\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    (matlab_root / launcher_module.MATLAB_VERSION_INFO_RELATIVE_PATH).write_text(
+        "<?xml version=\"1.0\"?><MathWorks_version_info><release>R2026a</release></MathWorks_version_info>\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    monkeypatch.setattr(launcher_module, "DEFAULT_MATLAB_ROOT", matlab_root)
+
+    root = tmp_path / "root"
+    seed = 11
+    out_dir = event_window_dir(seed, karr_native_root=root)
+    out_dir.mkdir(parents=True)
+
+    # Reuse the exact real-fixture writer helper from
+    # test_validate_dual_division_canary.py's module.
+    tvc = _import_validate_dual_division_canary_test_helpers()
+    tvc._write_cytokinesis_trace(
+        out_dir,
+        seed=seed,
+        completion_tick=31427,
+        onset_tick=27556,
+        tick_start=31427 - CYTOKINESIS_N_TICKS + 1,
+    )
+    tvc._write_ftsz_trace(
+        out_dir,
+        seed=seed,
+        completion_tick=31427,
+        tick_start=31427 - FTSZ_N_TICKS + 1,
+    )
+
+    # Now write a TAMPERED sidecar: real trace files (PASS-validating),
+    # but the sidecar claims a different onset_tick than what the trace
+    # actually contains (27556 real vs 1 claimed).
+    (out_dir / attempt_record_filename()).write_text(
+        json.dumps({"status": COMPLETED, "onset_tick": 1}), encoding="utf-8"
+    )
+
+    with pytest.raises(CohortContractError, match="do\\s+NOT match the MEASURED"):
+        resolve_seed_attempt(seed, karr_native_root=root)
+
+
+def test_completed_sidecar_with_correct_measured_identity_is_accepted(tmp_path, monkeypatch):
+    """Positive control: a sidecar whose claimed identity fields exactly
+    match the measured trace validation is accepted, and the returned
+    AttemptRecord carries the MEASURED (not merely repeated) values."""
+    import h5py  # noqa: F401  (imported for parity/clarity with sibling test; not directly used)
+
+    from scripts.l2_event import launcher as launcher_module
+    from scripts.l2_event.validate_dual_division_canary import CYTOKINESIS_N_TICKS, FTSZ_N_TICKS
+
+    matlab_root = tmp_path / "MATLAB"
+    for name in launcher_module.STATISTICS_RNG_FUNCTIONS:
+        provider_path = launcher_module.genuine_statistics_rng_path(name, matlab_root=matlab_root)
+        provider_path.parent.mkdir(parents=True, exist_ok=True)
+        provider_path.write_text(f"% fake genuine {name} provider\n", encoding="utf-8", newline="\n")
+    (matlab_root / launcher_module.STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH).parent.mkdir(
+        parents=True, exist_ok=True
+    )
+    (matlab_root / launcher_module.STATISTICS_TOOLBOX_CONTENTS_RELATIVE_PATH).write_text(
+        "% Statistics and Machine Learning Toolbox\n% Version 26.1 (R2026a) 12-Jan-2026\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    (matlab_root / launcher_module.MATLAB_VERSION_INFO_RELATIVE_PATH).write_text(
+        "<?xml version=\"1.0\"?><MathWorks_version_info><release>R2026a</release></MathWorks_version_info>\n",
+        encoding="utf-8",
+        newline="\n",
+    )
+    monkeypatch.setattr(launcher_module, "DEFAULT_MATLAB_ROOT", matlab_root)
+
+    root = tmp_path / "root"
+    seed = 12
+    out_dir = event_window_dir(seed, karr_native_root=root)
+    out_dir.mkdir(parents=True)
+
+    tvc = _import_validate_dual_division_canary_test_helpers()
+    tvc._write_cytokinesis_trace(
+        out_dir,
+        seed=seed,
+        completion_tick=31427,
+        onset_tick=27556,
+        tick_start=31427 - CYTOKINESIS_N_TICKS + 1,
+    )
+    tvc._write_ftsz_trace(
+        out_dir,
+        seed=seed,
+        completion_tick=31427,
+        tick_start=31427 - FTSZ_N_TICKS + 1,
+    )
+    # A sidecar with the CORRECT (measured) onset_tick.
+    (out_dir / attempt_record_filename()).write_text(
+        json.dumps({"status": COMPLETED, "onset_tick": 27556, "completion_tick": 31427}), encoding="utf-8"
+    )
+
+    record = resolve_seed_attempt(seed, karr_native_root=root)
+    assert record is not None
+    assert record.status == COMPLETED
+    assert record.onset_tick == 27556
+    assert record.completion_tick == 31427
+    assert record.cytokinesis_trace_sha256 is not None
+    assert record.ftsz_trace_sha256 is not None
+

@@ -673,8 +673,21 @@ def main(argv: list[str] | None = None) -> int:
             "scripts.l2_event.division_cohort_selector.audit_cohort(...).selected_seeds "
             "(the Cytokinesis dual-tap cohort's ascending-contiguous first-N COMPLETED "
             "seed IDs) instead of the legacy range(REQUIRED_N_SEEDS). Off by default -- "
-            "runs a real, potentially slow cohort audit across autodiscovered karr_native "
-            "roots when enabled."
+            "runs a real, potentially slow cohort audit across the resolved karr_native "
+            "root(s) when enabled."
+        ),
+    )
+    parser.add_argument(
+        "--search-root",
+        action="append",
+        type=Path,
+        default=None,
+        help=(
+            "Only used with --use-cohort-selector: karr_native root(s) to pass through to "
+            "division_cohort_selector.audit_cohort(search_roots=...) (repeatable). Defaults "
+            "to that function's own default (the authoritative dual_division_cohort_current "
+            "root only -- second Opus re-review, 2026-09-09: never a broad sibling-worktree "
+            "scan by default)."
         ),
     )
     args = parser.parse_args(argv)
@@ -683,7 +696,8 @@ def main(argv: list[str] | None = None) -> int:
     if args.use_cohort_selector:
         from scripts.l2_event import division_cohort_selector
 
-        cohort_audit = division_cohort_selector.audit_cohort()
+        search_roots = [p.resolve() for p in args.search_root] if args.search_root else None
+        cohort_audit = division_cohort_selector.audit_cohort(search_roots=search_roots)
         selected_seeds = tuple(cohort_audit.selected_seeds)
         print(
             f"[ftsz_pre_division_evidence] cohort selector: completed={cohort_audit.completed_count} "
