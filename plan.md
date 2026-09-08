@@ -227,7 +227,16 @@ earlier blocks below:**
     smaller horizon are valid if they completed before that recorded
     horizon, whereas RIGHT_CENSORED claims must prove the full 100k. The
     branch currently checks completed traces using `recorded >= n_ticks`;
-    do not integrate until Opus confirms or corrects that exact invariant.
+    Opus **REJECTED** that fail-open proxy: COMPLETED traces must satisfy
+    `recorded_max_search_ticks >= window_anchor`; RIGHT_CENSORED still
+    requires the full 100k. Two further blockers remain: default root
+    discovery scans 93 worktrees and crashes on documented superseded
+    traces instead of using/failing clearly on the authoritative dedicated
+    root, and attempt-record identity trusts JSON self-claims instead of
+    cross-checking measured canary hashes/ticks. Correct those plus the
+    migration accounting (22 dirs / 21 completed / 15 premature + one
+    censor), then re-review. Seed-18 backfill itself is independently
+    verified genuine.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
