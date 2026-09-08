@@ -32,10 +32,19 @@ from scripts.l2_event.division_window_spec import (  # noqa: E402
     SPEC_PATH,
     DivisionWindowSpecError,
     ProvisionalMarginOverrunError,
+    SelectionContractError,
+    attempt_record_filename,
+    attempt_status_values,
+    candidate_seed_start,
     check_inclusive_span_margin,
     load_spec,
     m_ticks_for,
     process_spec,
+    required_completed_windows,
+    selection_contract,
+    selection_contract_applies_to,
+    selection_horizon_max_search_ticks,
+    selection_order,
     tick_range_from_division_for,
 )
 
@@ -202,3 +211,109 @@ def test_margin_gate_rejects_span_one_tick_above_m_ticks(): # M+1 overrun
 def test_margin_gate_error_message_reports_the_escalation_formula():
     with pytest.raises(ProvisionalMarginOverrunError, match=r"1\.227"):
         check_inclusive_span_margin(onset_tick=1, completion_tick=5000, m_ticks=5000)
+
+
+# ---------------------------------------------------------------------------
+# Selection contract (division-censor-contract, 2026-09-08 preregistration):
+# candidate_seed_start / required_completed_windows / max_search_ticks /
+# selection_order / attempt_record_filename. Fail-closed, no defaults --
+# mirrors the per-process m_ticks accessors' discipline exactly.
+# ---------------------------------------------------------------------------
+
+
+def test_real_repo_spec_has_the_preregistered_selection_contract_values():
+    assert candidate_seed_start() == 0
+    assert required_completed_windows() == 50
+    assert selection_horizon_max_search_ticks() == 100000
+    assert selection_order() == "ascending_seed"
+    assert attempt_record_filename() == "division_window_attempt.json"
+    assert set(attempt_status_values()) == {"COMPLETED", "RIGHT_CENSORED"}
+
+
+def test_selection_contract_applies_to_both_dual_tap_processes():
+    assert selection_contract_applies_to("Cytokinesis")
+    assert selection_contract_applies_to("FtsZPolymerization")
+    assert not selection_contract_applies_to("SomeUnrelatedProcess")
+
+
+def test_selection_contract_schema_version_bumped_to_3():
+    doc = load_spec()
+    assert doc["schema_version"] == 3
+
+
+def test_missing_selection_contract_block_raises(tmp_path):
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text(
+        json.dumps({"processes": {"Cytokinesis": {"m_ticks": 5000, "tick_range_from_division": [-4999, 0]}}}),
+        encoding="utf-8",
+    )
+    with pytest.raises(SelectionContractError):
+        selection_contract(spec_path=spec_path)
+    with pytest.raises(SelectionContractError):
+        candidate_seed_start(spec_path=spec_path)
+
+
+def test_selection_contract_missing_required_key_raises(tmp_path):
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "processes": {"Cytokinesis": {"m_ticks": 5000, "tick_range_from_division": [-4999, 0]}},
+                "selection_contract": {
+                    "applies_to": ["Cytokinesis"],
+                    "candidate_seed_start": 0,
+                    # required_completed_windows deliberately omitted
+                    "max_search_ticks": 100000,
+                    "selection_order": "ascending_seed",
+                    "attempt_record_filename": "division_window_attempt.json",
+                    "attempt_status_values": ["COMPLETED", "RIGHT_CENSORED"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(SelectionContractError):
+        required_completed_windows(spec_path=spec_path)
+
+
+def test_selection_contract_not_a_dict_raises(tmp_path):
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "processes": {"Cytokinesis": {"m_ticks": 5000, "tick_range_from_division": [-4999, 0]}},
+                "selection_contract": "not-a-dict",
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(SelectionContractError):
+        selection_contract(spec_path=spec_path)
+
+
+def test_selection_contract_is_isolated_from_a_custom_spec_path(tmp_path):
+    custom_path = tmp_path / "custom_spec.json"
+    custom_path.write_text(
+        json.dumps(
+            {
+                "processes": {"Cytokinesis": {"m_ticks": 6000, "tick_range_from_division": [-5999, 0]}},
+                "selection_contract": {
+                    "applies_to": ["Cytokinesis"],
+                    "candidate_seed_start": 3,
+                    "required_completed_windows": 10,
+                    "max_search_ticks": 200000,
+                    "selection_order": "ascending_seed",
+                    "attempt_record_filename": "attempt.json",
+                    "attempt_status_values": ["COMPLETED", "RIGHT_CENSORED"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert candidate_seed_start(spec_path=custom_path) == 3
+    assert required_completed_windows(spec_path=custom_path) == 10
+    assert selection_horizon_max_search_ticks(spec_path=custom_path) == 200000
+    # The real repo spec's values must be unaffected.
+    assert candidate_seed_start() == 0
+    assert required_completed_windows() == 50
+    assert selection_horizon_max_search_ticks() == 100000
