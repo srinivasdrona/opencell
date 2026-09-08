@@ -536,7 +536,12 @@ below:**
     `complexBoundSites` positions, invisible to the current linking-number
     projection and draw-count telemetry. Port both calls plus final modulo
     normalization, commit the MATLAB probes, add the production-path
-    inversion, and rerun N=200 before a third review.
+    inversion, and rerun N=200 before a third review. Commits
+    `29f8f5f`/`4556d27` now report that correction complete: both
+    `joinSplitOverOriCRegions` calls and final normalization are ported,
+    the live-MATLAB and seeds-0..3 corpus divergences reproduce exactly,
+    the probes are committed, and the new N=200 run remains PASS with
+    0/20,000 over- and under-consumption. Await fourth Opus review.
 
 **Current status (2026-09-04 12:15 IST) — supersedes the Sept-3 live-process
 snapshot below:**
