@@ -255,8 +255,15 @@ earlier blocks below:**
     root, and attempt-record identity trusts JSON self-claims instead of
     cross-checking measured canary hashes/ticks. Correct those plus the
     migration accounting (22 dirs / 21 completed / 15 premature + one
-    censor), then re-review. Seed-18 backfill itself is independently
-    verified genuine.
+    censor), then re-review. Final corrective branch is now clean at
+    `927b270`: horizon validation uses recorded>=window_anchor, authoritative
+    root/no-arg CLI and non-authoritative rejection reporting are fixed,
+    sidecar claims are canary-cross-checked, non-forced censored seeds skip,
+    and both seed 6/18 100k censor records are mechanically source/provider
+    bound. Live root now has 25 dirs: 23 completed pairs (0-5,17,34-49) and
+    two censored attempts; contiguous prefix ends at seed 6, next attempt 7.
+    Reported gate: 275 targeted tests, 23 validators, clean no-arg audit,
+    L2.2 unchanged. Await final Opus review.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
