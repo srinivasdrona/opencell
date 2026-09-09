@@ -268,9 +268,12 @@ earlier blocks below:**
     (0-5,17,34-49) and RIGHT_CENSORED records for 6/18; contiguous prefix
     ends at 6 and `next_seed_to_attempt=7`. Worker A has been fast-forwarded
     to current main `9757f6e`; 108 censor/spec/extractor tests pass there.
-    Launch the contract-aware sequential range 7-16 next, then 19-33,
-    consolidating each pair/attempt sidecar into the dedicated root. No
-    MATLAB process is active before this relaunch.
+    The contract-aware sequential range 7-16 is running as detached shell
+    `dual-contract-007-016`, MATLAB wrapper/child PIDs 19400/27912, status
+    `bulk-division-a/artifacts/dual_contract_007_016.status`; it started seed
+    7 at 2026-09-10 04:12 IST. After it finishes, consolidate each pair/
+    attempt sidecar into the dedicated root and run 19-33. MATLAB warns the
+    trial license expires in 6 days, so this extraction is time-sensitive.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
