@@ -200,15 +200,16 @@ earlier blocks below:**
     not comparable under dec-005). Seed 6 is now running the matching
     100,000-tick diagnostic (`dual-a-seed6-100k`). Do not skip/resample
     censored seeds or resume uncontrolled ranges.
-  - All 21 completed pairs (0-5, 17, 34-47) have been independently run
-    through the combined validator: 21/21 PASS for both Cytokinesis and
+  - All 23 completed pairs (0-5, 17, 34-49) have been independently run
+    through the combined validator: 23/23 PASS for both Cytokinesis and
     FtsZ, same completion anchor, distinct files/content, genuine provider,
     and current DNADamage source binding. Observed Cytokinesis inclusive
     spans range 3737-4076 ticks; no M=5000 margin trigger fired. These
     traces are banked regardless of the pending cohort-selection redesign.
     The homogeneous paired copies are consolidated under
     `data/m1_sources/karr_native/dual_division_cohort_current/` and
-    revalidated there. Use this explicit root for the cohort: seed 36
+    revalidated there. Worker C's original 34-49 range is complete. Use
+    this explicit root for the cohort: seed 36
     correctly carries paired-dual Cyt SHA `f04ea79e...3cc80`; the standard
     event root separately retains the L2.1 single-process trace
     `b0c919e8...eeeb0`. Never overwrite or silently mix those two artifacts.
