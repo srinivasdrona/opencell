@@ -194,12 +194,14 @@ earlier blocks below:**
     processes; never land a 1 PASS / 19 FAIL board.
   - Cytokinesis/FtsZ dual extraction: completed patched-source pairs are
     seeds 0-5, 17, and 34-46; worker C is running seed 47. Seeds 6 and 18
-    failed closed with no completion by 50,000 ticks; seed 18 also failed a
-    non-counting 100,000-tick diagnostic, proving genuine right-censoring
+    failed closed with no completion by 50,000 ticks; both also failed
+    non-counting 100,000-tick diagnostics, proving genuine right-censoring
     under the patched source (its pre-overlay completion at tick 28454 is
-    not comparable under dec-005). Seed 6 is now running the matching
-    100,000-tick diagnostic (`dual-a-seed6-100k`). Do not skip/resample
-    censored seeds or resume uncontrolled ranges.
+    not comparable under dec-005; seed 6's pre-overlay completion was tick
+    30505). No partial files were emitted. Backfill seed 6 from its preserved
+    `dual_a_s006_100k_probe` log only through the reviewed source/provider-
+    binding tool; do not skip/resample censored seeds or resume uncontrolled
+    ranges. No MATLAB sessions remain active after worker C completed 34-49.
   - All 23 completed pairs (0-5, 17, 34-49) have been independently run
     through the combined validator: 23/23 PASS for both Cytokinesis and
     FtsZ, same completion anchor, distinct files/content, genuine provider,
