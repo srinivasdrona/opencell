@@ -21,10 +21,10 @@ function report = probe_l21_chromosome_randstream_state(output_json_path)
 % local MATLAB installation, independent of any Python-side formula.
 
 if nargin < 1 || isempty(output_json_path)
-    output_json_path = fullfile('artifacts', 'l21_dnadamage_chromosome_rng', 'chromosome_randstream_state_probe.json');
+    output_json_path = fullfile('artifacts', 'l21_chromosome_rng', 'chromosome_randstream_state_probe.json');
 end
 
-seeds_to_probe = [1, 2000, 12345, 2147483646];
+seeds_to_probe = [0, 1, 2000, 12345, 2147483646];
 rows = struct([]);
 row_idx = 0;
 

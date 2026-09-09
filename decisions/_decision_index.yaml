@@ -69,11 +69,17 @@ decisions:
     # this decision's own owner/a future reviewer to formally revisit.
 
   - id: dec-006
-    title: "Shared Chromosome.randStream state is a captured input oracle, not RNG output leakage (ReplicationInitiation)"
+    title: "Shared Chromosome.randStream state is a captured input oracle, not RNG output leakage (ReplicationInitiation, TranscriptionalRegulation)"
     file: decisions/dec-006-shared-chromosome-randstream-input-oracle.md
     status: active
     created: 2026-09-05
+    renumbered_from: dec-005-shared-chromosome-randstream-input-oracle.md
+    renumber_reason: "Collided with an unrelated dec-005-full-simulation-source-hash-binding.md already claiming dec-005 on the integration branch."
     invalidation_triggers:
+      - "A future audit shows chromosome.randStream is NOT actually shared across the ~28 Karr processes that call bindProteinToChromosome/sampleAccessibleRegions/setSiteDamaged/setSiteProteinBound for a given Karr build/version"
+      - "RandStream('mcg16807').State's internal encoding is later found to be closed-form decodable, making the ledger-walk reconstruction technique unnecessary infrastructure"
+      - "A consuming process's own draw-count/branch logic changes such that the frozen ledger JSON schema no longer captures every draw the process consumes"
+      - "A second, independently-verified formula for .State disagrees with the ledger-walk reconstruction's output for the same seed/tick"
       - "A non-ledger-restored L2.1 replay of ReplicationInitiation (or any other consuming process) is later shown bit-identical without the ledger, proving the shared stream IS independently reconstructable for that case"
       - "The ledger sidecar format changes incompatibly with tests/vivarium/chromosome_rand_stream_ledger.py's loader (main) without a corresponding regeneration"
       - "A new process is found to consume the shared Chromosome.randStream and needs its own <Process>ChromosomeLedgerRandStream subclass registered"

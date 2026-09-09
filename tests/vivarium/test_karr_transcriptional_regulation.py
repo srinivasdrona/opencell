@@ -22,6 +22,7 @@ if "opencell" in sys.modules:
 
 from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
+from opencell.util.txreg_mcg_rand import TxRegMcgRandStream
 from opencell.vivarium import karr_transcriptional_regulation as tx_reg_module
 from opencell.vivarium.karr_composite import build_karr_chassis_v6
 from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
@@ -37,7 +38,8 @@ def _empty_tr_state(process: KarrTranscriptionalRegulationProcess) -> dict[str, 
     return {
         "protein": {"counts": {tf: 0.0 for tf in process.tf_wids}},
         "complex": {"counts": {tf: 0.0 for tf in process.tf_wids}},
-        "tf_binding": {tf: {tu: 0.0 for tu in process.tu_wids} for tf in process.tf_wids},
+        "chromosome": {},
+        "tf_bound_promoters": {wid: 0.0 for wid in process.tf_bound_promoters_wids},
     }
 
 
@@ -71,36 +73,81 @@ def _regulated_tus_for_tf(
     return [process.tu_wids[idx] for idx in np.flatnonzero(mask).tolist()]
 
 
-def _apply_tf_binding_update(state: dict[str, Any], update: dict[str, Any]) -> None:
-    for tf_wid, per_tu in update.get("tf_binding", {}).items():
-        for tu_wid, delta in per_tu.items():
-            state["tf_binding"][tf_wid][tu_wid] = float(
-                state["tf_binding"][tf_wid].get(tu_wid, 0.0) + float(delta)
-            )
+def _apply_full_update(
+    process: KarrTranscriptionalRegulationProcess,
+    state: dict[str, Any],
+    update: dict[str, Any],
+) -> None:
+    """Apply the authoritative site-level + free/bound-copy deltas emitted by
+    ``next_update`` back onto a hand-built test state dict."""
+    for wid, delta in update.get("tf_bound_promoters", {}).items():
+        state["tf_bound_promoters"][wid] = float(state["tf_bound_promoters"].get(wid, 0.0)) + float(delta)
+    for tf_wid, delta in update.get("enzymes", {}).items():
+        store = _tf_store(process, tf_wid)
+        state[store]["counts"][tf_wid] = float(state[store]["counts"].get(tf_wid, 0.0)) + float(delta)
+
+
+def _bound_site_count(state: dict[str, Any]) -> int:
+    return int(sum(1 for v in state["tf_bound_promoters"].values() if float(v) > 0.5))
 
 
 def _make_toy_process(
     tf_wids: list[str],
     tu_wids: list[str],
-    affinity: np.ndarray,
-    fold_change: np.ndarray,
+    site_tf: list[int],
+    site_tu: list[int],
+    site_affinity: list[float],
+    site_activity: list[float],
     other_activities: np.ndarray | None = None,
     tf_wid_source: dict[str, str] | None = None,
     seed: int = 0,
 ) -> KarrTranscriptionalRegulationProcess:
+    """Build a process wired directly with a synthetic Karr-shaped site
+    table (bypassing fixture loading), for testing the genuine site-level
+    binding algorithm in isolation from the real 5-TF/335-TU KB data.
+
+    Each toy site is given a distinct, well-separated genome position so
+    footprint/positional collisions are impossible by construction; column
+    0 sits on strand 0 (chromosome copy 1, always polymerized by the
+    no-chromosome-data fallback), column 1 sits on strand 2 (chromosome
+    copy 2, never polymerized by that same fallback) so toy tests exercise
+    exactly the same "copy 1 only, by default" behavior as production.
+    """
     p = KarrTranscriptionalRegulationProcess({"rng_seed": seed})
+    n_tf = len(tf_wids)
+    n_tu = len(tu_wids)
     p.tf_wids = tf_wids
+    p.enzyme_wids = list(tf_wids)
     p.tu_wids = tu_wids
-    p.tf_promoter_affinity = np.asarray(affinity, dtype=np.float64)
-    p.tf_tu_fold_change = np.asarray(fold_change, dtype=np.float64)
+    p.tf_promoter_affinity = np.zeros((n_tf, n_tu), dtype=np.float64)
+    p.tf_tu_fold_change = np.ones((n_tf, n_tu), dtype=np.float64)
+    for tf_i, tu_i, aff, act in zip(site_tf, site_tu, site_affinity, site_activity, strict=True):
+        p.tf_promoter_affinity[tf_i, tu_i] = aff
+        p.tf_tu_fold_change[tf_i, tu_i] = act
     if other_activities is None:
-        p.tf_other_activities = np.ones_like(p.tf_tu_fold_change, dtype=np.float64)
+        p.tf_other_activities = np.ones((n_tf, n_tu), dtype=np.float64)
     else:
         p.tf_other_activities = np.asarray(other_activities, dtype=np.float64)
-    p.n_relationships = int(np.count_nonzero(p.tf_promoter_affinity > 0.0))
-    p._n_tf = len(tf_wids)
-    p._n_tu = len(tu_wids)
-    p._rng = np.random.default_rng(seed)
+    p.n_relationships = len(site_tf)
+    p._n_tf = n_tf
+    p._n_tu = n_tu
+
+    n_sites = len(site_tf)
+    p.site_tf_index = np.asarray(site_tf, dtype=np.int64)
+    p.site_tu_index = np.asarray(site_tu, dtype=np.int64)
+    p.site_affinity = np.asarray(site_affinity, dtype=np.float64)
+    p.site_activity = np.asarray(site_activity, dtype=np.float64)
+    p.site_position = np.arange(n_sites, dtype=np.int64) * 1000
+    p.site_strand_col0 = np.zeros(n_sites, dtype=np.int64)
+    p.site_strand_col1 = np.full(n_sites, 2, dtype=np.int64)
+    p._n_sites = n_sites
+    p.tf_bound_promoters_wids = [f"site{s:03d}_copy0" for s in range(n_sites)] + [
+        f"site{s:03d}_copy1" for s in range(n_sites)
+    ]
+    p.chromosome_shape = (10_000, 4)
+
+    p._rng = TxRegMcgRandStream(seed)
+    p._chromosome_rng = TxRegMcgRandStream(seed)
     if tf_wid_source is None:
         tf_wid_source = {tf_wid: "protein" for tf_wid in tf_wids}
     p._tf_wid_source = {tf_wid: str(tf_wid_source.get(tf_wid, "protein")) for tf_wid in tf_wids}
@@ -238,8 +285,10 @@ def test_missing_tf_wid_in_expected_store_raises() -> None:
     p = _make_toy_process(
         tf_wids=["TF_DIMER"],
         tu_wids=["TU_X"],
-        affinity=np.array([[1.0]], dtype=np.float64),
-        fold_change=np.array([[2.0]], dtype=np.float64),
+        site_tf=[0],
+        site_tu=[0],
+        site_affinity=[1.0],
+        site_activity=[2.0],
         tf_wid_source={"TF_DIMER": "complex"},
         seed=0,
     )
@@ -255,7 +304,8 @@ def test_no_free_tfs_no_binding_change() -> None:
     state = _empty_tr_state(p)
     update = p.next_update(1.0, state)
 
-    assert update["tf_binding"] == {}
+    assert update.get("tf_bound_promoters") is None
+    assert all(val == pytest.approx(0.0) for per_tu in update["tf_binding"].values() for val in per_tu.values())
     assert set(update["tx_rate_fold_change"]) == set(p.tu_wids)
     assert all(val == pytest.approx(1.0) for val in update["tx_rate_fold_change"].values())
 
@@ -268,15 +318,18 @@ def test_high_affinity_tf_binds_first() -> None:
         p = _make_toy_process(
             tf_wids=["TF_A"],
             tu_wids=["TU_HI", "TU_LO"],
-            affinity=np.array([[10.0, 1.0]], dtype=np.float64),
-            fold_change=np.array([[1.5, 1.5]], dtype=np.float64),
+            site_tf=[0, 0],
+            site_tu=[0, 1],
+            site_affinity=[10.0, 1.0],
+            site_activity=[1.5, 1.5],
             seed=seed,
         )
         state = _empty_tr_state(p)
         _set_tf_count(p, state, "TF_A", 1.0)
         update = p.next_update(1.0, state)
-        chosen = next(iter(update["tf_binding"]["TF_A"]))
-        if chosen == "TU_HI":
+        bound = update.get("tf_bound_promoters", {})
+        assert len(bound) == 1
+        if next(iter(bound)) == "site000_copy0":
             hi_hits += 1
         else:
             lo_hits += 1
@@ -288,27 +341,31 @@ def test_one_copy_per_tf_per_promoter() -> None:
     p = _make_toy_process(
         tf_wids=["TF_A"],
         tu_wids=["TU_A"],
-        affinity=np.array([[1.0]], dtype=np.float64),
-        fold_change=np.array([[2.0]], dtype=np.float64),
+        site_tf=[0],
+        site_tu=[0],
+        site_affinity=[1.0],
+        site_activity=[2.0],
         seed=0,
     )
     state = _empty_tr_state(p)
     _set_tf_count(p, state, "TF_A", 10.0)
 
     update = p.next_update(1.0, state)
-    assert update["tf_binding"]["TF_A"]["TU_A"] == pytest.approx(1.0)
-    _apply_tf_binding_update(state, update)
+    assert update["tf_bound_promoters"] == {"site000_copy0": 1.0}
+    _apply_full_update(p, state, update)
 
     update_next = p.next_update(1.0, state)
-    assert update_next["tf_binding"] == {}
+    assert update_next.get("tf_bound_promoters") is None
 
 
 def test_fold_change_multiplicative() -> None:
     p = _make_toy_process(
         tf_wids=["TF_A", "TF_B"],
         tu_wids=["TU_X"],
-        affinity=np.array([[1.0], [1.0]], dtype=np.float64),
-        fold_change=np.array([[2.0], [2.0]], dtype=np.float64),
+        site_tf=[0, 1],
+        site_tu=[0, 0],
+        site_affinity=[1.0, 1.0],
+        site_activity=[2.0, 2.0],
         seed=0,
     )
     state = _empty_tr_state(p)
@@ -323,20 +380,22 @@ def test_other_activities_fold_change_tracks_tf_presence() -> None:
     p = _make_toy_process(
         tf_wids=["TF_A"],
         tu_wids=["TU_X"],
-        affinity=np.array([[0.0]], dtype=np.float64),
-        fold_change=np.array([[1.0]], dtype=np.float64),
+        site_tf=[],
+        site_tu=[],
+        site_affinity=[],
+        site_activity=[],
         other_activities=np.array([[3.0]], dtype=np.float64),
         seed=0,
     )
     state = _empty_tr_state(p)
 
     update_none = p.next_update(1.0, state)
-    assert update_none["tf_binding"] == {}
+    assert update_none.get("tf_bound_promoters") is None
     assert update_none["tx_rate_fold_change"]["TU_X"] == pytest.approx(1.0)
 
     _set_tf_count(p, state, "TF_A", 1.0)
     update_present = p.next_update(1.0, state)
-    assert update_present["tf_binding"] == {}
+    assert update_present.get("tf_bound_promoters") is None
     assert update_present["tx_rate_fold_change"]["TU_X"] == pytest.approx(3.0)
 
 
@@ -362,24 +421,32 @@ def test_m2v3_reads_fold_change() -> None:
     assert regulated["rna"]["counts"][gid1] == pytest.approx(base["rna"]["counts"][gid1])
 
 
-def test_unbinding_recovers_baseline() -> None:
+def test_never_unbinds_when_free_copies_drop_to_zero() -> None:
+    """Karr's `bindTranscriptionFactors` never releases an already-bound
+    TF-promoter pair; a dropping free-copy count must NOT cause the site
+    to become unbound (this is the literal fix for the fabricated
+    'release-lower-affinity-binding-on-copy-drop' behavior that caused
+    every-tick spurious activity in the pre-fix implementation)."""
     p = _make_toy_process(
         tf_wids=["TF_A"],
         tu_wids=["TU_A"],
-        affinity=np.array([[1.0]], dtype=np.float64),
-        fold_change=np.array([[3.0]], dtype=np.float64),
+        site_tf=[0],
+        site_tu=[0],
+        site_affinity=[1.0],
+        site_activity=[3.0],
         seed=0,
     )
     state = _empty_tr_state(p)
     _set_tf_count(p, state, "TF_A", 1.0)
     first = p.next_update(1.0, state)
-    _apply_tf_binding_update(state, first)
+    assert first["tf_bound_promoters"] == {"site000_copy0": 1.0}
+    _apply_full_update(p, state, first)
     assert first["tx_rate_fold_change"]["TU_A"] == pytest.approx(3.0)
 
     _set_tf_count(p, state, "TF_A", 0.0)
     second = p.next_update(1.0, state)
-    assert second["tf_binding"]["TF_A"]["TU_A"] == pytest.approx(-1.0)
-    assert second["tx_rate_fold_change"]["TU_A"] == pytest.approx(1.0)
+    assert second.get("tf_bound_promoters") is None
+    assert second["tx_rate_fold_change"]["TU_A"] == pytest.approx(3.0)
 
 
 def test_steady_state_binding_fraction() -> None:
@@ -390,18 +457,14 @@ def test_steady_state_binding_fraction() -> None:
 
     for _ in range(100):
         update = p.next_update(1.0, state)
-        _apply_tf_binding_update(state, update)
+        _apply_full_update(p, state, update)
 
-    total_bound = 0.0
-    for tf in p.tf_wids:
-        total_bound += sum(float(state["tf_binding"][tf][tu]) for tu in p.tu_wids)
-    total_tf = 0.0
-    for tf in p.tf_wids:
-        total_tf += float(state[_tf_store(p, tf)]["counts"][tf])
-    binding_capacity = float(np.count_nonzero(p.tf_promoter_affinity > 0.0))
-    expected_bound = min(total_tf, binding_capacity)
-    if expected_bound > 0.0:
-        assert total_bound >= 0.90 * expected_bound
+    # With ample free copies for every TF (10 >> any single TF's site
+    # count) and no unbinding ever, every column-0 (chromosome copy 1)
+    # site -- the only copy accessible under the default no-chromosome
+    # fallback -- must end up bound within 100 ticks.
+    total_bound = sum(1 for wid, v in state["tf_bound_promoters"].items() if float(v) > 0.5 and wid.endswith("_copy0"))
+    assert total_bound == p._n_sites
 
 
 def test_no_regression_m2v3_without_regulation() -> None:

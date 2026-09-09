@@ -1,0 +1,98 @@
+{
+  "tf_wids": [
+    [
+      "MG_101_MONOMER",
+      "MG_127_MONOMER",
+      "MG_205_DIMER",
+      "MG_236_MONOMER",
+      "MG_428_DIMER"
+    ]
+  ],
+  "per_tf": [
+    {
+      "tf_wid": "MG_101_MONOMER",
+      "local_idx": 1,
+      "global_monomer_idx": 101,
+      "global_complex_idx": [],
+      "releasable_monomer_global_idxs": 123,
+      "releasable_complex_global_idxs": [
+        1,
+        78,
+        82,
+        180,
+        181
+      ],
+      "own_footprint": 30,
+      "own_footprint_3prime": 14,
+      "own_footprint_5prime": 15
+    },
+    {
+      "tf_wid": "MG_127_MONOMER",
+      "local_idx": 2,
+      "global_monomer_idx": 128,
+      "global_complex_idx": [],
+      "releasable_monomer_global_idxs": 123,
+      "releasable_complex_global_idxs": [
+        1,
+        78,
+        82,
+        180,
+        181
+      ],
+      "own_footprint": 25,
+      "own_footprint_3prime": 12,
+      "own_footprint_5prime": 12
+    },
+    {
+      "tf_wid": "MG_205_DIMER",
+      "local_idx": 3,
+      "global_monomer_idx": [],
+      "global_complex_idx": 79,
+      "releasable_monomer_global_idxs": 123,
+      "releasable_complex_global_idxs": [
+        1,
+        78,
+        82,
+        180,
+        181
+      ],
+      "own_footprint": 33,
+      "own_footprint_3prime": 16,
+      "own_footprint_5prime": 16
+    },
+    {
+      "tf_wid": "MG_236_MONOMER",
+      "local_idx": 4,
+      "global_monomer_idx": 242,
+      "global_complex_idx": [],
+      "releasable_monomer_global_idxs": 123,
+      "releasable_complex_global_idxs": [
+        1,
+        78,
+        82,
+        180,
+        181
+      ],
+      "own_footprint": 36,
+      "own_footprint_3prime": 17,
+      "own_footprint_5prime": 18
+    },
+    {
+      "tf_wid": "MG_428_DIMER",
+      "local_idx": 5,
+      "global_monomer_idx": [],
+      "global_complex_idx": 165,
+      "releasable_monomer_global_idxs": 123,
+      "releasable_complex_global_idxs": [
+        1,
+        78,
+        82,
+        180,
+        181
+      ],
+      "own_footprint": 28,
+      "own_footprint_3prime": 13,
+      "own_footprint_5prime": 14
+    }
+  ]
+}

@@ -11,7 +11,6 @@ import re
 import subprocess
 import sys
 from dataclasses import asdict, dataclass
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -43,6 +42,7 @@ from l2_replay_common import (  # type: ignore
 )
 
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, _read_matlab_dataset
+from opencell.util.txreg_mcg_rand import TxRegChromosomeLedgerRandStream
 from opencell.vivarium.karr_dna_damage_rng import KarrLedgerReplayStream
 from opencell.vivarium.karr_replication_initiation import (  # type: ignore
     _ReplicationInitiationChromosomeLedgerRandStream,
@@ -65,6 +65,7 @@ from scripts.l2_event.launcher import (
 _CHROMOSOME_LEDGER_STREAM_CLS: dict[str, type] = {
     "DNADamage": KarrLedgerReplayStream,
     "ReplicationInitiation": _ReplicationInitiationChromosomeLedgerRandStream,
+    "TranscriptionalRegulation": TxRegChromosomeLedgerRandStream,
 }
 
 TARGET_PROCESSES = (
@@ -215,10 +216,18 @@ CUSTOM_COMPARE_OBSERVABLES: dict[str, tuple[str, ...]] = {
         "isNFkBActivated",
         "isInflammatoryResponseActivated",
     ),
-    "TranscriptionalRegulation": (
-        "boundTFs",
-        "tfBoundPromoters",
-    ),
+    # No "TranscriptionalRegulation" entry here (deliberately, not an
+    # oversight): the real site-level `tf_bound_promoters`/`bound_tfs`
+    # surfaces (34/5 entries) already come from the generic
+    # `l2_2_replay_common_v2.py::_PROCESS_SPECS["TranscriptionalRegulation"]`
+    # `store_path_override` path via `spec.observables`, never via this
+    # custom-observable machinery. Routing them through here too (as a
+    # prior, pre-site-level-rewrite version of this dict did, with a stale
+    # 130-element TU-level `tf_binding` cross-product shape) shadowed the
+    # correct v2-spec projection and produced a spurious CODE_GAP
+    # independent of any RNG/occlusion fix -- see
+    # `_overlay_custom_observable`/`_project_custom_observable`'s own
+    # comments below for the removed branches this fixed.
     "RibosomeAssembly": ("RNAs",),
 }
 
@@ -245,9 +254,10 @@ CUSTOM_VECTOR_SURFACES: dict[str, dict[str, tuple[str, ...]]] = {
 }
 
 CUSTOM_WID_ATTRS: dict[str, dict[str, str]] = {
-    "TranscriptionalRegulation": {
-        "boundTFs": "tf_wids",
-    },
+    # No "TranscriptionalRegulation" entry (see CUSTOM_COMPARE_OBSERVABLES'
+    # comment above this process): its wids come exclusively from the v2
+    # spec's `observable_to_wids_attr` (`tf_bound_promoters_wids`/
+    # `tf_wids`), never this legacy custom-observable machinery.
     "RibosomeAssembly": {
         "RNAs": "rna_subunit_wids",
     },
@@ -585,12 +595,6 @@ def _infer_custom_wids(process: Any, process_name: str, observable: str, vector_
     return [f"{observable}_{idx}" for idx in range(vector_len)]
 
 
-@lru_cache(maxsize=1)
-def _tr_surface_order() -> tuple[list[str], list[str]]:
-    process = _PROCESS_SPECS["TranscriptionalRegulation"].process_cls({})
-    return list(getattr(process, "tf_wids", [])), list(getattr(process, "tu_wids", []))
-
-
 def _overlay_custom_observable(
     *,
     state: dict[str, Any],
@@ -599,9 +603,6 @@ def _overlay_custom_observable(
     process_name: str,
     wids: list[str],
 ) -> None:
-    if process_name == "TranscriptionalRegulation":
-        return
-
     if process_name == "HostInteraction":
         # Seed ALL SIX host booleans from their genuine states_before trace
         # values (not just isBacteriumAdherent) -- CUSTOM_COMPARE_OBSERVABLES
@@ -646,30 +647,6 @@ def _project_custom_observable(
     process_name: str,
     wids: list[str],
 ) -> np.ndarray:
-    if process_name == "TranscriptionalRegulation":
-        binding_store = state.get("tf_binding", {})
-        if not isinstance(binding_store, dict):
-            binding_store = {}
-        if observable == "boundTFs":
-            tf_wids = list(wids)
-            out = np.zeros(len(tf_wids), dtype=np.float64)
-            for idx, tf_wid in enumerate(tf_wids):
-                per_tf = binding_store.get(tf_wid, {})
-                if not isinstance(per_tf, dict):
-                    continue
-                out[idx] = float(sum(float(value) for value in per_tf.values()))
-            return out
-        if observable == "tfBoundPromoters":
-            tf_wids, tu_wids = _tr_surface_order()
-            flattened: list[float] = []
-            for tf_wid in tf_wids:
-                per_tf = binding_store.get(tf_wid, {})
-                if not isinstance(per_tf, dict):
-                    per_tf = {}
-                for tu_wid in tu_wids:
-                    flattened.append(float(per_tf.get(tu_wid, 0.0)))
-            return np.asarray(flattened, dtype=np.float64)
-
     path = CUSTOM_VECTOR_SURFACES.get(process_name, {}).get(observable)
     if path is None:
         raise KeyError(f"No custom projection path for {process_name}:{observable}")
