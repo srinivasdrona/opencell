@@ -20,6 +20,10 @@ def test_karr_dna_supercoiling_strict_zero_no_global_fallback() -> None:
     process = KarrDNASupercoilingProcess(
         {
             "rng_seed": 3,
+            # synthetic state, not a real MATLAB trace: opt out of ledger lookup
+            "chromosome_release_rng_ledger_path": False,
+            "superhelical_density_ledger_path": False,
+            "process_rng_ledger_path": False,
             "gyrase_activity_rate": 4.0,
             "topoiv_activity_rate": 0.05,
             "reference_gyrase_count": 1.0,

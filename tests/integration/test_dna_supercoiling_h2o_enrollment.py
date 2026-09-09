@@ -93,6 +93,10 @@ def test_dna_supercoiling_consumes_h2o_with_atp() -> None:
     process = KarrDNASupercoilingProcess(
         {
             "rng_seed": 7,
+            # synthetic state, not a real MATLAB trace: opt out of ledger lookup
+            "chromosome_release_rng_ledger_path": False,
+            "superhelical_density_ledger_path": False,
+            "process_rng_ledger_path": False,
             "gyrase_activity_rate": 20.0,
             "topoiv_activity_rate": 20.0,
             "reference_gyrase_count": 1.0,

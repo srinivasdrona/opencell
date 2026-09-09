@@ -108,7 +108,10 @@ def _scalar_sigma_from_store(
     store: ChromosomeStore,
 ) -> float:
     polymerized = store.get_field("polymerizedRegions")
-    positive_regions = process._positive_ds_regions(polymerized)
+    positive_regions = process._positive_regions_from_store(  # noqa: SLF001
+        store=store,
+        polymerized=polymerized,
+    )
     linking_values = process._align_positive_region_values(
         positive_regions=positive_regions,
         linking_numbers=store.get_field("linkingNumbers"),
@@ -128,7 +131,12 @@ def _replication_state_for_store(
     process: KarrDNASupercoilingProcess,
     store: ChromosomeStore,
 ) -> str:
-    if len(process._positive_ds_regions(store.get_field("polymerizedRegions"))) > 1:
+    if len(
+        process._positive_regions_from_store(  # noqa: SLF001
+            store=store,
+            polymerized=store.get_field("polymerizedRegions"),
+        )
+    ) > 1:
         return "elongating"
     return "idle"
 
