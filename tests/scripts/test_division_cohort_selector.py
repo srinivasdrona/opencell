@@ -339,6 +339,28 @@ def test_right_censored_record_with_a_trace_file_present_raises(tmp_path):
         resolve_seed_attempt(seed, karr_native_root=tmp_path)
 
 
+def test_right_censored_record_seed_must_match_directory(tmp_path):
+    seed = 7
+    out_dir = event_window_dir(seed, karr_native_root=tmp_path)
+    out_dir.mkdir(parents=True)
+    dnadamage_sha, mnrnd_sha = _current_censor_identity()
+    (out_dir / attempt_record_filename()).write_text(
+        json.dumps(
+            {
+                "seed": 8,
+                "status": RIGHT_CENSORED,
+                "max_search_ticks": selection_horizon_max_search_ticks(),
+                "dnadamage_source_resolved_sha256": dnadamage_sha,
+                "mnrnd_provider_sha256": mnrnd_sha,
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    with pytest.raises(CohortContractError, match="claims seed=8"):
+        resolve_seed_attempt(seed, karr_native_root=tmp_path)
+
+
 def test_completed_record_missing_one_trace_file_raises(tmp_path):
     seed = 8
     out_dir = event_window_dir(seed, karr_native_root=tmp_path)
@@ -936,4 +958,3 @@ def test_completed_sidecar_with_correct_measured_identity_is_accepted(tmp_path, 
     assert record.completion_tick == 31427
     assert record.cytokinesis_trace_sha256 is not None
     assert record.ftsz_trace_sha256 is not None
-

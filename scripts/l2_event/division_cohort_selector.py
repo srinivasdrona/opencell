@@ -263,6 +263,12 @@ def resolve_seed_attempt(
         # sole evidence, and its identity fields are used as recorded
         # (still subject to the horizon/current-identity-binding checks
         # audit_cohort applies afterward).
+        recorded_seed = raw.get("seed")
+        if recorded_seed is not None and int(recorded_seed) != seed:
+            raise CohortContractError(
+                f"seed {seed}: RIGHT_CENSORED attempt record claims seed={recorded_seed!r}; "
+                "refusing a sidecar copied from a different seed directory"
+            )
         return AttemptRecord(
             seed=seed,
             status=status,
