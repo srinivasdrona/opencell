@@ -77,7 +77,9 @@ earlier blocks below:**
 - Live/active review lanes after runtime recovery:
   - DNAS accepted candidate `4556d27` is in a provenance-safe integration
     lane (`dnas-provenance-integration`).
-  - TxReg continuation is active in its preserved dirty worktree.
+  - TxReg continuation: **DONE, 2026-09-09**, see the full write-up under
+    its L2.1 queue entry below (`integrate/l21-txreg-final`, 11 EWP/0/0,
+    ready for one final lightweight Opus integration review).
   - RepInit L2.1 split is accepted, merged, and pending push; exact 200-tick
     replay passed non-skipped in main.
   - Division censoring implementation completed; Opus review is active.
@@ -179,6 +181,42 @@ earlier blocks below:**
     integration with one unioned dec-006 and three-process ledger registry,
     mechanically regenerate 11/0/0, stage trace `73fc1d97...` and ledger
     `f01783e8...`, preserve RepInit/DNADamage/Cyt/Host, and keep L2.2 18/2/2.
+    **2026-09-09 05:xx-06:xx IST UPDATE: DONE.** New clean worktree/branch
+    `integrate/l21-txreg-final` (rooted at `origin/main`, then merged
+    forward through `1a10006` -> `8d25274` mid-session, no code conflicts,
+    provenance conflict resolved by event_id union) at commits `6dfc1a1`/
+    `559287d`/`9a0ad41`. One unioned `dec-006` (shared title, main's
+    renumbering/related-decisions/consequences kept, candidate's
+    invalidation triggers added, 7 triggers total, yaml-tested no
+    duplicate ids). `_CHROMOSOME_LEDGER_STREAM_CLS` kept from main
+    wholesale + one TxReg import/registry line (registry now exactly
+    DNADamage/ReplicationInitiation/TranscriptionalRegulation). RepInit's
+    and DNADamage's `l2_2_replay_common_v2.py` specs untouched; TxReg's
+    spec rewritten to the real site-level surfaces. Main's `not bool` +
+    float-coercion normalization predicate kept verbatim in
+    `chromosome_rand_stream_ledger.py`; candidate's docstring merged in
+    (now also naming RepInit). `reconstruct_chromosome_draw_ledger.m`
+    code logic confirmed identical, only the naming comment unioned.
+    Provenance merged by event_id twice (345, then 347 total), both
+    duplicate-checked. Trace `73fc1d97...`/ledger `f01783e8...` copied
+    into both this worktree and `main-integrate`, hash-verified before
+    and after. Promoter's counts-tally bug fixed (was silently omitting
+    zero-valued classification keys); reran mechanically ->
+    literal 11/0/0, 11 nodeids. Added a fully synthetic Host-verifier
+    regression test (`test_active_window_manifest_code_gap_row_verifies_
+    via_synthetic_row`) so the manifest's CODE_GAP re-verification branch
+    stays covered now that zero real rows are CODE_GAP. Verified
+    preserved: RepInit exact (`bit_identity_pass=true`, 200/200) and
+    `--no-ledger` (honest mismatch at tick 15, matches
+    `STATUS_L21_REPINIT_SEPT2.md` exactly), DNADamage seed2000 ledger
+    replay, all 11 active-window rows GENUINE (16/16 in the full strict-
+    rubric file), ledger/extractor/rule8/oracle suites (52+54 passed),
+    L1b+provenance (63/63), Ruff clean, L2.2 generator audit unchanged at
+    18/2/2 integrity OK. TxReg's own PIT-gate pilot regenerated
+    byte-identical (`ks_pvalue=0.422`), still
+    `PILOT_ONLY_NOT_A_GATE_VERDICT`, still outside the scored board. Full
+    write-up: `STATUS_L21_TXREG_FINAL_INTEGRATION.md`. **Not merged/pushed
+    to main** -- ready for one final lightweight Opus integration review.
 - L2.2:
   - DNASupercoiling branch `agent/l22-dnas-20260812` at `4556d27` is
     **ACCEPTED** by final Opus review: both MATLAB origin-wrap helpers,
