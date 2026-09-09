@@ -1,34 +1,36 @@
 {
   "completion_status": "COMPLETE",
-  "evaluator_schema_version": 4,
+  "evaluator_schema_version": 5,
   "git_dirty": null,
-  "git_sha": "514a6966d0e1f278fe52d768621de7026f1855eb",
+  "git_sha": "9044af22fa763e92e14e81e2a39ea67deef32676",
   "inputs_verified": true,
   "m_ticks": 100,
-  "n_seeds": 50,
+  "n_seeds": 200,
   "process": "DNASupercoiling",
   "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "90b6067172ba3f6267628865f01a05e19e1414098fb56acd9b8cae9a12ce3807",
+    "SUMMARY.json": "879c3a4a0e97605f5c8197db59c95cf5e5bdef39b7afd416434cc6156e0e4478",
     "analytical_check.json": "fe7776df0a449ac6226e4a97dddce8cd8b17225d60ad090c4ed22d459aa01733",
-    "input_manifest.json": "bd79b741d7bf074d0429fe692dab4d8d34108bc6dcab177ac0744b951d7fcc59",
-    "null_calibration.json": "30810716682f4a90805e938f469d15b437b3a1fb617956a6b87a4377733ed9b2",
-    "provenance.json": "62db0df15459d2f4ceb1217ff3342ca881ea1b20e3f39c9b7dd1883277250a24",
-    "result.json": "63ea1524acbc32e206af97805f3e3e39031e71c02550b9843e985084fe0b1529",
-    "thresholds.json": "49bf0423b5e7bbe588caf3f013cf72d2fd7af96b8267859c52eee7914f8ae0cc"
+    "input_manifest.json": "ea31f816a1c433c1f0a71c7d210a55877827313dc83675871af0b9882bc62f69",
+    "null_calibration.json": "490e92c96cd759fe0f1880180d3f07b42f93a14afa3bc672e79b56b1ceb4222b",
+    "provenance.json": "12bc1d98d37ce5b322c95838b46a33d78e3aa9ebe485a6dc46f1eeaa0fd7b1e2",
+    "result.json": "627342cbe01f3e3a29095eae4565e38f161f115239a20009d5ded41d80d67afa",
+    "thresholds.json": "0f9ae3912ad5ddaf280fdf246c86ed029e849d0b348e6cf6ac7029a879a354b5"
   },
   "source_hashes": {
-    "catalog": "d7e205d08fa4bcc16ac38bf7de16496be25b7e6e486f4abfba9dd583cce002f1",
-    "chromosome_store_module": "7066d68f8b3a3dfd0a1be6d446800445583f17381779adbb03562510ffdae22a",
-    "helpers": "d0657a1e2a552035f31480934515eb784b747715cf38544c91f63312d719b35a",
-    "l2_replay_common": "dbc43d5d0850f58bee564da81e410dffce0d05e4572ef0827c49a1c17831cdcb",
+    "catalog_entry": "d09d45460696cb0998e72d8f0b2d9a0a1bf8e49d53ba9f5aa5dd37c7e967fdf9",
+    "chromosome_store_module": "de00a57b8a881a247b4af536b152b3ec452eccb53f193f601eeb0192d3639dad",
+    "dnas_runner_helpers_module": "b9feda43473d68d1fc9d4cfc908944867f271450d4e9b1e92c4aa24f2e14eca4",
+    "helpers": "016c0d8647aa7bdf4b1aaf3c01be6b3387213e773768ab4eb507fc6e5863f160",
+    "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
     "m_gen_constants_module": "bbfea3ac477e4a3eb93edcfae355350c9d5b8c1501ea574ef9b83acfaebce8ae",
-    "oc_module": "9e89aea7115960ca5e2237b7f0385b24d2e58f535bbc21a55fe865e94ea85ac1",
-    "projections": "ff2154045ffad25ab5074103ef96989c336cb3e9d3c63444f292a48ecba2eb3b",
-    "runner": "44af79f2de583dd0e7a9d100cc3bb076f0f251c9276e87f5408de8ba5c6fa0a1",
+    "oc_module": "538922a7ce0bb2a65ad881d6fca9a65f666b4be42d8c912d55fcf3dc5675fa82",
+    "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+    "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
     "state_init_module": "6f1ff7401f505cfcc68d89d912d2af35776adb08643069e176e922ac912b50ec",
+    "tick_runner": "72bf768fb73d97c7dda254d7159ee6543836e3ece67b228d5e7e46559660d39c",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-07-31T13:16:18.155480+00:00"
+  "written_at": "2026-09-09T02:20:05.922156+00:00"
 }

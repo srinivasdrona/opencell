@@ -1,0 +1,115 @@
+{
+  "generated_at": "2026-09-08T23:34:11.812373+00:00",
+  "process": "DNASupercoiling",
+  "rule": "two_sided_sparse_gate",
+  "trace_root": "/mnt/e/opencell-worktrees/integrate-l22-dnas-current/data/m1_sources/karr_native",
+  "base_checkpoint_path": "/mnt/e/opencell-worktrees/integrate-l22-dnas-current/docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/diagnostic_n200/raw_captured_tensors_checkpoint.npz",
+  "checkpoint_path": "/mnt/e/opencell-worktrees/integrate-l22-dnas-current/docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/diagnostic_n200_followup/sept2_two_sided_rerun/raw_captured_tensors_checkpoint.npz",
+  "shape": [
+    200,
+    100,
+    2
+  ],
+  "component_scales": {},
+  "preregistration_examples": {
+    "followup8_pooled_1486_vs_65_two_sided_pvalue": 0.0,
+    "followup8_active_200_vs_58_two_sided_pvalue": 1.8556914037787696e-19,
+    "followup8_clustered_200_vs_7_two_sided_pvalue": 2.937429825663667e-50,
+    "holm_alpha_per_test_upper_bound": 0.016666666666666666
+  },
+  "primary_evaluation": {
+    "process": "DNASupercoiling",
+    "primary_channel": "chromosome",
+    "primary_projection": [
+      "linkingNumbers.delta_value_sum",
+      "linkingNumbers.delta_nnz"
+    ],
+    "rule": "two_sided_sparse_gate",
+    "config": {
+      "alpha_family": 0.05
+    },
+    "delta_value_sum_metric": {
+      "component_name": "linkingNumbers.delta_value_sum",
+      "scaled_w1": 7.612095933263693e-05,
+      "raw_w1": 0.007299999999999992,
+      "scale": 95.90000000000146,
+      "verdict": "PASS",
+      "n_nonzero_oc": 19840,
+      "n_nonzero_karr": 19842,
+      "scaled_distance_threshold": 1.0
+    },
+    "delta_nnz_sparse_gate": {
+      "component_name": "linkingNumbers.delta_nnz",
+      "config": {
+        "alpha_family": 0.05
+      },
+      "oc_support": {
+        "pooled_nonzero_ticks": 64,
+        "active_seeds": 58,
+        "clustered_seeds": 6
+      },
+      "karr_support": {
+        "pooled_nonzero_ticks": 65,
+        "active_seeds": 58,
+        "clustered_seeds": 7
+      },
+      "support_ok": true,
+      "axes": [
+        {
+          "axis": "pooled_nonzero_ticks",
+          "oc_count": 64,
+          "karr_count": 65,
+          "pooled_total": 129,
+          "testable": true,
+          "raw_pvalue": 1.0,
+          "holm_adjusted_pvalue": 1.0,
+          "rejected": false,
+          "direction": "BALANCED"
+        },
+        {
+          "axis": "active_seeds",
+          "oc_count": 58,
+          "karr_count": 58,
+          "pooled_total": 116,
+          "testable": true,
+          "raw_pvalue": 1.0,
+          "holm_adjusted_pvalue": 1.0,
+          "rejected": false,
+          "direction": "BALANCED"
+        },
+        {
+          "axis": "clustered_seeds",
+          "oc_count": 6,
+          "karr_count": 7,
+          "pooled_total": 13,
+          "testable": true,
+          "raw_pvalue": 1.0,
+          "holm_adjusted_pvalue": 1.0,
+          "rejected": false,
+          "direction": "BALANCED"
+        }
+      ],
+      "metric": {
+        "component_name": "linkingNumbers.delta_nnz",
+        "scaled_w1": 5.000000000000013e-05,
+        "raw_w1": 0.00010000000000000026,
+        "scale": 2.0,
+        "verdict": "PASS",
+        "n_nonzero_oc": 64,
+        "n_nonzero_karr": 65,
+        "scaled_distance_threshold": 1.0
+      },
+      "verdict": "PASS"
+    },
+    "process_verdict": "PASS"
+  },
+  "process_rng_audit_boundary": {
+    "ledger_covered_tick_count": 20000,
+    "breach_count": 0,
+    "audit_boundary_ok": true,
+    "breaches": [],
+    "under_consumption_count": 0,
+    "under_consumption": []
+  },
+  "process_verdict": "PASS"
+}

@@ -1,18 +1,18 @@
 {
-  "generated_at": "2026-07-31T13:16:06.863224+00:00",
+  "generated_at": "2026-09-09T02:19:53.054099+00:00",
   "process": "DNASupercoiling",
   "bucket": "ALGORITHMIC_SHALLOW",
   "channels": {
     "substrates": {
       "bootstrap_B": 1000,
-      "n_karr_seeds": 50,
+      "n_karr_seeds": 200,
       "n_ticks": 100,
-      "q95_null": 344787.31996399997,
+      "q95_null": 373454.7771024999,
       "bootstrap_values_summary": {
-        "mean": 317826.22213143995,
-        "stddev": 16119.950660001241,
-        "min": 258030.5570799999,
-        "max": 372747.94811999996
+        "mean": 346327.4973069899,
+        "stddev": 15831.141158801654,
+        "min": 301508.18465999997,
+        "max": 413945.36950999993
       }
     }
   },

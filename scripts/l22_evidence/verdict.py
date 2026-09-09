@@ -130,7 +130,24 @@ from scripts.l22_evidence.channel_names import normalize_channel_name  # noqa: E
 # the Karr citation's `upstream_repo`/`upstream_commit`/`line_ranges` to
 # this module's own registry constants, rejecting a forged/edited claim
 # even where the referenced files' hashes still happen to match.
-EVALUATOR_SCHEMA_VERSION = 4
+EVALUATOR_SCHEMA_VERSION = 5
+# v5 (R9, DNASupercoiling two-sided sparse gate): adds a NEW, additively-
+# dispatched aggregation type, `"dnas_two_sided_sparse_gate"`
+# (`_rederive_dnas_two_sided_gate_channel`), for DNASupercoiling's accepted
+# `chromosome` primary channel. Selected purely by the channel payload's own
+# `aggregation` string (mirroring every other `rederive_channel` branch), so
+# it has ZERO effect on any other process's channel (all other processes use
+# a different `aggregation` value already). Re-derives, from raw stored
+# counts only (never a stored verdict string): the `linkingNumbers.
+# delta_value_sum` component via the SAME `scaled_w1 <= threshold` formula
+# `per_component_scaled` already uses, and the `linkingNumbers.delta_nnz`
+# component via the pre-registered, Opus-reviewed two-sided exact-binomial
+# sparse-support gate (`scripts/l22_dnas_rare_event/two_sided_sparse_gate.py`,
+# imported read-only, never duplicated) across its three axes (
+# `pooled_nonzero_ticks`/`active_seeds`/`clustered_seeds`), Holm-Bonferroni
+# corrected at family alpha=0.05. `verdict.py` is not a registered hash-guard
+# dependency of any process (`schema.py` never hashes it), so this addition
+# changes zero provenance/staleness behavior for any existing row either.
 
 
 @dataclass(frozen=True)
@@ -243,6 +260,8 @@ def rederive_channel(name: str, payload: dict[str, Any], *, is_primary: bool) ->
         return _rederive_hurdle_channel(name, payload, is_primary=is_primary)
     if aggregation == "fva_feasibility":
         return _rederive_fva_channel(name, payload, is_primary=is_primary)
+    if aggregation == "dnas_two_sided_sparse_gate":
+        return _rederive_dnas_two_sided_gate_channel(name, payload, is_primary=is_primary)
 
     return (
         schema.STATUS_MISSING_EVALUATOR,
@@ -766,6 +785,150 @@ def _rederive_fva_channel(name: str, payload: dict[str, Any], *, is_primary: boo
             f"is below fva_threshold={threshold}"
         ],
     )
+
+
+_DNAS_SPARSE_GATE_ALPHA_FAMILY = 0.05
+_DNAS_SPARSE_GATE_AXES: tuple[str, ...] = ("pooled_nonzero_ticks", "active_seeds", "clustered_seeds")
+
+
+def _rederive_dnas_two_sided_gate_channel(
+    name: str, payload: dict[str, Any], *, is_primary: bool
+) -> tuple[str, list[str]]:
+    """Re-derive DNASupercoiling's accepted ``chromosome`` primary channel:
+    a ``value_component`` (``linkingNumbers.delta_value_sum``, the SAME
+    ``scaled_w1 <= threshold`` formula ``per_component_scaled`` uses) plus a
+    ``sparse_component`` (``linkingNumbers.delta_nnz``) re-scored via the
+    pre-registered two-sided exact-binomial sparse-support gate -- see
+    ``scripts/l22_dnas_rare_event/two_sided_sparse_gate.py`` (imported
+    read-only; its exact ``exact_two_sided_pvalue``/``holm_adjust`` are
+    called here, never re-implemented) for the full statistical design.
+    Both sub-checks are re-derived from raw stored counts only -- the
+    stored ``verdict``/``rejected``/``direction`` strings are never
+    trusted."""
+    value_block = payload.get("value_component")
+    sparse_block = payload.get("sparse_component")
+    if not isinstance(value_block, dict) or not isinstance(sparse_block, dict):
+        return (
+            schema.STATUS_MISSING_EVALUATOR,
+            [f"{schema.STATUS_MISSING_EVALUATOR}: channel {name!r} missing 'value_component'/'sparse_component' blocks"],
+        )
+
+    value_required = ("raw_w1", "scale", "scaled_distance_threshold", "n_nonzero_oc", "n_nonzero_karr")
+    missing_value = [key for key in value_required if key not in value_block]
+    if missing_value:
+        return (
+            schema.STATUS_MISSING_EVALUATOR,
+            [f"{schema.STATUS_MISSING_EVALUATOR}: channel {name!r} value_component missing field(s) {missing_value}"],
+        )
+    raw_w1 = value_block["raw_w1"]
+    scale = value_block["scale"]
+    threshold = value_block["scaled_distance_threshold"]
+    n_oc_value = value_block["n_nonzero_oc"]
+    n_karr_value = value_block["n_nonzero_karr"]
+    if (
+        not _is_finite_number(raw_w1)
+        or not _is_finite_number(scale)
+        or float(scale) <= 0.0
+        or not _is_finite_number(threshold)
+        or not _is_nonnegative_count(n_oc_value)
+        or not _is_nonnegative_count(n_karr_value)
+    ):
+        return (
+            schema.STATUS_MISSING_EVALUATOR,
+            [f"{schema.STATUS_MISSING_EVALUATOR}: channel {name!r} value_component has non-finite/invalid raw fields"],
+        )
+    scaled_w1 = float(raw_w1) / max(float(scale), _SCALED_DISTANCE_EPSILON)
+    value_verdict = "PASS" if scaled_w1 <= float(threshold) else "FAIL"
+
+    axes_block = sparse_block.get("axes")
+    if not isinstance(axes_block, list) or not axes_block:
+        return (
+            schema.STATUS_MISSING_EVALUATOR,
+            [f"{schema.STATUS_MISSING_EVALUATOR}: channel {name!r} sparse_component missing non-empty 'axes' list"],
+        )
+    axes_by_name: dict[str, dict[str, Any]] = {}
+    for axis_entry in axes_block:
+        if not isinstance(axis_entry, dict) or "axis" not in axis_entry:
+            return (
+                schema.STATUS_MISSING_EVALUATOR,
+                [f"{schema.STATUS_MISSING_EVALUATOR}: channel {name!r} sparse_component has a malformed axis entry"],
+            )
+        axes_by_name[str(axis_entry["axis"])] = axis_entry
+    if set(axes_by_name) != set(_DNAS_SPARSE_GATE_AXES):
+        return (
+            schema.STATUS_MISSING_EVALUATOR,
+            [
+                f"{schema.STATUS_MISSING_EVALUATOR}: channel {name!r} sparse_component axes {sorted(axes_by_name)!r} "
+                f"!= expected {sorted(_DNAS_SPARSE_GATE_AXES)!r}"
+            ],
+        )
+
+    from scripts.l22_dnas_rare_event.two_sided_sparse_gate import exact_two_sided_pvalue, holm_adjust
+
+    ordered_axes = list(_DNAS_SPARSE_GATE_AXES)
+    counts: list[tuple[int, int]] = []
+    for axis_name in ordered_axes:
+        entry = axes_by_name[axis_name]
+        oc_count = entry.get("oc_count")
+        karr_count = entry.get("karr_count")
+        if not _is_nonnegative_count(oc_count) or not _is_nonnegative_count(karr_count):
+            return (
+                schema.STATUS_MISSING_EVALUATOR,
+                [
+                    f"{schema.STATUS_MISSING_EVALUATOR}: channel {name!r} axis {axis_name!r} has negative/"
+                    f"non-finite oc_count/karr_count ({oc_count!r}, {karr_count!r})"
+                ],
+            )
+        counts.append((int(oc_count), int(karr_count)))
+
+    raw_pvalues = [exact_two_sided_pvalue(oc, karr) for oc, karr in counts]
+    holm_pvalues = holm_adjust(raw_pvalues)
+    totals = [oc + karr for oc, karr in counts]
+    support_ok = all(total > 0 for total in totals)
+
+    reasons: list[str] = []
+    any_overactive = False
+    any_underactive = False
+    for axis_name, (oc, karr), total, holm_pvalue in zip(ordered_axes, counts, totals, holm_pvalues, strict=True):
+        testable = total > 0
+        rejected = testable and holm_pvalue < _DNAS_SPARSE_GATE_ALPHA_FAMILY
+        if not rejected:
+            continue
+        if oc > karr:
+            any_overactive = True
+            reasons.append(
+                f"{schema.STATUS_FAIL}: channel {name!r} axis {axis_name!r} OVERACTIVE "
+                f"(oc={oc}, karr={karr}, holm_p={holm_pvalue})"
+            )
+        elif oc < karr:
+            any_underactive = True
+            reasons.append(
+                f"{schema.STATUS_FAIL}: channel {name!r} axis {axis_name!r} UNDERACTIVE "
+                f"(oc={oc}, karr={karr}, holm_p={holm_pvalue})"
+            )
+
+    if not support_ok:
+        return (
+            schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES,
+            [
+                f"{schema.STATUS_PRIMARY_INSUFFICIENT_SAMPLES}: channel {name!r} has a sparse-gate axis with "
+                "zero pooled total (oc_count + karr_count == 0); two-sided test undefined"
+            ],
+        )
+    if any_overactive and any_underactive:
+        return schema.STATUS_FAIL, reasons
+    if any_overactive or any_underactive:
+        return schema.STATUS_FAIL, reasons
+
+    if value_verdict != "PASS":
+        return (
+            schema.STATUS_FAIL,
+            [
+                f"{schema.STATUS_FAIL}: channel {name!r} value_component scaled_w1={scaled_w1} exceeds "
+                f"threshold={threshold}"
+            ],
+        )
+    return "PASS", []
 
 
 def rederive_process(process_name: str, entry: ProcessEntry, result_payload: dict[str, Any]) -> ProcessVerdict:
