@@ -86,9 +86,12 @@ function extract_dual_division_window(seed, opts)
 % Usage (from repo root):
 %   matlab -batch "addpath(genpath('scripts/matlab')); extract_dual_division_window(49)"
 %
-% opts (optional, default struct()): only field supported is
-% max_search_ticks (default 50000, matches extract_per_process_traces_v2.m's
-% default_anchor_opts()).
+% opts (optional, default struct()): max_search_ticks (default read from
+% docs/phase_f/l2_event/division_window_spec.json's selection_contract via
+% division_window_selection_contract().max_search_ticks -- 100000 as of
+% the 2026-09-08 division-censor-contract preregistration; NEVER a
+% hardcoded literal here, so a future contract revision changes every
+% caller's default in one place) and force_reattempt (default false).
 
 if nargin < 1 || isempty(seed)
     error('extract_dual_division_window:missing_seed', 'seed is required');
@@ -97,7 +100,10 @@ if nargin < 2 || isempty(opts)
     opts = struct();
 end
 if ~isfield(opts, 'max_search_ticks') || isempty(opts.max_search_ticks)
-    opts.max_search_ticks = 50000;
+    opts.max_search_ticks = division_window_selection_contract().max_search_ticks;
+end
+if ~isfield(opts, 'force_reattempt') || isempty(opts.force_reattempt)
+    opts.force_reattempt = false;
 end
 
 seed = uint32(seed);
@@ -127,6 +133,12 @@ out_root = fullfile(repo_root, 'data', 'm1_sources', 'karr_native', out_subdir);
 
 cyt_out_path = fullfile(out_root, sprintf('%s_%dticks.mat', cyt_process_name, cyt_n_ticks));
 ftsz_out_path = fullfile(out_root, sprintf('%s_%dticks.mat', ftsz_process_name, ftsz_n_ticks));
+% Per-seed atomic attempt record (division-censor-contract, 2026-09-08):
+% docs/phase_f/l2_event/division_window_spec.json's selection_contract
+% names this file 'division_window_attempt.json'; read via
+% division_window_selection_contract() rather than hardcoded here.
+attempt_record_name = division_window_selection_contract().attempt_record_filename;
+attempt_record_path = fullfile(out_root, attempt_record_name);
 
 cyt_exists = exist(cyt_out_path, 'file') == 2;
 ftsz_exists = exist(ftsz_out_path, 'file') == 2;
@@ -147,6 +159,36 @@ if cyt_exists || ftsz_exists
          'A genuine one-pass extraction always produces both together. Investigate and remove the ' ...
          'stray file by hand before retrying.\n  cytokinesis exists=%d: %s\n  ftsz exists=%d: %s'], ...
         seed, cyt_exists, cyt_out_path, ftsz_exists, ftsz_out_path);
+end
+
+% An existing RIGHT_CENSORED attempt record (no trace files, by the
+% mutual-exclusivity invariant this contract enforces at write time --
+% see write_division_window_attempt_record below) means this seed was
+% already genuinely attempted and found non-completing at some prior
+% max_search_ticks. Silently re-running would either (a) reproduce the
+% same censored outcome at the same horizon, wasting a multi-hour
+% trajectory, or (b) if max_search_ticks has since grown, could complete
+% -- but that is exactly the "new, separate, reviewed action" this
+% contract requires never happen silently. Refuse unless the caller
+% explicitly opts in via opts.force_reattempt.
+existing_attempt = read_division_window_attempt_record(attempt_record_path);
+if ~isempty(existing_attempt)
+    if ~strcmp(existing_attempt.status, 'RIGHT_CENSORED')
+        error('extract_dual_division_window:attempt_record_status_conflict', ...
+            ['seed %d has an existing attempt record at %s with unexpected status ''%s'' and no ' ...
+             'matching trace files on disk -- investigate by hand before retrying'], ...
+            seed, attempt_record_path, existing_attempt.status);
+    end
+    if ~opts.force_reattempt
+        error('extract_dual_division_window:censored_attempt_exists', ...
+            ['seed %d already has a RIGHT_CENSORED attempt record at %s (max_search_ticks=%d) -- ' ...
+             'refusing to silently re-attempt. Pass opts.force_reattempt=true to explicitly retry ' ...
+             '(e.g. under a larger max_search_ticks) after reviewing the existing record.'], ...
+            seed, attempt_record_path, existing_attempt.max_search_ticks);
+    end
+    fprintf('[dual-extract] seed %d: opts.force_reattempt=true, removing existing RIGHT_CENSORED record %s\n', ...
+        seed, attempt_record_path);
+    delete(attempt_record_path);
 end
 
 if ~exist(out_root, 'dir')
@@ -199,11 +241,31 @@ anchor_opts = struct( ...
 fprintf('[dual-extract] seed %d: single scheduler pass, dual tap (cyt window=%d ticks, ftsz window=%d ticks)...\n', ...
     seed, cyt_n_ticks, ftsz_n_ticks);
 [cyt_before, cyt_after, cyt_tick_start, completion_tick, onset_tick, ...
- ftsz_before, ftsz_after, ftsz_tick_start, ok, error_message] = ...
+ ftsz_before, ftsz_after, ftsz_tick_start, ok, error_message, censored] = ...
     capture_dual_anchor_windows(sim, cyt_idx, cyt_snapshot_props, cyt_n_ticks, ...
                                  ftsz_idx, ftsz_snapshot_props, ftsz_n_ticks, anchor_opts);
 
 if ~ok
+    if censored
+        % Right-censoring (division-censor-contract, 2026-09-08): the
+        % search exhausted the full max_search_ticks horizon without ever
+        % observing a Cytokinesis division-completion tick. This is a
+        % DISTINCT, dedicated outcome from every other capture failure --
+        % no trace files are written (mutual exclusivity with the
+        % COMPLETED case, enforced by write_division_window_attempt_record
+        % below), and the caller (extract_dual_division_window_seeds.m)
+        % must never fold this into its generic failed_seeds bucket.
+        write_division_window_attempt_record(out_root, attempt_record_path, seed, 'RIGHT_CENSORED', ...
+            struct('max_search_ticks', anchor_opts.max_search_ticks, ...
+                   'mnrnd_provider', mnrnd_provider, ...
+                   'dnadamage_overlay', dnadamage_overlay, ...
+                   'onset_tick', [], 'completion_tick', [], ...
+                   'cytokinesis_n_ticks', cyt_n_ticks, 'ftsz_n_ticks', ftsz_n_ticks, ...
+                   'cytokinesis_sha256', '', 'ftsz_sha256', '', ...
+                   'reason', error_message));
+        error('extract_dual_division_window:right_censored', ...
+            'seed %d: RIGHT_CENSORED (recorded at %s): %s', seed, attempt_record_path, error_message);
+    end
     error('extract_dual_division_window:capture_failed', 'seed %d: %s', seed, error_message);
 end
 
@@ -324,6 +386,21 @@ verify_temp_output(ftsz_tmp_path, ftsz_process_name, ftsz_n_ticks, seed);
 movefile(cyt_tmp_path, cyt_out_path);
 movefile(ftsz_tmp_path, ftsz_out_path);
 
+% Atomic per-seed COMPLETED attempt record (division-censor-contract,
+% 2026-09-08), written AFTER both trace files are already safely
+% promoted -- paired trace hashes are computed from the FINAL on-disk
+% files, never the temp paths, so the record can never describe bytes
+% that did not actually get promoted.
+write_division_window_attempt_record(out_root, attempt_record_path, seed, 'COMPLETED', ...
+    struct('max_search_ticks', anchor_opts.max_search_ticks, ...
+           'mnrnd_provider', mnrnd_provider, ...
+           'dnadamage_overlay', dnadamage_overlay, ...
+           'onset_tick', onset_tick, 'completion_tick', completion_tick, ...
+           'cytokinesis_n_ticks', cyt_n_ticks, 'ftsz_n_ticks', ftsz_n_ticks, ...
+           'cytokinesis_sha256', sha256_of_file_dual(cyt_out_path), ...
+           'ftsz_sha256', sha256_of_file_dual(ftsz_out_path), ...
+           'reason', ''));
+
 fprintf('[dual-extract] seed %d DONE:\n  %s (tick_start=%d, window_anchor=%d, onset_tick=%s)\n  %s (tick_start=%d, window_anchor=%d)\n', ...
     seed, cyt_out_path, cyt_tick_start, completion_tick, mat2str(onset_tick), ...
     ftsz_out_path, ftsz_tick_start, completion_tick);
@@ -334,7 +411,7 @@ end
 % =============================================================================
 
 function [states_before_a, states_after_a, tick_start_a, completion_tick, onset_tick, ...
-          states_before_b, states_after_b, tick_start_b, ok, error_message] = ...
+          states_before_b, states_after_b, tick_start_b, ok, error_message, censored] = ...
     capture_dual_anchor_windows(sim, idx_a, props_a, n_ticks_a, idx_b, props_b, n_ticks_b, anchor_opts)
 % capture_dual_anchor_windows  Single free-running pass tapping TWO target
 % processes (idx_a, idx_b) at their own real scheduler positions on every
@@ -352,17 +429,29 @@ function [states_before_a, states_after_a, tick_start_a, completion_tick, onset_
 % detection -- it has no pinchedDiameter/ftsZRing/chromosome properties of
 % its own (see module docstring).
 %
-% The search stops at the FIRST completion tick found (never scans past
-% it). Both n_ticks windows are the fixed-length spans ending exactly at
-% that tick. Fails loudly (ok=false) rather than emit an incomplete window
-% when: no completion is ever observed within anchor_opts.max_search_ticks;
+% Fails loudly (ok=false) rather than emit an incomplete window when: no
+% completion is ever observed within anchor_opts.max_search_ticks;
 % completion occurs before a full n_ticks_a (the larger of the two) window
 % could be collected; no onset was observed; or the observed onset does not
 % strictly precede tick_start_a..completion. There is no fallback that
 % invents an onset or completion, matching capture_anchor_window's
 % contract exactly.
+%
+% `censored` (new output, division-censor-contract, 2026-09-08) is true
+% ONLY for the first of those failure modes (the search exhausted the
+% entire max_search_ticks budget without ever observing a completion
+% tick) -- the one genuine right-censoring outcome, where the seed's real
+% trajectory may still complete beyond this horizon and no data quality
+% problem is implicated. It is false (the default) for every other
+% ok=false path, INCLUDING the mid-loop scheduler-crash path and every
+% post-completion consistency failure (span-too-short, missing onset,
+% onset not strictly preceding tick_start/completion) -- those seeds DID
+% reach a completion tick (or crashed outright), so they are never
+% right-censoring; they are genuine errors that must propagate as hard
+% failures, never silently reclassified as censored.
 ok = true;
 error_message = '';
+censored = false;
 onset_tick = [];
 completion_tick = [];
 tick_start_a = [];
@@ -421,6 +510,7 @@ end
 
 if isempty(completion_tick)
     ok = false;
+    censored = true;
     error_message = sprintf( ...
         ['division-completion signal did not fire within max_search_ticks=%d ticks -- refusing to ' ...
          'fabricate a window_anchor; either raise anchor_opts.max_search_ticks or this seed genuinely ' ...
@@ -977,3 +1067,137 @@ for p = 1:numel(snapshot_props)
     end
 end
 end
+
+function record = read_division_window_attempt_record(attempt_record_path)
+% read_division_window_attempt_record  Return the parsed
+% division_window_attempt.json struct for this seed's out_root, or []
+% (empty double, MATLAB's canonical "absent" sentinel) if no such file
+% exists yet. Fails loudly (error(), never a silent []) if the file
+% exists but is not valid JSON or is missing the 'status' field --
+% mirrors division_window_spec.m's fail-closed discipline.
+if exist(attempt_record_path, 'file') ~= 2
+    record = [];
+    return;
+end
+raw = fileread(attempt_record_path);
+try
+    record = jsondecode(raw);
+catch err
+    error('extract_dual_division_window:attempt_record_invalid_json', ...
+        'existing attempt record at %s is not valid JSON: %s', attempt_record_path, err.message);
+end
+if ~isfield(record, 'status')
+    error('extract_dual_division_window:attempt_record_missing_status', ...
+        'existing attempt record at %s has no ''status'' field', attempt_record_path);
+end
+end
+
+function write_division_window_attempt_record(out_root, attempt_record_path, seed, status, fields)
+% write_division_window_attempt_record  Atomic (temp-then-movefile) writer
+% for one seed's division_window_attempt.json (division-censor-contract,
+% 2026-09-08, docs/phase_f/l2_event/division_window_spec.json's
+% selection_contract). `status` must be 'COMPLETED' or 'RIGHT_CENSORED'.
+%
+% Mutual exclusivity (enforced HERE, not merely by caller discipline):
+%   COMPLETED       requires BOTH fields.cytokinesis_sha256 and
+%                   fields.ftsz_sha256 to be non-empty strings (the two
+%                   trace files must already have been promoted to their
+%                   final paths by the caller before this function is
+%                   invoked -- see the main function's call site, which
+%                   only calls this AFTER both movefile calls succeed).
+%   RIGHT_CENSORED  requires BOTH hashes to be empty AND requires that
+%                   NEITHER of this seed's two trace file paths exists on
+%                   disk at call time -- a censor record next to real
+%                   trace bytes would be a direct contradiction this
+%                   function refuses to persist.
+% Any other combination raises rather than writing an inconsistent record.
+if ~exist(out_root, 'dir')
+    mkdir(out_root);
+end
+
+cyt_trace_present = ~isempty(fields.cytokinesis_sha256);
+ftsz_trace_present = ~isempty(fields.ftsz_sha256);
+if strcmp(status, 'COMPLETED')
+    if ~cyt_trace_present || ~ftsz_trace_present
+        error('extract_dual_division_window:attempt_record_completed_missing_hash', ...
+            'seed %d: COMPLETED attempt record requires both cytokinesis_sha256 and ftsz_sha256 -- got cyt=%d ftsz=%d', ...
+            seed, cyt_trace_present, ftsz_trace_present);
+    end
+elseif strcmp(status, 'RIGHT_CENSORED')
+    if cyt_trace_present || ftsz_trace_present
+        error('extract_dual_division_window:attempt_record_censored_has_hash', ...
+            'seed %d: RIGHT_CENSORED attempt record must not carry any trace hash -- got cyt=%d ftsz=%d', ...
+            seed, cyt_trace_present, ftsz_trace_present);
+    end
+else
+    error('extract_dual_division_window:attempt_record_unknown_status', ...
+        'seed %d: unknown attempt record status ''%s'' (must be COMPLETED or RIGHT_CENSORED)', seed, status);
+end
+
+record = struct( ...
+    'schema_version', int32(1), ...
+    'seed', int32(seed), ...
+    'status', status, ...
+    'max_search_ticks', int32(fields.max_search_ticks), ...
+    'extractor', 'extract_dual_division_window', ...
+    'recorded_at', datestr(now, 'yyyy-mm-dd HH:MM:SS'), ...
+    'mnrnd_provider_sha256', fields.mnrnd_provider.sha256_lf_normalized, ...
+    'dnadamage_source_resolved_sha256', fields.dnadamage_overlay.resolved_sha256_lf_normalized, ...
+    'cytokinesis_n_ticks', int32(fields.cytokinesis_n_ticks), ...
+    'ftsz_n_ticks', int32(fields.ftsz_n_ticks), ...
+    'onset_tick', ternary_empty_to_nan(fields.onset_tick), ...
+    'completion_tick', ternary_empty_to_nan(fields.completion_tick), ...
+    'cytokinesis_trace_sha256', fields.cytokinesis_sha256, ...
+    'ftsz_trace_sha256', fields.ftsz_sha256, ...
+    'reason', fields.reason ...
+);
+
+token = dual_tap_temp_token();
+tmp_path = fullfile(out_root, sprintf('.tmp-%s-%s', token, 'division_window_attempt.json'));
+cleanup_tmp = onCleanup(@() remove_if_exists({tmp_path})); %#ok<NASGU>
+fid = fopen(tmp_path, 'w');
+if fid == -1
+    error('extract_dual_division_window:attempt_record_write_failed', ...
+        'seed %d: unable to open temp attempt-record path %s for writing', seed, tmp_path);
+end
+fwrite(fid, jsonencode(record), 'char');
+fclose(fid);
+movefile(tmp_path, attempt_record_path);
+fprintf('[dual-extract] seed %d: wrote %s attempt record to %s\n', seed, status, attempt_record_path);
+end
+
+function out = ternary_empty_to_nan(v)
+% ternary_empty_to_nan  jsonencode(struct with a [] field) silently drops
+% that field's key from the JSON object entirely (MATLAB's documented
+% behavior), which would make onset_tick/completion_tick disappear rather
+% than read as an explicit null for a RIGHT_CENSORED record. NaN
+% round-trips through jsonencode/jsondecode as the JSON literal `null`,
+% which is what this contract's readers (scripts/l2_event/
+% division_cohort_selector.py) expect for "not applicable".
+if isempty(v)
+    out = NaN;
+else
+    out = double(v);
+end
+end
+
+function hash_hex = sha256_of_file_dual(path_value)
+% sha256_of_file_dual  Local sha256 helper, named distinctly (not
+% sha256_of_file/sha256OfFile) to avoid any ambiguity with the
+% differently-scoped same-named local functions already present in
+% reconstruct_chromosome_draw_ledger.m/extract_karr_mats.m (each MATLAB
+% function file scopes its own helpers privately, so no actual collision
+% is possible, but a distinct name keeps grep/reading unambiguous across
+% files). Identical implementation (java.security.MessageDigest) to
+% those files' own helpers.
+fid = fopen(path_value, 'rb');
+if fid < 0
+    error('extract_dual_division_window:file_unreadable', 'could not open %s', path_value);
+end
+raw = fread(fid, Inf, '*uint8')';
+fclose(fid);
+digest = java.security.MessageDigest.getInstance('SHA-256');
+digest_bytes = typecast(digest.digest(raw), 'uint8');
+hash_hex = lower(sprintf('%02x', digest_bytes));
+end
+

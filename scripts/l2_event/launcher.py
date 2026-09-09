@@ -1134,11 +1134,26 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
     ``tick_start``/``tick_end`` must match the corrected absolute-tick
     formula (``tick_start == tick_offset + 1``, ``tick_end == tick_offset +
     n_ticks``) exactly, and an ``AnchorWindowSpec``'s
-    ``signal_kind``/``signal_property``/``signal_field``/
-    ``max_search_ticks``/observable-projection-schema-version must match
-    the on-disk trace's own persisted anchor-config metadata -- so a trace
-    produced for a DIFFERENT fixed-offset or anchor-signal request can
-    never ``skip_valid`` against this one. Independently of window kind,
+    ``signal_kind``/``signal_property``/``signal_field``/observable-
+    projection-schema-version must match the on-disk trace's own
+    persisted anchor-config metadata exactly -- so a trace produced for a
+    DIFFERENT fixed-offset or anchor-signal request can never
+    ``skip_valid`` against this one. ``max_search_ticks`` is the one
+    exception to exact-match identity (division-censor-contract horizon
+    fix, 2026-09-09, tightened 2026-09-09 second Opus re-review): it is
+    checked as a MONOTONE MINIMUM against the trace's OWN
+    ``metadata.window_anchor`` (``recorded >= window_anchor``, both
+    non-null), never against ``spec.n_ticks`` (too loose -- silently
+    accepts impossible metadata such as ``max_search_ticks=6000`` paired
+    with ``window_anchor=31993``) and never an exact match against
+    ``spec.max_search_ticks`` (too strict -- rejects every legacy
+    50000-recorded trace once the selection contract's horizon grows to
+    100000). See the check's own inline rationale for why a completed
+    trace's real completion tick is independent of the search ceiling
+    that was configured when it was captured, so a smaller recorded
+    budget is not weaker evidence, as long as it was at least large
+    enough to have actually captured that completion.
+    Independently of window kind,
     the trace must also carry genuine-provider metadata whose kind,
     MATLAB release, Statistics Toolbox version, provider path relative to
     ``matlabroot``, and LF-normalized provider SHA-256 all match the
@@ -1350,10 +1365,40 @@ def validate_existing_event_window(path: Path, spec: WindowSpec) -> tuple[bool, 
             return False, (
                 f"metadata.signal_field={anchor_meta['signal_field']!r} != expected {spec.signal_field!r}"
             )
-        if anchor_meta["max_search_ticks"] != int(spec.max_search_ticks):
+        if window.window_anchor is None:
             return False, (
-                f"metadata.max_search_ticks={anchor_meta['max_search_ticks']!r} != expected "
-                f"{spec.max_search_ticks!r}"
+                "metadata.window_anchor is missing -- cannot validate max_search_ticks against the "
+                "trace's own observed completion tick (an anchor-kind trace must always carry this)"
+            )
+        if anchor_meta["max_search_ticks"] is None or int(anchor_meta["max_search_ticks"]) < int(window.window_anchor):
+            return False, (
+                f"metadata.max_search_ticks={anchor_meta['max_search_ticks']!r} is smaller than the "
+                f"trace's own observed completion tick (metadata.window_anchor={window.window_anchor!r}) "
+                "-- an impossible/malformed trace: the real capture loop can never observe a "
+                "completion tick strictly beyond the search ceiling it was actually bounded by, so "
+                "recorded < window_anchor proves the metadata is corrupt/mismatched, not merely a "
+                "different horizon. Division-censor-contract horizon fix (2026-09-09, Opus second "
+                "re-review): max_search_ticks IS trace identity (the real search ceiling used at "
+                "capture time is always recorded and auditable), but for a COMPLETED anchor trace it "
+                "is checked as a MONOTONE MINIMUM against the trace's OWN window_anchor (recorded >= "
+                "window_anchor), never against spec.n_ticks (too loose -- would silently accept "
+                "impossible metadata like max_search_ticks=6000 with window_anchor=31993) and never "
+                "an exact-match against spec.max_search_ticks (too strict -- would reject every "
+                "legacy 50000-recorded trace once the selection contract's horizon moves to 100000; "
+                "see docs/phase_f/l2_event/division_window_spec.json's selection_contract."
+                "max_search_ticks_validation_policy). Rationale: a genuine completion tick is a "
+                "deterministic property of (seed, DNADamage source) -- it does not depend on how "
+                "large a search ceiling was configured, so a smaller recorded budget is neither "
+                "weaker nor stronger evidence than a larger one, AS LONG AS it was at least large "
+                "enough to have actually captured the observed completion -- window_anchor is the "
+                "tightest such floor this function can check directly from the trace's own "
+                "already-loaded metadata, without re-deriving onset/completion from the raw signal "
+                "a second time. A RIGHT_CENSORED claim's validity against the LARGER selection-"
+                "contract censoring horizon (100000, exact/full requirement, unrelated to "
+                "window_anchor since a censored attempt has no completion tick at all) is a "
+                "SEPARATE, additional gate enforced by scripts.l2_event.division_cohort_selector -- "
+                "never here, because a censored attempt has no trace file (hence no metadata) for "
+                "this function to even inspect."
             )
         if anchor_meta["event_observable_projection_version"] != EVENT_OBSERVABLE_PROJECTION_VERSION:
             return False, (

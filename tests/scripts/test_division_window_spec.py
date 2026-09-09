@@ -32,10 +32,23 @@ from scripts.l2_event.division_window_spec import (  # noqa: E402
     SPEC_PATH,
     DivisionWindowSpecError,
     ProvisionalMarginOverrunError,
+    SelectionContractError,
+    attempt_record_filename,
+    attempt_status_values,
+    authoritative_operational_root,
+    candidate_seed_start,
+    censor_record_required_identity_fields,
     check_inclusive_span_margin,
+    formal_estimand,
     load_spec,
     m_ticks_for,
     process_spec,
+    required_completed_windows,
+    selection_contract,
+    selection_contract_applies_to,
+    selection_horizon_max_search_ticks,
+    selection_order,
+    stopping_rule,
     tick_range_from_division_for,
 )
 
@@ -202,3 +215,145 @@ def test_margin_gate_rejects_span_one_tick_above_m_ticks(): # M+1 overrun
 def test_margin_gate_error_message_reports_the_escalation_formula():
     with pytest.raises(ProvisionalMarginOverrunError, match=r"1\.227"):
         check_inclusive_span_margin(onset_tick=1, completion_tick=5000, m_ticks=5000)
+
+
+# ---------------------------------------------------------------------------
+# Selection contract (division-censor-contract, 2026-09-08 preregistration):
+# candidate_seed_start / required_completed_windows / max_search_ticks /
+# selection_order / attempt_record_filename. Fail-closed, no defaults --
+# mirrors the per-process m_ticks accessors' discipline exactly.
+# ---------------------------------------------------------------------------
+
+
+def test_real_repo_spec_has_the_preregistered_selection_contract_values():
+    assert candidate_seed_start() == 0
+    assert required_completed_windows() == 50
+    assert selection_horizon_max_search_ticks() == 100000
+    assert selection_order() == "ascending_seed"
+    assert attempt_record_filename() == "division_window_attempt.json"
+    assert set(attempt_status_values()) == {"COMPLETED", "RIGHT_CENSORED"}
+
+
+def test_selection_contract_applies_to_both_dual_tap_processes():
+    assert selection_contract_applies_to("Cytokinesis")
+    assert selection_contract_applies_to("FtsZPolymerization")
+    assert not selection_contract_applies_to("SomeUnrelatedProcess")
+
+
+def test_selection_contract_schema_version_bumped_to_4():
+    doc = load_spec()
+    assert doc["schema_version"] == 4
+
+
+def test_missing_selection_contract_block_raises(tmp_path):
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text(
+        json.dumps({"processes": {"Cytokinesis": {"m_ticks": 5000, "tick_range_from_division": [-4999, 0]}}}),
+        encoding="utf-8",
+    )
+    with pytest.raises(SelectionContractError):
+        selection_contract(spec_path=spec_path)
+    with pytest.raises(SelectionContractError):
+        candidate_seed_start(spec_path=spec_path)
+
+
+def test_selection_contract_missing_required_key_raises(tmp_path):
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "processes": {"Cytokinesis": {"m_ticks": 5000, "tick_range_from_division": [-4999, 0]}},
+                "selection_contract": {
+                    "applies_to": ["Cytokinesis"],
+                    "candidate_seed_start": 0,
+                    # required_completed_windows deliberately omitted
+                    "max_search_ticks": 100000,
+                    "selection_order": "ascending_seed",
+                    "attempt_record_filename": "division_window_attempt.json",
+                    "attempt_status_values": ["COMPLETED", "RIGHT_CENSORED"],
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(SelectionContractError):
+        required_completed_windows(spec_path=spec_path)
+
+
+def test_selection_contract_not_a_dict_raises(tmp_path):
+    spec_path = tmp_path / "spec.json"
+    spec_path.write_text(
+        json.dumps(
+            {
+                "processes": {"Cytokinesis": {"m_ticks": 5000, "tick_range_from_division": [-4999, 0]}},
+                "selection_contract": "not-a-dict",
+            }
+        ),
+        encoding="utf-8",
+    )
+    with pytest.raises(SelectionContractError):
+        selection_contract(spec_path=spec_path)
+
+
+def test_selection_contract_is_isolated_from_a_custom_spec_path(tmp_path):
+    custom_path = tmp_path / "custom_spec.json"
+    custom_path.write_text(
+        json.dumps(
+            {
+                "processes": {"Cytokinesis": {"m_ticks": 6000, "tick_range_from_division": [-5999, 0]}},
+                "selection_contract": {
+                    "applies_to": ["Cytokinesis"],
+                    "candidate_seed_start": 3,
+                    "required_completed_windows": 10,
+                    "max_search_ticks": 200000,
+                    "selection_order": "ascending_seed",
+                    "attempt_record_filename": "attempt.json",
+                    "attempt_status_values": ["COMPLETED", "RIGHT_CENSORED"],
+                    "formal_estimand": "test estimand",
+                    "stopping_rule": "test stopping rule",
+                    "censor_record_required_identity_fields": ["dnadamage_source_resolved_sha256"],
+                    "authoritative_operational_root": "test_root",
+                },
+            }
+        ),
+        encoding="utf-8",
+    )
+    assert candidate_seed_start(spec_path=custom_path) == 3
+    assert required_completed_windows(spec_path=custom_path) == 10
+    assert selection_horizon_max_search_ticks(spec_path=custom_path) == 200000
+    # The real repo spec's values must be unaffected.
+    assert candidate_seed_start() == 0
+    assert required_completed_windows() == 50
+    assert selection_horizon_max_search_ticks() == 100000
+
+
+# ---------------------------------------------------------------------------
+# Opus re-review (2026-09-09): tightened spec wording -- formal estimand,
+# non-adaptive stopping rule, censor-record identity binding, authoritative
+# operational root, all machine-loadable.
+# ---------------------------------------------------------------------------
+
+
+def test_real_repo_spec_has_the_exact_formal_estimand_text():
+    assert formal_estimand() == (
+        "Cytokinesis process-local behavior conditional on division completion "
+        "within 100000 ticks under source S, over the first 50 completions of "
+        "the ascending attempt stream from seed 0."
+    )
+
+
+def test_real_repo_spec_stopping_rule_is_non_adaptive():
+    rule = stopping_rule()
+    assert "cannot be truncated" in rule
+    assert "cannot be lowered" in rule
+    assert "Non-adaptive" in rule
+
+
+def test_real_repo_spec_censor_record_required_identity_fields():
+    fields = censor_record_required_identity_fields()
+    assert "dnadamage_source_resolved_sha256" in fields
+    assert "mnrnd_provider_sha256" in fields
+
+
+def test_real_repo_spec_authoritative_operational_root():
+    assert authoritative_operational_root() == "dual_division_cohort_current"

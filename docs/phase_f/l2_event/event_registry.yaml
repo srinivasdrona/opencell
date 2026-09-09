@@ -144,6 +144,35 @@ processes:
       SAME-SOURCE runs remains a fully meaningful, achievable requirement
       (this task's decisive same-source isolation probe tests exactly
       this -- see STATUS_DUAL_CYT_WINDOW_FIX.md).
+      UPDATE 2026-09-08 (division-censor-contract preregistration): seeds
+      6 and 18 produced no Cytokinesis division-completion signal within
+      the pre-existing per-call max_search_ticks=50000 default; seed 18
+      additionally failed a non-counting 100000-tick diagnostic, and no
+      partial trace files were emitted for either seed under the patched
+      (dec-005-bound) source. Left uncorrected, skipping/resampling either
+      seed would silently condition the required_n_seeds=50 ensemble on
+      division completion -- exactly the outcome-cherry-picking this
+      registry's own D3/anti-laundering discipline forbids. A seed-
+      selection/censoring-horizon contract is now preregistered in
+      docs/phase_f/l2_event/division_window_spec.json's
+      `selection_contract` (candidate_seed_start=0,
+      required_completed_windows=50, a common max_search_ticks=100000
+      censoring horizon, ascending selection order, and a per-seed
+      `division_window_attempt.json` COMPLETED/RIGHT_CENSORED record
+      mutually exclusive with the seed's trace files) and mechanically
+      enforced by the new `scripts/l2_event/division_cohort_selector.py`
+      (contiguous-attempt-ledger auditor, never counts a censored seed
+      toward N, never selects a later completion while an earlier
+      contiguous seed remains unattempted). This does NOT change
+      `required_n_seeds: 50` above, and does not retroactively invalidate
+      any existing COMPLETED trace that finished well under the new
+      100000-tick horizon -- only a RIGHT_CENSORED claim must have been
+      attempted at the full horizon to count. See
+      docs/phase_f/l2_event/DIVISION_WINDOW_MIGRATION.md for the current
+      attempt-ledger state (which existing completed seeds are
+      mechanically backfillable, and which censored-seed diagnostics are
+      not yet bindable without fabrication) and outstanding backfill
+      commands.
 
   - process: RibosomeAssembly
     in_scope_v4: true

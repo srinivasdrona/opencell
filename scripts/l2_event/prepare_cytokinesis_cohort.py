@@ -38,7 +38,10 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.l2_event import evidence, launcher  # noqa: E402
-from scripts.l2_event.division_window_spec import m_ticks_for  # noqa: E402
+from scripts.l2_event.division_window_spec import (  # noqa: E402
+    m_ticks_for,
+    selection_horizon_max_search_ticks,
+)
 from scripts.l2_event.survey_cytokinesis_onset_span import (  # noqa: E402
     REQUIRED_N_SEEDS,
     REQUIRED_OBSERVABLES,
@@ -63,6 +66,15 @@ AUTHORITATIVE_N_TICKS = m_ticks_for(PROCESS)
 # silently treating an unresolvable source tree as "no check needed".
 _EXPECTED_DNADAMAGE_SOURCE = launcher.current_genuine_dnadamage_source()
 REQUIRED_DNADAMAGE_SOURCE_SHA256 = _EXPECTED_DNADAMAGE_SOURCE["patched_sha256_lf_normalized"]
+# Division-censor-contract (2026-09-08, wired 2026-09-09 per Opus
+# re-review): the selection contract's common censoring horizon. Safe to
+# use uniformly for both fresh-extraction planning and validating
+# existing (possibly smaller-recorded-horizon) traces -- see
+# launcher.validate_existing_event_window's monotone-minimum policy on
+# max_search_ticks (checked against spec.n_ticks, never spec.max_search_ticks
+# exactly) and scripts.l2_event.validate_dual_division_canary.
+# REQUIRED_MAX_SEARCH_TICKS for the identical wiring/rationale.
+REQUIRED_MAX_SEARCH_TICKS = selection_horizon_max_search_ticks()
 _TRACE_NAME_RE = re.compile(r"^Cytokinesis_(\d+)ticks\.mat$")
 _EVENT_SEED_DIR_RE = re.compile(r"per_process_traces_v2_event_s(\d+)$")
 _STANDARD_SEED_DIR_RE = re.compile(r"per_process_traces_v2_s(\d+)$")
@@ -82,6 +94,7 @@ def _anchor_spec(seed: int, *, n_ticks: int = AUTHORITATIVE_N_TICKS) -> launcher
         process=PROCESS,
         seed=seed,
         n_ticks=n_ticks,
+        max_search_ticks=REQUIRED_MAX_SEARCH_TICKS,
         required_observables=REQUIRED_OBSERVABLES,
         scalar_finite_observables=launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES,
         required_dnadamage_source_sha256=REQUIRED_DNADAMAGE_SOURCE_SHA256,
@@ -257,10 +270,21 @@ def materialize_seed0(source_path: Path, *, output_root: Path) -> dict[str, obje
     }
 
 
-def build_missing_seed_specs(valid_event_seeds: set[int]) -> list[dict[str, object]]:
+def build_missing_seed_specs(
+    valid_event_seeds: set[int], *, seed_universe: tuple[int, ...] | None = None
+) -> list[dict[str, object]]:
+    """``seed_universe`` (division-censor-contract, 2026-09-08): when
+    given, iterate this explicit ascending seed-ID universe (e.g. the
+    contiguous-attempt-ledger's ``next_seed_to_attempt`` onward, or the
+    full gap list from ``scripts.l2_event.division_cohort_selector.
+    audit_cohort()``) instead of the legacy ``range(1, REQUIRED_N_SEEDS)``
+    -- seed 0 is still always excluded (handled separately by
+    ``materialize_seed0``/``seed0_source``). When ``None`` (the default),
+    existing callers are unaffected."""
+    universe = range(1, REQUIRED_N_SEEDS) if seed_universe is None else seed_universe
     specs: list[dict[str, object]] = []
-    for seed in range(1, REQUIRED_N_SEEDS):
-        if seed in valid_event_seeds:
+    for seed in universe:
+        if seed == 0 or seed in valid_event_seeds:
             continue
         spec = _anchor_spec(seed)
         specs.append(
@@ -291,7 +315,16 @@ def prepare_cohort(
     output_root: Path,
     out_dir: Path,
     materialize_seed0_locally: bool,
+    seed_universe: tuple[int, ...] | None = None,
 ) -> dict[str, object]:
+    """``seed_universe`` (division-censor-contract, 2026-09-08): restricts
+    the "which seeds still need extraction" computation to this explicit
+    ascending seed-ID set instead of the legacy ``range(REQUIRED_N_SEEDS)``
+    -- see ``build_missing_seed_specs``. Typically the caller passes the
+    cohort selector's ``next_seed_to_attempt`` through its own
+    ``gap_seeds`` (the seeds that must still be attempted, ascending,
+    before the contiguous prefix can grow), never an unauthorized bulk
+    range. When ``None`` (the default), behavior is unchanged."""
     inventory = build_inventory(search_roots)
     seed0_source = select_seed0_source(inventory)
 
@@ -300,15 +333,16 @@ def prepare_cohort(
         for row in inventory
         if row.get("valid_for_authoritative_cohort") is True and row.get("seed") is not None
     }
+    universe_for_missing = range(REQUIRED_N_SEEDS) if seed_universe is None else seed_universe
     missing_event_seeds = [
-        seed for seed in range(REQUIRED_N_SEEDS) if seed not in valid_event_seeds
+        seed for seed in universe_for_missing if seed not in valid_event_seeds
     ]
 
     materialization: dict[str, object] | None = None
     if materialize_seed0_locally:
         materialization = materialize_seed0(Path(str(seed0_source["path"])), output_root=output_root)
 
-    specs_payload = build_missing_seed_specs(valid_event_seeds)
+    specs_payload = build_missing_seed_specs(valid_event_seeds, seed_universe=seed_universe)
     plan = launcher.plan_event_window_extraction(
         [_anchor_spec(int(row["seed"])) for row in specs_payload],
         karr_native_root=output_root,
@@ -328,6 +362,7 @@ def prepare_cohort(
         "process": PROCESS,
         "authoritative_n_ticks": AUTHORITATIVE_N_TICKS,
         "required_n_seeds": REQUIRED_N_SEEDS,
+        "seed_universe_source": "range(REQUIRED_N_SEEDS)" if seed_universe is None else "explicit seed_universe",
         "searched_roots": [str(path) for path in search_roots],
         "output_root": str(output_root.resolve()),
         "valid_event_seeds": sorted(valid_event_seeds),
@@ -342,6 +377,7 @@ def prepare_cohort(
     _write_json(summary_path, summary)
     summary["summary_path"] = str(summary_path)
     return summary
+
 
 
 def _build_arg_parser() -> argparse.ArgumentParser:

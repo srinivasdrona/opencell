@@ -496,6 +496,18 @@ class PreDivisionAuditReport:
     resumable_extraction_command: str = ""
     monomer_primary_statistic: dict[str, float] | None = None
     activity_summary: dict[str, int] = field(default_factory=dict)
+    # Division-censor-contract (2026-09-08): when the caller passes an
+    # explicit `selected_seeds` universe (the Cytokinesis cohort
+    # selector's ascending-contiguous first-N COMPLETED seed IDs, see
+    # scripts/l2_event/division_cohort_selector.py), this records that
+    # fact and whether that upstream selection itself already reached
+    # required_n_seeds -- a descriptive, non-gating property of the
+    # upstream chassis (how many Cytokinesis-completing seeds exist),
+    # never a Cytokinesis-process-local verdict. When None (the default,
+    # legacy behavior), the seed universe is plain range(required_n_seeds)
+    # and this field is None (not applicable).
+    seed_universe_source: str = "range(required_n_seeds)"
+    upstream_selection_complete: bool | None = None
 
     def to_json(self) -> dict[str, Any]:
         return {
@@ -514,17 +526,31 @@ class PreDivisionAuditReport:
             "resumable_extraction_command": self.resumable_extraction_command,
             "monomer_primary_statistic": self.monomer_primary_statistic,
             "activity_summary": self.activity_summary,
+            "seed_universe_source": self.seed_universe_source,
+            "upstream_selection_complete": self.upstream_selection_complete,
         }
 
 
 def audit_pre_division_evidence(
     data_roots: tuple[Path, ...] = DEFAULT_DATA_ROOTS,
+    *,
+    selected_seeds: tuple[int, ...] | None = None,
 ) -> PreDivisionAuditReport:
     """The single entry point this module exposes: discover, dedupe,
     validate, and replay every real on-disk FtsZ division-window seed, and
     report an honest ensemble-completeness verdict. Never reports
     ``SUFFICIENT_ENSEMBLE`` for ``len(found_seeds) < REQUIRED_N_SEEDS`` --
-    there is no partial-credit branch."""
+    there is no partial-credit branch.
+
+    ``selected_seeds`` (division-censor-contract, 2026-09-08): when given,
+    this is the Cytokinesis cohort selector's ascending-contiguous first-N
+    COMPLETED seed IDs (``scripts.l2_event.division_cohort_selector.
+    audit_cohort(...).selected_seeds``) -- FtsZ's own pre-division window
+    is paired to Cytokinesis's completion via the dual-tap extractor, so a
+    validated FtsZ trace for a seed Cytokinesis right-censored (or has not
+    yet reached, contiguity-wise) must never count toward FtsZ's own
+    N=50 either. When ``None`` (the default), the seed universe is the
+    legacy ``range(REQUIRED_N_SEEDS)`` -- existing callers are unaffected."""
     candidates = discover_candidate_paths(data_roots)
 
     seen_sha: dict[str, int] = {}
@@ -558,10 +584,27 @@ def audit_pre_division_evidence(
         per_seed_evidence.append(evidence)
         found_seeds.append(seed)
 
+    seed_universe = tuple(range(REQUIRED_N_SEEDS)) if selected_seeds is None else tuple(sorted(selected_seeds))
+    upstream_selection_complete = None if selected_seeds is None else len(seed_universe) >= REQUIRED_N_SEEDS
+    seed_universe_source = (
+        "range(required_n_seeds)"
+        if selected_seeds is None
+        else "division_cohort_selector.audit_cohort(...).selected_seeds"
+    )
+
+    if selected_seeds is not None:
+        # A validated seed OUTSIDE the given universe (e.g. a leftover
+        # FtsZ trace for a seed Cytokinesis right-censored, or one not
+        # yet reachable because an earlier seed in the contiguous prefix
+        # is still unattempted) must never inflate found_seeds/deficit --
+        # it simply is not part of the requested selection.
+        universe_set = set(seed_universe)
+        found_seeds = [seed for seed in found_seeds if seed in universe_set]
+
     deficit = max(0, REQUIRED_N_SEEDS - len(found_seeds))
     status = "INSUFFICIENT_ENSEMBLE" if deficit > 0 else "SUFFICIENT_ENSEMBLE"
 
-    # Three-way partition of every seed in [0, REQUIRED_N_SEEDS) that is not
+    # Three-way partition of every seed in the seed universe that is not
     # a validated/found seed -- NEVER conflated into one "missing" bucket
     # (Opus 5 review finding): a seed can be truly absent (no candidate file
     # discovered at all -- discover_candidate_paths never saw it) or it can
@@ -574,8 +617,8 @@ def audit_pre_division_evidence(
     invalid_seed_numbers = {int(e["seed"]) for e in rejected_windows} | {
         int(e["seed"]) for e in duplicate_seeds
     }
-    missing_seeds = sorted(seed for seed in range(REQUIRED_N_SEEDS) if seed not in candidates)
-    invalid_seeds = sorted(seed for seed in range(REQUIRED_N_SEEDS) if seed in invalid_seed_numbers)
+    missing_seeds = sorted(seed for seed in seed_universe if seed not in candidates)
+    invalid_seeds = sorted(seed for seed in seed_universe if seed in invalid_seed_numbers)
 
     monomer_stat: dict[str, float] | None = None
     if per_seed_evidence:
@@ -613,11 +656,57 @@ def audit_pre_division_evidence(
         resumable_extraction_command=resumable_extraction_command(missing_seeds, invalid_seeds),
         monomer_primary_statistic=monomer_stat,
         activity_summary=activity_summary,
+        seed_universe_source=seed_universe_source,
+        upstream_selection_complete=upstream_selection_complete,
     )
 
 
-def main() -> int:
-    report = audit_pre_division_evidence()
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument(
+        "--use-cohort-selector",
+        action="store_true",
+        help=(
+            "Division-censor-contract (2026-09-08): restrict the seed universe to "
+            "scripts.l2_event.division_cohort_selector.audit_cohort(...).selected_seeds "
+            "(the Cytokinesis dual-tap cohort's ascending-contiguous first-N COMPLETED "
+            "seed IDs) instead of the legacy range(REQUIRED_N_SEEDS). Off by default -- "
+            "runs a real, potentially slow cohort audit across the resolved karr_native "
+            "root(s) when enabled."
+        ),
+    )
+    parser.add_argument(
+        "--search-root",
+        action="append",
+        type=Path,
+        default=None,
+        help=(
+            "Only used with --use-cohort-selector: karr_native root(s) to pass through to "
+            "division_cohort_selector.audit_cohort(search_roots=...) (repeatable). Defaults "
+            "to that function's own default (the authoritative dual_division_cohort_current "
+            "root only -- second Opus re-review, 2026-09-09: never a broad sibling-worktree "
+            "scan by default)."
+        ),
+    )
+    args = parser.parse_args(argv)
+
+    selected_seeds = None
+    if args.use_cohort_selector:
+        from scripts.l2_event import division_cohort_selector
+
+        search_roots = [p.resolve() for p in args.search_root] if args.search_root else None
+        cohort_audit = division_cohort_selector.audit_cohort(search_roots=search_roots)
+        selected_seeds = tuple(cohort_audit.selected_seeds)
+        print(
+            f"[ftsz_pre_division_evidence] cohort selector: completed={cohort_audit.completed_count} "
+            f"required={cohort_audit.required_completed_windows} "
+            f"selection_satisfied={cohort_audit.selection_satisfied} "
+            f"selected_seeds={selected_seeds}"
+        )
+
+    report = audit_pre_division_evidence(selected_seeds=selected_seeds)
     print(json.dumps(report.to_json(), indent=2, sort_keys=True))
     print()
     print(f"status={report.status} deficit={report.deficit}/{report.required_n_seeds}")
