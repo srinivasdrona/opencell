@@ -59,30 +59,37 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-09 00:22 IST) — supersedes all
+**Current status (2026-09-10 04:03 IST) — supersedes all
 earlier blocks below:**
 
-- Local `main` has the accepted RepInit split committed at `42adebb`
-  (pending push). DNADamage,
+- Local `main` is clean and published at `0957343`. DNADamage,
   Cytokinesis, and HostInteraction L2.1 are merged. The authoritative L2.1
   manifest is **10 EWP / 1 CODE_GAP / 0 MISSING**. Host's final integrated
   regression passed 148 tests/6 expected data-absence skips; Cytokinesis's
   passed 184 tests. L1b is 28/28, oracle-dependency 38/38, and L2.2 remains
   **18/2/2 integrity OK** after the honest RepInit L2.2 demotion.
+  ReplicationInitiation L2.1 is accepted, merged, and published
+  (`42adebb`/`0dca05c`); its exact 200-tick replay passed non-skipped in
+  main, while its L2.2 row remains honestly FAIL pending M-aware trace-path
+  redesign.
   DNADamage's canonical seed-2000 trace and
   chromosome-ledger sidecar are present
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
   data-dependent skips and active rubric 14/14.
-- Live/active review lanes after runtime recovery:
-  - DNAS accepted candidate `4556d27` is in a provenance-safe integration
-    lane (`dnas-provenance-integration`).
-  - TxReg continuation is active in its preserved dirty worktree.
-  - RepInit L2.1 split is accepted, merged, and pending push; exact 200-tick
-    replay passed non-skipped in main.
-  - Division censoring implementation completed; Opus review is active.
-  The earlier agents were runtime-cleared, not deliberately stopped; their
-  worktrees were preserved and resumed rather than recreated.
+- Runtime/session recovery: no agents survived the latest CLI-session
+  restart. This long session has repeatedly hit context compaction and
+  session-scoped agent cleanup; filesystem worktrees/commits remain intact.
+  Relaunch, never recreate:
+  - DNAS provenance-safe integration worktree
+    `integrate-l22-dnas-current` has accepted code committed through
+    `f5c9d4f` plus uncommitted provenance/evidence changes. Resume it against
+    current board **18/2/2**; successful DNAS promotion should yield
+    **19 PASS / 1 FAIL / 2 MISSING** (RepInit remains the sole FAIL).
+  - TxReg final integration branch `integrate/l21-txreg-final` is clean at
+    `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
+    registry, one unioned dec-006, and reported board 18/2/2. Relaunch final
+    Opus review against `0957343`.
 - L2.1 review/integration queue:
   - ReplicationInitiation branch `agent/l21-repinit-20260817` at `8ee75f0`
     was **REJECTED** by Opus despite a genuine ledger-restored 200-tick
@@ -179,6 +186,9 @@ earlier blocks below:**
     integration with one unioned dec-006 and three-process ledger registry,
     mechanically regenerate 11/0/0, stage trace `73fc1d97...` and ledger
     `f01783e8...`, preserve RepInit/DNADamage/Cyt/Host, and keep L2.2 18/2/2.
+    Final rebuilt branch `integrate/l21-txreg-final` is clean at `57f1f19`
+    and reports every prescribed fix/test green; only final Opus integration
+    review remains.
 - L2.2:
   - DNASupercoiling branch `agent/l22-dnas-20260812` at `4556d27` is
     **ACCEPTED** by final Opus review: both MATLAB origin-wrap helpers,
@@ -215,7 +225,8 @@ earlier blocks below:**
     correctly carries paired-dual Cyt SHA `f04ea79e...3cc80`; the standard
     event root separately retains the L2.1 single-process trace
     `b0c919e8...eeeb0`. Never overwrite or silently mix those two artifacts.
-  - Candidate cohort correction is implemented on
+  - The censor-aware cohort contract is accepted, merged, and published
+    (`8807819`, cleanup `0957343`). It uses
     `fix/division-censor-contract` (6 commits from `701b991`). Opus accepts
     the statistical design but **REJECTED** the implementation: `N=50`
     means the first 50 **completed event windows**
@@ -252,18 +263,13 @@ earlier blocks below:**
     requires the full 100k. Two further blockers remain: default root
     discovery scans 93 worktrees and crashes on documented superseded
     traces instead of using/failing clearly on the authoritative dedicated
-    root, and attempt-record identity trusts JSON self-claims instead of
-    cross-checking measured canary hashes/ticks. Correct those plus the
-    migration accounting (22 dirs / 21 completed / 15 premature + one
-    censor), then re-review. Final corrective branch is now clean at
-    `927b270`: horizon validation uses recorded>=window_anchor, authoritative
-    root/no-arg CLI and non-authoritative rejection reporting are fixed,
-    sidecar claims are canary-cross-checked, non-forced censored seeds skip,
-    and both seed 6/18 100k censor records are mechanically source/provider
-    bound. Live root now has 25 dirs: 23 completed pairs (0-5,17,34-49) and
-    two censored attempts; contiguous prefix ends at seed 6, next attempt 7.
-    Reported gate: 275 targeted tests, 23 validators, clean no-arg audit,
-    L2.2 unchanged. Await final Opus review.
+    recorded>=window_anchor for completions and full-100k source/provider-
+    bound censors. The dedicated root contains 23 validated completed pairs
+    (0-5,17,34-49) and RIGHT_CENSORED records for 6/18; contiguous prefix
+    ends at 6 and `next_seed_to_attempt=7`. Before relaunching, update worker
+    worktrees to the merged contract; then attempt 7-16 and 19-33 in
+    ascending order, consolidating each pair/attempt sidecar into the
+    dedicated root. No MATLAB process is currently active.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
