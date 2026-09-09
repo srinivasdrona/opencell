@@ -1200,4 +1200,3 @@ digest = java.security.MessageDigest.getInstance('SHA-256');
 digest_bytes = typecast(digest.digest(raw), 'uint8');
 hash_hex = lower(sprintf('%02x', digest_bytes));
 end
-
