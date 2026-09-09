@@ -182,7 +182,11 @@ def main() -> int:
             "TranscriptionalRegulation row not found in manifest; refusing to append a new row mechanically"
         )
 
-    counts: dict[str, int] = {}
+    counts: dict[str, int] = {
+        CLASS_EXISTING_WINDOW_PASS: 0,
+        "CODE_GAP": 0,
+        "MISSING_ACTIVE_EXTRACTION": 0,
+    }
     for row in payload["rows"]:
         counts[row["classification"]] = counts.get(row["classification"], 0) + 1
     payload["counts"] = counts
