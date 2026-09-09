@@ -1,10 +1,13 @@
-# STATUS: Division-window cohort-censoring contract (second Opus re-review fixes)
+# STATUS: Division-window cohort-censoring contract (final Opus review round)
 
 Branch `fix/division-censor-contract`, worktree
 `E:\opencell-worktrees\fix-division-censor-contract`, base `701b991`.
-Not merged/pushed to main. This revises the previous candidate after
-Opus's SECOND implementation re-review rejected three remaining
-blockers; all six review items are addressed below.
+Not merged/pushed to main. Sections 1-6 below (unchanged since the second
+Opus re-review) record the code fixes for all six original review items.
+See "Final round: accounting refresh + seed 6 backfill" at the bottom of
+this document for this session's work: a fresh dedicated-root audit
+(23 COMPLETED + 2 RIGHT_CENSORED, up from 21+1) and seed 6's mechanical
+RIGHT_CENSORED backfill.
 
 ## 1. Horizon predicate: recorded >= window_anchor, not recorded >= n_ticks (FIXED)
 
@@ -200,12 +203,12 @@ blockers; all six review items are addressed below.
   seed6_100k_probe.status`) reconfirmed still `RUNNING` at the end of
   this session — untouched throughout.
 
-## Open items carried forward
+## Open items carried forward (as of the second re-review; see "Final round" below for resolution)
 
-1. Seed 6 remains genuinely unresolved (still running) — no code or
-   documentation change can close this; it requires the live process to
-   finish.
-2. A bulk sidecar-backfill pass for the 21 already-completed seeds
+1. ~~Seed 6 remains genuinely unresolved (still running)~~ — **RESOLVED
+   this session**: the live attempt finished RIGHT_CENSORED and was
+   mechanically backfilled; see "Final round" below.
+2. A bulk sidecar-backfill pass for the (now 23) already-completed seeds
    (writing real `division_window_attempt.json` files next to their
    existing trace pairs, now that the identity-cross-check machinery to
    do so safely exists) remains designed but not executed in this
@@ -213,8 +216,104 @@ blockers; all six review items are addressed below.
    shared consolidated root outside a narrowly-scoped code-fix branch.
 3. `premature_seeds` does not itself distinguish COMPLETED from
    RIGHT_CENSORED within the premature bucket (seed 18 appears there
-   alongside 17/34-47) — `completed_seeds`/`censored_seeds` (both scoped
+   alongside 17/34-49) — `completed_seeds`/`censored_seeds` (both scoped
    to the contiguous prefix only) provide the status breakdown instead.
    Not changed this round since no review item asked for it; flagged
    here in case a future round wants a `premature_completed_seeds`/
    `premature_censored_seeds` split for clarity.
+
+## Final round: accounting refresh + seed 6 backfill (2026-09-09, this session)
+
+* **Fresh dedicated-root audit** (Opus item 4 — "currently 24? Inspect
+  fresh, not hardcoded"): re-surveyed
+  `main-integrate/data/m1_sources/karr_native/dual_division_cohort_current`
+  directly this session. Real count: **25 seed directories** — **23
+  COMPLETED pairs** (seeds 0-5, 17, 34-49 — worker C finished 48/49 since
+  the last round's 34-47 snapshot) plus **2 RIGHT_CENSORED** (seed 18,
+  backfilled two rounds ago; seed 6, backfilled this session, see below).
+  Neither "24" nor last round's "21+1" is current; both prior counts are
+  superseded by this fresh survey. `docs/phase_f/l2_event/
+  DIVISION_WINDOW_MIGRATION.md` rewritten again with the corrected
+  breakdown and a fresh real no-arg CLI capture.
+* **Seed 6 mechanically backfilled** (Opus item 5): `bulk-division-a/
+  artifacts/seed6_100k_probe.status` (job
+  `dual_a_s006_100k_probe_20260908_221616_27040`) finished this session —
+  `FAILED seed=6 max_search_ticks=100000`, no `.mat` output files ever
+  emitted. The preserved job log's exact extractor error text ("seed 6:
+  division-completion signal did not fire within max_search_ticks=100000
+  ticks") was parsed and independently re-verified via the SAME reviewed
+  `scripts/l2_event/backfill_right_censored_from_log.py` tool used for
+  seed 18 (never fabricated): the log's referenced DNADamage overlay
+  (`bulk-division-a/tmp/wcm_source_overlay/src/.../DNADamage.m`)
+  independently hashes to
+  `86d8b3c2d2ed42df03e1b9ea14f06efc4b645a4e6aeaa3ef938b9ea41ad27e7e` —
+  byte-identical to this worktree's current dec-005-resolved patched
+  DNADamage source (the SAME hash seed 18's evidence chain verified,
+  confirming both worker worktrees ran against the identical current-main
+  source) — and the log's mnrnd provider line matches the current genuine
+  provider exactly. Wrote
+  `dual_division_cohort_current/per_process_traces_v2_event_s006/
+  division_window_attempt.json` (`RIGHT_CENSORED`, `max_search_ticks=
+  100000`, both hashes verified, no trace files present — mutual
+  exclusivity intact). No code changes were needed for this step; the
+  backfill tool already existed from the seed-18 round and required zero
+  modification to handle seed 6.
+* **Re-run verification (Opus item 7), this session**:
+  * Targeted suite (the 9 files from section 6 above): **275 passed**
+    (unchanged from last round — the horizon/root/identity code paths
+    were not touched this session, only data + docs).
+  * Broader `l2_event`/`division`/`cytokinesis`/`ftsz`/`backfill`-scoped
+    sweep: **385 passed, 17 skipped, 1 failed** — the same pre-existing,
+    unrelated `test_shared_evidence_index_is_known_stale_for_
+    ribosome_assembly_after_this_promotion` failure reconfirmed present
+    (RibosomeAssembly provenance hash staleness, nothing to do with
+    division/censoring).
+  * `test_l22_evidence_portability.py`: **7 passed** (Design-A tally
+    unaffected by this session's work).
+  * **Live dedicated-root audit, all 23 COMPLETED + both RIGHT_CENSORED
+    records**: the real no-arg `division_cohort_selector.py` invocation
+    (native WSL via `bin/oc-py`, ~9 minutes — validates every COMPLETED
+    pair's full canary, not just the contiguous prefix) returned a clean
+    report: `attempted_count=7` (seeds 0-5 COMPLETED + seed 6
+    RIGHT_CENSORED), `completed_count=6`, `censored_seeds=[6]`,
+    `contiguous_prefix_end=6`, `next_seed_to_attempt=7`,
+    `premature_seeds=[17, 18, 34..49]` (18 entries), `gap_seeds=[7..16,
+    19..33]` (25 entries), `invalid_censor_seeds=[]`,
+    `rejected_root_traces=[]`, `source_hash_mismatches=[]`,
+    `duplicate_trace_hashes=[]`, exit code 2 (`selection_satisfied=
+    false`, 6 of 50 required). Exactly matches the expected shape:
+    completed 0-5 then censored 6 form the contiguous prefix, next
+    attempt is 7, and 17/34-49 (plus censored 18) remain premature —
+    zero `CohortContractError`s across all 25 real seed directories.
+  * No-arg CLI proof: confirmed above IS the no-arg invocation (no
+    `--search-root` passed) — clean JSON report + exit code 2, no
+    traceback, resolving `authoritative_karr_native_root()` to the real
+    `main-integrate` sibling-worktree path with zero manual
+    configuration.
+  * `ruff check` on files touched this session (docs only — no Python
+    changed): N/A; the last Python-touching round's `ruff check` (clean)
+    still applies unchanged.
+  * L2.2 board: unrelated to this branch's scope; `plan.md`'s narrative
+    (updated by a separate, concurrent ChromCond-integration line of
+    work) correctly reads "L2.2 remains integrity-OK at 18/2/2" (the
+    RepInit-demotion-adjusted `evidence.audit_index()` FAIL/MISSING tally
+    for the shared tracked index) — not the older "19/1/2"; this is a
+    DIFFERENT metric from this document's own "19 PASS/1 FAIL/2
+    MISSING_EVIDENCE" Design-A/`PROCESS_CATALOG.yaml`-scope tally in
+    section 6 above (`n_in_scope=22`, unaffected by RepInit's demotion).
+    Neither this branch's tests nor its docs claim a stale "19/1/2" as
+    the current L2.2 audit-index board.
+  * Current-main merge analysis: `main-integrate` is at `bcbdd3f` ("docs:
+    record seed 6 right censoring") — a concurrent, independent line of
+    work on main already narrates seed 6's genuine right-censoring and
+    instructs backfilling it "from its preserved `dual_a_s006_100k_probe`
+    log only through the reviewed source/provider-binding tool", which is
+    exactly what this branch did. No conflict: this branch only wrote a
+    new (previously-absent) data file into the shared, untracked
+    `dual_division_cohort_current` directory (confirmed via `git status`
+    in `main-integrate` — the whole directory is untracked, not
+    gitignored, and was already untracked before this session); no git
+    state in `main-integrate` was touched, and this branch's own commits
+    remain unmerged/unpushed as required.
+* Provenance to be logged (`opencell/provenance/llm_interactions.jsonl`)
+  at the same commit as this STATUS update.
