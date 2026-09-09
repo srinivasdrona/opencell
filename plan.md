@@ -170,9 +170,15 @@ earlier blocks below:**
     `integrate/l21-txreg-clean` is clean at `209a951`: source-derived damage
     shifts, unified ledger, explicit PIT failure, regenerated trace/ledger,
     mechanical promoter, and 11 EWP/0/0 candidate are committed; L2.2 stays
-    18/2/2 after the now-published RepInit demotion. Await Opus re-review
-    against current main `0dca05c`, especially shared ledger/`dec-006` union
-    and preservation of RepInit/DNADamage/Cytokinesis/Host behavior.
+    18/2/2 after the now-published RepInit demotion. Opus accepts the TxReg
+    science but **REJECTED integration mechanics**: merge creates duplicate
+    `dec-006` entries, splits RepInit/TxReg ledger registries, promoter drops
+    zero-valued count keys, a Host verifier test assumes a real non-PASS row,
+    candidate scalar-draw normalization is weaker than main, and regenerated
+    trace/ledger bytes are absent from main. Build a clean current-main
+    integration with one unioned dec-006 and three-process ledger registry,
+    mechanically regenerate 11/0/0, stage trace `73fc1d97...` and ledger
+    `f01783e8...`, preserve RepInit/DNADamage/Cyt/Host, and keep L2.2 18/2/2.
 - L2.2:
   - DNASupercoiling branch `agent/l22-dnas-20260812` at `4556d27` is
     **ACCEPTED** by final Opus review: both MATLAB origin-wrap helpers,
