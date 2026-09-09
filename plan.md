@@ -266,10 +266,11 @@ earlier blocks below:**
     recorded>=window_anchor for completions and full-100k source/provider-
     bound censors. The dedicated root contains 23 validated completed pairs
     (0-5,17,34-49) and RIGHT_CENSORED records for 6/18; contiguous prefix
-    ends at 6 and `next_seed_to_attempt=7`. Before relaunching, update worker
-    worktrees to the merged contract; then attempt 7-16 and 19-33 in
-    ascending order, consolidating each pair/attempt sidecar into the
-    dedicated root. No MATLAB process is currently active.
+    ends at 6 and `next_seed_to_attempt=7`. Worker A has been fast-forwarded
+    to current main `9757f6e`; 108 censor/spec/extractor tests pass there.
+    Launch the contract-aware sequential range 7-16 next, then 19-33,
+    consolidating each pair/attempt sidecar into the dedicated root. No
+    MATLAB process is active before this relaunch.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce
