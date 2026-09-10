@@ -125,10 +125,16 @@ earlier blocks below:**
     unchanged 19/1/2 integrity OK, and added a durable regression
     (`test_dnas_canonical_bundle_uses_accepted_two_sided_sparse_gate_not_
     standard_per_component`) binding directly to the tracked `result.json`
-    bytes. Full details:
+    bytes. `1005f18` **ACCEPTED by Opus** with one non-blocking follow-up:
+    the promoter's `source_checkpoint_sha256` silently hashed empty bytes
+    (wrong live-tree path lookup) instead of the real checkpoint.
+    **Fixed in `d984e9f`**: checkpoint now resolves under `BUNDLE_ROOT`,
+    fails closed if missing; canonical `result.json` now records the real
+    `7e52aecb...3bd7` hash; 3 new regression tests
+    (`tests/scripts/test_l22_dnas_promote_n200_evidence.py`) added. Board
+    still 19/1/2, integrity OK. Full details:
     `E:\opencell-worktrees\integrate-l22-dnas-current\STATUS_DNAS_INTEGRATION_FINAL.md`
-    "Opus review round 2" section. Ready for Opus re-review against current
-    main, then merge.
+    "Opus round 3" section. Ready for final Opus re-review, then merge.
   - TxReg final integration branch `integrate/l21-txreg-final` is clean at
     `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
     registry, one unioned dec-006, and reported board 18/2/2. Final review
