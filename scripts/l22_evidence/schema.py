@@ -203,6 +203,11 @@ DNAS_RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_dnas_runn
 # `PROCESS_DEPENDENCY_FILES["ReplicationInitiation"]["repinit_runner_helpers_module"]`
 # and `runner_helpers_generic_hash`'s R11 section below.
 REPINIT_RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_repinit_runner_helpers.py"
+# R12: ReplicationInitiation's own requested-M-vs-catalog-M-vs-process
+# guard entrypoint (`sweep.runner_command` launches THIS script, never the
+# generic `l2_2_design_a_runner.py`, for ReplicationInitiation jobs) -- see
+# `PROCESS_DEPENDENCY_FILES["ReplicationInitiation"]["repinit_runner_entrypoint_module"]`.
+REPINIT_RUNNER_ENTRYPOINT_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_repinit_runner_entrypoint.py"
 EVENT_BRIDGE_MODULE = REPO_ROOT / "scripts" / "l22_evidence" / "event_bridge.py"
 DNA_DAMAGE_EVENT_VERIFIER_MODULE = REPO_ROOT / "scripts" / "l22_evidence" / "dna_damage_event_verifier.py"
 DNA_DAMAGE_STIMULUS_COHORT_MODULE = REPO_ROOT / "scripts" / "l2_event" / "dna_damage_stimulus_cohort.py"
@@ -600,6 +605,11 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         # exactly). Registering it here makes an edit to IT stale only
         # ReplicationInitiation's row.
         "repinit_runner_helpers_module": REPINIT_RUNNER_HELPERS_MODULE,
+        # R12: ReplicationInitiation's own requested-M validation entrypoint
+        # (`sweep.runner_command` launches it in place of the generic
+        # `l2_2_design_a_runner.py` for ReplicationInitiation jobs only) --
+        # see `_l2_2_repinit_runner_entrypoint.py`'s module docstring.
+        "repinit_runner_entrypoint_module": REPINIT_RUNNER_ENTRYPOINT_MODULE,
     },
     "DNADamage": {
         "dna_damage_event_verifier_module": DNA_DAMAGE_EVENT_VERIFIER_MODULE,
@@ -623,13 +633,14 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
 # then merged as Git-normalized LF despite identical Python source. Source
 # provenance should bind executable text, not that transient line-ending
 # difference. Keep all other dependency hashes raw-byte exact; this exception
-# is deliberately process/key scoped. The RepInit sibling module (R11) hit
-# the identical CRLF-on-Windows-then-LF-on-commit transient during this
-# session and is registered here for the same reason.
+# is deliberately process/key scoped. The RepInit sibling modules (R11/R12)
+# hit the identical CRLF-on-Windows-then-LF-on-commit transient during this
+# session and are registered here for the same reason.
 LF_NORMALIZED_PROCESS_DEPENDENCIES = frozenset(
     {
         ("DNASupercoiling", "dnas_runner_helpers_module"),
         ("ReplicationInitiation", "repinit_runner_helpers_module"),
+        ("ReplicationInitiation", "repinit_runner_entrypoint_module"),
     }
 )
 

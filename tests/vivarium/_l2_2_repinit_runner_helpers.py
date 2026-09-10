@@ -46,8 +46,11 @@ of the following:
     never hardcoded, so a future catalog change is honored automatically),
   - the file's own `metadata/n_ticks` does not equal that same catalog
     `M_ticks`,
-  - any non-chromosome `states_before`/`states_after` channel's own tick
-    dimension does not equal that same catalog `M_ticks`.
+  - any `states_before`/`states_after` channel's own tick dimension --
+    including `chromosome`, which is an ordinary `(1, M)`-shaped
+    reference-cell-array dataset in this project's per_process_traces_v2
+    schema exactly like every other channel, not a structure requiring
+    special-case exemption -- does not equal that same catalog `M_ticks`.
 This four-way equality (filename token == metadata == catalog M_ticks ==
 channel tick dimension) is exactly the anti-cheat contract an independent
 integration review required; the previous (rejected) `_100ticks.mat`-named
@@ -137,8 +140,9 @@ def _channel_tick_dimension(dataset: h5py.Dataset) -> int:
 def repinit_v2_seed_mat_path(seed: int) -> Path:
     """Resolve AND validate seed `seed`'s genuine ReplicationInitiation L2.2
     trace. Never returns a path without having verified, right now, that its
-    filename token, `metadata/n_ticks`, the live catalog `M_ticks`, and every
-    non-chromosome channel's own tick dimension are all mutually equal.
+    filename token, `metadata/n_ticks`, the live catalog `M_ticks`, and
+    EVERY `states_before`/`states_after` channel's own tick dimension --
+    including `chromosome` -- are all mutually equal.
 
     Seed 0 is NOT special-cased: it lives at the SAME seed-padded
     `per_process_traces_v2_s000/` path every other seed does, genuinely
@@ -186,12 +190,6 @@ def repinit_v2_seed_mat_path(seed: int) -> Path:
                 raise RepInitTraceIdentityError(f"{path} is missing the {section!r} group.")
             group = handle[section]
             for channel_name in group:
-                if str(channel_name) == "chromosome":
-                    # Structured sparse-triple group, validated separately by
-                    # `load_chromosome_oracle_for_process`'s own tick-range read
-                    # (which, for ReplicationInitiation, resolves through THIS
-                    # module via `_v2_seed_mat_path`'s redirect too).
-                    continue
                 tick_dim = _channel_tick_dimension(group[channel_name])
                 if tick_dim != catalog_m:
                     raise RepInitTraceIdentityError(

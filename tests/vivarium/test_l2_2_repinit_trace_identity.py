@@ -46,11 +46,14 @@ THIS closure (R11) instead:
 Fail-closed identity enforced by `_l2_2_repinit_runner_helpers.
 repinit_v2_seed_mat_path`, and independently re-verified here: filename
 tick token == `metadata/n_ticks` == live `PROCESS_CATALOG.yaml` `M_ticks`
-== every non-chromosome channel's own tick dimension, for every genuine
-seed file, PLUS anti-cheat reproductions of the exact prior-rejected
-mislabeling shape (a `_100ticks.mat`-named file with `metadata/n_ticks`
-claiming 200) and its inverse (a `_200ticks.mat`-named file whose
-metadata or channel data actually diverges from 200).
+== every `states_before`/`states_after` channel's own tick dimension
+(including `chromosome`, an ordinary `(1, M)`-shaped reference-cell-array
+dataset, not a special-cased exemption), for every genuine seed file,
+PLUS anti-cheat reproductions of the exact prior-rejected mislabeling
+shape (a `_100ticks.mat`-named file with `metadata/n_ticks` claiming 200),
+its inverse (a `_200ticks.mat`-named file whose metadata or channel data
+actually diverges from 200), and a truncated/replaced `chromosome`
+channel specifically (round-3 integration review requirement).
 """
 
 from __future__ import annotations
@@ -251,8 +254,10 @@ def test_all_50_seeds_resolve_to_genuine_200tick_named_paths() -> None:
 def test_all_50_repinit_seed_traces_have_genuine_200_tick_identity() -> None:
     """Independent (does not call `repinit_v2_seed_mat_path`'s own
     validation) four-way re-derivation per seed file: filename token ==
-    metadata/n_ticks == live catalog M_ticks == every non-chromosome
-    channel's own tick dimension."""
+    metadata/n_ticks == live catalog M_ticks == EVERY channel's own tick
+    dimension, including `chromosome` (an ordinary `(1, M)`-shaped
+    reference-cell-array dataset in this schema, not a special-cased
+    exemption)."""
     _skip_if_raw_data_absent()
     catalog_m = _catalog_m_ticks(_PROCESS_NAME)
     assert catalog_m == 200
@@ -265,8 +270,6 @@ def test_all_50_repinit_seed_traces_have_genuine_200_tick_identity() -> None:
             for section in ("states_before", "states_after"):
                 group = handle[section]
                 for channel_name in group:
-                    if str(channel_name) == "chromosome":
-                        continue
                     ds = group[channel_name]
                     actual_ticks = ds.shape[1] if ds.shape[0] == 1 else ds.shape[0]
                     assert actual_ticks == catalog_m, (
@@ -353,8 +356,8 @@ def test_rejects_200ticks_filename_whose_metadata_disagrees(tmp_path: Path, monk
 
 def test_rejects_channel_tick_dimension_mismatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     """Filename token and metadata both correctly say 200, but one
-    non-chromosome channel's own tick dimension has been truncated to 150
-    (e.g. a partial/corrupted extraction). Must be rejected."""
+    ordinary count-vector channel's own tick dimension has been truncated
+    to 150 (e.g. a partial/corrupted extraction). Must be rejected."""
     _skip_if_raw_data_absent()
     fake_root = tmp_path / "karr_native"
     seed_dir = fake_root / "per_process_traces_v2_s000"
@@ -368,6 +371,33 @@ def test_rejects_channel_tick_dimension_mismatch(tmp_path: Path, monkeypatch: py
 
     monkeypatch.setattr(repinit_helpers, "_KARR_NATIVE_ROOT", fake_root)
     with pytest.raises(repinit_helpers.RepInitTraceIdentityError, match="tick dimension"):
+        repinit_helpers.repinit_v2_seed_mat_path(0)
+
+
+def test_rejects_chromosome_channel_tick_dimension_mismatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Round-3 integration review requirement: ReplicationInitiation's
+    catalog declares `chromosome` in BOTH `input_channels` and
+    `output_channels`, and its on-disk representation is an ordinary
+    `(1, M)`-shaped reference-cell-array dataset exactly like every other
+    channel -- NOT a structure warranting a validation exemption. Here the
+    `chromosome` dataset specifically (not `substrates`) is truncated from
+    200 to 150 ticks; must be rejected, and the failure must occur inside
+    `repinit_v2_seed_mat_path` -- i.e. BEFORE any oracle stacking/
+    evaluation ever sees this seed."""
+    _skip_if_raw_data_absent()
+    fake_root = tmp_path / "karr_native"
+    seed_dir = fake_root / "per_process_traces_v2_s000"
+    seed_dir.mkdir(parents=True)
+    target = seed_dir / f"{_PROCESS_NAME}_200ticks.mat"
+    shutil.copy(_genuine_seed_path(0), target)
+    with h5py.File(target, "r+") as handle:
+        assert handle["states_before/chromosome"].shape == (1, 200)
+        truncated = handle["states_before/chromosome"][:, :150]
+        del handle["states_before/chromosome"]
+        handle.create_dataset("states_before/chromosome", data=truncated)
+
+    monkeypatch.setattr(repinit_helpers, "_KARR_NATIVE_ROOT", fake_root)
+    with pytest.raises(repinit_helpers.RepInitTraceIdentityError, match="chromosome"):
         repinit_helpers.repinit_v2_seed_mat_path(0)
 
 

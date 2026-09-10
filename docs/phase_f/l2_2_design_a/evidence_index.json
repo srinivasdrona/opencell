@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "5442fe539b4b3549da1af3c99a45521a7b3617078f2cb7cc1109be79f44f66dd",
-  "content_hash": "abb4d588f6a99f5f01a8c257e17c57fbd68b18cb7dc482e2a662388018b0c513",
+  "content_hash": "d69c8046f579adf48000ad87912c2a2882f798247e75fd0cd570696828a1c72d",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-10T14:49:34.594431+00:00",
+  "generated_at": "2026-09-10T17:48:06.732541+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -673,12 +673,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "672c4345aca69d8ea53675d35cad66ff952dc12f57c039e681ee89994fe399a6",
+        "SUMMARY.json": "69e70fffa8a44ee5ce6f7750eeee8e42741713c6a0e16981683b14df22d4ee56",
         "analytical_check.json": "d40b24b7383e02c3833fabb799ed0d2e28709559cf7c34245fa9331fefeda6f7",
-        "null_calibration.json": "d0cb2c1cdcedec44e06373509e68ac90094a6bf342c1f7d959c5080f0f55cc72",
-        "provenance.json": "2b1c21cd66ab743664e1dce0501305b5d35390bea9f9453c7989d9481a6bbab9",
-        "result.json": "3c2799aaeef73bbc229fc43cb0cd1c7797fc001c71d5dfb1bed61fcf622c8980",
-        "sweep_provenance.json": "4dbb73db735fa40dc5a62beb6a6f49966297f1f02c01b103c6e0e02259caddfd",
+        "null_calibration.json": "5ff8f3f3e803c4a2d000d39ee63bfd1534d4bb57400ab4d7ca20726032b736ee",
+        "provenance.json": "2e54418b9d80571b924bb48ddfb243479b9427a182e6d6204285bc4323b23cbc",
+        "result.json": "144e01d0d787cffbe9f9015fdda2dbfc83ef955f65feccfdd8b6fad8500c5ce8",
+        "sweep_provenance.json": "08220c215ade6e483fd3ce18d900057ac6109510d756c73f25b31afeccb4bfcc",
         "thresholds.json": "966b369f1823dddf82a0ee157ff1de3433188cd1669d1941381943c8060246da"
       },
       "bucket": "ALGORITHMIC_DEEP",
@@ -706,7 +706,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 5,
         "git_dirty": null,
-        "git_sha": "0e4627b0aa25227dc3bfd10386555b56ea9b0648",
+        "git_sha": "899d277685a0b148c286d991707440ee99eef8bb",
         "inputs_verified": true,
         "result_schema_version": 1
       },
