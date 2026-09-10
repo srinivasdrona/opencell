@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-10T03:07:45.571189+00:00",
+  "generated_at": "2026-09-10T03:52:16.813305+00:00",
   "jobs": [
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/DNARepair.log",
@@ -14,9 +14,9 @@
       "stored_warnings": []
     },
     {
-      "log_path": null,
+      "log_path": "artifacts/l2_2_gates/_sweep_logs/DNASupercoiling.log",
       "m_ticks": 100,
-      "output_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/latest",
+      "output_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
       "process": "DNASupercoiling",
       "reason": null,
       "seeds": 200,
