@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "5442fe539b4b3549da1af3c99a45521a7b3617078f2cb7cc1109be79f44f66dd",
-  "content_hash": "89b6a59c3f96a9c618f5add64387099463702ad2a314de0bcd857b0ccead3f15",
+  "content_hash": "5b5beff0fb166fb2f62572f22653d1555d8e18898efe9bfb0ca2459ba2db34aa",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-10T03:53:09.521573+00:00",
+  "generated_at": "2026-09-10T04:45:13.836991+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -115,8 +115,8 @@
         "analytical_check.json": "fe7776df0a449ac6226e4a97dddce8cd8b17225d60ad090c4ed22d459aa01733",
         "null_calibration.json": "498505d5c3c6dac0b8f0862b3a7618af6284c1f17c8938857432da7e3c3b8493",
         "provenance.json": "3f19247b0154394b49b4cc23070f83534da3bc1b54b554dddfd7d1fb5d58bce2",
-        "result.json": "4c2a819f65c618514bed9982b4fe30a6307012bff6627a425a09fd60feb79746",
-        "sweep_provenance.json": "f13259fbbf2400f90131e626a3c2e67911589c45e81ac843c6677f75521cb00d",
+        "result.json": "8142b664d8e3287d765cf31f9ef87c73c98487100c3cb656fb911506a6cfb616",
+        "sweep_provenance.json": "61ec926a4b0e95145fd15b186d5131ae41034620f95129a0db6e7b4599976bde",
         "thresholds.json": "0f9ae3912ad5ddaf280fdf246c86ed029e849d0b348e6cf6ac7029a879a354b5"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
