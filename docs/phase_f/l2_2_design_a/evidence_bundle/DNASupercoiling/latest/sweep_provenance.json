@@ -21,9 +21,13 @@
   "source_hashes": {
     "catalog_entry": "d09d45460696cb0998e72d8f0b2d9a0a1bf8e49d53ba9f5aa5dd37c7e967fdf9",
     "chromosome_store_module": "de00a57b8a881a247b4af536b152b3ec452eccb53f193f601eeb0192d3639dad",
+    "dnas_chromosome_release_ledger_module": "eaea2857704d0299231525aec4552237ee0e50907f64a2ce42aa7cde38f41f70",
+    "dnas_process_rng_ledger_module": "de7e64f20d628475faffe89e8d85bcbbdc4162cb6ce0077401a471bdb3edc2a2",
     "dnas_runner_helpers_module": "b9feda43473d68d1fc9d4cfc908944867f271450d4e9b1e92c4aa24f2e14eca4",
+    "dnas_superhelical_density_ledger_module": "f3687f6c9e50443a80b324b60d885af5cec345c81489e32cb42ff7f30754c24b",
     "helpers": "016c0d8647aa7bdf4b1aaf3c01be6b3387213e773768ab4eb507fc6e5863f160",
     "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
+    "m1_protein_complexes_module": "6ec74c2ea0b35cd0273a37084745339e6df751ea80090f914766a66a8e2fcfa1",
     "m_gen_constants_module": "bbfea3ac477e4a3eb93edcfae355350c9d5b8c1501ea574ef9b83acfaebce8ae",
     "oc_module": "538922a7ce0bb2a65ad881d6fca9a65f666b4be42d8c912d55fcf3dc5675fa82",
     "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",

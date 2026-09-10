@@ -24,16 +24,16 @@ integration_touchpoints:
       symbol: "KarrDNASupercoilingProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "406-406"
+        lines: "1083-1083"
         note: "Current OC request calculator used by next_update."
         symbol: "KarrDNASupercoilingProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_dna_supercoiling.py"
-          lines: "459-462"
+          lines: "1285-1285"
           note: "Reads allocated ATP/H2O from substrates_allocated[self.name]."
           symbol: KarrDNASupercoilingProcess.next_update
         - path: "opencell/vivarium/karr_dna_supercoiling.py"
-          lines: "560-577"
+          lines: "1345-1361"
           note: "Writes the request vector for both ATP and H2O."
           symbol: KarrDNASupercoilingProcess.next_update
         - path: "opencell/vivarium/karr_allocation_step.py"
@@ -56,22 +56,22 @@ integration_touchpoints:
       symbol: "KarrDNASupercoilingProcess.next_update"
       source:
         path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "406-406"
+        lines: "1083-1083"
         note: "Current OC per-tick update path."
         symbol: "KarrDNASupercoilingProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_dna_supercoiling.py"
-          lines: "459-462"
+          lines: "1285-1285"
           note: "Allocator budget read."
           symbol: KarrDNASupercoilingProcess.next_update
         - path: "opencell/vivarium/karr_dna_supercoiling.py"
-          lines: "555-577"
+          lines: "1345-1361"
           note: "Request emission for ATP/H2O."
           symbol: KarrDNASupercoilingProcess.next_update
         - path: "opencell/vivarium/karr_dna_supercoiling.py"
-          lines: "1024-1035"
+          lines: "2860-2874"
           note: "Per-tick ATP/H2O consumption and ADP/PI/H production."
-          symbol: KarrDNASupercoilingProcess._limit_events_by_atp
+          symbol: KarrDNASupercoilingProcess._substrate_delta
       note: "OC folds request emission and state writeback into one controller and uses the sparse chromosome-store representation."
     status: "implemented"
     note: "Implemented, but not as a literal MATLAB control-flow clone."
@@ -144,9 +144,9 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "1024-1035"
+      lines: "2860-2874"
       note: "ATP is decremented in _substrate_delta and emitted via update[\"substrates\"] in next_update."
-      symbol: KarrDNASupercoilingProcess._limit_events_by_atp
+      symbol: KarrDNASupercoilingProcess._substrate_delta
     note: "Executed ATP hydrolysis is the sum of gyrase and topoIV event counts times their ATP costs."
     kind: expression
   - wid: "H2O"
@@ -159,9 +159,9 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "1024-1035"
+      lines: "2860-2874"
       note: "Water is decremented 1:1 with ATP usage."
-      symbol: KarrDNASupercoilingProcess._limit_events_by_atp
+      symbol: KarrDNASupercoilingProcess._substrate_delta
     note: "Co-substrate consumption mirrors ATP hydrolysis."
     kind: expression
 produce_stoichiometry:
@@ -175,9 +175,9 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "1027-1035"
+      lines: "2860-2874"
       note: "Hydrolysis product emitted by _substrate_delta."
-      symbol: KarrDNASupercoilingProcess._limit_events_by_atp
+      symbol: KarrDNASupercoilingProcess._substrate_delta
     note: "Direct hydrolysis product."
     kind: expression
   - wid: "PI"
@@ -190,9 +190,9 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "1027-1035"
+      lines: "2860-2874"
       note: "Hydrolysis product emitted by _substrate_delta."
-      symbol: KarrDNASupercoilingProcess._limit_events_by_atp
+      symbol: KarrDNASupercoilingProcess._substrate_delta
     note: "Direct hydrolysis product."
     kind: expression
   - wid: "H"
@@ -205,9 +205,9 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "1027-1035"
+      lines: "2860-2874"
       note: "Hydrogen product emitted only when h_wid is available."
-      symbol: KarrDNASupercoilingProcess._limit_events_by_atp
+      symbol: KarrDNASupercoilingProcess._substrate_delta
     note: "Hydrogen is emitted when present in the fixture."
     kind: expression
 stoichiometry_oracle:
@@ -317,34 +317,34 @@ source_anchors:
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "115-245"
+      lines: "524-568"
       note: "Class definition, defaults, and fixture loading."
       symbol: KarrDNASupercoilingProcess
     build_default_state:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "259-290"
+      lines: "735-884"
       note: "Default chromosome state construction."
       symbol: KarrDNASupercoilingProcess._load_fixture
     ports_schema:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "292-358"
+      lines: "885-893"
       note: "Chromosome, substrate, request, and allocation ports."
       symbol: KarrDNASupercoilingProcess._load_equilibrium_sigma
     next_update:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "360-644"
+      lines: "1010-1082"
       note: "Current per-tick update path."
       symbol: KarrDNASupercoilingProcess.ports_schema
     request_budget:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "976-1022"
+      lines: "2812-2859"
       note: "ATP request calculator."
-      symbol: KarrDNASupercoilingProcess
+      symbol: KarrDNASupercoilingProcess._atp_request
     substrate_delta:
       path: "opencell/vivarium/karr_dna_supercoiling.py"
-      lines: "1024-1035"
+      lines: "2860-2874"
       note: "ATP/H2O consumption and ADP/PI/H production."
-      symbol: KarrDNASupercoilingProcess._limit_events_by_atp
+      symbol: KarrDNASupercoilingProcess._substrate_delta
     allocator_consumer_vector:
       path: "opencell/vivarium/karr_allocation_step.py"
       lines: "79-84"

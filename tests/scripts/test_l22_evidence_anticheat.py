@@ -1165,12 +1165,18 @@ def test_process_dependency_registry_matches_real_current_import_graph():
     # process-specific dependency -- see that module's and
     # `schema.runner_helpers_generic_hash`'s docstrings for the full
     # rationale (the shared `_l2_2_design_a_runner_helpers.py` must stay
-    # byte-identical to main for every OTHER process).
+    # byte-identical to main for every OTHER process). R9: also registers
+    # its own oc_module's direct imports of the three DNAS-only RNG-oracle
+    # ledger modules and opencell/m1/protein_complexes.py.
     assert set(schema.PROCESS_DEPENDENCY_FILES["DNASupercoiling"]) == {
         "chromosome_store_module",
         "m_gen_constants_module",
         "state_init_module",
         "dnas_runner_helpers_module",
+        "m1_protein_complexes_module",
+        "dnas_chromosome_release_ledger_module",
+        "dnas_process_rng_ledger_module",
+        "dnas_superhelical_density_ledger_module",
     }
     assert set(schema.PROCESS_DEPENDENCY_FILES["DNADamage"]) == {
         "chromosome_store_module",

@@ -56,7 +56,11 @@ def test_plan_sweep_default_covers_all_18_design_a_per_tick_processes():
     assert len(jobs) == 18
     assert len({j.process for j in jobs}) == 18
     for job in jobs:
-        assert job.seeds == 50
+        # R9: DNASupercoiling's catalog N_seeds is 200 (its accepted two-sided
+        # sparse-gate promotion); every other design_a_per_tick process is
+        # still 50.
+        expected_seeds = 200 if job.process == "DNASupercoiling" else 50
+        assert job.seeds == expected_seeds
         assert isinstance(job.m_ticks, int) and job.m_ticks > 0
 
 

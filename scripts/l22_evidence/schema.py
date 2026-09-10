@@ -379,6 +379,16 @@ UTIL_MATLAB_RNG_MODULE = REPO_ROOT / "opencell" / "util" / "matlab_rng.py"
 # process, its own `oc_module` too -- both DIRECT, module-scope imports,
 # verified by inspection.
 M_GEN_CONSTANTS_MODULE = REPO_ROOT / "opencell" / "m_gen_constants.py"
+# `opencell/m1/protein_complexes.py` -- direct, module-scope import of
+# DNASupercoiling's own oc_module (karr_dna_supercoiling.py), verified by
+# inspection.
+M1_PROTEIN_COMPLEXES_MODULE = REPO_ROOT / "opencell" / "m1" / "protein_complexes.py"
+# The three DNAS-only RNG-oracle ledger modules karr_dna_supercoiling.py
+# directly imports (module scope): dnas_chromosome_release_ledger.py,
+# dnas_process_rng_ledger.py, dnas_superhelical_density_ledger.py.
+DNAS_CHROMOSOME_RELEASE_LEDGER_MODULE = REPO_ROOT / "opencell" / "vivarium" / "dnas_chromosome_release_ledger.py"
+DNAS_PROCESS_RNG_LEDGER_MODULE = REPO_ROOT / "opencell" / "vivarium" / "dnas_process_rng_ledger.py"
+DNAS_SUPERHELICAL_DENSITY_LEDGER_MODULE = REPO_ROOT / "opencell" / "vivarium" / "dnas_superhelical_density_ledger.py"
 # `chromosome_store.py`/`chromosome_views.py` are imported by SOME but not
 # all chromosome-coupled processes' own `oc_module` implementation files
 # (DNARepair imports both; DNASupercoiling/Replication/ReplicationInitiation
@@ -557,6 +567,14 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         # only DNASupercoiling's row, exactly like every other entry in this
         # dict.
         "dnas_runner_helpers_module": DNAS_RUNNER_HELPERS_MODULE,
+        # R9: the accepted candidate's own oc_module (karr_dna_supercoiling.py)
+        # directly imports these four modules at module scope (verified by
+        # inspection) -- the three DNAS-only RNG-oracle ledgers plus
+        # opencell/m1/protein_complexes.py.
+        "m1_protein_complexes_module": M1_PROTEIN_COMPLEXES_MODULE,
+        "dnas_chromosome_release_ledger_module": DNAS_CHROMOSOME_RELEASE_LEDGER_MODULE,
+        "dnas_process_rng_ledger_module": DNAS_PROCESS_RNG_LEDGER_MODULE,
+        "dnas_superhelical_density_ledger_module": DNAS_SUPERHELICAL_DENSITY_LEDGER_MODULE,
     },
     "Replication": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,

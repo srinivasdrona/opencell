@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
 import math
+from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
@@ -11,8 +11,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
-from opencell.m_gen_constants import GENOME_LENGTH_BP
 from opencell.m1.protein_complexes import load_default as _load_protein_complex_composition
+from opencell.m_gen_constants import GENOME_LENGTH_BP
 from opencell.state.chromosome_store import (
     CHROMOSOME_FIELDS,
     ChromosomeBindingResult,
@@ -32,6 +32,8 @@ from opencell.vivarium.dnas_process_rng_ledger import (
 )
 from opencell.vivarium.dnas_superhelical_density_ledger import (
     SuperhelicalDensityLedger,
+)
+from opencell.vivarium.dnas_superhelical_density_ledger import (
     default_ledger_path as default_superhelical_density_ledger_path,
 )
 
@@ -1188,7 +1190,6 @@ class KarrDNASupercoilingProcess(Process):
             legal[:, topoi_idx] = sigma_values < self.topoi_sigma_limit
         topoi_transient = np.zeros(len(positive_regions), dtype=np.float64)
         if not replay_mode:
-            gyrase_legal = bool(np.any(legal[:, gyrase_idx]))
             topoiv_legal = bool(np.any(legal[:, topoiv_idx]))
 
             topoiv_protected_regions = [
@@ -1522,10 +1523,7 @@ class KarrDNASupercoilingProcess(Process):
         configured = self.parameters.get("chromosome_release_rng_ledger_path")
         if configured is False:
             return None
-        if configured is not None:
-            path = Path(configured)
-        else:
-            path = default_ledger_path(self._rng_seed)
+        path = Path(configured) if configured is not None else default_ledger_path(self._rng_seed)
         if not path.exists():
             return None
         return ChromosomeReleaseLedger.load(path)

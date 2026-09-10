@@ -211,8 +211,7 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 19,
-        schema.STATUS_FAIL: 1,
+        schema.STATUS_PASS: 20,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
     fail_rows = {
@@ -220,11 +219,9 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         for row in payload["rows"]
         if row["mechanical_verdict"] == schema.STATUS_FAIL
     }
-    assert set(fail_rows) == {
-        "DNASupercoiling",
-    }
-    assert any(
-        "PRIMARY_INSUFFICIENT_SAMPLES" in reason for reason in fail_rows["DNASupercoiling"]
+    assert set(fail_rows) == set(), (
+        "R9: DNASupercoiling's accepted N=200 two-sided sparse-gate promotion moved it FAIL -> PASS; "
+        f"unexpected FAIL row(s): {fail_rows!r}"
     )
     pass_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_PASS}
     for process in ("ProteinFolding", "ProteinProcessingI", "ProteinProcessingII", "tRNAAminoacylation"):
@@ -232,6 +229,7 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     assert "DNADamage" in pass_rows, "DNADamage expected verified genuine-corpus PASS"
     assert "RibosomeAssembly" in pass_rows, "RibosomeAssembly expected bridged event-class PASS"
     assert "Replication" in pass_rows, "Replication expected current-tree N=50 PASS"
+    assert "DNASupercoiling" in pass_rows, "DNASupercoiling expected accepted N=200 two-sided sparse-gate PASS"
     assert "MacromolecularComplexation" in pass_rows, (
         "MacromolecularComplexation expected active-window-cohort mechanical PASS"
     )
@@ -282,8 +280,7 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 19,
-        schema.STATUS_FAIL: 1,
+        schema.STATUS_PASS: 20,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
