@@ -5,13 +5,13 @@
   "bucket": "ALGORITHMIC_DEEP",
   "channels": {
     "substrates": {
-      "q95_null": 1191.4941639999997,
+      "q95_null": 1278.8003849999996,
       "k_eng": 3.0,
       "absolute_floor": 1.0,
-      "threshold": 3574.482491999999
+      "threshold": 3836.4011549999987
     },
     "complexs": {
-      "q95_null": 0.08333066666666664,
+      "q95_null": 0.08591399999999998,
       "k_eng": 3.0,
       "absolute_floor": 1.0,
       "threshold": 1.0

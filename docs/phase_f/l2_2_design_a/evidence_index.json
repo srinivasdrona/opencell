@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "5442fe539b4b3549da1af3c99a45521a7b3617078f2cb7cc1109be79f44f66dd",
-  "content_hash": "6f159dd78226e12d92ae475087a9d4e40ffd446cf6e63a236a9169f6e7bfc60a",
+  "content_hash": "d38046df4261cbdc576fb52ee20b26eacb3bb96e619d28e169cb7cf7b26fdfac",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-10T06:26:55.836399+00:00",
+  "generated_at": "2026-09-10T10:05:40.393367+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -673,13 +673,13 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "777059a6ef6c1b9338ac522c49e6d9bbd760bac69d5e14858fbd6ac4b663c3be",
+        "SUMMARY.json": "36da3792e9956dbb350dadaee153ca30907d633e11b1402c9f4dafe4a25cfcab",
         "analytical_check.json": "d40b24b7383e02c3833fabb799ed0d2e28709559cf7c34245fa9331fefeda6f7",
-        "null_calibration.json": "2aca0217ad429edace31f95967fb806fc8b3f7eb3db9355a710f427e076fe05c",
-        "provenance.json": "aa7a8a3c2f747893d4dd153d6f797bcf43eb05e107cfe763c2d950d69a7495f8",
-        "result.json": "432459b5c95282c072350cf0b8806364640e6cd2a92dd1f26e2999ccfd6d1d2f",
-        "sweep_provenance.json": "527090e767e3dedb57d3ddd59b8893efccd211e229dbd9c8ae154f2f2ea9af4e",
-        "thresholds.json": "f371d2d65e25e1cf7d577adb812aeb79fa5f5824ede2d7d73628b3e37d33dd6c"
+        "null_calibration.json": "751046d2ac80552ed82cce530788247b65e5750d7ac3ef33ead595229b09194b",
+        "provenance.json": "9a7c275dda7f8f6a005da8758bc965ccd2f980e70a98c2ff3726d5122ac99e5a",
+        "result.json": "738f9d69a96ff7cfb49ba7e3800a73f2b88b83d5091d74ac8f3baaad776b9e1d",
+        "sweep_provenance.json": "6709f5f16de45a0704c6bc89096c932c6a87016147efac2a41d00016e1ef5c9c",
+        "thresholds.json": "966b369f1823dddf82a0ee157ff1de3433188cd1669d1941381943c8060246da"
       },
       "bucket": "ALGORITHMIC_DEEP",
       "catalog_soft_flags": {
@@ -692,23 +692,21 @@
         "primary_distance": "per_tick_vector_w1_mean"
       },
       "channel_verdicts": {
-        "complexs": "PASS",
+        "complexs": "SEED_NOISE",
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ReplicationInitiation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "ReplicationInitiation",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=0c428c473ded.., current=025a7b02f087..)"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
-        "evaluator_schema_version": 4,
+        "evaluator_schema_version": 5,
         "git_dirty": null,
-        "git_sha": "0f62281ebae08c9ecfaa5de70c8dbb8fb441039a",
+        "git_sha": "543c737ebf51a0f190fa434b170360ca5ecd5a3d",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -888,8 +886,7 @@
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 1,
     "MISSING_EVIDENCE": 2,
-    "PASS": 19
+    "PASS": 20
   }
 }

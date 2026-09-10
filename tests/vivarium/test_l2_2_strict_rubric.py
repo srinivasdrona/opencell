@@ -87,45 +87,49 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13.14, and for
     this move Section 13.15):
 
-    As of this commit (DNASupercoiling's clean integration -- R7/R8/R10
-    provenance redesigns + mechanical equivalence-proof migrations isolating
-    its accepted persistent-process-pool fix and hidden-chromosome-state
-    extension from every OTHER Design-A process, plus its own accepted N=200
-    two-sided sparse-support gate promotion -- reconciled here against
-    current main's separately-landed, honest ReplicationInitiation PASS ->
-    FAIL demotion, `9f983fd`, `STALE_SWEEP_PROVENANCE`, pending its own
-    M-aware trace-path redesign) the tally is
-    PASS: 19, FAIL: 1, MISSING_EVIDENCE: 2, n_in_scope: 22:
-      - PASS (19): DNADamage, DNARepair, DNASupercoiling,
+    fix(l2.2): RepInit M-aware trace identity, current-main-safe closure
+    (this commit). ReplicationInitiation's genuine N=50/M=200 gate was
+    closed WITHOUT editing `tests/vivarium/_l2_2_design_a_runner_helpers.py`
+    or `l2_2_design_a_runner.py` at all (verified byte-identical to
+    published main by
+    `tests/vivarium/test_l2_2_repinit_trace_identity.py::
+    test_shared_runner_helper_files_are_byte_identical_to_published_main`):
+    RepInit's 50 genuine seed traces were placed at the standard, UNMODIFIED
+    discovery paths (seeds 1-49 at their natural suffixed directories; seed
+    0's genuine trace generated at its natural suffixed path with the
+    canonical L2.1 trace temporarily moved aside, then the canonical trace
+    restored and the genuine seed-0 trace archived alongside -- see that
+    same test file's module docstring for the full mechanism). Zero other
+    process's sentinel is affected by this closure.
+
+    The tally is now PASS: 20, FAIL: 0, MISSING_EVIDENCE: 2, n_in_scope: 22:
+      - PASS (20): DNADamage, DNARepair, DNASupercoiling,
         MacromolecularComplexation, Metabolism, ProteinDecay, ProteinFolding,
         ProteinModification, ProteinProcessingI, ProteinProcessingII,
-        ProteinTranslocation, RNADecay, RNAModification, RNAProcessing,
-        Replication, RibosomeAssembly, Transcription, Translation,
-        tRNAAminoacylation.
-      - FAIL (1): ReplicationInitiation (pre-existing on main, unrelated to
-        this closure).
+        ProteinTranslocation, ReplicationInitiation, RNADecay,
+        RNAModification, RNAProcessing, Replication, RibosomeAssembly,
+        Transcription, Translation, tRNAAminoacylation.
+      - FAIL (0).
       - MISSING_EVIDENCE (2): Cytokinesis, FtsZPolymerization (pre-existing,
-        unrelated to this closure).
+        unrelated to this closure -- still mid-extraction in a separate
+        parallel lane).
 
     This is a deliberate, evidence-driven mechanical re-derivation, not a
     regression or a fabrication: `gen.audit()` reports `integrity: OK` (see
-    the test above); the shared `_l2_2_design_a_runner_helpers.py`/
-    `opencell/state/chromosome_store.py` edits DNASupercoiling's accepted
-    candidate required were isolated via a redesigned per-process
-    `"helpers"`/`"tick_runner"` hash pair (R7) and a real, executable
-    equivalence proof against each affected process's own oracle trace (R8),
-    NEVER by weakening what those hash guards can detect; every OTHER
-    process's row is migrated (not blindly re-derived) with its own fully
-    documented, fail-closed proof. If this test ever needs to change again,
-    that change must be driven by real evidence (a sweep rerun populating/
+    the test above); `git diff` on the committed `evidence_index.json` and
+    `evidence_bundle/` touches ONLY ReplicationInitiation's own row/files
+    plus the mechanically-required top-level `generated_at`/`content_hash`
+    fields -- every other row is byte-for-byte unchanged, confirming this
+    closure did not need to migrate, re-derive, or rerun any other
+    process's evidence. If this test ever needs to change again, that
+    change must be driven by real evidence (a sweep rerun populating/
     changing rows under the evidence tree, or a further evaluator
     correctness fix with cited raw-metric evidence), not by editing this
     assertion to make it pass."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 19,
-        schema.STATUS_FAIL: 1,
+        schema.STATUS_PASS: 20,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
