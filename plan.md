@@ -95,10 +95,24 @@ earlier blocks below:**
   mechanically from already-accepted raw artifacts, require a genuine
   **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE** board with integrity OK, and
   stop at a clean reviewed candidate without merging or pushing.
-- ✅ **RepInit provenance-safe closure COMPLETE, awaiting independent Opus
-  review**: `E:\opencell-worktrees\integrate-l22-repinit-m-aware-current`,
-  branch `integrate/l22-repinit-m-aware-current` @ `900f99e` (`dafeab9` +
-  provenance), from published main `543c737`. Not merged/pushed. Achieved
+- ✅ **RepInit provenance-safe closure COMPLETE, independent Opus review
+  returned ACCEPT WITH MINOR CORRECTIONS, corrections applied**:
+  `E:\opencell-worktrees\integrate-l22-repinit-m-aware-current`, branch
+  `integrate/l22-repinit-m-aware-current` @ `6cc6494` (`dafeab9` + `900f99e`
+  provenance + `d9ef265` handoff + `6cc6494` rng_seed/STATUS correction),
+  from published main `543c737`. Not merged/pushed. Opus independently
+  re-derived the board (20/0/2 integrity OK), re-hashed the two shared
+  harness files (byte-identical to `543c737`), re-hashed 6 sampled seed
+  files, re-ran all 12 relevant tests, and confirmed the seed-0 collision
+  fix and collateral-damage bounds directly -- found no scientific/code/
+  evidence blocker. One documentation-only correction was applied: the
+  original STATUS draft mis-stated seed 0's internal MATLAB `rng_seed` as
+  "50" and implied the manifest recorded it; on-disk truth (verified via
+  h5py) is `rng_seed=1` for the archived seed 0 and `rng_seed=2..50` for
+  directories `_s001/`..`_s049/`. `REPINIT_SEED_MANIFEST.json` now carries
+  a real per-seed `rng_seed` field (committed in `6cc6494`) and the STATUS
+  prose was corrected on disk; re-audited after the fix, board unchanged
+  at 20/0/2 integrity OK, 12/12 identity+rubric tests still pass. Achieved
   with **ZERO edits** to `tests/vivarium/_l2_2_design_a_runner_helpers.py`/
   `l2_2_design_a_runner.py` (proven byte-identical to published main by a
   new hash-pinned test, not asserted) -- the decisive empirical finding
@@ -130,8 +144,10 @@ earlier blocks below:**
   and their own gitignored data was restored to correct numbering except
   one untracked seed-1 copy (permanently lost from this worktree only;
   their TRACKED, SEALED evidence rows are completely unaffected). Full
-  narrative: `STATUS_l22_repinit_m_aware_current.md` (session-local). Next
-  step: independent Opus review of this candidate before any merge/push.
+  narrative: `STATUS_l22_repinit_m_aware_current.md` (session-local, now
+  corrected). Candidate is READY FOR MERGE by an operator/maintainer at
+  their discretion (out of scope for this lane): 20/0/2 integrity OK,
+  zero shared-file byte changes, independently reviewed and accepted.
 - Detached division extraction remains healthy: supervisor PID `29372`,
   MATLAB PIDs `19400`/`27912`; seed 11 completed and seed 12 is running.
   Status/log remain under
