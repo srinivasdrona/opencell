@@ -77,6 +77,12 @@ earlier blocks below:**
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
   data-dependent skips and active rubric 14/14.
+- Publication trigger: once merged `main` independently verifies
+  **L2.1 11/11** and **L2.2 20 PASS / 0 FAIL / 2 MISSING**, publish and push
+  a Tehol/Bugg dialogue post under `docs/blog/`, using post 1 for character
+  voice and the 2026-09-02 post for narrative continuity. Publish the next
+  post only when L2.2 reaches **22 PASS / 0 FAIL / 0 MISSING**. Candidate
+  branch counts do not trigger publication.
 - Runtime/session recovery: no agents survived the latest CLI-session
   restart. This long session has repeatedly hit context compaction and
   session-scoped agent cleanup; filesystem worktrees/commits remain intact.
