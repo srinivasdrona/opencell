@@ -89,18 +89,31 @@ earlier blocks below:**
     `karr_dna_supercoiling.py` wholesale -- `0532de9`, L1b back to 28/28),
     reconciled the board against main's independently-landed RepInit
     demotion, and refreshed DNAS's own evidence after the anchor-fix code
-    edit correctly staled it (`208c1d1`). Final board: **19 PASS / 1 FAIL
+    edit correctly staled it (`208c1d1`); a follow-up review round then
+    fixed `sweep_status.json`'s DNAS row to match sibling path convention
+    (`8ce7acd`) and logged a provenance entry superseding the merged-in
+    stale `20/0/2` claim (`752088d`; supersedes
+    `sha256:8c6f8c1f...`). Final board: **19 PASS / 1 FAIL
     (ReplicationInitiation, pre-existing, unrelated) / 2 MISSING
     (Cytokinesis, FtsZPolymerization, pre-existing, unrelated), integrity
-    OK** -- exactly the predicted outcome. Full verification (DNAS 90
-    tests, chromosome_store-consumer regression 93 tests, L1b 28/28 +19
-    tests, oracle-dependency 38 tests, L2.4 chassis PASS, full L2.2
-    evidence suite 445+74 tests, provenance 44 tests, ruff clean) recorded
-    in `STATUS_DNAS_INTEGRATION_FINAL.md` (local-only per `/STATUS_*.md`
-    gitignore convention). Two confirmed pre-existing-on-main failures
+    OK** -- exactly the predicted outcome. Full verification (DNAS +
+    chromosome_store-consumer combined regression 183 tests rerun on the
+    final tree, L1b 28/28 +19 tests, oracle-dependency 38 tests, L2.4
+    chassis PASS, full L2.2 evidence suite 445+74+53 tests across reruns,
+    provenance 44 tests, ruff clean) recorded in full at
+    `E:\opencell-worktrees\integrate-l22-dnas-current\STATUS_DNAS_INTEGRATION_FINAL.md`
+    (local-only per `/STATUS_*.md` gitignore convention -- does not travel
+    with the branch). Two confirmed pre-existing-on-main failures
     (DNADamage dependency-registry gaps in `test_l22_evidence_anticheat.py`
     /`test_l22_evidence_ast_completeness.py`) were independently reproduced
     on unmodified `main-integrate` HEAD and left unfixed (out of scope).
+    Note for reviewer: DNAS's `sweep_provenance.json` records
+    `git_sha=51cffc8` rather than the later commit that actually contains
+    the anchor/lint fix, because the forced sweep ran against a
+    dirty-but-later-committed tree; `git_sha`/`git_dirty` are explicitly
+    informational-only (never staleness-gating -- that's SHA-256 content
+    hash based) and the content hash matches current HEAD exactly since
+    `karr_dna_supercoiling.py` was not touched after the sweep ran.
     Ready for Opus integration review against current main, then merge.
   - TxReg final integration branch `integrate/l21-txreg-final` is clean at
     `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
