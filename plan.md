@@ -82,12 +82,26 @@ earlier blocks below:**
   session-scoped agent cleanup; filesystem worktrees/commits remain intact.
   Relaunch, never recreate:
   - DNAS provenance-safe integration worktree
-    `integrate-l22-dnas-current` has accepted code committed through
-    `f5c9d4f` plus uncommitted provenance/evidence changes. Resume it against
-    current board **18/2/2**; successful DNAS promotion should yield
-    **19 PASS / 1 FAIL / 2 MISSING** (RepInit remains the sole FAIL).
-    Continuation agent: `dnas-integration-resume-again`
-    (`1d021115-9f69-4435-9454-af017e8a9140`).
+    `integrate-l22-dnas-current` is **DONE, green, self-consistent**
+    (2026-09-10). Merged current main (`51cffc8`), fixed a real L1b
+    regression the accepted candidate introduced (stale
+    `DNASupercoiling.yaml` oc-anchors after `0bc114a` replaced
+    `karr_dna_supercoiling.py` wholesale -- `0532de9`, L1b back to 28/28),
+    reconciled the board against main's independently-landed RepInit
+    demotion, and refreshed DNAS's own evidence after the anchor-fix code
+    edit correctly staled it (`208c1d1`). Final board: **19 PASS / 1 FAIL
+    (ReplicationInitiation, pre-existing, unrelated) / 2 MISSING
+    (Cytokinesis, FtsZPolymerization, pre-existing, unrelated), integrity
+    OK** -- exactly the predicted outcome. Full verification (DNAS 90
+    tests, chromosome_store-consumer regression 93 tests, L1b 28/28 +19
+    tests, oracle-dependency 38 tests, L2.4 chassis PASS, full L2.2
+    evidence suite 445+74 tests, provenance 44 tests, ruff clean) recorded
+    in `STATUS_DNAS_INTEGRATION_FINAL.md` (local-only per `/STATUS_*.md`
+    gitignore convention). Two confirmed pre-existing-on-main failures
+    (DNADamage dependency-registry gaps in `test_l22_evidence_anticheat.py`
+    /`test_l22_evidence_ast_completeness.py`) were independently reproduced
+    on unmodified `main-integrate` HEAD and left unfixed (out of scope).
+    Ready for Opus integration review against current main, then merge.
   - TxReg final integration branch `integrate/l21-txreg-final` is clean at
     `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
     registry, one unioned dec-006, and reported board 18/2/2. Final review
