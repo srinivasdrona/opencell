@@ -59,15 +59,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-10 12:28 IST) — supersedes all
+**Current status (2026-09-11 00:50 IST) — supersedes all
 earlier blocks below:**
 
 - DNAS is published on `main` at `92cb7b6` (merge commit `aec89fa`,
   handoff/provenance commit `92cb7b6`; `origin/main` matches). The CRLF/LF
   provenance blocker is fixed by LF-normalizing only
   `DNASupercoiling/dnas_runner_helpers_module`; the accepted N=200
-  checkpoint was mechanically re-promoted against the merge tree. Current
-  canonical board: **19 PASS / 1 FAIL / 2 MISSING_EVIDENCE, integrity OK**.
+  checkpoint was mechanically re-promoted against the merge tree. DNAS moved
+  the canonical board to **19 PASS / 1 FAIL / 2 MISSING_EVIDENCE** before
+  the subsequent RepInit closure.
   The required local oracle trace is restored at
   `data/m1_sources/karr_native/per_process_traces_v2/
   DNASupercoiling_100ticks.mat`, SHA-256 `c88b9c97...d85a` (the previous
@@ -80,8 +81,9 @@ earlier blocks below:**
   partial live `artifacts/l2_2_gates` root contains only DNAS; move/remove
   that restored temporary root first so defaults resolve to the complete
   tracked bundle.
-- RepInit final candidate `integrate/l22-repinit-m-aware-current` at
-  `e1accc9` is in a no-commit merge onto current `main`. It stores all 50
+- RepInit is published on `main` at merge commit `be17fc2` (`origin/main`
+  matches). Candidate `integrate/l22-repinit-m-aware-current` at `e1accc9`
+  stores all 50
   genuine traces at durable suffixed
   `ReplicationInitiation_200ticks.mat` paths while preserving the canonical
   unsuffixed L2.1 `_100ticks.mat` (SHA `0c61c816...550c0f`). Its
@@ -99,8 +101,10 @@ earlier blocks below:**
   92/92; L2.1 manifest 11/11 EWP; L2.2 **20/0/2 integrity OK**; L1b 28/28;
   L2.4 PASS; provenance 44/44. Focused Ruff is clean apart from the three
   pre-existing `sweep.py` SIM105 findings and the intentionally late-bound
-  DNAS/RepInit helper import I001. Commit/push the merge, then publish the
-  triggered 20/0/2 Tehol/Bugg blog post directly on main.
+  DNAS/RepInit helper import I001. The triggered Tehol/Bugg milestone post
+  is drafted at
+  `docs/blog/2026-09-11-days-105-113-twenty-greens-two-empty-chairs-and-a-200-tick-file-that-finally-said-200.md`;
+  commit/push it directly on main.
 - Detached division extraction remains healthy: supervisor PID `29372`,
   MATLAB PIDs `19400`/`27912`; seed 11 completed, was hash-banked, and
   passed the cohort validator. Its trace hashes are Cytokinesis
@@ -133,12 +137,11 @@ earlier blocks below:**
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
   data-dependent skips and active rubric 14/14.
-- Publication trigger: once merged `main` independently verifies
-  **L2.1 11/11** and **L2.2 20 PASS / 0 FAIL / 2 MISSING**, publish and push
-  a Tehol/Bugg dialogue post under `docs/blog/`, using post 1 for character
-  voice and the 2026-09-02 post for narrative continuity. Publish the next
-  post only when L2.2 reaches **22 PASS / 0 FAIL / 0 MISSING**. Candidate
-  branch counts do not trigger publication.
+- Publication trigger: **20/0/2 milestone reached on published main and the
+  Tehol/Bugg post drafted for immediate publication** (using post 1 for voice
+  and the 2026-09-02 post for continuity). Publish the next post only when
+  L2.2 reaches **22 PASS / 0 FAIL / 0 MISSING**; no intermediate candidate
+  count triggers another post.
 - Runtime/session recovery: no agents survived the latest CLI-session
   restart. This long session has repeatedly hit context compaction and
   session-scoped agent cleanup; filesystem worktrees/commits remain intact.
