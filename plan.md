@@ -226,6 +226,25 @@ earlier blocks below:**
   commit). Full narrative: `STATUS_l22_repinit_m_aware_current_r12.md`
   (session-local). Next step: dispatch a NEW independent review whose
   prompt explicitly checks both blockers, before any merge/push.
+- ✅ **R12 independent Opus review COMPLETE: ACCEPT, no corrections
+  needed**. Reviewer independently reproduced both blocker fixes with
+  mechanical evidence: (1) chromosome truncated 200->150 via direct h5py
+  probe correctly raised `RepInitTraceIdentityError` mentioning both
+  `chromosome` and `150`; all 14 identity tests pass, all-50-seed test
+  now covers every channel. (2) real subprocess `--ticks 100` rejected in
+  1.8s with exit 2, zero output files (proves no oracle load); real
+  subprocess `--process Translation` also rejected; real subprocess
+  `--ticks 200` accepted, ran 2m55s, wrote a genuine `result.json`;
+  `runner_command` dispatch confirmed to differ only in script path
+  between ReplicationInitiation and other processes; `sweep.py` confirmed
+  absent from all three hashed-dependency registries. Board re-confirmed
+  20/0/2 integrity OK; only RepInit's own 6 bundle files changed since
+  R11; 54/54 evidence-sweep suite pass with the durable membership-based
+  lock-test fix; `git status` clean, 11 commits ahead of `origin/main`,
+  nothing pushed. **Final state: branch
+  `integrate/l22-repinit-m-aware-current` @ `1c3f427`, board 20 PASS / 0
+  FAIL / 2 MISSING_EVIDENCE integrity OK, not merged/pushed/blogged,
+  ready for a maintainer to merge at their discretion.**
   `integrate/l22-repinit-m-aware-current` @ `6cc6494` (`dafeab9` + `900f99e`
   provenance + `d9ef265` handoff + `6cc6494` rng_seed/STATUS correction),
   from published main `543c737`. Not merged/pushed. Opus independently
