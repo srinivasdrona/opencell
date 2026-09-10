@@ -62,25 +62,38 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-10 12:28 IST) — supersedes all
 earlier blocks below:**
 
-- DNAS merge is live in `E:\opencell-worktrees\main-integrate`: `main`
-  remains at published `8a5ccc4`, `MERGE_HEAD=3307575`, conflicts are
-  resolved, and the merge is intentionally uncommitted while final gates
-  run. The CRLF/LF provenance blocker is fixed by LF-normalizing only
+- DNAS is merged locally on `main` at `aec89fa` (published base
+  `8a5ccc4`; push pending this handoff/provenance cleanup). The CRLF/LF
+  provenance blocker is fixed by LF-normalizing only
   `DNASupercoiling/dnas_runner_helpers_module`; the accepted N=200
   checkpoint was mechanically re-promoted against the merge tree. Current
   canonical board: **19 PASS / 1 FAIL / 2 MISSING_EVIDENCE, integrity OK**.
+  The required local oracle trace is restored at
+  `data/m1_sources/karr_native/per_process_traces_v2/
+  DNASupercoiling_100ticks.mat`, SHA-256 `c88b9c97...d85a` (the previous
+  `6449bdd3...fba` file was stale versus the accepted input manifest).
+  Final gates: accepted DNAS suite 90/90; chromosome-store consumers 93/93;
+  evidence 515 pass plus one confirmed pre-existing AST-registry failure;
+  L1b 28/28 plus 57 tests; L2.4 PASS; provenance 44; focused Ruff clean.
+  Opus independently **ACCEPTED** the line-ending portability delta.
   Operational trap: never run default evidence generation/tests while the
   partial live `artifacts/l2_2_gates` root contains only DNAS; move/remove
   that restored temporary root first so defaults resolve to the complete
   tracked bundle.
-- RepInit agent `e3a01492-9c55-4535-880e-2264858589ad` is still running in
-  `E:\opencell-worktrees\fix-l22-repinit-m-aware` after completing the 50
-  genuine M=200 MATLAB traces; it is in final gate/advisor work.
+- RepInit agent `e3a01492-9c55-4535-880e-2264858589ad` is idle/completed.
+  Branch `fix/l22-repinit-m-aware` is clean at `49c54d5`; all 50 genuine
+  M=200 traces were re-extracted and the corrected RepInit gate is PASS
+  (both channels SEED_NOISE, zero warnings). It is **not merge-ready**:
+  its shared loader/helper hash changes stale 16 unrelated green rows,
+  producing a 3 PASS / 17 FAIL / 2 MISSING board. Build a provenance-safe
+  current-main integration/migration that preserves those rows before
+  review and merge; do not publish the 20/0/2 blog from the candidate PASS.
 - Detached division extraction remains healthy: supervisor PID `29372`,
   MATLAB PIDs `19400`/`27912`; seed 11 completed and seed 12 is running.
   Status/log remain under
   `E:\opencell-worktrees\bulk-division-a\artifacts\dual_contract_007_016.*`.
-- Local `main` is clean and published at `3b9e6e2`.
+- Historical published main at the start of the final DNAS merge wave was
+  `8a5ccc4` (earlier L2.1 cleanup milestone `3b9e6e2`).
   DNADamage, Cytokinesis, HostInteraction, ReplicationInitiation, and
   TranscriptionalRegulation L2.1 are merged. The authoritative L2.1
   manifest is **11 EWP / 0 CODE_GAP / 0 MISSING**. Host's final integrated
