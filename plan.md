@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-10 04:03 IST) — supersedes all
 earlier blocks below:**
 
-- Local `main` has the accepted TxReg merge staged and fully verified.
+- Local `main` is clean and published at `3b9e6e2`.
   DNADamage, Cytokinesis, HostInteraction, ReplicationInitiation, and
   TranscriptionalRegulation L2.1 are merged. The authoritative L2.1
   manifest is **11 EWP / 0 CODE_GAP / 0 MISSING**. Host's final integrated
@@ -90,11 +90,11 @@ earlier blocks below:**
   Relaunch, never recreate:
   - DNAS provenance-safe integration worktree
     `integrate-l22-dnas-current` has accepted code committed through
-    `f5c9d4f` plus uncommitted provenance/evidence changes. Resume it against
-    current board **18/2/2**; successful DNAS promotion should yield
-    **19 PASS / 1 FAIL / 2 MISSING** (RepInit remains the sole FAIL).
-    Continuation agent: `dnas-integration-resume-again`
-    (`1d021115-9f69-4435-9454-af017e8a9140`).
+    `63a85de`; provenance/evidence reconciliation is complete. Candidate
+    board is **19 PASS / 1 FAIL / 2 MISSING**, integrity OK (RepInit sole
+    FAIL). Verified: DNAS+store consumers 183 tests, L1b 28/28+19,
+    oracle 38, L2.4 PASS, evidence 445+74+53, provenance 44, Ruff clean.
+    Await independent Opus integration review against current 11/11 main.
   - TxReg final integration branch `integrate/l21-txreg-final` is clean at
     `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
     registry, one unioned dec-006, and reported board 18/2/2. Final review
