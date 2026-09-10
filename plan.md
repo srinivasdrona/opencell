@@ -177,6 +177,55 @@ earlier blocks below:**
   of `origin/main`, working tree clean, board 20 PASS / 0 FAIL / 2
   MISSING_EVIDENCE integrity OK, not merged/pushed/blogged. Ready for a
   maintainer to merge at their discretion.
+- ✅ **R12 closure COMPLETE, awaiting a NEW independent review** (round-3
+  integration review found 2 concrete blockers in R11; both fixed here):
+  branch `integrate/l22-repinit-m-aware-current` @ `70311a0`. (1)
+  `repinit_v2_seed_mat_path` had explicitly skipped `chromosome` when
+  validating per-channel tick dimension, even though it is an ordinary
+  `(1, 200)`-shaped channel in RepInit's on-disk schema and is declared
+  in the catalog's input/output channels -- fixed (validated identically
+  to every other channel now); added a truncation anti-cheat test
+  (`test_rejects_chromosome_channel_tick_dimension_mismatch`). (2)
+  requested M (`--ticks`) was never checked against catalog M anywhere on
+  the official path (`run_design_a` calls `load_karr_oracle(process)`
+  with no `m_ticks`; `_normalize_seed_axis` silently truncates) -- fixed
+  via a new process-specific entrypoint,
+  `tests/vivarium/_l2_2_repinit_runner_entrypoint.py`, which validates
+  `--ticks == live catalog M_ticks` BEFORE any oracle loading, then
+  delegates in-process to the unmodified shared runner with the same
+  argv. `sweep.runner_command` now launches this entrypoint only for
+  ReplicationInitiation; verified `sweep.py` itself is not a
+  registered/hashed dependency of ANY row, so this dispatch change
+  required zero migration. Registered as
+  `PROCESS_DEPENDENCY_FILES["ReplicationInitiation"]
+  ["repinit_runner_entrypoint_module"]`. New
+  `tests/vivarium/test_l2_2_repinit_runner_entrypoint.py` (8 tests):
+  unit-level negative/positive checks, a mocked-delegation-order proof,
+  and REAL subprocess negative (`--ticks 100`, exit 2, before any
+  evaluation) and positive (`--ticks 200`, 1 seed, small bootstrap, ~3
+  min, reaches a genuine verdict) tests. Fresh genuine N=50/M=200 sweep
+  regenerated through the corrected official path (confirmed via the
+  job's own log: it launched the entrypoint, not the generic runner) --
+  PASS, both channels SEED_NOISE, zero warnings. Board: **20 PASS / 0
+  FAIL / 2 MISSING_EVIDENCE, integrity OK** (re-confirmed after every
+  change). `sweep_status.json` regenerated again (its own diff this
+  round: `generated_at` only, no further drift). **Learned from R11's
+  near-miss**: this round's live-artifacts cleanup removed only
+  `artifacts\l2_2_gates` specifically, never the parent `artifacts\`
+  directory -- confirmed zero deleted tracked files both before and
+  after. Also fixed the SAME `LF_NORMALIZED_PROCESS_DEPENDENCIES`
+  lock-test a second time (adding the new entrypoint module's entry broke
+  its exact-set-equality assertion again) -- this time durably, via a
+  membership check instead of exact equality, so it will not need
+  touching again for a future legitimate addition. Full regression: 183+
+  tests pass (identity 14, entrypoint 8, strict rubric+L2.1 replay 6,
+  L2.1 rubric 37/38 with 1 pre-existing unrelated failure, evidence
+  sweep 54/54, evidence anticheat/AST-completeness 79 pass + 2
+  pre-existing unrelated failures, L1b+L2.4 25/25). Ruff clean except 3
+  pre-existing `sweep.py` findings (confirmed identical on the pre-R12
+  commit). Full narrative: `STATUS_l22_repinit_m_aware_current_r12.md`
+  (session-local). Next step: dispatch a NEW independent review whose
+  prompt explicitly checks both blockers, before any merge/push.
   `integrate/l22-repinit-m-aware-current` @ `6cc6494` (`dafeab9` + `900f99e`
   provenance + `d9ef265` handoff + `6cc6494` rng_seed/STATUS correction),
   from published main `543c737`. Not merged/pushed. Opus independently
