@@ -102,7 +102,7 @@ earlier blocks below:**
   L2.4 PASS; provenance 44/44. Focused Ruff is clean apart from the three
   pre-existing `sweep.py` SIM105 findings and the intentionally late-bound
   DNAS/RepInit helper import I001. The triggered Tehol/Bugg milestone post
-  is drafted at
+  is published on `main` at `9b72d11`:
   `docs/blog/2026-09-11-days-105-113-twenty-greens-two-empty-chairs-and-a-200-tick-file-that-finally-said-200.md`;
   commit/push it directly on main.
 - Detached division extraction remains healthy: supervisor PID `29372`,
@@ -137,11 +137,10 @@ earlier blocks below:**
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
   data-dependent skips and active rubric 14/14.
-- Publication trigger: **20/0/2 milestone reached on published main and the
-  Tehol/Bugg post drafted for immediate publication** (using post 1 for voice
-  and the 2026-09-02 post for continuity). Publish the next post only when
-  L2.2 reaches **22 PASS / 0 FAIL / 0 MISSING**; no intermediate candidate
-  count triggers another post.
+- Publication trigger: **20/0/2 milestone post published at `9b72d11`**
+  (using post 1 for voice and the 2026-09-02 post for continuity). Publish
+  the next post only when L2.2 reaches **22 PASS / 0 FAIL / 0 MISSING**; no
+  intermediate candidate count triggers another post.
 - Runtime/session recovery: no agents survived the latest CLI-session
   restart. This long session has repeatedly hit context compaction and
   session-scoped agent cleanup; filesystem worktrees/commits remain intact.
