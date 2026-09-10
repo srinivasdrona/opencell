@@ -95,9 +95,68 @@ earlier blocks below:**
   mechanically from already-accepted raw artifacts, require a genuine
   **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE** board with integrity OK, and
   stop at a clean reviewed candidate without merging or pushing.
-- ✅ **RepInit provenance-safe closure COMPLETE, independent Opus review
-  returned ACCEPT WITH MINOR CORRECTIONS, corrections applied**:
+- ⚠️ **SUPERSEDED**: the block below (the `6cc6494`/Opus-ACCEPT candidate)
+  described a design an integration review subsequently **REJECTED**
+  (filename tick token treated as non-authoritative; required a temporary
+  seed-0/canonical-trace swap). See the R11 entry immediately below for
+  the corrected, accepted-in-progress replacement on the SAME branch.
+- ✅ **RepInit L2.2 R11 closure COMPLETE, awaiting NEW independent Opus
+  review** (this entry supersedes the one below it):
   `E:\opencell-worktrees\integrate-l22-repinit-m-aware-current`, branch
+  `integrate/l22-repinit-m-aware-current` @ `a7da684` (plus a provenance
+  logging + this plan.md handoff commit immediately following it), from published main `0ef809a` (== `543c737` +
+  plan.md-only updates). Not merged/pushed. Corrects the rejected
+  `0e4627b` candidate: all 50 genuine seed traces renamed hash-exact to
+  `per_process_traces_v2_s{000..049}/ReplicationInitiation_200ticks.mat`
+  (seed 0 included, no special-casing, no collision, no swap); canonical
+  L2.1 100-tick trace untouched (sha256 `0c61c816...` verified unchanged).
+  RepInit's own trace-path resolution/identity validation extracted into
+  a new sibling module, `tests/vivarium/_l2_2_repinit_runner_helpers.py`
+  (registered as a process-specific `PROCESS_DEPENDENCY_FILES` entry,
+  mirroring R7's DNASupercoiling tick-runner extraction exactly), with a
+  minimal two-line redirect added to each of `_v2_seed_mat_path`/
+  `load_karr_oracle` in the shared `_l2_2_design_a_runner_helpers.py`
+  (`l2_2_design_a_runner.py` untouched). `schema.py`'s
+  `runner_helpers_generic_hash()` DELETES this exact redirect scaffolding
+  (matched by AST shape with a PINNED expected callee, not "any call")
+  before hashing, mechanically proven identical vs published main
+  `543c737`'s blob. New `scripts/l22_evidence/migrate_r11_repinit_
+  provenance.py` re-verifies that proof then re-stamps ONLY
+  `input_manifest.json`'s whole-file hash (+ its `sweep_provenance.json`
+  sidecar binding) for the 17 other currently-accepted rows -- never
+  reruns them. Fresh genuine N=50/M=200 sweep run through the corrected
+  path: PASS, both channels SEED_NOISE, zero warnings. Board:
+  **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE, integrity OK**.
+  `tests/vivarium/test_l2_2_repinit_trace_identity.py` rewritten (13
+  tests): shared-file line-diff proof (not just a hash claim), all-50-seed
+  identity, manifest cross-check, canonical-trace preservation, 4
+  anti-cheat reproductions (legacy `_100ticks.mat` name with genuine 200
+  data; tampered metadata; truncated channel dimension; missing file) --
+  all fail closed. Regenerating `sweep_status.json` (required by a
+  dedicated freshness test) surfaced and corrected two PRE-EXISTING,
+  unrelated drifts vs the authoritative `evidence_index.json`
+  (Replication `IN_PROGRESS_OR_UNKNOWN`->`DONE_VALID_EVIDENCE`,
+  MacromolecularComplexation's stale warning string) -- both cross-
+  verified, disclosed in STATUS. **Operational near-miss, caught and
+  fully reverted before commit**: cleaning up a temporary live-artifacts
+  mirror via `Remove-Item artifacts -Recurse -Force` deleted ~44 TRACKED
+  files that happen to live under the gitignored `artifacts/` prefix;
+  caught via `git status --short` and restored via
+  `git checkout -- artifacts/` -- confirmed zero net diff before
+  committing. Also fixed a CRLF-on-Windows-then-LF-on-commit transient on
+  the new sibling module (same class as the DNAS precedent above),
+  registered in `LF_NORMALIZED_PROCESS_DEPENDENCIES`, hash re-stamped.
+  Full regression: 172+ tests pass across identity/anti-cheat, strict
+  rubric, L2.1 RepInit replay, L2.1 rubric (1 pre-existing unrelated
+  failure), full evidence generator/sweep suites, evidence anticheat/AST-
+  completeness (2 pre-existing unrelated failures, both independently
+  confirmed identical on clean `main-integrate`), L1b, L2.4. Ruff clean
+  except one pre-existing-class tolerated `I001` finding (same as DNAS's
+  own import). Full narrative:
+  `STATUS_l22_repinit_m_aware_current_r11.md` (session-local). Next step:
+  dispatch a NEW independent Opus review with an explicit instruction to
+  reject any filename/metadata/requested/catalog/channel mismatch or
+  temporal swap, before any merge/push.
   `integrate/l22-repinit-m-aware-current` @ `6cc6494` (`dafeab9` + `900f99e`
   provenance + `d9ef265` handoff + `6cc6494` rng_seed/STATUS correction),
   from published main `543c737`. Not merged/pushed. Opus independently
