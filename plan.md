@@ -114,7 +114,21 @@ earlier blocks below:**
     informational-only (never staleness-gating -- that's SHA-256 content
     hash based) and the content hash matches current HEAD exactly since
     `karr_dna_supercoiling.py` was not touched after the sweep ran.
-    Ready for Opus integration review against current main, then merge.
+    **Opus round 1 REJECTED one artifact blocker** (canonical
+    `result.json` silently reverted `aggregation: dnas_two_sided_sparse_gate`
+    -> standard `per_component_scaled` by the L1b-fix-triggered sweep
+    rerun); **fixed in `17cf977`** by rerunning
+    `scripts/l22_dnas_promote_n200_evidence.py --apply` (no new N=200
+    simulation -- reused the accepted `sept2_two_sided_rerun`
+    evaluation/checkpoint), confirmed aggregation + exact axes
+    `(64,65),(58,58),(6,7)` + 0 audit-boundary breaches restored, board
+    unchanged 19/1/2 integrity OK, and added a durable regression
+    (`test_dnas_canonical_bundle_uses_accepted_two_sided_sparse_gate_not_
+    standard_per_component`) binding directly to the tracked `result.json`
+    bytes. Full details:
+    `E:\opencell-worktrees\integrate-l22-dnas-current\STATUS_DNAS_INTEGRATION_FINAL.md`
+    "Opus review round 2" section. Ready for Opus re-review against current
+    main, then merge.
   - TxReg final integration branch `integrate/l21-txreg-final` is clean at
     `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
     registry, one unioned dec-006, and reported board 18/2/2. Final review
