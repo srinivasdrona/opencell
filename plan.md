@@ -301,8 +301,10 @@ earlier blocks below:**
     `dual-contract-007-016`, MATLAB wrapper/child PIDs 19400/27912, status
     `bulk-division-a/artifacts/dual_contract_007_016.status`; seed 7
     completed, passed the combined validator, and was hash-banked into the
-    dedicated root. Seed 8 is running; the contiguous prefix now ends at 7
-    and the next unresolved attempt is 8. After the range finishes, consolidate each pair/
+    dedicated root. Seeds 8-10 subsequently completed, passed, and were
+    banked; seed 11 is running. The contiguous prefix now ends at 10
+    (10 completed, seed 6 censored) and the next unresolved attempt is 11.
+    After the range finishes, consolidate each pair/
     attempt sidecar into the dedicated root and run 19-33. MATLAB warns the
     trial license expires in 6 days, so this extraction is time-sensitive.
 - Operational traps:
