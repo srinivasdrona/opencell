@@ -62,8 +62,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-10 12:28 IST) — supersedes all
 earlier blocks below:**
 
-- DNAS is merged locally on `main` at `aec89fa` (published base
-  `8a5ccc4`; push pending this handoff/provenance cleanup). The CRLF/LF
+- DNAS is published on `main` at `92cb7b6` (merge commit `aec89fa`,
+  handoff/provenance commit `92cb7b6`; `origin/main` matches). The CRLF/LF
   provenance blocker is fixed by LF-normalizing only
   `DNASupercoiling/dnas_runner_helpers_module`; the accepted N=200
   checkpoint was mechanically re-promoted against the merge tree. Current
@@ -88,6 +88,13 @@ earlier blocks below:**
   producing a 3 PASS / 17 FAIL / 2 MISSING board. Build a provenance-safe
   current-main integration/migration that preserves those rows before
   review and merge; do not publish the 20/0/2 blog from the candidate PASS.
+  Next dispatch: reuse the same agent context to create
+  `integrate/l22-repinit-m-aware-current` from published `92cb7b6`, isolate
+  RepInit-specific trace identity/path behavior from shared source hashes
+  wherever possible, migrate any unavoidable shared dependency provenance
+  mechanically from already-accepted raw artifacts, require a genuine
+  **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE** board with integrity OK, and
+  stop at a clean reviewed candidate without merging or pushing.
 - Detached division extraction remains healthy: supervisor PID `29372`,
   MATLAB PIDs `19400`/`27912`; seed 11 completed and seed 12 is running.
   Status/log remain under
