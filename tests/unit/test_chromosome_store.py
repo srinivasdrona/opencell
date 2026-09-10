@@ -18,7 +18,12 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
-from opencell.state.chromosome_store import CHROMOSOME_FIELDS, ChromosomeStore, SparseTriplet
+from opencell.state.chromosome_store import (
+    CHROMOSOME_FIELDS,
+    CHROMOSOME_HIDDEN_STATE_KEY,
+    ChromosomeStore,
+    SparseTriplet,
+)
 
 
 def _resolve_seed_trace_path() -> Path:
@@ -81,3 +86,47 @@ def test_chromosome_store_loads_v2_trace_fixture_and_empty_fields() -> None:
     assert linking.shape == (580076, 4)
     assert store.get_field("gapSites").calc_num_edges() == 0
     assert store.get_field("abasicSites").calc_num_edges() == 0
+
+
+def test_chromosome_store_round_trips_hidden_trace_state() -> None:
+    shape = (100, 4)
+    payload = {
+        "polymerizedRegions": {
+            "positions": np.array([0, 0], dtype=np.int64),
+            "strands": np.array([0, 1], dtype=np.int8),
+            "values": np.array([100, 100], dtype=np.int32),
+            "shape": shape,
+        },
+        CHROMOSOME_HIDDEN_STATE_KEY: {
+            "doubleStrandedRegions": {
+                "positions": np.array([7, 7], dtype=np.int64),
+                "strands": np.array([0, 1], dtype=np.int8),
+                "values": np.array([12, 12], dtype=np.int32),
+                "shape": shape,
+            },
+            "superhelicalDensity": {
+                "positions": np.array([7, 7], dtype=np.int64),
+                "strands": np.array([0, 1], dtype=np.int8),
+                "values": np.array([-0.06, -0.06], dtype=np.float64),
+                "shape": shape,
+            },
+            "validated_doubleStrandedRegions": np.uint32(9),
+        },
+    }
+
+    store = ChromosomeStore.from_state_mapping(payload, shape=shape)
+    ds_regions = store.get_hidden_sparse_field("doubleStrandedRegions")
+    sigma = store.get_hidden_sparse_field("superhelicalDensity")
+
+    assert ds_regions.positions.tolist() == [7, 7]
+    assert ds_regions.strands.tolist() == [0, 1]
+    assert ds_regions.values.tolist() == [12, 12]
+    assert sigma.values.tolist() == pytest.approx([-0.06, -0.06])
+    assert int(store.get_hidden_scalar("validated_doubleStrandedRegions")) == 9
+
+    round_trip = store.to_state()
+    assert CHROMOSOME_HIDDEN_STATE_KEY in round_trip
+    hidden = round_trip[CHROMOSOME_HIDDEN_STATE_KEY]
+    assert hidden["doubleStrandedRegions"]["positions"].tolist() == [7, 7]
+    assert hidden["superhelicalDensity"]["values"].tolist() == pytest.approx([-0.06, -0.06])
+    assert int(hidden["validated_doubleStrandedRegions"]) == 9

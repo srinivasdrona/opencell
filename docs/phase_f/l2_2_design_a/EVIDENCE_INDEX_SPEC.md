@@ -1362,7 +1362,7 @@ current import graph of every in-scope `oc_module` (see (c) below):
 | `RNAProcessing` | `karr_trna_aminoacylation_module` → `opencell/vivarium/karr_trna_aminoacylation.py` |
 | `ProteinTranslocation` | `util_module` → `opencell/util/__init__.py`; `util_matlab_rng_module` → `opencell/util/matlab_rng.py` |
 | `DNARepair` | `chromosome_store_module` → `opencell/state/chromosome_store.py`; `chromosome_views_module` → `opencell/vivarium/chromosome_views.py` |
-| `DNASupercoiling` | `chromosome_store_module`; `m_gen_constants_module` → `opencell/m_gen_constants.py` |
+| `DNASupercoiling` | `chromosome_store_module`; `m_gen_constants_module` → `opencell/m_gen_constants.py`; `state_init_module` → `opencell/vivarium/state_init.py`; `dnas_runner_helpers_module` → `tests/vivarium/_l2_2_dnas_runner_helpers.py`; `m1_protein_complexes_module` → `opencell/m1/protein_complexes.py`; the three DNAS RNG-ledger modules under `opencell/data/` |
 | `Replication` | `chromosome_store_module` |
 | `ReplicationInitiation` | `chromosome_store_module` |
 | `DNADamage` (event_class — no `design_a_per_tick` sweep row exists yet, so this entry has zero effect on the current tally) | `chromosome_store_module`; `chromosome_views_module`; `m_gen_constants_module` |
@@ -1375,6 +1375,13 @@ import target of `from opencell.util import MatlabRandStream`) and
 registered, mirroring the existing Metabolism precedent of registering
 both a process's direct import and that import's own one-hop dependency
 (`karr_metabolism_writeback_module`).
+
+`dnas_runner_helpers_module` is the one text dependency hashed after
+normalizing CRLF to LF. Its freshly generated candidate bytes used CRLF while
+the merged Git-normalized file used LF despite identical executable Python
+source, so that transient line-ending difference must not stale accepted
+evidence. This exception is explicitly scoped to the `DNASupercoiling`
+process/key pair; every other registered dependency remains raw-byte exact.
 
 **(b) Bidirectional staleness.** Both `sweep.evidence_is_valid()` and
 `generator._check_sweep_provenance_staleness()` previously only checked

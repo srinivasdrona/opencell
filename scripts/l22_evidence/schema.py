@@ -194,6 +194,10 @@ RESULT_SCHEMA_VERSION = 1
 RUNNER_SCRIPT = REPO_ROOT / "tests" / "vivarium" / "l2_2_design_a_runner.py"
 RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_runner_helpers.py"
 RUNNER_PROJECTIONS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_projections.py"
+# R7: DNASupercoiling's own tick-runner sibling module -- see
+# `PROCESS_DEPENDENCY_FILES["DNASupercoiling"]["dnas_runner_helpers_module"]`
+# and `runner_helpers_generic_hash`/`tick_runner_entry_hash` below.
+DNAS_RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_dnas_runner_helpers.py"
 EVENT_BRIDGE_MODULE = REPO_ROOT / "scripts" / "l22_evidence" / "event_bridge.py"
 DNA_DAMAGE_EVENT_VERIFIER_MODULE = REPO_ROOT / "scripts" / "l22_evidence" / "dna_damage_event_verifier.py"
 DNA_DAMAGE_STIMULUS_COHORT_MODULE = REPO_ROOT / "scripts" / "l2_event" / "dna_damage_stimulus_cohort.py"
@@ -375,6 +379,16 @@ UTIL_MATLAB_RNG_MODULE = REPO_ROOT / "opencell" / "util" / "matlab_rng.py"
 # process, its own `oc_module` too -- both DIRECT, module-scope imports,
 # verified by inspection.
 M_GEN_CONSTANTS_MODULE = REPO_ROOT / "opencell" / "m_gen_constants.py"
+# `opencell/m1/protein_complexes.py` -- direct, module-scope import of
+# DNASupercoiling's own oc_module (karr_dna_supercoiling.py), verified by
+# inspection.
+M1_PROTEIN_COMPLEXES_MODULE = REPO_ROOT / "opencell" / "m1" / "protein_complexes.py"
+# The three DNAS-only RNG-oracle ledger modules karr_dna_supercoiling.py
+# directly imports (module scope): dnas_chromosome_release_ledger.py,
+# dnas_process_rng_ledger.py, dnas_superhelical_density_ledger.py.
+DNAS_CHROMOSOME_RELEASE_LEDGER_MODULE = REPO_ROOT / "opencell" / "vivarium" / "dnas_chromosome_release_ledger.py"
+DNAS_PROCESS_RNG_LEDGER_MODULE = REPO_ROOT / "opencell" / "vivarium" / "dnas_process_rng_ledger.py"
+DNAS_SUPERHELICAL_DENSITY_LEDGER_MODULE = REPO_ROOT / "opencell" / "vivarium" / "dnas_superhelical_density_ledger.py"
 # `chromosome_store.py`/`chromosome_views.py` are imported by SOME but not
 # all chromosome-coupled processes' own `oc_module` implementation files
 # (DNARepair imports both; DNASupercoiling/Replication/ReplicationInitiation
@@ -544,6 +558,23 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
         "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
         "state_init_module": STATE_INIT_MODULE,
+        # R7: DNASupercoiling's persistent-process-pool tick runner lives in
+        # its own sibling module (extracted OUT of the shared, universally-
+        # hashed `_l2_2_design_a_runner_helpers.py` -- see that module's
+        # `"# ---- DNASupercoiling ----"` section docstring and
+        # `_l2_2_dnas_runner_helpers.py`'s module docstring for the full R7
+        # incident/rationale). Registering it here makes an edit to IT stale
+        # only DNASupercoiling's row, exactly like every other entry in this
+        # dict.
+        "dnas_runner_helpers_module": DNAS_RUNNER_HELPERS_MODULE,
+        # R9: the accepted candidate's own oc_module (karr_dna_supercoiling.py)
+        # directly imports these four modules at module scope (verified by
+        # inspection) -- the three DNAS-only RNG-oracle ledgers plus
+        # opencell/m1/protein_complexes.py.
+        "m1_protein_complexes_module": M1_PROTEIN_COMPLEXES_MODULE,
+        "dnas_chromosome_release_ledger_module": DNAS_CHROMOSOME_RELEASE_LEDGER_MODULE,
+        "dnas_process_rng_ledger_module": DNAS_PROCESS_RNG_LEDGER_MODULE,
+        "dnas_superhelical_density_ledger_module": DNAS_SUPERHELICAL_DENSITY_LEDGER_MODULE,
     },
     "Replication": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
@@ -572,6 +603,32 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         "l2_event_ribosome_seed_audit_module": L2_EVENT_RIBOSOME_SEED_AUDIT_MODULE,
     },
 }
+
+# This DNAS-only helper was first hashed while freshly generated with CRLF,
+# then merged as Git-normalized LF despite identical Python source. Source
+# provenance should bind executable text, not that transient line-ending
+# difference. Keep all other dependency hashes raw-byte exact; this exception
+# is deliberately process/key scoped.
+LF_NORMALIZED_PROCESS_DEPENDENCIES = frozenset(
+    {("DNASupercoiling", "dnas_runner_helpers_module")}
+)
+
+
+def _sha256_lf_normalized(path: Path) -> str | None:
+    if not path.is_file():
+        return None
+    raw = path.read_bytes().replace(b"\r\n", b"\n")
+    return hashlib.sha256(raw).hexdigest()
+
+
+def process_dependency_hashes(process: str) -> dict[str, str | None]:
+    hashes: dict[str, str | None] = {}
+    for name, path in PROCESS_DEPENDENCY_FILES.get(process, {}).items():
+        if (process, name) in LF_NORMALIZED_PROCESS_DEPENDENCIES:
+            hashes[name] = _sha256_lf_normalized(path)
+        else:
+            hashes[name] = _sha256_module_file(path)
+    return hashes
 
 # --- Harness-level shared dependency (F1: `l2_replay_common.py`) ------------
 #
@@ -621,6 +678,229 @@ def _sha256_module_file(path: Path) -> str | None:
         for chunk in iter(lambda: handle.read(1024 * 1024), b""):
             digest.update(chunk)
     return digest.hexdigest()
+
+
+# --- R7: per-process tick-runner CONTRACT hash (fail-closed, replaces the ---
+# --- old whole-file `"helpers"` key coupling every process to every other --
+#
+# 2026-09 DNASupercoiling integration: the accepted DNASupercoiling-only
+# persistent-process-pool fix to `_run_dna_supercoiling_tick` (in
+# `_l2_2_design_a_runner_helpers.py`) staled ALL 18 in-scope
+# `design_a_per_tick` rows at once, because `SWEEP_PROVENANCE_SOURCE_FILES`
+# hashed the ENTIRE runner-helpers file, whole, under a process-agnostic
+# `"helpers"` key -- structurally the exact same bug R2 (`oc_module`) and R6
+# (`"catalog_entry"`/`"event_registry_entry"`) already fixed for other
+# single shared files that hold many processes' own per-process data/code.
+#
+# The fix here cannot simply move DNASupercoiling's runner function to its
+# own file and leave `"helpers"` a plain whole-file hash of
+# `_l2_2_design_a_runner_helpers.py`: that file also holds real
+# process-AGNOSTIC shared code (`_tick_dispatch`, `_apply_chromosome_update`,
+# `_sample_seed`, `compute_w1`, `load_karr_oracle`, ...) that every process's
+# verdict genuinely depends on, so a plain per-process split (hashing only
+# each process's own runner function and dropping the whole-file check
+# entirely) would silently STOP catching a real edit to that shared code --
+# an actual weakening of the guard, which is exactly what this design must
+# not do.
+#
+# Instead, `"helpers"` is redefined (`runner_helpers_generic_hash`) as the
+# sha256 of this file's source with ONLY the per-process tick-runner
+# function BODIES that `_tick_dispatch()` maps to -- and ONLY the ones still
+# defined locally in this file -- redacted to a fixed placeholder. Every
+# other line (imports, constants, `_tick_dispatch` itself, every other
+# shared helper) is preserved verbatim, so an edit to any of that shared
+# code still changes `"helpers"` for every process, exactly as before.
+# `tick_runner_entry_hash(process)` is the complementary, genuinely
+# per-process piece: it resolves the ACTUAL function `_tick_dispatch()`
+# binds `process` to -- whether that is a plain local `def` in this file
+# (today: every process except DNASupercoiling) or a name imported from a
+# registered process-specific sibling module via a plain `from <module>
+# import <name> as <local_name>` statement (today: DNASupercoiling, from
+# `_l2_2_dnas_runner_helpers.py`) -- and hashes ONLY that function's own
+# source text.
+#
+# Together, `"helpers"` (generic, redacted) + `"tick_runner"` (this
+# process's own dispatched function, wherever it lives) cover EXACTLY the
+# same source bytes the old whole-file `"helpers"` hash did for any given
+# process, split so that an edit confined to one process's OWN runner
+# function/module changes only that process's `"tick_runner"` value, never
+# any other process's `"helpers"` OR `"tick_runner"` value. Both are
+# resolved by STATIC AST inspection of the file text -- never by importing
+# or executing `_l2_2_design_a_runner_helpers.py` or its dependencies --
+# so computing them stays as cheap and side-effect-free as the plain
+# whole-file hash it replaces.
+_TICK_DISPATCH_FUNCTION_NAME = "_tick_dispatch"
+
+
+class _RunnerDispatchAuditError(RuntimeError):
+    """Raised when `_tick_dispatch()`'s source no longer has the single,
+    simple `return {"Process": name, ...}` shape these helpers require to
+    stay fail-closed. Never silently falls back to a partial/guessed map."""
+
+
+def _parse_runner_helpers_ast(path: Path = RUNNER_HELPERS_MODULE, *, source: str | None = None) -> tuple[str, Any]:
+    """Parse `_l2_2_design_a_runner_helpers.py`'s AST. `source`, when given,
+    is used VERBATIM instead of reading `path` from disk -- this is what
+    lets `migrate_helpers_provenance.py` evaluate a `--pre-ref` git blob's
+    text (via `git show`) with the EXACT SAME static-analysis code path
+    used against the current tree, without ever checking that ref out."""
+    import ast
+
+    text = source if source is not None else path.read_text(encoding="utf-8")
+    return text, ast.parse(text, filename=str(path))
+
+
+def _static_tick_dispatch_map(tree: Any) -> dict[str, str]:
+    """Statically resolve `_tick_dispatch()`'s returned dict literal to a
+    ``{"ProcessName": "<local-name-it-is-bound-to>"}`` mapping, without
+    importing or executing the module. Fails closed (raises
+    `_RunnerDispatchAuditError`) on any shape it does not recognize --
+    multiple/no `return`, a non-dict return value, a non-string-constant
+    key, or a value that is not a bare `Name` -- rather than silently
+    returning an incomplete map."""
+    import ast
+
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == _TICK_DISPATCH_FUNCTION_NAME:
+            returns = [n for n in ast.walk(node) if isinstance(n, ast.Return)]
+            if len(returns) != 1 or not isinstance(returns[0].value, ast.Dict):
+                raise _RunnerDispatchAuditError(
+                    f"{_TICK_DISPATCH_FUNCTION_NAME}() must have exactly one "
+                    "`return {...}` statement returning a dict literal."
+                )
+            dict_node = returns[0].value
+            mapping: dict[str, str] = {}
+            for key_node, value_node in zip(dict_node.keys, dict_node.values, strict=True):
+                if not (isinstance(key_node, ast.Constant) and isinstance(key_node.value, str)):
+                    raise _RunnerDispatchAuditError(
+                        f"{_TICK_DISPATCH_FUNCTION_NAME}() dict key {ast.dump(key_node)} "
+                        "is not a plain string constant."
+                    )
+                if not isinstance(value_node, ast.Name):
+                    raise _RunnerDispatchAuditError(
+                        f"{_TICK_DISPATCH_FUNCTION_NAME}()['{key_node.value}'] value "
+                        f"{ast.dump(value_node)} is not a plain bare name."
+                    )
+                mapping[key_node.value] = value_node.id
+            return mapping
+    raise _RunnerDispatchAuditError(f"{_TICK_DISPATCH_FUNCTION_NAME}() not found in {RUNNER_HELPERS_MODULE}")
+
+
+def _top_level_function_source(tree: Any, source: str, name: str) -> tuple[int, int, str] | None:
+    import ast
+
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name == name:
+            segment = ast.get_source_segment(source, node)
+            if segment is None:
+                return None
+            return node.lineno, node.end_lineno, segment
+    return None
+
+
+def _resolve_bound_name_source(tree: Any, source: str, bound_name: str) -> str | None:
+    """Source text of whatever `bound_name` refers to in
+    `_l2_2_design_a_runner_helpers.py`: either a local top-level `def
+    bound_name(...)`, or -- for a name introduced by a plain top-level
+    `from <module> import <real_name> as bound_name` (or, with no alias,
+    `from <module> import bound_name`) -- the top-level `def` of
+    `<real_name>` inside `<module>`, resolved as a sibling `.py` file next
+    to `_l2_2_design_a_runner_helpers.py` itself (every registered runner
+    sibling module, e.g. `_l2_2_dnas_runner_helpers.py`, lives there).
+    Returns None if neither resolves (fails closed by making the caller's
+    hash come back `None`, which the staleness checker treats as a
+    guaranteed mismatch, never a guaranteed match)."""
+    import ast
+
+    local = _top_level_function_source(tree, source, bound_name)
+    if local is not None:
+        return local[2]
+
+    for node in tree.body:
+        if not isinstance(node, ast.ImportFrom) or node.module is None:
+            continue
+        for alias in node.names:
+            local_name = alias.asname or alias.name
+            if local_name != bound_name:
+                continue
+            sibling_path = RUNNER_HELPERS_MODULE.parent / f"{node.module}.py"
+            if not sibling_path.is_file():
+                return None
+            sibling_source = sibling_path.read_text(encoding="utf-8")
+            sibling_tree = ast.parse(sibling_source, filename=str(sibling_path))
+            found = _top_level_function_source(sibling_tree, sibling_source, alias.name)
+            return found[2] if found is not None else None
+    return None
+
+
+def runner_helpers_generic_hash(*, source: str | None = None) -> str | None:
+    """sha256 of `_l2_2_design_a_runner_helpers.py` with every per-process
+    tick-runner BINDING that `_tick_dispatch()` maps a process to -- a
+    local top-level `def <name>(...)`, OR a top-level `from <module> import
+    <real_name> as <name>` that rebinds it to an external sibling module
+    (today: DNASupercoiling only) -- replaced by a FIXED one-line
+    placeholder naming only the local name. Keying the placeholder purely
+    by name (never by construct kind) is what makes this hash produce the
+    IDENTICAL value whether a given process's tick-runner currently lives
+    as a local `def` or as an imported rebinding: migrating one to the
+    other changes ONLY that process's own `"tick_runner"` hash, never this
+    one. See this section's module-level comment for the full design.
+    Returns None if the file is missing (never silently treated as
+    "unchanged").
+
+    `source`, when given, is evaluated VERBATIM instead of reading the file
+    from disk -- `migrate_helpers_provenance.py` passes a `--pre-ref` git
+    blob's text through here so it can compare "what would this hash have
+    been at pre-ref" against "what is it now" without ever checking that
+    ref out onto disk."""
+    import ast
+
+    if source is None and not RUNNER_HELPERS_MODULE.is_file():
+        return None
+    text, tree = _parse_runner_helpers_ast(source=source)
+    dispatch_fn_names = set(_static_tick_dispatch_map(tree).values())
+    spans: list[tuple[int, int, str]] = []
+    for node in tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name in dispatch_fn_names:
+            spans.append((node.lineno, node.end_lineno, node.name))
+            continue
+        if isinstance(node, ast.ImportFrom):
+            for alias in node.names:
+                local_name = alias.asname or alias.name
+                if local_name in dispatch_fn_names:
+                    spans.append((node.lineno, node.end_lineno, local_name))
+                    break
+    if not spans:
+        return hashlib.sha256(text.encode("utf-8")).hexdigest()
+    lines = text.splitlines(keepends=True)
+    for start, end, name in sorted(spans, key=lambda item: item[0], reverse=True):
+        lines[start - 1 : end] = [f"# <<REDACTED_TICK_RUNNER_BODY:{name}>>\n"]
+    return hashlib.sha256("".join(lines).encode("utf-8")).hexdigest()
+
+
+def tick_runner_entry_hash(process: str, *, source: str | None = None) -> str | None:
+    """sha256 of the ACTUAL source of the function
+    `_l2_2_design_a_runner_helpers._tick_dispatch()` maps `process` to,
+    right now -- resolved statically (see `_resolve_bound_name_source`).
+    Process-specific by construction: an edit confined to ONE process's own
+    runner function/module changes only that process's `"tick_runner"`
+    value. Returns None if `process` is not a `_tick_dispatch()` key, or if
+    its bound name cannot be resolved to source (both treated as a
+    guaranteed staleness mismatch by the checker, never a pass).
+
+    `source`, when given, is evaluated VERBATIM instead of reading the file
+    from disk (see `runner_helpers_generic_hash`'s matching parameter)."""
+    if source is None and not RUNNER_HELPERS_MODULE.is_file():
+        return None
+    text, tree = _parse_runner_helpers_ast(source=source)
+    dispatch_map = _static_tick_dispatch_map(tree)
+    bound_name = dispatch_map.get(process)
+    if bound_name is None:
+        return None
+    resolved = _resolve_bound_name_source(tree, text, bound_name)
+    if resolved is None:
+        return None
+    return hashlib.sha256(resolved.encode("utf-8")).hexdigest()
 
 
 # --- R6: per-process catalog/registry CONTRACT hashes (fail-closed,      ---

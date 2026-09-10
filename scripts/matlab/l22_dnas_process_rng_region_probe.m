@@ -1,0 +1,324 @@
+function summary = l22_dnas_process_rng_region_probe(varargin)
+% l22_dnas_process_rng_region_probe
+%
+% Standalone, self-contained diagnostic (duplicates only the minimal
+% scheduler-loop harness already used by l22_dnas_chromosome_release_rng_ledger.m;
+% does not modify that file or any other shared extractor) that runs the
+% REAL full-process scheduler for a given seed up to n_ticks, and for the
+% DNASupercoiling process on each tick reproduces evolveState()'s own
+% sigma/legal computation (DNASupercoiling.m lines ~363-378) from the LIVE
+% chromosome state immediately before evolveState() runs, to check whether
+% the number of dsDNA regions (dsPosStrands rows) and the legal(region,enzyme)
+% matrix match what opencell's Python port assumes.
+%
+% This exists to localize a proven process-randStream draw-count divergence
+% found at seed 0 / tick 2 (zero-based): opencell's port consumes 12 of the
+% real 14 process_draws recorded in the chromosome-release RNG ledger for
+% that tick, with the last 8 draws consumed matching the real MATLAB
+% sequence byte-for-byte in order (permutation(3)+choice+random x2 for bind,
+% permutation(3)+stochasticRound x2 for activity) -- so the 2 missing draws
+% must come from something evolveState() does that opencell's 1-region
+% assumption does not replicate. The strongest candidate, from reading
+% DNASupercoiling.m directly, is a 2-region dsPosStrands split (the
+% `numel(lengths)==2` branch, which costs 1 extra this.randStream.rand<0.5
+% tie-break draw during transient binding, plus 1 extra stochasticRound
+% draw per additional legal (region,enzyme) pair in the activity loop).
+%
+% Example:
+%   addpath('scripts/matlab');
+%   l22_dnas_process_rng_region_probe('seed', 0, 'n_ticks', 6, ...
+%       'out_path', fullfile(pwd, 'tmp', 'l22_dnas_process_rng_region_probe_s000.json'));
+
+opts = parse_inputs(varargin{:});
+repo_root = infer_repo_root();
+ensure_wholecell_runtime_paths(repo_root);
+
+sim = karr_bootstrap();
+[target_idx, canonical_name] = find_process_index(sim, 'DNASupercoiling');
+if isempty(target_idx)
+    error('l22_dnas_process_rng_region_probe:missingProcess', 'DNASupercoiling not found in simulation');
+end
+seed_simulation(sim, uint32(opts.seed));
+
+summary = run_probe(sim, target_idx, canonical_name, opts);
+
+if ~isempty(opts.out_path)
+    out_dir = fileparts(opts.out_path);
+    if ~isempty(out_dir) && ~exist(out_dir, 'dir')
+        mkdir(out_dir);
+    end
+    fid = fopen(opts.out_path, 'w');
+    if fid < 0
+        error('l22_dnas_process_rng_region_probe:writeFailed', 'Could not open output path: %s', opts.out_path);
+    end
+    cleaner = onCleanup(@() fclose(fid)); %#ok<NASGU>
+    fprintf(fid, '%s', jsonencode(summary));
+    fprintf('[l22_dnas_process_rng_region_probe] wrote %s\n', opts.out_path);
+end
+end
+
+function summary = run_probe(sim, target_idx, canonical_name, opts)
+time = sim.state_time;
+mets = sim.state_metabolite;
+stim = sim.state_stimulus;
+processes = sim.processes;
+nProcesses = numel(processes);
+rna_decay_idx = sim.processIndex('RNADecay');
+
+n_ticks = opts.n_ticks;
+ticks = struct('tick_zero_based', {}, 'n_regions', {}, 'lengths', {}, ...
+    'positions', {}, 'strands', {}, 'linkingNumbers', {}, 'sigmas', {}, ...
+    'gyraseSigmaLimit', {}, 'topoIVSigmaLimit', {}, 'topoISigmaLimit', {}, ...
+    'relaxedBasesPerTurn', {}, 'legal', {}, ...
+    'gyrase_idx', {}, 'topoiv_idx', {}, 'topoi_idx', {});
+
+for abs_tick = 1:n_ticks
+    time.values = time.values + sim.stepSizeSec;
+    stim.values = edu.stanford.covert.cell.sim.constant.Condition.applyConditions( ...
+        stim.values, stim.setValues, time.values);
+
+    requirements = zeros([numel(mets.counts) nProcesses]);
+    for i = 1:nProcesses
+        mod = processes{i};
+        mod.copyFromState();
+        r = mod.calcResourceRequirements_Current();
+        gidx = mod.substrateMetaboliteGlobalCompartmentIndexs;
+        lidx = mod.substrateMetaboliteLocalIndexs;
+        if ~isempty(gidx) && ~isempty(lidx)
+            requirements(gidx, i) = reshape(r(lidx, :), [], 1);
+        end
+    end
+
+    requirements = max(0, requirements);
+    tmp = mets.counts(:) ./ max(1, sum(requirements, 2));
+    allocations = max(0, fix(requirements .* tmp(:, ones(nProcesses, 1))));
+
+    rand_stream = [];
+    if isobject(sim) && ismethod(sim, 'getForTest')
+        try
+            rand_stream = sim.getForTest('randStream');
+        catch
+        end
+    end
+
+    while true
+        if isempty(rand_stream)
+            processEvalOrderIndexs = randperm(nProcesses);
+        else
+            processEvalOrderIndexs = rand_stream.randperm(nProcesses);
+        end
+        idx1 = find(processEvalOrderIndexs == sim.processIndex_tRNAAminoacylation, 1);
+        idx2 = find(processEvalOrderIndexs == sim.processIndex_translation, 1);
+        if isempty(idx1) || isempty(idx2) || idx1 < idx2
+            break;
+        end
+    end
+
+    for i = 1:nProcesses
+        proc_idx = processEvalOrderIndexs(i);
+        mod = processes{proc_idx};
+
+        gidx = mod.substrateMetaboliteGlobalCompartmentIndexs;
+        lidx = mod.substrateMetaboliteLocalIndexs;
+        allocation = reshape(allocations(gidx, proc_idx), size(gidx));
+        counts = mets.counts(gidx);
+
+        mod.simulationStateSideEffects = [];
+        mod.copyFromState();
+        mod.substrates(lidx, :) = allocation;
+        if proc_idx == rna_decay_idx && isprop(mod, 'RNAs')
+            mod.RNAs = max(0, mod.RNAs);
+        end
+
+        is_target = (proc_idx == target_idx);
+        if is_target
+            [n_regions, lengths, legal, positions, strands, linkingNumbers, sigmas, limits] = compute_sigma_legal(mod);
+            ticks(end + 1) = struct( ... %#ok<AGROW>
+                'tick_zero_based', int32(abs_tick - 1), ...
+                'n_regions', int32(n_regions), ...
+                'lengths', lengths(:)', ...
+                'positions', positions(:)', ...
+                'strands', strands(:)', ...
+                'linkingNumbers', linkingNumbers(:)', ...
+                'sigmas', sigmas(:)', ...
+                'gyraseSigmaLimit', limits(1), ...
+                'topoIVSigmaLimit', limits(2), ...
+                'topoISigmaLimit', limits(3), ...
+                'relaxedBasesPerTurn', limits(4), ...
+                'legal', double(legal), ...
+                'gyrase_idx', int32(mod.enzymeIndexs_gyrase), ...
+                'topoiv_idx', int32(mod.enzymeIndexs_topoIV), ...
+                'topoi_idx', int32(mod.enzymeIndexs_topoI));
+        end
+
+        mod.evolveState();
+
+        mod.copyToState();
+        mets.counts(gidx) = counts + mod.substrates(lidx, :) - allocation;
+
+        if ~isempty(mod.simulationStateSideEffects)
+            mod.simulationStateSideEffects.updateSimulationState(sim);
+        end
+    end
+
+    mets.counts = edu.stanford.covert.cell.sim.constant.Condition.applyConditions( ...
+        mets.counts, mets.setCounts, time.values);
+end
+
+summary = struct();
+summary.seed = int32(opts.seed);
+summary.process_name = canonical_name;
+summary.n_ticks = int32(n_ticks);
+summary.ticks = ticks;
+end
+
+function [n_regions, lengths, legal, positions, strands, linkingNumbers, sigmas, limits] = compute_sigma_legal(this)
+% Reproduces DNASupercoiling.m evolveState()'s own sigma/legal computation
+% (lines ~363-378) exactly, read-only, from the live chromosome state
+% immediately before evolveState() executes.
+c = this.chromosome;
+[tmpPosStrands, lens] = find(c.doubleStrandedRegions);
+tmpIdxs = find(mod(tmpPosStrands(:, 2), 2));
+lengths = lens(tmpIdxs, 1);
+positions = tmpPosStrands(tmpIdxs, 1);
+strands = tmpPosStrands(tmpIdxs, 2);
+
+[~, linkingNumbers] = find(c.linkingNumbers);
+linkingNumbers = linkingNumbers(tmpIdxs, 1);
+sigmas = (linkingNumbers - lengths / c.relaxedBasesPerTurn) ./ (lengths / c.relaxedBasesPerTurn);
+
+legal = [ ...
+    sigmas > this.gyraseSigmaLimit ...
+    sigmas > this.topoIVSigmaLimit ...
+    sigmas < this.topoISigmaLimit];
+
+n_regions = numel(lengths);
+limits = [this.gyraseSigmaLimit, this.topoIVSigmaLimit, this.topoISigmaLimit, c.relaxedBasesPerTurn];
+end
+
+function opts = parse_inputs(varargin)
+opts = struct( ...
+    'seed', 0, ...
+    'n_ticks', 6, ...
+    'out_path', '');
+
+if mod(numel(varargin), 2) ~= 0
+    error('l22_dnas_process_rng_region_probe:invalidArgs', 'Arguments must be name/value pairs');
+end
+
+for i = 1:2:numel(varargin)
+    name = varargin{i};
+    value = varargin{i + 1};
+    switch lower(char(name))
+        case 'seed'
+            opts.seed = double(value);
+        case 'n_ticks'
+            opts.n_ticks = double(value);
+        case 'out_path'
+            opts.out_path = char(value);
+        otherwise
+            error('l22_dnas_process_rng_region_probe:unknownOption', 'Unknown option: %s', char(name));
+    end
+end
+
+if isempty(opts.out_path)
+    opts.out_path = fullfile(infer_repo_root(), 'tmp', sprintf('l22_dnas_process_rng_region_probe_s%03d.json', opts.seed));
+end
+end
+
+function repo_root = infer_repo_root()
+this_file = mfilename('fullpath');
+matlab_dir = fileparts(this_file);
+scripts_dir = fileparts(matlab_dir);
+repo_root = fileparts(scripts_dir);
+end
+
+function seed_simulation(sim, seed)
+try
+    if isobject(sim) && ismethod(sim, 'applyOptions') && ismethod(sim, 'seedRandStream')
+        sim.applyOptions('seed', seed);
+        sim.seedRandStream();
+        return;
+    end
+catch
+end
+
+try
+    if isprop(sim, 'randStream') && ~isempty(sim.randStream)
+        sim.randStream.seed = seed;
+        return;
+    end
+catch
+end
+end
+
+function [idx, canonical_name] = find_process_index(sim, requested_name)
+idx = [];
+canonical_name = '';
+want = normalize_name_token(requested_name);
+
+for i = 1:numel(sim.processes)
+    proc = sim.processes{i};
+    short = process_short_name(proc);
+    tokens = { ...
+        normalize_name_token(short), ...
+        normalize_name_token(proc.wholeCellModelID)};
+    if isprop(proc, 'name')
+        tokens{end + 1} = normalize_name_token(proc.name); %#ok<AGROW>
+    end
+    if any(strcmp(tokens, want))
+        idx = i;
+        canonical_name = short;
+        return;
+    end
+end
+end
+
+function short = process_short_name(proc)
+wid = proc.wholeCellModelID;
+if strncmp(wid, 'Process_', numel('Process_'))
+    short = wid(numel('Process_') + 1:end);
+else
+    short = wid;
+end
+end
+
+function token = normalize_name_token(s)
+token = lower(regexprep(char(s), '[^a-zA-Z0-9]', ''));
+end
+
+function ensure_wholecell_runtime_paths(repo_root)
+candidate_roots = { ...
+    fullfile(repo_root, 'data', 'm1_sources', 'WholeCell'), ...
+    'E:\opencell\data\m1_sources\WholeCell'};
+
+for i = 1:numel(candidate_roots)
+    root = candidate_roots{i};
+    if ~exist(root, 'dir')
+        continue;
+    end
+
+    old_dir = pwd;
+    cleaner = onCleanup(@() cd(old_dir)); %#ok<NASGU>
+    cd(root);
+
+    if exist('setWarnings.m', 'file') == 2
+        try
+            setWarnings();
+        catch
+        end
+    end
+
+    if exist('setPath.m', 'file') == 2
+        try
+            setPath();
+            return;
+        catch
+        end
+    end
+
+    addpath(genpath(fullfile(root, 'src')));
+    addpath(genpath(fullfile(root, 'lib')));
+    return;
+end
+end

@@ -12,7 +12,7 @@
   "sidecar_hashes": {
     "SUMMARY.json": "90adfb4d9929be165db8e09b93865fbab39c26ab73751e79e1845e92950d84a0",
     "analytical_check.json": "64e9f45a7d21897111c42017dd901c9baf696c13fce7cdd86d8831788d689fc5",
-    "input_manifest.json": "cd9c717d55bb30a8f6bfa7b7dadad61388f75544b99b4b4d6f98c55a69c72d26",
+    "input_manifest.json": "1b24441d5aa49d83c3f32ac0692ab0163683c30f5e942e0cd87e5c4a83388744",
     "null_calibration.json": "4434c3eb822d4f45b89b4267726e7015cd6952a1b07863e08e80e283078dc750",
     "provenance.json": "5fb09679fc5e4d46fad4122322c68490e708ea63d25ab7fa338aca28927ce35d",
     "result.json": "985845448128f7b99895a756d9c51de8f231d7358bae053342b2f5661c55598f",
@@ -22,7 +22,7 @@
     "calc_flux_bounds_module": "8c17bae8821133dc2bb624874c233902215e600a684ec739793b436ffc7c36b7",
     "catalog_entry": "d8481827a4b22e02fbb7046822dae7f62c159a8ad421abb98b95a4ce9176ed3b",
     "fva_module": "6e6ba906174d6ecde9c8f7291094690492f9f54b1a48a11972534d5c5204a5e2",
-    "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+    "helpers": "016c0d8647aa7bdf4b1aaf3c01be6b3387213e773768ab4eb507fc6e5863f160",
     "karr_metabolism_writeback_module": "97029398ee5ce2fd22a915aa778dc66689b622bcda3d3153cbbcc300dcc35203",
     "karr_protein_decay_light_module": "f00efd6f524f0f3cf2236f96e7d9e2223e70eb46d6b50b598f40caed05466a9a",
     "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
@@ -31,6 +31,7 @@
     "oc_module": "444adac56acc68abad338ca43ae230bb5e1adee73bde9f6cb519cc1ee3e0874a",
     "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
     "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
+    "tick_runner": "d8356c69fb38235edefc5845394be6a8032d7e91a5f53dfaecf027a1df1514b3",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
   "written_at": "2026-08-06T10:13:50.822284+00:00"

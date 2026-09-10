@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-31T18:43:59.893097+00:00",
+  "generated_at": "2026-09-10T05:57:38.061161+00:00",
   "jobs": [
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/DNARepair.log",
@@ -19,7 +19,7 @@
       "output_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
       "process": "DNASupercoiling",
       "reason": null,
-      "seeds": 50,
+      "seeds": 200,
       "status": "DONE_VALID_EVIDENCE",
       "stored_bucket": "ALGORITHMIC_SHALLOW",
       "stored_verdict": "PASS",

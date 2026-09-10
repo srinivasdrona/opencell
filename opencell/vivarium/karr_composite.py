@@ -1679,7 +1679,21 @@ def build_karr_chassis_v5(
 
     rep_init_proc = KarrReplicationInitiationProcess({"time_step": time_step_s})
     rep_proc = KarrReplicationProcess({"time_step": time_step_s})
-    supercoil_proc = KarrDNASupercoilingProcess({"time_step": time_step_s})
+    supercoil_proc = KarrDNASupercoilingProcess(
+        {
+            "time_step": time_step_s,
+            # Chassis bootstrap is a synthetic (non-trace-driven)
+            # initialization, not a replay of MATLAB's real seed-0
+            # evolveState() sequence, even though the process's default
+            # rng_seed (0) falls inside the reserved 0-199 real-ledger
+            # range. Opt out of the process-RNG ledger here so
+            # build_default_initialized_state()'s gyrase-binding draws use
+            # the process's own approximate proxy stream, matching the
+            # other synthetic/test call sites' established convention (see
+            # dnas_process_rng_ledger.py).
+            "process_rng_ledger_path": False,
+        }
+    )
     condensation_proc = KarrChromosomeCondensationProcess({"time_step": time_step_s})
     segregation_proc = KarrChromosomeSegregationProcess({"time_step": time_step_s})
     dna_damage_proc = KarrDNADamageProcess({"time_step": time_step_s})
@@ -1981,6 +1995,16 @@ def build_karr_chassis_v5(
             ",".join(sorted(zero_seeded_regulatory_tfs)),
         )
 
+    supercoil_available_gyrase = float(complex_counts.get(supercoil_proc.gyrase_wid, 0.0))
+    supercoil_init = supercoil_proc.build_default_initialized_state(
+        replication_state="idle",
+        available_gyrase=supercoil_available_gyrase,
+    )
+    if supercoil_proc.enzyme_store_by_wid.get(supercoil_proc.gyrase_wid) == "complex":
+        complex_counts[supercoil_proc.gyrase_wid] = float(supercoil_init["free_gyrase_count"])
+    else:
+        prot_init[supercoil_proc.gyrase_wid] = float(supercoil_init["free_gyrase_count"])
+
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
         "substrates": ("substrates",),
@@ -2248,15 +2272,15 @@ def build_karr_chassis_v5(
             wid: float(initial_substrates.get(wid, 0.0)) for wid in p_activation_proc.substrate_wids
         },
         "tx_rate_fold_change": tx_rate_fold_init,
+        "boundEnzymes": supercoil_init["boundEnzymes"],
         "chromosome": {
-            **supercoil_proc.build_default_chromosome_state(replication_state="idle"),
+            **supercoil_init["chromosome"],
             "fork_position_bp": {"left": 0.0, "right": 0.0},
             "fork_positions": {"left": 0.0, "right": 0.0},
             "events": {"replication_complete": 0.0},
             "smc_bound_count": float(condensation_proc.trace_anchor_bound),
             "condensation_level": float(condensation_proc.default_condensation_level),
             "forks_passing": False,
-            "segregated": False,
             "segregation_progress": 0.0,
             "segregation_complete": False,
             "daughter_pole_positions": {"left": 0.0, "right": 0.0},

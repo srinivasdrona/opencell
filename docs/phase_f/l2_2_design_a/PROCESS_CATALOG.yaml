@@ -179,7 +179,7 @@ processes:
     bucket: ALGORITHMIC_SHALLOW
     in_scope_L2_2: true
     M_ticks: 100
-    N_seeds: 50
+    N_seeds: 200
     event_density: moderate
     input_channels: [substrates, enzymes, chromosome]
     output_channels: [substrates, chromosome]
@@ -188,7 +188,7 @@ processes:
     primary_distance: per_component_scaled
     karr_artifact: per_process_traces_v2
     rationale_M: "default; randperm + half-up branch covered"
-    notes: "v1.4 (2026-06-14): primary_projection set to linkingNumbers.{delta_value_sum, delta_nnz}. v3.10 (2026-06-16): PORTED to full chromosome sparse-triple state at dc9eb70. Reads/writes chromosome.linkingNumbers as sparse triples. L2 replay PASS on seed 0. Legacy supercoil_density mirror maintained. First chromosome-primary process validated end-to-end."
+    notes: "v1.4 (2026-06-14): primary_projection set to linkingNumbers.{delta_value_sum, delta_nnz}. v3.10 (2026-06-16): PORTED to full chromosome sparse-triple state at dc9eb70. Reads/writes chromosome.linkingNumbers as sparse triples. L2 replay PASS on seed 0. Legacy supercoil_density mirror maintained. First chromosome-primary process validated end-to-end. v4.0 (2026-09, R9): N_seeds raised 50->200 for the accepted two-sided sparse-support re-evaluation of linkingNumbers.delta_nnz (scripts/l22_dnas_rare_event/two_sided_sparse_gate.py, promoted via scripts/l22_dnas_promote_n200_evidence.py into the canonical chromosome channel's own aggregation='dnas_two_sided_sparse_gate' payload -- see verdict.py's _rederive_dnas_two_sided_gate_channel) -- the standard per_component_scaled magnitude distance is insensitive to a sparse channel's ACTIVITY-COUNT direction (over- vs under-active), which is exactly the failure mode the two-sided gate targets. linkingNumbers.delta_value_sum keeps the unchanged per_component_scaled formula (still catalog primary_distance=per_component_scaled so the standard runner accepts this row unmodified; the two-sided re-scoring is a result.json channel-payload-level promotion, not a runner/catalog dispatch change). Accepted N=200 verdict: pooled_nonzero_ticks 64 vs 65, active_seeds 58 vs 58, clustered_seeds 6 vs 7, all axes BALANCED (Holm-adjusted p=1.0), scaled_w1=7.61e-05; 0 process-RNG audit-boundary breaches across 20000 ledger-covered ticks."
 
   - name: RNAProcessing
     oc_module: opencell/vivarium/karr_rna_processing.py

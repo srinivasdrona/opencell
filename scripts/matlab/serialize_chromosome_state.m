@@ -33,6 +33,29 @@ props = { ...
     'strandBreaks', ...        % DNARepair (primary repair signal)
     'hollidayJunctions' ...    % DNARepair
 };
+hidden_sparse_props = { ...
+    'damagedSites', ...
+    'singleStrandedRegions', ...
+    'doubleStrandedRegions', ...
+    'supercoils', ...
+    'superhelicalDensity', ...
+    'supercoiled' ...
+};
+hidden_scalar_props = { ...
+    'validated', ...
+    'validated_damaged', ...
+    'validated_polymerizedRegions', ...
+    'validated_linkingNumbers', ...
+    'validated_singleStrandedRegions', ...
+    'validated_doubleStrandedRegions', ...
+    'validated_supercoils', ...
+    'validated_superhelicalDensity', ...
+    'validated_supercoiled', ...
+    'validated_damagedSites', ...
+    'validated_damagedSites_shifted_incm6AD', ...
+    'validated_damagedSites_nonRedundant', ...
+    'validated_damagedSites_excm6AD' ...
+};
 
 out = struct();
 % Capture genome dimensions once (used as shape metadata).
@@ -50,6 +73,16 @@ end
 for i = 1:numel(props)
     p = props{i};
     out.(p) = sparse_triple_safe(chrom, p);
+end
+
+for i = 1:numel(hidden_sparse_props)
+    p = hidden_sparse_props{i};
+    out.(p) = sparse_triple_generic_safe(chrom, p);
+end
+
+for i = 1:numel(hidden_scalar_props)
+    p = hidden_scalar_props{i};
+    out.(p) = scalar_safe(chrom, p);
 end
 end
 
@@ -84,5 +117,46 @@ try
     tri.values = int32(vals(:));
 catch err
     tri.error = err.message;
+end
+end
+
+function tri = sparse_triple_generic_safe(chrom, prop_name)
+% Extract sparse triple while preserving the source value dtype.
+tri = struct( ...
+    'positions', zeros(0, 1, 'int64'), ...
+    'strands',   zeros(0, 1, 'int8'), ...
+    'values',    zeros(0, 1), ...
+    'shape',     int64([0 0]), ...
+    'error',     '' ...
+);
+try
+    v = chrom.(prop_name);
+    sz = size(v);
+    tri.shape = int64(sz(1:min(2, numel(sz))));
+    if isempty(sz) || prod(sz) == 0
+        return;
+    end
+    [subs, vals] = find(v);
+    if isempty(subs)
+        return;
+    end
+    tri.positions = int64(subs(:, 1));
+    if size(subs, 2) >= 2
+        tri.strands = int8(subs(:, 2));
+    else
+        tri.strands = int8(ones(size(subs, 1), 1));
+    end
+    tri.values = vals(:);
+catch err
+    tri.error = err.message;
+end
+end
+
+function value = scalar_safe(chrom, prop_name)
+% Read a scalar validation/cache field without throwing away the extraction.
+try
+    value = chrom.(prop_name);
+catch err
+    value = struct('error', err.message);
 end
 end

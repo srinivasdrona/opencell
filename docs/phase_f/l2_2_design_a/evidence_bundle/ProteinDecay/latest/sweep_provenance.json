@@ -12,7 +12,7 @@
   "sidecar_hashes": {
     "SUMMARY.json": "c893a5c1176421c3f5b1c1f5775b55a18052edc3423c70bcd436308e65d20900",
     "analytical_check.json": "2654dd797b75612697b074688d1708a61fd3c46cf50b15cf24ef13918061446b",
-    "input_manifest.json": "e06afdd12c16e62424f8c7db4e53aa41eaca12a204d2b37c90214ce7c444a576",
+    "input_manifest.json": "f8e2a975e78a669d3e23451777af0e959bdae85625c27d923c6bbaaa8db189c8",
     "null_calibration.json": "2c67cb8b57f6a50f75ec653ec30ce2fa2ac4dc3ac93afb9b531812346adbe239",
     "provenance.json": "664f8b1b54b99508d49bd463017c80dde735a0e9a36792aec62d6d43df81b86e",
     "result.json": "9152c07e2c993ed52206b2e16fc5aef3d7dfc031441f108e1424977fc214fc33",
@@ -20,11 +20,12 @@
   },
   "source_hashes": {
     "catalog_entry": "f6f8e86f707fdd99db19127f47119163b43fcf9bd5dc38a12c0fe94a17243689",
-    "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+    "helpers": "016c0d8647aa7bdf4b1aaf3c01be6b3387213e773768ab4eb507fc6e5863f160",
     "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
     "oc_module": "f00efd6f524f0f3cf2236f96e7d9e2223e70eb46d6b50b598f40caed05466a9a",
     "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
     "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
+    "tick_runner": "7d623b9663d69ebced545faa35063cf3a5dec06798f175ec910a9b2c4d98641a",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
   "written_at": "2026-08-06T11:50:20.780590+00:00"

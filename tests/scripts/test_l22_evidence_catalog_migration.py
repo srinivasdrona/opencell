@@ -167,7 +167,18 @@ def _write_evidence_dir(
     source_hashes = dict(sweep.current_source_hashes(None, process=None, harness_type=harness_type))
     # `current_source_hashes` (fixed) no longer computes catalog/registry
     # keys at all when `process=None` -- add the OLD-STYLE whole-file
-    # key(s) explicitly, simulating a pre-migration sentinel.
+    # key(s) explicitly, simulating a pre-migration sentinel. `process=None`
+    # is deliberate here (not the real process name): it sidesteps
+    # `schema.process_contract_hashes` needing a REAL `catalog_path`/
+    # `registry_path` pointing at this fixture's SYNTHETIC catalog (this
+    # call passes neither, so `process=<real name>` would look the
+    # synthetic "ProcA"/"ProcB" name up in the REAL production
+    # PROCESS_CATALOG.yaml and raise). R7's `"tick_runner"` key is added
+    # explicitly below instead, computed the SAME way the real staleness
+    # check computes it (a real process name IS given there) so both sides
+    # agree -- `tick_runner_entry_hash` needs no catalog_path at all.
+    if harness_type == "design_a_per_tick":
+        source_hashes["tick_runner"] = schema.tick_runner_entry_hash(process)
     if tamper_oc_module_hash:
         source_hashes["oc_module"] = "0" * 64
     source_hashes["catalog"] = catalog_hash

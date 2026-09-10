@@ -59,9 +59,27 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-10 04:03 IST) — supersedes all
+**Current status (2026-09-10 12:28 IST) — supersedes all
 earlier blocks below:**
 
+- DNAS merge is live in `E:\opencell-worktrees\main-integrate`: `main`
+  remains at published `8a5ccc4`, `MERGE_HEAD=3307575`, conflicts are
+  resolved, and the merge is intentionally uncommitted while final gates
+  run. The CRLF/LF provenance blocker is fixed by LF-normalizing only
+  `DNASupercoiling/dnas_runner_helpers_module`; the accepted N=200
+  checkpoint was mechanically re-promoted against the merge tree. Current
+  canonical board: **19 PASS / 1 FAIL / 2 MISSING_EVIDENCE, integrity OK**.
+  Operational trap: never run default evidence generation/tests while the
+  partial live `artifacts/l2_2_gates` root contains only DNAS; move/remove
+  that restored temporary root first so defaults resolve to the complete
+  tracked bundle.
+- RepInit agent `e3a01492-9c55-4535-880e-2264858589ad` is still running in
+  `E:\opencell-worktrees\fix-l22-repinit-m-aware` after completing the 50
+  genuine M=200 MATLAB traces; it is in final gate/advisor work.
+- Detached division extraction remains healthy: supervisor PID `29372`,
+  MATLAB PIDs `19400`/`27912`; seed 11 completed and seed 12 is running.
+  Status/log remain under
+  `E:\opencell-worktrees\bulk-division-a\artifacts\dual_contract_007_016.*`.
 - Local `main` is clean and published at `3b9e6e2`.
   DNADamage, Cytokinesis, HostInteraction, ReplicationInitiation, and
   TranscriptionalRegulation L2.1 are merged. The authoritative L2.1
@@ -90,17 +108,15 @@ earlier blocks below:**
   Relaunch, never recreate:
   - DNAS provenance-safe integration worktree
     `integrate-l22-dnas-current` has accepted code committed through
-    `63a85de`; provenance/evidence reconciliation is complete. Candidate
-    board is **19 PASS / 1 FAIL / 2 MISSING**, integrity OK (RepInit sole
-    FAIL). Verified: DNAS+store consumers 183 tests, L1b 28/28+19,
-    oracle 38, L2.4 PASS, evidence 445+74+53, provenance 44, Ruff clean.
-    Opus review cleared the biology/provenance integration but **REJECTED
-    one canonical-artifact regression**: the final generic sweep overwrote
-    DNAS `latest/result.json` from `dnas_two_sided_sparse_gate` back to
-    `per_component_scaled`, dropping the accepted active-seed and clustered-
-    seed axes from canonical evidence. Re-run the N=200 promoter against the
-    accepted checkpoint (no simulation rerun), regenerate 19/1/2, and add a
-    regression pinning aggregation + axes 64/65, 58/58, 6/7 before re-review.
+    `3307575`; provenance/evidence reconciliation is complete. Final
+    candidate board is **19 PASS / 1 FAIL / 2 MISSING**, integrity OK
+    (RepInit sole FAIL). The canonical artifact is restored to
+    `dnas_two_sided_sparse_gate` with axes 64/65, 58/58, 6/7 and records the
+    real tracked checkpoint hash `7e52aecb...`; missing checkpoint now fails
+    closed. Opus **ACCEPTED** without requiring another N=200 run. Verified:
+    DNAS+store consumers 183 tests, L1b 28/28+19, oracle 38, L2.4 PASS,
+    evidence suites and durable inversion green. Merge is in progress;
+    run final audit/regressions, then publish.
   - TxReg final integration branch `integrate/l21-txreg-final` is clean at
     `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
     registry, one unioned dec-006, and reported board 18/2/2. Final review

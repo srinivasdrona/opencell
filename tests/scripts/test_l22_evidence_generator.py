@@ -17,6 +17,7 @@ Run via `bin\\oc-pytest tests/scripts/test_l22_evidence_generator.py -v`.
 from __future__ import annotations
 
 import copy
+import json
 import sys
 from pathlib import Path
 
@@ -221,10 +222,15 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         if row["mechanical_verdict"] == schema.STATUS_FAIL
     }
     assert set(fail_rows) == {
-        "DNASupercoiling",
-    }
+        "ReplicationInitiation",
+    }, (
+        "R9: DNASupercoiling's accepted N=200 two-sided sparse-gate promotion moved it FAIL -> PASS; "
+        "ReplicationInitiation is separately, honestly demoted PASS -> FAIL "
+        "(STALE_SWEEP_PROVENANCE, see 9f983fd on main) pending its M-aware trace-path redesign; "
+        f"unexpected FAIL row(s): {set(fail_rows) - {'ReplicationInitiation'}!r}"
+    )
     assert any(
-        "PRIMARY_INSUFFICIENT_SAMPLES" in reason for reason in fail_rows["DNASupercoiling"]
+        "STALE_SWEEP_PROVENANCE" in reason for reason in fail_rows["ReplicationInitiation"]
     )
     pass_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_PASS}
     for process in ("ProteinFolding", "ProteinProcessingI", "ProteinProcessingII", "tRNAAminoacylation"):
@@ -232,9 +238,61 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     assert "DNADamage" in pass_rows, "DNADamage expected verified genuine-corpus PASS"
     assert "RibosomeAssembly" in pass_rows, "RibosomeAssembly expected bridged event-class PASS"
     assert "Replication" in pass_rows, "Replication expected current-tree N=50 PASS"
+    assert "DNASupercoiling" in pass_rows, "DNASupercoiling expected accepted N=200 two-sided sparse-gate PASS"
     assert "MacromolecularComplexation" in pass_rows, (
         "MacromolecularComplexation expected active-window-cohort mechanical PASS"
     )
+
+
+def test_dnas_canonical_bundle_uses_accepted_two_sided_sparse_gate_not_standard_per_component():
+    """Regression for a real incident (2026-09-10): a subsequent standard
+    `sweep.py run --processes DNASupercoiling --force` (needed to refresh
+    provenance after an unrelated L1b oc-anchor fix touched
+    `karr_dna_supercoiling.py`) silently reverted the canonical
+    `evidence_bundle/DNASupercoiling/latest/result.json`'s `chromosome`
+    channel from the accepted `dnas_two_sided_sparse_gate` promotion back to
+    the standard sweep's own `per_component_scaled` aggregation --
+    `scripts/l22_dnas_promote_n200_evidence.py` must be rerun with
+    `--apply` after every standard-sweep refresh of this row, since the
+    standard sweep only knows how to write its own generic aggregation.
+    Opus's integration review caught this because it is a real methodology
+    regression even though the process-level `mechanical_verdict` can still
+    read PASS under either aggregation -- this test binds directly to the
+    tracked `result.json` bytes so a future silent revert fails loudly here,
+    not only in a human review.
+
+    The exact three axes below are the Opus-accepted, frozen numbers from
+    the `sept2_two_sided_rerun` evaluation (oric-join-closure fix
+    included; see `STATUS_L22_DNAS_SEPT2.md` "Session 6" / commit
+    `29f8f5f` upstream): pooled_nonzero_ticks 64 (OC) vs 65 (Karr),
+    active_seeds 58 vs 58, clustered_seeds 6 vs 7, all BALANCED."""
+    payload = gen.build_evidence_index()
+    dnas_row = next(row for row in payload["rows"] if row["process"] == "DNASupercoiling")
+    assert dnas_row["mechanical_verdict"] == schema.STATUS_PASS, (
+        f"DNASupercoiling expected PASS, got {dnas_row['mechanical_verdict']!r}: {dnas_row.get('reasons')!r}"
+    )
+
+    result_path = REPO_ROOT / dnas_row["evidence_dir"] / "result.json"
+    result_payload = json.loads(result_path.read_text(encoding="utf-8"))
+    chromosome_channel = result_payload["channels"]["chromosome"]
+
+    assert chromosome_channel.get("aggregation") == "dnas_two_sided_sparse_gate", (
+        "DNASupercoiling's canonical chromosome channel must use the accepted "
+        "dnas_two_sided_sparse_gate aggregation, never the standard sweep's "
+        f"per_component_scaled -- got {chromosome_channel.get('aggregation')!r}. "
+        "Rerun `python scripts/l22_dnas_promote_n200_evidence.py --apply` after "
+        "any standard-sweep refresh of this row."
+    )
+
+    sparse_axes = {
+        axis["axis"]: (axis["oc_count"], axis["karr_count"])
+        for axis in chromosome_channel["sparse_component"]["axes"]
+    }
+    assert sparse_axes == {
+        "pooled_nonzero_ticks": (64, 65),
+        "active_seeds": (58, 58),
+        "clustered_seeds": (6, 7),
+    }, f"unexpected sparse_component axes: {sparse_axes!r}"
 
 
 def test_content_hash_is_deterministic_across_regenerations():

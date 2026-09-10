@@ -87,32 +87,40 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13.14, and for
     this move Section 13.15):
 
-    As of this commit (MacromolecularComplexation's active-window
-    promotion via the canonical `per_process_traces_v2_sNNN/` mirror; see
-    STATUS_L22_MACROMOL_AUTHORITY_PROMOTION.md) the tally is
+    As of this commit (DNASupercoiling's clean integration -- R7/R8/R10
+    provenance redesigns + mechanical equivalence-proof migrations isolating
+    its accepted persistent-process-pool fix and hidden-chromosome-state
+    extension from every OTHER Design-A process, plus its own accepted N=200
+    two-sided sparse-support gate promotion -- reconciled here against
+    current main's separately-landed, honest ReplicationInitiation PASS ->
+    FAIL demotion, `9f983fd`, `STALE_SWEEP_PROVENANCE`, pending its own
+    M-aware trace-path redesign) the tally is
     PASS: 19, FAIL: 1, MISSING_EVIDENCE: 2, n_in_scope: 22:
-      - PASS (19): DNADamage, DNARepair, MacromolecularComplexation,
-        Metabolism, ProteinDecay, ProteinFolding, ProteinModification,
-        ProteinProcessingI, ProteinProcessingII, ProteinTranslocation,
-        RNADecay, RNAModification, RNAProcessing, Replication,
-        ReplicationInitiation, RibosomeAssembly, Transcription,
-        Translation, tRNAAminoacylation.
-      - FAIL (1): DNASupercoiling (pre-existing, unrelated to this
-        closure).
-      - MISSING_EVIDENCE (2): Cytokinesis, FtsZPolymerization.
+      - PASS (19): DNADamage, DNARepair, DNASupercoiling,
+        MacromolecularComplexation, Metabolism, ProteinDecay, ProteinFolding,
+        ProteinModification, ProteinProcessingI, ProteinProcessingII,
+        ProteinTranslocation, RNADecay, RNAModification, RNAProcessing,
+        Replication, RibosomeAssembly, Transcription, Translation,
+        tRNAAminoacylation.
+      - FAIL (1): ReplicationInitiation (pre-existing on main, unrelated to
+        this closure).
+      - MISSING_EVIDENCE (2): Cytokinesis, FtsZPolymerization (pre-existing,
+        unrelated to this closure).
 
-    This is a deliberate, evidence-driven mechanical re-derivation (the
-    canonical sweep/bundle/generate/audit pipeline run with all four
-    shared source files confirmed byte-identical to the pre-closure
-    baseline), not a regression or a fabrication: `gen.audit()` reports
-    `integrity: OK` (see the test above) and `git diff` on the committed
-    `evidence_index.json` touches only the MacromolecularComplexation row
-    plus the mechanically-required top-level `generated_at`/`content_hash`
-    fields -- every other row is byte-for-byte unchanged. If this test
-    ever needs to change again, that change must be driven by real
-    evidence (a sweep rerun populating/changing rows under the evidence
-    tree, or a further evaluator correctness fix with cited raw-metric
-    evidence), not by editing this assertion to make it pass."""
+    This is a deliberate, evidence-driven mechanical re-derivation, not a
+    regression or a fabrication: `gen.audit()` reports `integrity: OK` (see
+    the test above); the shared `_l2_2_design_a_runner_helpers.py`/
+    `opencell/state/chromosome_store.py` edits DNASupercoiling's accepted
+    candidate required were isolated via a redesigned per-process
+    `"helpers"`/`"tick_runner"` hash pair (R7) and a real, executable
+    equivalence proof against each affected process's own oracle trace (R8),
+    NEVER by weakening what those hash guards can detect; every OTHER
+    process's row is migrated (not blindly re-derived) with its own fully
+    documented, fail-closed proof. If this test ever needs to change again,
+    that change must be driven by real evidence (a sweep rerun populating/
+    changing rows under the evidence tree, or a further evaluator
+    correctness fix with cited raw-metric evidence), not by editing this
+    assertion to make it pass."""
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {

@@ -56,7 +56,11 @@ def test_plan_sweep_default_covers_all_18_design_a_per_tick_processes():
     assert len(jobs) == 18
     assert len({j.process for j in jobs}) == 18
     for job in jobs:
-        assert job.seeds == 50
+        # R9: DNASupercoiling's catalog N_seeds is 200 (its accepted two-sided
+        # sparse-gate promotion); every other design_a_per_tick process is
+        # still 50.
+        expected_seeds = 200 if job.process == "DNASupercoiling" else 50
+        assert job.seeds == expected_seeds
         assert isinstance(job.m_ticks, int) and job.m_ticks > 0
 
 
@@ -79,6 +83,69 @@ def test_plan_sweep_rejects_unknown_or_event_class_process_names():
         sweep.plan_sweep(["NotARealProcess"])
     with pytest.raises(ValueError, match="not in-scope design_a_per_tick"):
         sweep.plan_sweep(["DNADamage"])  # a real catalog process, but event_class
+
+
+def test_dnas_runner_dependency_hash_is_portable_across_line_endings(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+):
+    lf_path = tmp_path / "helper_lf.py"
+    crlf_path = tmp_path / "helper_crlf.py"
+    changed_path = tmp_path / "helper_changed.py"
+    lf_path.write_bytes(b"def run():\n    return 1\n")
+    crlf_path.write_bytes(b"def run():\r\n    return 1\r\n")
+    changed_path.write_bytes(b"def run():\n    return 2\n")
+
+    assert frozenset(
+        {("DNASupercoiling", "dnas_runner_helpers_module")}
+    ) == schema.LF_NORMALIZED_PROCESS_DEPENDENCIES
+
+    dependencies = dict(schema.PROCESS_DEPENDENCY_FILES["DNASupercoiling"])
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "DNASupercoiling",
+        {**dependencies, "dnas_runner_helpers_module": lf_path},
+    )
+    lf_hash = schema.process_dependency_hashes("DNASupercoiling")[
+        "dnas_runner_helpers_module"
+    ]
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "DNASupercoiling",
+        {**dependencies, "dnas_runner_helpers_module": crlf_path},
+    )
+    crlf_hash = schema.process_dependency_hashes("DNASupercoiling")[
+        "dnas_runner_helpers_module"
+    ]
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "DNASupercoiling",
+        {**dependencies, "dnas_runner_helpers_module": changed_path},
+    )
+    changed_hash = schema.process_dependency_hashes("DNASupercoiling")[
+        "dnas_runner_helpers_module"
+    ]
+
+    assert lf_hash == crlf_hash
+    assert changed_hash != lf_hash
+
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "Replication",
+        {"chromosome_store_module": lf_path},
+    )
+    raw_lf_hash = schema.process_dependency_hashes("Replication")[
+        "chromosome_store_module"
+    ]
+    monkeypatch.setitem(
+        schema.PROCESS_DEPENDENCY_FILES,
+        "Replication",
+        {"chromosome_store_module": crlf_path},
+    )
+    raw_crlf_hash = schema.process_dependency_hashes("Replication")[
+        "chromosome_store_module"
+    ]
+
+    assert raw_lf_hash != raw_crlf_hash
 
 
 # --- evidence_is_valid resume semantics -----------------------------------------

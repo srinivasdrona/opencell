@@ -12,7 +12,7 @@
   "sidecar_hashes": {
     "SUMMARY.json": "ebe88ff3ee383678b45d91a64a13099d6003bc754dde87639e0190f0a565c12c",
     "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
-    "input_manifest.json": "032b4ba3a654a3e998b8053a38122b1ce9bf0a06f006856bb394059278d96e47",
+    "input_manifest.json": "b0e97f4aecedbbd0025b4740fe82931112a07440627fab91b634e55b6297ff48",
     "null_calibration.json": "fba67362a73fd58bb7199d0a77c1f8172be2a438606c829185fdf990d3ccffc1",
     "provenance.json": "08f3af0710d1111bf51c240bc46a0926230579d04969c48760e2910b847a9586",
     "result.json": "27f08831eb22ee61c8b2594721efb46ae6ed6a6217bedc649feb10c5cd54e758",
@@ -20,11 +20,12 @@
   },
   "source_hashes": {
     "catalog_entry": "6674d9aa70b639fb96908b539924cbed52c20c52a19a205e999f5520b430f223",
-    "helpers": "0bf545d5bf3f069cf9059df7676680ec2a0ac0b1bb21f6bd59856958353e7e93",
+    "helpers": "016c0d8647aa7bdf4b1aaf3c01be6b3387213e773768ab4eb507fc6e5863f160",
     "l2_replay_common": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215",
     "oc_module": "d89fac67ba6caa6f7966fb5198302a4f6da7cd73b9475d89d2d684a2f4e706e1",
     "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
     "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
+    "tick_runner": "7455840c29c95f7ba206b47d76dd52c3b9c55867418854f33183be14d6f73fe9",
     "util_matlab_rng_module": "5c2a982aa874c6ff2d62ae1fff85b58436eab4b47caa7b9a36d1f087b19b72fa",
     "util_module": "dbdea5b4ad6dba7019f05cbb59ae20d8db0065804327daa4c74fc6ef3e63264e",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
