@@ -42,7 +42,6 @@ data/m1_sources/karr_native/*.mat
 data/m1_sources/karr_native/h12_perturbation_traces/
 data/m1_sources/karr_native/genuine_signedzero_*/
 data/m1_sources/karr_native/probe_*/
-data/m1_sources/karr_native/per_process_traces_v2_l22_repinit_seed0_archived/
 
 # Local MATLAB source-overlay scratch (regeneratable; carries no evidence
 # provenance of its own -- the tracked overlay hashes live in trace metadata)

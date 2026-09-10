@@ -1,81 +1,61 @@
-"""Standalone, RepInit-scoped trace-identity verification.
+"""Standalone, RepInit-scoped trace-identity + anti-cheat verification (R11).
 
-fix(l2.2): RepInit M-aware trace identity, current-main-safe closure.
+fix(l2.2): RepInit M-aware trace identity, current-main-safe closure, round 2.
 
-This test file exists because the previous integration attempt
-(`fix/l22-repinit-m-aware`, see STATUS_l22_repinit_m_aware.md in that
-worktree) closed ReplicationInitiation's L2.2 gate by editing
-`tests/vivarium/_l2_2_design_a_runner_helpers.py` /
-`l2_2_design_a_runner.py` to make trace-path resolution catalog-M-aware.
-Both files are universally-hashed `SWEEP_PROVENANCE_SOURCE_FILES`
-dependencies of EVERY `design_a_per_tick` process (verified: applying
-only those two files' edits atop a separately-clean main checkout
-reproduces the exact same PASS:18->2 collapse with no other change) --
-so that fix, while scientifically correct, was not integration-safe: it
-would stale DNAS and all 17 other currently-PASSING rows.
+This test file supersedes an earlier version written for a REJECTED
+integration candidate that placed genuine 200-tick ReplicationInitiation
+data at the generic, hardcoded `_100ticks.mat` path (relying on the
+unmodified loader never validating tick depth against the filename). An
+independent integration review correctly rejected that candidate: the
+filename tick token is part of this project's trace-identity contract, not
+a non-authoritative legacy label, and a seed-0/canonical-trace "temporal
+swap" procedure was required just to generate the evidence at all -- both
+unacceptable for a durable, mechanically-verifiable candidate.
 
-THIS closure takes a different, zero-shared-file-edit path instead:
+THIS closure (R11) instead:
 
-1. `_v2_seed_mat_path`/`_v2_canonical_seed0_mat_path`/`load_karr_oracle`
-   in `_l2_2_design_a_runner_helpers.py` are BYTE-IDENTICAL to published
-   main (`543c737`) -- confirmed by this test's own
-   `test_shared_runner_helper_files_are_byte_identical_to_published_main`
-   below. No process's sentinel is affected by this closure.
-2. RepInit's genuine 50-seed x 200-tick evidence lives at the standard,
-   UNMODIFIED `per_process_traces_v2_s{NNN}/ReplicationInitiation_100ticks.mat`
-   discovery path (seeds 0-49) -- the historical hardcoded `_100ticks.mat`
-   literal, which the unmodified loader has always expected. The genuine
-   per-seed .mat files' OWN internal `metadata/n_ticks` is 200 (verified
-   below); the FILENAME token `100ticks` is a KNOWN, DISCLOSED legacy
-   artifact of not touching the shared resolver -- it is NEVER treated as
-   authoritative by this test or by any human/reviewer reading this file.
-   Real identity is enforced here via metadata + actual per-tick channel
-   array length + catalog `M_ticks`, independently of the filename.
-3. The canonical L2.1 100-tick trace lives at the UNSUFFIXED
-   `per_process_traces_v2/ReplicationInitiation_100ticks.mat` path (seed
-   0's canonical slot). Because `_v2_seed_mat_path` unconditionally
-   prefers the canonical unsuffixed file over any suffixed `_s000/`
-   alternative for seed 0 (see that function's own docstring), that path
-   MUST NOT be used as one of RepInit's 50 L2.2 seeds -- if it were, the
-   loader would either silently pick up the wrong (100-tick, L2.1) trace
-   for "seed 0" or hard-fail on a tick-count-drift schema mismatch,
-   exactly the failure mode that originally demoted this row. This
-   closure uses the SUFFIXED `per_process_traces_v2_s001/...s049/`
-   directories for seeds 1-49 (never the unsuffixed slot), so those 49
-   seeds and L2.1's canonical trace coexist at disjoint, non-colliding
-   paths with zero code change.
-3b. Seed 0 specifically cannot use the suffixed `_s000/` fallback either:
-   `_v2_seed_mat_path`'s seed-0 branch unconditionally prefers the
-   canonical unsuffixed file whenever it exists, and hard-fails
-   (`ValueError: Seed-0 conflict`) if a differing suffixed `_s000/` file
-   ALSO exists -- so the two cannot both sit at their natural discovery
-   paths at once. This closure's worktree therefore keeps its RESTING
-   state as: canonical L2.1 trace present at the unsuffixed path (so
-   L2.1 tests pass and seed 0 resolves there, per
-   `test_resting_state_seed0_resolves_to_canonical_l21_trace_not_archived_data`),
-   and the genuine, hash-verified seed-0 200-tick L2.2 trace ARCHIVED
-   (not deleted) at
-   `per_process_traces_v2_l22_repinit_seed0_archived/ReplicationInitiation_200ticks_genuine.mat`.
-   The tracked L2.2 evidence for RepInit was genuinely generated using
-   this seed-0 file (at its natural `_s000/` path, with the canonical
-   trace temporarily absent) plus seeds 1-49; regenerating it requires
-   repeating that same temporary swap (see
-   `test_regenerating_l22_evidence_requires_temporarily_moving_canonical_aside`,
-   which mechanically proves the fail-closed behavior if the swap is
-   skipped, and STATUS_l22_repinit_m_aware_current.md for the exact
-   procedure).
+1. Stores all 50 genuine seed traces at their ACTUAL, honest names:
+   `per_process_traces_v2_s{NNN:03d}/ReplicationInitiation_200ticks.mat`
+   for seeds 0-49 (including seed 0 -- no special-casing, no unsuffixed
+   canonical-path involvement, no collision, no swap). The canonical L2.1
+   100-tick replay trace remains independently, permanently, at the
+   UNSUFFIXED `per_process_traces_v2/ReplicationInitiation_100ticks.mat`
+   path; the two never share a directory or a filename.
+2. Extracts ReplicationInitiation's OWN trace-path resolution + identity
+   validation into a new sibling module,
+   `tests/vivarium/_l2_2_repinit_runner_helpers.py`, registered as a
+   process-specific dependency
+   (`schema.PROCESS_DEPENDENCY_FILES["ReplicationInitiation"]
+   ["repinit_runner_helpers_module"]`) exactly mirroring R7's
+   DNASupercoiling tick-runner extraction. `_v2_seed_mat_path()` and
+   `load_karr_oracle()` in the shared, universally-hashed
+   `_l2_2_design_a_runner_helpers.py` each gain a single two-line redirect
+   to this module for ReplicationInitiation ONLY -- see
+   `test_shared_files_r11_delta_is_exactly_the_documented_redirect` below,
+   which verifies this is the ONLY diff from published main `543c737`,
+   line by line, not merely a hash claim.
+3. `schema.py`'s `runner_helpers_generic_hash()` DELETES (never
+   placeholders) this exact redirect scaffolding when computing the
+   shared `"helpers"` provenance hash, so it is IDENTICAL whether
+   evaluated against `543c737` or the current tree -- verified by
+   `test_redacted_helpers_hash_unchanged_vs_published_main` below,
+   the mechanical precondition `scripts/l22_evidence/
+   migrate_r11_repinit_provenance.py` requires before migrating any other
+   row.
 
-Fail-closed identity enforced below, per seed file actually used to
-GENERATE the tracked evidence: catalog `M_ticks` (read live from
-`PROCESS_CATALOG.yaml`, never hardcoded) == `metadata/n_ticks` == actual
-per-tick channel array count, for every one of the 50 files, plus the
-seed-1-to-49-collision regression guard (2) and a genuine independent
-re-hash of every file used
-(never trusting a previously-recorded hash).
+Fail-closed identity enforced by `_l2_2_repinit_runner_helpers.
+repinit_v2_seed_mat_path`, and independently re-verified here: filename
+tick token == `metadata/n_ticks` == live `PROCESS_CATALOG.yaml` `M_ticks`
+== every non-chromosome channel's own tick dimension, for every genuine
+seed file, PLUS anti-cheat reproductions of the exact prior-rejected
+mislabeling shape (a `_100ticks.mat`-named file with `metadata/n_ticks`
+claiming 200) and its inverse (a `_200ticks.mat`-named file whose
+metadata or channel data actually diverges from 200).
 """
 
 from __future__ import annotations
 
+import shutil
 import sys
 from pathlib import Path
 
@@ -93,26 +73,22 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
+import _l2_2_repinit_runner_helpers as repinit_helpers  # noqa: E402
+
+from scripts.l22_evidence import migrate_helpers_provenance as mhp  # noqa: E402
+from scripts.l22_evidence import schema  # noqa: E402
 
 _PROCESS_NAME = "ReplicationInitiation"
 _CATALOG_PATH = _REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "PROCESS_CATALOG.yaml"
 _N_SEEDS = 50
+_KARR_NATIVE_ROOT = _REPO_ROOT / "data" / "m1_sources" / "karr_native"
 
-# The two shared files this closure deliberately leaves untouched. Hashes
-# recorded here are those of published main `543c737` (the base this
-# integration branch was created from) -- NOT asserted as unchanging
-# forever (a legitimate unrelated future edit to these files is expected
-# eventually), but as a strong, reviewable regression guard for THIS
-# specific commit: if this test starts failing because these files
-# changed, that is real, actionable information (either this closure
-# accidentally touched them, or main moved on and this pin needs a
-# deliberate, disclosed refresh), never a reason to silently update the
-# pin without investigating which case it is.
 _RUNNER_SCRIPT = _REPO_ROOT / "tests" / "vivarium" / "l2_2_design_a_runner.py"
 _RUNNER_HELPERS_MODULE = _REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_runner_helpers.py"
 _PUBLISHED_MAIN_BASE_SHA = "543c737ebf51a0f190fa434b170360ca5ecd5a3d"
+# `l2_2_design_a_runner.py` is completely untouched by R11 (only the
+# helpers module gets the two-line redirects).
 _EXPECTED_RUNNER_SCRIPT_SHA256 = "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee"
-_EXPECTED_RUNNER_HELPERS_SHA256 = "e26d8dd573ae7d9670778e6c78c61d1bd56cd2273ae960ae66b25aeb34b8138a"
 
 
 def _sha256_file(path: Path) -> str:
@@ -125,6 +101,13 @@ def _sha256_file(path: Path) -> str:
     return digest.hexdigest()
 
 
+def _git_show(ref: str, rel_path: str) -> str:
+    """`git show <ref>:<rel_path>` -- delegates to `migrate_helpers_
+    provenance.git_show_text`, which resolves the correct `--git-dir` for
+    a linked worktree (a plain `git -C <worktree> show` can fail there)."""
+    return mhp.git_show_text(ref, rel_path, repo_root=_REPO_ROOT)
+
+
 def _catalog_m_ticks(process_name: str) -> int:
     document = yaml.safe_load(_CATALOG_PATH.read_text(encoding="utf-8"))
     for entry in document.get("processes") or ():
@@ -134,127 +117,15 @@ def _catalog_m_ticks(process_name: str) -> int:
 
 
 def _canonical_l21_path() -> Path:
-    return (
-        _REPO_ROOT
-        / "data"
-        / "m1_sources"
-        / "karr_native"
-        / "per_process_traces_v2"
-        / f"{_PROCESS_NAME}_100ticks.mat"
-    )
+    return _KARR_NATIVE_ROOT / "per_process_traces_v2" / f"{_PROCESS_NAME}_100ticks.mat"
 
 
-def _archived_seed0_path() -> Path:
-    return (
-        _REPO_ROOT
-        / "data"
-        / "m1_sources"
-        / "karr_native"
-        / "per_process_traces_v2_l22_repinit_seed0_archived"
-        / "ReplicationInitiation_200ticks_genuine.mat"
-    )
+def _genuine_seed_path(seed: int) -> Path:
+    return _KARR_NATIVE_ROOT / f"per_process_traces_v2_s{int(seed):03d}" / f"{_PROCESS_NAME}_200ticks.mat"
 
 
-def _generation_time_seed_paths() -> list[Path]:
-    """The 50 paths actually used to GENERATE the tracked L2.2 evidence:
-    the archived seed-0 file (see module docstring point 3b) plus the 49
-    live-discoverable suffixed seeds 1-49. This is NOT the same as calling
-    `_v2_seed_mat_path` for seed 0 in the worktree's current resting state
-    (canonical restored, seed-0 archived) -- see
-    `test_resting_state_seed0_no_longer_resolves_to_archived_l22_data`."""
-    return [_archived_seed0_path()] + [
-        runner_helpers._v2_seed_mat_path(_PROCESS_NAME, seed) for seed in range(1, _N_SEEDS)
-    ]
-
-
-def test_catalog_m_ticks_is_200_for_replication_initiation() -> None:
-    assert _catalog_m_ticks(_PROCESS_NAME) == 200
-
-
-def test_shared_runner_helper_files_are_byte_identical_to_published_main() -> None:
-    """This closure's entire safety argument depends on this being true.
-    Fails loudly (not silently) if `_l2_2_design_a_runner_helpers.py` or
-    `l2_2_design_a_runner.py` differ from what published main `543c737`
-    had -- i.e. if this integration accidentally touched either file."""
-    assert _RUNNER_SCRIPT.is_file()
-    assert _RUNNER_HELPERS_MODULE.is_file()
-    runner_hash = _sha256_file(_RUNNER_SCRIPT)
-    helpers_hash = _sha256_file(_RUNNER_HELPERS_MODULE)
-    assert runner_hash == _EXPECTED_RUNNER_SCRIPT_SHA256, (
-        f"tests/vivarium/l2_2_design_a_runner.py sha256 changed from the published-main "
-        f"({_PUBLISHED_MAIN_BASE_SHA}) baseline ({_EXPECTED_RUNNER_SCRIPT_SHA256}) to "
-        f"{runner_hash}. This closure MUST NOT edit this shared, universally-hashed file; "
-        "if it changed for a legitimate unrelated reason, refresh this pin deliberately "
-        "and re-verify the full 18-row board, never just silently update it here."
-    )
-    assert helpers_hash == _EXPECTED_RUNNER_HELPERS_SHA256, (
-        f"tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed from the "
-        f"published-main ({_PUBLISHED_MAIN_BASE_SHA}) baseline "
-        f"({_EXPECTED_RUNNER_HELPERS_SHA256}) to {helpers_hash}. This closure MUST NOT "
-        "edit this shared, universally-hashed file; if it changed for a legitimate "
-        "unrelated reason, refresh this pin deliberately and re-verify the full "
-        "18-row board, never just silently update it here."
-    )
-
-
-def test_seeds_1_to_49_never_resolve_to_the_canonical_unsuffixed_l21_path() -> None:
-    """Regression guard for the exact incident this closure fixes: seeds
-    1-49 must all resolve to SUFFIXED `_s0NN/` directories, never the
-    unsuffixed canonical path L2.1's 100-tick trace also lives at. (Seed 0
-    is handled separately -- see the two tests below -- because the
-    unmodified resolver's seed-0 special-casing structurally cannot
-    discover BOTH the canonical L2.1 trace and a same-named 200-tick L2.2
-    trace at once; see module docstring point 3.)"""
-    canonical = _canonical_l21_path()
-    for seed in range(1, _N_SEEDS):
-        path = runner_helpers._v2_seed_mat_path(_PROCESS_NAME, seed)
-        assert path != canonical
-        assert path.parent.name == f"per_process_traces_v2_s{seed:03d}", (
-            f"seed {seed} unexpectedly resolved outside its own suffixed directory: {path}"
-        )
-
-
-def test_resting_state_seed0_resolves_to_canonical_l21_trace_not_archived_data() -> None:
-    """In this worktree's RESTING state (canonical L2.1 trace present,
-    genuine L2.2 seed-0 data archived aside -- see module docstring point
-    3b), the unmodified resolver's seed-0 special case correctly returns
-    the CANONICAL L2.1 trace, never a stale/silent read of the archived
-    L2.2 file. This is the direct, load-bearing proof that L2.1 and this
-    closure's L2.2 evidence do not collide in the committed resting
-    state."""
-    canonical = _canonical_l21_path()
-    if not canonical.exists():
-        pytest.skip("Canonical L2.1 trace not present on this machine/checkout.")
-    resolved = runner_helpers._v2_seed_mat_path(_PROCESS_NAME, 0)
-    assert resolved == canonical
-
-
-def test_regenerating_l22_evidence_requires_temporarily_moving_canonical_aside() -> None:
-    """Documents and mechanically proves the operational constraint this
-    closure's design accepts: as long as the canonical L2.1 trace sits at
-    the unsuffixed path, a full range(0..49) sweep re-run for RepInit
-    reads a 100-tick, 4-channel trace for seed 0 and genuine 200-tick,
-    6-channel traces for seeds 1-49, and MUST fail closed (never silently
-    succeed with mixed schemas/depths) via `_load_seeded_mat_channels`'s
-    schema-drift (channel-set mismatch) or tick-count-drift check -- in
-    practice the schema check fires first, since it runs before any
-    channel data is loaded. To regenerate this evidence, the canonical
-    trace must be moved aside first (see
-    STATUS_l22_repinit_m_aware_current.md), exactly as this closure's own
-    generation run did."""
-    canonical = _canonical_l21_path()
-    if not canonical.exists():
-        pytest.skip("Canonical L2.1 trace not present on this machine/checkout.")
-    _skip_if_raw_data_absent_for_seeds_1_to_49()
-    seed_paths = [runner_helpers._v2_seed_mat_path(_PROCESS_NAME, seed) for seed in range(_N_SEEDS)]
-    assert seed_paths[0] == canonical
-    with pytest.raises(ValueError, match="Schema drift|Tick-count drift"):
-        runner_helpers._load_seeded_mat_channels(seed_paths, process_name=_PROCESS_NAME)
-
-
-def _skip_if_raw_data_absent_for_seeds_1_to_49() -> None:
-    paths = [runner_helpers._v2_seed_mat_path(_PROCESS_NAME, seed) for seed in range(1, _N_SEEDS)]
-    if not all(p.exists() for p in paths):
+def _skip_if_raw_data_absent() -> None:
+    if not all(_genuine_seed_path(seed).exists() for seed in range(_N_SEEDS)):
         pytest.skip(
             "Genuine gitignored RepInit raw seed traces are not present on this "
             "machine/checkout; this is a local-evidence verification test, not a "
@@ -262,51 +133,173 @@ def _skip_if_raw_data_absent_for_seeds_1_to_49() -> None:
         )
 
 
+# --- Catalog + shared-file isolation ----------------------------------------
+
+
+def test_catalog_m_ticks_is_200_for_replication_initiation() -> None:
+    assert _catalog_m_ticks(_PROCESS_NAME) == 200
+
+
+def test_runner_script_is_byte_identical_to_published_main() -> None:
+    """`l2_2_design_a_runner.py` (unlike the helpers module) is completely
+    untouched by R11 -- no redirect of any kind lives there."""
+    assert _RUNNER_SCRIPT.is_file()
+    actual = _sha256_file(_RUNNER_SCRIPT)
+    assert actual == _EXPECTED_RUNNER_SCRIPT_SHA256, (
+        f"tests/vivarium/l2_2_design_a_runner.py sha256 changed from the published-main "
+        f"({_PUBLISHED_MAIN_BASE_SHA}) baseline to {actual}. R11 never touches this file."
+    )
+
+
+def test_redacted_helpers_hash_unchanged_vs_published_main() -> None:
+    """The mechanical precondition R11's provenance migration
+    (`scripts/l22_evidence/migrate_r11_repinit_provenance.py`) depends on:
+    `schema.runner_helpers_generic_hash()` -- which DELETES the R11
+    ReplicationInitiation redirect scaffolding before hashing -- must be
+    IDENTICAL whether evaluated against published main `543c737`'s blob or
+    the current tree. If this ever fails, R11's redaction is broken and
+    every OTHER process's migrated `"helpers"` provenance is suspect."""
+    pre_ref_text = _git_show(_PUBLISHED_MAIN_BASE_SHA, "tests/vivarium/_l2_2_design_a_runner_helpers.py")
+    pre_ref_hash = schema.runner_helpers_generic_hash(source=pre_ref_text)
+    current_hash = schema.runner_helpers_generic_hash()
+    assert pre_ref_hash == current_hash, (
+        f"Redacted 'helpers' hash changed between published main {_PUBLISHED_MAIN_BASE_SHA!r} "
+        f"({str(pre_ref_hash)[:12]!r}..) and the current tree ({str(current_hash)[:12]!r}..) -- "
+        "either R11's redaction is broken, or real shared/generic code changed."
+    )
+
+
+def test_shared_files_r11_delta_is_exactly_the_documented_redirect() -> None:
+    """Stronger than the hash-equality check above: line-diffs
+    `_l2_2_design_a_runner_helpers.py` against published main `543c737`
+    and asserts every ADDED line is one of the four expected R11 additions
+    (the sibling-module import statement, and the two-line redirect guard
+    each in `_v2_seed_mat_path`/`load_karr_oracle`), and that NO line was
+    REMOVED or MODIFIED anywhere else in the file."""
+    import difflib
+
+    pre_ref_text = _git_show(_PUBLISHED_MAIN_BASE_SHA, "tests/vivarium/_l2_2_design_a_runner_helpers.py")
+    current_text = _RUNNER_HELPERS_MODULE.read_text(encoding="utf-8")
+    pre_ref_lines = pre_ref_text.splitlines()
+    current_lines = current_text.splitlines()
+
+    matcher = difflib.SequenceMatcher(a=pre_ref_lines, b=current_lines, autojunk=False)
+    removed: list[str] = []
+    added: list[str] = []
+    for tag, i1, i2, j1, j2 in matcher.get_opcodes():
+        if tag == "equal":
+            continue
+        removed.extend(pre_ref_lines[i1:i2])
+        added.extend(current_lines[j1:j2])
+
+    assert removed == [], f"R11 must never remove/modify a pre-existing line; found removed/changed: {removed!r}"
+
+    expected_added = {
+        '    if process_name == "ReplicationInitiation":',
+        "        return _repinit_v2_seed_mat_path(int(seed))",
+        '    if process == "ReplicationInitiation":',
+        "        return _load_replication_initiation_v2_ensemble()",
+        "from _l2_2_repinit_runner_helpers import (  # noqa: E402",
+        "    load_replication_initiation_v2_ensemble as _load_replication_initiation_v2_ensemble,",
+        "    repinit_v2_seed_mat_path as _repinit_v2_seed_mat_path,",
+        ")",
+    }
+    unexpected = [line for line in added if line not in expected_added]
+    assert unexpected == [], f"R11 added unexpected line(s) beyond the documented redirect: {unexpected!r}"
+    assert set(added) == expected_added, f"R11's added lines do not match every expected redirect line: got {set(added)!r}"
+
+
+def test_v2_canonical_and_suffixed_seed0_helpers_never_invoked_for_repinit() -> None:
+    """`_v2_seed_mat_path` must redirect to the sibling module BEFORE
+    calling `_v2_canonical_seed0_mat_path`/`_v2_suffixed_seed_mat_path` for
+    ReplicationInitiation -- proven here by making both raise
+    unconditionally and confirming resolution still succeeds for every
+    seed 0-49."""
+
+    def _boom(*args: object, **kwargs: object) -> None:
+        raise AssertionError("must never be called for ReplicationInitiation")
+
+    original_canonical = runner_helpers._v2_canonical_seed0_mat_path
+    original_suffixed = runner_helpers._v2_suffixed_seed_mat_path
+    runner_helpers._v2_canonical_seed0_mat_path = _boom
+    runner_helpers._v2_suffixed_seed_mat_path = _boom
+    try:
+        for seed in range(_N_SEEDS):
+            path = runner_helpers._v2_seed_mat_path(_PROCESS_NAME, seed)
+            assert path.name == "ReplicationInitiation_200ticks.mat"
+    finally:
+        runner_helpers._v2_canonical_seed0_mat_path = original_canonical
+        runner_helpers._v2_suffixed_seed_mat_path = original_suffixed
+
+
+# --- Genuine trace layout / identity ----------------------------------------
+
+
+def test_all_50_seeds_resolve_to_genuine_200tick_named_paths() -> None:
+    """No seed-0 special case, no collision: every seed 0-49 resolves to
+    its OWN seed-padded directory with the honest `_200ticks.mat` name."""
+    _skip_if_raw_data_absent()
+    canonical = _canonical_l21_path()
+    for seed in range(_N_SEEDS):
+        path = runner_helpers._v2_seed_mat_path(_PROCESS_NAME, seed)
+        assert path != canonical
+        assert path.parent.name == f"per_process_traces_v2_s{seed:03d}"
+        assert path.name == "ReplicationInitiation_200ticks.mat"
+        assert path == _genuine_seed_path(seed)
+
+
 def test_all_50_repinit_seed_traces_have_genuine_200_tick_identity() -> None:
-    """Fail-closed three-way check per seed file actually used to GENERATE
-    the tracked evidence (archived seed 0 + live seeds 1-49): catalog
-    M_ticks == metadata/n_ticks == actual per-tick channel array length.
-    The filename token (`_100ticks.mat`/`_200ticks_genuine.mat`, legacy/
-    archival naming -- see module docstring) is deliberately NOT part of
-    this check; it is not authoritative and this test exists precisely so
-    a human/reviewer never has to rely on it."""
-    _skip_if_raw_data_absent_for_seeds_1_to_49()
-    if not _archived_seed0_path().exists():
-        pytest.skip("Archived genuine seed-0 L2.2 trace not present on this machine/checkout.")
+    """Independent (does not call `repinit_v2_seed_mat_path`'s own
+    validation) four-way re-derivation per seed file: filename token ==
+    metadata/n_ticks == live catalog M_ticks == every non-chromosome
+    channel's own tick dimension."""
+    _skip_if_raw_data_absent()
     catalog_m = _catalog_m_ticks(_PROCESS_NAME)
     assert catalog_m == 200
-    for seed, path in enumerate(_generation_time_seed_paths()):
+    for seed in range(_N_SEEDS):
+        path = _genuine_seed_path(seed)
+        assert path.name == f"{_PROCESS_NAME}_{catalog_m}ticks.mat"
         with h5py.File(path, "r") as handle:
-            assert "metadata" in handle and "n_ticks" in handle["metadata"], (
-                f"seed {seed} trace {path} has no metadata/n_ticks field."
-            )
             metadata_ticks = int(np.asarray(handle["metadata/n_ticks"][()]).reshape(-1)[0])
-            assert metadata_ticks == catalog_m, (
-                f"seed {seed} trace {path}: metadata/n_ticks={metadata_ticks} != "
-                f"catalog M_ticks={catalog_m}."
-            )
+            assert metadata_ticks == catalog_m, f"seed {seed}: metadata/n_ticks={metadata_ticks} != {catalog_m}"
             for section in ("states_before", "states_after"):
                 group = handle[section]
-                assert "substrates" in group, f"seed {seed} {path} missing {section}/substrates"
-                ds = group["substrates"]
-                actual_ticks = ds.shape[1] if ds.shape[0] == 1 else ds.shape[0]
-                assert actual_ticks == catalog_m, (
-                    f"seed {seed} trace {path} {section}/substrates has {actual_ticks} "
-                    f"tick entries, catalog requires {catalog_m}."
-                )
+                for channel_name in group:
+                    if str(channel_name) == "chromosome":
+                        continue
+                    ds = group[channel_name]
+                    actual_ticks = ds.shape[1] if ds.shape[0] == 1 else ds.shape[0]
+                    assert actual_ticks == catalog_m, (
+                        f"seed {seed} {section}/{channel_name} has {actual_ticks} ticks, expected {catalog_m}"
+                    )
+
+
+def test_manifest_hashes_match_current_seed_files() -> None:
+    """`REPINIT_SEED_MANIFEST.json`'s recorded sha256/rng_seed per seed
+    must match the CURRENT, renamed on-disk files exactly."""
+    import json
+
+    _skip_if_raw_data_absent()
+    manifest_path = _REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "REPINIT_SEED_MANIFEST.json"
+    manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert len(manifest) == _N_SEEDS
+    for entry in manifest:
+        seed = entry["seed"]
+        recorded_path = _KARR_NATIVE_ROOT / entry["path"]
+        assert recorded_path == _genuine_seed_path(seed), f"seed {seed}: manifest path {recorded_path} != {_genuine_seed_path(seed)}"
+        actual_sha = _sha256_file(recorded_path)
+        assert actual_sha.upper() == entry["sha256"].upper(), f"seed {seed}: manifest sha256 mismatch"
+        with h5py.File(recorded_path, "r") as handle:
+            actual_rng_seed = int(np.asarray(handle["metadata/rng_seed"][()]).reshape(-1)[0])
+        assert actual_rng_seed == entry["rng_seed"], f"seed {seed}: manifest rng_seed {entry['rng_seed']} != actual {actual_rng_seed}"
 
 
 def test_canonical_l21_trace_preserved_and_untouched() -> None:
-    """The canonical L2.1 100-tick trace must exist, be genuinely 100
-    ticks, and match the accepted sha256 -- untouched by this closure."""
+    """The canonical L2.1 100-tick trace exists, is genuinely 100 ticks,
+    and matches the accepted sha256 -- permanently, with no swap/archival
+    procedure of any kind involved in R11."""
     canonical = _canonical_l21_path()
-    if not canonical.exists():
-        pytest.skip(
-            "Canonical L2.1 trace not present on this machine/checkout at this "
-            "moment (this closure intentionally keeps it ABSENT while regenerating "
-            "L2.2 evidence, then restores it -- see module docstring point 3 and "
-            "STATUS_l22_repinit_m_aware_current.md). Re-run after restoration."
-        )
+    assert canonical.exists(), f"Canonical L2.1 trace missing at {canonical}."
     expected_sha256 = "0c61c816e3903e771550e674db36fedaa76a546687891a99e46f163703550c0f"
     actual_sha256 = _sha256_file(canonical)
     assert actual_sha256 == expected_sha256, (
@@ -316,3 +309,73 @@ def test_canonical_l21_trace_preserved_and_untouched() -> None:
     with h5py.File(canonical, "r") as handle:
         n_ticks = int(np.asarray(handle["metadata/n_ticks"][()]).reshape(-1)[0])
         assert n_ticks == 100
+
+
+# --- Anti-cheat: reproduce the exact prior-rejected mislabeling shapes ------
+
+
+def test_rejects_legacy_100ticks_filename_even_when_genuine_200tick_data_exists(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Reproduces the PRIOR REJECTED candidate's exact shape: a genuine
+    200-tick trace sitting at a `_100ticks.mat`-named path. Must be
+    rejected -- the resolver looks ONLY for `_200ticks.mat` and never
+    falls back to a differently-named file, no matter what its own
+    metadata claims."""
+    _skip_if_raw_data_absent()
+    fake_root = tmp_path / "karr_native"
+    seed_dir = fake_root / "per_process_traces_v2_s000"
+    seed_dir.mkdir(parents=True)
+    # Genuine 200-tick bytes, but at the legacy, now-forbidden filename.
+    shutil.copy(_genuine_seed_path(0), seed_dir / f"{_PROCESS_NAME}_100ticks.mat")
+
+    monkeypatch.setattr(repinit_helpers, "_KARR_NATIVE_ROOT", fake_root)
+    with pytest.raises(repinit_helpers.RepInitTraceIdentityError, match="Missing genuine"):
+        repinit_helpers.repinit_v2_seed_mat_path(0)
+
+
+def test_rejects_200ticks_filename_whose_metadata_disagrees(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Inverse mismatch: a correctly-NAMED `_200ticks.mat` file whose OWN
+    `metadata/n_ticks` has been tampered to 100. Filename token and catalog
+    M_ticks agree (both 200); the file's internal metadata is the one that
+    lies. Must be rejected."""
+    _skip_if_raw_data_absent()
+    fake_root = tmp_path / "karr_native"
+    seed_dir = fake_root / "per_process_traces_v2_s000"
+    seed_dir.mkdir(parents=True)
+    target = seed_dir / f"{_PROCESS_NAME}_200ticks.mat"
+    shutil.copy(_genuine_seed_path(0), target)
+    with h5py.File(target, "r+") as handle:
+        handle["metadata/n_ticks"][...] = 100.0
+
+    monkeypatch.setattr(repinit_helpers, "_KARR_NATIVE_ROOT", fake_root)
+    with pytest.raises(repinit_helpers.RepInitTraceIdentityError, match="metadata/n_ticks"):
+        repinit_helpers.repinit_v2_seed_mat_path(0)
+
+
+def test_rejects_channel_tick_dimension_mismatch(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """Filename token and metadata both correctly say 200, but one
+    non-chromosome channel's own tick dimension has been truncated to 150
+    (e.g. a partial/corrupted extraction). Must be rejected."""
+    _skip_if_raw_data_absent()
+    fake_root = tmp_path / "karr_native"
+    seed_dir = fake_root / "per_process_traces_v2_s000"
+    seed_dir.mkdir(parents=True)
+    target = seed_dir / f"{_PROCESS_NAME}_200ticks.mat"
+    shutil.copy(_genuine_seed_path(0), target)
+    with h5py.File(target, "r+") as handle:
+        truncated = handle["states_before/substrates"][:, :150]
+        del handle["states_before/substrates"]
+        handle.create_dataset("states_before/substrates", data=truncated)
+
+    monkeypatch.setattr(repinit_helpers, "_KARR_NATIVE_ROOT", fake_root)
+    with pytest.raises(repinit_helpers.RepInitTraceIdentityError, match="tick dimension"):
+        repinit_helpers.repinit_v2_seed_mat_path(0)
+
+
+def test_rejects_missing_seed_file_outright(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """No file at all for a requested seed must fail closed, never
+    silently substitute another seed's data."""
+    fake_root = tmp_path / "karr_native"
+    (fake_root / "per_process_traces_v2_s000").mkdir(parents=True)
+    monkeypatch.setattr(repinit_helpers, "_KARR_NATIVE_ROOT", fake_root)
+    with pytest.raises(repinit_helpers.RepInitTraceIdentityError, match="Missing genuine"):
+        repinit_helpers.repinit_v2_seed_mat_path(0)

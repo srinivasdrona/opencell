@@ -87,20 +87,31 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md Section 13.14, and for
     this move Section 13.15):
 
-    fix(l2.2): RepInit M-aware trace identity, current-main-safe closure
-    (this commit). ReplicationInitiation's genuine N=50/M=200 gate was
-    closed WITHOUT editing `tests/vivarium/_l2_2_design_a_runner_helpers.py`
-    or `l2_2_design_a_runner.py` at all (verified byte-identical to
-    published main by
-    `tests/vivarium/test_l2_2_repinit_trace_identity.py::
-    test_shared_runner_helper_files_are_byte_identical_to_published_main`):
-    RepInit's 50 genuine seed traces were placed at the standard, UNMODIFIED
-    discovery paths (seeds 1-49 at their natural suffixed directories; seed
-    0's genuine trace generated at its natural suffixed path with the
-    canonical L2.1 trace temporarily moved aside, then the canonical trace
-    restored and the genuine seed-0 trace archived alongside -- see that
-    same test file's module docstring for the full mechanism). Zero other
-    process's sentinel is affected by this closure.
+    fix(l2.2): RepInit M-aware trace identity, current-main-safe closure,
+    round 2 (R11). An independent review rejected an earlier candidate for
+    placing genuine 200-tick ReplicationInitiation data at the legacy,
+    hardcoded `_100ticks.mat` path -- the filename tick token is part of
+    this project's trace-identity contract, not a legacy label, and that
+    candidate needed a temporary seed-0/canonical-trace swap just to
+    generate evidence at all. THIS closure instead stores all 50 genuine
+    seeds honestly named `_200ticks.mat` (no seed-0 special case, no
+    collision, no swap -- see
+    `tests/vivarium/test_l2_2_repinit_trace_identity.py`), and extracts
+    ReplicationInitiation's own trace-path resolution/identity validation
+    into a new sibling module, `_l2_2_repinit_runner_helpers.py`,
+    registered as a process-specific dependency (mirroring R7's
+    DNASupercoiling tick-runner extraction exactly). This requires a
+    genuinely minimal, two-line redirect in BOTH `_v2_seed_mat_path()` and
+    `load_karr_oracle()` inside the shared `_l2_2_design_a_runner_helpers.
+    py` -- proven (by that same test file) to be the ONLY diff from
+    published main `543c737`, line by line, and proven (by `schema.py`'s
+    R11 redaction) to leave the shared `"helpers"` provenance hash
+    completely unchanged for every OTHER process. The other 19 currently-
+    accepted rows' `input_manifest.json` whole-file hash of that shared
+    file was mechanically migrated forward (never re-run) by
+    `scripts/l22_evidence/migrate_r11_repinit_provenance.py`, which
+    independently re-verifies the redaction-equality proof itself before
+    writing anything.
 
     The tally is now PASS: 20, FAIL: 0, MISSING_EVIDENCE: 2, n_in_scope: 22:
       - PASS (20): DNADamage, DNARepair, DNASupercoiling,
@@ -116,12 +127,13 @@ def test_committed_evidence_index_is_honestly_non_green_today():
 
     This is a deliberate, evidence-driven mechanical re-derivation, not a
     regression or a fabrication: `gen.audit()` reports `integrity: OK` (see
-    the test above); `git diff` on the committed `evidence_index.json` and
-    `evidence_bundle/` touches ONLY ReplicationInitiation's own row/files
-    plus the mechanically-required top-level `generated_at`/`content_hash`
-    fields -- every other row is byte-for-byte unchanged, confirming this
-    closure did not need to migrate, re-derive, or rerun any other
-    process's evidence. If this test ever needs to change again, that
+    the test above); every other row's `result.json`/`thresholds.json`/
+    `null_calibration.json`/`SUMMARY.json`/`analytical_check.json`/
+    `provenance.json`/`sweep_provenance.json["source_hashes"]` is
+    byte-for-byte unchanged from `543c737` -- only `input_manifest.json`'s
+    single whole-file-hash entry (and the `sweep_provenance.json`
+    sidecar_hash binding it) was mechanically re-stamped, per-row, by the
+    migration tool above. If this test ever needs to change again, that
     change must be driven by real evidence (a sweep rerun populating/
     changing rows under the evidence tree, or a further evaluator
     correctness fix with cited raw-metric evidence), not by editing this

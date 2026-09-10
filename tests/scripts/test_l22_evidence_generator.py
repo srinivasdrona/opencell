@@ -200,6 +200,23 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     for the full, honest caveat; it does not affect this mechanical,
     aggregate-distributional PASS.
 
+    A SIXTH change (R11, this commit): ReplicationInitiation moves
+    FAIL -> PASS. An independent integration review rejected an earlier
+    candidate that placed genuine 200-tick data at the legacy hardcoded
+    `_100ticks.mat` path; this closure instead stores all 50 genuine seeds
+    honestly named `_200ticks.mat` (no seed-0 special case, no collision,
+    no swap) and extracts ReplicationInitiation's own trace-path
+    resolution/identity validation into a process-specific sibling module
+    (`_l2_2_repinit_runner_helpers.py`, mirroring R7's DNASupercoiling
+    tick-runner extraction), requiring only a two-line redirect in each of
+    `_v2_seed_mat_path`/`load_karr_oracle` -- proven to leave the shared
+    `"helpers"` provenance hash unchanged for every other process (see
+    `tests/vivarium/test_l2_2_repinit_trace_identity.py`), with the other
+    19 rows' `input_manifest.json` whole-file hash mechanically migrated
+    forward (never rerun) by `scripts/l22_evidence/
+    migrate_r11_repinit_provenance.py`. A genuine, fresh N=50/M=200 sweep
+    was run to produce this row's own evidence.
+
     If this test ever needs to change again, that change must be driven by
     real evidence (a sweep rerun populating/changing rows under the evidence
     tree, a broader H12 artifact regeneration, or a further cited evaluator
@@ -212,8 +229,7 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 19,
-        schema.STATUS_FAIL: 1,
+        schema.STATUS_PASS: 20,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
     fail_rows = {
@@ -221,16 +237,9 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         for row in payload["rows"]
         if row["mechanical_verdict"] == schema.STATUS_FAIL
     }
-    assert set(fail_rows) == {
-        "ReplicationInitiation",
-    }, (
-        "R9: DNASupercoiling's accepted N=200 two-sided sparse-gate promotion moved it FAIL -> PASS; "
-        "ReplicationInitiation is separately, honestly demoted PASS -> FAIL "
-        "(STALE_SWEEP_PROVENANCE, see 9f983fd on main) pending its M-aware trace-path redesign; "
-        f"unexpected FAIL row(s): {set(fail_rows) - {'ReplicationInitiation'}!r}"
-    )
-    assert any(
-        "STALE_SWEEP_PROVENANCE" in reason for reason in fail_rows["ReplicationInitiation"]
+    assert set(fail_rows) == set(), (
+        "R11: ReplicationInitiation's genuine N=50/M=200 sweep closed its row to PASS; "
+        f"unexpected FAIL row(s): {set(fail_rows)!r}"
     )
     pass_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_PASS}
     for process in ("ProteinFolding", "ProteinProcessingI", "ProteinProcessingII", "tRNAAminoacylation"):
@@ -242,6 +251,7 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     assert "MacromolecularComplexation" in pass_rows, (
         "MacromolecularComplexation expected active-window-cohort mechanical PASS"
     )
+    assert "ReplicationInitiation" in pass_rows, "ReplicationInitiation expected R11 genuine N=50/M=200 PASS"
 
 
 def test_dnas_canonical_bundle_uses_accepted_two_sided_sparse_gate_not_standard_per_component():
@@ -340,8 +350,7 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 19,
-        schema.STATUS_FAIL: 1,
+        schema.STATUS_PASS: 20,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
