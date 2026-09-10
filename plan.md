@@ -94,7 +94,13 @@ earlier blocks below:**
     board is **19 PASS / 1 FAIL / 2 MISSING**, integrity OK (RepInit sole
     FAIL). Verified: DNAS+store consumers 183 tests, L1b 28/28+19,
     oracle 38, L2.4 PASS, evidence 445+74+53, provenance 44, Ruff clean.
-    Await independent Opus integration review against current 11/11 main.
+    Opus review cleared the biology/provenance integration but **REJECTED
+    one canonical-artifact regression**: the final generic sweep overwrote
+    DNAS `latest/result.json` from `dnas_two_sided_sparse_gate` back to
+    `per_component_scaled`, dropping the accepted active-seed and clustered-
+    seed axes from canonical evidence. Re-run the N=200 promoter against the
+    accepted checkpoint (no simulation rerun), regenerate 19/1/2, and add a
+    regression pinning aggregation + axes 64/65, 58/58, 6/7 before re-review.
   - TxReg final integration branch `integrate/l21-txreg-final` is clean at
     `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
     registry, one unioned dec-006, and reported board 18/2/2. Final review
