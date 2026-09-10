@@ -5,55 +5,37 @@
   "canonical_seed_count": 200,
   "channels": {
     "chromosome": {
-      "aggregation": "dnas_two_sided_sparse_gate",
+      "aggregation": "per_component_scaled",
+      "is_event_channel": false,
       "is_primary": true,
-      "source_checkpoint_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
-      "source_eval_script": "scripts/l22_dnas_sept2_two_sided_n200_eval.py",
-      "sparse_component": {
-        "alpha_family": 0.05,
-        "axes": [
-          {
-            "axis": "pooled_nonzero_ticks",
-            "direction": "BALANCED",
-            "holm_adjusted_pvalue": 1.0,
-            "karr_count": 65,
-            "oc_count": 64,
-            "pooled_total": 129,
-            "raw_pvalue": 1.0,
-            "rejected": false
-          },
-          {
-            "axis": "active_seeds",
-            "direction": "BALANCED",
-            "holm_adjusted_pvalue": 1.0,
-            "karr_count": 58,
-            "oc_count": 58,
-            "pooled_total": 116,
-            "raw_pvalue": 1.0,
-            "rejected": false
-          },
-          {
-            "axis": "clustered_seeds",
-            "direction": "BALANCED",
-            "holm_adjusted_pvalue": 1.0,
-            "karr_count": 7,
-            "oc_count": 6,
-            "pooled_total": 13,
-            "raw_pvalue": 1.0,
-            "rejected": false
-          }
-        ],
-        "component_name": "linkingNumbers.delta_nnz",
-        "rule": "two_sided_sparse_gate"
-      },
-      "value_component": {
-        "component_name": "linkingNumbers.delta_value_sum",
-        "n_nonzero_karr": 19842,
-        "n_nonzero_oc": 19840,
-        "raw_w1": 0.007299999999999992,
-        "scale": 95.90000000000146,
+      "per_component": {
+        "component_n_nonzero_karr": {
+          "linkingNumbers.delta_nnz": 65,
+          "linkingNumbers.delta_value_sum": 19842
+        },
+        "component_n_nonzero_oc": {
+          "linkingNumbers.delta_nnz": 64,
+          "linkingNumbers.delta_value_sum": 19840
+        },
+        "component_raw_w1": {
+          "linkingNumbers.delta_nnz": 0.00010000000000000026,
+          "linkingNumbers.delta_value_sum": 0.007299999999999992
+        },
+        "component_scales": {
+          "linkingNumbers.delta_nnz": 2.0,
+          "linkingNumbers.delta_value_sum": 95.90000000000146
+        },
+        "component_verdicts": {
+          "linkingNumbers.delta_nnz": "PASS",
+          "linkingNumbers.delta_value_sum": "PASS"
+        },
+        "joint_verdict": "PASS",
+        "linkingNumbers.delta_nnz": 5.000000000000013e-05,
+        "linkingNumbers.delta_value_sum": 7.612095933263693e-05,
         "scaled_distance_threshold": 1.0
-      }
+      },
+      "verdict": "PASS",
+      "w1_oc_vs_karr": 0.0
     },
     "substrates": {
       "absolute_floor": 1.0,
@@ -308,7 +290,7 @@
     199
   ],
   "ticks": 100,
-  "timestamp": "2026-09-09T02:19:53.054099+00:00",
+  "timestamp": "2026-09-10T02:53:55.886788+00:00",
   "verdict": "PASS",
   "warnings": []
 }

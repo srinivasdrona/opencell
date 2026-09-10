@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-07-31T18:43:59.893097+00:00",
+  "generated_at": "2026-09-10T03:07:45.571189+00:00",
   "jobs": [
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/DNARepair.log",
@@ -14,12 +14,12 @@
       "stored_warnings": []
     },
     {
-      "log_path": "artifacts/l2_2_gates/_sweep_logs/DNASupercoiling.log",
+      "log_path": null,
       "m_ticks": 100,
-      "output_dir": "artifacts/l2_2_gates/DNASupercoiling/latest",
+      "output_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/DNASupercoiling/latest",
       "process": "DNASupercoiling",
       "reason": null,
-      "seeds": 50,
+      "seeds": 200,
       "status": "DONE_VALID_EVIDENCE",
       "stored_bucket": "ALGORITHMIC_SHALLOW",
       "stored_verdict": "PASS",

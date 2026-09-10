@@ -211,7 +211,8 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 20,
+        schema.STATUS_PASS: 19,
+        schema.STATUS_FAIL: 1,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
     fail_rows = {
@@ -219,9 +220,16 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
         for row in payload["rows"]
         if row["mechanical_verdict"] == schema.STATUS_FAIL
     }
-    assert set(fail_rows) == set(), (
+    assert set(fail_rows) == {
+        "ReplicationInitiation",
+    }, (
         "R9: DNASupercoiling's accepted N=200 two-sided sparse-gate promotion moved it FAIL -> PASS; "
-        f"unexpected FAIL row(s): {fail_rows!r}"
+        "ReplicationInitiation is separately, honestly demoted PASS -> FAIL "
+        "(STALE_SWEEP_PROVENANCE, see 9f983fd on main) pending its M-aware trace-path redesign; "
+        f"unexpected FAIL row(s): {set(fail_rows) - {'ReplicationInitiation'}!r}"
+    )
+    assert any(
+        "STALE_SWEEP_PROVENANCE" in reason for reason in fail_rows["ReplicationInitiation"]
     )
     pass_rows = {row["process"] for row in payload["rows"] if row["mechanical_verdict"] == schema.STATUS_PASS}
     for process in ("ProteinFolding", "ProteinProcessingI", "ProteinProcessingII", "tRNAAminoacylation"):
@@ -280,7 +288,8 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     assert result.ok is True
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 20,
+        schema.STATUS_PASS: 19,
+        schema.STATUS_FAIL: 1,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
 

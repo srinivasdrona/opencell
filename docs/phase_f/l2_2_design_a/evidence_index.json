@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "5442fe539b4b3549da1af3c99a45521a7b3617078f2cb7cc1109be79f44f66dd",
-  "content_hash": "e4c9043dba5d483e763788e2d98c48da4cc350f0b2a4f8626da098efae5b0870",
+  "content_hash": "89b6a59c3f96a9c618f5add64387099463702ad2a314de0bcd857b0ccead3f15",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-09T03:19:08.243508+00:00",
+  "generated_at": "2026-09-10T02:56:51.157638+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -111,12 +111,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "879c3a4a0e97605f5c8197db59c95cf5e5bdef39b7afd416434cc6156e0e4478",
+        "SUMMARY.json": "60922d9473716c0a93628795dd9baddfd83f56cd5c514f77a5912432d375c48a",
         "analytical_check.json": "fe7776df0a449ac6226e4a97dddce8cd8b17225d60ad090c4ed22d459aa01733",
-        "null_calibration.json": "490e92c96cd759fe0f1880180d3f07b42f93a14afa3bc672e79b56b1ceb4222b",
-        "provenance.json": "12bc1d98d37ce5b322c95838b46a33d78e3aa9ebe485a6dc46f1eeaa0fd7b1e2",
-        "result.json": "627342cbe01f3e3a29095eae4565e38f161f115239a20009d5ded41d80d67afa",
-        "sweep_provenance.json": "0d7877edc644874f1be42f1e9f1893553a86815f0aa9ae5fa213d19a32e75ce3",
+        "null_calibration.json": "498505d5c3c6dac0b8f0862b3a7618af6284c1f17c8938857432da7e3c3b8493",
+        "provenance.json": "3f19247b0154394b49b4cc23070f83534da3bc1b54b554dddfd7d1fb5d58bce2",
+        "result.json": "4c2a819f65c618514bed9982b4fe30a6307012bff6627a425a09fd60feb79746",
+        "sweep_provenance.json": "f13259fbbf2400f90131e626a3c2e67911589c45e81ac843c6677f75521cb00d",
         "thresholds.json": "0f9ae3912ad5ddaf280fdf246c86ed029e849d0b348e6cf6ac7029a879a354b5"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -144,7 +144,7 @@
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 5,
         "git_dirty": null,
-        "git_sha": "9044af22fa763e92e14e81e2a39ea67deef32676",
+        "git_sha": "51cffc88606bdd4c1bfa2b1826541d91608a33f0",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -696,12 +696,14 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ReplicationInitiation/latest",
-      "green": true,
+      "green": false,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "PASS",
+      "mechanical_verdict": "FAIL",
       "process": "ReplicationInitiation",
       "provenance_git_sha": "unknown",
-      "reasons": [],
+      "reasons": [
+        "STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=0c428c473ded.., current=025a7b02f087..)"
+      ],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 4,
@@ -886,7 +888,8 @@
   ],
   "schema_version": 1,
   "tally": {
+    "FAIL": 1,
     "MISSING_EVIDENCE": 2,
-    "PASS": 20
+    "PASS": 19
   }
 }

@@ -91,14 +91,19 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     provenance redesigns + mechanical equivalence-proof migrations isolating
     its accepted persistent-process-pool fix and hidden-chromosome-state
     extension from every OTHER Design-A process, plus its own accepted N=200
-    two-sided sparse-support gate promotion) the tally is
-    PASS: 20, FAIL: 0, MISSING_EVIDENCE: 2, n_in_scope: 22:
-      - PASS (20): DNADamage, DNARepair, DNASupercoiling,
+    two-sided sparse-support gate promotion -- reconciled here against
+    current main's separately-landed, honest ReplicationInitiation PASS ->
+    FAIL demotion, `9f983fd`, `STALE_SWEEP_PROVENANCE`, pending its own
+    M-aware trace-path redesign) the tally is
+    PASS: 19, FAIL: 1, MISSING_EVIDENCE: 2, n_in_scope: 22:
+      - PASS (19): DNADamage, DNARepair, DNASupercoiling,
         MacromolecularComplexation, Metabolism, ProteinDecay, ProteinFolding,
         ProteinModification, ProteinProcessingI, ProteinProcessingII,
         ProteinTranslocation, RNADecay, RNAModification, RNAProcessing,
-        Replication, ReplicationInitiation, RibosomeAssembly, Transcription,
-        Translation, tRNAAminoacylation.
+        Replication, RibosomeAssembly, Transcription, Translation,
+        tRNAAminoacylation.
+      - FAIL (1): ReplicationInitiation (pre-existing on main, unrelated to
+        this closure).
       - MISSING_EVIDENCE (2): Cytokinesis, FtsZPolymerization (pre-existing,
         unrelated to this closure).
 
@@ -119,7 +124,8 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     result = gen.audit()
     assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 20,
+        schema.STATUS_PASS: 19,
+        schema.STATUS_FAIL: 1,
         schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
