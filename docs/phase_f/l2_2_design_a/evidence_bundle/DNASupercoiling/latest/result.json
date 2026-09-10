@@ -7,7 +7,7 @@
     "chromosome": {
       "aggregation": "dnas_two_sided_sparse_gate",
       "is_primary": true,
-      "source_checkpoint_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "source_checkpoint_sha256": "7e52aecbb570cbbf8819c54d1f11e16c757b2883eaeb6fa592a7e633861a3bd7",
       "source_eval_script": "scripts/l22_dnas_sept2_two_sided_n200_eval.py",
       "sparse_component": {
         "alpha_family": 0.05,

@@ -64,6 +64,11 @@ LIVE_DIR = schema.EVIDENCE_ROOT / PROCESS / schema.DESIGN_A_SUBDIR
 TWO_SIDED_EVAL_PATH = (
     schema.BUNDLE_ROOT / PROCESS / "diagnostic_n200_followup" / "sept2_two_sided_rerun" / "two_sided_gate_evaluation.json"
 )
+# The checkpoint sits alongside the eval file in the same TRACKED bundle
+# directory, never under the live/gitignored `artifacts/l2_2_gates` tree --
+# `LIVE_DIR` only ever holds the standard sweep's output, which has no such
+# checkpoint file at all.
+TWO_SIDED_EVAL_CHECKPOINT_PATH = TWO_SIDED_EVAL_PATH.parent / "raw_captured_tensors_checkpoint.npz"
 BUNDLE_DIR = schema.BUNDLE_ROOT / PROCESS / schema.DESIGN_A_SUBDIR
 
 
@@ -157,6 +162,13 @@ def main(argv: list[str] | None = None) -> int:
     if not TWO_SIDED_EVAL_PATH.is_file():
         print(f"REFUSED: no two-sided evaluation at {TWO_SIDED_EVAL_PATH}.", file=sys.stderr)
         return 1
+    if not TWO_SIDED_EVAL_CHECKPOINT_PATH.is_file():
+        print(
+            f"REFUSED: no source checkpoint at {TWO_SIDED_EVAL_CHECKPOINT_PATH} -- "
+            "cannot record a real source_checkpoint_sha256 without it.",
+            file=sys.stderr,
+        )
+        return 1
 
     result_payload = _load_json(LIVE_DIR / "result.json")
     if result_payload.get("process") != PROCESS:
@@ -166,12 +178,7 @@ def main(argv: list[str] | None = None) -> int:
     two_sided_eval = _load_json(TWO_SIDED_EVAL_PATH)
     import hashlib
 
-    two_sided_eval["_checkpoint_sha256"] = hashlib.sha256(
-        (LIVE_DIR.parent / "diagnostic_n200_followup" / "sept2_two_sided_rerun" / "raw_captured_tensors_checkpoint.npz")
-        .read_bytes()
-        if (LIVE_DIR.parent / "diagnostic_n200_followup" / "sept2_two_sided_rerun" / "raw_captured_tensors_checkpoint.npz").is_file()
-        else b""
-    ).hexdigest()
+    two_sided_eval["_checkpoint_sha256"] = hashlib.sha256(TWO_SIDED_EVAL_CHECKPOINT_PATH.read_bytes()).hexdigest()
 
     chromosome_channel = result_payload["channels"]["chromosome"]
     new_chromosome_channel = build_dnas_two_sided_channel_payload(
