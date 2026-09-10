@@ -95,6 +95,18 @@ earlier blocks below:**
   mechanically from already-accepted raw artifacts, require a genuine
   **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE** board with integrity OK, and
   stop at a clean reviewed candidate without merging or pushing.
+  First candidate `0e4627b` reached 20/0/2 with shared harness bytes
+  unchanged, but is **REJECTED by integration review**: it stores genuine
+  200-tick traces under `_100ticks.mat`, deliberately omits filename-tick
+  validation, and requires a manual seed-0 archive/temporary-swap sequence.
+  That violates the standing identity contract
+  `filename ticks == metadata n_ticks == requested/catalog M == channel
+  tick dimension` and is not a durable/resumable loader design. Correct it
+  on the same branch/agent context with actual
+  `ReplicationInitiation_200ticks.mat` files and a RepInit-scoped runner/
+  resolver path (or a mechanically justified shared-provenance migration);
+  preserve the canonical L2.1 `_100ticks.mat` without temporal swapping and
+  require a fresh Opus review explicitly against this contract.
 - Detached division extraction remains healthy: supervisor PID `29372`,
   MATLAB PIDs `19400`/`27912`; seed 11 completed, was hash-banked, and
   passed the cohort validator. Its trace hashes are Cytokinesis
