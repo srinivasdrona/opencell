@@ -95,6 +95,43 @@ earlier blocks below:**
   mechanically from already-accepted raw artifacts, require a genuine
   **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE** board with integrity OK, and
   stop at a clean reviewed candidate without merging or pushing.
+- ✅ **RepInit provenance-safe closure COMPLETE, awaiting independent Opus
+  review**: `E:\opencell-worktrees\integrate-l22-repinit-m-aware-current`,
+  branch `integrate/l22-repinit-m-aware-current` @ `900f99e` (`dafeab9` +
+  provenance), from published main `543c737`. Not merged/pushed. Achieved
+  with **ZERO edits** to `tests/vivarium/_l2_2_design_a_runner_helpers.py`/
+  `l2_2_design_a_runner.py` (proven byte-identical to published main by a
+  new hash-pinned test, not asserted) -- the decisive empirical finding
+  was that the unmodified generic loader never validates tick depth
+  against the catalog, so placing genuine 200-tick data at the paths the
+  unmodified resolver already looks for reproduces a correct oracle with
+  no code change. Seed-0 vs the L2.1-canonical-trace path collision
+  (`_v2_seed_mat_path`'s hardcoded seed-0 preference) resolved via a
+  documented temporary-swap-then-archive procedure: seeds 1-49 at their
+  natural non-colliding suffixed paths (reused from the prior closure,
+  re-hashed); seed 0 genuinely re-extracted (one additional MATLAB
+  session, respecting the host cap alongside the untouched division job)
+  with the canonical trace temporarily aside, then canonical restored and
+  seed-0 data archived (gitignored, not deleted). New
+  `tests/vivarium/test_l2_2_repinit_trace_identity.py` (7 tests) enforces
+  catalog M == metadata n_ticks == channel dim per seed, independent of
+  the legacy/archival filename tokens. Board: mechanically regenerated,
+  **PASS:20/FAIL:0/MISSING:2, integrity OK**; `git diff` touches only
+  RepInit's own bundle rows + `evidence_index.json`. Updated
+  `test_l2_2_strict_rubric.py`'s pinned tally (19/1/2 -> 20/0/2) with this
+  evidence. Full targeted regression clean except 2 pre-existing failures
+  independently confirmed identical on a clean `main-integrate` checkout
+  (`TranscriptionalRegulation` L2.1 ERROR from a locally-absent raw trace;
+  a DNADamage registry/AST-audit mismatch) -- both unrelated, not touched.
+  Disclosed collateral: reorganizing RepInit's own seed directories
+  temporarily disturbed MacromolecularComplexation/ProteinProcessingII's
+  co-located raw seed data in this worktree; a tracked git exception
+  (`_s001/` Macromol+Translation files) was restored via `git checkout`,
+  and their own gitignored data was restored to correct numbering except
+  one untracked seed-1 copy (permanently lost from this worktree only;
+  their TRACKED, SEALED evidence rows are completely unaffected). Full
+  narrative: `STATUS_l22_repinit_m_aware_current.md` (session-local). Next
+  step: independent Opus review of this candidate before any merge/push.
 - Detached division extraction remains healthy: supervisor PID `29372`,
   MATLAB PIDs `19400`/`27912`; seed 11 completed and seed 12 is running.
   Status/log remain under
