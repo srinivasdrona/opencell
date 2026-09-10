@@ -86,10 +86,13 @@ earlier blocks below:**
     `f5c9d4f` plus uncommitted provenance/evidence changes. Resume it against
     current board **18/2/2**; successful DNAS promotion should yield
     **19 PASS / 1 FAIL / 2 MISSING** (RepInit remains the sole FAIL).
+    Continuation agent: `dnas-integration-resume-again`
+    (`1d021115-9f69-4435-9454-af017e8a9140`).
   - TxReg final integration branch `integrate/l21-txreg-final` is clean at
     `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
-    registry, one unioned dec-006, and reported board 18/2/2. Relaunch final
-    Opus review against `0957343`.
+    registry, one unioned dec-006, and reported board 18/2/2. Final review
+    agent: `opus-txreg-final-resume`
+    (`a7da74e9-a201-4ed2-b48f-7c2370c07fb3`).
 - L2.1 review/integration queue:
   - ReplicationInitiation branch `agent/l21-repinit-20260817` at `8ee75f0`
     was **REJECTED** by Opus despite a genuine ledger-restored 200-tick
@@ -270,8 +273,10 @@ earlier blocks below:**
     to current main `9757f6e`; 108 censor/spec/extractor tests pass there.
     The contract-aware sequential range 7-16 is running as detached shell
     `dual-contract-007-016`, MATLAB wrapper/child PIDs 19400/27912, status
-    `bulk-division-a/artifacts/dual_contract_007_016.status`; it started seed
-    7 at 2026-09-10 04:12 IST. After it finishes, consolidate each pair/
+    `bulk-division-a/artifacts/dual_contract_007_016.status`; seed 7
+    completed, passed the combined validator, and was hash-banked into the
+    dedicated root. Seed 8 is running; the contiguous prefix now ends at 7
+    and the next unresolved attempt is 8. After the range finishes, consolidate each pair/
     attempt sidecar into the dedicated root and run 19-33. MATLAB warns the
     trial license expires in 6 days, so this extraction is time-sensitive.
 - Operational traps:
