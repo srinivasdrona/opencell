@@ -74,7 +74,10 @@ if str(_REPO_ROOT) not in sys.path:
 
 from scripts.l2_event import division_window_spec, launcher  # noqa: E402
 from scripts.l2_event import ftsz_pre_division_evidence as ftsz_evidence  # noqa: E402
-from scripts.l2_event.division_window_spec import m_ticks_for  # noqa: E402
+from scripts.l2_event.division_window_spec import (  # noqa: E402
+    m_ticks_for,
+    selection_horizon_max_search_ticks,
+)
 from scripts.l2_event.survey_cytokinesis_onset_span import (  # noqa: E402
     REQUIRED_OBSERVABLES as CYTOKINESIS_REQUIRED_OBSERVABLES,
 )
@@ -92,6 +95,17 @@ FTSZ_N_TICKS = m_ticks_for(FTSZ_PROCESS)
 # scripts/l2_event/prepare_cytokinesis_cohort.py's identical constant for
 # the full rationale. Computed once at import time.
 REQUIRED_DNADAMAGE_SOURCE_SHA256 = launcher.current_genuine_dnadamage_source()["patched_sha256_lf_normalized"]
+# Division-censor-contract (2026-09-08, wired 2026-09-09 per Opus
+# re-review): the selection contract's common censoring horizon
+# (docs/phase_f/l2_event/division_window_spec.json's selection_contract.
+# max_search_ticks). Used to build fresh AnchorWindowSpecs for both
+# planning NEW extractions (build_matlab_command bakes this into the
+# generated MATLAB call) and validating existing traces -- the latter is
+# safe against legacy (smaller-horizon) traces because
+# launcher.validate_existing_event_window checks max_search_ticks as a
+# MONOTONE MINIMUM against spec.n_ticks, never an exact match against
+# this value (see that function's inline rationale).
+REQUIRED_MAX_SEARCH_TICKS = selection_horizon_max_search_ticks()
 
 
 def _sha256_file(path: Path) -> str:
@@ -124,11 +138,16 @@ def cytokinesis_anchor_spec(seed: int) -> launcher.AnchorWindowSpec:
     """The exact spec ``prepare_cytokinesis_cohort._anchor_spec`` builds --
     reused verbatim (not re-derived) so this module's Cytokinesis check is
     the same check the existing cohort-preparation tooling already
-    applies."""
+    applies. ``max_search_ticks`` is the division-censor-contract's
+    ``selection_horizon_max_search_ticks()`` (100000), not the launcher's
+    older ``DEFAULT_MAX_SEARCH_TICKS`` (50000) -- safe for validating
+    legacy (smaller-recorded-horizon) traces because of the
+    monotone-minimum policy (see ``REQUIRED_MAX_SEARCH_TICKS``)."""
     return launcher.AnchorWindowSpec(
         process=CYTOKINESIS_PROCESS,
         seed=seed,
         n_ticks=CYTOKINESIS_N_TICKS,
+        max_search_ticks=REQUIRED_MAX_SEARCH_TICKS,
         required_observables=CYTOKINESIS_REQUIRED_OBSERVABLES,
         scalar_finite_observables=launcher.CYTOKINESIS_SCALAR_FINITE_OBSERVABLES,
         required_dnadamage_source_sha256=REQUIRED_DNADAMAGE_SOURCE_SHA256,

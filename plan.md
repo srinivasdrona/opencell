@@ -59,30 +59,47 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-09 00:22 IST) — supersedes all
+**Current status (2026-09-10 04:03 IST) — supersedes all
 earlier blocks below:**
 
-- Local `main` is clean and published at `7367402`. DNADamage,
+- Local `main` is clean and published at `0957343`. DNADamage,
   Cytokinesis, and HostInteraction L2.1 are merged. The authoritative L2.1
   manifest is **10 EWP / 1 CODE_GAP / 0 MISSING**. Host's final integrated
   regression passed 148 tests/6 expected data-absence skips; Cytokinesis's
   passed 184 tests. L1b is 28/28, oracle-dependency 38/38, and L2.2 remains
-  19/1/2 integrity OK. DNADamage's canonical seed-2000 trace and
+  **18/2/2 integrity OK** after the honest RepInit L2.2 demotion.
+  ReplicationInitiation L2.1 is accepted, merged, and published
+  (`42adebb`/`0dca05c`); its exact 200-tick replay passed non-skipped in
+  main, while its L2.2 row remains honestly FAIL pending M-aware trace-path
+  redesign.
+  DNADamage's canonical seed-2000 trace and
   chromosome-ledger sidecar are present
   in `main-integrate` with SHA-256 `7be78871...52f0` and
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
   data-dependent skips and active rubric 14/14.
-- Agent-runtime recovery: only `division-censor-contract`
-  (`0678eca0-b5d5-42ee-8e30-3e62ac4c1126`) remains live. The runtime
-  auto-cleared the DNAS Opus reviewer and the TxReg/RepInit implementers
-  before they returned final messages; this was not a deliberate stop.
-  Their filesystem work survived:
-  - DNAS is committed at `4556d27`; relaunch the final Opus review.
-  - TxReg clean worktree has substantial uncommitted corrections; relaunch
-    a continuation agent in that same worktree.
-  - RepInit current-main worktree has substantial uncommitted corrections;
-    relaunch a continuation agent in that same worktree.
-  Never discard or restart these worktrees from scratch.
+- Runtime/session recovery: no agents survived the latest CLI-session
+  restart. This long session has repeatedly hit context compaction and
+  session-scoped agent cleanup; filesystem worktrees/commits remain intact.
+  Relaunch, never recreate:
+  - DNAS provenance-safe integration worktree
+    `integrate-l22-dnas-current` has accepted code committed through
+    `f5c9d4f` plus uncommitted provenance/evidence changes. Resume it against
+    current board **18/2/2**; successful DNAS promotion should yield
+    **19 PASS / 1 FAIL / 2 MISSING** (RepInit remains the sole FAIL).
+    Continuation agent: `dnas-integration-resume-again`
+    (`1d021115-9f69-4435-9454-af017e8a9140`).
+  - TxReg final integration branch `integrate/l21-txreg-final` is clean at
+    `57f1f19`, with literal 11/0/0 manifest candidate, three-process ledger
+    registry, one unioned dec-006, and reported board 18/2/2. Final review
+    agent: `opus-txreg-final-resume`
+    (`a7da74e9-a201-4ed2-b48f-7c2370c07fb3`).
+  - RepInit L2.2 M-aware trace naming/rerun is a separate active lane:
+    redesign trace lookup from hardcoded `_100ticks.mat` to catalog
+    `{Process}_{M_ticks}ticks.mat`, require filename/metadata/requested tick
+    equality, preserve the canonical 100-tick L2.1 trace, generate a genuine
+    50-seed x 200-tick ensemble, and restore the honestly-failed RepInit row
+    only after a fresh gate. This work runs in parallel with DNAS and the
+    detached division extraction.
 - L2.1 review/integration queue:
   - ReplicationInitiation branch `agent/l21-repinit-20260817` at `8ee75f0`
     was **REJECTED** by Opus despite a genuine ledger-restored 200-tick
@@ -107,6 +124,30 @@ earlier blocks below:**
     DNADamage fields/current taps, re-extract and re-pin RepInit, preserve
     all sweep rows, and restore the real 100-tick canonical trace that was
     accidentally replaced by a 200-tick file before another Opus review.
+    Replacement branch `integrate/l21-repinit-current` is now clean at
+    `7889449`: extractor parsing/API, ledger union, canonical 100-tick
+    restoration, regenerated 200-tick ledger, sweep-report preservation,
+    and honest ledger/no-ledger claims are committed. L2.1 remains genuine
+    200/200 under the input ledger; L2.2 is deliberately demoted to FAIL
+    (`STALE_SWEEP_PROVENANCE`) because the current 100-vs-200 canonical
+    filename convention cannot support a genuine M=200 ensemble without
+    identity collision. Opus **ACCEPTS the L2.1 code with a clean split**
+    but rejects the whole branch: tracked `sweep_status.json` says
+    DNASupercoiling NOT_STARTED while `sweep_report.json` says RAN_EXIT_0
+    (52/53 sweep tests, not the claimed 53/53). Curate onto current main:
+    land exact-replay code/tests/decision plus `evidence_index.json`'s
+    honest RepInit PASS->FAIL demotion (expected board 18/2/2); hold both
+    inconsistent sweep summary files; correct STATUS/plan/provenance claims;
+    add a regression assertion for the reproduced 200-tick observable
+    identity. Curated commit `9f983fd` now reports all of that complete:
+    tracked sweep report/status match main and 53/53 tests pass, the false
+    claims are superseded, the strengthened exact-replay assertion is
+    present, and the board is honestly 18/2/2 integrity OK. Final Opus
+    review **ACCEPTED RepInit L2.1** and the clean split. The merge target's
+    truncated sweep report and shadow evidence root were removed before
+    merge; main exact replay passed and the split is committed at
+    `42adebb`. Separately redesign M-aware trace paths and exact metadata/
+    filename tick checks before regenerating RepInit L2.2.
   - HostInteraction branch `agent/l21-host-active-fix-20260904` at
     `36c92ec` is **ACCEPTED** by final Opus review: condition
     enzyme overrides are contained across `copyToState`, the stale oracle
@@ -142,7 +183,22 @@ earlier blocks below:**
     accessibility mask before checking Karr's winner. Fix those, build a
     surgical integration on current main without downgrading the other ten
     L2.1 rows, regenerate/re-pin the ledger and pilot provenance, and
-    return for another Opus review before N=10 extraction.
+    return for another Opus review before N=10 extraction. Corrected branch
+    `integrate/l21-txreg-clean` is clean at `209a951`: source-derived damage
+    shifts, unified ledger, explicit PIT failure, regenerated trace/ledger,
+    mechanical promoter, and 11 EWP/0/0 candidate are committed; L2.2 stays
+    18/2/2 after the now-published RepInit demotion. Opus accepts the TxReg
+    science but **REJECTED integration mechanics**: merge creates duplicate
+    `dec-006` entries, splits RepInit/TxReg ledger registries, promoter drops
+    zero-valued count keys, a Host verifier test assumes a real non-PASS row,
+    candidate scalar-draw normalization is weaker than main, and regenerated
+    trace/ledger bytes are absent from main. Build a clean current-main
+    integration with one unioned dec-006 and three-process ledger registry,
+    mechanically regenerate 11/0/0, stage trace `73fc1d97...` and ledger
+    `f01783e8...`, preserve RepInit/DNADamage/Cyt/Host, and keep L2.2 18/2/2.
+    Final rebuilt branch `integrate/l21-txreg-final` is clean at `57f1f19`
+    and reports every prescribed fix/test green; only final Opus integration
+    review remains.
 - L2.2:
   - DNASupercoiling branch `agent/l22-dnas-20260812` at `4556d27` is
     **ACCEPTED** by final Opus review: both MATLAB origin-wrap helpers,
@@ -158,27 +214,32 @@ earlier blocks below:**
     processes; never land a 1 PASS / 19 FAIL board.
   - Cytokinesis/FtsZ dual extraction: completed patched-source pairs are
     seeds 0-5, 17, and 34-46; worker C is running seed 47. Seeds 6 and 18
-    failed closed with no completion by 50,000 ticks; seed 18 also failed a
-    non-counting 100,000-tick diagnostic, proving genuine right-censoring
+    failed closed with no completion by 50,000 ticks; both also failed
+    non-counting 100,000-tick diagnostics, proving genuine right-censoring
     under the patched source (its pre-overlay completion at tick 28454 is
-    not comparable under dec-005). Seed 6 is now running the matching
-    100,000-tick diagnostic (`dual-a-seed6-100k`). Do not skip/resample
-    censored seeds or resume uncontrolled ranges.
-  - All 19 completed pairs (0-5, 17, 34-45) have been independently run
-    through the combined validator: 19/19 PASS for both Cytokinesis and
+    not comparable under dec-005; seed 6's pre-overlay completion was tick
+    30505). No partial files were emitted. Backfill seed 6 from its preserved
+    `dual_a_s006_100k_probe` log only through the reviewed source/provider-
+    binding tool; do not skip/resample censored seeds or resume uncontrolled
+    ranges. No MATLAB sessions remain active after worker C completed 34-49.
+  - All 23 completed pairs (0-5, 17, 34-49) have been independently run
+    through the combined validator: 23/23 PASS for both Cytokinesis and
     FtsZ, same completion anchor, distinct files/content, genuine provider,
     and current DNADamage source binding. Observed Cytokinesis inclusive
     spans range 3737-4076 ticks; no M=5000 margin trigger fired. These
     traces are banked regardless of the pending cohort-selection redesign.
     The homogeneous paired copies are consolidated under
     `data/m1_sources/karr_native/dual_division_cohort_current/` and
-    revalidated 19/19 there. Use this explicit root for the cohort: seed 36
+    revalidated there. Worker C's original 34-49 range is complete. Use
+    this explicit root for the cohort: seed 36
     correctly carries paired-dual Cyt SHA `f04ea79e...3cc80`; the standard
     event root separately retains the L2.1 single-process trace
     `b0c919e8...eeeb0`. Never overwrite or silently mix those two artifacts.
-  - Candidate cohort correction is implemented on
-    `fix/division-censor-contract` (6 commits from `701b991`) and awaits
-    independent review: `N=50` means the first 50 **completed event windows**
+  - The censor-aware cohort contract is accepted, merged, and published
+    (`8807819`, cleanup `0957343`). It uses
+    `fix/division-censor-contract` (6 commits from `701b991`). Opus accepts
+    the statistical design but **REJECTED** the implementation: `N=50`
+    means the first 50 **completed event windows**
     from a deterministic ascending attempted-seed stream starting at seed 0.
     Every seed is attempted exactly once at a common
     `max_search_ticks=100000`; each attempt atomically records either a
@@ -193,7 +254,38 @@ earlier blocks below:**
     seeds 17 and 34-46 are premature until gaps 6-16 and 18-33 have attempt
     records. Seed 6/18 censor outcomes still need mechanically bound
     backfill. Reported gate: 136 targeted tests, Ruff clean, L2.2 19/1/2
-    preserved. Keep the host-wide cap at three.
+    preserved. Required fixes: plumb 100k through validator/spec/driver
+    (accept recorded horizons >= required), delete attempt records during
+    force re-extraction, hard-fail cross-root contradictions, source-bind
+    RIGHT_CENSORED records, and make source/hash contradictions block
+    selection. Formal estimand: Cytokinesis behavior conditional on
+    completion within 100k ticks under the bound source; completion fraction
+    stays descriptive and N may never adapt downward. Keep the host-wide
+    cap at three. Corrective branch is now at `32ee156`, reporting 267
+    targeted tests green, cross-root/source integrity fixed, force retry
+    repaired, seed-18 censor mechanically backfilled, and 100k plumbed.
+    One semantic point remains for Opus: COMPLETED traces produced under a
+    smaller horizon are valid if they completed before that recorded
+    horizon, whereas RIGHT_CENSORED claims must prove the full 100k. The
+    branch currently checks completed traces using `recorded >= n_ticks`;
+    Opus **REJECTED** that fail-open proxy: COMPLETED traces must satisfy
+    `recorded_max_search_ticks >= window_anchor`; RIGHT_CENSORED still
+    requires the full 100k. Two further blockers remain: default root
+    discovery scans 93 worktrees and crashes on documented superseded
+    traces instead of using/failing clearly on the authoritative dedicated
+    recorded>=window_anchor for completions and full-100k source/provider-
+    bound censors. The dedicated root contains 23 validated completed pairs
+    (0-5,17,34-49) and RIGHT_CENSORED records for 6/18; contiguous prefix
+    ends at 6 and `next_seed_to_attempt=7`. Worker A has been fast-forwarded
+    to current main `9757f6e`; 108 censor/spec/extractor tests pass there.
+    The contract-aware sequential range 7-16 is running as detached shell
+    `dual-contract-007-016`, MATLAB wrapper/child PIDs 19400/27912, status
+    `bulk-division-a/artifacts/dual_contract_007_016.status`; seed 7
+    completed, passed the combined validator, and was hash-banked into the
+    dedicated root. Seed 8 is running; the contiguous prefix now ends at 7
+    and the next unresolved attempt is 8. After the range finishes, consolidate each pair/
+    attempt sidecar into the dedicated root and run 19-33. MATLAB warns the
+    trial license expires in 6 days, so this extraction is time-sensitive.
 - Operational traps:
   - MATLAB scratch tags must use underscores, not hyphens.
   - `run_matlab_slot.ps1` locks are worktree-local, not host-global; enforce

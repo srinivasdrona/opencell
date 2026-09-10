@@ -258,4 +258,34 @@ def test_prepare_cohort_writes_plan_only_for_missing_seeds_and_copies_seed0(tmp_
     decision_actions = {row["seed"]: row["action"] for row in plan["decisions"]}
     assert decision_actions[1] == "generate_missing"
     assert decision_actions[49] == "generate_missing"
-    assert 7 not in decision_actions
+
+
+def test_prepare_cohort_seed_universe_restricts_missing_seeds_to_explicit_set(tmp_path):
+    """Division-censor-contract (2026-09-08): when `seed_universe` is
+    given (e.g. the cohort selector's gap_seeds), the missing-seed
+    computation must be restricted to exactly that set, never the legacy
+    range(REQUIRED_N_SEEDS) -- proving prepare_cytokinesis_cohort.py
+    consumes an explicit selected seed set rather than assuming a plain
+    0-49 range."""
+    current_root = tmp_path / "current" / "data" / "m1_sources" / "karr_native"
+    sibling_root = tmp_path / "sibling" / "data" / "m1_sources" / "karr_native"
+    out_dir = tmp_path / "artifacts"
+
+    _write_valid_anchor_trace(sibling_root, seed=0)
+
+    summary = prepare_cohort(
+        search_roots=[current_root, sibling_root],
+        output_root=current_root,
+        out_dir=out_dir,
+        materialize_seed0_locally=False,
+        seed_universe=(6, 7, 8),
+    )
+
+    assert summary["seed_universe_source"] == "explicit seed_universe"
+    # Only seeds 6, 7, 8 are in the requested universe -- none of them are
+    # valid on disk, so all three (and only these three) are missing.
+    assert sorted(summary["missing_event_seeds"]) == [6, 7, 8]
+
+    specs = json.loads((out_dir / "seed_1_49_specs.json").read_text(encoding="utf-8"))
+    spec_seeds = {row["seed"] for row in specs}
+    assert spec_seeds == {6, 7, 8}

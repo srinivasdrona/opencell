@@ -411,3 +411,307 @@ def test_rerun_manifest_replay_nodeid_accepts_genuine_pass(monkeypatch: pytest.M
     result = active_windows._rerun_manifest_replay_nodeid(row)
     assert result["passed"] is True
     assert result["error"] is None
+
+
+# --- ReplicationInitiation cases (DEC-005/DEC-006: decisions/dec-005-full-
+# simulation-source-hash-binding.md, decisions/dec-006-shared-chromosome-
+# randstream-input-oracle.md) -- append-only extension of this module's
+# existing DNADamage coverage above, mirroring the SAME shared
+# infrastructure (`chromosome_rand_stream_ledger.py`,
+# `_ProcessSpec.chromosome_rand_stream_ledger_attr`, `_build_context`,
+# `_honest_replay`'s ledger injection block) for a second consuming
+# process. See STATUS_L21_REPINIT_SEPT2.md for the full narrative.
+
+_REPINIT_CANONICAL_TRACE = (
+    REPO_ROOT
+    / "data"
+    / "m1_sources"
+    / "karr_native"
+    / "per_process_traces_v2"
+    / "ReplicationInitiation_200ticks.mat"
+)
+_REPINIT_CANONICAL_LEDGER = _REPINIT_CANONICAL_TRACE.with_suffix("").with_suffix(".chromosome_rand_stream_ledger.json")
+
+_requires_repinit_canonical_trace = pytest.mark.skipif(
+    not (_REPINIT_CANONICAL_TRACE.exists() and _REPINIT_CANONICAL_LEDGER.exists()),
+    reason=(
+        "canonical seed0 ReplicationInitiation 200-tick trace/ledger not present in this "
+        "checkout -- the .mat trace tree is gitignored/regenerated-on-demand, not committed"
+    ),
+)
+
+
+def _copy_repinit_trace_and_ledger(dest_dir: Path) -> tuple[Path, Path]:
+    dest_dir.mkdir(parents=True, exist_ok=True)
+    dest_trace = dest_dir / _REPINIT_CANONICAL_TRACE.name
+    dest_ledger = dest_dir / _REPINIT_CANONICAL_LEDGER.name
+    shutil.copyfile(_REPINIT_CANONICAL_TRACE, dest_trace)
+    shutil.copyfile(_REPINIT_CANONICAL_LEDGER, dest_ledger)
+    return dest_trace, dest_ledger
+
+
+def test_replication_initiation_spec_declares_chromosome_rand_stream_ledger_attr() -> None:
+    spec = replay_common._PROCESS_SPECS["ReplicationInitiation"]
+    assert spec.chromosome_rand_stream_ledger_attr == "_chromosome_rng"
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_ledger_loads_and_covers_every_tick() -> None:
+    with h5py.File(_REPINIT_CANONICAL_TRACE, "r") as handle:
+        ctx = replay_common._build_context(name="ReplicationInitiation", rng_seed=0, handle=handle)
+        assert ctx.chromosome_rand_stream_ledger is not None
+        assert len(ctx.chromosome_rand_stream_ledger) == ctx.n_ticks == 200
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_full_200_tick_chromosome_stream_ledger_bit_identity() -> None:
+    """Session N+3 (`_second_copy_site_mask` source-fidelity fix, see
+    STATUS_L21_REPINIT_SEPT2.md): `_honest_replay` no longer raises at
+    all across the full 200-tick trace -- OC's own chromosome-owned
+    site-selection algorithm now consumes EXACTLY the real recorded draw
+    count on EVERY tick, verified here by asserting the actual
+    `BitIdentityResult` fields directly (`pass_all_compared_ticks is
+    True` and `first_mismatch_tick is None` over all 200 compared ticks),
+    not merely that the replay ran to completion without raising.
+    (An earlier revision of this docstring cited a one-off,
+    never-committed `scripts/tmp_repinit_full_ledger_scan.py` scratch
+    script as independent verification; no such file exists in this
+    repository. The only genuine independent verification is this test
+    itself asserting the real `BitIdentityResult`, plus the reproducible
+    `scripts/diagnose_repinit_l21.py` diagnostic invoked directly --
+    see STATUS_L21_REPINIT_SEPT2.md for the exact commands and output.)
+
+    NOTE (Session N+5 correction, carried into this current-main
+    integration -- see STATUS_L21_REPINIT_SEPT2.md "read this first"):
+    the shared-Chromosome-RNG-stream mechanism being bit-exact does NOT
+    by itself mean the process's full AGGREGATE observable replay is
+    bit-identical WITHOUT the ledger -- the genuine non-ledger replay
+    mismatches at a real, reproducible tick (see the explicit
+    `--no-ledger` diagnostic in `scripts/diagnose_repinit_l21.py`), an
+    accepted, documented, non-blocking gap under DEC-005/DEC-006's own
+    input-oracle scope (the shared stream's real tick-to-tick position
+    is not independently reconstructable from a single-process trace by
+    architecture, not by omission). This test intentionally scopes ONLY
+    the chromosome-stream-ledger mechanism (this replay call uses the
+    ledger, restoring input state), exactly like every other assertion
+    in this module."""
+    bit_identity, honest = active_windows._honest_replay(
+        process_name="ReplicationInitiation", trace_path=_REPINIT_CANONICAL_TRACE
+    )
+    assert bit_identity.compared_tick_count == 200
+    assert bit_identity.pass_all_compared_ticks is True, (
+        "ledger-restored ReplicationInitiation replay must be bit-identical across "
+        f"all 200 ticks; first mismatch was {bit_identity.first_mismatch_tick!r} "
+        f"({bit_identity.first_mismatch_observable!r}, index {bit_identity.first_mismatch_index!r}: "
+        f"OC={bit_identity.first_mismatch_oc_val!r} vs Karr={bit_identity.first_mismatch_karr_val!r})"
+    )
+    assert bit_identity.first_mismatch_tick is None
+    assert bit_identity.first_mismatch_observable is None
+    assert bit_identity.first_mismatch_index is None
+    assert honest is not None
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_missing_ledger_sidecar_falls_back_to_prior_stand_in_behavior(tmp_path: Path) -> None:
+    """A ReplicationInitiation trace with NO companion ledger sidecar
+    must silently fall back to the pre-existing freshly-seeded stand-in
+    `_chromosome_rng` stream -- never raise, never treat absence as a
+    failure. This is also this integration's own explicit, documented
+    no-ledger diagnostic case: the real, non-ledger-restored replay is
+    expected to diverge on OBSERVABLE grounds eventually but must never
+    raise a ledger-related error while doing so."""
+    dest_dir = tmp_path / "per_process_traces_v2_missing_ledger"
+    dest_dir.mkdir(parents=True)
+    dest_trace = dest_dir / _REPINIT_CANONICAL_TRACE.name
+    shutil.copyfile(_REPINIT_CANONICAL_TRACE, dest_trace)
+    # Deliberately do NOT copy the ledger sidecar.
+
+    with h5py.File(dest_trace, "r") as handle:
+        ctx = replay_common._build_context(name="ReplicationInitiation", rng_seed=0, handle=handle)
+        assert ctx.chromosome_rand_stream_ledger is None
+
+    # The replay must still run (using the stand-in stream), not raise --
+    # it will still diverge eventually on OBSERVABLE grounds, but must
+    # not raise a ledger-related error.
+    bit_identity, honest = active_windows._honest_replay(
+        process_name="ReplicationInitiation", trace_path=dest_trace
+    )
+    assert bit_identity.compared_tick_count == 200
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_tampered_ledger_hash_mismatch_fails_closed_not_silent_fallback(tmp_path: Path) -> None:
+    """A ledger sidecar bound to a DIFFERENT trace than the one it sits
+    beside must raise at load time -- never silently accept stale data."""
+    dest_dir = tmp_path / "per_process_traces_v2_tampered"
+    dest_trace, dest_ledger = _copy_repinit_trace_and_ledger(dest_dir)
+
+    payload = json.loads(dest_ledger.read_text(encoding="utf-8"))
+    payload["trace_sha256"] = "0" * 64  # deliberately wrong
+    dest_ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    with h5py.File(dest_trace, "r") as handle, pytest.raises(Exception, match="DIFFERENT trace file"):
+        replay_common._build_context(name="ReplicationInitiation", rng_seed=0, handle=handle)
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_truncated_ledger_n_draws_mismatch_fails_closed(tmp_path: Path) -> None:
+    """A ledger whose recorded n_draws/draws length disagree (corrupted/
+    manually-truncated) must raise at load time -- never silently
+    truncate or pad."""
+    dest_dir = tmp_path / "per_process_traces_v2_short"
+    dest_trace, dest_ledger = _copy_repinit_trace_and_ledger(dest_dir)
+
+    payload = json.loads(dest_ledger.read_text(encoding="utf-8"))
+    # Tick 0 (0-indexed) is a real, nonzero-draw tick for this trace.
+    payload["per_tick"][0]["draws"] = payload["per_tick"][0]["draws"][:-1]
+    dest_ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    with h5py.File(dest_trace, "r") as handle, pytest.raises(Exception, match="does not match len"):
+        replay_common._build_context(name="ReplicationInitiation", rng_seed=0, handle=handle)
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_overflow_ledger_fails_closed_during_replay(tmp_path: Path) -> None:
+    """A ledger padded with an extra draw OC's algorithm does not consume
+    must fail closed via the ledger replay stream's
+    `assert_fully_consumed()` detecting leftover draws -- never silently
+    ignored."""
+    dest_dir = tmp_path / "per_process_traces_v2_overflow"
+    dest_trace, dest_ledger = _copy_repinit_trace_and_ledger(dest_dir)
+
+    payload = json.loads(dest_ledger.read_text(encoding="utf-8"))
+    tick0 = payload["per_tick"][0]
+    tick0["draws"] = [*tick0["draws"], 0.123456789]
+    tick0["n_draws"] = len(tick0["draws"])
+    dest_ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="only consumed"):
+        active_windows._honest_replay(process_name="ReplicationInitiation", trace_path=dest_trace)
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_overconsumption_ledger_fails_closed_immediately(tmp_path: Path) -> None:
+    """A ledger tick whose recorded draws are too FEW for what OC's
+    algorithm actually needs must raise immediately mid-call (exhausted),
+    not just at the end-of-tick assert_fully_consumed check -- exercised
+    here by truncating a tick known to need more than 1 draw down to
+    exactly 1."""
+    dest_dir = tmp_path / "per_process_traces_v2_underflow"
+    dest_trace, dest_ledger = _copy_repinit_trace_and_ledger(dest_dir)
+
+    payload = json.loads(dest_ledger.read_text(encoding="utf-8"))
+    tick0 = payload["per_tick"][0]
+    if tick0["n_draws"] > 1:
+        tick0["draws"] = tick0["draws"][:1]
+        tick0["n_draws"] = 1
+    dest_ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(RuntimeError, match="exhausted after|only consumed"):
+        active_windows._honest_replay(process_name="ReplicationInitiation", trace_path=dest_trace)
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_accepts_regenerated_ledger(tmp_path: Path) -> None:
+    """Explicit proof (task requirement): main's UNCHANGED
+    `chromosome_rand_stream_ledger.py` loader accepts a genuinely
+    regenerated RepInit ledger sidecar -- i.e. the extractor's
+    unconditional `dnadamage_source_resolved_sha256` fix (see
+    `scripts/matlab/extract_per_process_traces_v2.m`'s metadata block
+    and decisions/dec-006-shared-chromosome-randstream-input-oracle.md
+    "Related Decisions") produced a trace/ledger pair that satisfies
+    every one of main's stricter provenance checks (trace_sha256 binding,
+    raw-byte Chromosome.m/RandStream.m hashes, and the
+    dnadamage_source_sha256 cross-check against the trace's own
+    metadata) -- not just that the DNADamage lane's own ledger passes."""
+    ledger = ledger_mod.load_chromosome_rand_stream_ledger(_REPINIT_CANONICAL_TRACE, repo_root=REPO_ROOT)
+    assert ledger is not None
+    assert len(ledger) == 200
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_missing_dnadamage_binding_fails_closed(tmp_path: Path) -> None:
+    """A RepInit ledger missing its `dnadamage_source_sha256` field
+    entirely (an older/pre-portability-fix sidecar) must raise -- never
+    silently treat an absent DNADamage source binding as
+    "nothing to verify". Exercises the SAME shared loader code path as
+    DNADamage's own `test_missing_required_source_hash_field_fails_closed`
+    above, for RepInit's own trace/ledger pair."""
+    dest_dir = tmp_path / "per_process_traces_v2_repinit_missing_dnadamage_field"
+    dest_trace, dest_ledger = _copy_repinit_trace_and_ledger(dest_dir)
+
+    payload = json.loads(dest_ledger.read_text(encoding="utf-8"))
+    del payload["dnadamage_source_sha256"]
+    dest_ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ledger_mod.ChromosomeRandStreamLedgerError, match="missing its required"):
+        ledger_mod.load_chromosome_rand_stream_ledger(dest_trace, repo_root=REPO_ROOT)
+
+
+@_requires_repinit_canonical_trace
+def test_replication_initiation_mismatched_dnadamage_binding_fails_closed(tmp_path: Path) -> None:
+    """A RepInit ledger whose recorded `dnadamage_source_sha256`
+    disagrees with the TRACE's own `dnadamage_source_resolved_sha256`
+    metadata (the ledger was reconstructed against a different
+    DNADamage.m revision than the one that actually produced this
+    trace) must raise -- never silently accept a mismatched
+    source-revision binding. Exercises the SAME shared loader code path
+    as DNADamage's own `test_tampered_dnadamage_source_hash_fails_closed`
+    above, for RepInit's own trace/ledger pair."""
+    dest_dir = tmp_path / "per_process_traces_v2_repinit_mismatched_dnadamage_field"
+    dest_trace, dest_ledger = _copy_repinit_trace_and_ledger(dest_dir)
+
+    payload = json.loads(dest_ledger.read_text(encoding="utf-8"))
+    payload["dnadamage_source_sha256"] = "0" * 64
+    dest_ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ledger_mod.ChromosomeRandStreamLedgerError, match="DIFFERENT DNADamage.m source revision"):
+        ledger_mod.load_chromosome_rand_stream_ledger(dest_trace, repo_root=REPO_ROOT)
+
+
+# --- Safe scalar-`draws` normalization (loader hardening, shared by every
+# process using this ledger, not RepInit-specific): MATLAB's `jsonencode`
+# collapses a length-1 numeric array to a bare scalar rather than a
+# 1-element array (e.g. `jsonencode([1.5])` -> `1.5`, not `[1.5]`).
+# Reproduced against the DNADamage canonical fixture (this normalization
+# is a property of the shared loader, not of any one process's ledger).
+
+
+@_requires_canonical_trace
+def test_scalar_draws_with_matching_n_draws_one_normalizes_to_single_element_list(tmp_path: Path) -> None:
+    """A tick whose `draws` field was written as a bare JSON scalar (not
+    a 1-element list) by a MATLAB jsonencode call must be silently
+    normalized to a 1-element list when -- and ONLY when -- the SAME
+    entry's own `n_draws` field is exactly 1, never for any other
+    `n_draws` value."""
+    dest_dir = tmp_path / "per_process_traces_v2_event_s2000_scalar_draws_ok"
+    dest_trace, dest_ledger = _copy_trace_and_ledger(dest_dir)
+
+    payload = json.loads(dest_ledger.read_text(encoding="utf-8"))
+    tick0 = payload["per_tick"][0]
+    tick0["n_draws"] = 1
+    tick0["draws"] = 0.987654321  # bare scalar, not [0.987654321]
+    dest_ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    ledgers = ledger_mod.load_chromosome_rand_stream_ledger(dest_trace, repo_root=REPO_ROOT)
+    assert ledgers is not None
+    assert ledgers[0] == [0.987654321]
+
+
+@_requires_canonical_trace
+def test_scalar_draws_with_mismatched_n_draws_still_fails_closed(tmp_path: Path) -> None:
+    """A bare-scalar `draws` value whose `n_draws` is NOT 1 (e.g. a
+    genuinely malformed/truncated ledger, not a jsonencode single-element
+    collapse) must still raise -- the scalar-normalization convenience
+    above must never mask an actual n_draws/draws-shape mismatch."""
+    dest_dir = tmp_path / "per_process_traces_v2_event_s2000_scalar_draws_bad"
+    dest_trace, dest_ledger = _copy_trace_and_ledger(dest_dir)
+
+    payload = json.loads(dest_ledger.read_text(encoding="utf-8"))
+    tick0 = payload["per_tick"][0]
+    tick0["n_draws"] = 2
+    tick0["draws"] = 0.5  # bare scalar, but n_draws claims 2 -- must not normalize
+    dest_ledger.write_text(json.dumps(payload), encoding="utf-8")
+
+    with pytest.raises(ledger_mod.ChromosomeRandStreamLedgerError, match="malformed/missing draws array"):
+        ledger_mod.load_chromosome_rand_stream_ledger(dest_trace, repo_root=REPO_ROOT)

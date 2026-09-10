@@ -103,6 +103,7 @@ def _write_cytokinesis_trace(
     corrupt_completion: bool = False,
     dnadamage_source_sha256: str | None = REQUIRED_DNADAMAGE_SOURCE_SHA256,
     omit_dnadamage_source_metadata: bool = False,
+    max_search_ticks: int = launcher.DEFAULT_MAX_SEARCH_TICKS,
 ) -> Path:
     path = out_dir / f"Cytokinesis_{CYTOKINESIS_N_TICKS}ticks.mat"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -136,7 +137,7 @@ def _write_cytokinesis_trace(
         metadata.create_dataset("signal_kind", data=_encode_char_metadata("diameter_decrease"))
         metadata.create_dataset("signal_property", data=_encode_char_metadata("geometry"))
         metadata.create_dataset("signal_field", data=_encode_char_metadata("pinchedDiameter"))
-        metadata.create_dataset("max_search_ticks", data=np.array([launcher.DEFAULT_MAX_SEARCH_TICKS]))
+        metadata.create_dataset("max_search_ticks", data=np.array([max_search_ticks]))
         metadata.create_dataset(
             "event_observable_projection_version",
             data=np.array([launcher.EVENT_OBSERVABLE_PROJECTION_VERSION]),
@@ -204,7 +205,7 @@ def _write_ftsz_trace(
     return path
 
 
-def _write_matched_pair(root: Path, *, seed: int = 49) -> Path:
+def _write_matched_pair(root: Path, *, seed: int = 49, max_search_ticks: int = launcher.DEFAULT_MAX_SEARCH_TICKS) -> Path:
     out_dir = event_window_dir(seed, karr_native_root=root)
     completion_tick = 31427
     onset_tick = 27556
@@ -214,6 +215,7 @@ def _write_matched_pair(root: Path, *, seed: int = 49) -> Path:
         completion_tick=completion_tick,
         onset_tick=onset_tick,
         tick_start=completion_tick - CYTOKINESIS_N_TICKS + 1,
+        max_search_ticks=max_search_ticks,
     )
     _write_ftsz_trace(
         out_dir,
@@ -236,6 +238,34 @@ def test_matched_pair_passes_both_validators_and_all_dual_tap_checks(tmp_path):
     assert report.provider_sha256_match is True
     assert report.status == "PASS"
     assert report.reasons == []
+
+
+def test_matched_pair_stamped_at_the_selection_contract_horizon_still_passes(tmp_path):
+    """Horizon-plumbing fix (division-censor-contract, 2026-09-09, Opus
+    re-review): a matched pair whose Cytokinesis trace is stamped
+    max_search_ticks=100000 (cytokinesis_anchor_spec's new
+    REQUIRED_MAX_SEARCH_TICKS, wired from
+    scripts.l2_event.division_window_spec.selection_horizon_max_search_ticks())
+    must pass identically to one stamped at the old 50000 default --
+    proving both the legacy-horizon and the new-horizon cases validate."""
+    from scripts.l2_event.validate_dual_division_canary import REQUIRED_MAX_SEARCH_TICKS
+
+    assert REQUIRED_MAX_SEARCH_TICKS == 100000
+    root = _write_matched_pair(tmp_path, max_search_ticks=REQUIRED_MAX_SEARCH_TICKS)
+    report = validate_dual_division_canary(49, karr_native_root=root)
+    assert report.status == "PASS", report.reasons
+
+
+def test_matched_pair_at_legacy_50000_horizon_still_passes_alongside_100000_spec(tmp_path):
+    """Complements the above: the legacy default (50000, what every
+    currently-banked seed 0-5/17/34-47 trace actually carries) must ALSO
+    still pass now that cytokinesis_anchor_spec requests 100000 -- the
+    monotone-minimum policy (recorded max_search_ticks >= n_ticks, never
+    an exact match against the spec's requested horizon) is what makes
+    this possible."""
+    root = _write_matched_pair(tmp_path, max_search_ticks=launcher.DEFAULT_MAX_SEARCH_TICKS)
+    report = validate_dual_division_canary(49, karr_native_root=root)
+    assert report.status == "PASS", report.reasons
 
 
 def test_missing_ftsz_file_fails_closed_never_reports_partial_pass(tmp_path):

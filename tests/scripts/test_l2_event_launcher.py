@@ -876,6 +876,237 @@ def test_plan_regenerate_invalid_for_anchor_missing_identity_metadata(tmp_path):
     assert plan.decisions[0].action == "regenerate_invalid"
 
 
+# ---------------------------------------------------------------------------
+# max_search_ticks monotone-minimum validation (division-censor-contract
+# horizon fix, 2026-09-09, Opus re-review): recorded metadata.max_search_ticks
+# must be >= spec.n_ticks, never an exact match against spec.max_search_ticks.
+# ---------------------------------------------------------------------------
+
+
+def test_anchor_trace_recorded_at_a_smaller_horizon_than_spec_still_validates(tmp_path):
+    """The core horizon-plumbing fix: a COMPLETED trace captured under the
+    OLD default max_search_ticks=50000 must still validate/skip_valid
+    against a spec now requesting the selection contract's
+    max_search_ticks=100000 -- a genuine completion's timing does not
+    depend on the search ceiling used to find it. Locks in Opus's own
+    accepted accounting (existing seeds 0-5/17/34-47, all recorded at
+    50000, remain valid/selectable under the new 100000-horizon spec)."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis",
+        seed=20,
+        n_ticks=4,
+        max_search_ticks=100000,  # the NEW selection-contract horizon
+        required_observables=("pinchedDiameter",),
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=20,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=50000,  # recorded at the OLD, smaller default
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert ok, reason
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "skip_valid"
+
+
+def test_anchor_trace_stamped_exactly_the_selection_contract_horizon_validates(tmp_path):
+    """Live/synthetic test (Opus re-review requirement): a COMPLETED trace
+    whose recorded metadata.max_search_ticks IS the selection contract's
+    100000 horizon validates and is selectable -- proving future
+    extractions stamped at the new horizon work identically to legacy
+    ones stamped at the old default."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis", seed=21, n_ticks=4, max_search_ticks=100000, required_observables=("pinchedDiameter",)
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=21,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=100000,
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert ok, reason
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "skip_valid"
+
+
+def test_anchor_trace_recorded_max_search_ticks_smaller_than_window_anchor_is_rejected(tmp_path):
+    """The monotone-minimum floor is not vacuous, and is tight (not the
+    looser n_ticks floor a prior round used): a trace whose recorded
+    max_search_ticks is smaller than its OWN observed completion tick
+    (metadata.window_anchor) is impossible/malformed -- the real capture
+    loop can never observe a completion strictly beyond the search
+    ceiling it was actually bounded by -- and must regenerate_invalid,
+    never skip_valid, even though max_search_ticks here is still >=
+    n_ticks (the exact gap the prior n_ticks-based check missed)."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis", seed=22, n_ticks=4, max_search_ticks=100000, required_observables=("pinchedDiameter",)
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=22,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=2,  # smaller than BOTH n_ticks=4 and window_anchor=999 -- impossible
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert not ok
+    assert "max_search_ticks" in reason
+    assert "window_anchor" in reason
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+
+
+def test_anchor_trace_max_search_ticks_above_n_ticks_but_below_window_anchor_is_rejected(tmp_path):
+    """The exact gap a looser n_ticks-only floor would miss: recorded
+    max_search_ticks (500) is comfortably >= n_ticks (4) but strictly
+    LESS than the trace's own observed completion tick / window_anchor
+    (999) -- impossible metadata (the capture loop could never have
+    found a completion beyond its own search ceiling), so this must
+    regenerate_invalid despite trivially clearing the n_ticks floor."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis", seed=23, n_ticks=4, max_search_ticks=100000, required_observables=("pinchedDiameter",)
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=23,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=500,  # >= n_ticks=4 but < window_anchor=999 -- impossible
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert not ok
+    assert "window_anchor" in reason
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+
+
+def test_anchor_trace_realistic_impossible_horizon_max6000_anchor31993_is_rejected(tmp_path):
+    """The exact impossible-metadata scenario Opus's second re-review
+    named: max_search_ticks=6000 with window_anchor=31993 (realistic
+    Cytokinesis magnitudes -- n_ticks=5000, a real completion tick deep
+    into a ~32k-tick trajectory). Must regenerate_invalid: a search
+    ceiling of 6000 could never have observed a completion at tick
+    31993."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis",
+        seed=24,
+        n_ticks=5000,
+        max_search_ticks=100000,
+        required_observables=("pinchedDiameter",),
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=24,
+        n_ticks=5000,
+        tick_offset=26993.0,
+        stride=1,
+        tick_start=26994,
+        tick_end=None,
+        window_anchor=31993,
+        onset_tick=27556,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=6000,  # impossible: far smaller than window_anchor=31993
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert not ok
+    assert "6000" in reason
+    assert "31993" in reason
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "regenerate_invalid"
+
+
+def test_anchor_trace_max_search_ticks_exactly_equal_to_window_anchor_validates(tmp_path):
+    """Boundary case: recorded max_search_ticks exactly equal to the
+    trace's own window_anchor is the tightest possible non-impossible
+    value (the search loop found completion on the very last tick of its
+    budget) and must still validate -- the monotone-minimum check is
+    `>=`, never `>`."""
+    spec = launcher.AnchorWindowSpec(
+        process="Cytokinesis", seed=25, n_ticks=4, max_search_ticks=100000, required_observables=("pinchedDiameter",)
+    )
+    path = launcher.mat_path_for(spec, karr_native_root=tmp_path)
+    _write_event_window_fixture(
+        path,
+        process_name="Cytokinesis",
+        seed=25,
+        n_ticks=4,
+        tick_offset=996.0,
+        stride=1,
+        tick_start=996,
+        tick_end=None,
+        window_anchor=999,
+        onset_tick=997,
+        observables=("pinchedDiameter",),
+        signal_kind=spec.signal_kind,
+        signal_property=spec.signal_property,
+        signal_field=spec.signal_field,
+        max_search_ticks=999,  # exactly == window_anchor
+        event_observable_projection_version=launcher.EVENT_OBSERVABLE_PROJECTION_VERSION,
+    )
+    ok, reason = launcher.validate_existing_event_window(path, spec)
+    assert ok, reason
+    plan = launcher.plan_event_window_extraction([spec], karr_native_root=tmp_path)
+    assert plan.decisions[0].action == "skip_valid"
+
+
 def test_plan_regenerate_invalid_for_anchor_stale_projection_version(tmp_path):
     """Performance/sufficiency patch: a trace written under the OLD
     EVENT_OBSERVABLE_PROJECTION_VERSION (1 -- full chromosome object, no

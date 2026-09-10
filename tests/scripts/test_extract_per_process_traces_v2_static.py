@@ -305,8 +305,19 @@ def test_dnadamage_overlay_provenance_is_written_into_trace_metadata():
     # must no longer be nested inside `if strcmp(canonical_name, 'DNADamage')`.
     assert "if strcmp(canonical_name, 'DNADamage')" not in source
 
-    # All five assignments must live inside the SAME fixed/anchor guard as
-    # the genuine-mnrnd-provider metadata (no separate/duplicated guard).
+    # l21-repinit current-main integration fix: these five assignments
+    # must now be UNCONDITIONAL -- written for every window_contract,
+    # including '' (e.g. ReplicationInitiation's canonical extraction),
+    # not only 'fixed'/'anchor'. This closes dec-005's own documented
+    # "Revisit Triggers" blind spot (see decisions/dec-005-full-
+    # simulation-source-hash-binding.md and decisions/dec-006-shared-
+    # chromosome-randstream-input-oracle.md "Related Decisions") without
+    # changing any existing DNADamage('fixed'/'anchor') trace's already-
+    # recorded values. Assert they live OUTSIDE the fixed/anchor guard
+    # body (the inverse of this test's pre-dec-006 shape), while the
+    # genuine-mnrnd-provider metadata (a genuinely event-window-only
+    # concept) continues to live INSIDE it -- see
+    # test_genuine_mnrnd_provider_metadata_written_for_fixed_and_anchor_not_legacy.
     guard_match = re.search(
         r"if strcmp\(window_contract, 'fixed'\) \|\| strcmp\(window_contract, 'anchor'\)\n"
         r"(.*?)\n\s*end\n",
@@ -315,8 +326,15 @@ def test_dnadamage_overlay_provenance_is_written_into_trace_metadata():
     )
     assert guard_match is not None, "could not locate the fixed/anchor metadata guard block"
     guard_body = guard_match.group(1)
-    assert "metadata.dnadamage_source_resolved_sha256" in guard_body
-    assert "metadata.dnadamage_overlay_required" in guard_body
+    assert "metadata.dnadamage_source_resolved_sha256" not in guard_body
+    assert "metadata.dnadamage_overlay_required" not in guard_body
+    assert "metadata.mnrnd_provider_kind" in guard_body
+
+    # The five assignments must appear AFTER the guard's closing `end`
+    # (unconditional placement), not before it.
+    idx_guard_end = source.index(guard_match.group(0)) + len(guard_match.group(0))
+    idx_first_unconditional_field = source.index("metadata.dnadamage_source_original_sha256 = dnadamage_overlay.source_sha256_lf_normalized;")
+    assert idx_first_unconditional_field >= idx_guard_end
 
 
 def test_rand_stream_state_captured_at_both_tap_points():

@@ -95,6 +95,129 @@ def tick_range_from_division_for(process: str, *, spec_path: Path = SPEC_PATH) -
     return int(lo), int(hi)
 
 
+class SelectionContractError(DivisionWindowSpecError):
+    """Raised when the shared division-window spec's ``selection_contract``
+    block is missing, malformed, or missing a required key. Never silently
+    defaulted -- mirrors :class:`DivisionWindowSpecError`'s discipline for
+    the per-process m_ticks/tick_range_from_division accessors exactly, for
+    the same reason: a silently-guessed selection/horizon contract here
+    would defeat the entire point of preregistering it in one place (see
+    the 2026-09-08 division-censor-contract preregistration,
+    ``schema_v3_changes`` in ``division_window_spec.json``)."""
+
+
+_REQUIRED_SELECTION_CONTRACT_KEYS = (
+    "applies_to",
+    "candidate_seed_start",
+    "required_completed_windows",
+    "max_search_ticks",
+    "selection_order",
+    "attempt_record_filename",
+    "attempt_status_values",
+    "formal_estimand",
+    "stopping_rule",
+    "censor_record_required_identity_fields",
+    "authoritative_operational_root",
+)
+
+
+def selection_contract(*, spec_path: Path = SPEC_PATH) -> dict[str, Any]:
+    """Return the full parsed ``selection_contract`` block. Raises
+    :class:`SelectionContractError` if the block is absent from the spec
+    document, or if any of the keys the rest of this module's accessors
+    depend on is missing. Never returns a partial/best-effort dict."""
+    doc = load_spec(spec_path)
+    if "selection_contract" not in doc:
+        raise SelectionContractError(
+            f"division-window spec at {spec_path} has no top-level 'selection_contract' key"
+        )
+    contract = doc["selection_contract"]
+    if not isinstance(contract, dict):
+        raise SelectionContractError(
+            f"division-window spec at {spec_path}'s 'selection_contract' must be an object, "
+            f"got {type(contract).__name__}"
+        )
+    missing = [key for key in _REQUIRED_SELECTION_CONTRACT_KEYS if key not in contract]
+    if missing:
+        raise SelectionContractError(
+            f"division-window spec at {spec_path}'s 'selection_contract' is missing required "
+            f"key(s): {missing}"
+        )
+    return contract
+
+
+def selection_contract_applies_to(process: str, *, spec_path: Path = SPEC_PATH) -> bool:
+    """Whether ``process`` is covered by the preregistered selection
+    contract (e.g. ``'Cytokinesis'``/``'FtsZPolymerization'``)."""
+    return process in selection_contract(spec_path=spec_path)["applies_to"]
+
+
+def candidate_seed_start(*, spec_path: Path = SPEC_PATH) -> int:
+    return int(selection_contract(spec_path=spec_path)["candidate_seed_start"])
+
+
+def required_completed_windows(*, spec_path: Path = SPEC_PATH) -> int:
+    return int(selection_contract(spec_path=spec_path)["required_completed_windows"])
+
+
+def selection_horizon_max_search_ticks(*, spec_path: Path = SPEC_PATH) -> int:
+    """The common censoring horizon (``max_search_ticks``) every seed in
+    the cohort must be attempted at for a RIGHT_CENSORED record to count
+    as a valid censor under this contract. Distinct from (and, per the
+    spec's ``horizon_vs_existing_traces`` note, NOT a retroactive floor
+    on) any single extraction call's own ``max_search_ticks`` -- an
+    existing COMPLETED trace that finished well under this horizon
+    remains valid without re-extraction; only a censor CLAIM must have
+    been attempted at exactly this horizon."""
+    return int(selection_contract(spec_path=spec_path)["max_search_ticks"])
+
+
+def selection_order(*, spec_path: Path = SPEC_PATH) -> str:
+    return str(selection_contract(spec_path=spec_path)["selection_order"])
+
+
+def attempt_record_filename(*, spec_path: Path = SPEC_PATH) -> str:
+    return str(selection_contract(spec_path=spec_path)["attempt_record_filename"])
+
+
+def attempt_status_values(*, spec_path: Path = SPEC_PATH) -> tuple[str, ...]:
+    return tuple(str(v) for v in selection_contract(spec_path=spec_path)["attempt_status_values"])
+
+
+def formal_estimand(*, spec_path: Path = SPEC_PATH) -> str:
+    """The exact, preregistered estimand text (Opus re-review, 2026-09-09
+    tightened wording): what quantity the Cytokinesis/FtsZPolymerization
+    dual-tap cohort actually estimates. Machine-loadable so tooling/docs
+    can quote it verbatim rather than paraphrase it differently in
+    different places."""
+    return str(selection_contract(spec_path=spec_path)["formal_estimand"])
+
+
+def stopping_rule(*, spec_path: Path = SPEC_PATH) -> str:
+    """The preregistered non-adaptive stopping-rule text: the attempted
+    stream cannot be truncated, and required_completed_windows cannot be
+    lowered, based on observed completion/censoring incidence."""
+    return str(selection_contract(spec_path=spec_path)["stopping_rule"])
+
+
+def censor_record_required_identity_fields(*, spec_path: Path = SPEC_PATH) -> tuple[str, ...]:
+    """The ``AttemptRecord`` field names a RIGHT_CENSORED record must bind
+    to the CURRENT run's identity (e.g. ``dnadamage_source_resolved_sha256``,
+    ``mnrnd_provider_sha256``) for that censor to advance the contiguous
+    attempted prefix (see ``scripts.l2_event.division_cohort_selector``).
+    A censor record missing, or mismatching, any of these fields is
+    reclassified as an invalid/unresolved gap, never silently accepted."""
+    return tuple(str(v) for v in selection_contract(spec_path=spec_path)["censor_record_required_identity_fields"])
+
+
+def authoritative_operational_root(*, spec_path: Path = SPEC_PATH) -> str:
+    """The dedicated, homogeneous banking root name (a subdirectory of
+    ``data/m1_sources/karr_native/``) every dual-tap extraction should
+    ultimately be consolidated into -- see
+    ``scripts.l2_event.division_cohort_selector.authoritative_karr_native_root``."""
+    return str(selection_contract(spec_path=spec_path)["authoritative_operational_root"])
+
+
 class ProvisionalMarginOverrunError(DivisionWindowSpecError):
     """Raised when an observed inclusive onset-to-completion span leaves
     ZERO OR NEGATIVE margin against a preregistered ``m_ticks`` (i.e.

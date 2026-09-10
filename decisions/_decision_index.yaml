@@ -59,4 +59,22 @@ decisions:
       - "The live genuine-l22-cytokinesis (or any other) queue's worktree is updated to include the DNADamage signed-zero overlay commits"
       - "A same-source isolation probe shows a real array divergence under matched DNADamage source hashes (would indicate a genuine dual-tap-vs-single-process bug, not a source confound)"
     superseded_by: null
+    # NOTE (dec-006 integration, 2026-09-08): the first invalidation
+    # trigger above (single-process extractor writes DNADamage source
+    # metadata unconditionally) is fulfilled by dec-006's integration
+    # candidate -- see decisions/dec-006-shared-chromosome-randstream-
+    # input-oracle.md "Related Decisions". Not marking this decision
+    # superseded here; its own core Cytokinesis/event-window binding
+    # remains unaffected and this note is informational only, left for
+    # this decision's own owner/a future reviewer to formally revisit.
 
+  - id: dec-006
+    title: "Shared Chromosome.randStream state is a captured input oracle, not RNG output leakage (ReplicationInitiation)"
+    file: decisions/dec-006-shared-chromosome-randstream-input-oracle.md
+    status: active
+    created: 2026-09-05
+    invalidation_triggers:
+      - "A non-ledger-restored L2.1 replay of ReplicationInitiation (or any other consuming process) is later shown bit-identical without the ledger, proving the shared stream IS independently reconstructable for that case"
+      - "The ledger sidecar format changes incompatibly with tests/vivarium/chromosome_rand_stream_ledger.py's loader (main) without a corresponding regeneration"
+      - "A new process is found to consume the shared Chromosome.randStream and needs its own <Process>ChromosomeLedgerRandStream subclass registered"
+    superseded_by: null

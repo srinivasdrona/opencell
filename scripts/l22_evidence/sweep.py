@@ -1115,15 +1115,50 @@ def write_sweep_report(results: list[JobResult], path: Path = DEFAULT_REPORT_PAT
     execution status, exit code, timing, disjoint output/log paths, and a
     failure reason where relevant. Deliberately excludes raw per-tick
     arrays or channel numbers -- that detail lives in the runner's own
-    result.json (evidence_root), which this report only points at."""
+    result.json (evidence_root), which this report only points at.
+
+    MERGES `results` into any EXISTING report already at `path`, keyed by
+    `process`, rather than unconditionally overwriting the whole file.
+    A `--processes <subset>` sweep run therefore only replaces the rows
+    for the processes it actually ran -- every other process's row from
+    the prior full sweep is carried forward untouched. Previously, a
+    process-scoped rerun (e.g. `--processes ReplicationInitiation`)
+    silently TRUNCATED a 17-job report down to the 1 job just run,
+    destroying the other 16 processes' evidence rows in the tracked
+    file; this was found and must never recur (see
+    STATUS_L21_REPINIT_SEPT2.md and plan.md's RepInit integration
+    blockers). Writing a full (unfiltered) sweep's results here is still
+    safe/idempotent: it is simply a merge where every existing key is
+    also present in `results`."""
+    existing_jobs_by_process: dict[str, dict[str, Any]] = {}
+    if path.exists():
+        try:
+            existing_payload = json.loads(path.read_text(encoding="utf-8"))
+        except (OSError, ValueError):
+            existing_payload = None
+        if isinstance(existing_payload, dict):
+            for row in existing_payload.get("jobs", []):
+                if isinstance(row, dict) and isinstance(row.get("process"), str):
+                    existing_jobs_by_process[row["process"]] = row
+
+    for result in results:
+        existing_jobs_by_process[result.process] = result.to_dict()
+
+    # Stable, deterministic ordering: sorted by process name, independent
+    # of this invocation's `results` order or the prior file's row order,
+    # so re-running the SAME subset twice produces a byte-identical
+    # `jobs` array ordering (only `generated_at` differs).
+    merged_jobs = [existing_jobs_by_process[name] for name in sorted(existing_jobs_by_process)]
+
     tally: dict[str, int] = {}
-    for r in results:
-        tally[r.status] = tally.get(r.status, 0) + 1
+    for row in merged_jobs:
+        status = row.get("status")
+        tally[status] = tally.get(status, 0) + 1
     payload = {
         "generated_at": datetime.now(UTC).isoformat(),
-        "n_jobs": len(results),
+        "n_jobs": len(merged_jobs),
         "tally": tally,
-        "jobs": [r.to_dict() for r in results],
+        "jobs": merged_jobs,
     }
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
