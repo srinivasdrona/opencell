@@ -1,0 +1,302 @@
+[
+  {
+    "seed": 0,
+    "path": "per_process_traces_v2_s000/ReplicationInitiation_200ticks.mat",
+    "sha256": "40C24AF3C8303F3A8549E639676570B7E46FC16E86FD619F601E5B3BA9DEF796",
+    "rng_seed": 1
+  },
+  {
+    "seed": 1,
+    "path": "per_process_traces_v2_s001/ReplicationInitiation_200ticks.mat",
+    "sha256": "8DCB831B7FD0A544AEABEE0F24ADC668CA756D7246C53BCA3A48180B314323E6",
+    "rng_seed": 2
+  },
+  {
+    "seed": 2,
+    "path": "per_process_traces_v2_s002/ReplicationInitiation_200ticks.mat",
+    "sha256": "5627E6E9A9CCB48B438312058A3B74AF09959CF5C98BDDFEFF70F8F9459A0AE9",
+    "rng_seed": 3
+  },
+  {
+    "seed": 3,
+    "path": "per_process_traces_v2_s003/ReplicationInitiation_200ticks.mat",
+    "sha256": "A958A1ED9C952E4C3F79A1F8212C99F74AB652E8E4D40D4B78483C1EE312D606",
+    "rng_seed": 4
+  },
+  {
+    "seed": 4,
+    "path": "per_process_traces_v2_s004/ReplicationInitiation_200ticks.mat",
+    "sha256": "ECBD8EA4AD9BD0A4919A18CB710C03503110B79F1FF83F09A66928C30B1CB5FF",
+    "rng_seed": 5
+  },
+  {
+    "seed": 5,
+    "path": "per_process_traces_v2_s005/ReplicationInitiation_200ticks.mat",
+    "sha256": "30CEA613C35017BE47714EE5F00777D1AD62DD3880AF7B1120E99D29276EF036",
+    "rng_seed": 6
+  },
+  {
+    "seed": 6,
+    "path": "per_process_traces_v2_s006/ReplicationInitiation_200ticks.mat",
+    "sha256": "B4FB4A0B30F3002FD7C8ECB1D6B90C46843A392156216E6E3ED270DA2C437407",
+    "rng_seed": 7
+  },
+  {
+    "seed": 7,
+    "path": "per_process_traces_v2_s007/ReplicationInitiation_200ticks.mat",
+    "sha256": "9925160F8F62BC6D1987E07BB67DA3ACB5D65ED2C544A2224050C459E7A84151",
+    "rng_seed": 8
+  },
+  {
+    "seed": 8,
+    "path": "per_process_traces_v2_s008/ReplicationInitiation_200ticks.mat",
+    "sha256": "247BABE9EFDAC29EE6F023F094ACA23362E3A11111D6771954EA18B9A3209B35",
+    "rng_seed": 9
+  },
+  {
+    "seed": 9,
+    "path": "per_process_traces_v2_s009/ReplicationInitiation_200ticks.mat",
+    "sha256": "85F3B3ABDD571C948E72965C52730C481DF7D5E305FA299857D1D4426AEC00A6",
+    "rng_seed": 10
+  },
+  {
+    "seed": 10,
+    "path": "per_process_traces_v2_s010/ReplicationInitiation_200ticks.mat",
+    "sha256": "1BCA6AD644329B6AC9613174ACD2E97EB5F5158660A12DB05AE81E19C9F7DD7F",
+    "rng_seed": 11
+  },
+  {
+    "seed": 11,
+    "path": "per_process_traces_v2_s011/ReplicationInitiation_200ticks.mat",
+    "sha256": "ED393ECB937E95FA1664C0436D3290BF97A295D761A03C3F3283BA1A91F96CEB",
+    "rng_seed": 12
+  },
+  {
+    "seed": 12,
+    "path": "per_process_traces_v2_s012/ReplicationInitiation_200ticks.mat",
+    "sha256": "4D0F2B141C9503639B5CD60F6A8E107175B6F151C23AF56854C7579E85553486",
+    "rng_seed": 13
+  },
+  {
+    "seed": 13,
+    "path": "per_process_traces_v2_s013/ReplicationInitiation_200ticks.mat",
+    "sha256": "A0F8EFC832A922B8D619AC452F68E65FD33042F30C6FA74008F6DE2EA9C1D9E2",
+    "rng_seed": 14
+  },
+  {
+    "seed": 14,
+    "path": "per_process_traces_v2_s014/ReplicationInitiation_200ticks.mat",
+    "sha256": "177F0B4A26C50AF23B3797A772A596F613166A426AEA6F9611794DC0E9398DAE",
+    "rng_seed": 15
+  },
+  {
+    "seed": 15,
+    "path": "per_process_traces_v2_s015/ReplicationInitiation_200ticks.mat",
+    "sha256": "FB8F2398F27324452501A36DB45687FDB380463075F02E57566B72AAEF9A19F3",
+    "rng_seed": 16
+  },
+  {
+    "seed": 16,
+    "path": "per_process_traces_v2_s016/ReplicationInitiation_200ticks.mat",
+    "sha256": "0159C78628C97D6B4D389749CCCC760A16B0DEFB380F1B9D84C2DF48237AA499",
+    "rng_seed": 17
+  },
+  {
+    "seed": 17,
+    "path": "per_process_traces_v2_s017/ReplicationInitiation_200ticks.mat",
+    "sha256": "C46D6550EEBD840069C29B3268DF43EA0682F5FD27236076D4F518D4326FD62E",
+    "rng_seed": 18
+  },
+  {
+    "seed": 18,
+    "path": "per_process_traces_v2_s018/ReplicationInitiation_200ticks.mat",
+    "sha256": "AA421762C62FBAB7AC5E14DD4D156C30E05F9FF448FF932561FA98395FEDE3D3",
+    "rng_seed": 19
+  },
+  {
+    "seed": 19,
+    "path": "per_process_traces_v2_s019/ReplicationInitiation_200ticks.mat",
+    "sha256": "D1DF1749C782EE688582616975E77BE17F76011C35D120C191A72C9DEA7BA04B",
+    "rng_seed": 20
+  },
+  {
+    "seed": 20,
+    "path": "per_process_traces_v2_s020/ReplicationInitiation_200ticks.mat",
+    "sha256": "4A2CCF9ED699B2A2C21872DDB5309472F8755DBBD5F166F6E3F43BF3B559E1DB",
+    "rng_seed": 21
+  },
+  {
+    "seed": 21,
+    "path": "per_process_traces_v2_s021/ReplicationInitiation_200ticks.mat",
+    "sha256": "E93BF4361BA8B61CC113E6E3581183316F7B095EBF6045C96D9D845089FCC693",
+    "rng_seed": 22
+  },
+  {
+    "seed": 22,
+    "path": "per_process_traces_v2_s022/ReplicationInitiation_200ticks.mat",
+    "sha256": "7B5EBB1F3736BCD577CB849B99E8087C8001BE8EF2351E3EA803FD0DC10D98FD",
+    "rng_seed": 23
+  },
+  {
+    "seed": 23,
+    "path": "per_process_traces_v2_s023/ReplicationInitiation_200ticks.mat",
+    "sha256": "4BEEAD11D27373C9B191F829B023868E6B0F1061F507B14ED078CBBF465F1FBF",
+    "rng_seed": 24
+  },
+  {
+    "seed": 24,
+    "path": "per_process_traces_v2_s024/ReplicationInitiation_200ticks.mat",
+    "sha256": "52692ADD16247CCC9BD822E778A9FB8194616982267FBEEBEA722AF61C86E752",
+    "rng_seed": 25
+  },
+  {
+    "seed": 25,
+    "path": "per_process_traces_v2_s025/ReplicationInitiation_200ticks.mat",
+    "sha256": "100A5665E2470166F384F9FA3F8407F4C8067E5434A06B5086AD7CF1E2B4A199",
+    "rng_seed": 26
+  },
+  {
+    "seed": 26,
+    "path": "per_process_traces_v2_s026/ReplicationInitiation_200ticks.mat",
+    "sha256": "8417FD7F83DE33340D96D0C2EA0C59A57D90FFE3529CE43BBAB475D501028920",
+    "rng_seed": 27
+  },
+  {
+    "seed": 27,
+    "path": "per_process_traces_v2_s027/ReplicationInitiation_200ticks.mat",
+    "sha256": "C9D5F791FAD7FD8854BCC63BD28307EFE1655BFD01A9E00DC51FBF7A03621B97",
+    "rng_seed": 28
+  },
+  {
+    "seed": 28,
+    "path": "per_process_traces_v2_s028/ReplicationInitiation_200ticks.mat",
+    "sha256": "5951E0B8453DD8C72C824631029D92EBD53A6C6CC1701CAD02EA892737823D14",
+    "rng_seed": 29
+  },
+  {
+    "seed": 29,
+    "path": "per_process_traces_v2_s029/ReplicationInitiation_200ticks.mat",
+    "sha256": "BD2BA26F8FE0FF9653065713CCD90238FA82E9F95BC72416CA426BB5E2076313",
+    "rng_seed": 30
+  },
+  {
+    "seed": 30,
+    "path": "per_process_traces_v2_s030/ReplicationInitiation_200ticks.mat",
+    "sha256": "D061800AFD56F8FCAD2E079FF1738777691D54D29912DA18DA9EF12DA5FF8980",
+    "rng_seed": 31
+  },
+  {
+    "seed": 31,
+    "path": "per_process_traces_v2_s031/ReplicationInitiation_200ticks.mat",
+    "sha256": "09D3F4AB7A7B812B88FD0076477C382A25DA32FEDBED8BB4629EC29C049A5B07",
+    "rng_seed": 32
+  },
+  {
+    "seed": 32,
+    "path": "per_process_traces_v2_s032/ReplicationInitiation_200ticks.mat",
+    "sha256": "002D62608DF4297DE659999B95E53724FDC23D0DCE17BB362E95A19BDAEFE0D4",
+    "rng_seed": 33
+  },
+  {
+    "seed": 33,
+    "path": "per_process_traces_v2_s033/ReplicationInitiation_200ticks.mat",
+    "sha256": "C884A5F1799842240EF80CE7DA7B1D91BA77E48665A78DB0DF9896B696448DAF",
+    "rng_seed": 34
+  },
+  {
+    "seed": 34,
+    "path": "per_process_traces_v2_s034/ReplicationInitiation_200ticks.mat",
+    "sha256": "B6827135DF1B207287EF9246980A38D4C11F1634F7015F01DAEBD5865AC8004D",
+    "rng_seed": 35
+  },
+  {
+    "seed": 35,
+    "path": "per_process_traces_v2_s035/ReplicationInitiation_200ticks.mat",
+    "sha256": "85F6160D35950C0259A1BAA624A58BD167DDA3FC8E0CA7692757060DF2D211EE",
+    "rng_seed": 36
+  },
+  {
+    "seed": 36,
+    "path": "per_process_traces_v2_s036/ReplicationInitiation_200ticks.mat",
+    "sha256": "6E8B059C5F5384D1FF0E77DBE14E760C7C7C55A6994A88B924EAB910A8B87025",
+    "rng_seed": 37
+  },
+  {
+    "seed": 37,
+    "path": "per_process_traces_v2_s037/ReplicationInitiation_200ticks.mat",
+    "sha256": "D0BD5AE53813327CD970CF1A2063521826D071695007EEC6392CF96C01357193",
+    "rng_seed": 38
+  },
+  {
+    "seed": 38,
+    "path": "per_process_traces_v2_s038/ReplicationInitiation_200ticks.mat",
+    "sha256": "3BD6914619CAD12D4FD0D9F30DC31D833B9E90F7873486A9F30E1EA731083F54",
+    "rng_seed": 39
+  },
+  {
+    "seed": 39,
+    "path": "per_process_traces_v2_s039/ReplicationInitiation_200ticks.mat",
+    "sha256": "8709B5FFFCF5752FB2D026B3934E961CFA1951AFF71B4E69AE696588E056D94F",
+    "rng_seed": 40
+  },
+  {
+    "seed": 40,
+    "path": "per_process_traces_v2_s040/ReplicationInitiation_200ticks.mat",
+    "sha256": "383F46CA42991BC1B6F1383BE78FBF5D5EA64D0CB5D767F60C57A3EA06B77C59",
+    "rng_seed": 41
+  },
+  {
+    "seed": 41,
+    "path": "per_process_traces_v2_s041/ReplicationInitiation_200ticks.mat",
+    "sha256": "1733C358B9F9196BE75A69A18B2EB497F198B0C67BDB1887A669FAF71518C43C",
+    "rng_seed": 42
+  },
+  {
+    "seed": 42,
+    "path": "per_process_traces_v2_s042/ReplicationInitiation_200ticks.mat",
+    "sha256": "B3AD3B895AFCC61FC9BC66672E6AC7D1E5A79AF4DE0EC49CA4A4E9D137DF25A3",
+    "rng_seed": 43
+  },
+  {
+    "seed": 43,
+    "path": "per_process_traces_v2_s043/ReplicationInitiation_200ticks.mat",
+    "sha256": "7E6107E9C186A406F44FA70977DFEA3B242884824A03620971C1DADA248CA100",
+    "rng_seed": 44
+  },
+  {
+    "seed": 44,
+    "path": "per_process_traces_v2_s044/ReplicationInitiation_200ticks.mat",
+    "sha256": "67CE1DDE6B64252A7E32BD91F178E0A73675D789CBFAA9C4688A8654E7B4642A",
+    "rng_seed": 45
+  },
+  {
+    "seed": 45,
+    "path": "per_process_traces_v2_s045/ReplicationInitiation_200ticks.mat",
+    "sha256": "EFFA1E41FFB47FCE60EFDEC35E9AA35EB2939B0532DDFDB1A15CFDDBD76FC579",
+    "rng_seed": 46
+  },
+  {
+    "seed": 46,
+    "path": "per_process_traces_v2_s046/ReplicationInitiation_200ticks.mat",
+    "sha256": "2CD8C3D3993AFF97599042A76E034F8979D9F90FF022BF85CFD05517891766DC",
+    "rng_seed": 47
+  },
+  {
+    "seed": 47,
+    "path": "per_process_traces_v2_s047/ReplicationInitiation_200ticks.mat",
+    "sha256": "62FF45B5D6ACDC97D8301223413F8B923BADD4BC5C392264922BA9CBA0264BDF",
+    "rng_seed": 48
+  },
+  {
+    "seed": 48,
+    "path": "per_process_traces_v2_s048/ReplicationInitiation_200ticks.mat",
+    "sha256": "BA179A0D7417749BF04ACC5243B9FD4EAC9C2DE17E18B91101B644793038AF57",
+    "rng_seed": 49
+  },
+  {
+    "seed": 49,
+    "path": "per_process_traces_v2_s049/ReplicationInitiation_200ticks.mat",
+    "sha256": "B5CEDF9D0072ECDAA44F50AB16D1508EE7551A1CD02AA9F41CB6CD35BDEED161",
+    "rng_seed": 50
+  }
+]

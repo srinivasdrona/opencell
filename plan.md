@@ -80,45 +80,27 @@ earlier blocks below:**
   partial live `artifacts/l2_2_gates` root contains only DNAS; move/remove
   that restored temporary root first so defaults resolve to the complete
   tracked bundle.
-- RepInit agent `e3a01492-9c55-4535-880e-2264858589ad` is idle/completed.
-  Branch `fix/l22-repinit-m-aware` is clean at `49c54d5`; all 50 genuine
-  M=200 traces were re-extracted and the corrected RepInit gate is PASS
-  (both channels SEED_NOISE, zero warnings). It is **not merge-ready**:
-  its shared loader/helper hash changes stale 16 unrelated green rows,
-  producing a 3 PASS / 17 FAIL / 2 MISSING board. Build a provenance-safe
-  current-main integration/migration that preserves those rows before
-  review and merge; do not publish the 20/0/2 blog from the candidate PASS.
-  Next dispatch: reuse the same agent context to create
-  `integrate/l22-repinit-m-aware-current` from published `92cb7b6`, isolate
-  RepInit-specific trace identity/path behavior from shared source hashes
-  wherever possible, migrate any unavoidable shared dependency provenance
-  mechanically from already-accepted raw artifacts, require a genuine
-  **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE** board with integrity OK, and
-  stop at a clean reviewed candidate without merging or pushing.
-  First candidate `0e4627b` reached 20/0/2 with shared harness bytes
-  unchanged, but is **REJECTED by integration review**: it stores genuine
-  200-tick traces under `_100ticks.mat`, deliberately omits filename-tick
-  validation, and requires a manual seed-0 archive/temporary-swap sequence.
-  That violates the standing identity contract
-  `filename ticks == metadata n_ticks == requested/catalog M == channel
-  tick dimension` and is not a durable/resumable loader design. Correct it
-  on the same branch/agent context with actual
-  `ReplicationInitiation_200ticks.mat` files and a RepInit-scoped runner/
-  resolver path (or a mechanically justified shared-provenance migration);
-  preserve the canonical L2.1 `_100ticks.mat` without temporal swapping and
-  require a fresh Opus review explicitly against this contract.
-  Corrected R11 candidate `899d277` fixed honest `_200ticks.mat` naming,
-  removed seed-0 swapping, and restored 20/0/2, but integration review found
-  two remaining **blocking identity gaps**: its helper explicitly skips the
-  `chromosome` dataset even though RepInit catalogs chromosome as an input/
-  output channel (the real HDF5 dataset has shape `(1, 200)` and must be
-  checked), and the official runner can still accept `--ticks 100` then
-  truncate a 200-tick oracle because requested M is never compared with
-  catalog M. Add a RepInit-specific runner/entrypoint selected by the sweep
-  path (or equivalent fail-closed mechanism) so requested M == catalog M
-  before evaluation; validate chromosome dimensions too; add negative tests
-  for both; regenerate RepInit evidence/provenance and require another Opus
-  review before merge.
+- RepInit final candidate `integrate/l22-repinit-m-aware-current` at
+  `e1accc9` is in a no-commit merge onto current `main`. It stores all 50
+  genuine traces at durable suffixed
+  `ReplicationInitiation_200ticks.mat` paths while preserving the canonical
+  unsuffixed L2.1 `_100ticks.mat` (SHA `0c61c816...550c0f`). Its
+  process-specific resolver validates filename, metadata, catalog M, and
+  every channel dimension including chromosome; its RepInit-only official
+  entrypoint rejects requested M != catalog M before oracle loading.
+  Unrelated rows are preserved through exact AST-redacted shared-helper
+  hashing plus a fail-closed one-shot input-manifest migration. Fresh
+  official N=50/M=200 evidence is PASS (both channels SEED_NOISE);
+  authoritative candidate board is **20 PASS / 0 FAIL / 2
+  MISSING_EVIDENCE, integrity OK**. Independent Opus review **ACCEPTED**
+  R12 with no corrections. Merge-tree validation is complete: 50/50 raw
+  `_200ticks.mat` traces match the tracked manifest, zero obsolete suffixed
+  `_100ticks.mat` aliases remain; identity/entrypoint/evidence/L2.1 suite
+  92/92; L2.1 manifest 11/11 EWP; L2.2 **20/0/2 integrity OK**; L1b 28/28;
+  L2.4 PASS; provenance 44/44. Focused Ruff is clean apart from the three
+  pre-existing `sweep.py` SIM105 findings and the intentionally late-bound
+  DNAS/RepInit helper import I001. Commit/push the merge, then publish the
+  triggered 20/0/2 Tehol/Bugg blog post directly on main.
 - Detached division extraction remains healthy: supervisor PID `29372`,
   MATLAB PIDs `19400`/`27912`; seed 11 completed, was hash-banked, and
   passed the cohort validator. Its trace hashes are Cytokinesis

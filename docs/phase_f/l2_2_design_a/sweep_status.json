@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-09-10T05:57:38.061161+00:00",
+  "generated_at": "2026-09-10T17:49:13.660390+00:00",
   "jobs": [
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/DNARepair.log",
@@ -35,9 +35,7 @@
       "status": "DONE_VALID_EVIDENCE",
       "stored_bucket": "ALGORITHMIC_SHALLOW",
       "stored_verdict": "PASS",
-      "stored_warnings": [
-        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=complexs; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
-      ]
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/Metabolism.log",
@@ -167,13 +165,15 @@
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/Replication.log",
-      "log_tail": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/l22-final-sweep/tests/vivarium/l2_2_design_a_runner.py', '--process', 'Replication', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/l22-final-sweep/artifacts/l2_2_gates/Replication/.latest.rebuild-348-1785375351415765145']\n# started_at: 2026-07-30T01:35:51.417492+00:00\nReplication PASS substrates=SEED_NOISE@67.938000 boundEnzymes=SEED_NOISE@0.104385 chromosome=PASS@0.000000",
       "m_ticks": 100,
       "output_dir": "artifacts/l2_2_gates/Replication/latest",
       "process": "Replication",
-      "reason": "sweep_provenance.json source hash for 'helpers' is stale/unknown vs current tree",
+      "reason": null,
       "seeds": 50,
-      "status": "IN_PROGRESS_OR_UNKNOWN"
+      "status": "DONE_VALID_EVIDENCE",
+      "stored_bucket": "ALGORITHMIC_SHALLOW",
+      "stored_verdict": "PASS",
+      "stored_warnings": []
     },
     {
       "log_path": "artifacts/l2_2_gates/_sweep_logs/ReplicationInitiation.log",
@@ -230,7 +230,6 @@
   ],
   "n_jobs": 18,
   "tally": {
-    "DONE_VALID_EVIDENCE": 17,
-    "IN_PROGRESS_OR_UNKNOWN": 1
+    "DONE_VALID_EVIDENCE": 18
   }
 }

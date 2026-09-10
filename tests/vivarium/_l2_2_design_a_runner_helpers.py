@@ -275,6 +275,8 @@ def _v2_seed_mat_path(process_name: str, seed: int) -> Path:
     Seeds > 0 are unaffected: they only ever live under the seed-padded
     `_sNNN/` directory.
     """
+    if process_name == "ReplicationInitiation":
+        return _repinit_v2_seed_mat_path(int(seed))
     if int(seed) == 0:
         canonical = _v2_canonical_seed0_mat_path(process_name)
         suffixed = _v2_suffixed_seed_mat_path(process_name, 0)
@@ -1180,6 +1182,8 @@ def _oracle_dispatch() -> dict[str, Any]:
 
 def load_karr_oracle(process: str) -> dict[str, Any]:
     """Load the canonical Karr oracle for a Design-A process."""
+    if process == "ReplicationInitiation":
+        return _load_replication_initiation_v2_ensemble()
     v2_oracle = _load_v2_ensemble(process)
     specialized_ensemble_oracle = _load_ensembles_layout(process)
     if v2_oracle is not None and specialized_ensemble_oracle is not None:
@@ -3466,6 +3470,10 @@ def _dna_supercoiling_process(seed: int) -> KarrDNASupercoilingProcess:
 
 from _l2_2_dnas_runner_helpers import (  # noqa: E402
     run_dna_supercoiling_tick as _run_dna_supercoiling_tick,
+)
+from _l2_2_repinit_runner_helpers import (  # noqa: E402
+    load_replication_initiation_v2_ensemble as _load_replication_initiation_v2_ensemble,
+    repinit_v2_seed_mat_path as _repinit_v2_seed_mat_path,
 )
 
 

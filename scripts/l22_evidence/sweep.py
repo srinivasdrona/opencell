@@ -1,7 +1,7 @@
 """Resumable, bounded-parallel sweep launcher for the L2.2 Design-A runner.
 
-Drives the existing, UNMODIFIED ``tests/vivarium/l2_2_design_a_runner.py``
-across the 18 ``design_a_per_tick`` in-scope processes at their real catalog
+Drives the existing ``tests/vivarium/l2_2_design_a_runner.py`` across the
+18 ``design_a_per_tick`` in-scope processes at their real catalog
 ``N_seeds``/``M_ticks`` values, writing each process's runner-native
 evidence to ``artifacts/l2_2_gates/<Process>/latest/`` -- the exact
 directory the evidence generator (``scripts/l22_evidence/generator.py``)
@@ -9,7 +9,13 @@ already reads (see ``schema.py``). This module only decides *when* and
 *with what arguments* to invoke the existing runner subprocess and records
 what happened; it never touches biology, metrics, thresholds, catalog
 values, or verdict evaluators, and it never overrides the runner's own
-output.
+output. R12 exception: for ``ReplicationInitiation`` ONLY,
+``runner_command`` launches ``schema.REPINIT_RUNNER_ENTRYPOINT_MODULE`` --
+a thin, process-specific entrypoint that validates requested ``--ticks``
+against that process's live catalog ``M_ticks`` before delegating to the
+exact same, otherwise-unmodified runner with the exact same argv -- see
+that module's own docstring; every other process's invocation is
+unchanged.
 
 Resume semantics: a job is considered "already satisfied" only if its
 output directory contains the three mandatory authority files
@@ -671,13 +677,29 @@ def _sanitize_dangling_temp_refs(tmp_output_dir: Path, *, final_output_dir: Path
 
 
 def runner_command(job: SweepJob, *, python_exe: str | None = None) -> list[str]:
-    """The exact, unmodified runner CLI invocation for `job`. Seeds are
-    passed as a plain count ("50"), which the runner's own `_parse_seed_spec`
-    resolves to the explicit `range(50)` -- i.e. seeds 0..49, the real
-    Karr-oracle seed count already populated on disk."""
+    """The runner CLI invocation for `job`. Seeds are passed as a plain
+    count ("50"), which the runner's own `_parse_seed_spec` resolves to
+    the explicit `range(50)` -- i.e. seeds 0..49, the real Karr-oracle
+    seed count already populated on disk.
+
+    R12: for `ReplicationInitiation` ONLY, this launches `schema.
+    REPINIT_RUNNER_ENTRYPOINT_MODULE` instead of the generic, unmodified
+    `RUNNER_SCRIPT` -- a thin, process-specific entrypoint that validates
+    the requested `--ticks` against ReplicationInitiation's live catalog
+    `M_ticks` BEFORE any oracle loading/evaluation, then delegates to the
+    exact same shared runner with the exact same argv (see
+    `tests/vivarium/_l2_2_repinit_runner_entrypoint.py`'s module
+    docstring for the full rationale). Every OTHER process's invocation
+    is completely unchanged. This file (`sweep.py`) is not itself a
+    registered/hashed dependency of any row's `sweep_provenance.json` --
+    verified by direct inspection of `schema.SWEEP_PROVENANCE_SOURCE_
+    FILES`/`PROCESS_DEPENDENCY_FILES`/`HARNESS_DEPENDENCY_FILES`, none of
+    which name it -- so this dispatch requires no provenance migration of
+    any kind."""
+    script = schema.REPINIT_RUNNER_ENTRYPOINT_MODULE if job.process == "ReplicationInitiation" else RUNNER_SCRIPT
     return [
         python_exe or sys.executable,
-        str(RUNNER_SCRIPT),
+        str(script),
         "--process",
         job.process,
         "--seeds",

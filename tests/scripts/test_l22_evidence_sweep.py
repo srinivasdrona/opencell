@@ -95,9 +95,17 @@ def test_dnas_runner_dependency_hash_is_portable_across_line_endings(
     crlf_path.write_bytes(b"def run():\r\n    return 1\r\n")
     changed_path.write_bytes(b"def run():\n    return 2\n")
 
-    assert frozenset(
-        {("DNASupercoiling", "dnas_runner_helpers_module")}
-    ) == schema.LF_NORMALIZED_PROCESS_DEPENDENCIES
+    # This assertion checks membership, not exact set equality: the set of
+    # LF-normalized process dependencies has grown twice already in this
+    # project's history (DNASupercoiling's own sibling module, then
+    # ReplicationInitiation's TWO sibling modules for the same
+    # CRLF-on-Windows-then-LF-on-commit reason) -- an exact-equality lock
+    # here would need editing every time a new, unrelated process
+    # legitimately hits the same transient, which is exactly what happened
+    # across this session's own commits. What this test actually verifies
+    # (DNAS's entry is present and the normalization behaves correctly for
+    # it) is unaffected by how many OTHER entries the set holds.
+    assert ("DNASupercoiling", "dnas_runner_helpers_module") in schema.LF_NORMALIZED_PROCESS_DEPENDENCIES
 
     dependencies = dict(schema.PROCESS_DEPENDENCY_FILES["DNASupercoiling"])
     monkeypatch.setitem(

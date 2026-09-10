@@ -198,6 +198,16 @@ RUNNER_PROJECTIONS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_design_a_p
 # `PROCESS_DEPENDENCY_FILES["DNASupercoiling"]["dnas_runner_helpers_module"]`
 # and `runner_helpers_generic_hash`/`tick_runner_entry_hash` below.
 DNAS_RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_dnas_runner_helpers.py"
+# R11: ReplicationInitiation's own catalog-M-aware trace resolver/identity
+# guard sibling module -- see
+# `PROCESS_DEPENDENCY_FILES["ReplicationInitiation"]["repinit_runner_helpers_module"]`
+# and `runner_helpers_generic_hash`'s R11 section below.
+REPINIT_RUNNER_HELPERS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_repinit_runner_helpers.py"
+# R12: ReplicationInitiation's own requested-M-vs-catalog-M-vs-process
+# guard entrypoint (`sweep.runner_command` launches THIS script, never the
+# generic `l2_2_design_a_runner.py`, for ReplicationInitiation jobs) -- see
+# `PROCESS_DEPENDENCY_FILES["ReplicationInitiation"]["repinit_runner_entrypoint_module"]`.
+REPINIT_RUNNER_ENTRYPOINT_MODULE = REPO_ROOT / "tests" / "vivarium" / "_l2_2_repinit_runner_entrypoint.py"
 EVENT_BRIDGE_MODULE = REPO_ROOT / "scripts" / "l22_evidence" / "event_bridge.py"
 DNA_DAMAGE_EVENT_VERIFIER_MODULE = REPO_ROOT / "scripts" / "l22_evidence" / "dna_damage_event_verifier.py"
 DNA_DAMAGE_STIMULUS_COHORT_MODULE = REPO_ROOT / "scripts" / "l2_event" / "dna_damage_stimulus_cohort.py"
@@ -585,6 +595,21 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
         "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
         "state_init_module": STATE_INIT_MODULE,
+        # R11: ReplicationInitiation's catalog-M-aware (M_ticks=200) trace
+        # resolver/identity guard lives in its own sibling module (extracted
+        # OUT of the shared, universally-hashed
+        # `_l2_2_design_a_runner_helpers.py` -- see that module's
+        # `"# ---- ReplicationInitiation (R11...)"` section docstring and
+        # `_l2_2_repinit_runner_helpers.py`'s module docstring for the full
+        # incident/rationale, mirroring R7's DNASupercoiling precedent
+        # exactly). Registering it here makes an edit to IT stale only
+        # ReplicationInitiation's row.
+        "repinit_runner_helpers_module": REPINIT_RUNNER_HELPERS_MODULE,
+        # R12: ReplicationInitiation's own requested-M validation entrypoint
+        # (`sweep.runner_command` launches it in place of the generic
+        # `l2_2_design_a_runner.py` for ReplicationInitiation jobs only) --
+        # see `_l2_2_repinit_runner_entrypoint.py`'s module docstring.
+        "repinit_runner_entrypoint_module": REPINIT_RUNNER_ENTRYPOINT_MODULE,
     },
     "DNADamage": {
         "dna_damage_event_verifier_module": DNA_DAMAGE_EVENT_VERIFIER_MODULE,
@@ -604,13 +629,19 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     },
 }
 
-# This DNAS-only helper was first hashed while freshly generated with CRLF,
+# The DNAS-only helper was first hashed while freshly generated with CRLF,
 # then merged as Git-normalized LF despite identical Python source. Source
 # provenance should bind executable text, not that transient line-ending
 # difference. Keep all other dependency hashes raw-byte exact; this exception
-# is deliberately process/key scoped.
+# is deliberately process/key scoped. The RepInit sibling modules (R11/R12)
+# hit the identical CRLF-on-Windows-then-LF-on-commit transient during this
+# session and are registered here for the same reason.
 LF_NORMALIZED_PROCESS_DEPENDENCIES = frozenset(
-    {("DNASupercoiling", "dnas_runner_helpers_module")}
+    {
+        ("DNASupercoiling", "dnas_runner_helpers_module"),
+        ("ReplicationInitiation", "repinit_runner_helpers_module"),
+        ("ReplicationInitiation", "repinit_runner_entrypoint_module"),
+    }
 )
 
 
@@ -731,6 +762,123 @@ def _sha256_module_file(path: Path) -> str | None:
 # whole-file hash it replaces.
 _TICK_DISPATCH_FUNCTION_NAME = "_tick_dispatch"
 
+# --- R11: ReplicationInitiation's own catalog-M-aware trace-resolver      ---
+# --- redirect, excluded from the shared, process-agnostic "helpers" hash ---
+#
+# 2026-09 integration review round 2: an independent review rejected a
+# candidate that placed genuine 200-tick ReplicationInitiation data at the
+# generic, hardcoded `_100ticks.mat` path (filename token is part of this
+# project's trace-identity contract, never a non-authoritative legacy
+# label). The corrected design extracts ReplicationInitiation's own
+# catalog-M-aware (M_ticks=200) trace-path resolution and identity
+# validation into its own sibling module, `_l2_2_repinit_runner_helpers.py`
+# (mirroring R7's DNASupercoiling tick-runner extraction exactly), and adds
+# a single `if process(_name) == "ReplicationInitiation": return
+# <sibling-bound-name>(...)` redirect at the very top of BOTH
+# `_v2_seed_mat_path()` and `load_karr_oracle()` -- the two, and only two,
+# call sites that resolve a Design-A process's on-disk v2 trace path.
+#
+# Unlike R7's DNASupercoiling case (whose tick-runner function ALREADY
+# existed, as a local `def`, inside the shared file -- migrating it to an
+# import rebinding changes WHERE it lives but not whether ANY span exists
+# there at all), this redirect is a genuinely NEW addition: neither
+# `_v2_seed_mat_path` nor `load_karr_oracle` had any ReplicationInitiation-
+# specific code before it. Redacting it to a placeholder (as R7 does for
+# tick-dispatch bodies) would therefore NOT reproduce the pre-R11 hash --
+# a placeholder line is still a line that did not exist before. Instead,
+# `_r11_repinit_insertion_spans` identifies this EXACT, narrow shape (see
+# `_match_repinit_redirect_guard`) and `runner_helpers_generic_hash` DELETES
+# those lines outright (never a placeholder) when computing the hash, so a
+# tree with the R11 redirect and a tree without it hash IDENTICALLY for
+# every process other than ReplicationInitiation -- exactly the invariant
+# `migrate_r11_repinit_provenance.py` needs to mechanically prove the
+# migration of the other 19 already-accepted rows' recorded `"helpers"`
+# hash is safe, without rerunning their sweeps. A tree where the guard is
+# ABSENT (e.g. the pre-R11 `543c737` blob) simply yields no spans to
+# delete, which is what makes this hash produce the SAME value whether
+# evaluated against that blob or the post-R11 tree.
+#
+# ReplicationInitiation's own row is covered by a SEPARATE mechanism: the
+# sibling module is registered whole-file under
+# `PROCESS_DEPENDENCY_FILES["ReplicationInitiation"]["repinit_runner_helpers_module"]`
+# (same pattern as DNAS's `dnas_runner_helpers_module`), so an edit to it
+# still stales ReplicationInitiation's own row, just never any other one.
+_REPINIT_SIBLING_MODULE_NAME = "_l2_2_repinit_runner_helpers"
+_REPINIT_REDIRECT_GUARD_FUNCTIONS = ("_v2_seed_mat_path", "load_karr_oracle")
+# The redirect's call TARGET is pinned per guard-function, not accepted as
+# "any Call" -- otherwise a future edit that repointed the guard at some
+# OTHER function (while keeping the same `if <x> == "ReplicationInitiation":
+# return <call>()` shape) would still match, still get deleted, and still
+# hash-equal, silently hiding a real behavioral change from every OTHER
+# process's provenance. `test_shared_files_r11_delta_is_exactly_the_
+# documented_redirect` (tests/vivarium/test_l2_2_repinit_trace_identity.py)
+# is the compensating, independent control: it line-diffs the WHOLE file
+# against published main and asserts the added lines are byte-exact matches
+# of the four expected lines (including these exact call targets) -- so
+# even if this dict's pin and that test's pin were both wrong in the SAME
+# way, a manual review of either source diff would still catch it.
+_REPINIT_REDIRECT_GUARD_EXPECTED_CALLEE = {
+    "_v2_seed_mat_path": "_repinit_v2_seed_mat_path",
+    "load_karr_oracle": "_load_replication_initiation_v2_ensemble",
+}
+
+
+def _match_repinit_redirect_guard(stmt: Any, *, expected_callee: str) -> bool:
+    """True iff `stmt` is EXACTLY `if <name> == "ReplicationInitiation":
+    return <expected_callee>(...)` -- a single `ast.If` whose test is a
+    two-operand `==` comparison with one `ast.Name` operand and one
+    `ast.Constant` operand equal to the literal string
+    `"ReplicationInitiation"`, and whose entire body is one `ast.Return` of
+    an `ast.Call` whose callee is a bare `ast.Name` equal to
+    `expected_callee` (never "any Call" -- see the module-level comment on
+    `_REPINIT_REDIRECT_GUARD_EXPECTED_CALLEE` for why the callee itself
+    must be pinned). Deliberately narrow: returns False (never raises) on
+    any other shape, which simply means "this tree has nothing here to
+    delete" -- e.g. `543c737`, before R11, where `stmt` would be the
+    seed-0/docstring-adjacent code these two functions always had, not
+    this guard."""
+    import ast
+
+    if not isinstance(stmt, ast.If):
+        return False
+    test = stmt.test
+    if not (isinstance(test, ast.Compare) and len(test.ops) == 1 and isinstance(test.ops[0], ast.Eq)):
+        return False
+    operands = (test.left, test.comparators[0])
+    literal_hits = [o for o in operands if isinstance(o, ast.Constant) and o.value == "ReplicationInitiation"]
+    name_hits = [o for o in operands if isinstance(o, ast.Name)]
+    if len(literal_hits) != 1 or len(name_hits) != 1:
+        return False
+    if len(stmt.body) != 1 or not isinstance(stmt.body[0], ast.Return):
+        return False
+    call = stmt.body[0].value
+    return isinstance(call, ast.Call) and isinstance(call.func, ast.Name) and call.func.id == expected_callee
+
+
+def _r11_repinit_insertion_spans(tree: Any) -> list[tuple[int, int]]:
+    """Line spans (1-based, inclusive) of the R11 ReplicationInitiation
+    redirect scaffolding: the sibling-module import statement (if present,
+    matched by `node.module`, never by guessing at names), and the single
+    redirect guard at the first non-docstring statement of
+    `_v2_seed_mat_path`/`load_karr_oracle` (if present AND it matches
+    `_match_repinit_redirect_guard` exactly, INCLUDING that function's
+    pinned expected callee). A tree with none of these (e.g. `543c737`)
+    yields an empty list."""
+    import ast
+
+    spans: list[tuple[int, int]] = []
+    for node in tree.body:
+        if isinstance(node, ast.ImportFrom) and node.module == _REPINIT_SIBLING_MODULE_NAME:
+            spans.append((node.lineno, node.end_lineno))
+        if isinstance(node, ast.FunctionDef) and node.name in _REPINIT_REDIRECT_GUARD_FUNCTIONS:
+            body = node.body
+            if body and isinstance(body[0], ast.Expr) and isinstance(body[0].value, ast.Constant) and isinstance(body[0].value.value, str):
+                body = body[1:]  # skip the function's own docstring, if any
+            expected_callee = _REPINIT_REDIRECT_GUARD_EXPECTED_CALLEE[node.name]
+            if body and _match_repinit_redirect_guard(body[0], expected_callee=expected_callee):
+                spans.append((body[0].lineno, body[0].end_lineno))
+    return spans
+
 
 class _RunnerDispatchAuditError(RuntimeError):
     """Raised when `_tick_dispatch()`'s source no longer has the single,
@@ -834,47 +982,59 @@ def _resolve_bound_name_source(tree: Any, source: str, bound_name: str) -> str |
 
 
 def runner_helpers_generic_hash(*, source: str | None = None) -> str | None:
-    """sha256 of `_l2_2_design_a_runner_helpers.py` with every per-process
-    tick-runner BINDING that `_tick_dispatch()` maps a process to -- a
-    local top-level `def <name>(...)`, OR a top-level `from <module> import
-    <real_name> as <name>` that rebinds it to an external sibling module
-    (today: DNASupercoiling only) -- replaced by a FIXED one-line
-    placeholder naming only the local name. Keying the placeholder purely
-    by name (never by construct kind) is what makes this hash produce the
-    IDENTICAL value whether a given process's tick-runner currently lives
-    as a local `def` or as an imported rebinding: migrating one to the
-    other changes ONLY that process's own `"tick_runner"` hash, never this
-    one. See this section's module-level comment for the full design.
-    Returns None if the file is missing (never silently treated as
-    "unchanged").
+    """sha256 of `_l2_2_design_a_runner_helpers.py` with:
+      1. every per-process tick-runner BINDING that `_tick_dispatch()` maps
+         a process to -- a local top-level `def <name>(...)`, OR a
+         top-level `from <module> import <real_name> as <name>` that
+         rebinds it to an external sibling module (today: DNASupercoiling
+         only) -- replaced by a FIXED one-line placeholder naming only the
+         local name (R7); and
+      2. the R11 ReplicationInitiation trace-resolver redirect scaffolding
+         (see this section's module-level comment) DELETED outright, not
+         placeholdered, if present.
+    (1) keys its placeholder purely by name (never by construct kind),
+    which is what makes this hash produce the IDENTICAL value whether a
+    given process's tick-runner currently lives as a local `def` or as an
+    imported rebinding: migrating one to the other changes ONLY that
+    process's own `"tick_runner"` hash, never this one. (2) is a genuinely
+    NEW addition with no previous span to swap places with, so it is
+    deleted (never placeholdered) so that a tree with it and a tree
+    without it hash IDENTICALLY -- see `_r11_repinit_insertion_spans`'s
+    docstring for why. Returns None if the file is missing (never silently
+    treated as "unchanged").
 
     `source`, when given, is evaluated VERBATIM instead of reading the file
-    from disk -- `migrate_helpers_provenance.py` passes a `--pre-ref` git
-    blob's text through here so it can compare "what would this hash have
-    been at pre-ref" against "what is it now" without ever checking that
-    ref out onto disk."""
+    from disk -- `migrate_helpers_provenance.py`/`migrate_r11_repinit_
+    provenance.py` pass a `--pre-ref` git blob's text through here so they
+    can compare "what would this hash have been at pre-ref" against "what
+    is it now" without ever checking that ref out onto disk."""
     import ast
 
     if source is None and not RUNNER_HELPERS_MODULE.is_file():
         return None
     text, tree = _parse_runner_helpers_ast(source=source)
     dispatch_fn_names = set(_static_tick_dispatch_map(tree).values())
-    spans: list[tuple[int, int, str]] = []
+    edits: list[tuple[int, int, str | None]] = []
     for node in tree.body:
         if isinstance(node, ast.FunctionDef) and node.name in dispatch_fn_names:
-            spans.append((node.lineno, node.end_lineno, node.name))
+            edits.append((node.lineno, node.end_lineno, f"# <<REDACTED_TICK_RUNNER_BODY:{node.name}>>\n"))
             continue
         if isinstance(node, ast.ImportFrom):
             for alias in node.names:
                 local_name = alias.asname or alias.name
                 if local_name in dispatch_fn_names:
-                    spans.append((node.lineno, node.end_lineno, local_name))
+                    edits.append((node.lineno, node.end_lineno, f"# <<REDACTED_TICK_RUNNER_BODY:{local_name}>>\n"))
                     break
-    if not spans:
+    for start, end in _r11_repinit_insertion_spans(tree):
+        edits.append((start, end, None))
+    if not edits:
         return hashlib.sha256(text.encode("utf-8")).hexdigest()
     lines = text.splitlines(keepends=True)
-    for start, end, name in sorted(spans, key=lambda item: item[0], reverse=True):
-        lines[start - 1 : end] = [f"# <<REDACTED_TICK_RUNNER_BODY:{name}>>\n"]
+    for start, end, placeholder in sorted(edits, key=lambda item: item[0], reverse=True):
+        if placeholder is None:
+            del lines[start - 1 : end]
+        else:
+            lines[start - 1 : end] = [placeholder]
     return hashlib.sha256("".join(lines).encode("utf-8")).hexdigest()
 
 
