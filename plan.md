@@ -107,6 +107,18 @@ earlier blocks below:**
   resolver path (or a mechanically justified shared-provenance migration);
   preserve the canonical L2.1 `_100ticks.mat` without temporal swapping and
   require a fresh Opus review explicitly against this contract.
+  Corrected R11 candidate `899d277` fixed honest `_200ticks.mat` naming,
+  removed seed-0 swapping, and restored 20/0/2, but integration review found
+  two remaining **blocking identity gaps**: its helper explicitly skips the
+  `chromosome` dataset even though RepInit catalogs chromosome as an input/
+  output channel (the real HDF5 dataset has shape `(1, 200)` and must be
+  checked), and the official runner can still accept `--ticks 100` then
+  truncate a 200-tick oracle because requested M is never compared with
+  catalog M. Add a RepInit-specific runner/entrypoint selected by the sweep
+  path (or equivalent fail-closed mechanism) so requested M == catalog M
+  before evaluation; validate chromosome dimensions too; add negative tests
+  for both; regenerate RepInit evidence/provenance and require another Opus
+  review before merge.
 - Detached division extraction remains healthy: supervisor PID `29372`,
   MATLAB PIDs `19400`/`27912`; seed 11 completed, was hash-banked, and
   passed the cohort validator. Its trace hashes are Cytokinesis
