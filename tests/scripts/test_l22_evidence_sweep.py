@@ -96,7 +96,10 @@ def test_dnas_runner_dependency_hash_is_portable_across_line_endings(
     changed_path.write_bytes(b"def run():\n    return 2\n")
 
     assert frozenset(
-        {("DNASupercoiling", "dnas_runner_helpers_module")}
+        {
+            ("DNASupercoiling", "dnas_runner_helpers_module"),
+            ("ReplicationInitiation", "repinit_runner_helpers_module"),
+        }
     ) == schema.LF_NORMALIZED_PROCESS_DEPENDENCIES
 
     dependencies = dict(schema.PROCESS_DEPENDENCY_FILES["DNASupercoiling"])
