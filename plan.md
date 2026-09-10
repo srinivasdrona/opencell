@@ -124,10 +124,14 @@ earlier blocks below:**
   passed the cohort validator. Its trace hashes are Cytokinesis
   `addd60f6...1e70`, FtsZ `d6a1a00f...cb90`, attempt sidecar
   `a2ef57c3...e7f`. The contiguous attempted prefix now ends at seed 11:
-  11 completed, seed 6 right-censored, zero duplicate hashes/source
-  mismatches/invalid censors; seed 12 is running and correctly reported as
-  `next_seed_to_attempt`. Selector exit 2 is expected until 50 completions
-  are selected.
+  seed 12 subsequently completed its full 100,000-tick attempt as a valid
+  right-censor (sidecar `d4d3ab4d...2432`), and seed 13 completed with Cyt
+  `4ee3e54b...5f72`, FtsZ `9864544a...5e4f`, sidecar
+  `f714d25c...f95a`. The validated contiguous prefix now ends at seed 13:
+  **12 completed / 2 right-censored** (6, 12), zero duplicate hashes,
+  source mismatches, invalid censors, or rejected traces; seed 14 is running
+  and correctly reported as `next_seed_to_attempt`. Selector exit 2 is
+  expected until 50 completions are selected.
   Status/log remain under
   `E:\opencell-worktrees\bulk-division-a\artifacts\dual_contract_007_016.*`.
 - Historical published main at the start of the final DNAS merge wave was
