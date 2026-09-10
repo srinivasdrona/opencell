@@ -1,0 +1,10 @@
+{
+  "cohort_status": "PILOT_ONLY_NOT_A_GATE_VERDICT",
+  "ledger_note": "Present for provenance completeness only -- this L2.2 gate's analysis never reads the ledger's contents (it derives candidates/weights from real states_before and winners from real states_after deltas, with no OC RNG replay of any kind); the ledger remains an L2.1-only mechanism.",
+  "ledger_path": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/TranscriptionalRegulation_4000ticks.chromosome_rand_stream_ledger.json",
+  "ledger_sha256": "f01783e8356737429cf02bd90edf4b4063f49724092c5f77b2deb9dc303d2b67",
+  "n_seeds": 1,
+  "process": "TranscriptionalRegulation",
+  "trace_path": "data/m1_sources/karr_native/per_process_traces_v2_event_s000/TranscriptionalRegulation_4000ticks.mat",
+  "trace_sha256": "73fc1d9710e2a98f61221d51a80cdbc490fb6d44db4ea95853414048c9fc7aa2"
+}

@@ -7,13 +7,16 @@ function report = reconstruct_chromosome_draw_ledger(trace_mat_path, output_json
 % using ONLY the `chromosome_rand_stream_state` before/after pair already
 % captured in `states_before`/`states_after` by
 % `extract_per_process_traces_v2.m::merge_chromosome_rand_stream_state`.
-% Process-agnostic: used by DNADamage's own L2.1 lane and by
-% ReplicationInitiation's (see DEC-005/DEC-006), and handles a QUIESCENT
-% tick (`state_before(t) == state_after(t)`, i.e. zero chromosome draws
-% that tick -- common for processes whose own coarse candidate-set
-% gating means many ticks have no chromosome-site contention at all)
-% WITHOUT attempting to draw a full LCG period to "walk back" to an
-% identical state by chance.
+% Process-agnostic: used by DNADamage's own L2.1 lane, by
+% ReplicationInitiation's, and by TranscriptionalRegulation's (see
+% DEC-005/DEC-006), and handles a QUIESCENT tick
+% (`state_before(t) == state_after(t)`, i.e. zero chromosome draws that
+% tick -- common for processes whose own coarse candidate-set gating
+% means many ticks have no chromosome-site contention at all, most
+% acutely on TranscriptionalRegulation's 4000-tick window, whose per-tick
+% TF-site competition is far sparser than DNADamage's denser per-tick
+% reaction/site-sampling call volume) WITHOUT attempting to draw a full
+% LCG period to "walk back" to an identical state by chance.
 %
 % Method: for each tick t, construct a SCRATCH `RandStream('mcg16807')`
 % (never the live simulation's real stream -- this never touches

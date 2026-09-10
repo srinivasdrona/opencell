@@ -579,16 +579,39 @@ _PROCESS_SPECS: dict[str, _ProcessSpec] = {
     ),
     "TranscriptionalRegulation": _ProcessSpec(
         process_cls=KarrTranscriptionalRegulationProcess,
-        observables=("substrates", "enzymes", "boundEnzymes"),
-        pass_through=frozenset({"boundEnzymes", "enzymes"}),
+        # Corrected 2026-09-08 (Opus re-review, TxReg integration): the
+        # prior spec here (`observables=("substrates", "enzymes",
+        # "boundEnzymes")`, `enzymes`/`boundEnzymes` both `pass_through`)
+        # predated the entire site-level rewrite (eb46fc6) and caused the
+        # shared mechanical audit harness (scripts/l21_active_window_audit.py)
+        # to report a stale CODE_GAP (legacy 130-element tf_binding
+        # TU-level shape, unrelated to the real RNG/occlusion fixes).
+        # Authoritative spec is opencell/vivarium/
+        # karr_transcriptional_regulation.py::ports_schema():
+        # `tf_bound_promoters` (34 entries, site{NNN}_copy{0,1}, Karr
+        # `tfBoundPromoters`) and `bound_tfs` (5 entries, Karr `boundTFs`,
+        # column-0-only histc) are the authoritative site-level surfaces.
+        # `enzymes`/`boundEnzymes` are now genuinely comparable too
+        # (computed from genuine per-tick bind counts), so they are no
+        # longer `pass_through` either.
+        observables=("substrates", "enzymes", "boundEnzymes", "tfBoundPromoters", "boundTFs"),
+        pass_through=frozenset(),
         observable_to_wids_attr={
             "substrates": "substrate_wids",
             "enzymes": "enzyme_wids",
             "boundEnzymes": "enzyme_wids",
+            "tfBoundPromoters": "tf_bound_promoters_wids",
+            "boundTFs": "tf_wids",
+        },
+        store_path_override={
+            "tfBoundPromoters": ("tf_bound_promoters",),
+            "boundTFs": ("bound_tfs",),
         },
         trace_after_hint_observables=("enzymes", "boundEnzymes"),
         requires_hints_for_honest_mode=False,
         oracle_type=ORACLE_BIT_IDENTITY,
+        hidden_read_surface=("chromosome",),
+        chromosome_rand_stream_ledger_attr="_chromosome_rng",
     ),
 }
 

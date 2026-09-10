@@ -7,6 +7,7 @@ Run via:
 from __future__ import annotations
 
 import copy
+import hashlib
 import json
 import sys
 from collections import Counter
@@ -34,7 +35,7 @@ EXPECTED_ACTIVE_WINDOW_VERDICTS = {
     "RNAModification": "GENUINE",
     "RibosomeAssembly": "GENUINE",
     "ChromosomeSegregation": "GENUINE",
-    "TranscriptionalRegulation": active_windows.CLASS_CODE_GAP,
+    "TranscriptionalRegulation": "GENUINE",
     "Cytokinesis": "GENUINE",
     "DNADamage": "GENUINE",
     "HostInteraction": "GENUINE",
@@ -118,6 +119,105 @@ def test_active_window_manifest_stale_classification_fails_closed(tmp_path: Path
     result = probe.audit_one_process("Metabolism", active_window_manifest=manifest_path)
     assert result["verdict"] == active_windows.MANIFEST_VERIFY_INVALID
     assert "replay_evidence" in result["active_window_manifest_error"]
+
+
+def test_active_window_manifest_code_gap_row_verifies_via_synthetic_row(tmp_path: Path):
+    """Regression coverage for `verify_active_window_manifest_row`'s
+    CLASS_CODE_GAP re-verification branch (the final fall-through in that
+    function, reached when `recorded_classification` is neither
+    EXISTING_WINDOW_PASS nor MISSING_ACTIVE_EXTRACTION), using an entirely
+    SYNTHETIC manifest row built around a dummy on-disk file -- never
+    depending on any row in the REAL manifest actually being CODE_GAP.
+
+    Before the TranscriptionalRegulation promotion (2026-09-09), this
+    branch was incidentally exercised by
+    `test_current_tree_active_window_manifest_checkpoint
+    [TranscriptionalRegulation]` because that was the manifest's one
+    real CODE_GAP row. Now that the real manifest is a literal
+    11 EXISTING_WINDOW_PASS / 0 CODE_GAP / 0 MISSING_ACTIVE_EXTRACTION (see
+    `test_current_manifest_summary_matches_rows`), that incidental
+    coverage is gone -- this test closes the gap directly and
+    permanently, independent of any future manifest composition.
+
+    Uses HostInteraction's `process_name` (an arbitrary, real
+    `TARGET_PROCESSES` member -- the specific choice does not matter here,
+    since `_summarize_trace_candidate`/`_classify_live_trace_candidate`
+    are both monkeypatched below rather than reading any real trace
+    content) with a tiny, self-contained dummy trace file created in
+    `tmp_path` so the source-existence/sha256 checks
+    (`verify_active_window_manifest_row`'s first real gate) pass against
+    a genuine file this test fully controls, never a real gitignored
+    trace this worktree may or may not have locally.
+    """
+    process_name = "HostInteraction"
+    dummy_trace_path = tmp_path / "synthetic_dummy_trace.mat"
+    dummy_trace_path.write_bytes(b"not a real .mat file, only its sha256 is ever read by this test")
+    dummy_sha256 = hashlib.sha256(dummy_trace_path.read_bytes()).hexdigest()
+
+    manifest_path = _write_single_row_manifest(tmp_path, process_name)
+    payload = json.loads(manifest_path.read_text(encoding="utf-8"))
+    row = payload["rows"][0]
+    row["classification"] = active_windows.CLASS_CODE_GAP
+    row["source"] = {
+        "path": str(dummy_trace_path),
+        "repo_relative_hint": str(dummy_trace_path),
+        "sha256": dummy_sha256,
+        "trace_family": "event_window",
+        "source_manifest": None,
+    }
+    synthetic_trace_window = {
+        "n_ticks": 100,
+        "tick_offset": 0.0,
+        "first_active_local_tick": 4,
+        "first_active_absolute_tick": 4.0,
+        "active_tick_count": 1,
+        "first_active_detail": None,
+    }
+    row["trace_window"] = synthetic_trace_window
+    manifest_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+
+    dummy_candidate = active_windows.TraceCandidate(
+        path=str(dummy_trace_path),
+        repo_relative_hint=str(dummy_trace_path),
+        sha256=dummy_sha256,
+        trace_family="event_window",
+        n_ticks=100,
+        rng_seed=0,
+        tick_offset=0.0,
+        states_after_keys=["substrates"],
+        first_active_tick=synthetic_trace_window["first_active_local_tick"],
+        first_active_absolute_tick=synthetic_trace_window["first_active_absolute_tick"],
+        active_tick_count=synthetic_trace_window["active_tick_count"],
+        first_active_detail=None,
+        source_manifest=None,
+    )
+
+    def fake_summarize_trace_candidate(process, path, *, known_sha, source_manifest):
+        assert process == process_name
+        assert Path(path) == dummy_trace_path
+        assert known_sha == dummy_sha256
+        return dummy_candidate
+
+    def fake_classify_live_trace_candidate(process, candidate, *, progress=False):
+        assert process == process_name
+        assert candidate is dummy_candidate
+        return None, None, active_windows.CLASS_CODE_GAP, None
+
+    original_summarize = active_windows._summarize_trace_candidate
+    original_classify = active_windows._classify_live_trace_candidate
+    active_windows._summarize_trace_candidate = fake_summarize_trace_candidate
+    active_windows._classify_live_trace_candidate = fake_classify_live_trace_candidate
+    try:
+        verification = active_windows.verify_active_window_manifest_row(manifest_path, process_name)
+    finally:
+        active_windows._summarize_trace_candidate = original_summarize
+        active_windows._classify_live_trace_candidate = original_classify
+
+    assert verification["verified"] is True
+    assert verification["verification_status"] == active_windows.MANIFEST_VERIFY_CODE_GAP
+    assert verification["fresh_classification"] == active_windows.CLASS_CODE_GAP
+    assert verification["recorded_classification"] == active_windows.CLASS_CODE_GAP
+    assert verification["failure_reason"] is None
 
 
 @pytest.mark.parametrize("process_name", sorted(EXPECTED_ACTIVE_WINDOW_VERDICTS))

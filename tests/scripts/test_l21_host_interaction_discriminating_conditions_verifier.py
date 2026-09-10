@@ -42,6 +42,7 @@ if str(_VIVARIUM_TESTS_DIR) not in sys.path:
     sys.path.insert(0, str(_VIVARIUM_TESTS_DIR))
 
 import l21_active_window_audit as active_windows  # noqa: E402
+import l21_evidence_common as evidence_common  # noqa: E402
 from l21_evidence_common import skip_or_fail_missing_artifact  # noqa: E402
 
 MANIFEST_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_1" / "L21_ACTIVE_WINDOWS_MANIFEST.json"
@@ -220,18 +221,19 @@ def test_skip_or_fail_missing_artifact_fails_for_existing_window_pass_process():
         )
 
 
-def test_skip_or_fail_missing_artifact_skips_for_non_pass_process():
+def test_skip_or_fail_missing_artifact_skips_for_non_pass_process(monkeypatch):
     """A process whose manifest row is NOT EXISTING_WINDOW_PASS (e.g. a
     CODE_GAP row) carries no genuine-evidence claim, so a missing artifact
     for it legitimately skips rather than fails."""
-    payload = _load_manifest_payload()
-    non_pass_processes = [
-        row["process"] for row in payload["rows"] if row["classification"] != active_windows.CLASS_EXISTING_WINDOW_PASS
-    ]
-    assert non_pass_processes, "expected at least one non-PASS row in the real manifest to exercise this branch"
+    process_name = "SyntheticCodeGapProcess"
+    monkeypatch.setattr(
+        evidence_common,
+        "_l21_manifest_classification",
+        lambda process: active_windows.CLASS_CODE_GAP if process == process_name else None,
+    )
     with pytest.raises(pytest.skip.Exception):
         skip_or_fail_missing_artifact(
-            Path("does/not/exist.mat"), non_pass_processes[0], "synthetic missing-artifact test"
+            Path("does/not/exist.mat"), process_name, "synthetic missing-artifact test"
         )
 
 

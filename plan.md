@@ -62,9 +62,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-10 04:03 IST) — supersedes all
 earlier blocks below:**
 
-- Local `main` is clean and published at `0957343`. DNADamage,
-  Cytokinesis, and HostInteraction L2.1 are merged. The authoritative L2.1
-  manifest is **10 EWP / 1 CODE_GAP / 0 MISSING**. Host's final integrated
+- Local `main` has the accepted TxReg merge staged and fully verified.
+  DNADamage, Cytokinesis, HostInteraction, ReplicationInitiation, and
+  TranscriptionalRegulation L2.1 are merged. The authoritative L2.1
+  manifest is **11 EWP / 0 CODE_GAP / 0 MISSING**. Host's final integrated
   regression passed 148 tests/6 expected data-absence skips; Cytokinesis's
   passed 184 tests. L1b is 28/28, oracle-dependency 38/38, and L2.2 remains
   **18/2/2 integrity OK** after the honest RepInit L2.2 demotion.
@@ -203,8 +204,14 @@ earlier blocks below:**
     mechanically regenerate 11/0/0, stage trace `73fc1d97...` and ledger
     `f01783e8...`, preserve RepInit/DNADamage/Cyt/Host, and keep L2.2 18/2/2.
     Final rebuilt branch `integrate/l21-txreg-final` is clean at `57f1f19`
-    and reports every prescribed fix/test green; only final Opus integration
-    review remains.
+    and reports every prescribed fix/test green. Final Opus review
+    **ACCEPTED** the merged-tree result: one unioned `dec-006`, exact
+    three-process ledger registry, literal 11/0/0 manifest with 11 nodeids,
+    no-skip 4000-tick replay, preserved RepInit/DNADamage/Cyt/Host/ChromSeg
+    and censor contract, PIT still pilot-only, L2.2 still 18/2/2. Real
+    merge-tree verification passed 102 TxReg tests, 250 division/censor
+    tests, 17 active-window/Host tests, 88 ledger/extractor/oracle tests,
+    the DNADamage replay, and L1b 28/28. Publish the verified merge.
 - L2.2:
   - DNASupercoiling branch `agent/l22-dnas-20260812` at `4556d27` is
     **ACCEPTED** by final Opus review: both MATLAB origin-wrap helpers,

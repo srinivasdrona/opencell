@@ -1,15 +1,34 @@
 """Shared loader for Karr's shared-Chromosome-stream per-tick raw-draw
 ledger (`scripts/matlab/reconstruct_chromosome_draw_ledger.m`'s output),
-used by BOTH `tests/vivarium/test_karr_dna_damage_l2_replay.py` (the
-process-specific L2.1 replay test) and `scripts/l21_active_window_audit.py`
-(via `tests/vivarium/l2_2_replay_common_v2.py`, the shared multi-process
-L2.1 audit harness) -- one hash-bound loader, reused rather than
-duplicated, so both call sites fail closed identically on a missing,
-tampered, or short/long ledger.
+used by `tests/vivarium/test_karr_dna_damage_l2_replay.py` (the
+process-specific DNADamage L2.1 replay test),
+`tests/vivarium/test_karr_replication_initiation.py` (the
+process-specific ReplicationInitiation L2.1 replay test, dec-006 --
+this lane's own `_chromosome_rng` restoration uses
+`opencell/vivarium/karr_replication_initiation.py::
+_ReplicationInitiationChromosomeLedgerRandStream`),
+`tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py` (the
+process-specific TranscriptionalRegulation L2.1 replay test, dec-006 --
+this lane's own `_chromosome_rng` restoration is process-scoped and
+site-sampling-specific; see that test module and
+`opencell/util/txreg_mcg_rand.py::TxRegChromosomeLedgerRandStream`), and
+`scripts/l21_active_window_audit.py` (via
+`tests/vivarium/l2_2_replay_common_v2.py`, the shared multi-process L2.1
+audit harness) -- one hash-bound loader, reused rather than duplicated,
+so every call site fails closed identically on a missing, tampered, or
+short/long ledger. The DNADamage-source-hash cross-check below is
+unconditional for every lane (never weakened or made lane-specific): the
+shared extractor (`extract_per_process_traces_v2.m`) writes
+`dnadamage_source_resolved_sha256` metadata unconditionally into every
+trace regardless of which process it targets, so this check is a
+meaningful provenance guard for the RepInit/TxReg lanes too, not merely
+inherited DNADamage-lane boilerplate.
 
 This module is test/audit-tier (it reads a companion oracle-adjacent
-sidecar file), never imported by `opencell/vivarium/karr_dna_damage.py`
-or `karr_dna_damage_rng.py` themselves -- see
+sidecar file), never imported by `opencell/vivarium/karr_dna_damage.py`,
+`karr_dna_damage_rng.py`, `opencell/vivarium/karr_replication_initiation.py`,
+`opencell/vivarium/karr_transcriptional_regulation.py`, or
+`opencell/util/txreg_mcg_rand.py` themselves -- see
 `docs/prompts/FIX_TEMPLATE_L2_REPLAY.md` Rule 8 ("a `_static_replay.py`
 helper consumed only by tests is fine ... not under `opencell/vivarium/`").
 """

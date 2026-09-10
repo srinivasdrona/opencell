@@ -1,4 +1,4 @@
-# DEC-006: Shared `Chromosome.randStream` state is a captured input oracle, not RNG output leakage
+# DEC-006: Shared `Chromosome.randStream` state is a captured input oracle, not RNG output leakage (ReplicationInitiation, TranscriptionalRegulation)
 
 **Status:** Active
 **Date:** 2026-09-05
@@ -177,6 +177,59 @@ window -- not a guess, not an average, not a warmup-count approximation.
    still fails loudly -- it cannot pass by "fitting" the ledger, only by
    genuinely consuming the same draws in the same order Karr's real
    algorithm did.
+
+## Invalidation triggers
+
+This decision should be revisited (not silently re-affirmed) if any of the
+following becomes true:
+
+1. **The shared-stream premise itself is refuted.** If a future, more
+   careful audit of a given Karr build/version shows
+   `chromosome.randStream` is NOT actually a single instance shared across
+   the ~28 processes that call `bindProteinToChromosome`/
+   `sampleAccessibleRegions`/`setSiteDamaged`/`setSiteProteinBound` (e.g. a
+   per-process clone was silently introduced upstream), the entire
+   rationale for capturing/replaying this stream's state as an *input*
+   collapses -- it would instead be ordinary per-process RNG output, and
+   capturing it WOULD be Rule-8 oracle leakage.
+2. **`.State` becomes closed-form decodable.** If a future probe derives an
+   exact formula for `RandStream('mcg16807').State`'s internal encoding
+   (superseding the empirically-refuted `seed*65536 mod M` / `16807*x mod M`
+   candidates this decision's own probes ruled out), the offline
+   ledger-walk reconstruction technique (`reconstruct_chromosome_draw_
+   ledger.m`) becomes unnecessary infrastructure -- replayers should decode
+   the state directly instead of consuming a pre-walked draw list, and this
+   decision's Decision #2 (frozen ledger JSON schema) should be revised to
+   describe the simpler mechanism.
+3. **A consuming process's own draw-count/branch logic changes such that
+   the frozen ledger schema no longer captures every draw it consumes**
+   (e.g. a process starts drawing from the shared stream via a Karr method
+   this decision's probes never characterized, such as a different
+   `Chromosome.m` public method that also advances `randStream` but isn't
+   `sampleAccessibleRegions`/`setSiteDamaged`/`setSiteProteinBound`). If a
+   replay harness starts under-consuming a supposedly-complete ledger for a
+   reason OTHER than a genuine algorithm bug in the ported process (i.e.
+   the ledger itself is incomplete, not the port), this decision's
+   "exact, hash-bound, per-tick ordered list" claim (see "Context" above)
+   is falsified for that process and must be corrected here, not patched
+   around in the consuming process's code.
+4. **A second, independently-verified formula for `.State` disagrees with
+   the ledger-walk reconstruction's output for the same seed/tick.** This
+   decision's confidence rests on convergent live-MATLAB verification
+   across two independently-developed lanes (TranscriptionalRegulation,
+   DNADamage); a documented disagreement between the ledger-walk method
+   and any future alternative reconstruction would require re-opening the
+   "Arguments For" #2 convergence claim.
+5. **A non-ledger-restored L2.1 replay of ReplicationInitiation (or any
+   other consuming process) is later shown bit-identical without the
+   ledger**, proving the shared stream IS independently reconstructable
+   for that case.
+6. **The ledger sidecar format changes incompatibly with
+   `tests/vivarium/chromosome_rand_stream_ledger.py`'s loader (main)
+   without a corresponding regeneration.**
+7. **A new process is found to consume the shared `Chromosome.randStream`
+   and needs its own `<Process>ChromosomeLedgerRandStream` subclass
+   registered.**
 
 ## Consequences
 

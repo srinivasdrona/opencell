@@ -1,0 +1,9 @@
+{
+  "analysis_rng_seed": 12345,
+  "generator_module": "scripts/l22_evidence/txreg_pit_gate.py",
+  "generator_module_sha256": "faa5d557068e2fde10b456751c91d54f3525d1fccec8553e7a4e055c19eee3a9",
+  "method": "Randomized PIT of Karr's real trace winners (states_after tfBoundPromoters/boundTFs deltas) under OC's real pre-tick candidate/post-mask-renormalized-weight law (candidate_sites_for_tf), pooled two-sided KS test against Uniform(0,1).",
+  "oc_source_path": "opencell/vivarium/karr_transcriptional_regulation.py",
+  "oc_source_sha256": "80f4a3fb2d0d0249019d81885c0764fa1b3a0c729b43aeb17f619e5ca715f21a",
+  "process": "TranscriptionalRegulation"
+}
