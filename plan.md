@@ -157,6 +157,26 @@ earlier blocks below:**
   dispatch a NEW independent Opus review with an explicit instruction to
   reject any filename/metadata/requested/catalog/channel mismatch or
   temporal swap, before any merge/push.
+- ✅ **R11 independent Opus review COMPLETE: ACCEPT WITH MINOR
+  CORRECTIONS, applied**. Reviewer independently reproduced every
+  architectural claim (canonical trace hash, all-50-seed four-way
+  identity across a spread sample, shared-file line-diff proof, R11
+  hash-equality proof, migration script's write-scope restriction,
+  board/integrity, all 3 anti-cheat reproductions, sweep_status drift
+  cross-check against `evidence_index.json`, git hygiene) and flagged
+  ONE real defect: the `LF_NORMALIZED_PROCESS_DEPENDENCIES` expansion
+  (adding RepInit's sibling module alongside DNAS's) left a paired
+  lock-test, `tests/scripts/test_l22_evidence_sweep.py::
+  test_dnas_runner_dependency_hash_is_portable_across_line_endings`,
+  asserting the OLD single-entry frozenset -- genuinely red on this
+  branch, and this session's own STATUS doc falsely claimed "54/54
+  PASS" for that suite. Fixed in `776be46` (test-only, one assertion
+  updated to the correct 2-entry frozenset); re-ran the full suite:
+  genuinely 54/54 PASS. Final state: branch
+  `integrate/l22-repinit-m-aware-current` @ `776be46`, 8 commits ahead
+  of `origin/main`, working tree clean, board 20 PASS / 0 FAIL / 2
+  MISSING_EVIDENCE integrity OK, not merged/pushed/blogged. Ready for a
+  maintainer to merge at their discretion.
   `integrate/l22-repinit-m-aware-current` @ `6cc6494` (`dafeab9` + `900f99e`
   provenance + `d9ef265` handoff + `6cc6494` rng_seed/STATUS correction),
   from published main `543c737`. Not merged/pushed. Opus independently
