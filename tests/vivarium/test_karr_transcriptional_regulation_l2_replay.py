@@ -420,4 +420,3 @@ def test_karr_transcriptional_regulation_l2_event_replay(rng_seed: int) -> None:
 
         chromosome_rand_stream_ledger = _load_chromosome_rand_stream_ledger(trace_path)
         _run_replay(trace, n_ticks, int(rng_seed), chromosome_rand_stream_ledger=chromosome_rand_stream_ledger)
-
