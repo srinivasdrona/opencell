@@ -93,6 +93,13 @@ earlier blocks below:**
     registry, one unioned dec-006, and reported board 18/2/2. Final review
     agent: `opus-txreg-final-resume`
     (`a7da74e9-a201-4ed2-b48f-7c2370c07fb3`).
+  - RepInit L2.2 M-aware trace naming/rerun is a separate active lane:
+    redesign trace lookup from hardcoded `_100ticks.mat` to catalog
+    `{Process}_{M_ticks}ticks.mat`, require filename/metadata/requested tick
+    equality, preserve the canonical 100-tick L2.1 trace, generate a genuine
+    50-seed x 200-tick ensemble, and restore the honestly-failed RepInit row
+    only after a fresh gate. This work runs in parallel with DNAS and the
+    detached division extraction.
 - L2.1 review/integration queue:
   - ReplicationInitiation branch `agent/l21-repinit-20260817` at `8ee75f0`
     was **REJECTED** by Opus despite a genuine ledger-restored 200-tick
