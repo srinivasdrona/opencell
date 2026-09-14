@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "61f2868799b8516e26be4919bec1a432df3ae5b0583475ed7a1e35f8d17b65f5",
-  "content_hash": "c7a02f4f03bda31ce0cfc46ca1a6481a672b7e8a051b392e2a54b2b558923ce4",
+  "content_hash": "2ee8668badbdc539996b3c0870bf7179dcd85a4c9df2effa57b3dcb9f8a47b18",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-14T14:03:24.944801+00:00",
+  "generated_at": "2026-09-14T17:05:16.571190+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -35,7 +35,7 @@
         "null_calibration.json": "91bbb90f6da38b82da8fd5d47b648c397d6fe7ec8ea36936d682b5d584ceaca3",
         "provenance.json": "2e1332173cc8986bba3267a11ab39b9a0a5c443ecf1bf6908985268796a4fc83",
         "result.json": "4c53f6ccdf05f0437499650fbe8b1382da373c91e662e02442825a90fb473d73",
-        "sweep_provenance.json": "eb5cc54af176af86b4e5341846c5e286f4460dc542a929005ebd83363ea1a751",
+        "sweep_provenance.json": "fa7b688280157c3da336298e5f8d8b6f283d6fc4bfbcff21344e9d8afadf2e99",
         "thresholds.json": "a003f687c212d54f0efd18ff09b0c5a2069de27fb56efaddc8014775089202e5"
       },
       "bucket": "EVENT_CLASS",
@@ -636,7 +636,7 @@
         "null_calibration.json": "33e5b3732b67ee75908c8d0188d0cafec80a6026e22ef51d08f9d628a46b73bd",
         "provenance.json": "61ed0fa57cb38ee6caa08265cc99755484f429fe74ec7ed592078303b351045b",
         "result.json": "5a10c6648a2e626e6f7a37ddea2b2f5d48aad43fa0ab7853c6a1d27a9eb85fc2",
-        "sweep_provenance.json": "9843fb80911a0f5166a35bbd226a63746108c79a17bc817094a7484c6b820c20",
+        "sweep_provenance.json": "5bc9c82170997b9521730bc8631675b05af67ef36f5925d343c7e604b901e98f",
         "thresholds.json": "5c399248d78b450c0e78114e2a4ac2ee54cae809b382c2bdb611a1782bed4cf9"
       },
       "bucket": "ALGORITHMIC_SHALLOW",

@@ -62,6 +62,27 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-14 19:30 IST) — supersedes all
 earlier blocks below:**
 
+- L2.2 provenance-gap repair (2026-09-14 23:55 IST): merged into current
+  `main` from isolated worktree
+  `E:\opencell-worktrees\fix-l22-provenance-gaps-final`, branch
+  `fix/l22-provenance-gaps-final`, base `a021dd4`. The explicit import
+  registry now covers Replication (`protein_complexes.py`, `util/__init__.py`),
+  Cytokinesis (`mcg16807_state_codec.py`), and DNADamage
+  (`karr_dna_damage_rng.py`). Replication and DNADamage sentinels were
+  migrated only after exact-byte proof against explicit evidence-source
+  refs (`0f2e039...` and `c330fe5...` respectively); Cytokinesis remains
+  MISSING and required no migration. Fresh complete-bundle generation/audit
+  is **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE, integrity OK**. Validation:
+  AST+migration 29 passed; full anti-cheat 56 passed; generator/strict-rubric
+  19 passed; broader evidence sweep/portability/catalog suites 106 passed;
+  provenance 44 passed; L1b wiring 28/28 plus 19 tests; changed-file Ruff
+  clean. Current-main merge validation: 100/100 focused tests and complete
+  bundle audit **20/0/2 integrity OK**. Two unrelated base-`a021dd4` failures were independently reproduced
+  in `main-integrate`: L1b method-completeness is 76/115 with 39 stale anchor
+  errors, and repository-wide Ruff reports 962 legacy errors.   Implementation commit `379828c`; candidate tip `2af0de2`; the required
+  sub-agent provenance record links that commit. Operational trap:
+  keep using the explicit tracked complete bundle path; this worktree has no
+  live `artifacts/l2_2_gates` shadow root.
 - Active closure wave (2026-09-14 22:05 IST): finish the four remaining
   todos iteratively. Independent isolated tracks: (A) close L2.2
   first-party dependency/provenance registry gaps and stale DNADamage
