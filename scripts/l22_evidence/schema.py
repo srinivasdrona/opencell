@@ -397,14 +397,14 @@ KARR_TRNA_AMINOACYLATION_MODULE = REPO_ROOT / "opencell" / "vivarium" / "karr_tr
 # `oc_module` only ever imports the package, never the submodule directly.
 UTIL_MODULE = REPO_ROOT / "opencell" / "util" / "__init__.py"
 UTIL_MATLAB_RNG_MODULE = REPO_ROOT / "opencell" / "util" / "matlab_rng.py"
-MCG16807_STATE_CODEC_MODULE = REPO_ROOT / "opencell" / "util" / "mcg16807_state_codec.py"
 # `opencell/m_gen_constants.py` is imported by DNASupercoiling's own
 # `oc_module` (`GENOME_LENGTH_BP`) and, for the event-class DNADamage
 # process, its own `oc_module` too -- both DIRECT, module-scope imports,
 # verified by inspection.
 M_GEN_CONSTANTS_MODULE = REPO_ROOT / "opencell" / "m_gen_constants.py"
 # `opencell/m1/protein_complexes.py` -- direct, module-scope import of
-# DNASupercoiling's own oc_module (karr_dna_supercoiling.py), verified by
+# DNASupercoiling's and Replication's own oc_modules
+# (`karr_dna_supercoiling.py` / `karr_replication.py`), verified by
 # inspection.
 M1_PROTEIN_COMPLEXES_MODULE = REPO_ROOT / "opencell" / "m1" / "protein_complexes.py"
 # The three DNAS-only RNG-oracle ledger modules karr_dna_supercoiling.py
@@ -489,6 +489,12 @@ M1_INIT_MODULE = REPO_ROOT / "opencell" / "m1" / "__init__.py"
 M2_INIT_MODULE = REPO_ROOT / "opencell" / "m2" / "__init__.py"
 M3_INIT_MODULE = REPO_ROOT / "opencell" / "m3" / "__init__.py"
 STATE_INIT_MODULE = REPO_ROOT / "opencell" / "state" / "__init__.py"
+# Cytokinesis's own `oc_module` imports the process-local MCG16807 state
+# codec directly at module scope for its ring-transition RNG state.
+MCG16807_STATE_CODEC_MODULE = REPO_ROOT / "opencell" / "util" / "mcg16807_state_codec.py"
+# DNADamage's own `oc_module` imports its MATLAB-compatible process-local
+# MCG16807 stream directly at module scope.
+KARR_DNA_DAMAGE_RNG_MODULE = REPO_ROOT / "opencell" / "vivarium" / "karr_dna_damage_rng.py"
 L2_EVENT_RIBOSOME_GATE_ADAPTER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "adapters" / "ribosome_assembly_gate.py"
 L2_EVENT_RIBOSOME_SMOKE_ADAPTER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "adapters" / "ribosome_assembly_smoke.py"
 L2_EVENT_RIBOSOME_N50_GATE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ribosome_assembly_n50_gate.py"
@@ -545,14 +551,6 @@ L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.p
 # either way; see EVIDENCE_INDEX_SPEC.md Section 13.11 for why it is
 # excluded from the audit too (out-of-scope processes are never iterated).
 PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
-    "Cytokinesis": {
-        "cytokinesis_n20_gate_module": CYTOKINESIS_N20_GATE_MODULE,
-        "cytokinesis_event_adapter_module": CYTOKINESIS_EVENT_ADAPTER_MODULE,
-        "division_gate_common_module": DIVISION_GATE_COMMON_MODULE,
-        "division_cohort_selector_module": DIVISION_COHORT_SELECTOR_MODULE,
-        "division_window_spec_module": DIVISION_WINDOW_SPEC_MODULE,
-        "mcg16807_state_codec_module": MCG16807_STATE_CODEC_MODULE,
-    },
     "FtsZPolymerization": {
         "ftsz_windowed_n20_gate_module": FTSZ_WINDOWED_N20_GATE_MODULE,
         "ftsz_pre_division_evidence_module": FTSZ_PRE_DIVISION_EVIDENCE_MODULE,
@@ -620,6 +618,11 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
         "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
         "state_init_module": STATE_INIT_MODULE,
+        # Direct module-scope imports in karr_replication.py: the protein-
+        # complex composition loader and opencell.util package re-export
+        # surface supplying MatlabRandStream.
+        "m1_protein_complexes_module": M1_PROTEIN_COMPLEXES_MODULE,
+        "util_module": UTIL_MODULE,
     },
     "ReplicationInitiation": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
@@ -646,10 +649,19 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
         "dna_damage_stimulus_cohort_module": DNA_DAMAGE_STIMULUS_COHORT_MODULE,
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
         "chromosome_views_module": CHROMOSOME_VIEWS_MODULE,
+        "karr_dna_damage_rng_module": KARR_DNA_DAMAGE_RNG_MODULE,
         "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
         "l2_projections_module": RUNNER_PROJECTIONS_MODULE,
         "l2_replay_common_module": L2_REPLAY_COMMON_MODULE,
         "state_init_module": STATE_INIT_MODULE,
+    },
+    "Cytokinesis": {
+        "mcg16807_state_codec_module": MCG16807_STATE_CODEC_MODULE,
+        "cytokinesis_n20_gate_module": CYTOKINESIS_N20_GATE_MODULE,
+        "cytokinesis_event_adapter_module": CYTOKINESIS_EVENT_ADAPTER_MODULE,
+        "division_gate_common_module": DIVISION_GATE_COMMON_MODULE,
+        "division_cohort_selector_module": DIVISION_COHORT_SELECTOR_MODULE,
+        "division_window_spec_module": DIVISION_WINDOW_SPEC_MODULE,
     },
     "RibosomeAssembly": {
         "l2_event_ribosome_gate_adapter_module": L2_EVENT_RIBOSOME_GATE_ADAPTER_MODULE,

@@ -2460,6 +2460,38 @@ full migration run). `tests/scripts/test_l22_evidence_generator.py`
 explicit alternate `catalog_path` for the `"catalog_entry"` staleness
 hash rather than silently defaulting to the real tracked catalog).
 
+### 13.19 Explicit import-registry closure and exact-byte migration
+
+The test-only AST completeness audit remains deliberately separate from the
+runtime hashing path, but its 2026-09-14 full-tree run found four real direct
+imports missing from the explicit registry: Replication's
+`opencell/m1/protein_complexes.py` and `opencell/util/__init__.py`,
+Cytokinesis's `opencell/util/mcg16807_state_codec.py`, and DNADamage's
+`opencell/vivarium/karr_dna_damage_rng.py`. These are now named,
+process-scoped `PROCESS_DEPENDENCY_FILES` entries. The already-registered
+DNADamage verifier/cohort/projection/replay dependencies remain part of its
+exact expected set; the anti-cheat assertion was stale, not those entries.
+
+Adding a dependency key intentionally makes any existing evidence row stale:
+an old sentinel cannot prove a file it never named. Cytokinesis has no
+evidence to migrate. Replication and DNADamage are restored only through
+`migrate_import_dependency_provenance.py`, which requires an explicit
+evidence-source ref per row and refuses unless:
+
+1. the ref either resolves to the sentinel's recorded `git_sha`, or contains
+   byte-identical copies of every current authority/mandatory sidecar file;
+2. each newly registered dependency exists at that ref and is raw-byte
+   identical to the current file;
+3. every previously recorded source hash and every sidecar hash still matches
+   current bytes.
+
+The migration writes only `sweep_provenance.json["source_hashes"]`, atomically.
+It never writes current hashes without the source-tree equality proof and
+never touches `result.json`, `input_manifest.json`, thresholds, calibrations,
+summaries, analytical checks, or runner provenance. Tests cover dependency
+drift, a dependency missing at the evidence source, an unbound source ref,
+idempotent refusal, and exact write scope.
+
 ## 14. Files
 
 - `scripts/l22_evidence/catalog.py` — catalog access (scope derivation).
@@ -2469,6 +2501,8 @@ hash rather than silently defaulting to the real tracked catalog).
   verdict re-derivation.
 - `scripts/l22_evidence/generator.py` — `build_evidence_index()`, `audit()`,
   CLI (`generate`, `audit [--require-all-pass]`).
+- `scripts/l22_evidence/migrate_import_dependency_provenance.py` —
+  fail-closed exact-byte backfill for newly registered process imports.
 - `docs/phase_f/l2_2_design_a/evidence_index.json` — the one tracked
   generator output. **Never hand-edit.**
 - `tests/vivarium/test_l2_2_strict_rubric.py` — now asserts index integrity
@@ -2558,6 +2592,9 @@ hash rather than silently defaulting to the real tracked catalog).
   drift, non-catalog source/sidecar drift, harness mismatch, atomicity/
   resumability) against a real synthetic throwaway git repo; see Section
   13.18.
+- `tests/scripts/test_l22_evidence_import_dependency_migration.py` —
+  source-ref binding, exact-byte dependency proof, drift/missing-file
+  refusal, and exact-write-scope tests; see Section 13.19.
 - `STATUS_L22_CATALOG_PROVENANCE_MIGRATION.md` — design summary, exact
   migrated-row list, before/after audit tallies, and test inventory for
   the R6 catalog-provenance fix and its one-time migration.

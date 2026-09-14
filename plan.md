@@ -64,7 +64,8 @@ earlier blocks below:**
 
 - Division-gate implementation lane (2026-09-14 22:45 IST): isolated
   worktree `E:\opencell-worktrees\build-division-n20-gates`, branch
-  `build/division-n20-gates`, base `a021dd4`. Implementing fail-closed
+  `build/division-n20-gates`, base `a021dd4`, now merged with provenance
+  repair main `843f04f`. Implementing fail-closed
   Cytokinesis event and FtsZ windowed-continuous N=20 gates. Raw cohort is
   read-only from
   `E:\opencell-worktrees\main-integrate\data\m1_sources\karr_native\
@@ -88,14 +89,34 @@ earlier blocks below:**
   checks 16 passed and generator audit remains **20 PASS / 0 FAIL / 2
   MISSING_EVIDENCE**; gate-focused tests 42 passed / 1 expected RA skip;
   L1b PASS 28/28 plus 19 tests; L2.4 6 passed; provenance 53 passed; focused
-  Ruff clean. The full AST dependency audit still reports only the separate
-  pre-existing provenance-track gaps for Replication
-  (`protein_complexes.py`, `opencell.util`) and DNADamage
-  (`karr_dna_damage_rng.py`); Cytokinesis's own codec dependency is closed
-  on this branch. Implementation/docs/catalog commit: `1826c07` (local
-  only; not pushed/merged). LLM provenance event
+  Ruff clean. Main's exact-byte provenance repair is preserved: Replication,
+  Cytokinesis, and DNADamage dependency coverage and the migrated
+  Replication/DNADamage sentinels remain intact. Implementation/docs/catalog
+  commit: `1826c07`; handoff/provenance commit `e0c000a` (local only; not
+  pushed/merged). LLM provenance event
   `sha256:5f3e9af8cd0a753d02dff6500ca75b5e6b073bb459aca41ae1a4dd5f463cc9d6`
-  is appended and awaiting the final provenance/handoff commit.
+  is appended.
+- L2.2 provenance-gap repair (2026-09-14 23:55 IST): merged into current
+  `main` from isolated worktree
+  `E:\opencell-worktrees\fix-l22-provenance-gaps-final`, branch
+  `fix/l22-provenance-gaps-final`, base `a021dd4`. The explicit import
+  registry now covers Replication (`protein_complexes.py`, `util/__init__.py`),
+  Cytokinesis (`mcg16807_state_codec.py`), and DNADamage
+  (`karr_dna_damage_rng.py`). Replication and DNADamage sentinels were
+  migrated only after exact-byte proof against explicit evidence-source
+  refs (`0f2e039...` and `c330fe5...` respectively); Cytokinesis remains
+  MISSING and required no migration. Fresh complete-bundle generation/audit
+  is **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE, integrity OK**. Validation:
+  AST+migration 29 passed; full anti-cheat 56 passed; generator/strict-rubric
+  19 passed; broader evidence sweep/portability/catalog suites 106 passed;
+  provenance 44 passed; L1b wiring 28/28 plus 19 tests; changed-file Ruff
+  clean. Current-main merge validation: 100/100 focused tests and complete
+  bundle audit **20/0/2 integrity OK**. Two unrelated base-`a021dd4` failures were independently reproduced
+  in `main-integrate`: L1b method-completeness is 76/115 with 39 stale anchor
+  errors, and repository-wide Ruff reports 962 legacy errors.   Implementation commit `379828c`; candidate tip `2af0de2`; the required
+  sub-agent provenance record links that commit. Operational trap:
+  keep using the explicit tracked complete bundle path; this worktree has no
+  live `artifacts/l2_2_gates` shadow root.
 - Active closure wave (2026-09-14 22:05 IST): finish the four remaining
   todos iteratively. Independent isolated tracks: (A) close L2.2
   first-party dependency/provenance registry gaps and stale DNADamage
@@ -105,6 +126,20 @@ earlier blocks below:**
   (D) resume OS-detached dual MATLAB extraction at seed 15 while code work
   proceeds, then bank/audit each attempt. Curate, review, merge and push
   each code track; final target **22 PASS / 0 FAIL / 0 MISSING_EVIDENCE**.
+  Live agents/worktrees:
+  - provenance agent `64e083ed-d3a8-420c-9b7c-a25149ae2e84`,
+    target `E:\opencell-worktrees\fix-l22-provenance-gaps-final`;
+  - TxReg rubric agent `90887e41-1048-40c1-b348-4cfe7bcdd0c5`,
+    target `E:\opencell-worktrees\fix-l21-txreg-rubric-final`;
+  - division-gate agent `e3ec1309-b8cd-4778-bf52-b11004b080fb`,
+    target `E:\opencell-worktrees\build-division-n20-gates`.
+  OS-detached extraction shell `division-n20-resume-2`, supervisor PID
+  2260, MATLAB wrapper/child PIDs 17624/10940; seed 15 started at 22:08.
+  Durable launcher/status/log:
+  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\resume_division_n20.ps1`,
+  `division_n20_resume.status`, `division_n20_resume.log`. The launcher
+  banks each attempt, runs the selector, and stops immediately at 20
+  completed windows.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade

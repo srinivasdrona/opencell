@@ -26,6 +26,7 @@
     "dna_damage_stimulus_cohort_module": "241637cb1865edd0728e01fbf8211d73ca49ec588b82d1082fcd4ce8f14a6c0f",
     "event_bridge": "421595e16c855b0dea6331781927c8ed573c5a93bc37df7e4720d49e18464145",
     "event_registry_entry": "d84f25ed7c69da00baff71c96dbdefe5f474aa89e9c6bc3bad474b5945504fdf",
+    "karr_dna_damage_rng_module": "3eb0f271a6147843e92eed132a89cdfb3fc62ffd769c3bfffe24bcdfca9899fd",
     "l2_event_evidence": "731fbf819fd2314e61bee8e63117889769c4e84941ea6f9e9f1969e89c42691c",
     "l2_event_metrics": "2b194475b53121efd3bb34e865b4ee4053704393d33974cfd4ead31147278eda",
     "l2_event_runner": "8770a734cd9ea549fa44a4e70d278277cbf6d2de3dc5e412fe5300ef3509da99",
