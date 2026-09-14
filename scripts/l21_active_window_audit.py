@@ -929,6 +929,106 @@ def _locate_manifest_source_path(
     return primary
 
 
+def resolve_active_window_manifest_source(
+    manifest_path: Path,
+    process_name: str,
+) -> dict[str, Any]:
+    """Resolve and hash-verify one active-window manifest source.
+
+    This is the shared source-identity contract used both by the full active-
+    window verifier and by strict-rubric consumers that need the authoritative
+    trace before running their own replay. It deliberately does not execute the
+    manifest's replay nodeid; callers remain responsible for their own replay.
+    """
+    manifest_path = Path(manifest_path)
+    result: dict[str, Any] = {
+        "manifest_path": manifest_path.as_posix(),
+        "manifest_sha256": None,
+        "source_verified": False,
+        "failure_reason": None,
+        "recorded_classification": None,
+        "source_path": None,
+        "source_recorded_sha256": None,
+        "source_actual_sha256": None,
+        "_row": None,
+    }
+    if not manifest_path.exists():
+        result["failure_reason"] = f"manifest file not found: {manifest_path.as_posix()}"
+        return result
+
+    result["manifest_sha256"] = _sha256(manifest_path)
+    try:
+        payload = _load_json(manifest_path)
+    except (OSError, json.JSONDecodeError) as exc:
+        result["failure_reason"] = f"manifest could not be loaded: {exc}"
+        return result
+
+    manifest_rows = [row for row in payload.get("rows", []) if row.get("process") == process_name]
+    if not manifest_rows:
+        result["failure_reason"] = f"manifest has no row for {process_name}"
+        return result
+    if len(manifest_rows) != 1:
+        result["failure_reason"] = (
+            f"manifest must contain exactly one row for {process_name}; found {len(manifest_rows)}"
+        )
+        return result
+
+    row = manifest_rows[0]
+    result["_row"] = row
+    recorded_classification = row.get("classification")
+    result["recorded_classification"] = recorded_classification
+    if recorded_classification not in {
+        CLASS_EXISTING_WINDOW_PASS,
+        CLASS_CODE_GAP,
+        CLASS_MISSING_ACTIVE_EXTRACTION,
+    }:
+        result["failure_reason"] = f"unsupported manifest classification: {recorded_classification!r}"
+        return result
+
+    source = row.get("source")
+    if not isinstance(source, dict):
+        result["failure_reason"] = "manifest row missing source object"
+        return result
+    raw_source_path = source.get("path")
+    recorded_sha256 = source.get("sha256")
+    if not raw_source_path or not isinstance(raw_source_path, str):
+        result["failure_reason"] = "manifest row source.path must be a non-empty string"
+        return result
+    if not recorded_sha256 or not isinstance(recorded_sha256, str):
+        result["failure_reason"] = "manifest row source.sha256 must be a non-empty string"
+        return result
+
+    source_path = _locate_manifest_source_path(
+        process_name,
+        manifest_path,
+        raw_source_path,
+        recorded_sha256,
+    )
+    result["source_path"] = source_path.as_posix()
+    result["source_recorded_sha256"] = recorded_sha256
+    if not source_path.exists():
+        result["failure_reason"] = f"manifest source trace missing: {source_path.as_posix()}"
+        return result
+
+    actual_sha256 = _sha256(source_path)
+    result["source_actual_sha256"] = actual_sha256
+    if actual_sha256 != recorded_sha256:
+        result["failure_reason"] = (
+            "manifest source sha256 mismatch: "
+            f"recorded={recorded_sha256} actual={actual_sha256}"
+        )
+        return result
+
+    if recorded_classification == CLASS_EXISTING_WINDOW_PASS:
+        ledger_binding_error = _verify_manifest_ledger_binding(row, source_path)
+        if ledger_binding_error is not None:
+            result["failure_reason"] = ledger_binding_error
+            return result
+
+    result["source_verified"] = True
+    return result
+
+
 def _standard_candidates_from_manifest(process_name: str) -> list[tuple[Path, str | None, str | None]]:
     payload = _load_json(STANDARD_MANIFEST_PATH)
     sources = {entry["name"]: Path(entry["path"]) for entry in payload.get("sources", [])}
@@ -1905,67 +2005,20 @@ def verify_active_window_manifest_row(
         "dnadamage_source_binding": None,
         "discriminating_conditions_verification": None,
     }
-    if not manifest_path.exists():
-        result["failure_reason"] = f"manifest file not found: {manifest_path.as_posix()}"
+    source_resolution = resolve_active_window_manifest_source(manifest_path, process_name)
+    row = source_resolution.pop("_row")
+    source_verified = bool(source_resolution.pop("source_verified"))
+    for key, value in source_resolution.items():
+        if key in result:
+            result[key] = value
+    if not source_verified:
+        if result["failure_reason"] == f"manifest has no row for {process_name}":
+            result["verification_status"] = "MANIFEST_ROW_MISSING"
         return result
-
-    result["manifest_sha256"] = _sha256(manifest_path)
-    payload = _load_json(manifest_path)
-    manifest_rows = [row for row in payload.get("rows", []) if row.get("process") == process_name]
-    if not manifest_rows:
-        result["verification_status"] = "MANIFEST_ROW_MISSING"
-        result["failure_reason"] = f"manifest has no row for {process_name}"
-        return result
-    if len(manifest_rows) != 1:
-        result["failure_reason"] = (
-            f"manifest must contain exactly one row for {process_name}; found {len(manifest_rows)}"
-        )
-        return result
-
-    row = manifest_rows[0]
-    recorded_classification = row.get("classification")
-    result["recorded_classification"] = recorded_classification
-    if recorded_classification not in {
-        CLASS_EXISTING_WINDOW_PASS,
-        CLASS_CODE_GAP,
-        CLASS_MISSING_ACTIVE_EXTRACTION,
-    }:
-        result["failure_reason"] = f"unsupported manifest classification: {recorded_classification!r}"
-        return result
-
-    source = row.get("source")
-    if not isinstance(source, dict):
-        result["failure_reason"] = "manifest row missing source object"
-        return result
-    raw_source_path = source.get("path")
-    recorded_sha256 = source.get("sha256")
-    if not raw_source_path or not isinstance(raw_source_path, str):
-        result["failure_reason"] = "manifest row source.path must be a non-empty string"
-        return result
-    if not recorded_sha256 or not isinstance(recorded_sha256, str):
-        result["failure_reason"] = "manifest row source.sha256 must be a non-empty string"
-        return result
-
-    source_path = _locate_manifest_source_path(
-        process_name,
-        manifest_path,
-        raw_source_path,
-        recorded_sha256,
-    )
-    result["source_path"] = source_path.as_posix()
-    result["source_recorded_sha256"] = recorded_sha256
-    if not source_path.exists():
-        result["failure_reason"] = f"manifest source trace missing: {source_path.as_posix()}"
-        return result
-
-    actual_sha256 = _sha256(source_path)
-    result["source_actual_sha256"] = actual_sha256
-    if actual_sha256 != recorded_sha256:
-        result["failure_reason"] = (
-            "manifest source sha256 mismatch: "
-            f"recorded={recorded_sha256} actual={actual_sha256}"
-        )
-        return result
+    assert isinstance(row, dict)
+    recorded_classification = result["recorded_classification"]
+    source_path = Path(str(result["source_path"]))
+    actual_sha256 = str(result["source_actual_sha256"])
 
     live_candidate = _summarize_trace_candidate(
         process_name,
@@ -1997,11 +2050,6 @@ def verify_active_window_manifest_row(
         return result
 
     if recorded_classification == CLASS_EXISTING_WINDOW_PASS:
-        ledger_binding_error = _verify_manifest_ledger_binding(row, source_path)
-        if ledger_binding_error is not None:
-            result["fresh_classification"] = CLASS_CODE_GAP
-            result["failure_reason"] = ledger_binding_error
-            return result
         replay_verification = _rerun_manifest_replay_nodeid(row)
         result["replay_verification"] = replay_verification
         result["fresh_classification"] = (

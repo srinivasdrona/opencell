@@ -65,7 +65,8 @@ earlier blocks below:**
 - Division-gate implementation lane (2026-09-14 22:45 IST): isolated
   worktree `E:\opencell-worktrees\build-division-n20-gates`, branch
   `build/division-n20-gates`, base `a021dd4`, now merged with provenance
-  repair main `843f04f`. Implementing fail-closed
+  repair main `843f04f` and current published main `6d16559` (TxReg
+  strict-rubric repair). Implementing fail-closed
   Cytokinesis event and FtsZ windowed-continuous N=20 gates. Raw cohort is
   read-only from
   `E:\opencell-worktrees\main-integrate\data\m1_sources\karr_native\
@@ -101,7 +102,15 @@ earlier blocks below:**
   `sha256:5f3e9af8cd0a753d02dff6500ca75b5e6b073bb459aca41ae1a4dd5f463cc9d6`
   and
   `sha256:02cf29d77e5f2c3192237845680c5bb7f5350b58d9989520f1c133a92568d75b`
-  are appended.
+  are appended. Post-`6d16559` integration: the complete L2.2 board
+  regenerates at **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE, integrity OK**;
+  division/provenance/index merge validation is 118 passed / 1 expected
+  RA-data skip. The TxReg files are byte-identical to published main and
+  the TxReg strict-rubric/resolver/active-window suite passes 76/76 when
+  executed from `main-integrate`, where its gitignored authoritative
+  4000-tick trace is mounted. Running those same data-dependent tests from
+  this isolated worktree correctly fails because that raw trace is absent;
+  no code divergence was found.
 - L2.2 provenance-gap repair (2026-09-14 23:55 IST): merged into current
   `main` from isolated worktree
   `E:\opencell-worktrees\fix-l22-provenance-gaps-final`, branch
@@ -117,12 +126,24 @@ earlier blocks below:**
   19 passed; broader evidence sweep/portability/catalog suites 106 passed;
   provenance 44 passed; L1b wiring 28/28 plus 19 tests; changed-file Ruff
   clean. Current-main merge validation: 100/100 focused tests and complete
-  bundle audit **20/0/2 integrity OK**. Two unrelated base-`a021dd4` failures were independently reproduced
-  in `main-integrate`: L1b method-completeness is 76/115 with 39 stale anchor
-  errors, and repository-wide Ruff reports 962 legacy errors.   Implementation commit `379828c`; candidate tip `2af0de2`; the required
+  bundle audit **20/0/2 integrity OK**. Two unrelated base-`a021dd4`
+  failures were independently reproduced in `main-integrate`: L1b
+  method-completeness is 76/115 with 39 stale anchor errors, and
+  repository-wide Ruff reports 962 legacy errors. Implementation commit
+  `379828c`; candidate tip `2af0de2`; the required
   sub-agent provenance record links that commit. Operational trap:
   keep using the explicit tracked complete bundle path; this worktree has no
   live `artifacts/l2_2_gates` shadow root.
+- TxReg legacy strict-rubric resolver repair: candidate `ad9f1a5` merged
+  and current-main validated
+  from `E:\opencell-worktrees\fix-l21-txreg-rubric-final`. The rubric now
+  preserves canonical resolution when complete, but when required
+  observables are absent it may use only a hash/ledger-verified
+  `EXISTING_WINDOW_PASS` source from `L21_ACTIVE_WINDOWS_MANIFEST.json`.
+  TxReg resolves to the authoritative 4000-tick trace SHA
+  `73fc1d97...7aa2`; strict rubric 28/28, active resolver 48 tests, TxReg
+  suites 87 tests, replay 4000/4000, L1b 28/28 plus 19 integration tests;
+  merged regression set 136/136. No process biology changed.
 - Active closure wave (2026-09-14 22:05 IST): finish the four remaining
   todos iteratively. Independent isolated tracks: (A) close L2.2
   first-party dependency/provenance registry gaps and stale DNADamage

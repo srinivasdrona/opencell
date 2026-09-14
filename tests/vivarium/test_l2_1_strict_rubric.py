@@ -54,6 +54,133 @@ from l2_replay_common import (  # type: ignore
     refresh_allocator_views,
 )
 
+from scripts.l21_active_window_audit import (  # type: ignore
+    CLASS_EXISTING_WINDOW_PASS,
+    _honest_replay,
+    resolve_active_window_manifest_source,
+)
+
+_ACTIVE_WINDOW_MANIFEST_PATH = (
+    _REPO / "docs" / "phase_f" / "l2_1" / "L21_ACTIVE_WINDOWS_MANIFEST.json"
+)
+
+
+class StrictRubricTraceResolutionError(RuntimeError):
+    """The strict rubric could not verify its authoritative oracle trace."""
+
+
+def _missing_required_trace_observables(
+    trace_path: Path,
+    required_observables: tuple[str, ...],
+) -> tuple[str, ...]:
+    with h5py.File(trace_path, "r") as handle:
+        missing = [
+            f"{group}/{observable}"
+            for group in ("states_before", "states_after")
+            for observable in required_observables
+            if f"{group}/{observable}" not in handle
+        ]
+    return tuple(missing)
+
+
+def _resolve_strict_rubric_trace_path(
+    name: str,
+    *,
+    active_window_manifest: Path = _ACTIVE_WINDOW_MANIFEST_PATH,
+) -> tuple[Path, dict | None]:
+    """Preserve the canonical resolver unless its trace lacks required fields.
+
+    A schema-incomplete canonical trace may be replaced only by a hash-verified
+    EXISTING_WINDOW_PASS row from the authoritative active-window manifest.
+    """
+    spec = _PROCESS_SPECS[name]
+    default_error: FileNotFoundError | None = None
+    try:
+        default_path = resolve_trace_path(name)
+    except FileNotFoundError as exc:
+        default_path = None
+        default_error = exc
+
+    missing = (
+        tuple(spec.observables)
+        if default_path is None
+        else _missing_required_trace_observables(default_path, spec.observables)
+    )
+    if default_path is not None and not missing:
+        return default_path, None
+
+    resolution = resolve_active_window_manifest_source(active_window_manifest, name)
+    if not resolution["source_verified"]:
+        if default_path is None and resolution["failure_reason"] == f"manifest has no row for {name}":
+            assert default_error is not None
+            raise default_error
+        raise StrictRubricTraceResolutionError(
+            f"{name}: canonical strict-rubric trace is missing required observable(s) "
+            f"{list(missing)!r}, and the active-window source could not be verified: "
+            f"{resolution['failure_reason']}"
+        )
+    if resolution["recorded_classification"] != CLASS_EXISTING_WINDOW_PASS:
+        raise StrictRubricTraceResolutionError(
+            f"{name}: canonical strict-rubric trace is missing required observable(s) "
+            f"{list(missing)!r}, but the active-window manifest classification is "
+            f"{resolution['recorded_classification']!r}, not {CLASS_EXISTING_WINDOW_PASS!r}"
+        )
+
+    selected_path = Path(str(resolution["source_path"]))
+    selected_missing = _missing_required_trace_observables(selected_path, spec.observables)
+    if selected_missing:
+        raise StrictRubricTraceResolutionError(
+            f"{name}: hash-verified active-window trace {selected_path} is still missing "
+            f"required observable(s) {list(selected_missing)!r}"
+        )
+    return selected_path, resolution
+
+
+def _verdict_from_counts(
+    *,
+    bit_identity_failures: int,
+    karr_active: int,
+    oc_fired_on_karr_active: int,
+) -> tuple[str, float | None]:
+    fire_rate_when_karr_active = (
+        oc_fired_on_karr_active / karr_active if karr_active else None
+    )
+    if bit_identity_failures > 0:
+        verdict = "FAIL"
+    elif karr_active == 0:
+        verdict = "UNINFORMATIVE"
+    elif fire_rate_when_karr_active is not None and fire_rate_when_karr_active < 0.05:
+        verdict = "COINCIDENTAL"
+    elif fire_rate_when_karr_active is not None and fire_rate_when_karr_active >= 0.50:
+        verdict = "GENUINE"
+    else:
+        verdict = "PARTIAL"
+    return verdict, fire_rate_when_karr_active
+
+
+def _classify_active_window_trace(name: str, trace_path: Path, resolution: dict) -> dict:
+    bit_identity, honest_replay = _honest_replay(name, trace_path)
+    bit_identity_failures = 0 if bit_identity.pass_all_compared_ticks else 1
+    verdict, fire_rate_when_karr_active = _verdict_from_counts(
+        bit_identity_failures=bit_identity_failures,
+        karr_active=honest_replay.karr_active_ticks,
+        oc_fired_on_karr_active=honest_replay.oc_active_on_karr_active_ticks,
+    )
+    return {
+        "name": name,
+        "verdict": verdict,
+        "bit_identity_failures": bit_identity_failures,
+        "karr_active": honest_replay.karr_active_ticks,
+        "oc_fired": honest_replay.oc_active_ticks,
+        "oc_fired_on_karr_active": honest_replay.oc_active_on_karr_active_ticks,
+        "fire_rate_when_karr_active": fire_rate_when_karr_active,
+        "n_ticks": bit_identity.compared_tick_count,
+        "trace_path": trace_path.as_posix(),
+        "trace_source": "active_window_manifest",
+        "trace_sha256": resolution["source_actual_sha256"],
+        "active_window_manifest_sha256": resolution["manifest_sha256"],
+    }
+
 # Day-37 (2026-06-23) Phase B+ baseline — oracle-type-aware rubric
 # Stochastic processes (oracle_type=distributional) no longer require per-tick
 # bit-identity. Per-tick bit-identity is checked only for deterministic
@@ -140,14 +267,36 @@ EXPECTED_VERDICTS = {
 KARR_ACTIVE_THRESHOLD = 1.0
 
 
-def _classify(name: str) -> dict:
+def _classify(
+    name: str,
+    *,
+    active_window_manifest: Path = _ACTIVE_WINDOW_MANIFEST_PATH,
+) -> dict:
     """Run a single process's strict-rubric replay."""
     spec = _PROCESS_SPECS.get(name)
     if spec is None:
         return {"name": name, "verdict": "ERROR", "error": "no spec"}
 
     try:
-        handle = h5py.File(resolve_trace_path(name), "r")
+        trace_path, manifest_resolution = _resolve_strict_rubric_trace_path(
+            name,
+            active_window_manifest=active_window_manifest,
+        )
+    except StrictRubricTraceResolutionError:
+        raise
+    except Exception as exc:
+        return {"name": name, "verdict": "ERROR", "error": f"trace: {exc}"}
+
+    if manifest_resolution is not None:
+        try:
+            return _classify_active_window_trace(name, trace_path, manifest_resolution)
+        except Exception as exc:
+            raise StrictRubricTraceResolutionError(
+                f"{name}: verified active-window trace replay failed closed: {exc}"
+            ) from exc
+
+    try:
+        handle = h5py.File(trace_path, "r")
     except Exception as exc:
         return {"name": name, "verdict": "ERROR", "error": f"trace: {exc}"}
 
@@ -290,19 +439,11 @@ def _classify(name: str) -> dict:
 
     handle.close()
 
-    fire_rate_when_karr_active = (
-        oc_fired_on_karr_active / karr_active if karr_active else None
+    verdict, fire_rate_when_karr_active = _verdict_from_counts(
+        bit_identity_failures=bit_identity_failures,
+        karr_active=karr_active,
+        oc_fired_on_karr_active=oc_fired_on_karr_active,
     )
-    if bit_identity_failures > 0:
-        verdict = "FAIL"
-    elif karr_active == 0:
-        verdict = "UNINFORMATIVE"
-    elif fire_rate_when_karr_active is not None and fire_rate_when_karr_active < 0.05:
-        verdict = "COINCIDENTAL"
-    elif fire_rate_when_karr_active is not None and fire_rate_when_karr_active >= 0.50:
-        verdict = "GENUINE"
-    else:
-        verdict = "PARTIAL"
 
     return {
         "name": name,
@@ -312,6 +453,8 @@ def _classify(name: str) -> dict:
         "oc_fired_on_karr_active": oc_fired_on_karr_active,
         "fire_rate_when_karr_active": fire_rate_when_karr_active,
         "n_ticks": n_ticks,
+        "trace_path": trace_path.as_posix(),
+        "trace_source": "canonical",
     }
 
 
@@ -333,6 +476,14 @@ def test_l2_1_strict_rubric_matches_expected(process_name: str) -> None:
     expected = EXPECTED_VERDICTS[process_name]
     result = _classify(process_name)
     actual = result["verdict"]
+
+    if process_name == "TranscriptionalRegulation":
+        assert result["trace_source"] == "active_window_manifest"
+        assert result["trace_sha256"] == (
+            "73fc1d9710e2a98f61221d51a80cdbc490fb6d44db4ea95853414048c9fc7aa2"
+        )
+        assert result["n_ticks"] == 4000
+        assert result["bit_identity_failures"] == 0
 
     if actual != expected:
         pytest.fail(
