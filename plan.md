@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-14 19:30 IST) — supersedes all
 earlier blocks below:**
 
-- Cytokinesis N20 RNG-replay repair (2026-09-15 04:05 IST): active isolated
+- Cytokinesis N20 RNG-replay repair (2026-09-15 04:45 IST): complete in isolated
   worktree `E:\opencell-worktrees\fix-cyt-n20-rng-replay`, branch
   `fix/cyt-n20-rng-replay`, based exactly on division-gate candidate
   `6e7cd84`; no merge/push and no MATLAB launched. Source audit confirmed
@@ -74,19 +74,29 @@ earlier blocks below:**
   single-process M5000 trace does contain before/after process RNG state and
   proves the new OC full-replay implementation at **5000/5000 ticks, zero
   mismatches across all fields**, but it is not a selector-owned dual trace
-  and cannot authorize the N20 cohort. In-progress code adds before/after
-  `randStreamState`, dual extractor/Cytokinesis source identity, full
-  restored-RNG `next_update` replay, and fail-closed legacy-vs-authority
-  validation. Validation so far: focused 79/79; division/evidence 351 passed
-  / 1 expected RibosomeAssembly-data skip; L1b wiring 28/28 plus 63
-  L1b/provenance tests; tracked evidence audit remains **20 PASS / 0 FAIL /
-  2 MISSING_EVIDENCE, integrity OK**; Ruff clean. The separate method-
+  and cannot authorize the N20 cohort. Implementation commit `b1f1a29`
+  adds before/after `randStreamState`, LF-normalized dual-extractor and
+  resolved-Cytokinesis source identity, full continuous restored-RNG
+  `next_update` replay, and fail-closed legacy-vs-authority validation.
+  Old traces still validate for selector/FtsZ use and explicit conditional
+  pilots, but Cytokinesis authority refuses them. Independent Opus 5 review
+  **ACCEPTED** the actual MATLAB-source ownership/tap design and full diff
+  with no blocking findings. Validation: division/evidence 351 passed / 1
+  expected RibosomeAssembly-data skip; final focused 99 passed / 1 expected
+  skip; L1b wiring 28/28 plus 63 L1b/provenance tests; tracked evidence audit
+  remains **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE, integrity OK**; Ruff and
+  diff check clean. The separate method-
   completeness gate remains at its documented pre-existing 76/115 with 39
   stale anchor errors (including three Cytokinesis line anchors); this branch
-  does not change the OC process file or those unrelated anchors. Next:
-  independent Opus 5 review, corrections, final validation, implementation
-  commit, then append-only LLM provenance + final handoff commit. MATLAB
-  canary remains approval-gated.
+  does not change the OC process file or those unrelated anchors. LLM
+  provenance events:
+  `sha256:f1e17074d2a84d19a194c376b9d8dfe525521adbc41014445375f965ba025fea`
+  (implementation) and
+  `sha256:ccec1a56b14bce39342b82a24b24720f9c76c5b4abd4ffd1a14af58075574c16`
+  (Opus ACCEPT). No live process/agent remains. MATLAB canary remains
+  orchestrator/host-cap approval-gated; exact seed-36 slot command and
+  post-run validator are recorded in
+  `docs/phase_f/DIVISION_N20_GATE_SURFACES.md`.
 - Division-gate implementation lane (2026-09-14 22:45 IST): isolated
   worktree `E:\opencell-worktrees\build-division-n20-gates`, branch
   `build/division-n20-gates`, base `a021dd4`, now merged with provenance
