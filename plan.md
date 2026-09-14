@@ -62,6 +62,15 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-14 19:30 IST) — supersedes all
 earlier blocks below:**
 
+- Active closure wave (2026-09-14 22:05 IST): finish the four remaining
+  todos iteratively. Independent isolated tracks: (A) close L2.2
+  first-party dependency/provenance registry gaps and stale DNADamage
+  anti-cheat assertion; (B) fix the legacy TxReg strict-rubric trace
+  resolver; (C) implement genuine fail-closed Cytokinesis/FtsZ N=20 gates
+  that evaluate the current 12-seed pilot but refuse promotion below 20;
+  (D) resume OS-detached dual MATLAB extraction at seed 15 while code work
+  proceeds, then bank/audit each attempt. Curate, review, merge and push
+  each code track; final target **22 PASS / 0 FAIL / 0 MISSING_EVIDENCE**.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
