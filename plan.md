@@ -81,6 +81,8 @@ earlier blocks below:**
   Opus 5 review passes ACCEPTED the behavior after requiring the non-gating
   audit and combined canary to fail closed too; provenance event
   `sha256:72d0db159c5fd1bf92928e77b60f4863a1268e7297412be21fc71205e0773ed1`.
+  Implementation/diagnosis commit `c614b9b`; linked implementation event
+  `sha256:5912d1aee32814bc76f79f06921b463a01706992ceceb6470f1ca4736df40269`.
   Validation: post-review focused suite 111 passed; exhaustive
   FtsZ-referencing sweep 649 passed / 10 audited data/ensemble skips, with
   two non-regressions: the FtsZ legacy scorecard expectation already fails
