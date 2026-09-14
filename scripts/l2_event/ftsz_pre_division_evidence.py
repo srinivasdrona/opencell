@@ -7,7 +7,7 @@ correlation" honest-mode diagnostic
 that is directly conformant with the LIVE, unedited
 ``docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`` row for
 ``FtsZPolymerization`` (``bucket: EVENT_CLASS``, ``M_ticks: 200``,
-``N_seeds: 50``, ``event_density: sparse``,
+``N_seeds: 20``, ``event_density: sparse``,
 ``seed_window.tick_range_from_division: [-200, 0]``). That row is
 authoritative and is NOT edited by this module -- see the constants below,
 each cited back to the catalog field it mirrors.
@@ -49,8 +49,8 @@ WHAT THIS MODULE DOES
   a ``monomers`` port that ``next_update`` does not emit.
 - Reports ``INSUFFICIENT_ENSEMBLE`` with a nonzero, exact seed deficit and
   the precise resumable MATLAB extraction command whenever fewer than
-  ``REQUIRED_N_SEEDS`` (50) validated windows exist on disk. It NEVER
-  reports a sufficient/gated verdict for N < 50 -- there is no partial-
+  ``REQUIRED_N_SEEDS`` (20) validated windows exist on disk. It NEVER
+  reports a sufficient/gated verdict for N < 20 -- there is no partial-
   credit branch (mirrors the existing honest canary's
   ``classify_ensemble_support``).
 
@@ -86,6 +86,9 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
+from scripts.l2_event.division_window_spec import (  # noqa: E402
+    required_completed_windows,
+)
 from scripts.l2_event.window_loader import (  # noqa: E402
     EventWindowRefused,
     WindowGrid,
@@ -100,7 +103,7 @@ _VIVARIUM_TEST_DIR = _REPO_ROOT / "tests" / "vivarium"
 # that file.
 # ---------------------------------------------------------------------------
 PROCESS_NAME = "FtsZPolymerization"
-REQUIRED_N_SEEDS = 50  # catalog N_seeds
+REQUIRED_N_SEEDS = required_completed_windows()  # engineering catalog N_seeds
 REQUIRED_M_TICKS = 200  # catalog M_ticks
 TICK_RANGE_FROM_DIVISION = (-200, 0)  # catalog seed_window.tick_range_from_division
 PRIMARY_CHANNEL = "monomers"  # catalog primary_channel (projected, see module docstring)
@@ -549,7 +552,7 @@ def audit_pre_division_evidence(
     is paired to Cytokinesis's completion via the dual-tap extractor, so a
     validated FtsZ trace for a seed Cytokinesis right-censored (or has not
     yet reached, contiguity-wise) must never count toward FtsZ's own
-    N=50 either. When ``None`` (the default), the seed universe is the
+    engineering cohort either. When ``None`` (the default), the seed universe is the
     legacy ``range(REQUIRED_N_SEEDS)`` -- existing callers are unaffected."""
     candidates = discover_candidate_paths(data_roots)
 
@@ -600,6 +603,9 @@ def audit_pre_division_evidence(
         # it simply is not part of the requested selection.
         universe_set = set(seed_universe)
         found_seeds = [seed for seed in found_seeds if seed in universe_set]
+        per_seed_evidence = [
+            evidence for evidence in per_seed_evidence if evidence.seed in universe_set
+        ]
 
     deficit = max(0, REQUIRED_N_SEEDS - len(found_seeds))
     status = "INSUFFICIENT_ENSEMBLE" if deficit > 0 else "SUFFICIENT_ENSEMBLE"
@@ -693,12 +699,18 @@ def main(argv: list[str] | None = None) -> int:
     args = parser.parse_args(argv)
 
     selected_seeds = None
+    audit_data_roots = DEFAULT_DATA_ROOTS
     if args.use_cohort_selector:
         from scripts.l2_event import division_cohort_selector
 
-        search_roots = [p.resolve() for p in args.search_root] if args.search_root else None
+        search_roots = (
+            [p.resolve() for p in args.search_root]
+            if args.search_root
+            else division_cohort_selector.default_search_roots()
+        )
         cohort_audit = division_cohort_selector.audit_cohort(search_roots=search_roots)
         selected_seeds = tuple(cohort_audit.selected_seeds)
+        audit_data_roots = tuple(search_roots)
         print(
             f"[ftsz_pre_division_evidence] cohort selector: completed={cohort_audit.completed_count} "
             f"required={cohort_audit.required_completed_windows} "
@@ -706,7 +718,10 @@ def main(argv: list[str] | None = None) -> int:
             f"selected_seeds={selected_seeds}"
         )
 
-    report = audit_pre_division_evidence(selected_seeds=selected_seeds)
+    report = audit_pre_division_evidence(
+        data_roots=audit_data_roots,
+        selected_seeds=selected_seeds,
+    )
     print(json.dumps(report.to_json(), indent=2, sort_keys=True))
     print()
     print(f"status={report.status} deficit={report.deficit}/{report.required_n_seeds}")

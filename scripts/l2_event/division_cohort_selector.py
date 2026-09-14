@@ -19,8 +19,9 @@ WHAT THIS MODULE ENFORCES
   to exist. A record (or on-disk state) violating this raises
   :class:`CohortContractError` -- this is a hard mechanical contract
   violation, never silently repaired.
-* The authoritative cohort is the first ``required_completed_windows``
-  (50) COMPLETED seeds in ascending order, drawn ONLY from the
+* The authoritative engineering cohort is the first
+  ``required_completed_windows`` (20) COMPLETED seeds in ascending order,
+  drawn ONLY from the
   CONTIGUOUS prefix of attempted seeds starting at
   ``candidate_seed_start`` -- a COMPLETED trace for a seed that lies
   beyond the first gap in the attempt ledger is preserved (never deleted
@@ -744,7 +745,7 @@ def audit_cohort(
     # ANY cross-seed integrity finding is outstanding, even if the raw
     # completed count already reached required_completed_windows -- a
     # cohort with mixed DNADamage source identity or aliased/duplicated
-    # trace content is not a valid N=50 ensemble regardless of count.
+    # trace content is not a valid engineering ensemble regardless of count.
     selection_satisfied = (
         len(selected_seeds) >= required
         and not source_hash_mismatches

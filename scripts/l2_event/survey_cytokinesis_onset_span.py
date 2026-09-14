@@ -2,21 +2,21 @@
 however many seed event-window traces currently exist on disk under
 ``data/m1_sources/karr_native/per_process_traces_v2_event_s*/Cytokinesis_*ticks.mat``.
 
-Purpose: this is the tool the catalog owner should run, once ALL 50
+Purpose: this is the tool the catalog owner should run, once all required
 seeds of the required event-window ensemble exist, to determine the
 COHORT-WIDE MAXIMUM onset-to-completion span before authorizing an
-N=50 sweep -- see ``docs/phase_f/l2_event/event_registry.yaml``'s
+engineering sweep -- see ``docs/phase_f/l2_event/event_registry.yaml``'s
 Cytokinesis notes and ``docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml``'s
 Cytokinesis ``M_ticks``/``seed_window`` fields (reconciled 2026-08-05 to
 the seed-0 LOWER BOUND, `event_sweep_blocked_on` (formerly `blocked_on`)
 pending this survey for the real cohort-wide maximum).
 
 Hard rule: this script NEVER launches a MATLAB extraction itself. It
-only reads whatever traces already exist. If fewer than 50 seeds are
+only reads whatever traces already exist. If fewer than the required seeds are
 present it reports the partial survey and explicitly REFUSES to claim a
 cohort-wide maximum (only a lower bound over the seeds actually
 present) -- inventing/interpolating a full-cohort number from a partial
-sample would be exactly the kind of unauthorized N=50 shortcut this
+sample would be an unauthorized shortcut this
 project's hard rules forbid. Generating the missing seeds must go
 through the established resumable/atomic launcher
 (``scripts/l2_event/launcher.py``), one seed at a time, under
@@ -70,6 +70,7 @@ from scripts.l2_event.division_window_spec import (  # noqa: E402
     ProvisionalMarginOverrunError,
     check_inclusive_span_margin,
     m_ticks_for,
+    required_completed_windows,
 )
 from scripts.l2_event.window_loader import load_event_window  # noqa: E402
 
@@ -86,7 +87,7 @@ REQUIRED_OBSERVABLES = (
 )
 
 TRACE_ROOT = REPO_ROOT / "data" / "m1_sources" / "karr_native"
-REQUIRED_N_SEEDS = 50
+REQUIRED_N_SEEDS = required_completed_windows()
 
 _SEED_DIR_RE = re.compile(r"_s(\d+)$")
 _TRACE_NAME_RE = re.compile(r"^Cytokinesis_(\d+)ticks\.mat$")
@@ -99,20 +100,22 @@ class MTicksMetadataMismatchError(ValueError):
     the file is mislabeled or corrupted, not merely "a different cohort"."""
 
 
-def discover_traces(*, m_ticks: int) -> dict[int, Path]:
+def discover_traces(*, m_ticks: int, trace_root: Path | None = None) -> dict[int, Path]:
     """Map seed -> trace path for every Cytokinesis event-window trace on
     disk whose FILENAME encodes exactly ``m_ticks`` (e.g.
     ``Cytokinesis_5000ticks.mat`` for ``m_ticks=5000``) -- traces
     preregistered under a DIFFERENT M_ticks (e.g. the preserved
     M_ticks=4000 cohort) are never included, so a survey can never mix
     two non-comparable cohorts into one max/lower-bound claim. Reads
-    `TRACE_ROOT` at call time so tests can monkeypatch it to a temp
-    directory without touching the real data tree."""
+    `TRACE_ROOT` at call time unless ``trace_root`` is supplied, so tests can
+    monkeypatch it and operational callers can point at the dedicated cohort
+    root without copying traces into the repository's legacy flat root."""
     found: dict[int, Path] = {}
-    if not TRACE_ROOT.exists():
+    root = TRACE_ROOT if trace_root is None else trace_root
+    if not root.exists():
         return found
     expected_name = f"Cytokinesis_{int(m_ticks)}ticks.mat"
-    for seed_dir in sorted(TRACE_ROOT.glob("per_process_traces_v2_event_s*")):
+    for seed_dir in sorted(root.glob("per_process_traces_v2_event_s*")):
         match = _SEED_DIR_RE.search(seed_dir.name)
         if not match:
             continue
@@ -178,10 +181,47 @@ def main(argv: list[str] | None = None) -> int:
             "preserved, non-authoritative) prior cohort instead."
         ),
     )
+    parser.add_argument(
+        "--trace-root",
+        type=Path,
+        default=None,
+        help=(
+            "Optional karr_native-style root containing per_process_traces_v2_event_sNNN "
+            "directories. Defaults to the legacy repository karr_native root; pass the "
+            "authoritative dual_division_cohort_current root for the current cohort."
+        ),
+    )
+    parser.add_argument(
+        "--use-cohort-selector",
+        action="store_true",
+        help=(
+            "Restrict the survey to the ascending, contiguous completed seeds selected "
+            "by division_cohort_selector. Required for an engineering-cohort claim; "
+            "without it the command is an all-banked window-size diagnostic only."
+        ),
+    )
     args = parser.parse_args(argv)
     m_ticks = args.m_ticks if args.m_ticks is not None else m_ticks_for("Cytokinesis")
 
-    traces = discover_traces(m_ticks=m_ticks)
+    traces = discover_traces(m_ticks=m_ticks, trace_root=args.trace_root)
+    if args.use_cohort_selector:
+        from scripts.l2_event import division_cohort_selector
+
+        trace_root = (
+            args.trace_root.resolve()
+            if args.trace_root is not None
+            else division_cohort_selector.authoritative_karr_native_root()
+        )
+        cohort = division_cohort_selector.audit_cohort(
+            search_roots=[trace_root],
+            authoritative_root=trace_root,
+        )
+        selected = set(cohort.selected_seeds)
+        traces = {seed: path for seed, path in traces.items() if seed in selected}
+        print(
+            f"cohort selector: selected={len(selected)}/{cohort.required_completed_windows} "
+            f"selection_satisfied={cohort.selection_satisfied}"
+        )
     if not traces:
         print(f"No Cytokinesis_{m_ticks}ticks.mat event-window traces found on disk; nothing to survey.")
         return 1
@@ -209,13 +249,23 @@ def main(argv: list[str] | None = None) -> int:
         print(
             f"PARTIAL SURVEY ONLY (M_ticks={m_ticks}): max observed span over these {n_present} "
             f"seed(s) is {max_span} ticks. This is a LOWER BOUND, not the cohort-wide maximum -- "
-            "refusing to authorize N=50 M_ticks/seed_window reconciliation from a "
+            "refusing to authorize engineering M_ticks/seed_window reconciliation from a "
             "partial sample. Generate the remaining seeds through the established "
             "resumable/atomic launcher (scripts/l2_event/launcher.py), one at a time, "
             "before drawing any cohort-wide conclusion."
         )
         return 2
-    print(f"FULL SURVEY (M_ticks={m_ticks}): cohort-wide maximum onset-to-completion span is {max_span} ticks.")
+    if args.use_cohort_selector:
+        print(
+            f"FULL ENGINEERING SURVEY (M_ticks={m_ticks}): cohort-wide maximum "
+            f"onset-to-completion span is {max_span} ticks."
+        )
+    else:
+        print(
+            f"ALL-BANKED DIAGNOSTIC (M_ticks={m_ticks}): maximum observed "
+            f"onset-to-completion span is {max_span} ticks. This is not an "
+            "engineering-cohort claim because the contiguous selector was not applied."
+        )
     return 0
 
 

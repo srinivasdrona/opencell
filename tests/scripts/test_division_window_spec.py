@@ -227,7 +227,7 @@ def test_margin_gate_error_message_reports_the_escalation_formula():
 
 def test_real_repo_spec_has_the_preregistered_selection_contract_values():
     assert candidate_seed_start() == 0
-    assert required_completed_windows() == 50
+    assert required_completed_windows() == 20
     assert selection_horizon_max_search_ticks() == 100000
     assert selection_order() == "ascending_seed"
     assert attempt_record_filename() == "division_window_attempt.json"
@@ -240,9 +240,9 @@ def test_selection_contract_applies_to_both_dual_tap_processes():
     assert not selection_contract_applies_to("SomeUnrelatedProcess")
 
 
-def test_selection_contract_schema_version_bumped_to_4():
+def test_selection_contract_schema_version_bumped_to_5():
     doc = load_spec()
-    assert doc["schema_version"] == 4
+    assert doc["schema_version"] == 5
 
 
 def test_missing_selection_contract_block_raises(tmp_path):
@@ -323,7 +323,7 @@ def test_selection_contract_is_isolated_from_a_custom_spec_path(tmp_path):
     assert selection_horizon_max_search_ticks(spec_path=custom_path) == 200000
     # The real repo spec's values must be unaffected.
     assert candidate_seed_start() == 0
-    assert required_completed_windows() == 50
+    assert required_completed_windows() == 20
     assert selection_horizon_max_search_ticks() == 100000
 
 
@@ -337,7 +337,7 @@ def test_selection_contract_is_isolated_from_a_custom_spec_path(tmp_path):
 def test_real_repo_spec_has_the_exact_formal_estimand_text():
     assert formal_estimand() == (
         "Cytokinesis process-local behavior conditional on division completion "
-        "within 100000 ticks under source S, over the first 50 completions of "
+        "within 100000 ticks under source S, over the first 20 completions of "
         "the ascending attempt stream from seed 0."
     )
 

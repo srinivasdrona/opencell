@@ -59,9 +59,18 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-11 00:50 IST) — supersedes all
+**Current status (2026-09-14 19:30 IST) — supersedes all
 earlier blocks below:**
 
+- Division engineering cohort decision: required COMPLETED windows reduced
+  from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
+  N=50 is deferred confirmatory evidence for a later publication-grade
+  claim. The ascending seed stream, 100,000-tick censor horizon,
+  completed-only selection, source/provider binding, and no-gap/no-resampling
+  rules are unchanged. Logged in
+  `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` as
+  `division-engineering-cohort-n20`; machine-readable contract/catalog/
+  registry/audits updated together.
 - DNAS is published on `main` at `92cb7b6` (merge commit `aec89fa`,
   handoff/provenance commit `92cb7b6`; `origin/main` matches). The CRLF/LF
   provenance blocker is fixed by LF-normalizing only
@@ -105,8 +114,11 @@ earlier blocks below:**
   is published on `main` at `9b72d11`:
   `docs/blog/2026-09-11-days-105-113-twenty-greens-two-empty-chairs-and-a-200-tick-file-that-finally-said-200.md`;
   commit/push it directly on main.
-- Detached division extraction remains healthy: supervisor PID `29372`,
-  MATLAB PIDs `19400`/`27912`; seed 11 completed, was hash-banked, and
+- The detached 7-16 extraction died during seed 15 when the host rebooted;
+  no MATLAB/supervisor process remains. Seed 14 completed as a valid
+  right-censor and is banked (sidecar SHA `ca970042...50d7`). Seed 15 has
+  no attempt record/traces; seed 16 was never started.
+  Earlier, seed 11 completed, was hash-banked, and
   passed the cohort validator. Its trace hashes are Cytokinesis
   `addd60f6...1e70`, FtsZ `d6a1a00f...cb90`, attempt sidecar
   `a2ef57c3...e7f`. The contiguous attempted prefix now ends at seed 11:
@@ -114,12 +126,34 @@ earlier blocks below:**
   right-censor (sidecar `d4d3ab4d...2432`), and seed 13 completed with Cyt
   `4ee3e54b...5f72`, FtsZ `9864544a...5e4f`, sidecar
   `f714d25c...f95a`. The validated contiguous prefix now ends at seed 13:
-  **12 completed / 2 right-censored** (6, 12), zero duplicate hashes,
-  source mismatches, invalid censors, or rejected traces; seed 14 is running
-  and correctly reported as `next_seed_to_attempt`. Selector exit 2 is
-  expected until 50 completions are selected.
-  Status/log remain under
+  After banking seed 14, the validated contiguous prefix ends at 14:
+  **12 completed / 3 right-censored** (6, 12, 14), zero duplicate hashes,
+  source mismatches, invalid censors, or rejected traces; seed 15 is next
+  and the engineering deficit is 8 completions.
+  Current selected-cohort pilots: Cyt 12/20 valid windows, observed
+  onset-to-completion spans 3676-3943 ticks (all below M=5000); FtsZ 12/12
+  seeds show both Karr and OC activity at the first window tick with zero
+  monomer-projection discrepancy. Both remain `INSUFFICIENT_ENSEMBLE`
+  (deficit 8), and neither pilot is an authoritative gate verdict.
+  Additional closure work remains after extraction: Cytokinesis's registry
+  adapter is still `structural_smoke_only`, while FtsZ's audit explicitly
+  computes no distributional threshold and its registry adapter is
+  `not_implemented`. Build/review the real N=20 gate surfaces before
+  promoting either MISSING_EVIDENCE row.
+  Stale status/log remain under
   `E:\opencell-worktrees\bulk-division-a\artifacts\dual_contract_007_016.*`.
+- Other gate status verified 2026-09-14: authoritative L2.1 active-window
+  manifest is **11/11 EWP**; a fresh TxReg active audit passes all 4000
+  compared ticks. Authoritative L2.2 is **20 PASS / 0 FAIL / 2
+  MISSING_EVIDENCE**, integrity OK; L1b is 28/28 and L2.4 passes four seeds
+  x 100 ticks. No other process verdict is FAIL. Known non-process test
+  debt: the legacy 28-row L2.1 rubric selects TxReg's stale 100-tick trace
+  (missing `tfBoundPromoters`) instead of the authoritative active window;
+  the L2.2 dependency audit has uncovered registry gaps for Replication
+  (`protein_complexes.py`, `opencell.util`), Cytokinesis
+  (`mcg16807_state_codec.py`), and DNADamage (`karr_dna_damage_rng.py`);
+  one DNADamage exact-set anti-cheat assertion is also stale after four
+  legitimate dependency entries were added.
 - Historical published main at the start of the final DNAS merge wave was
   `8a5ccc4` (earlier L2.1 cleanup milestone `3b9e6e2`).
   DNADamage, Cytokinesis, HostInteraction, ReplicationInitiation, and

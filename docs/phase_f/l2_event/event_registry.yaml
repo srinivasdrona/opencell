@@ -49,7 +49,7 @@ processes:
     adapter_status: structural_smoke_only
     event_timing_model: single_firing
     magnitude_gateable: false
-    required_n_seeds: 50
+    required_n_seeds: 20
     deferred_reason: null
     notes: >
       In v4 scope (spec §8, D6). Canary D closed 2026-08-05: 1 of 50
@@ -83,7 +83,7 @@ processes:
       docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md). Per D6,
       magnitude is NOT_GATEABLE_REDUNDANT until the OC port grows a
       non-redundant payload; count + timing are the two gating channels.
-      N=50 sweep remains unauthorized until a 50-seed onset-span survey
+      HISTORICAL 2026-08-05: N=50 sweep remained unauthorized until a 50-seed onset-span survey
       (scripts/l2_event/survey_cytokinesis_onset_span.py) determines the
       real cohort-wide maximum span -- the reconciled M_ticks=4000 is only
       a seed-0-validated lower bound, never assumed sufficient for all 50
@@ -156,15 +156,19 @@ processes:
       selection/censoring-horizon contract is now preregistered in
       docs/phase_f/l2_event/division_window_spec.json's
       `selection_contract` (candidate_seed_start=0,
-      required_completed_windows=50, a common max_search_ticks=100000
+      originally required_completed_windows=50, a common max_search_ticks=100000
       censoring horizon, ascending selection order, and a per-seed
       `division_window_attempt.json` COMPLETED/RIGHT_CENSORED record
       mutually exclusive with the seed's trace files) and mechanically
       enforced by the new `scripts/l2_event/division_cohort_selector.py`
       (contiguous-attempt-ledger auditor, never counts a censored seed
       toward N, never selects a later completion while an earlier
-      contiguous seed remains unattempted). This does NOT change
-      `required_n_seeds: 50` above, and does not retroactively invalidate
+      contiguous seed remains unattempted).
+      UPDATE 2026-09-14: the engineering gate is amended to
+      `required_n_seeds: 20` before running the current Cytokinesis/FtsZ
+      outcomes. The original 50-completion cohort is deferred confirmatory
+      evidence; ascending selection, censoring, and source binding are unchanged.
+      This does not retroactively invalidate
       any existing COMPLETED trace that finished well under the new
       100000-tick horizon -- only a RIGHT_CENSORED claim must have been
       attempted at the full horizon to count. See
@@ -236,7 +240,7 @@ processes:
     adapter_status: not_implemented
     event_timing_model: null
     magnitude_gateable: false
-    required_n_seeds: 50
+    required_n_seeds: 20
     deferred_reason: >
       Out of v4 scope (spec §8 out-of-scope #1): gradient/continuous
       polymerization process, not a binary firing event; v0.3 already
@@ -258,6 +262,7 @@ processes:
       rows (Cytokinesis, RibosomeAssembly) -- the harness_type check is
       scoped to `in_scope_v4: true` rows only, precisely to keep FtsZ's
       pending status from bricking RA's structural smoke.
-      Catalog carries a seed_window (tick_range_from_division [-200, 0])
-      but no event_adapter_id or event-window extraction has ever run for
-      this process.
+      Catalog carries a seed_window (tick_range_from_division [-200, 0]).
+      Paired dual-tap event-window extraction is now in progress, and the
+      2026-09-14 engineering cohort is N=20; a gating adapter/classification
+      is still not implemented.

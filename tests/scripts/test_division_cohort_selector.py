@@ -144,7 +144,7 @@ def _record(seed: int, status: str, *, max_search_ticks=None, dnadamage_sha=None
 
 def test_contract_constants_match_the_real_repo_spec():
     assert candidate_seed_start() == 0
-    assert required_completed_windows() == 50
+    assert required_completed_windows() == 20
     assert selection_horizon_max_search_ticks() == 100000
 
 

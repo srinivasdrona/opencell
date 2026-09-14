@@ -1,10 +1,10 @@
 {
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
-  "catalog_sha256": "5442fe539b4b3549da1af3c99a45521a7b3617078f2cb7cc1109be79f44f66dd",
-  "content_hash": "d69c8046f579adf48000ad87912c2a2882f798247e75fd0cd570696828a1c72d",
+  "catalog_sha256": "61f2868799b8516e26be4919bec1a432df3ae5b0583475ed7a1e35f8d17b65f5",
+  "content_hash": "c7a02f4f03bda31ce0cfc46ca1a6481a672b7e8a051b392e2a54b2b558923ce4",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-10T17:48:06.732541+00:00",
+  "generated_at": "2026-09-14T14:03:24.944801+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -12,7 +12,7 @@
       "bucket": "EVENT_CLASS",
       "catalog_soft_flags": {
         "M_ticks": 5000,
-        "N_seeds": 50,
+        "N_seeds": 20,
         "closed_form_dominant": "false",
         "harness_type": "event_class",
         "in_scope_L2_2": true,
@@ -155,7 +155,7 @@
       "bucket": "EVENT_CLASS",
       "catalog_soft_flags": {
         "M_ticks": 200,
-        "N_seeds": 50,
+        "N_seeds": 20,
         "closed_form_dominant": "false",
         "harness_type": "event_class",
         "in_scope_L2_2": true,

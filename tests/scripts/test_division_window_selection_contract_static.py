@@ -94,7 +94,7 @@ def test_loader_fails_closed_never_defaults():
     assert "error('division_window_selection_contract:missing_field'" in source
     # No fallback/default assignment for any of the required fields.
     assert "candidate_seed_start = 0;" not in source
-    assert "required_completed_windows = 50;" not in source
+    assert "required_completed_windows = 20;" not in source
     assert "max_search_ticks = 100000;" not in source
 
 
@@ -114,7 +114,7 @@ def test_real_repo_spec_file_is_valid_json_and_matches_python_accessor():
     doc = json.loads(SPEC_PATH.read_text(encoding="utf-8"))
     contract = doc["selection_contract"]
     assert contract["candidate_seed_start"] == 0
-    assert contract["required_completed_windows"] == 50
+    assert contract["required_completed_windows"] == 20
     assert contract["max_search_ticks"] == 100000
     assert contract["selection_order"] == "ascending_seed"
     assert contract["attempt_record_filename"] == "division_window_attempt.json"

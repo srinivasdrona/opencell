@@ -1,9 +1,9 @@
 """Unit tests for `scripts/l2_event/survey_cytokinesis_onset_span.py`
 (Opus review, 2026-08-05, item 4: a small, explicitly read-only survey
-tool -- never an uncontrolled 50-seed launch -- that reports the
+tool -- never an uncontrolled bulk launch -- that reports the
 onset-to-completion span over whatever Cytokinesis event-window seeds
 already exist on disk, and refuses to claim a cohort-wide maximum until
-all 50 required seeds are present."""
+all 20 required engineering seeds are present."""
 
 from __future__ import annotations
 
@@ -90,9 +90,15 @@ def test_main_m_ticks_flag_overrides_the_default(tmp_path, monkeypatch, capsys):
     assert "Cytokinesis_4000ticks.mat" in capsys.readouterr().out
 
 
+def test_trace_root_argument_targets_explicit_cohort_root(tmp_path, capsys):
+    exit_code = survey.main(["--trace-root", str(tmp_path)])
+    assert exit_code == 1
+    assert "nothing to survey" in capsys.readouterr().out
+
+
 @pytest.mark.skipif(not _REAL_CYTOKINESIS_TRACE.exists(), reason="Real Cytokinesis seed-000 event-window MAT not present locally")
 def test_main_reports_partial_survey_with_the_one_real_seed(monkeypatch, capsys):
-    """With only the seed-0 Canary D trace present (1/50) under its own
+    """With only the seed-0 Canary D trace present (1/20) under its own
     preserved M_ticks=4000 cohort, the survey must print a partial-survey
     refusal and exit nonzero -- it must never claim a cohort-wide maximum
     from a single seed. Explicitly surveys the M_ticks=4000 cohort (the
@@ -103,7 +109,7 @@ def test_main_reports_partial_survey_with_the_one_real_seed(monkeypatch, capsys)
     exit_code = survey.main(["--m-ticks", "4000"])
     assert exit_code == 2
     out = capsys.readouterr().out
-    assert "1/50 required seeds present" in out
+    assert "1/20 required seeds present" in out
     assert "PARTIAL SURVEY ONLY" in out
     assert "seed=000" in out
 

@@ -1,5 +1,19 @@
 # Division-window cohort-censoring contract — migration/backfill plan
 
+## 2026-09-14 engineering-gate amendment
+
+The engineering cohort now requires the first **20 COMPLETED** windows from
+the same ascending, contiguous attempted-seed stream. The 100,000-tick censor
+horizon, completed-only counting, source/provider identity binding, and
+no-gap/no-resampling rules are unchanged. The original 50-completion target is
+deferred confirmatory evidence for a later publication-grade claim.
+
+Current mechanically validated state after banking seed 14: attempted prefix
+0-14, **12 COMPLETED / 3 RIGHT_CENSORED** (6, 12, 14), zero duplicate hashes,
+source mismatches, invalid censors, or rejected traces; seed 15 is next and
+the engineering deficit is eight completions. Re-run the selector command
+below rather than treating this snapshot as permanently current.
+
 Preregistered 2026-09-08, revised 2026-09-09 (Opus implementation
 re-review, then a second Opus re-review, then this final backfill/
 accounting round), branch `fix/division-censor-contract`, base `701b991`

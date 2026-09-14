@@ -13,12 +13,10 @@ Covers, per the task's Beat-3 predicted outcome and pre-mortem:
 * the monomer-projection primary-channel statistic;
 * no-hint, no-synthetic-activation end-to-end replay of one seed's window
   through the REAL, unmodified `KarrFtsZPolymerizationProcess` ODE port;
-* duplicate-seed detection and the "never promote N < 50 to
+* duplicate-seed detection and the "never promote N < 20 to
   SUFFICIENT_ENSEMBLE" guard (the "N=1 relabeled diagnostic-green"
   pre-mortem risk, generalized to N=3);
-* the exact resumable-extraction-command surface against real data roots
-  (0 real division-anchored FtsZ seeds exist anywhere at the time of
-  writing -- see the audit's own INSUFFICIENT_ENSEMBLE/deficit=50 result).
+* the exact resumable-extraction-command surface against real data roots.
 """
 
 from __future__ import annotations
@@ -384,6 +382,29 @@ def test_audit_never_promotes_partial_ensemble_to_sufficient(tmp_path):
     assert report.activity_summary["seeds_total"] == 3
 
 
+def test_selected_seed_universe_filters_summary_statistics(tmp_path):
+    root = tmp_path / "karr_native"
+    for seed in range(3):
+        enzymes = np.tile(_REAL_INITIAL_ENZYME_COUNTS, (REQUIRED_M_TICKS, 1))
+        enzymes[:, 0] += seed
+        _write_ftsz_window(
+            _trace_path(root, seed),
+            seed=seed,
+            enzymes_before=enzymes,
+        )
+
+    report = audit_pre_division_evidence(
+        data_roots=(root,),
+        selected_seeds=(0, 2),
+    )
+
+    assert report.found_seeds == [0, 2]
+    assert [row.seed for row in report.per_seed_evidence] == [0, 2]
+    assert report.activity_summary["seeds_total"] == 2
+    assert report.monomer_primary_statistic is not None
+    assert report.monomer_primary_statistic["n_seeds"] == 2
+
+
 def test_audit_surfaces_rejected_window_reason_without_counting_it_found(tmp_path):
     root = tmp_path / "karr_native"
     _write_ftsz_window(_trace_path(root, 0), seed=0, n_ticks=100, tick_start=1901)  # wrong n_ticks
@@ -406,9 +427,8 @@ def test_discover_candidate_paths_finds_all_seed_directories(tmp_path):
 
 
 # ---------------------------------------------------------------------------
-# Real data roots: expected INSUFFICIENT_ENSEMBLE / deficit=50 (0 real
-# division-anchored FtsZ seeds exist anywhere at the time of writing) and a
-# well-formed resumable extraction command.
+# Real data roots: honest completeness status and a well-formed resumable
+# extraction command.
 # ---------------------------------------------------------------------------
 
 
@@ -444,7 +464,7 @@ def test_direct_script_entrypoint_runs_from_repo_root_without_import_error():
 def test_resumable_extraction_command_is_well_formed_and_driver_exists():
     missing = list(range(REQUIRED_N_SEEDS))
     command = resumable_extraction_command(missing)
-    assert "extract_ftsz_pre_division_window_seeds(0, 49, [])" in command
+    assert "extract_ftsz_pre_division_window_seeds(0, 19, [])" in command
     assert f"NO output file at all -- extracted fresh, never overwritten: {missing}" in command
     assert _MATLAB_DRIVER.exists(), (
         f"resumable_extraction_command references {_MATLAB_DRIVER}, which must exist "
