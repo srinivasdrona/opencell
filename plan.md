@@ -110,7 +110,9 @@ earlier blocks below:**
   executed from `main-integrate`, where its gitignored authoritative
   4000-tick trace is mounted. Running those same data-dependent tests from
   this isolated worktree correctly fails because that raw trace is absent;
-  no code divergence was found.
+  no code divergence was found. Current-main integration commit `62d9cd5`;
+  provenance event
+  `sha256:27ab685ef134f08148ca13a28bec2534bcc7d9874eff3c5bb7e0d4fbb4a7d201`.
 - L2.2 provenance-gap repair (2026-09-14 23:55 IST): merged into current
   `main` from isolated worktree
   `E:\opencell-worktrees\fix-l22-provenance-gaps-final`, branch
