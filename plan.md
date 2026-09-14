@@ -129,9 +129,18 @@ earlier blocks below:**
     worktree `E:\opencell-worktrees\fix-ftsz-n20-mismatch`;
   - Cyt RNG/extractor closure `7fcc7bd1-60f3-4214-bd6a-577bab8a7225`,
     worktree `E:\opencell-worktrees\fix-cyt-n20-rng-replay`.
-  Do not promote either row from the conditional/failed pilots; merge gate
-  infrastructure only after review, then integrate corrective branches and
-  regenerate/rerun the required genuine cohort.
+  Opus review `b611b17c-4f24-4a74-bb08-f335627de9ea` **REJECTED Cyt only**:
+  one payload mismatch passes at threshold equality; OC count/timing are
+  evaluated only on Karr contraction ticks and cannot detect overfire; the
+  catalog primary/output surface was post-hoc changed to fit the conditional
+  projection; full stochastic decisions remain untested without
+  `randStreamState`. Opus accepted the FtsZ/cohort plumbing and independently
+  confirmed its N12 enzyme mismatch is credible/conservative. Do not merge
+  `6e7cd84` wholesale or promote either row. Seed 15 may finish and bank, but
+  pause before seed 16 because old-format Cyt traces cannot support the full
+  gate. Pause monitor shell `pause-after-seed15-2` uses
+  `pause_division_after_seed15.ps1` and stops supervisor PID 2260 only after
+  the log records `seed 15 BANKED`.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
