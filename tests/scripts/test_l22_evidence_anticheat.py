@@ -1140,6 +1140,13 @@ def test_process_dependency_registry_matches_real_current_import_graph():
     assert "chromosome_views_module" not in schema.PROCESS_DEPENDENCY_FILES.get("DNASupercoiling", {})
     assert "chromosome_views_module" not in schema.PROCESS_DEPENDENCY_FILES.get("Replication", {})
     assert "chromosome_views_module" not in schema.PROCESS_DEPENDENCY_FILES.get("ReplicationInitiation", {})
+    assert set(schema.PROCESS_DEPENDENCY_FILES["Replication"]) == {
+        "chromosome_store_module",
+        "m_gen_constants_module",
+        "state_init_module",
+        "m1_protein_complexes_module",
+        "util_module",
+    }
 
     assert set(schema.PROCESS_DEPENDENCY_FILES["Metabolism"]) == {
         "fva_module",
@@ -1179,10 +1186,18 @@ def test_process_dependency_registry_matches_real_current_import_graph():
         "dnas_superhelical_density_ledger_module",
     }
     assert set(schema.PROCESS_DEPENDENCY_FILES["DNADamage"]) == {
+        "dna_damage_event_verifier_module",
+        "dna_damage_stimulus_cohort_module",
         "chromosome_store_module",
         "chromosome_views_module",
+        "karr_dna_damage_rng_module",
         "m_gen_constants_module",
+        "l2_projections_module",
+        "l2_replay_common_module",
         "state_init_module",
+    }
+    assert schema.PROCESS_DEPENDENCY_FILES["Cytokinesis"] == {
+        "mcg16807_state_codec_module": schema.MCG16807_STATE_CODEC_MODULE,
     }
 
     for name, deps in schema.PROCESS_DEPENDENCY_FILES.items():
