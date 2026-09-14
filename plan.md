@@ -77,8 +77,9 @@ earlier blocks below:**
   provenance 44 passed; L1b wiring 28/28 plus 19 tests; changed-file Ruff
   clean. Two unrelated base-`a021dd4` failures were independently reproduced
   in `main-integrate`: L1b method-completeness is 76/115 with 39 stale anchor
-  errors, and repository-wide Ruff reports 962 legacy errors. No merge/push
-  has occurred and no validation process remains live. Operational trap:
+  errors, and repository-wide Ruff reports 962 legacy errors. Implementation
+  commit `379828c`; the required sub-agent provenance record links that commit.
+  No merge/push has occurred and no validation process remains live. Operational trap:
   keep using the explicit tracked complete bundle path; this worktree has no
   live `artifacts/l2_2_gates` shadow root.
 - Active closure wave (2026-09-14 22:05 IST): finish the four remaining
