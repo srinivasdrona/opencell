@@ -93,9 +93,15 @@ earlier blocks below:**
   Cytokinesis, and DNADamage dependency coverage and the migrated
   Replication/DNADamage sentinels remain intact. Implementation/docs/catalog
   commit: `1826c07`; handoff/provenance commit `e0c000a` (local only; not
-  pushed/merged). LLM provenance event
+  pushed/merged). Provenance-main integration merge: `3cb4208`; exact-byte
+  Replication/DNADamage evidence migrations and the repaired dependency
+  registry are preserved, and fresh merged validation is 118 passed / 1
+  expected RA-data skip with complete-bundle **20/0/2 integrity OK**.
+  LLM provenance events
   `sha256:5f3e9af8cd0a753d02dff6500ca75b5e6b073bb459aca41ae1a4dd5f463cc9d6`
-  is appended.
+  and
+  `sha256:02cf29d77e5f2c3192237845680c5bb7f5350b58d9989520f1c133a92568d75b`
+  are appended.
 - L2.2 provenance-gap repair (2026-09-14 23:55 IST): merged into current
   `main` from isolated worktree
   `E:\opencell-worktrees\fix-l22-provenance-gaps-final`, branch
