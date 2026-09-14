@@ -1,5 +1,18 @@
 # Cytokinesis L2.event Adapter -- Process Report (Round 3)
 
+> **2026-09-14 N=20 gate update:** the structural adapter described below is
+> now complemented by `scripts/l2_event/cytokinesis_n20_gate.py` over the
+> genuine dual-division cohort and registered as
+> `cytokinesis.contraction_projection.v2`. The runner conditions on real
+> captured contraction ticks and evaluates OC's real
+> `calc_next_pinched_diameter`; it does not fabricate the missing per-tick
+> RNG state needed for full `next_update`. It gates contraction count/timing
+> and next-diameter payload. Substrate/enzyme replay remains explicitly
+> non-gateable until the extractor captures `randStreamState`. Authority is
+> refused below exactly 20 selector-owned
+> COMPLETED windows; current N=12 execution is pilot-only. Canonical current
+> design: `docs/phase_f/DIVISION_N20_GATE_SURFACES.md`.
+
 **Process**: Cytokinesis | **Adapter ID**: `cytokinesis.pinched_diameter_completion.v1`
 **Branch**: `agent/l2-event-cytokinesis` @ base `d92f8ad` (round 3 is a
 narrow closeout on round-2 HEAD `c264f538`, itself built on round-1 HEAD

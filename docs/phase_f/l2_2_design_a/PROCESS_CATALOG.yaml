@@ -43,9 +43,10 @@ universals:
 # --- Buckets (test policy per stochastic class) -----------------------------
 #
 # Schema v3 (2026-06-11): added `harness_type` field per in-scope process.
-# L2.2 = distributional fidelity gate. Two harness implementations under L2.2:
+# L2.2 = distributional fidelity gate. Three harness implementations under L2.2:
 #   - design_a_per_tick: per-tick continuous comparison (current Design-A runner)
 #   - event_class:       event-firing comparison (L2.event harness — TO BUILD)
+#   - windowed_continuous: process-local continuous/windowed comparison
 # Event-class processes STAY in_scope_L2_2; they just route to a different
 # harness implementation. They are NOT out-of-scope.
 
@@ -74,6 +75,11 @@ buckets:
     harness_type: event_class
     test_required: L2.event ensemble (event-aligned, not tick-aligned)
     rationale: "Process fires << 1 event per 100 ticks (singular per-cell-cycle events). Tick-level distribution undefined; events compared in their natural window. L2.event harness must be built; in interim, design_a_per_tick runner MUST refuse these processes (not silently produce zero-W1 fake PASS)."
+  WINDOWED_CONTINUOUS_CLASS:
+    in_scope_L2_2: true
+    harness_type: windowed_continuous
+    test_required: process-local windowed continuous ensemble
+    rationale: "Continuous update surfaces need window-aligned distributional comparison, not binary event normalization or generic fixed-window Design-A."
 
 # --- Processes (28 canonical Karr processes + 1 allocator note) -------------
 #
@@ -340,18 +346,18 @@ processes:
 
   - name: FtsZPolymerization
     oc_module: opencell/vivarium/karr_ftsz_polymerization.py
-    bucket: EVENT_CLASS
-    harness_type: event_class
+    bucket: WINDOWED_CONTINUOUS_CLASS
+    harness_type: windowed_continuous
     in_scope_L2_2: true
     M_ticks: 200
     N_seeds: 20
     event_density: sparse                 # only active in pre-division window
-    input_channels: [substrates, enzymes, monomers]
-    output_channels: [substrates, monomers]
-    primary_channel: monomers
+    input_channels: [substrates, enzymes]
+    output_channels: [enzymes, substrates]
+    primary_channel: enzymes
     karr_artifact: per_process_traces_v2
-    rationale_M: "sparse; need seeds that overlap pre-division window"
-    notes: "v3 (2026-06-11): reclassified to EVENT_CLASS. v3.9 (2026-06-16): FIXED at 9375e59 — full ODE-based port replacing Karr-light v1 stochastic rates. scipy BDF solver for activation/exchange/nucleation/elongation kinetics, mass-preserving discretization, substrate-limit clamping. Algorithm now faithful to Karr. Still EVENT_CLASS — needs event-window traces for distributional validation. 2026-09-14: engineering cohort amended from N=50 to N=20 before running the current gate outcomes; N=50 is deferred confirmatory evidence."
+    rationale_M: "continuous ODE/discretization updates compared over the final 200-tick pre-division window"
+    notes: "v3 (2026-06-11): classified EVENT_CLASS while the needed pre-division traces were unavailable. v3.9 (2026-06-16): FIXED at 9375e59 — full ODE-based port replacing Karr-light v1 stochastic rates. 2026-09-14: reclassified to WINDOWED_CONTINUOUS_CLASS because FtsZPolymerization is continuous/windowed, not a binary event; the real gate compares enzymes (primary) and substrates (secondary) over the selector-owned pre-division cohort. Engineering cohort amended from N=50 to N=20 before current outcomes; N=50 is deferred confirmatory evidence."
     seed_window:
       tick_range_from_division: [-200, 0]
       rationale: "FtsZ polymerization is biologically active only in the pre-division window"
@@ -364,10 +370,10 @@ processes:
     M_ticks: 5000  # SINGLE SOURCE OF TRUTH: docs/phase_f/l2_event/division_window_spec.json (Cytokinesis.m_ticks). Keep these two files in agreement -- tests/scripts/test_division_window_spec.py enforces it.
     N_seeds: 20
     event_density: sparse                 # only active during division
-    input_channels: [substrates, enzymes, chromosome]
-    output_channels: [substrates, chromosome]
-    event_channels: [chromosome]
-    primary_channel: substrates
+    input_channels: [pinchedDiameter, substrates, enzymes, boundEnzymes, chromosome_segregated, ftsZRing]
+    output_channels: [pinchedDiameter]
+    event_channels: [pinchedDiameter]
+    primary_channel: pinchedDiameter
     karr_artifact: per_process_traces_v2
     rationale_M: "2026-09-04 (Cytokinesis window fix, superseding the 2026-08-05 M_ticks=4000 reconciliation below): a required same-cohort equivalence run (fresh seed 36) completed a full ~32k-tick trajectory and failed closed under the OLD M_ticks=4000 -- real onset_tick=27918, completion_tick=31993, inclusive span=4076 ticks, 76 ticks LARGER than the 4000-tick buffer. CORRECTED 2026-09-04 (Opus review, post-initial-fix): the 35-trace M_ticks=4000 survey (spans 3637-3971) is NOT corroborating margin evidence -- those traces were produced under a DIFFERENT (pre-signed-zero-overlay) DNADamage.m source than the fresh seed-36 run (decisions/dec-005-full-simulation-source-hash-binding.md), not merely a truncated sample of the same model; the prior 'run-to-run nondeterminism'/'survivorship bias' explanation for the seed-36 conventional-vs-dual disagreement is RETRACTED. M_ticks=5000 is preregistered as PROVISIONAL, n=1 evidence (see division_window_spec.json's escalation_policy for the fail-closed rule if a future seed exceeds it -- new_m_ticks = ceil(observed*1.227/1000)*1000 in a SEPARATE commit, never same-commit tuning). The prior 4000-tick traces are preserved but non-authoritative because both M and DNADamage source identity differ. The current engineering cohort requires N=20 completed windows; the original N=50 target is deferred confirmatory evidence."
     # NOTE (2026-08-06, Opus review): this is deliberately NOT named

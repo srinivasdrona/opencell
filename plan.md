@@ -62,6 +62,37 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-14 19:30 IST) — supersedes all
 earlier blocks below:**
 
+- Division-gate implementation lane (2026-09-14 22:45 IST): isolated
+  worktree `E:\opencell-worktrees\build-division-n20-gates`, branch
+  `build/division-n20-gates`, base `a021dd4`. Implementing fail-closed
+  Cytokinesis event and FtsZ windowed-continuous N=20 gates. Raw cohort is
+  read-only from
+  `E:\opencell-worktrees\main-integrate\data\m1_sources\karr_native\
+  dual_division_cohort_current`; pilots write only under untracked
+  `artifacts/division_n20_pilots`, never tracked authority below N=20.
+  No MATLAB is launched by this lane. Long pilot commands use explicit
+  source-root paths and may run for several minutes because Cytokinesis has
+  12 x 5000 captured ticks and FtsZ performs 12 x 200 ODE updates.
+  Implementation/pilot result: Cytokinesis's source-faithful contraction
+  projection is clean at N=12 (147 contraction events/seed; count/timing/
+  next-diameter discrepancies all zero; spans 3676-3943). FtsZ's honest
+  windowed continuous pilot is active and invariant-clean but exceeds the
+  preregistered Karr-only thresholds on the independent 6-seed evaluation
+  half (enzyme scaled W1 0.581578 > 0.174015; substrate 0.1895 >
+  0.152667). Both remain PILOT/INSUFFICIENT; no N<20 authority was written.
+  Cytokinesis's current trace projection cannot gate stochastic substrate/
+  enzyme deltas without the minimal future extractor addition
+  `randStreamState` before/after each Cytokinesis tap; the present gate does
+  not fabricate it. Validation: final event/catalog suites 315 passed / 3
+  expected RibosomeAssembly-data skips; evidence-index strict/portable
+  checks 16 passed and generator audit remains **20 PASS / 0 FAIL / 2
+  MISSING_EVIDENCE**; gate-focused tests 42 passed / 1 expected RA skip;
+  L1b PASS 28/28 plus 19 tests; L2.4 6 passed; provenance 53 passed; focused
+  Ruff clean. The full AST dependency audit still reports only the separate
+  pre-existing provenance-track gaps for Replication
+  (`protein_complexes.py`, `opencell.util`) and DNADamage
+  (`karr_dna_damage_rng.py`); Cytokinesis's own codec dependency is closed
+  on this branch.
 - Active closure wave (2026-09-14 22:05 IST): finish the four remaining
   todos iteratively. Independent isolated tracks: (A) close L2.2
   first-party dependency/provenance registry gaps and stale DNADamage

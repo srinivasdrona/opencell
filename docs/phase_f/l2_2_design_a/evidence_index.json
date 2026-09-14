@@ -1,10 +1,10 @@
 {
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
-  "catalog_sha256": "61f2868799b8516e26be4919bec1a432df3ae5b0583475ed7a1e35f8d17b65f5",
-  "content_hash": "c7a02f4f03bda31ce0cfc46ca1a6481a672b7e8a051b392e2a54b2b558923ce4",
+  "catalog_sha256": "94e2be9516e977941ed0b33a5833200e83985fe552ccfe0a1304963312783ae7",
+  "content_hash": "f247f1542641b00f3481dd9a47720682038cc6c9ac9142e26418cc4839ff7ae5",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-14T14:03:24.944801+00:00",
+  "generated_at": "2026-09-14T20:11:39.744703+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -16,7 +16,7 @@
         "closed_form_dominant": "false",
         "harness_type": "event_class",
         "in_scope_L2_2": true,
-        "primary_channel": "substrates",
+        "primary_channel": "pinchedDiameter",
         "primary_distance": "per_tick_vector_w1_mean"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Cytokinesis/latest_event",
@@ -152,19 +152,19 @@
     },
     {
       "artifact_hashes": {},
-      "bucket": "EVENT_CLASS",
+      "bucket": "WINDOWED_CONTINUOUS_CLASS",
       "catalog_soft_flags": {
         "M_ticks": 200,
         "N_seeds": 20,
         "closed_form_dominant": "false",
-        "harness_type": "event_class",
+        "harness_type": "windowed_continuous",
         "in_scope_L2_2": true,
-        "primary_channel": "monomers",
+        "primary_channel": "enzymes",
         "primary_distance": "per_tick_vector_w1_mean"
       },
-      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/FtsZPolymerization/latest_event",
+      "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/FtsZPolymerization/latest_windowed",
       "green": false,
-      "harness_type": "event_class",
+      "harness_type": "windowed_continuous",
       "mechanical_verdict": "MISSING_EVIDENCE",
       "process": "FtsZPolymerization",
       "reasons": [

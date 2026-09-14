@@ -2,7 +2,8 @@
 
 Reads ``docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml`` for scope and, for
 every ``in_scope_L2_2`` process, looks for machine-produced runner evidence
-under ``<evidence_root>/<Process>/{latest,latest_event}/`` -- by default the
+under the harness-specific ``<evidence_root>/<Process>/latest*`` directory
+-- by default the
 live, gitignored sweep-output tree (``artifacts/l2_2_gates``) if present
 locally, otherwise the tracked, portable evidence bundle
 (``docs/phase_f/l2_2_design_a/evidence_bundle``); see
@@ -113,8 +114,7 @@ def _with_h12_evidence_ref(process_name: str, result_payload: dict[str, Any]) ->
 
 
 def _evidence_dir_for(entry: cat.ProcessEntry, evidence_root: Path) -> Path:
-    subdir = schema.EVENT_CLASS_SUBDIR if entry.harness_type == "event_class" else schema.DESIGN_A_SUBDIR
-    return evidence_root / entry.name / subdir
+    return evidence_root / entry.name / schema.subdir_for_harness(entry.harness_type)
 
 
 def _resolve_input_path(path_str: str) -> Path:
@@ -214,14 +214,38 @@ def _check_current_tree_staleness(
             )
 
     if entry is not None and entry.n_seeds is not None:
-        expected_seeds = list(range(entry.n_seeds))
         resolved_seeds = input_manifest.get("resolved_seeds")
         actual_seeds = sorted(resolved_seeds) if isinstance(resolved_seeds, list) else None
-        if actual_seeds != expected_seeds:
-            reasons.append(
-                f"{schema.STATUS_NM_MISMATCH}: input_manifest.json resolved_seeds={actual_seeds!r} "
-                f"do not cover expected {entry.n_seeds} seeds (0..{entry.n_seeds - 1})"
+        seed_selection = input_manifest.get("seed_selection")
+        if (
+            isinstance(seed_selection, dict)
+            and seed_selection.get("selector") == "division_cohort_selector"
+        ):
+            selected_seeds = seed_selection.get("selected_seeds")
+            expected_selected = (
+                sorted(selected_seeds) if isinstance(selected_seeds, list) else None
             )
+            if (
+                actual_seeds != expected_selected
+                or actual_seeds is None
+                or len(actual_seeds) != entry.n_seeds
+                or len(set(actual_seeds)) != entry.n_seeds
+                or seed_selection.get("required_completed_windows") != entry.n_seeds
+            ):
+                reasons.append(
+                    f"{schema.STATUS_NM_MISMATCH}: division_cohort_selector "
+                    f"manifest resolved_seeds={actual_seeds!r}, "
+                    f"selected_seeds={expected_selected!r}, required_completed_windows="
+                    f"{seed_selection.get('required_completed_windows')!r}; expected "
+                    f"exactly {entry.n_seeds} unique selected COMPLETED seeds"
+                )
+        else:
+            expected_seeds = list(range(entry.n_seeds))
+            if actual_seeds != expected_seeds:
+                reasons.append(
+                    f"{schema.STATUS_NM_MISMATCH}: input_manifest.json resolved_seeds={actual_seeds!r} "
+                    f"do not cover expected {entry.n_seeds} seeds (0..{entry.n_seeds - 1})"
+                )
     return reasons
 
 
@@ -875,7 +899,7 @@ def bundle_process_evidence(
     copied: dict[str, list[str]] = {}
     for name in sorted(entries):
         entry = entries[name]
-        subdir = schema.EVENT_CLASS_SUBDIR if entry.harness_type == "event_class" else schema.DESIGN_A_SUBDIR
+        subdir = schema.subdir_for_harness(entry.harness_type)
         src_dir = source_root / name / subdir
         if not src_dir.is_dir():
             continue

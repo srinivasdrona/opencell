@@ -1,5 +1,13 @@
 """FtsZPolymerization pre-division event-window evidence (catalog-conformant).
 
+2026-09-14 status: this module remains a NON-GATING pilot/audit and still
+computes no threshold. The live catalog is now correctly classified
+``windowed_continuous`` with ``enzymes`` primary and ``substrates``
+secondary; the real gate is
+``scripts/l2_event/ftsz_windowed_n20_gate.py``. Historical references below
+to the prior EVENT_CLASS/``monomers`` catalog row describe why this module
+was originally built, not current authority.
+
 This module replaces the ad hoc "seed 0, ticks 0-99, no division
 correlation" honest-mode diagnostic
 (``tests/vivarium/test_karr_ftsz_polymerization_honest_canary.py``, see
@@ -106,7 +114,7 @@ PROCESS_NAME = "FtsZPolymerization"
 REQUIRED_N_SEEDS = required_completed_windows()  # engineering catalog N_seeds
 REQUIRED_M_TICKS = 200  # catalog M_ticks
 TICK_RANGE_FROM_DIVISION = (-200, 0)  # catalog seed_window.tick_range_from_division
-PRIMARY_CHANNEL = "monomers"  # catalog primary_channel (projected, see module docstring)
+PRIMARY_CHANNEL = "monomers"  # conserved diagnostic projection; not the live catalog primary
 GATE_CHANNELS = ("enzymes", "substrates")
 
 _EVENT_WINDOW_DIR_PREFIX = "per_process_traces_v2_event_s"

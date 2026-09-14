@@ -12,7 +12,7 @@ have a valid specialized 50-seed ensemble on disk). The evidence index's
 scope is every catalog process flagged ``in_scope_L2_2: true``, regardless
 of harness_type or raw-extraction/specialized-ensemble status -- i.e. the
 full 22-process L2.2 in-scope GREEN-claim set (18 ``design_a_per_tick`` +
-4 ``event_class``).
+3 ``event_class`` + 1 ``windowed_continuous``).
 """
 
 from __future__ import annotations
@@ -21,7 +21,6 @@ import hashlib
 import sys
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 _REPO_ROOT_BOOTSTRAP = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT_BOOTSTRAP) not in sys.path:

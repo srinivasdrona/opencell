@@ -59,6 +59,7 @@ class ScopeReport:
     production: tuple[str, ...]
     specialized_excluded: dict[str, str]
     event_class_excluded: tuple[str, ...]
+    windowed_continuous_excluded: tuple[str, ...]
     out_of_scope_excluded: tuple[str, ...]
     design_a_per_tick_in_scope: tuple[str, ...]
 
@@ -67,6 +68,7 @@ class ScopeReport:
             "production": list(self.production),
             "specialized_excluded": dict(self.specialized_excluded),
             "event_class_excluded": list(self.event_class_excluded),
+            "windowed_continuous_excluded": list(self.windowed_continuous_excluded),
             "out_of_scope_excluded": list(self.out_of_scope_excluded),
             "design_a_per_tick_in_scope": list(self.design_a_per_tick_in_scope),
         }
@@ -133,6 +135,13 @@ def derive_scope(
     event_class_excluded = tuple(
         sorted(p.name for p in processes if p.in_scope_l2_2 and p.harness_type == "event_class")
     )
+    windowed_continuous_excluded = tuple(
+        sorted(
+            p.name
+            for p in processes
+            if p.in_scope_l2_2 and p.harness_type == "windowed_continuous"
+        )
+    )
     out_of_scope_excluded = tuple(sorted(p.name for p in processes if not p.in_scope_l2_2))
 
     specialized_excluded: dict[str, str] = {}
@@ -154,6 +163,7 @@ def derive_scope(
         production=tuple(sorted(production)),
         specialized_excluded=specialized_excluded,
         event_class_excluded=event_class_excluded,
+        windowed_continuous_excluded=windowed_continuous_excluded,
         out_of_scope_excluded=out_of_scope_excluded,
         design_a_per_tick_in_scope=design_a_per_tick_in_scope,
     )
@@ -186,6 +196,10 @@ def _main() -> int:
     for name in report.production:
         print(f"  - {name}")
     print(f"\nevent_class excluded ({len(report.event_class_excluded)}): {', '.join(report.event_class_excluded)}")
+    print(
+        f"windowed_continuous excluded ({len(report.windowed_continuous_excluded)}): "
+        f"{', '.join(report.windowed_continuous_excluded)}"
+    )
     print(
         f"out_of_scope (in_scope_L2_2=false) excluded ({len(report.out_of_scope_excluded)}): "
         f"{', '.join(report.out_of_scope_excluded)}"

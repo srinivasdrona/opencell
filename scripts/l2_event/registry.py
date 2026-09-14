@@ -25,8 +25,8 @@ _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
 
-from scripts.l22_extraction import derive_scope as _ds  # noqa: E402  (reuse, read-only)
 from scripts.l2_event.schema import EVENT_TIMING_MODELS, REGISTRY_SCHEMA_VERSION  # noqa: E402
+from scripts.l22_extraction import derive_scope as _ds  # noqa: E402  (reuse, read-only)
 
 REPO_ROOT = _REPO_ROOT
 REGISTRY_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_event" / "event_registry.yaml"
@@ -156,9 +156,7 @@ def validate_against_catalog(
     # Bidirectional (M5): every catalog process the catalog itself marks
     # harness_type='event_class' must have *some* registry row -- catches a
     # newly event-classified catalog process this registry hasn't picked up
-    # yet. This does not require in_scope_v4=true (DNADamage/FtsZ are
-    # event_class in the catalog today but correctly out of v4 scope), only
-    # that the process is tracked here at all.
+    # yet. This does not require in_scope_v4=true.
     missing_registry_rows = sorted(event_class_catalog_names - set(registry))
     for name in missing_registry_rows:
         problems.append(

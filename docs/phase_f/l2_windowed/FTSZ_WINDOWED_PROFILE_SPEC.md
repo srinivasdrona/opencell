@@ -1,5 +1,13 @@
 # FtsZPolymerization windowed/continuous fidelity profile — spec
 
+> **2026-09-14 implementation update:** the windowed classification proposed
+> by this historical spec is now live in `PROCESS_CATALOG.yaml` as
+> `harness_type: windowed_continuous`. The real N=20 gate is
+> `scripts/l2_event/ftsz_windowed_n20_gate.py`; it uses 200-tick
+> division-anchored dual traces, gates enzymes/substrates, calibrates from
+> Karr-only split/holdout distances, and refuses authority below N=20.
+> `ftsz_pre_division_evidence.py` remains explicitly non-gating.
+
 > **2026-08-05 update:** the N=1, non-division-anchored honest diagnostic
 > this spec documents (§3 onward) is superseded for CATALOG CONFORMANCE by
 > the pre-division event-window evidence path in

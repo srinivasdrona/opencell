@@ -1,5 +1,15 @@
 # FtsZPolymerization pre-division event-window evidence — spec
 
+> **2026-09-14 N=20 gate update:** this file remains the specification of
+> `ftsz_pre_division_evidence.py`, which is still a non-gating pilot/audit
+> and still computes no threshold. The actual gate is the separate
+> `scripts/l2_event/ftsz_windowed_n20_gate.py`. The live catalog has now
+> been corrected from `event_class` to `windowed_continuous`, with
+> `enzymes` primary and `substrates` secondary. Its thresholds are
+> Karr-only rotating split/holdout calibrations; authority is refused below
+> exactly 20 selector-owned COMPLETED windows. Canonical current design:
+> `docs/phase_f/DIVISION_N20_GATE_SURFACES.md`.
+
 STATUS: branch-local spec for `agent/l2-event-ftsz-20260805`. Documents the
 mechanism in `scripts/l2_event/ftsz_pre_division_evidence.py` and its tests
 (`tests/scripts/test_ftsz_pre_division_evidence.py`). Supersedes
