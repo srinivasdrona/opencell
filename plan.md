@@ -118,6 +118,20 @@ earlier blocks below:**
   `division_n20_resume.status`, `division_n20_resume.log`. The launcher
   banks each attempt, runs the selector, and stops immediately at 20
   completed windows.
+  Division gate candidate `build/division-n20-gates` at `6e7cd84` now
+  implements fail-closed N20 authority surfaces and preserves current main;
+  N12 pilots: Cyt conditional projection is exact, while FtsZ genuinely
+  exceeds Karr-only thresholds (enzymes 0.581578 > 0.174015; substrates
+  0.1895 > 0.152667). Cyt full stochastic replay remains blocked on missing
+  process `randStreamState`. Active follow-ups:
+  - Opus gate review `b611b17c-4f24-4a74-bb08-f335627de9ea`;
+  - FtsZ diagnosis/fix `42f8e764-ab05-4eab-ab2b-d69b0b2d5737`,
+    worktree `E:\opencell-worktrees\fix-ftsz-n20-mismatch`;
+  - Cyt RNG/extractor closure `7fcc7bd1-60f3-4214-bd6a-577bab8a7225`,
+    worktree `E:\opencell-worktrees\fix-cyt-n20-rng-replay`.
+  Do not promote either row from the conditional/failed pilots; merge gate
+  infrastructure only after review, then integrate corrective branches and
+  regenerate/rerun the required genuine cohort.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
