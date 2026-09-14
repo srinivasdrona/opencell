@@ -8,7 +8,7 @@ process:
   oc_file: "opencell/vivarium/karr_ftsz_polymerization.py"
   whole_cell_model_id: "Process_FtsZPolymerization"
   functional_area: "cytokinesis"
-  state_shape_role: "event-class / ring-state wiring row"
+  state_shape_role: "windowed-continuous ODE / ring-state wiring row"
   notes: "The raw MATLAB source file was not present in this checkout; MATLAB anchors below use the checked-in extract doc as the source proxy."
 integration_touchpoints:
   calcResourceRequirements_Current:
@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "KarrFtsZPolymerizationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "216-216"
+        lines: "223-303"
         note: "Emits the GTP request directly into `requests[self.name][gtp_wid]`."
         symbol: "KarrFtsZPolymerizationProcess.next_update"
       supporting:
@@ -48,12 +48,12 @@ integration_touchpoints:
       symbol: "KarrFtsZPolymerizationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "216-216"
+        lines: "223-303"
         note: "Per-tick update flow: gate, integrate, discretize, clamp, emit deltas."
         symbol: "KarrFtsZPolymerizationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_ftsz_polymerization.py"
-          lines: "295-479"
+          lines: "305-503"
           note: "ODE system and substrate-limit clamps."
           symbol: KarrFtsZPolymerizationProcess.integrate_odes
       note: "Implemented in OC as a direct `next_update` path."
@@ -227,20 +227,28 @@ compartment_routing:
     mismatch: false
     note: "Hydrolysis hydrogen byproduct is cytosolic."
 unit_conversion_chain:
-  source_units: "molecules/tick"
-  target_units: "molecules/tick"
+  source_units: "molecules"
+  target_units: "molecules"
   steps:
-    - from_units: molecules/tick
-      to_units: molecules/tick
-      operation: identity
-      constants: []
+    - from_units: "molecules"
+      to_units: "mol/L"
+      operation: "÷ (nAvogadro × geometry.volume)"
+      constants: ["nAvogadro", "geometry.volume"]
       anchor:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "216-293"
-        note: Process works directly in per-tick integer counts; no unit conversion needed.
-        symbol: KarrFtsZPolymerizationProcess.next_update
-      note: Process works directly in per-tick integer counts; no unit conversion needed.
-  note: This process does not require unit conversion (per-tick integer counts throughout).
+        lines: "504-513"
+        note: "Convert enzyme/substrate molecule counts to molar concentration using the live geometry volume."
+        symbol: KarrFtsZPolymerizationProcess.molecules_to_concentration
+    - from_units: "mol/L"
+      to_units: "molecules"
+      operation: "× nAvogadro × geometry.volume"
+      constants: ["nAvogadro", "geometry.volume"]
+      anchor:
+        path: "opencell/vivarium/karr_ftsz_polymerization.py"
+        lines: "514-525"
+        note: "Convert the ODE concentration solution back to molecule counts using the same live geometry volume."
+        symbol: KarrFtsZPolymerizationProcess.concentration_to_molecules
+  note: "Karr and OC integrate FtsZ kinetics in concentration space; live geometry.volume is a required per-tick reference-frame input."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -272,23 +280,23 @@ source_anchors:
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "64-214"
-      note: "Fixture load, state shape, and ports schema."
+      lines: "64-221"
+      note: "Fixture load, state shape, and ports schema including live geometry.volume."
       symbol: KarrFtsZPolymerizationProcess
     next_update:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "216-293"
-      note: "Per-tick update flow, request emission, and output writeback."
+      lines: "223-303"
+      note: "Per-tick live-volume ODE flow, request emission, and output writeback."
       symbol: KarrFtsZPolymerizationProcess.next_update
     solver_and_clamps:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "295-479"
+      lines: "305-503"
       note: "ODE integration, discretization, and substrate-limit clamps."
       symbol: KarrFtsZPolymerizationProcess.integrate_odes
     unit_helpers:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "481-587"
-      note: "Concentration conversion and substrate-delta extraction helpers."
+      lines: "504-640"
+      note: "Live-volume concentration conversion and substrate-delta extraction helpers."
       symbol: KarrFtsZPolymerizationProcess.molecules_to_concentration
     composite_allocation:
       path: "opencell/vivarium/karr_composite.py"
@@ -330,7 +338,7 @@ deviations:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "216-479"
+      lines: "223-503"
       note: "OC implements direct ODE / clamp logic, not LP bounds."
       symbol: KarrFtsZPolymerizationProcess.next_update
   shared_pool_projection_merges_compartments: false

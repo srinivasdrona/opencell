@@ -57,6 +57,13 @@ adapter. The gate replays every real 200-tick pre-division window without
 - enzyme oligomer-state update vectors (primary);
 - substrate update vectors (secondary).
 
+The primary MATLAB process also reads live `geometry.volume` for every
+count/concentration conversion and for its solver threshold. The dual
+extractor now captures that scalar at both FtsZ tap points, and the gate
+requires the before value as a replay input while asserting FtsZ did not
+change it. Older windows without `geometry_volume` are refused rather than
+replayed against the fixture default.
+
 The selector-owned cohort is split before OC scoring: first half Karr-only
 calibration, second half independent evaluation (10/10 at N=20; 6/6 in the
 current N=12 pilot). Within the calibration half, circular Karr-vs-Karr
@@ -98,11 +105,11 @@ Selected completions: `0-5, 7-11, 13`; censors `6, 12, 14` do not count.
   All 12 projected completion clamps reached zero. Karr
   onset-to-completion spans were 3676-3943 ticks. This is a clean pilot
   surface, not a PASS.
-- **FtsZPolymerization**: calibration seeds `0-5`; independent evaluation
-  seeds `7,8,9,10,11,13`. All 6 evaluation seeds had Karr and OC activity;
-  monomer-projection discrepancy remained exactly 0; no component had a
-  zero-vs-nonzero mismatch and sample support was sufficient. The honest
-  distributional comparisons exceeded their Karr-only engineering
-  thresholds: enzymes 0.581578 > 0.174015, substrates 0.1895 > 0.152667.
-  This pilot therefore surfaces a real prospective gate discrepancy; no
-  authority verdict is emitted at N=12.
+- **FtsZPolymerization**: the historical candidate run on calibration seeds
+  `0-5` and evaluation seeds `7,8,9,10,11,13` produced enzymes
+  `0.581578 > 0.174015` and substrates `0.1895 > 0.152667`. Source-first
+  diagnosis found that both the OC port and extractor had omitted live
+  `geometry.volume`, a required concentration reference frame. After the
+  fail-closed repair, the same N=12 files are refused because none contains
+  `geometry_volume`; no post-fix distance is fabricated. See
+  `docs/phase_f/audits/FTSZ_N12_MISMATCH_DIAGNOSIS.md`.

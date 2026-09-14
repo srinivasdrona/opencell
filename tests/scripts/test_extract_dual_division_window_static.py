@@ -222,11 +222,24 @@ def test_single_scheduler_loop_taps_both_target_indices():
     )
     assert "before_a = merge_event_observables(before_a, mod, anchor_opts);" in tap_loop_body
     assert "after_a = merge_event_observables(after_a, mod, anchor_opts);" in tap_loop_body
-    # process B is only ever plain-snapshotted, never merged with the
-    # event-observable projection (it has no pinchedDiameter/ftsZRing/
-    # chromosome properties of its own).
+    # Process B never receives the Cytokinesis event-observable projection
+    # (it has no pinchedDiameter/ftsZRing/chromosome properties of its own).
     assert "before_b = merge_event_observables" not in source
     assert "after_b = merge_event_observables" not in source
+    assert "before_b = merge_geometry_volume(before_b, mod);" in tap_loop_body
+    assert "after_b = merge_geometry_volume(after_b, mod);" in tap_loop_body
+
+
+def test_ftsz_tap_captures_live_geometry_volume_as_scalar():
+    source = _read(EXTRACTOR_PATH)
+    body = _function_body(
+        source,
+        "function snapshot = merge_geometry_volume(snapshot, mod)\n",
+    )
+    assert "geometry = mod.geometry;" in body
+    assert "volume = double(geometry.volume);" in body
+    assert "~isscalar(volume) || ~isfinite(volume) || volume <= 0" in body
+    assert "snapshot.geometry_volume = volume;" in body
 
 
 def test_completion_detected_solely_from_process_a():

@@ -207,6 +207,8 @@ def test_ftsz_constant_noop_surface_is_forced_non_green(monkeypatch):
             karr_activity_ticks=39,
             oc_activity_ticks=0,
             monomer_projection_max_abs_discrepancy=10.0,
+            geometry_volume_min_l=1.0,
+            geometry_volume_max_l=1.0,
         )
 
     monkeypatch.setattr(ftsz_gate, "_collect_surface", fake_surface)
@@ -215,6 +217,46 @@ def test_ftsz_constant_noop_surface_is_forced_non_green(monkeypatch):
     assert channel["w1_oc_vs_karr"] > channel["threshold"]
     assert payload["result"]["gate_surface"]["activity_failures"]
     assert payload["analytical_check"]["passed"] is False
+
+
+def test_ftsz_geometry_volume_replay_input_is_fail_closed():
+    base = {
+        "enzymes": np.zeros((1, 11), dtype=float),
+        "substrates": np.zeros((1, 5), dtype=float),
+    }
+    missing = WindowGrid(
+        process_name="FtsZPolymerization",
+        seed=0,
+        n_ticks=1,
+        tick_offset=0.0,
+        trace_path=Path("missing-volume.mat"),
+        observables=tuple(base),
+        states_before=base,
+        states_after=base,
+    )
+    with pytest.raises(ftsz_gate.FtsZGateError, match="missing required"):
+        ftsz_gate._geometry_volume_for_tick(missing, 0)
+
+    with_volume = {
+        **base,
+        ftsz_gate.GEOMETRY_VOLUME_CHANNEL: np.asarray([[1.2e-17]]),
+    }
+    changed_after = {
+        **with_volume,
+        ftsz_gate.GEOMETRY_VOLUME_CHANNEL: np.asarray([[1.3e-17]]),
+    }
+    changed = WindowGrid(
+        process_name="FtsZPolymerization",
+        seed=0,
+        n_ticks=1,
+        tick_offset=0.0,
+        trace_path=Path("changed-volume.mat"),
+        observables=tuple(with_volume),
+        states_before=with_volume,
+        states_after=changed_after,
+    )
+    with pytest.raises(ftsz_gate.FtsZGateError, match="changed geometry_volume"):
+        ftsz_gate._geometry_volume_for_tick(changed, 0)
 
 
 def _synthetic_cyt_grid(seed: int) -> WindowGrid:

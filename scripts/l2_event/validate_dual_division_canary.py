@@ -219,7 +219,14 @@ def validate_dual_division_canary(
     ftsz_reason = "file does not exist"
     if ftsz_path.exists():
         try:
-            ftsz_evidence.validate_seed_window(seed, ftsz_path)
+            ftsz_evidence.validate_seed_window(
+                seed,
+                ftsz_path,
+                required_observables=(
+                    *ftsz_evidence.GATE_CHANNELS,
+                    ftsz_evidence.GEOMETRY_VOLUME_CHANNEL,
+                ),
+            )
             ftsz_valid = True
             ftsz_reason = ""
         except Exception as exc:  # noqa: BLE001 - fail-closed: any exception is a real FAIL reason

@@ -59,9 +59,38 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-14 19:30 IST) — supersedes all
+**Current status (2026-09-15 05:25 IST) — supersedes all
 earlier blocks below:**
 
+- FtsZ N=12 mismatch diagnosis lane (2026-09-15 05:25 IST): isolated
+  worktree `E:\opencell-worktrees\fix-ftsz-n20-mismatch`, branch
+  `fix/ftsz-n20-mismatch`, base/gate tip `6e7cd84`; no merge, push, or
+  MATLAB launch. Source-first diagnosis found a real shared defect:
+  MATLAB `FtsZPolymerization.m` reads live `geometry.volume` for both
+  count/concentration conversions and its ODE threshold, while OC used the
+  fixture volume forever and the dual extractor omitted volume entirely.
+  Projection/index alignment is exact; source modified-ODE23S and RNG-offset
+  ablations do not reduce the mismatch. The branch now consumes a live
+  geometry-volume port, wires it into both chassis topologies, captures
+  scalar `geometry_volume` in future dual traces, and makes the N=20 gate
+  fail closed when it is absent. Historical N=12 distances remain enzymes
+  `0.581578 > 0.174015`, substrates `0.189500 > 0.152667`; the post-fix
+  rerun correctly REFUSES the current 12 files at seed 0 because they lack
+  `geometry_volume`, so no replacement distance is fabricated. Diagnostic:
+  `docs/phase_f/audits/FTSZ_N12_MISMATCH_DIAGNOSIS.md`. Two independent
+  Opus 5 review passes ACCEPTED the behavior after requiring the non-gating
+  audit and combined canary to fail closed too; provenance event
+  `sha256:72d0db159c5fd1bf92928e77b60f4863a1268e7297412be21fc71205e0773ed1`.
+  Validation: post-review focused suite 111 passed; exhaustive
+  FtsZ-referencing sweep 649 passed / 10 audited data/ensemble skips, with
+  two non-regressions: the FtsZ legacy scorecard expectation already fails
+  identically at base `6e7cd84`, and TxReg strict rubric cannot resolve its
+  gitignored 4000-tick trace in this isolated worktree (the same documented
+  data-mount limitation as the gate branch). L1b is 28/28 plus 19 tests;
+  L2.4 6 passed; provenance 53 passed; focused Ruff and diff checks clean.
+  Remaining blocker: regenerate genuine dual traces with captured
+  `geometry_volume`, then rerun the N=12/N=20 distribution. No live shells
+  or agents.
 - Division-gate implementation lane (2026-09-14 22:45 IST): isolated
   worktree `E:\opencell-worktrees\build-division-n20-gates`, branch
   `build/division-n20-gates`, base `a021dd4`, now merged with provenance

@@ -176,6 +176,7 @@ def _write_ftsz_trace(
     provider_sha256_override: str | None = None,
     dnadamage_source_sha256: str | None = REQUIRED_DNADAMAGE_SOURCE_SHA256,
     omit_dnadamage_source_metadata: bool = False,
+    omit_geometry_volume: bool = False,
 ) -> Path:
     path = out_dir / f"FtsZPolymerization_{FTSZ_N_TICKS}ticks.mat"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -202,6 +203,16 @@ def _write_ftsz_trace(
             before = after = np.zeros(n_ticks, dtype=float)
             states_before.create_dataset(observable, data=before.reshape(1, -1))
             states_after.create_dataset(observable, data=after.reshape(1, -1))
+        if not omit_geometry_volume:
+            volume = np.full(n_ticks, 1.2e-17, dtype=float)
+            states_before.create_dataset(
+                ftsz_evidence.GEOMETRY_VOLUME_CHANNEL,
+                data=volume.reshape(1, -1),
+            )
+            states_after.create_dataset(
+                ftsz_evidence.GEOMETRY_VOLUME_CHANNEL,
+                data=volume.reshape(1, -1),
+            )
     return path
 
 
@@ -286,6 +297,33 @@ def test_missing_ftsz_file_fails_closed_never_reports_partial_pass(tmp_path):
     assert report.ftsz_valid is False
     assert report.status == "FAIL"
     assert any("ftsz" in reason for reason in report.reasons)
+
+
+def test_ftsz_trace_without_geometry_volume_fails_combined_canary(tmp_path):
+    seed = 49
+    out_dir = event_window_dir(seed, karr_native_root=tmp_path)
+    completion_tick = 31427
+    _write_cytokinesis_trace(
+        out_dir,
+        seed=seed,
+        completion_tick=completion_tick,
+        onset_tick=27556,
+        tick_start=completion_tick - CYTOKINESIS_N_TICKS + 1,
+    )
+    _write_ftsz_trace(
+        out_dir,
+        seed=seed,
+        completion_tick=completion_tick,
+        tick_start=completion_tick - FTSZ_N_TICKS + 1,
+        omit_geometry_volume=True,
+    )
+
+    report = validate_dual_division_canary(seed, karr_native_root=tmp_path)
+
+    assert report.cytokinesis_valid is True
+    assert report.ftsz_valid is False
+    assert report.status == "FAIL"
+    assert "geometry_volume" in report.ftsz_reason
 
 
 def test_mismatched_completion_tick_fails_the_dual_tap_cross_check(tmp_path):

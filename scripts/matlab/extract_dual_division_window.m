@@ -604,11 +604,11 @@ function [sim, before_a, after_a, before_b, after_b] = ...
 % -> copyToState, with side effects and metabolite pool reconciliation
 % applied identically. Only process A's (Cytokinesis's) tap is enriched
 % via merge_event_observables (anchor_opts) -- process B
-% (FtsZPolymerization) never receives the event-observable projection
-% because it has no pinchedDiameter/ftsZRing/chromosome properties of its
-% own (see module docstring); its tap is a plain snapshot_from_process
-% call, identical to a fixed-window (non-anchor) capture in the
-% single-process extractor.
+% (FtsZPolymerization) never receives the Cytokinesis event-observable
+% projection because it has no pinchedDiameter/ftsZRing/chromosome
+% properties of its own (see module docstring). Its tap is otherwise the
+% fixed-window snapshot plus the scalar live geometry.volume input required
+% by FtsZ's concentration conversions.
 before_a = empty_snapshot_struct(props_a);
 after_a = empty_snapshot_struct(props_a);
 before_b = empty_snapshot_struct(props_b);
@@ -684,6 +684,7 @@ for i = 1:nProcesses
         before_a = merge_event_observables(before_a, mod, anchor_opts);
     elseif proc_idx == idx_b
         before_b = snapshot_from_process(mod, props_b);
+        before_b = merge_geometry_volume(before_b, mod);
     end
 
     mod.evolveState();
@@ -693,6 +694,7 @@ for i = 1:nProcesses
         after_a = merge_event_observables(after_a, mod, anchor_opts);
     elseif proc_idx == idx_b
         after_b = snapshot_from_process(mod, props_b);
+        after_b = merge_geometry_volume(after_b, mod);
     end
 
     mod.copyToState();
@@ -776,6 +778,27 @@ if ~isprop(chrom, 'segregated')
         'chromosome has no ''segregated'' property');
 end
 snapshot.chromosome_segregated = logical(chrom.segregated);  % second dereference
+end
+
+function snapshot = merge_geometry_volume(snapshot, mod)
+% FtsZPolymerization converts counts to concentrations with the live
+% CellGeometry.volume on every evolveState call. Capture that required input
+% as a scalar rather than serializing the cyclic geometry handle graph.
+if ~isprop(mod, 'geometry')
+    error('extract_dual_division_window:missing_geometry', ...
+        'FtsZPolymerization process has no geometry state reference');
+end
+geometry = mod.geometry;
+if ~isprop(geometry, 'volume')
+    error('extract_dual_division_window:missing_geometry_volume', ...
+        'CellGeometry has no volume property');
+end
+volume = double(geometry.volume);
+if ~isscalar(volume) || ~isfinite(volume) || volume <= 0
+    error('extract_dual_division_window:invalid_geometry_volume', ...
+        'CellGeometry.volume must be a finite positive scalar, got %s', mat2str(volume));
+end
+snapshot.geometry_volume = volume;
 end
 
 function out = snapshot_from_process(proc, snapshot_props)

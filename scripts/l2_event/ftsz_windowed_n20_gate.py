@@ -42,9 +42,13 @@ from scripts.l2_event.division_gate_common import (
 )
 from scripts.l2_event.ftsz_pre_division_evidence import (
     GATE_CHANNELS,
+    GEOMETRY_VOLUME_CHANNEL,
     REQUIRED_M_TICKS,
+    FtsZWindowContractError,
+    geometry_volume_for_tick,
     validate_seed_window,
 )
+from scripts.l2_event.window_loader import EventWindowRefused
 from scripts.l22_evidence import catalog as l22_catalog
 
 PROCESS_NAME = "FtsZPolymerization"
@@ -90,6 +94,8 @@ class SeedSurface:
     karr_activity_ticks: int
     oc_activity_ticks: int
     monomer_projection_max_abs_discrepancy: float
+    geometry_volume_min_l: float
+    geometry_volume_max_l: float
 
     def summary_json(self) -> dict[str, Any]:
         return {
@@ -99,6 +105,8 @@ class SeedSurface:
             "karr_activity_ticks": self.karr_activity_ticks,
             "oc_activity_ticks": self.oc_activity_ticks,
             "monomer_projection_max_abs_discrepancy": self.monomer_projection_max_abs_discrepancy,
+            "geometry_volume_min_l": self.geometry_volume_min_l,
+            "geometry_volume_max_l": self.geometry_volume_max_l,
         }
 
 
@@ -118,6 +126,13 @@ def _finite_matrix(value: np.ndarray, *, label: str) -> np.ndarray:
     if matrix.ndim != 2 or not np.all(np.isfinite(matrix)):
         raise FtsZGateError(f"{label} must be a finite 2-D matrix, got shape={matrix.shape}")
     return matrix
+
+
+def _geometry_volume_for_tick(grid: Any, tick: int) -> float:
+    try:
+        return geometry_volume_for_tick(grid, tick)
+    except FtsZWindowContractError as exc:
+        raise FtsZGateError(str(exc)) from exc
 
 
 def _component_scales(karr_seed_arrays: tuple[np.ndarray, ...]) -> np.ndarray:
@@ -195,7 +210,17 @@ def _collect_surface(
     process_factory=KarrFtsZPolymerizationProcess,
 ) -> SeedSurface:
     l2 = _import_l2_replay_common()
-    grid = validate_seed_window(seed, trace_path)
+    try:
+        grid = validate_seed_window(
+            seed,
+            trace_path,
+            required_observables=(*GATE_CHANNELS, GEOMETRY_VOLUME_CHANNEL),
+        )
+    except (EventWindowRefused, FtsZWindowContractError) as exc:
+        raise FtsZGateError(
+            f"seed {seed}: source-faithful replay requires captured "
+            f"{GEOMETRY_VOLUME_CHANNEL!r}: {exc}"
+        ) from exc
     process = process_factory({"rng_seed": seed})
     state_template = l2.build_state_template(process)
     wids_by_observable: dict[str, list[str]] = {}
@@ -216,6 +241,7 @@ def _collect_surface(
     karr_substrate_rows: list[np.ndarray] = []
     oc_substrate_rows: list[np.ndarray] = []
     monomer_discrepancy: list[float] = []
+    geometry_volumes: list[float] = []
 
     for tick in range(grid.n_ticks):
         state = l2.build_state_template(process)
@@ -231,6 +257,12 @@ def _collect_surface(
                 vector=before[observable],
                 wids=wids_by_observable[observable],
             )
+        try:
+            volume_l = _geometry_volume_for_tick(grid, tick)
+        except FtsZGateError as exc:
+            raise FtsZGateError(f"seed {seed} {exc}") from exc
+        state["geometry"]["volume"] = volume_l
+        geometry_volumes.append(volume_l)
         l2.refresh_allocator_views(process, state)
         if state.get("trace_hint"):
             raise FtsZGateError("FtsZ gate forbids trace_hint after overlay")
@@ -295,6 +327,8 @@ def _collect_surface(
         karr_activity_ticks=int(np.count_nonzero(np.sum(np.abs(karr_enzymes), axis=1))),
         oc_activity_ticks=int(np.count_nonzero(np.sum(np.abs(oc_enzymes), axis=1))),
         monomer_projection_max_abs_discrepancy=float(np.max(monomer_discrepancy)),
+        geometry_volume_min_l=float(np.min(geometry_volumes)),
+        geometry_volume_max_l=float(np.max(geometry_volumes)),
     )
 
 
@@ -526,6 +560,7 @@ def build_gate(
         for path in (
             l22_catalog.REPO_ROOT / "scripts" / "l2_event" / "ftsz_windowed_n20_gate.py",
             l22_catalog.REPO_ROOT / "scripts" / "l2_event" / "ftsz_pre_division_evidence.py",
+            l22_catalog.REPO_ROOT / "scripts" / "matlab" / "extract_dual_division_window.m",
             l22_catalog.REPO_ROOT / "opencell" / "vivarium" / "karr_ftsz_polymerization.py",
             l22_catalog.REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.py",
         )
