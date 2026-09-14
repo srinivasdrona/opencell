@@ -36,8 +36,16 @@ from scripts.l2_event.survey_cytokinesis_onset_span import (  # noqa: E402
     REQUIRED_OBSERVABLES as CYTOKINESIS_REQUIRED_OBSERVABLES,
 )
 from scripts.l2_event.validate_dual_division_canary import (  # noqa: E402
+    CYTOKINESIS_RNG_REPLAY_SCHEMA_VERSION,
+    CYTOKINESIS_RNG_STATE_OBSERVABLE,
+    CYTOKINESIS_RNG_STREAM_OWNER,
+    CYTOKINESIS_RNG_STREAM_TYPE,
+    DUAL_TAP_EXTRACTOR_PATH,
+    DUAL_TAP_EXTRACTOR_SCHEMA_VERSION,
     REQUIRED_DNADAMAGE_SOURCE_SHA256,
+    current_cytokinesis_source_identity,
     cytokinesis_anchor_spec,
+    cytokinesis_full_replay_capability,
     event_window_dir,
     validate_dual_division_canary,
 )
@@ -104,6 +112,7 @@ def _write_cytokinesis_trace(
     dnadamage_source_sha256: str | None = REQUIRED_DNADAMAGE_SOURCE_SHA256,
     omit_dnadamage_source_metadata: bool = False,
     max_search_ticks: int = launcher.DEFAULT_MAX_SEARCH_TICKS,
+    full_replay_projection: bool = False,
 ) -> Path:
     path = out_dir / f"Cytokinesis_{CYTOKINESIS_N_TICKS}ticks.mat"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -152,6 +161,41 @@ def _write_cytokinesis_trace(
             metadata.create_dataset(
                 "dnadamage_source_resolved_sha256", data=_encode_char_metadata(dnadamage_source_sha256)
             )
+        if full_replay_projection:
+            source_sha = current_cytokinesis_source_identity()["sha256_lf_normalized"]
+            extractor_sha = launcher.lf_normalized_sha256_hex(DUAL_TAP_EXTRACTOR_PATH)
+            metadata.create_dataset(
+                "dual_tap_extractor",
+                data=_encode_char_metadata("extract_dual_division_window"),
+            )
+            metadata.create_dataset(
+                "dual_tap_extractor_schema_version",
+                data=np.array([DUAL_TAP_EXTRACTOR_SCHEMA_VERSION]),
+            )
+            metadata.create_dataset(
+                "dual_tap_extractor_sha256_lf_normalized",
+                data=_encode_char_metadata(extractor_sha),
+            )
+            metadata.create_dataset(
+                "cytokinesis_source_resolved_sha256",
+                data=_encode_char_metadata(source_sha),
+            )
+            metadata.create_dataset(
+                "cytokinesis_rng_replay_schema_version",
+                data=np.array([CYTOKINESIS_RNG_REPLAY_SCHEMA_VERSION]),
+            )
+            metadata.create_dataset(
+                "cytokinesis_rand_stream_owner",
+                data=_encode_char_metadata(CYTOKINESIS_RNG_STREAM_OWNER),
+            )
+            metadata.create_dataset(
+                "cytokinesis_rand_stream_type",
+                data=_encode_char_metadata(CYTOKINESIS_RNG_STREAM_TYPE),
+            )
+            metadata.create_dataset(
+                "cytokinesis_rand_stream_state_observable",
+                data=_encode_char_metadata(CYTOKINESIS_RNG_STATE_OBSERVABLE),
+            )
 
         states_before = handle.create_group("states_before")
         states_after = handle.create_group("states_after")
@@ -164,6 +208,15 @@ def _write_cytokinesis_trace(
                 before = after = np.zeros(n_ticks, dtype=float)
             states_before.create_dataset(observable, data=before.reshape(1, -1))
             states_after.create_dataset(observable, data=after.reshape(1, -1))
+        if full_replay_projection:
+            states_before.create_dataset(
+                CYTOKINESIS_RNG_STATE_OBSERVABLE,
+                data=np.full((1, n_ticks), 12345.0),
+            )
+            states_after.create_dataset(
+                CYTOKINESIS_RNG_STATE_OBSERVABLE,
+                data=np.full((1, n_ticks), 12345.0),
+            )
     return path
 
 
@@ -176,6 +229,7 @@ def _write_ftsz_trace(
     provider_sha256_override: str | None = None,
     dnadamage_source_sha256: str | None = REQUIRED_DNADAMAGE_SOURCE_SHA256,
     omit_dnadamage_source_metadata: bool = False,
+    full_replay_projection: bool = False,
 ) -> Path:
     path = out_dir / f"FtsZPolymerization_{FTSZ_N_TICKS}ticks.mat"
     path.parent.mkdir(parents=True, exist_ok=True)
@@ -195,6 +249,25 @@ def _write_ftsz_trace(
             metadata.create_dataset(
                 "dnadamage_source_resolved_sha256", data=_encode_char_metadata(dnadamage_source_sha256)
             )
+        if full_replay_projection:
+            source_sha = current_cytokinesis_source_identity()["sha256_lf_normalized"]
+            extractor_sha = launcher.lf_normalized_sha256_hex(DUAL_TAP_EXTRACTOR_PATH)
+            metadata.create_dataset(
+                "dual_tap_extractor",
+                data=_encode_char_metadata("extract_dual_division_window"),
+            )
+            metadata.create_dataset(
+                "dual_tap_extractor_schema_version",
+                data=np.array([DUAL_TAP_EXTRACTOR_SCHEMA_VERSION]),
+            )
+            metadata.create_dataset(
+                "dual_tap_extractor_sha256_lf_normalized",
+                data=_encode_char_metadata(extractor_sha),
+            )
+            metadata.create_dataset(
+                "cytokinesis_source_resolved_sha256",
+                data=_encode_char_metadata(source_sha),
+            )
 
         states_before = handle.create_group("states_before")
         states_after = handle.create_group("states_after")
@@ -205,7 +278,13 @@ def _write_ftsz_trace(
     return path
 
 
-def _write_matched_pair(root: Path, *, seed: int = 49, max_search_ticks: int = launcher.DEFAULT_MAX_SEARCH_TICKS) -> Path:
+def _write_matched_pair(
+    root: Path,
+    *,
+    seed: int = 49,
+    max_search_ticks: int = launcher.DEFAULT_MAX_SEARCH_TICKS,
+    full_replay_projection: bool = False,
+) -> Path:
     out_dir = event_window_dir(seed, karr_native_root=root)
     completion_tick = 31427
     onset_tick = 27556
@@ -216,12 +295,14 @@ def _write_matched_pair(root: Path, *, seed: int = 49, max_search_ticks: int = l
         onset_tick=onset_tick,
         tick_start=completion_tick - CYTOKINESIS_N_TICKS + 1,
         max_search_ticks=max_search_ticks,
+        full_replay_projection=full_replay_projection,
     )
     _write_ftsz_trace(
         out_dir,
         seed=seed,
         completion_tick=completion_tick,
         tick_start=completion_tick - FTSZ_N_TICKS + 1,
+        full_replay_projection=full_replay_projection,
     )
     return root
 
@@ -236,8 +317,63 @@ def test_matched_pair_passes_both_validators_and_all_dual_tap_checks(tmp_path):
     assert report.distinct_content is True
     assert report.same_completion_tick is True
     assert report.provider_sha256_match is True
+    assert report.cytokinesis_full_replay_ready is False
+    assert report.cytokinesis_replay_authority_class == "CONDITIONAL_PILOT_ONLY"
     assert report.status == "PASS"
     assert report.reasons == []
+
+
+def test_legacy_pair_fails_only_when_full_replay_authority_is_required(tmp_path):
+    root = _write_matched_pair(tmp_path)
+    report = validate_dual_division_canary(
+        49,
+        karr_native_root=root,
+        require_cytokinesis_full_replay=True,
+    )
+    assert report.cytokinesis_valid is True
+    assert report.ftsz_valid is True
+    assert report.cytokinesis_full_replay_ready is False
+    assert report.status == "FAIL"
+    assert any("full next_update replay authority unavailable" in reason for reason in report.reasons)
+
+
+def test_source_bound_rng_projection_passes_full_replay_capability(tmp_path):
+    root = _write_matched_pair(tmp_path, full_replay_projection=True)
+    out_dir = event_window_dir(49, karr_native_root=root)
+    cyt_path = out_dir / f"Cytokinesis_{CYTOKINESIS_N_TICKS}ticks.mat"
+    ftsz_path = out_dir / f"FtsZPolymerization_{FTSZ_N_TICKS}ticks.mat"
+    capability = cytokinesis_full_replay_capability(cyt_path, ftsz_path)
+    assert capability.ready is True, capability.reason
+
+    report = validate_dual_division_canary(
+        49,
+        karr_native_root=root,
+        require_cytokinesis_full_replay=True,
+    )
+    assert report.cytokinesis_full_replay_ready is True
+    assert report.cytokinesis_replay_authority_class == "FULL_NEXT_UPDATE_REPLAY_READY"
+    assert report.status == "PASS", report.reasons
+
+
+def test_wrong_dual_extractor_identity_refuses_full_replay_authority(tmp_path):
+    root = _write_matched_pair(tmp_path, full_replay_projection=True)
+    out_dir = event_window_dir(49, karr_native_root=root)
+    cyt_path = out_dir / f"Cytokinesis_{CYTOKINESIS_N_TICKS}ticks.mat"
+    with h5py.File(cyt_path, "r+") as handle:
+        del handle["metadata"]["dual_tap_extractor_sha256_lf_normalized"]
+        handle["metadata"].create_dataset(
+            "dual_tap_extractor_sha256_lf_normalized",
+            data=_encode_char_metadata("0" * 64),
+        )
+
+    report = validate_dual_division_canary(
+        49,
+        karr_native_root=root,
+        require_cytokinesis_full_replay=True,
+    )
+    assert report.cytokinesis_full_replay_ready is False
+    assert report.status == "FAIL"
+    assert "dual extractor identity mismatch" in report.cytokinesis_replay_reason
 
 
 def test_matched_pair_stamped_at_the_selection_contract_horizon_still_passes(tmp_path):

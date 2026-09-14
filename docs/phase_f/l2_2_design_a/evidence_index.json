@@ -1,10 +1,10 @@
 {
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
-  "catalog_sha256": "94e2be9516e977941ed0b33a5833200e83985fe552ccfe0a1304963312783ae7",
-  "content_hash": "7c28537ab57508b08f9d507ce8dd8e943836f54c8de457a8dbecb065070419c2",
+  "catalog_sha256": "c243299da2938b1f6e51108dbef7e76d48d5d24260b110b844387623d4177f57",
+  "content_hash": "fd135143e9a7c5fa9dd36d46b7c9095997231b688923c45caba6efa94235b00c",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-14T20:56:50.891856+00:00",
+  "generated_at": "2026-09-14T22:28:24.639313+00:00",
   "n_in_scope": 22,
   "rows": [
     {

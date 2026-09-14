@@ -44,23 +44,27 @@ spec_ref: docs/phase_f/L2_EVENT_GATE_SPEC_v4.md
 processes:
   - process: Cytokinesis
     in_scope_v4: true
-    adapter_id: cytokinesis.contraction_projection.v2
+    adapter_id: cytokinesis.full_next_update_replay.v3
     adapter_status: gating_ready
     event_timing_model: repeated_firing
     magnitude_gateable: true
     required_n_seeds: 20
     deferred_reason: null
     notes: >
-      PROMOTED 2026-09-14: the registered adapter is now driven by
+      UPDATED 2026-09-15: the registered adapter is driven by
       scripts/l2_event/cytokinesis_n20_gate.py against selector-owned dual
-      traces. Each strict pinchedDiameter decrease is a contraction-cycle
-      event; the final positive-to-zero transition is completion. The gate
-      compares count/timing and the non-redundant next-diameter payload by
-      calling OC's real calc_next_pinched_diameter under Karr's observed
-      ring-hydrolysis schedule. Substrate/enzyme replay remains explicitly
-      non-gateable because the dual traces lack per-tick randStreamState.
-      Authority remains impossible below exactly
-      N=20; pilot runs write only untracked diagnostics.
+      traces. Full authority requires dual_tap_extractor_schema_version=2,
+      current Cytokinesis.m/extractor source identities, and the process's
+      private mcg16807 randStreamState before and after every Cytokinesis
+      evolveState tap. The gate restores the first captured state, verifies
+      stream continuity, runs OC's real next_update, and compares substrates,
+      enzymes, boundEnzymes, pinchedDiameter, all four independent ring
+      counters, and RNG exit state exactly. Derived flags/counts are checked
+      as invariants but not double-counted as independent outputs. Older
+      projection-v2 traces still drive the conditional
+      cytokinesis.contraction_projection.v2 pilot surface, but they are
+      explicitly barred from full-replay authority. Authority also remains
+      impossible below exactly N=20; pilots write only untracked diagnostics.
       Historical Canary D closed 2026-08-05: 1 of 50
       required event-window seeds now exists on disk (seed 000 under
       data/m1_sources/karr_native/per_process_traces_v2_event_s000/

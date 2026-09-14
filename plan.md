@@ -62,6 +62,31 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-14 19:30 IST) — supersedes all
 earlier blocks below:**
 
+- Cytokinesis N20 RNG-replay repair (2026-09-15 04:05 IST): active isolated
+  worktree `E:\opencell-worktrees\fix-cyt-n20-rng-replay`, branch
+  `fix/cyt-n20-rng-replay`, based exactly on division-gate candidate
+  `6e7cd84`; no merge/push and no MATLAB launched. Source audit confirmed
+  `Cytokinesis.m` draws only from the process-private
+  `Process_Cytokinesis.randStream` (`mcg16807`), while the scheduler and
+  chromosome own separate streams. Existing dual traces carry only the
+  initial seed and no per-tick process stream position; the selected N12
+  files therefore remain conditional pilots. A separate genuine seed-36
+  single-process M5000 trace does contain before/after process RNG state and
+  proves the new OC full-replay implementation at **5000/5000 ticks, zero
+  mismatches across all fields**, but it is not a selector-owned dual trace
+  and cannot authorize the N20 cohort. In-progress code adds before/after
+  `randStreamState`, dual extractor/Cytokinesis source identity, full
+  restored-RNG `next_update` replay, and fail-closed legacy-vs-authority
+  validation. Validation so far: focused 79/79; division/evidence 351 passed
+  / 1 expected RibosomeAssembly-data skip; L1b wiring 28/28 plus 63
+  L1b/provenance tests; tracked evidence audit remains **20 PASS / 0 FAIL /
+  2 MISSING_EVIDENCE, integrity OK**; Ruff clean. The separate method-
+  completeness gate remains at its documented pre-existing 76/115 with 39
+  stale anchor errors (including three Cytokinesis line anchors); this branch
+  does not change the OC process file or those unrelated anchors. Next:
+  independent Opus 5 review, corrections, final validation, implementation
+  commit, then append-only LLM provenance + final handoff commit. MATLAB
+  canary remains approval-gated.
 - Division-gate implementation lane (2026-09-14 22:45 IST): isolated
   worktree `E:\opencell-worktrees\build-division-n20-gates`, branch
   `build/division-n20-gates`, base `a021dd4`, now merged with provenance

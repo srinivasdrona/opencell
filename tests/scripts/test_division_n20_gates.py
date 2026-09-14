@@ -267,6 +267,259 @@ def _synthetic_cyt_grid(seed: int) -> WindowGrid:
     )
 
 
+def _synthetic_full_replay_grid(seed: int = 7, n_ticks: int = 3) -> WindowGrid:
+    process = KarrCytokinesisProcess({"rng_seed": seed})
+    substrate_wids = process.fixture_substrate_wids
+    enzyme_wids = process.fixture_enzyme_wids
+    state = {
+        "cell": {
+            "division_progress": 0.0,
+            "division_complete": False,
+        },
+        "chromosome": {"segregated": True},
+        "geometry": {
+            "pinchedDiameter": process.initial_pinched_diameter,
+            "pinched": False,
+        },
+        "ftsZRing": {
+            "numEdgesOneStraight": 0,
+            "numEdgesTwoStraight": 0,
+            "numEdgesTwoBent": 0,
+            "numResidualBent": 0,
+        },
+        "substrates": {wid: 0.0 for wid in substrate_wids},
+        "enzymes": {wid: 0.0 for wid in enzyme_wids},
+        "boundEnzymes": {wid: 0.0 for wid in enzyme_wids},
+        "substrates_allocated": {
+            process.name: {
+                process.gtp_wid: 0.0,
+                process.water_wid: 1_000_000.0,
+            }
+        },
+    }
+    state["substrates"][process.water_wid] = 1_000_000.0
+    state["enzymes"][
+        enzyme_wids[process.enzyme_index_ftsz_gtp_polymer]
+    ] = 10_000.0
+
+    fields = (
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "pinchedDiameter",
+        "ftsZRing_numEdgesOneStraight",
+        "ftsZRing_numEdgesTwoStraight",
+        "ftsZRing_numEdgesTwoBent",
+        "ftsZRing_numResidualBent",
+        "chromosome_segregated",
+        "randStreamState",
+    )
+    before_rows = {field: [] for field in fields}
+    after_rows = {field: [] for field in fields}
+
+    def vector(port: str, wids: list[str]) -> np.ndarray:
+        return np.asarray([state[port][wid] for wid in wids], dtype=float)
+
+    for _ in range(n_ticks):
+        before_rows["substrates"].append(vector("substrates", substrate_wids))
+        before_rows["enzymes"].append(vector("enzymes", enzyme_wids))
+        before_rows["boundEnzymes"].append(vector("boundEnzymes", enzyme_wids))
+        before_rows["pinchedDiameter"].append(
+            np.asarray([state["geometry"]["pinchedDiameter"]], dtype=float)
+        )
+        for observable, field_name in (
+            ("ftsZRing_numEdgesOneStraight", "numEdgesOneStraight"),
+            ("ftsZRing_numEdgesTwoStraight", "numEdgesTwoStraight"),
+            ("ftsZRing_numEdgesTwoBent", "numEdgesTwoBent"),
+            ("ftsZRing_numResidualBent", "numResidualBent"),
+        ):
+            before_rows[observable].append(
+                np.asarray([state["ftsZRing"][field_name]], dtype=float)
+            )
+        before_rows["chromosome_segregated"].append(np.asarray([1.0]))
+        before_rows["randStreamState"].append(
+            np.asarray([process._rng.get_state()], dtype=float)  # noqa: SLF001
+        )
+
+        update = process.next_update(1.0, state)
+        for port in ("substrates", "enzymes", "boundEnzymes"):
+            for wid, delta in update.get(port, {}).items():
+                state[port][wid] += float(delta)
+        state["geometry"].update(update["geometry"])
+        state["ftsZRing"].update(update["ftsZRing"])
+        state["cell"].update(
+            {
+                key: (
+                    state["cell"].get(key, 0.0) + value
+                    if key == "division_progress"
+                    else value
+                )
+                for key, value in update["cell"].items()
+            }
+        )
+
+        after_rows["substrates"].append(vector("substrates", substrate_wids))
+        after_rows["enzymes"].append(vector("enzymes", enzyme_wids))
+        after_rows["boundEnzymes"].append(vector("boundEnzymes", enzyme_wids))
+        after_rows["pinchedDiameter"].append(
+            np.asarray([state["geometry"]["pinchedDiameter"]], dtype=float)
+        )
+        for observable, field_name in (
+            ("ftsZRing_numEdgesOneStraight", "numEdgesOneStraight"),
+            ("ftsZRing_numEdgesTwoStraight", "numEdgesTwoStraight"),
+            ("ftsZRing_numEdgesTwoBent", "numEdgesTwoBent"),
+            ("ftsZRing_numResidualBent", "numResidualBent"),
+        ):
+            after_rows[observable].append(
+                np.asarray([state["ftsZRing"][field_name]], dtype=float)
+            )
+        after_rows["chromosome_segregated"].append(np.asarray([1.0]))
+        after_rows["randStreamState"].append(
+            np.asarray([process._rng.get_state()], dtype=float)  # noqa: SLF001
+        )
+
+        state["substrates_allocated"][process.name][process.water_wid] = state[
+            "substrates"
+        ][process.water_wid]
+
+    return WindowGrid(
+        process_name="Cytokinesis",
+        seed=seed,
+        n_ticks=n_ticks,
+        tick_offset=0.0,
+        trace_path=Path(f"full-seed-{seed}.mat"),
+        observables=fields,
+        states_before={
+            key: np.stack(value, axis=0) for key, value in before_rows.items()
+        },
+        states_after={
+            key: np.stack(value, axis=0) for key, value in after_rows.items()
+        },
+        tick_start=1,
+        window_anchor=n_ticks,
+        onset_tick=1,
+    )
+
+
+def _synthetic_evidence(seed: int, grid: WindowGrid) -> cyt_gate.CytokinesisSeedEvidence:
+    return cyt_gate.CytokinesisSeedEvidence(
+        seed=seed,
+        trace_path=grid.trace_path,
+        trace_sha256=f"{seed:064x}",
+        onset_offset=0,
+        completion_offset=max(0, grid.n_ticks - 1),
+        onset_to_completion_ticks=max(0, grid.n_ticks - 1),
+        contraction_cycle_count=1,
+        source_projection_mismatch_ticks=(),
+        water_consumed=0.0,
+        phosphate_produced=0.0,
+        hydrogen_produced=0.0,
+        hydrolysis_stoichiometry_ok=True,
+        polymer_payload_redundant=True,
+        hydrolysis_tick_count=0,
+    )
+
+
+def test_cytokinesis_full_replay_matches_all_captured_fields():
+    seed = 7
+    grid = _synthetic_full_replay_grid(seed)
+    surface = cyt_gate._full_replay_surface(
+        row=_synthetic_evidence(seed, grid),
+        grid=grid,
+        process=KarrCytokinesisProcess({"rng_seed": seed}),
+        sut_runner=cyt_gate.DEFAULT_SUT_RUNNER,
+    )
+    assert surface.full_replay_passed is True
+    assert not any(surface.full_replay_field_mismatch_counts.values())
+
+
+def test_cytokinesis_full_replay_wrong_rng_is_detected():
+    seed = 7
+    grid = _synthetic_full_replay_grid(seed)
+
+    def wrong_rng_runner(process, states):
+        process._rng.set_state(process._rng.get_state() + 1)  # noqa: SLF001
+        return process.next_update(1.0, states)
+
+    surface = cyt_gate._full_replay_surface(
+        row=_synthetic_evidence(seed, grid),
+        grid=grid,
+        process=KarrCytokinesisProcess({"rng_seed": seed}),
+        sut_runner=wrong_rng_runner,
+    )
+    assert surface.full_replay_passed is False
+    assert surface.full_replay_field_mismatch_counts["randStreamState"] > 0
+
+
+def test_cytokinesis_full_replay_noop_sut_is_detected():
+    seed = 7
+    grid = _synthetic_full_replay_grid(seed)
+    surface = cyt_gate._full_replay_surface(
+        row=_synthetic_evidence(seed, grid),
+        grid=grid,
+        process=KarrCytokinesisProcess({"rng_seed": seed}),
+        sut_runner=lambda _process, _states: {},
+    )
+    assert surface.full_replay_passed is False
+    assert surface.full_replay_field_mismatch_counts["outputContract"] > 0
+    assert surface.full_replay_field_mismatch_counts["randStreamState"] > 0
+
+
+def test_cytokinesis_full_replay_constant_sut_is_detected():
+    seed = 7
+    grid = _synthetic_full_replay_grid(seed)
+
+    def constant_runner(process, _states):
+        return {
+            "requests": {
+                process.name: {process.gtp_wid: 0.0, process.water_wid: 0.0}
+            },
+            "geometry": {
+                "pinchedDiameter": 0.0,
+                "pinched": True,
+            },
+            "ftsZRing": {
+                "numEdges": 0,
+                "numEdgesOneStraight": 0,
+                "numEdgesTwoStraight": 0,
+                "numEdgesTwoBent": 0,
+                "numResidualBent": 0,
+            },
+            "cell": {"division_complete": True},
+        }
+
+    surface = cyt_gate._full_replay_surface(
+        row=_synthetic_evidence(seed, grid),
+        grid=grid,
+        process=KarrCytokinesisProcess({"rng_seed": seed}),
+        sut_runner=constant_runner,
+    )
+    assert surface.full_replay_passed is False
+    assert surface.full_replay_field_mismatch_counts["pinchedDiameter"] > 0
+
+
+def test_cytokinesis_full_replay_captured_field_mismatch_is_detected():
+    seed = 7
+    grid = _synthetic_full_replay_grid(seed)
+    mutated_after = dict(grid.states_after)
+    mutated_after["enzymes"] = grid.states_after["enzymes"].copy()
+    mutated_after["enzymes"][1, 0] += 1.0
+    mutated = WindowGrid(
+        **{
+            **grid.__dict__,
+            "states_after": mutated_after,
+        }
+    )
+    surface = cyt_gate._full_replay_surface(
+        row=_synthetic_evidence(seed, mutated),
+        grid=mutated,
+        process=KarrCytokinesisProcess({"rng_seed": seed}),
+        sut_runner=cyt_gate.DEFAULT_SUT_RUNNER,
+    )
+    assert surface.full_replay_passed is False
+    assert surface.full_replay_field_mismatch_counts["enzymes"] == 1
+
+
 def test_cytokinesis_noop_sut_loses_event_and_payload(monkeypatch):
     selected = [0, 1, 2, 3]
     grids = {seed: _synthetic_cyt_grid(seed) for seed in selected}

@@ -244,6 +244,67 @@ def test_completion_detected_solely_from_process_a():
     assert "after_b.pinchedDiameter" not in body
 
 
+def test_cytokinesis_private_rng_state_is_captured_at_both_exact_tap_points():
+    source = _read(EXTRACTOR_PATH)
+    tap_loop_body = _function_body(
+        source,
+        "function [sim, before_a, after_a, before_b, after_b] = ...\n"
+        "    evolve_state_with_dual_tap(sim, idx_a, props_a, idx_b, props_b, anchor_opts)\n",
+    )
+    assert tap_loop_body.count(
+        "before_a.randStreamState = capture_process_rand_stream_state(mod);"
+    ) == 1
+    assert tap_loop_body.count(
+        "after_a.randStreamState = capture_process_rand_stream_state(mod);"
+    ) == 1
+    before_pos = tap_loop_body.index(
+        "before_a.randStreamState = capture_process_rand_stream_state(mod);"
+    )
+    evolve_pos = tap_loop_body.index("mod.evolveState();")
+    after_pos = tap_loop_body.index(
+        "after_a.randStreamState = capture_process_rand_stream_state(mod);"
+    )
+    assert before_pos < evolve_pos < after_pos
+    assert "before_b.randStreamState" not in source
+    assert "after_b.randStreamState" not in source
+
+
+def test_dual_rng_projection_is_source_and_schema_bound_on_both_outputs():
+    source = _read(EXTRACTOR_PATH)
+    for prefix in ("cyt_metadata", "ftsz_metadata"):
+        assert (
+            f"{prefix}.dual_tap_extractor_schema_version = int32(2);"
+            in source
+        )
+        assert (
+            f"{prefix}.dual_tap_extractor_sha256_lf_normalized = "
+            "extractor_source_identity.sha256_lf_normalized;"
+            in source
+        )
+        assert (
+            f"{prefix}.cytokinesis_source_resolved_sha256 = "
+            "cyt_source_identity.sha256_lf_normalized;"
+            in source
+        )
+    assert (
+        "cyt_metadata.cytokinesis_rng_replay_schema_version = int32(1);"
+        in source
+    )
+    assert (
+        "cyt_metadata.cytokinesis_rand_stream_owner = "
+        "'Process_Cytokinesis.randStream';"
+        in source
+    )
+    assert (
+        "cyt_metadata.cytokinesis_rand_stream_type = char(cyt_proc.randStream.type);"
+        in source
+    )
+    assert (
+        "temp Cytokinesis output %s must carry before/after randStreamState for every tick"
+        in source
+    )
+
+
 # ---------------------------------------------------------------------------
 # Exact window lengths / anchor arithmetic
 # ---------------------------------------------------------------------------

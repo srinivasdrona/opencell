@@ -82,7 +82,7 @@ def test_registry_reflects_actual_adapter_availability_not_aspirational_claims()
     assert registry["RibosomeAssembly"].adapter_status == "gating_ready"
     assert registry["RibosomeAssembly"].adapter_id == "ribosome_assembly.gate.v1"
     assert registry["Cytokinesis"].adapter_status == "gating_ready"
-    assert registry["Cytokinesis"].adapter_id == "cytokinesis.contraction_projection.v2"
+    assert registry["Cytokinesis"].adapter_id == "cytokinesis.full_next_update_replay.v3"
     assert registry["FtsZPolymerization"].adapter_status == "gating_ready"
     assert registry["FtsZPolymerization"].adapter_id == "ftsz.windowed_distribution.v1"
     assert registry["DNADamage"].adapter_status == "not_implemented"

@@ -2,8 +2,7 @@
 Cytokinesis + FtsZPolymerization division-window extractor
 (``scripts/matlab/extract_dual_division_window.m``).
 
-This module writes NO new validation logic for either process: it reuses,
-unmodified, the two existing fail-closed validators the task requires:
+The base paired-trace verdict reuses the two existing fail-closed validators:
 
 * Cytokinesis: ``scripts.l2_event.launcher.validate_existing_event_window``
   against an ``AnchorWindowSpec`` built from the same catalog-authoritative
@@ -50,6 +49,13 @@ to check on its own):
   invariant (left unchanged) would have allowed exactly-M_ticks. See
   ``scripts.l2_event.division_window_spec.check_inclusive_span_margin``/
   ``ProvisionalMarginOverrunError``.
+* Optional full-replay authority check (2026-09-15): requires the
+  backward-incompatible dual extractor schema, current LF-normalized hashes
+  of the dual extractor and resolved ``Cytokinesis.m``, and the Cytokinesis
+  process-private ``randStreamState`` before/after every tick. The default
+  remains backward-compatible so old pairs can still be explicit conditional
+  pilots and FtsZ inputs; callers requesting full Cytokinesis authority must
+  opt in and old traces then fail closed.
 
 Fail-closed: :func:`validate_dual_division_canary` never returns a
 combined-PASS verdict unless BOTH underlying validators independently
@@ -67,6 +73,7 @@ from dataclasses import asdict, dataclass, field
 from pathlib import Path
 
 import h5py
+import numpy as np
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -91,6 +98,22 @@ CYTOKINESIS_PROCESS = "Cytokinesis"
 CYTOKINESIS_N_TICKS = m_ticks_for(CYTOKINESIS_PROCESS)
 FTSZ_PROCESS = "FtsZPolymerization"
 FTSZ_N_TICKS = m_ticks_for(FTSZ_PROCESS)
+DUAL_TAP_EXTRACTOR_SCHEMA_VERSION = 2
+CYTOKINESIS_RNG_REPLAY_SCHEMA_VERSION = 1
+CYTOKINESIS_RNG_STREAM_OWNER = "Process_Cytokinesis.randStream"
+CYTOKINESIS_RNG_STREAM_TYPE = "mcg16807"
+CYTOKINESIS_RNG_STATE_OBSERVABLE = "randStreamState"
+DUAL_TAP_EXTRACTOR_PATH = _REPO_ROOT / "scripts" / "matlab" / "extract_dual_division_window.m"
+_CYTOKINESIS_SOURCE_RELATIVE_PATH = (
+    Path("src")
+    / "+edu"
+    / "+stanford"
+    / "+covert"
+    / "+cell"
+    / "+sim"
+    / "+process"
+    / "Cytokinesis.m"
+)
 # Full-simulation source-hash binding (decisions/dec-005, 2026-09-04): see
 # scripts/l2_event/prepare_cytokinesis_cohort.py's identical constant for
 # the full rationale. Computed once at import time.
@@ -159,6 +182,146 @@ def event_window_dir(seed: int, *, karr_native_root: Path | None = None) -> Path
     return root / f"per_process_traces_v2_event_s{int(seed):03d}"
 
 
+def current_cytokinesis_source_identity() -> dict[str, str]:
+    """Resolve and LF-hash the actual Cytokinesis.m source MATLAB will load."""
+    wcm_root = launcher.resolve_dnadamage_wcm_root(repo_root=_REPO_ROOT)
+    source_path = wcm_root / _CYTOKINESIS_SOURCE_RELATIVE_PATH
+    if not source_path.is_file():
+        raise FileNotFoundError(f"Cytokinesis.m not found at {source_path}")
+    return {
+        "resolved_path": str(source_path.resolve()),
+        "sha256_lf_normalized": launcher.lf_normalized_sha256_hex(source_path),
+    }
+
+
+@dataclass(frozen=True)
+class CytokinesisReplayCapability:
+    ready: bool
+    authority_class: str
+    reason: str
+    dual_tap_extractor_schema_version: int | None
+    cytokinesis_rng_replay_schema_version: int | None
+    cytokinesis_source_sha256: str | None
+    dual_tap_extractor_sha256: str | None
+
+
+def cytokinesis_full_replay_capability(
+    cytokinesis_path: Path,
+    ftsz_path: Path,
+) -> CytokinesisReplayCapability:
+    """Validate the backward-incompatible projection needed for full replay.
+
+    Legacy dual traces intentionally remain valid conditional pilots through
+    :func:`validate_dual_division_canary`'s default mode, but this capability
+    is false unless both paired files bind the current dual extractor and
+    Cytokinesis source and the Cytokinesis file carries its private process
+    RNG state at both tap points for every tick.
+    """
+    cyt_path = Path(cytokinesis_path)
+    partner_path = Path(ftsz_path)
+    problems: list[str] = []
+    if not cyt_path.is_file():
+        problems.append(f"Cytokinesis trace missing: {cyt_path}")
+    if not partner_path.is_file():
+        problems.append(f"paired FtsZ trace missing: {partner_path}")
+    if problems:
+        return CytokinesisReplayCapability(
+            ready=False,
+            authority_class="CONDITIONAL_PILOT_ONLY",
+            reason="; ".join(problems),
+            dual_tap_extractor_schema_version=None,
+            cytokinesis_rng_replay_schema_version=None,
+            cytokinesis_source_sha256=None,
+            dual_tap_extractor_sha256=None,
+        )
+
+    expected_source = current_cytokinesis_source_identity()["sha256_lf_normalized"]
+    expected_extractor = launcher.lf_normalized_sha256_hex(DUAL_TAP_EXTRACTOR_PATH)
+    cyt_dual_version = _read_metadata_int(cyt_path, "dual_tap_extractor_schema_version")
+    partner_dual_version = _read_metadata_int(
+        partner_path, "dual_tap_extractor_schema_version"
+    )
+    rng_version = _read_metadata_int(cyt_path, "cytokinesis_rng_replay_schema_version")
+    cyt_source = _read_metadata_string(cyt_path, "cytokinesis_source_resolved_sha256")
+    partner_source = _read_metadata_string(
+        partner_path, "cytokinesis_source_resolved_sha256"
+    )
+    cyt_extractor = _read_metadata_string(
+        cyt_path, "dual_tap_extractor_sha256_lf_normalized"
+    )
+    partner_extractor = _read_metadata_string(
+        partner_path, "dual_tap_extractor_sha256_lf_normalized"
+    )
+
+    if cyt_dual_version != DUAL_TAP_EXTRACTOR_SCHEMA_VERSION:
+        problems.append(
+            "Cytokinesis metadata.dual_tap_extractor_schema_version="
+            f"{cyt_dual_version!r}, expected {DUAL_TAP_EXTRACTOR_SCHEMA_VERSION}"
+        )
+    if partner_dual_version != DUAL_TAP_EXTRACTOR_SCHEMA_VERSION:
+        problems.append(
+            "FtsZ metadata.dual_tap_extractor_schema_version="
+            f"{partner_dual_version!r}, expected {DUAL_TAP_EXTRACTOR_SCHEMA_VERSION}"
+        )
+    if rng_version != CYTOKINESIS_RNG_REPLAY_SCHEMA_VERSION:
+        problems.append(
+            "Cytokinesis metadata.cytokinesis_rng_replay_schema_version="
+            f"{rng_version!r}, expected {CYTOKINESIS_RNG_REPLAY_SCHEMA_VERSION}"
+        )
+
+    exact_string_fields = {
+        "cytokinesis_rand_stream_owner": CYTOKINESIS_RNG_STREAM_OWNER,
+        "cytokinesis_rand_stream_type": CYTOKINESIS_RNG_STREAM_TYPE,
+        "cytokinesis_rand_stream_state_observable": CYTOKINESIS_RNG_STATE_OBSERVABLE,
+    }
+    for field_name, expected in exact_string_fields.items():
+        actual = _read_metadata_string(cyt_path, field_name)
+        if actual != expected:
+            problems.append(
+                f"Cytokinesis metadata.{field_name}={actual!r}, expected {expected!r}"
+            )
+
+    if cyt_source != expected_source or partner_source != expected_source:
+        problems.append(
+            "Cytokinesis source identity mismatch: "
+            f"cyt={cyt_source!r}, ftsz={partner_source!r}, current={expected_source!r}"
+        )
+    if cyt_extractor != expected_extractor or partner_extractor != expected_extractor:
+        problems.append(
+            "dual extractor identity mismatch: "
+            f"cyt={cyt_extractor!r}, ftsz={partner_extractor!r}, current={expected_extractor!r}"
+        )
+
+    with h5py.File(cyt_path, "r") as handle:
+        n_ticks = _read_metadata_int(cyt_path, "n_ticks")
+        for group_name in ("states_before", "states_after"):
+            group = handle.get(group_name)
+            if group is None or CYTOKINESIS_RNG_STATE_OBSERVABLE not in group:
+                problems.append(
+                    f"{group_name}.{CYTOKINESIS_RNG_STATE_OBSERVABLE} is missing"
+                )
+                continue
+            dataset = group[CYTOKINESIS_RNG_STATE_OBSERVABLE]
+            if n_ticks is None or int(np.prod(dataset.shape)) != n_ticks:
+                problems.append(
+                    f"{group_name}.{CYTOKINESIS_RNG_STATE_OBSERVABLE} has "
+                    f"shape={dataset.shape}, expected {n_ticks} tick entries"
+                )
+
+    ready = not problems
+    return CytokinesisReplayCapability(
+        ready=ready,
+        authority_class=(
+            "FULL_NEXT_UPDATE_REPLAY_READY" if ready else "CONDITIONAL_PILOT_ONLY"
+        ),
+        reason="" if ready else "; ".join(problems),
+        dual_tap_extractor_schema_version=cyt_dual_version,
+        cytokinesis_rng_replay_schema_version=rng_version,
+        cytokinesis_source_sha256=cyt_source,
+        dual_tap_extractor_sha256=cyt_extractor,
+    )
+
+
 @dataclass
 class DualDivisionCanaryReport:
     seed: int
@@ -182,6 +345,10 @@ class DualDivisionCanaryReport:
     margin_ok: bool
     cytokinesis_onset_tick: int | None
     inclusive_span_ticks: int | None
+    cytokinesis_full_replay_required: bool
+    cytokinesis_full_replay_ready: bool
+    cytokinesis_replay_authority_class: str
+    cytokinesis_replay_reason: str
     cytokinesis_sha256: str | None = None
     ftsz_sha256: str | None = None
     status: str = "FAIL"
@@ -192,7 +359,10 @@ class DualDivisionCanaryReport:
 
 
 def validate_dual_division_canary(
-    seed: int, *, karr_native_root: Path | None = None
+    seed: int,
+    *,
+    karr_native_root: Path | None = None,
+    require_cytokinesis_full_replay: bool = False,
 ) -> DualDivisionCanaryReport:
     """Fail-closed combined validation for one seed's dual-tap outputs.
 
@@ -321,6 +491,13 @@ def validate_dual_division_canary(
                 "cannot evaluate margin"
             )
 
+    replay_capability = cytokinesis_full_replay_capability(cyt_path, ftsz_path)
+    if require_cytokinesis_full_replay and not replay_capability.ready:
+        reasons.append(
+            "Cytokinesis full next_update replay authority unavailable: "
+            f"{replay_capability.reason}"
+        )
+
     status = (
         "PASS"
         if (
@@ -332,6 +509,10 @@ def validate_dual_division_canary(
             and provider_match
             and dnadamage_match
             and margin_ok
+            and (
+                not require_cytokinesis_full_replay
+                or replay_capability.ready
+            )
         )
         else "FAIL"
     )
@@ -358,6 +539,10 @@ def validate_dual_division_canary(
         margin_ok=margin_ok,
         cytokinesis_onset_tick=cyt_onset,
         inclusive_span_ticks=inclusive_span,
+        cytokinesis_full_replay_required=require_cytokinesis_full_replay,
+        cytokinesis_full_replay_ready=replay_capability.ready,
+        cytokinesis_replay_authority_class=replay_capability.authority_class,
+        cytokinesis_replay_reason=replay_capability.reason,
         cytokinesis_sha256=cyt_sha,
         ftsz_sha256=ftsz_sha,
         status=status,
@@ -369,9 +554,18 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--seed", type=int, required=True)
     parser.add_argument("--karr-native-root", type=Path, default=None)
+    parser.add_argument(
+        "--require-cytokinesis-full-replay",
+        action="store_true",
+        help="Fail unless the paired trace carries the source-bound Cytokinesis RNG replay projection.",
+    )
     args = parser.parse_args(argv)
 
-    report = validate_dual_division_canary(args.seed, karr_native_root=args.karr_native_root)
+    report = validate_dual_division_canary(
+        args.seed,
+        karr_native_root=args.karr_native_root,
+        require_cytokinesis_full_replay=args.require_cytokinesis_full_replay,
+    )
     print(json.dumps(report.to_json(), indent=2, sort_keys=True))
     return 0 if report.status == "PASS" else 2
 

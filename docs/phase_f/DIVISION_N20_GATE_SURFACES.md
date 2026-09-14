@@ -15,37 +15,67 @@ seeds and writes only the live gitignored L2.2 evidence root. The tracked
 portable bundle remains generator-owned and cannot be replaced by an N<20
 pilot.
 
-## Cytokinesis: single completion event plus hydrolysis payload
+## Cytokinesis: full stochastic next-update replay
 
-Primary MATLAB source: `Cytokinesis.m`. The dual trace has real flattened
-`substrates`, `enzymes`, `boundEnzymes`, `pinchedDiameter`, four FtsZ-ring
-edge counters, and `chromosome_segregated`. It does not have a nested geometry
-or ring object; the gate never invents one. It reconstructs only the OC port
-shape using:
+Primary MATLAB source: `Cytokinesis.m`. Projection-v3 dual traces add the Cytokinesis process's private
+`randStreamState` immediately before and after its real MATLAB
+`evolveState()` call. The stream is owned by `Process_Cytokinesis.randStream`
+(`mcg16807`); the simulation scheduler and chromosome state own different
+streams and cannot substitute. The gate reconstructs only the OC port shape
+using:
 
 - captured per-tick values for every dynamic field;
 - fixture-derived FtsZ constants/WIDs;
 - source-derived `numEdges = calcNumEdges(pinchedDiameter, filamentLength)`;
 - captured process-local substrates as the allocator grant Karr actually
   placed in `this.substrates` before `evolveState`.
+- captured process-private RNG state, restored once at the window start and
+  checked continuously against every subsequent before/after tap.
 
-The trace does not capture Cytokinesis's per-tick `randStreamState`, so a
-full stochastic `next_update` replay would require fabricated RNG state and
-is forbidden. The current gate instead conditions on Karr's real observed
-ring-hydrolysis schedule and evaluates OC's real
-`calc_next_pinched_diameter` transition for every captured contraction
-cycle. It gates:
+The gate runs OC's real `next_update` and compares every meaningful,
+non-redundant output exactly:
 
-1. contraction-cycle event count;
-2. contraction event timing and onset-to-completion span;
-3. the next `pinchedDiameter` payload, including the final zero clamp.
+1. substrate, enzyme, and bound-enzyme vectors;
+2. `pinchedDiameter` and all four independent FtsZ-ring counters;
+3. process-private RNG exit state;
+4. contraction count/timing/payload, including the final zero clamp.
 
-Substrate/enzyme/bound-enzyme deltas are reported diagnostically and marked
-non-gateable with the current projection. Their full OC comparison needs the
-minimal extractor addition `randStreamState` at both Cytokinesis tap points
-(the generic extractor already has the helper); the existing 12 traces are
-not modified or backfilled. The bound FtsZ-GTP/GDP hydrolysis component is
-also algebraically redundant with substrate extent.
+`geometry.pinched`, `ftsZRing.numEdges`, division compatibility fields, and
+fixed ring constants are deterministic projections of those values and are
+checked as invariants rather than double-counted. Authority additionally
+requires `dual_tap_extractor_schema_version=2` plus current LF-normalized
+hashes of the dual extractor and actual resolved `Cytokinesis.m`.
+
+Projection-v2 traces lack this state and remain usable only as explicitly
+conditional pilots of `calc_next_pinched_diameter` under Karr's observed
+ring-hydrolysis schedule. They cannot write authority. Every selected
+completed trace used for full N=20 Cytokinesis authority must therefore be
+re-extracted through the one-pass dual Cyt/FtsZ extractor; no field is
+backfilled or inferred from the initial seed.
+
+### Approval-gated one-seed canary
+
+Do not launch until the orchestrator confirms an available MATLAB host slot.
+Seed 36 is the canary because its patched-source completion/onset coordinates
+are already independently known and a separate genuine single-process trace
+has demonstrated exact 5000-tick OC replay. From PowerShell:
+
+```powershell
+.\scripts\tools\run_matlab_slot.ps1 `
+  -Worktree "E:\opencell-worktrees\fix-cyt-n20-rng-replay" `
+  -Tag "cyt_rng_replay_s036" `
+  -Slots <ORCHESTRATOR_APPROVED_CAP> `
+  -MatlabCommand "addpath(genpath('scripts/matlab')); extract_dual_division_window(uint32(36));"
+```
+
+Then validate without MATLAB:
+
+```powershell
+.\bin\oc-py.cmd -m scripts.l2_event.validate_dual_division_canary `
+  --seed 36 `
+  --karr-native-root data/m1_sources/karr_native `
+  --require-cytokinesis-full-replay
+```
 
 ## FtsZPolymerization: windowed continuous distributions
 
@@ -93,11 +123,12 @@ dual_division_cohort_current`.
 
 Selected completions: `0-5, 7-11, 13`; censors `6, 12, 14` do not count.
 
-- **Cytokinesis**: contraction counts were 147/seed on both Karr and OC
+- **Cytokinesis conditional projection**: contraction counts were 147/seed on both Karr and OC
   projection; count W1=0, timing W1=0, next-diameter payload mismatches=0.
   All 12 projected completion clamps reached zero. Karr
   onset-to-completion spans were 3676-3943 ticks. This is a clean pilot
-  surface, not a PASS.
+  surface, not a PASS. All 12 files predate the RNG replay projection and
+  are ineligible for full authority until re-extracted.
 - **FtsZPolymerization**: calibration seeds `0-5`; independent evaluation
   seeds `7,8,9,10,11,13`. All 6 evaluation seeds had Karr and OC activity;
   monomer-projection discrepancy remained exactly 0; no component had a
