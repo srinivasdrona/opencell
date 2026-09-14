@@ -188,3 +188,20 @@ check below is a genuine run, not a data-dependent skip:
 
 Ready for one final, lightweight Opus integration review of
 `integrate/l21-txreg-final` against current `origin/main`.
+
+## Legacy 28-row strict-rubric follow-up (2026-09-14)
+
+Branch `fix/l21-txreg-rubric-final` closes a test-harness-only regression
+introduced when TxReg's shared process spec gained the site-level
+`tfBoundPromoters`/`boundTFs` observables. The legacy rubric still called the
+canonical `_100ticks.mat` resolver, so `_build_context` failed before replay
+because that older trace predates those fields.
+
+The rubric now preserves canonical resolution for every schema-complete
+process, but a schema-incomplete trace must resolve through
+`L21_ACTIVE_WINDOWS_MANIFEST.json`. The shared active-window source contract
+validates the row classification, portable path, trace SHA-256, and pinned
+chromosome-ledger SHA before replay. TxReg therefore selects the authoritative
+4000-tick event trace (`73fc1d97...7aa2`); stale canonical, manifest hash/path,
+classification, or ledger drift fails closed rather than returning an
+ERROR-shaped pseudo-result. No process biology changed.
