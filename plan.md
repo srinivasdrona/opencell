@@ -71,6 +71,19 @@ earlier blocks below:**
   (D) resume OS-detached dual MATLAB extraction at seed 15 while code work
   proceeds, then bank/audit each attempt. Curate, review, merge and push
   each code track; final target **22 PASS / 0 FAIL / 0 MISSING_EVIDENCE**.
+- TxReg strict-rubric track completed locally (2026-09-14 23:44 IST):
+  `fix/l21-txreg-rubric-final` now detects that the stale canonical
+  `_100ticks.mat` lacks the current TxReg spec's site-level observables and
+  resolves the `EXISTING_WINDOW_PASS` active-window manifest row instead.
+  Selection is repo-portable and fail-closed on classification/path/hash/
+  pinned-ledger drift; the chosen 4000-tick trace is SHA-256
+  `73fc1d9710e2a98f61221d51a80cdbc490fb6d44db4ea95853414048c9fc7aa2`.
+  The legacy rubric is green 28/28, TxReg replay/RNG coverage is 87/87,
+  active-window/resolver coverage is 48/48, L1b is 28/28 plus 19/19
+  integration tests, and focused Ruff is clean. Provenance is 43/44 with
+  only the pre-existing worktree-root `_find_repo_root` test failure (its
+  `tmp_path` remains below the checkout's `pyproject.toml`). No biology,
+  merge, push, or `dual_division_cohort_current` change.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
