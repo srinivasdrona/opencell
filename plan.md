@@ -71,6 +71,20 @@ earlier blocks below:**
   (D) resume OS-detached dual MATLAB extraction at seed 15 while code work
   proceeds, then bank/audit each attempt. Curate, review, merge and push
   each code track; final target **22 PASS / 0 FAIL / 0 MISSING_EVIDENCE**.
+  Live agents/worktrees:
+  - provenance agent `64e083ed-d3a8-420c-9b7c-a25149ae2e84`,
+    target `E:\opencell-worktrees\fix-l22-provenance-gaps-final`;
+  - TxReg rubric agent `90887e41-1048-40c1-b348-4cfe7bcdd0c5`,
+    target `E:\opencell-worktrees\fix-l21-txreg-rubric-final`;
+  - division-gate agent `e3ec1309-b8cd-4778-bf52-b11004b080fb`,
+    target `E:\opencell-worktrees\build-division-n20-gates`.
+  OS-detached extraction shell `division-n20-resume-2`, supervisor PID
+  2260, MATLAB wrapper/child PIDs 17624/10940; seed 15 started at 22:08.
+  Durable launcher/status/log:
+  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\resume_division_n20.ps1`,
+  `division_n20_resume.status`, `division_n20_resume.log`. The launcher
+  banks each attempt, runs the selector, and stops immediately at 20
+  completed windows.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
