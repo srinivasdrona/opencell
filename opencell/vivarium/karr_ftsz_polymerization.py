@@ -4,13 +4,21 @@ This process mirrors Karr's `FtsZPolymerization.evolveState` flow:
 
 1. Gate on `any(enzymes)`.
 2. Convert enzyme counts to concentrations.
-3. Integrate the activation / exchange / nucleation / elongation ODEs.
-4. Discretize the last all-nonnegative ODE state while preserving monomer mass.
-5. Apply Karr's substrate-limit clamps.
+3. Read the caller-supplied ``geometry.volume`` concentration reference frame.
+4. Integrate the activation / exchange / nucleation / elongation ODEs.
+5. Discretize the last all-nonnegative ODE state while preserving monomer mass.
+6. Apply Karr's substrate-limit clamps.
 
 The Vivarium-facing surface remains allocator-compatible by requesting GTP and
 consuming only the granted GTP budget while reading GDP / PI / H2O / H from the
 shared substrate store.
+
+Source-fidelity boundary: the division replay gate supplies Karr's captured
+per-tick ``geometry.volume`` and fails closed when it is missing. OpenCell's
+autonomous chassis currently has no source-faithful geometry-volume producer;
+its shared geometry store is initialized from the fitted fixture default.
+That keeps legacy chassis construction operational but is not evidence of
+live-volume chassis fidelity, and no dynamic volume is inferred here.
 """
 
 from __future__ import annotations
@@ -164,7 +172,6 @@ class KarrFtsZPolymerizationProcess(Process):
         if geometry_state is None:
             raise ValueError("FtsZ fixture is missing CellGeometry state for concentration units")
         self._geometry_volume = float(_coerce_scalar(geometry_state.volume))
-        self._ode_threshold = 0.1 / (_N_AVOGADRO * self._geometry_volume)
 
         self.initial_ring_count = int(
             np.dot(
@@ -187,6 +194,16 @@ class KarrFtsZPolymerizationProcess(Process):
                     ),
                     "_updater": "set",
                     "_emit": True,
+                },
+            },
+            # The gate overlays captured Karr volume. In an autonomous
+            # chassis this default is only fitted initialization because no
+            # source-faithful geometry-volume producer is wired yet.
+            "geometry": {
+                "volume": {
+                    "_default": self._geometry_volume,
+                    "_updater": "set",
+                    "_emit": False,
                 },
             },
             "substrates": {
@@ -236,17 +253,20 @@ class KarrFtsZPolymerizationProcess(Process):
                 next_counts=next_counts,
             )
         else:
+            volume_l = self._geometry_volume_from_state(states)
             substrate_before = self._substrate_vector_for_limits(states)
-            y0 = self.molecules_to_concentration(current_counts)
+            y0 = self.molecules_to_concentration(current_counts, volume_l=volume_l)
             _, ode_solutions = self.integrate_odes(
                 y0=y0,
                 substrate_counts=substrate_before,
                 timestep=dt,
+                volume_l=volume_l,
             )
             last_valid_idx = self._last_nonnegative_solution_idx(ode_solutions)
             discretized = self.discretize_enzymes(
                 enzyme_concentrations=ode_solutions[:, last_valid_idx],
                 current_counts=current_counts,
+                volume_l=volume_l,
             )
             next_counts, substrate_after = self.apply_substrate_limits(
                 enzymes=discretized,
@@ -298,11 +318,16 @@ class KarrFtsZPolymerizationProcess(Process):
         y0: np.ndarray,
         substrate_counts: np.ndarray,
         timestep: float,
+        volume_l: float | None = None,
     ) -> tuple[np.ndarray, np.ndarray]:
         if float(timestep) <= 0.0:
             return np.asarray([0.0], dtype=np.float64), y0[:, np.newaxis].astype(np.float64)
 
-        substrate_conc = self.molecules_to_concentration(substrate_counts)
+        resolved_volume_l = self._validated_volume_l(volume_l)
+        substrate_conc = self.molecules_to_concentration(
+            substrate_counts,
+            volume_l=resolved_volume_l,
+        )
         params = np.asarray(
             [
                 self.activation_fwd,
@@ -326,7 +351,11 @@ class KarrFtsZPolymerizationProcess(Process):
             method=str(self.parameters["ode_method"]),
             jac=lambda _t, y: self.ode_jacobian(y, params),
             rtol=float(self.parameters["ode_rtol"]),
-            atol=np.full(len(y0), self._ode_threshold, dtype=np.float64),
+            atol=np.full(
+                len(y0),
+                0.1 / (_N_AVOGADRO * resolved_volume_l),
+                dtype=np.float64,
+            ),
             max_step=0.1 * float(timestep),
             vectorized=False,
         )
@@ -407,9 +436,13 @@ class KarrFtsZPolymerizationProcess(Process):
         *,
         enzyme_concentrations: np.ndarray,
         current_counts: np.ndarray,
+        volume_l: float | None = None,
     ) -> np.ndarray:
         enzymes = self._stochastic_round(
-            self.concentration_to_molecules(enzyme_concentrations)
+            self.concentration_to_molecules(
+                enzyme_concentrations,
+                volume_l=volume_l,
+            )
         ).astype(np.int64)
 
         while True:
@@ -478,11 +511,44 @@ class KarrFtsZPolymerizationProcess(Process):
 
         return enzymes, substrates
 
-    def molecules_to_concentration(self, count: np.ndarray | float) -> np.ndarray:
-        return np.asarray(count, dtype=np.float64) / (_N_AVOGADRO * self._geometry_volume)
+    def molecules_to_concentration(
+        self,
+        count: np.ndarray | float,
+        *,
+        volume_l: float | None = None,
+    ) -> np.ndarray:
+        return np.asarray(count, dtype=np.float64) / (
+            _N_AVOGADRO * self._validated_volume_l(volume_l)
+        )
 
-    def concentration_to_molecules(self, concentration: np.ndarray | float) -> np.ndarray:
-        return np.asarray(concentration, dtype=np.float64) * (_N_AVOGADRO * self._geometry_volume)
+    def concentration_to_molecules(
+        self,
+        concentration: np.ndarray | float,
+        *,
+        volume_l: float | None = None,
+    ) -> np.ndarray:
+        return (
+            np.asarray(concentration, dtype=np.float64)
+            * _N_AVOGADRO
+            * self._validated_volume_l(volume_l)
+        )
+
+    def _validated_volume_l(self, volume_l: float | None) -> float:
+        resolved = self._geometry_volume if volume_l is None else float(volume_l)
+        if not np.isfinite(resolved) or resolved <= 0.0:
+            raise ValueError(
+                "FtsZ geometry.volume must be a finite positive value in liters"
+            )
+        return resolved
+
+    def _geometry_volume_from_state(self, states: dict[str, Any]) -> float:
+        geometry = states.get("geometry", {})
+        if not isinstance(geometry, dict) or "volume" not in geometry:
+            raise ValueError(
+                "FtsZ requires the live geometry.volume state input; "
+                "fixture-volume fallback is not source-faithful"
+            )
+        return self._validated_volume_l(float(geometry["volume"]))
 
     def _allocated_or_state(
         self,

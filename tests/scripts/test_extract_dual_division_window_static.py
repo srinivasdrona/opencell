@@ -14,11 +14,12 @@ unavailable).
 
 from __future__ import annotations
 
+import hashlib
 import re
 import shutil
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import pytest
 
@@ -27,6 +28,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.l2_event.evidence import _translate_windows_gitdir  # noqa: E402
+from scripts.l2_event.launcher import lf_normalized_sha256_hex  # noqa: E402
 
 EXTRACTOR_PATH = REPO_ROOT / "scripts" / "matlab" / "extract_dual_division_window.m"
 DRIVER_PATH = REPO_ROOT / "scripts" / "matlab" / "extract_dual_division_window_seeds.m"
@@ -222,11 +224,28 @@ def test_single_scheduler_loop_taps_both_target_indices():
     )
     assert "before_a = merge_event_observables(before_a, mod, anchor_opts);" in tap_loop_body
     assert "after_a = merge_event_observables(after_a, mod, anchor_opts);" in tap_loop_body
-    # process B is only ever plain-snapshotted, never merged with the
-    # event-observable projection (it has no pinchedDiameter/ftsZRing/
-    # chromosome properties of its own).
+    # Process B never receives the Cytokinesis event-observable projection
+    # (it has no pinchedDiameter/ftsZRing/chromosome properties of its own).
     assert "before_b = merge_event_observables" not in source
     assert "after_b = merge_event_observables" not in source
+    assert "before_b = merge_geometry_volume(before_b, mod);" in tap_loop_body
+    assert "after_b = merge_geometry_volume(after_b, mod);" in tap_loop_body
+
+
+def test_ftsz_tap_captures_live_geometry_volume_as_scalar():
+    source = _read(EXTRACTOR_PATH)
+    body = _function_body(
+        source,
+        "function snapshot = merge_geometry_volume(snapshot, mod)\n",
+    )
+    assert "geometry = mod.geometry;" in body
+    assert "volume = double(geometry.volume);" in body
+    assert "~isscalar(volume) || ~isfinite(volume) || volume <= 0" in body
+    assert "snapshot.geometry_volume = volume;" in body
+    assert (
+        "temp FtsZPolymerization output %s must carry before/after "
+        "geometry_volume for every tick"
+    ) in source
 
 
 def test_completion_detected_solely_from_process_a():
@@ -242,6 +261,112 @@ def test_completion_detected_solely_from_process_a():
     # process B's snapshot must never appear in the onset/completion predicate.
     assert "before_b.pinchedDiameter" not in body
     assert "after_b.pinchedDiameter" not in body
+
+
+def test_cytokinesis_private_rng_state_is_captured_at_both_exact_tap_points():
+    source = _read(EXTRACTOR_PATH)
+    tap_loop_body = _function_body(
+        source,
+        "function [sim, before_a, after_a, before_b, after_b] = ...\n"
+        "    evolve_state_with_dual_tap(sim, idx_a, props_a, idx_b, props_b, anchor_opts)\n",
+    )
+    assert tap_loop_body.count(
+        "before_a.randStreamState = capture_process_rand_stream_state(mod);"
+    ) == 1
+    assert tap_loop_body.count(
+        "after_a.randStreamState = capture_process_rand_stream_state(mod);"
+    ) == 1
+    before_pos = tap_loop_body.index(
+        "before_a.randStreamState = capture_process_rand_stream_state(mod);"
+    )
+    evolve_pos = tap_loop_body.index("mod.evolveState();")
+    after_pos = tap_loop_body.index(
+        "after_a.randStreamState = capture_process_rand_stream_state(mod);"
+    )
+    assert before_pos < evolve_pos < after_pos
+    assert "before_b.randStreamState" not in source
+    assert "after_b.randStreamState" not in source
+
+
+def test_dual_rng_projection_is_source_and_schema_bound_on_both_outputs():
+    source = _read(EXTRACTOR_PATH)
+    for prefix in ("cyt_metadata", "ftsz_metadata"):
+        assert (
+            f"{prefix}.dual_tap_extractor_schema_version = int32(2);"
+            in source
+        )
+        assert (
+            f"{prefix}.dual_tap_extractor_sha256_lf_normalized = "
+            "extractor_source_identity.sha256_lf_normalized;"
+            in source
+        )
+        assert (
+            f"{prefix}.cytokinesis_source_resolved_sha256 = "
+            "cyt_source_identity.sha256_lf_normalized;"
+            in source
+        )
+    assert (
+        "cyt_metadata.cytokinesis_rng_replay_schema_version = int32(1);"
+        in source
+    )
+    assert (
+        "cyt_metadata.cytokinesis_rand_stream_owner = "
+        "'Process_Cytokinesis.randStream';"
+        in source
+    )
+    assert (
+        "cyt_metadata.cytokinesis_rand_stream_type = char(cyt_proc.randStream.type);"
+        in source
+    )
+    assert (
+        "temp Cytokinesis output %s must carry before/after randStreamState for every tick"
+        in source
+    )
+
+
+def test_extractor_self_identity_resolves_extensionless_windows_path_to_real_m_bytes():
+    source = _read(EXTRACTOR_PATH)
+    assert "this_file = mfilename('fullpath');" in source
+    assert "extractor_source_identity = source_identity_for_path(this_file);" in source
+
+    body = _function_body(
+        source,
+        "function resolved_path = resolve_matlab_source_path(path_value)\n",
+    )
+    assert "path_with_m = [path_text '.m'];" in body
+    assert "candidates = {path_with_m, path_text};" in body
+    assert "exist(canonical, 'file') == 2" in body
+    assert "~strcmpi(resolved_ext, '.m')" in body
+
+    identity_body = _function_body(
+        source,
+        "function identity = source_identity_for_path(path_value)\n",
+    )
+    assert "resolved_path = resolve_matlab_source_path(path_value);" in identity_body
+    assert (
+        "'sha256_lf_normalized', sha256_lf_normalized_file_dual(resolved_path)"
+        in identity_body
+    )
+    hash_body = _function_body(
+        source,
+        "function hash_hex = sha256_lf_normalized_file_dual(path_value)\n",
+    )
+    assert "fid = fopen(path_value, 'rb');" in hash_body
+    assert "raw = fread(fid, Inf, '*uint8')';" in hash_body
+    assert "raw(raw == uint8(13)) = [];" in hash_body
+
+    extensionless_windows_path = PureWindowsPath(
+        r"E:\opencell-worktrees\fix-cyt-n20-rng-replay"
+        r"\scripts\matlab\extract_dual_division_window"
+    )
+    assert extensionless_windows_path.suffix == ""
+    assert extensionless_windows_path.with_suffix(".m").name == EXTRACTOR_PATH.name
+    assert EXTRACTOR_PATH.is_file()
+
+    real_bytes = EXTRACTOR_PATH.read_bytes()
+    assert real_bytes
+    expected_hash = hashlib.sha256(real_bytes.replace(b"\r", b"")).hexdigest()
+    assert expected_hash == lf_normalized_sha256_hex(EXTRACTOR_PATH)
 
 
 # ---------------------------------------------------------------------------

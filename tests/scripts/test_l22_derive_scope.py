@@ -42,7 +42,8 @@ EXPECTED_PRODUCTION_SET = frozenset(
     }
 )
 EXPECTED_SPECIALIZED = frozenset({"Transcription", "Translation"})
-EXPECTED_EVENT_CLASS = frozenset({"Cytokinesis", "DNADamage", "FtsZPolymerization", "RibosomeAssembly"})
+EXPECTED_EVENT_CLASS = frozenset({"Cytokinesis", "DNADamage", "RibosomeAssembly"})
+EXPECTED_WINDOWED_CONTINUOUS = frozenset({"FtsZPolymerization"})
 
 
 def test_real_catalog_production_set_matches_expected_16():
@@ -60,6 +61,12 @@ def test_real_catalog_event_class_processes_are_never_in_production():
     report = ds.derive_scope()
     assert not (set(report.production) & EXPECTED_EVENT_CLASS)
     assert set(report.event_class_excluded) == EXPECTED_EVENT_CLASS
+
+
+def test_real_catalog_windowed_continuous_processes_are_never_in_production():
+    report = ds.derive_scope()
+    assert not (set(report.production) & EXPECTED_WINDOWED_CONTINUOUS)
+    assert set(report.windowed_continuous_excluded) == EXPECTED_WINDOWED_CONTINUOUS
 
 
 def test_real_catalog_out_of_scope_processes_are_never_in_production():

@@ -32,10 +32,10 @@ parse a mismatched version rather than silently guessing at a migration.
 | `process` | string | Canonical process name; must match `PROCESS_CATALOG.yaml`'s process `name` exactly. |
 | `in_scope_v4` | bool | Whether this process is in the ratified v4 spec's gating scope (spec §8). `Cytokinesis` and `RibosomeAssembly` are `true`; `DNADamage` and `FtsZPolymerization` are `false`. |
 | `adapter_id` | string or null | Stable adapter identifier (e.g. `ribosome_assembly.smoke.v1`), or `null` if no adapter exists yet. |
-| `adapter_status` | string | One of `not_implemented`, `structural_smoke_only`, `gating_ready`. **No process may claim `gating_ready` in this foundation task** — enforced by `registry.py` cross-checks in tests, not by this schema doc alone. |
+| `adapter_status` | string | One of `not_implemented`, `structural_smoke_only`, `gating_ready`. A `gating_ready` row must resolve to a real process-appropriate gate surface and remains subject to its own cohort/authority checks. |
 | `event_timing_model` | string or null | One of `scripts.l2_event.schema.EVENT_TIMING_MODELS` (`single_firing`, `repeated_firing`), or `null` if undetermined/not-yet-adapted. |
-| `magnitude_gateable` | bool | D6's escape hatch: whether a non-redundant payload/magnitude channel exists to gate on. `false` for Cytokinesis (division-marker style event with no independent magnitude channel); the runner must emit `NOT_GATEABLE_REDUNDANT` for the payload channel rather than skip it silently. |
-| `required_n_seeds` | int | Ensemble size the catalog declares (currently `50` for all four target processes). The runner refuses (`SINGLE_SEED_ENSEMBLE_REQUIRED`) any gate-mode run with fewer seeds than this. |
+| `magnitude_gateable` | bool | D6's escape hatch: whether a non-redundant payload/magnitude channel exists to gate on. Cytokinesis v2 gates the next `pinchedDiameter`; channels requiring absent per-tick RNG state remain explicitly non-gateable. |
+| `required_n_seeds` | int | Ensemble size the catalog declares. Cytokinesis/FtsZ use the first 20 selector-owned COMPLETED windows; other rows retain their own catalog values. Gate mode refuses an undersized cohort. |
 | `deferred_reason` | string or null | Required (non-null) when `in_scope_v4: false`; explains why, citing the spec section. |
 | `notes` | string | Free-text ground-truth notes — in particular, corrections to any `PROCESS_CATALOG.yaml` inline `notes:` claim this task found to be stale or misleading (e.g. a "L2.2 GREEN" claim based on a single-seed identity replay or a quiescent 0-vs-0 trace, not a calibrated ensemble gate verdict). |
 

@@ -23,8 +23,7 @@
 #                                                    smoke tests ONLY; it
 #                                                    must never be used to
 #                                                    compute a gate verdict
-#                           gating_ready           - (not used yet by any
-#                                                     process in this task)
+#                           gating_ready           - real gate surface exists
 #   event_timing_model  - "single_firing" | "repeated_firing" | null
 #                          (D2 addendum)
 #   magnitude_gateable  - whether a non-redundant payload channel exists to
@@ -45,14 +44,35 @@ spec_ref: docs/phase_f/L2_EVENT_GATE_SPEC_v4.md
 processes:
   - process: Cytokinesis
     in_scope_v4: true
-    adapter_id: cytokinesis.pinched_diameter_completion.v1
-    adapter_status: structural_smoke_only
-    event_timing_model: single_firing
-    magnitude_gateable: false
+    adapter_id: cytokinesis.full_next_update_replay.v3
+    adapter_status: gating_ready
+    event_timing_model: repeated_firing
+    magnitude_gateable: true
     required_n_seeds: 20
     deferred_reason: null
     notes: >
-      In v4 scope (spec §8, D6). Canary D closed 2026-08-05: 1 of 50
+      UPDATED 2026-09-15: the registered adapter is driven by
+      scripts/l2_event/cytokinesis_n20_gate.py against selector-owned dual
+      traces and resolves to that module's
+      CytokinesisFullReplayAdapter.adapter_id (not a dangling label).
+      Full authority requires dual_tap_extractor_schema_version=2,
+      current Cytokinesis.m/extractor source identities, and the process's
+      private mcg16807 randStreamState before and after every Cytokinesis
+      evolveState tap. The gate restores the first captured state, verifies
+      stream continuity, runs OC's real next_update, and compares substrates,
+      enzymes, boundEnzymes, pinchedDiameter, all four independent ring
+      counters, and RNG exit state exactly. Derived flags/counts are checked
+      as invariants but not double-counted as independent outputs. Older
+      projection-v2 traces still drive the conditional
+      cytokinesis.contraction_projection.v2 pilot surface, but they are
+      explicitly barred from full-replay authority. Authority also remains
+      impossible below exactly N=20; pilots write only untracked diagnostics.
+      Opus rejection of 6e7cd84 is binding: one payload mismatch must fail
+      (all exact thresholds are zero); count/timing come only from full OC
+      next_update evaluation over every tick so overfire is observable; payloads
+      pair by seed/tick; the catalog's substrates/chromosome surfaces are
+      preserved; and every legacy no-RNG pilot is mechanically non-green.
+      Historical Canary D closed 2026-08-05: 1 of 50
       required event-window seeds now exists on disk (seed 000 under
       data/m1_sources/karr_native/per_process_traces_v2_event_s000/
       Cytokinesis_4000ticks.mat), regenerated after the mnrnd shim repair
@@ -70,19 +90,11 @@ processes:
       `event_sweep_blocked_on` note (2026-08-06: renamed from `blocked_on`,
       which collided with derive_l25_pair_matrix.py's generic L2.2
       pass/fail fallback).
-      `adapter_id` here is `CytokinesisEventAdapter.adapter_id` (the real,
-      registered adapter for this process -- see
-      scripts/l2_event/adapters/cytokinesis.py), but `adapter_status` stays
-      `structural_smoke_only` because ONLY its read-only, Karr-side-only
-      helpers (karr_pinched_diameter_sequence/find_onset_tick/
-      find_completion_tick) are exercised by this evidence -- NOT an
-      OC-vs-Karr comparison via `CytokinesisEventAdapter.oc_observation`:
-      this anchor trace's snapshot only carries boundEnzymes/enzymes/
-      substrates plus the 6 flattened diameter-anchor scalars, not the full
-      geometry/ftsZRing/chromosome objects an OC replay would need (see
-      docs/phase_f/l2_event/CYTOKINESIS_ADAPTER_REPORT.md). Per D6,
-      magnitude is NOT_GATEABLE_REDUNDANT until the OC port grows a
-      non-redundant payload; count + timing are the two gating channels.
+      HISTORICAL 2026-08-05 (superseded by the 2026-09-14 promotion above):
+      adapter_status stayed structural_smoke_only because only the v1
+      completion adapter's Karr-side helpers were exercised. The v2
+      contraction projection now supplies a real next-diameter payload
+      without pretending the absent per-tick RNG state is available.
       HISTORICAL 2026-08-05: N=50 sweep remained unauthorized until a 50-seed onset-span survey
       (scripts/l2_event/survey_cytokinesis_onset_span.py) determines the
       real cohort-wide maximum span -- the reconciled M_ticks=4000 is only
@@ -236,33 +248,20 @@ processes:
 
   - process: FtsZPolymerization
     in_scope_v4: false
-    adapter_id: null
-    adapter_status: not_implemented
+    adapter_id: ftsz.windowed_distribution.v1
+    adapter_status: gating_ready
     event_timing_model: null
     magnitude_gateable: false
     required_n_seeds: 20
     deferred_reason: >
-      Out of v4 scope (spec §8 out-of-scope #1): gradient/continuous
-      polymerization process, not a binary firing event; v0.3 already
-      deferred it and v4 does not reopen the decision. No event-window
-      trace exists on disk for FtsZPolymerization under any
-      per_process_traces_v2_event_s* directory.
+      Out of the binary L2.event v4 runner by design: gradient/continuous
+      polymerization is gated by the separate windowed-continuous harness,
+      not by a fake event adapter.
     notes: >
-      M5 (Opus5 review): FtsZPolymerization SHOULD leave the event-class
-      profile entirely -- it is a continuous/gradient process, not a
-      binary firing event, so "in_scope_v4: false" undersells the
-      correction; this is a candidate reclassification pending an
-      explicit catalog-owning decision (out of this task's no-catalog-
-      edits scope). This row is kept here (rather than deleted) purely so
-      registry.validate_against_catalog()'s bidirectional event_class
-      coverage check has a place to record the catalog's current
-      harness_type="event_class" classification for it. Per M5, any
-      future reclassification of THIS row (in either direction) must
-      never cause validate_against_catalog() to refuse unrelated in-scope
-      rows (Cytokinesis, RibosomeAssembly) -- the harness_type check is
-      scoped to `in_scope_v4: true` rows only, precisely to keep FtsZ's
-      pending status from bricking RA's structural smoke.
-      Catalog carries a seed_window (tick_range_from_division [-200, 0]).
-      Paired dual-tap event-window extraction is now in progress, and the
-      2026-09-14 engineering cohort is N=20; a gating adapter/classification
-      is still not implemented.
+      Reclassified in PROCESS_CATALOG.yaml to harness_type
+      windowed_continuous. scripts/l2_event/ftsz_windowed_n20_gate.py gates
+      real enzyme/substrate delta surfaces using Karr-only analytical
+      thresholds fixed before OC replay, with explicit activity,
+      zero-vs-nonzero, sample-count, duplicate-seed, source-identity, and
+      no-op-SUT guards. The monomer-equivalent projection remains an exact
+      conservation diagnostic, never the primary activity channel.

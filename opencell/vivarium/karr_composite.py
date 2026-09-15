@@ -1058,6 +1058,10 @@ def build_karr_chassis_v4(
     p_fold_proc = KarrProteinFoldingProcess({"time_step": time_step_s})
     p_trans_proc = KarrProteinTranslocationProcess({"time_step": time_step_s})
     p_activation_proc = KarrProteinActivationProcess({"time_step": time_step_s})
+    # Geometry.volume is shared into FtsZ below, but this chassis currently
+    # has no source-faithful dynamic volume producer. The store starts from
+    # FtsZ's fitted fixture default; only the isolated replay gate overlays
+    # captured per-tick Karr volume and may claim live-volume fidelity.
     ftsz_proc = KarrFtsZPolymerizationProcess({"time_step": time_step_s})
 
     trna_consumed = [
@@ -1403,6 +1407,7 @@ def build_karr_chassis_v4(
         },
         "karr_ftsz_polymerization": {
             "cell": ("cell",),
+            "geometry": ("geometry",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
@@ -1698,6 +1703,10 @@ def build_karr_chassis_v5(
     segregation_proc = KarrChromosomeSegregationProcess({"time_step": time_step_s})
     dna_damage_proc = KarrDNADamageProcess({"time_step": time_step_s})
     dna_repair_proc = KarrDNARepairProcess({"time_step": time_step_s})
+    # Geometry.volume is shared into FtsZ below, but this chassis currently
+    # has no source-faithful dynamic volume producer. The store starts from
+    # FtsZ's fitted fixture default; only the isolated replay gate overlays
+    # captured per-tick Karr volume and may claim live-volume fidelity.
     ftsz_proc = KarrFtsZPolymerizationProcess({"time_step": time_step_s})
     cytokinesis_proc = KarrCytokinesisProcess({"time_step": time_step_s})
     terminal_organelle_proc = KarrTerminalOrganelleAssemblyProcess({"time_step": time_step_s})
@@ -2171,6 +2180,7 @@ def build_karr_chassis_v5(
         },
         "karr_ftsz_polymerization": {
             "cell": ("cell",),
+            "geometry": ("geometry",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),

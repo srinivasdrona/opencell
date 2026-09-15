@@ -215,6 +215,8 @@ end
 
 cyt_proc = sim.processes{cyt_idx};
 ftsz_proc = sim.processes{ftsz_idx};
+extractor_source_identity = source_identity_for_path(this_file);
+cyt_source_identity = source_identity_for_process(cyt_proc);
 
 % Cytokinesis: same performance/sufficiency exclusion
 % extract_per_process_traces_v2.m applies for its own diameter_decrease
@@ -262,6 +264,9 @@ if ~ok
                    'onset_tick', [], 'completion_tick', [], ...
                    'cytokinesis_n_ticks', cyt_n_ticks, 'ftsz_n_ticks', ftsz_n_ticks, ...
                    'cytokinesis_sha256', '', 'ftsz_sha256', '', ...
+                   'dual_tap_extractor_schema_version', int32(2), ...
+                   'dual_tap_extractor_sha256_lf_normalized', extractor_source_identity.sha256_lf_normalized, ...
+                   'cytokinesis_source_resolved_sha256', cyt_source_identity.sha256_lf_normalized, ...
                    'reason', error_message));
         error('extract_dual_division_window:right_censored', ...
             'seed %d: RIGHT_CENSORED (recorded at %s): %s', seed, attempt_record_path, error_message);
@@ -312,9 +317,17 @@ end
 % window_loader.load_event_window, which only checks the specific named
 % keys it requires).
 cyt_metadata.dual_tap_extractor = 'extract_dual_division_window';
+cyt_metadata.dual_tap_extractor_schema_version = int32(2);
+cyt_metadata.dual_tap_extractor_sha256_lf_normalized = extractor_source_identity.sha256_lf_normalized;
 cyt_metadata.dual_tap_partner_process = ftsz_canonical;
 cyt_metadata.dual_tap_partner_n_ticks = int32(ftsz_n_ticks);
 cyt_metadata.dual_tap_partner_tick_start = int32(ftsz_tick_start);
+cyt_metadata.cytokinesis_source_resolved_path = cyt_source_identity.resolved_path;
+cyt_metadata.cytokinesis_source_resolved_sha256 = cyt_source_identity.sha256_lf_normalized;
+cyt_metadata.cytokinesis_rng_replay_schema_version = int32(1);
+cyt_metadata.cytokinesis_rand_stream_owner = 'Process_Cytokinesis.randStream';
+cyt_metadata.cytokinesis_rand_stream_type = char(cyt_proc.randStream.type);
+cyt_metadata.cytokinesis_rand_stream_state_observable = 'randStreamState';
 
 ftsz_metadata = struct( ...
     'process_name', ftsz_canonical, ...
@@ -345,9 +358,13 @@ ftsz_metadata.max_search_ticks = int32(anchor_opts.max_search_ticks);
 ftsz_metadata.event_observable_projection_version = int32(2);
 ftsz_metadata.signal_source_process = cyt_canonical;
 ftsz_metadata.dual_tap_extractor = 'extract_dual_division_window';
+ftsz_metadata.dual_tap_extractor_schema_version = int32(2);
+ftsz_metadata.dual_tap_extractor_sha256_lf_normalized = extractor_source_identity.sha256_lf_normalized;
 ftsz_metadata.dual_tap_partner_process = cyt_canonical;
 ftsz_metadata.dual_tap_partner_n_ticks = int32(cyt_n_ticks);
 ftsz_metadata.dual_tap_partner_tick_start = int32(cyt_tick_start);
+ftsz_metadata.cytokinesis_source_resolved_path = cyt_source_identity.resolved_path;
+ftsz_metadata.cytokinesis_source_resolved_sha256 = cyt_source_identity.sha256_lf_normalized;
 if ~isempty(onset_tick)
     ftsz_metadata.dual_tap_partner_onset_tick = int32(onset_tick);
 end
@@ -399,6 +416,9 @@ write_division_window_attempt_record(out_root, attempt_record_path, seed, 'COMPL
            'cytokinesis_n_ticks', cyt_n_ticks, 'ftsz_n_ticks', ftsz_n_ticks, ...
            'cytokinesis_sha256', sha256_of_file_dual(cyt_out_path), ...
            'ftsz_sha256', sha256_of_file_dual(ftsz_out_path), ...
+           'dual_tap_extractor_schema_version', int32(2), ...
+           'dual_tap_extractor_sha256_lf_normalized', extractor_source_identity.sha256_lf_normalized, ...
+           'cytokinesis_source_resolved_sha256', cyt_source_identity.sha256_lf_normalized, ...
            'reason', ''));
 
 fprintf('[dual-extract] seed %d DONE:\n  %s (tick_start=%d, window_anchor=%d, onset_tick=%s)\n  %s (tick_start=%d, window_anchor=%d)\n', ...
@@ -604,11 +624,11 @@ function [sim, before_a, after_a, before_b, after_b] = ...
 % -> copyToState, with side effects and metabolite pool reconciliation
 % applied identically. Only process A's (Cytokinesis's) tap is enriched
 % via merge_event_observables (anchor_opts) -- process B
-% (FtsZPolymerization) never receives the event-observable projection
-% because it has no pinchedDiameter/ftsZRing/chromosome properties of its
-% own (see module docstring); its tap is a plain snapshot_from_process
-% call, identical to a fixed-window (non-anchor) capture in the
-% single-process extractor.
+% (FtsZPolymerization) never receives the Cytokinesis event-observable
+% projection because it has no pinchedDiameter/ftsZRing/chromosome
+% properties of its own (see module docstring). Its tap is otherwise the
+% fixed-window snapshot plus the scalar live geometry.volume input required
+% by FtsZ's concentration conversions.
 before_a = empty_snapshot_struct(props_a);
 after_a = empty_snapshot_struct(props_a);
 before_b = empty_snapshot_struct(props_b);
@@ -682,8 +702,10 @@ for i = 1:nProcesses
     if proc_idx == idx_a
         before_a = snapshot_from_process(mod, props_a);
         before_a = merge_event_observables(before_a, mod, anchor_opts);
+        before_a.randStreamState = capture_process_rand_stream_state(mod);
     elseif proc_idx == idx_b
         before_b = snapshot_from_process(mod, props_b);
+        before_b = merge_geometry_volume(before_b, mod);
     end
 
     mod.evolveState();
@@ -691,8 +713,10 @@ for i = 1:nProcesses
     if proc_idx == idx_a
         after_a = snapshot_from_process(mod, props_a);
         after_a = merge_event_observables(after_a, mod, anchor_opts);
+        after_a.randStreamState = capture_process_rand_stream_state(mod);
     elseif proc_idx == idx_b
         after_b = snapshot_from_process(mod, props_b);
+        after_b = merge_geometry_volume(after_b, mod);
     end
 
     mod.copyToState();
@@ -778,11 +802,48 @@ end
 snapshot.chromosome_segregated = logical(chrom.segregated);  % second dereference
 end
 
+function snapshot = merge_geometry_volume(snapshot, mod)
+% FtsZPolymerization converts counts to concentrations with the live
+% CellGeometry.volume on every evolveState call. Capture that required input
+% as a scalar rather than serializing the cyclic geometry handle graph.
+if ~isprop(mod, 'geometry')
+    error('extract_dual_division_window:missing_geometry', ...
+        'FtsZPolymerization process has no geometry state reference');
+end
+geometry = mod.geometry;
+if ~isprop(geometry, 'volume')
+    error('extract_dual_division_window:missing_geometry_volume', ...
+        'CellGeometry has no volume property');
+end
+volume = double(geometry.volume);
+if ~isscalar(volume) || ~isfinite(volume) || volume <= 0
+    error('extract_dual_division_window:invalid_geometry_volume', ...
+        'CellGeometry.volume must be a finite positive scalar, got %s', mat2str(volume));
+end
+snapshot.geometry_volume = volume;
+end
+
 function out = snapshot_from_process(proc, snapshot_props)
 out = struct();
 for p = 1:numel(snapshot_props)
     prop = snapshot_props{p};
     out.(prop) = sanitize_snapshot_value(proc.(prop), 0);
+end
+end
+
+function state_vec = capture_process_rand_stream_state(proc)
+% Capture the target process's own private mcg16807 stream position at the
+% exact before/after evolveState tap points. Cytokinesis.m draws only from
+% this.randStream; the simulation scheduler and chromosome state each own
+% separate streams and cannot substitute for this value.
+if ~isprop(proc, 'randStream') || isempty(proc.randStream)
+    error('extract_dual_division_window:missing_process_rand_stream', ...
+        'target process has no readable randStream required for full Cytokinesis replay');
+end
+state_vec = double(proc.randStream.state(:));
+if numel(state_vec) ~= 1 || ~isfinite(state_vec) || state_vec ~= fix(state_vec)
+    error('extract_dual_division_window:invalid_process_rand_stream_state', ...
+        'Cytokinesis randStream.state must be one finite integer scalar, got %s', mat2str(state_vec));
 end
 end
 
@@ -1054,6 +1115,16 @@ if ~isfield(metadata, 'window_anchor') || isfield(metadata, 'tick_end')
     error('extract_dual_division_window:temp_window_kind_mismatch', ...
         'temp output %s must carry metadata.window_anchor and must NOT carry metadata.tick_end (anchor-kind window)', tmp_path);
 end
+if ~isfield(metadata, 'dual_tap_extractor_schema_version') || ...
+        double(metadata.dual_tap_extractor_schema_version) ~= 2
+    error('extract_dual_division_window:temp_dual_schema_mismatch', ...
+        'temp output %s must carry dual_tap_extractor_schema_version=2', tmp_path);
+end
+if ~isfield(metadata, 'dual_tap_extractor_sha256_lf_normalized') || ...
+        ~isfield(metadata, 'cytokinesis_source_resolved_sha256')
+    error('extract_dual_division_window:temp_source_identity_missing', ...
+        'temp output %s is missing dual extractor/Cytokinesis source identity metadata', tmp_path);
+end
 snapshot_props = metadata.snapshot_properties;
 for p = 1:numel(snapshot_props)
     fn = snapshot_props{p};
@@ -1064,6 +1135,48 @@ for p = 1:numel(snapshot_props)
     if ~isfield(loaded.states_after, fn) || numel(loaded.states_after.(fn)) ~= double(expected_n_ticks)
         error('extract_dual_division_window:temp_states_after_incomplete', ...
             'temp output %s states_after.%s does not have exactly n_ticks=%d rows', tmp_path, fn, expected_n_ticks);
+    end
+end
+if strcmp(expected_process_name, 'Cytokinesis')
+    required_metadata = { ...
+        'cytokinesis_rng_replay_schema_version', ...
+        'cytokinesis_rand_stream_owner', ...
+        'cytokinesis_rand_stream_type', ...
+        'cytokinesis_rand_stream_state_observable' ...
+    };
+    for i = 1:numel(required_metadata)
+        if ~isfield(metadata, required_metadata{i})
+            error('extract_dual_division_window:temp_cyt_rng_metadata_missing', ...
+                'temp Cytokinesis output %s is missing metadata.%s', tmp_path, required_metadata{i});
+        end
+    end
+    if double(metadata.cytokinesis_rng_replay_schema_version) ~= 1
+        error('extract_dual_division_window:temp_cyt_rng_schema_mismatch', ...
+            'temp Cytokinesis output %s must carry cytokinesis_rng_replay_schema_version=1', tmp_path);
+    end
+    if ~isfield(loaded.states_before, 'randStreamState') || ...
+            numel(loaded.states_before.randStreamState) ~= double(expected_n_ticks) || ...
+            ~isfield(loaded.states_after, 'randStreamState') || ...
+            numel(loaded.states_after.randStreamState) ~= double(expected_n_ticks)
+        error('extract_dual_division_window:temp_cyt_rng_capture_incomplete', ...
+            'temp Cytokinesis output %s must carry before/after randStreamState for every tick', tmp_path);
+    end
+elseif strcmp(expected_process_name, 'FtsZPolymerization')
+    if ~isfield(loaded.states_before, 'geometry_volume') || ...
+            numel(loaded.states_before.geometry_volume) ~= double(expected_n_ticks) || ...
+            ~isfield(loaded.states_after, 'geometry_volume') || ...
+            numel(loaded.states_after.geometry_volume) ~= double(expected_n_ticks)
+        error('extract_dual_division_window:temp_ftsz_geometry_volume_incomplete', ...
+            'temp FtsZPolymerization output %s must carry before/after geometry_volume for every tick', tmp_path);
+    end
+    for t = 1:double(expected_n_ticks)
+        before_volume = loaded.states_before.geometry_volume{t};
+        after_volume = loaded.states_after.geometry_volume{t};
+        if ~isscalar(before_volume) || ~isfinite(before_volume) || before_volume <= 0 || ...
+                ~isscalar(after_volume) || ~isfinite(after_volume) || after_volume <= 0
+            error('extract_dual_division_window:temp_ftsz_geometry_volume_invalid', ...
+                'temp FtsZPolymerization output %s has invalid geometry_volume at tick %d', tmp_path, t);
+        end
     end
 end
 end
@@ -1149,6 +1262,9 @@ record = struct( ...
     'completion_tick', ternary_empty_to_nan(fields.completion_tick), ...
     'cytokinesis_trace_sha256', fields.cytokinesis_sha256, ...
     'ftsz_trace_sha256', fields.ftsz_sha256, ...
+    'dual_tap_extractor_schema_version', int32(fields.dual_tap_extractor_schema_version), ...
+    'dual_tap_extractor_sha256_lf_normalized', fields.dual_tap_extractor_sha256_lf_normalized, ...
+    'cytokinesis_source_resolved_sha256', fields.cytokinesis_source_resolved_sha256, ...
     'reason', fields.reason ...
 );
 
@@ -1199,4 +1315,74 @@ fclose(fid);
 digest = java.security.MessageDigest.getInstance('SHA-256');
 digest_bytes = typecast(digest.digest(raw), 'uint8');
 hash_hex = lower(sprintf('%02x', digest_bytes));
+end
+
+function hash_hex = sha256_lf_normalized_file_dual(path_value)
+fid = fopen(path_value, 'rb');
+if fid < 0
+    error('extract_dual_division_window:file_unreadable', 'could not open %s', path_value);
+end
+raw = fread(fid, Inf, '*uint8')';
+fclose(fid);
+raw(raw == uint8(13)) = [];
+digest = java.security.MessageDigest.getInstance('SHA-256');
+digest_bytes = typecast(digest.digest(raw), 'uint8');
+hash_hex = lower(sprintf('%02x', digest_bytes));
+end
+
+function identity = source_identity_for_path(path_value)
+resolved_path = resolve_matlab_source_path(path_value);
+identity = struct( ...
+    'resolved_path', resolved_path, ...
+    'sha256_lf_normalized', sha256_lf_normalized_file_dual(resolved_path) ...
+);
+end
+
+function resolved_path = resolve_matlab_source_path(path_value)
+% mfilename('fullpath') returns the function path without the `.m`
+% extension. Resolve that documented form to the real source file before
+% opening/hash-binding it, while still accepting an already-suffixed path
+% returned by `which(className)`. Extensionless candidates prefer `.m`;
+% identity must never bind an unrelated extensionless file.
+path_text = char(path_value);
+[~, ~, ext] = fileparts(path_text);
+if isempty(ext)
+    path_with_m = [path_text '.m'];
+    candidates = {path_with_m, path_text};
+else
+    candidates = {path_text};
+end
+
+resolved_path = '';
+for i = 1:numel(candidates)
+    candidate = candidates{i};
+    if exist(candidate, 'file') ~= 2
+        continue;
+    end
+    canonical = char(java.io.File(candidate).getCanonicalPath());
+    if exist(canonical, 'file') == 2
+        resolved_path = canonical;
+        break;
+    end
+end
+if isempty(resolved_path)
+    error('extract_dual_division_window:source_identity_missing', ...
+        'source path does not exist (tried: %s)', strjoin(candidates, ', '));
+end
+[~, ~, resolved_ext] = fileparts(resolved_path);
+if ~strcmpi(resolved_ext, '.m')
+    error('extract_dual_division_window:source_identity_not_m_file', ...
+        'source identity must resolve to an existing .m file, got: %s', resolved_path);
+end
+end
+
+function identity = source_identity_for_process(proc)
+class_name = class(proc);
+resolved_path = which(class_name);
+if isempty(resolved_path) || exist(resolved_path, 'file') ~= 2
+    error('extract_dual_division_window:process_source_unresolved', ...
+        'could not resolve source file for process class %s', class_name);
+end
+identity = source_identity_for_path(resolved_path);
+identity.class_name = class_name;
 end

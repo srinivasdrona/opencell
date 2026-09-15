@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
@@ -44,6 +45,7 @@ def _base_state(
                 >= int(process.parameters["ring_complete_threshold"])
             ),
         },
+        "geometry": {"volume": process._geometry_volume},
         "substrates": substrates,
         "enzymes": {wid: float(counts[idx]) for idx, wid in enumerate(process.enzyme_wids)},
         "requests": {process.name: {process.gtp_wid: 0.0}},
@@ -70,6 +72,45 @@ def test_fixture_loads() -> None:
     assert len(process.enzyme_wids) == 11
     assert process.initial_ring_count > 0
     assert process._geometry_volume > 0.0
+    assert process.ports_schema()["geometry"]["volume"]["_default"] == process._geometry_volume
+
+
+def test_live_geometry_volume_changes_the_ode_reference_frame() -> None:
+    process_default = KarrFtsZPolymerizationProcess({"rng_seed": 7})
+    process_larger = KarrFtsZPolymerizationProcess({"rng_seed": 7})
+    state_default = _base_state(
+        process_default,
+        allocated_gtp=50_000.0,
+    )
+    state_larger = deepcopy(state_default)
+    state_default["geometry"] = {"volume": process_default._geometry_volume}
+    state_larger["geometry"] = {"volume": 2.0 * process_larger._geometry_volume}
+
+    update_default = process_default.next_update(1.0, state_default)
+    update_larger = process_larger.next_update(1.0, state_larger)
+
+    assert update_default["enzymes"] != update_larger["enzymes"]
+
+
+def test_geometry_volume_conversion_round_trip_and_validation() -> None:
+    process = KarrFtsZPolymerizationProcess({})
+    counts = process._initial_enzyme_counts.astype(np.float64)
+    volume_l = 2.0 * process._geometry_volume
+    concentration = process.molecules_to_concentration(counts, volume_l=volume_l)
+    assert np.allclose(
+        process.concentration_to_molecules(concentration, volume_l=volume_l),
+        counts,
+    )
+
+    state = _base_state(process, allocated_gtp=50_000.0)
+    state["geometry"] = {"volume": 0.0}
+    with pytest.raises(ValueError, match="finite positive"):
+        process.next_update(1.0, state)
+
+    missing = _base_state(process, allocated_gtp=50_000.0)
+    missing.pop("geometry")
+    with pytest.raises(ValueError, match="live geometry.volume"):
+        process.next_update(1.0, missing)
 
 
 def test_integration_with_chassis_v4() -> None:

@@ -35,6 +35,8 @@ if str(_REPO_ROOT) not in sys.path:
 
 from scripts.l2_event.ftsz_pre_division_evidence import (  # noqa: E402
     DEFAULT_DATA_ROOTS,
+    GATE_CHANNELS,
+    GEOMETRY_VOLUME_CHANNEL,
     PROCESS_NAME,
     REQUIRED_M_TICKS,
     REQUIRED_N_SEEDS,
@@ -48,6 +50,7 @@ from scripts.l2_event.ftsz_pre_division_evidence import (  # noqa: E402
     resumable_extraction_command,
     validate_seed_window,
 )
+from scripts.l2_event.window_loader import EventWindowRefused  # noqa: E402
 
 _MATLAB_DRIVER = _REPO_ROOT / "scripts" / "matlab" / "extract_ftsz_pre_division_window_seeds.m"
 
@@ -94,6 +97,7 @@ def _write_ftsz_window(
     enzymes_after: np.ndarray | None = None,
     substrates_before: np.ndarray | None = None,
     substrates_after: np.ndarray | None = None,
+    include_geometry_volume: bool = True,
 ) -> Path:
     """Write a synthetic FtsZ division-anchored event-window trace.
 
@@ -133,6 +137,20 @@ def _write_ftsz_window(
         _write_cell_series(handle, states_after, "enzymes", enzymes_after)
         _write_cell_series(handle, states_before, "substrates", substrates_before)
         _write_cell_series(handle, states_after, "substrates", substrates_after)
+        if include_geometry_volume:
+            volumes = np.full((n_ticks, 1), 1.2e-17, dtype=np.float64)
+            _write_cell_series(
+                handle,
+                states_before,
+                GEOMETRY_VOLUME_CHANNEL,
+                volumes,
+            )
+            _write_cell_series(
+                handle,
+                states_after,
+                GEOMETRY_VOLUME_CHANNEL,
+                volumes,
+            )
     return path
 
 
@@ -156,6 +174,20 @@ def test_validate_seed_window_accepts_well_formed_division_anchored_window(tmp_p
     assert grid.seed == 7
     assert grid.n_ticks == REQUIRED_M_TICKS
     assert grid.window_anchor - grid.tick_start + 1 == REQUIRED_M_TICKS
+
+
+def test_validate_seed_window_can_require_geometry_volume_input(tmp_path):
+    trace_path = _write_ftsz_window(
+        _trace_path(tmp_path, 7),
+        seed=7,
+        include_geometry_volume=False,
+    )
+    with pytest.raises(EventWindowRefused, match="geometry_volume"):
+        validate_seed_window(
+            7,
+            trace_path,
+            required_observables=(*GATE_CHANNELS, "geometry_volume"),
+        )
 
 
 def test_validate_seed_window_rejects_post_division_leakage(tmp_path):
@@ -297,7 +329,11 @@ def test_compute_seed_evidence_detects_real_no_hint_oc_activity_without_karr_hin
         n_ticks=n_ticks,
         tick_start=1801,
     )
-    grid = validate_seed_window(11, trace_path)
+    grid = validate_seed_window(
+        11,
+        trace_path,
+        required_observables=(*GATE_CHANNELS, GEOMETRY_VOLUME_CHANNEL),
+    )
     evidence = compute_seed_evidence(11, grid)
 
     assert evidence.karr_activity_transition_tick is None  # synthetic Karr side: no change
@@ -321,7 +357,11 @@ def test_compute_seed_evidence_reports_no_activity_for_all_zero_enzyme_counts(tm
         enzymes_before=zeros,
         enzymes_after=zeros,
     )
-    grid = validate_seed_window(12, trace_path)
+    grid = validate_seed_window(
+        12,
+        trace_path,
+        required_observables=(*GATE_CHANNELS, GEOMETRY_VOLUME_CHANNEL),
+    )
     evidence = compute_seed_evidence(12, grid)
     assert evidence.karr_activity_transition_tick is None
     assert evidence.oc_activity_transition_tick is None
@@ -416,6 +456,21 @@ def test_audit_surfaces_rejected_window_reason_without_counting_it_found(tmp_pat
     assert "M_ticks" in report.rejected_windows[0]["reason"]
     assert report.deficit == REQUIRED_N_SEEDS
     assert report.status == "INSUFFICIENT_ENSEMBLE"
+
+
+def test_audit_rejects_window_without_geometry_volume(tmp_path):
+    root = tmp_path / "karr_native"
+    _write_ftsz_window(
+        _trace_path(root, 0),
+        seed=0,
+        include_geometry_volume=False,
+    )
+
+    report = audit_pre_division_evidence(data_roots=(root,))
+
+    assert report.found_seeds == []
+    assert len(report.rejected_windows) == 1
+    assert "geometry_volume" in report.rejected_windows[0]["reason"]
 
 
 def test_discover_candidate_paths_finds_all_seed_directories(tmp_path):

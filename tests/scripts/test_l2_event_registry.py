@@ -75,35 +75,34 @@ def test_registry_v4_scope_matches_spec_section_8():
 def test_registry_reflects_actual_adapter_availability_not_aspirational_claims():
     """Ground-truth audit of the two implemented adapters.
 
-    RibosomeAssembly is gating-ready because its N=50 bundle is audited
-    below. Cytokinesis has only a structural-smoke adapter and remains
-    non-gating pending the full span survey and OC-vs-Karr evidence.
-    DNADamage and FtsZPolymerization have no event adapters."""
+    RibosomeAssembly and Cytokinesis are gating-ready in the event harness.
+    FtsZ has a separate windowed-continuous gate and remains outside the
+    binary event runner. DNADamage has no event adapter."""
     registry = load_registry()
     assert registry["RibosomeAssembly"].adapter_status == "gating_ready"
     assert registry["RibosomeAssembly"].adapter_id == "ribosome_assembly.gate.v1"
-    assert registry["Cytokinesis"].adapter_status == "structural_smoke_only"
-    assert registry["Cytokinesis"].adapter_id == "cytokinesis.pinched_diameter_completion.v1"
-    for name in ("DNADamage", "FtsZPolymerization"):
-        assert registry[name].adapter_status == "not_implemented"
-        assert registry[name].adapter_id is None
+    assert registry["Cytokinesis"].adapter_status == "gating_ready"
+    assert registry["Cytokinesis"].adapter_id == "cytokinesis.full_next_update_replay.v3"
+    assert registry["FtsZPolymerization"].adapter_status == "gating_ready"
+    assert registry["FtsZPolymerization"].adapter_id == "ftsz.windowed_distribution.v1"
+    assert registry["DNADamage"].adapter_status == "not_implemented"
+    assert registry["DNADamage"].adapter_id is None
 
 
-def test_no_process_other_than_ribosome_assembly_claims_gating_ready():
+def test_only_implemented_gate_surfaces_claim_gating_ready():
     """Narrowed truthfulness guard: RibosomeAssembly's gating_ready claim
     is independently justified below (real N=50 bundle, audited clean).
-    No OTHER process may claim gating_ready without equivalent backing
-    evidence -- none currently has any adapter at all, so none may claim
-    it. This replaces the earlier blanket 'no entry may ever claim
-    gating_ready in this foundation task' assumption, which the real
-    2026-08-05 RibosomeAssembly promotion correctly falsified."""
+    Cytokinesis and FtsZ now have process-appropriate gate surfaces; no
+    unimplemented process may claim gating-ready."""
     registry = load_registry()
-    for name, entry in registry.items():
-        if name == "RibosomeAssembly":
-            continue
-        assert entry.adapter_status != "gating_ready", (
-            f"{name}: no adapter/evidence exists to back a gating_ready claim."
-        )
+    gating_ready = {
+        name for name, entry in registry.items() if entry.adapter_status == "gating_ready"
+    }
+    assert gating_ready == {
+        "Cytokinesis",
+        "FtsZPolymerization",
+        "RibosomeAssembly",
+    }
 
 
 @pytest.mark.skipif(not _ALL_50_PRESENT, reason=_missing_reason)
@@ -178,11 +177,10 @@ def test_registry_cytokinesis_adapter_id_resolves_to_the_real_adapter():
     `adapter_id` class attribute exactly, so `adapter_id` always resolves
     to real, importable code (never a dangling label some future reader
     could mistake for a distinct adapter that doesn't exist)."""
-    from scripts.l2_event.adapters.cytokinesis import CytokinesisEventAdapter
+    from scripts.l2_event.cytokinesis_n20_gate import CytokinesisFullReplayAdapter
 
     registry = load_registry()
-    assert registry["Cytokinesis"].adapter_id == CytokinesisEventAdapter.adapter_id
-    assert registry["Cytokinesis"].adapter_id == CytokinesisEventAdapter().adapter_id
+    assert registry["Cytokinesis"].adapter_id == CytokinesisFullReplayAdapter.adapter_id
 
 
 def test_registry_ribosome_assembly_adapter_id_resolves_to_the_real_adapter():
@@ -193,6 +191,13 @@ def test_registry_ribosome_assembly_adapter_id_resolves_to_the_real_adapter():
 
     registry = load_registry()
     assert registry["RibosomeAssembly"].adapter_id == RibosomeAssemblyGateAdapter.adapter_id
+
+
+def test_registry_ftsz_adapter_id_resolves_to_windowed_gate():
+    from scripts.l2_event.ftsz_windowed_n20_gate import ADAPTER_ID
+
+    registry = load_registry()
+    assert registry["FtsZPolymerization"].adapter_id == ADAPTER_ID
 
 
 def test_validate_against_catalog_is_clean_for_the_shipped_registry():

@@ -1198,6 +1198,22 @@ def test_process_dependency_registry_matches_real_current_import_graph():
     }
     assert schema.PROCESS_DEPENDENCY_FILES["Cytokinesis"] == {
         "mcg16807_state_codec_module": schema.MCG16807_STATE_CODEC_MODULE,
+        "cytokinesis_n20_gate_module": schema.CYTOKINESIS_N20_GATE_MODULE,
+        "cytokinesis_event_adapter_module": schema.CYTOKINESIS_EVENT_ADAPTER_MODULE,
+        "dual_division_validator_module": schema.DUAL_DIVISION_VALIDATOR_MODULE,
+        "dual_division_extractor_module": schema.DUAL_DIVISION_EXTRACTOR_MODULE,
+        "event_window_loader_module": schema.EVENT_WINDOW_LOADER_MODULE,
+        "division_gate_common_module": schema.DIVISION_GATE_COMMON_MODULE,
+        "division_cohort_selector_module": schema.DIVISION_COHORT_SELECTOR_MODULE,
+        "division_window_spec_module": schema.DIVISION_WINDOW_SPEC_MODULE,
+    }
+    assert schema.PROCESS_DEPENDENCY_FILES["FtsZPolymerization"] == {
+        "ftsz_windowed_n20_gate_module": schema.FTSZ_WINDOWED_N20_GATE_MODULE,
+        "ftsz_pre_division_evidence_module": schema.FTSZ_PRE_DIVISION_EVIDENCE_MODULE,
+        "division_gate_common_module": schema.DIVISION_GATE_COMMON_MODULE,
+        "division_cohort_selector_module": schema.DIVISION_COHORT_SELECTOR_MODULE,
+        "division_window_spec_module": schema.DIVISION_WINDOW_SPEC_MODULE,
+        "l2_replay_common": schema.L2_REPLAY_COMMON_MODULE,
     }
 
     for name, deps in schema.PROCESS_DEPENDENCY_FILES.items():

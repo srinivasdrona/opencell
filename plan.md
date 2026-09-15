@@ -59,9 +59,241 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-14 19:30 IST) — supersedes all
+**Current status (2026-09-15 05:52 IST) — supersedes all
 earlier blocks below:**
 
+- Final combined-canary cleanup (2026-09-15 09:05 IST): branch
+  `fix/cyt-n20-rng-replay` merged published current main `eb9fa34` at
+  `b9f3932` (provenance/TxReg/handoff only), preserving both repair lines.
+  Orchestrator's live seed-36 canary on `8b98643` passed:
+  Cyt SHA `d097a48c...4ec0`, FtsZ SHA `2a207bac...3882`,
+  `full_replay_ready=true`, inclusive span 4076, and source/provider match.
+  Actual Cyt helper replay is 5000/5000 with zero mismatches across all 13
+  fields, 147/147 contraction events, and 1351/1351 substrate-event ticks.
+  Actual FtsZ live-volume replay covers 200 ticks at
+  `2.1844313724237267e-17..2.192708426282513e-17 L`: both sides active
+  200/200, monomer discrepancy 0; enzymes have 1550 mismatched elements,
+  max abs 6, L1 2383, single-seed scaled W1 0.0743181818181818; substrates
+  have 280 mismatched elements across 165 ticks, max abs 6, L1 449, scaled
+  W1 0.028250000000000008. Raw MATs remain untracked.
+  Final cleanup now states the limited truth: isolated gate replay is
+  captured-volume source-faithful, but neither chassis has a dynamic
+  geometry-volume producer and its store remains fixture-initialized. Old
+  traces are not FtsZ gate inputs. Corrupt Cyt HDF5 now returns structured
+  non-ready/FAIL instead of raising; registry prose is repaired; N20
+  disclosure remains 5 distinct Karr calibration splits + 10 evaluation
+  seeds. Validation: cleanup suite 172 passed / 1 expected
+  RibosomeAssembly-data skip; live combined validator PASS; FtsZ L1b 1/1;
+  Ruff clean; regenerated board **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE,
+  integrity OK**. Quick Opus 5 review **ACCEPTED** the cleanup and
+  independently reproduced all live seed-36 values. Review provenance:
+  `sha256:c23faa5931cec92a550fcbfddb16f35ea5840d4cefa42772e7e47d6f05d469fa`.
+  Cleanup commit `4a01d4c`; linked implementation provenance:
+  `sha256:0ebeca2c92c1de15894f9fefc4b107299bba878f69a67ca10cea25fd5033d4b5`.
+  No MATLAB was launched by this coding-agent run.
+- Combined canary self-hash hotfix (2026-09-15 06:52 IST): orchestrator's
+  live seed-36 canary on tip `5501a13` failed before simulation because
+  MATLAB `mfilename('fullpath')` returned extensionless
+  `...\extract_dual_division_window`, and
+  `sha256_lf_normalized_file_dual` tried to open that nonexistent path.
+  No trajectory ran. The extractor now resolves extensionless self paths by
+  preferring `<path>.m`, canonicalizes and verifies the file exists, requires
+  the resolved extension to be `.m`, then LF-hashes those real bytes. Already
+  suffixed `which(className)` process-source paths remain supported.
+  MATLAB-free regression includes the exact Windows extensionless path,
+  pins the `.m` resolution branch, and cross-checks the real source-byte
+  LF hash against the Python authority validator; the live canary remains
+  the final runtime proof. Validation:
+  extractor/dual/gate suite 106 passed; Ruff and diff check clean. Independent
+  Opus 5 review **ACCEPTED** the fail-closed resolution and confirmed both
+  Cyt/FtsZ tap projections remain intact; its non-blocking test-quality note
+  was closed by binding the real-byte hash to the Python validator's
+  LF-normalized implementation. Review provenance:
+  `sha256:e67da8370d059de2094b2fe2b8b034d7eb4407b52cc48a0a77dd7741e3032735`.
+  Hotfix commit `2fc5571`; linked implementation provenance:
+  `sha256:c7ab67a01766ec626c801f9814eb9cd43c5298e682387b634678fdfb79ee0e22`.
+  No MATLAB launched by this branch. The orchestrator retains the
+  one-day-license canary rerun.
+- Combined division re-extraction surface (2026-09-15 06:35 IST): merged
+  accepted FtsZ repair tip `0ab6b74` into
+  `fix/cyt-n20-rng-replay` as merge commit `23008e2`. Shared conflicts were
+  resolved by union, not selection: the single scheduler pass now captures
+  Cytokinesis `randStreamState` immediately before/after its own
+  `evolveState`, and FtsZPolymerization live `geometry_volume` immediately
+  before/after its tap. Temp-output checks and the combined Python canary
+  require both projections; neither field can be dropped silently.
+  `validate_dual_division_canary` on legacy seed 0 fails specifically on
+  missing FtsZ `geometry_volume`, while Cyt full capability independently
+  reports missing RNG/schema/source identity. The genuine separate seed-36
+  Cyt trace still replays **5000/5000, zero mismatches** after the merge.
+  Validation: combined Cyt/FtsZ focused suite 144 passed; both dual static
+  validator suites 105 passed; L1b 28/28 plus 63 L1b/provenance tests; L2.4
+  6 passed; Ruff clean; evidence board remains **20 PASS / 0 FAIL / 2
+  MISSING_EVIDENCE, integrity OK**. Provenance event
+  `sha256:6742e5d1b8f991660298e1aabce37547f6179b4f2d3afaa159183214a10c1d65`.
+  No MATLAB was launched. Old-format extraction remains paused after seed
+  15; every selected completion must be re-extracted once through this
+  combined dual projection before either missing row can become authoritative.
+- Cytokinesis N20 RNG-replay repair (2026-09-15 05:35 IST): complete in isolated
+  worktree `E:\opencell-worktrees\fix-cyt-n20-rng-replay`, branch
+  `fix/cyt-n20-rng-replay`, based exactly on division-gate candidate
+  `6e7cd84`; no merge/push and no MATLAB launched. Source audit confirmed
+  `Cytokinesis.m` draws only from the process-private
+  `Process_Cytokinesis.randStream` (`mcg16807`), while the scheduler and
+  chromosome own separate streams. Existing dual traces carry only the
+  initial seed and no per-tick process stream position; the selected N12
+  files therefore remain conditional pilots. A separate genuine seed-36
+  single-process M5000 trace does contain before/after process RNG state and
+  proves the new OC full-replay implementation at **5000/5000 ticks, zero
+  mismatches across all fields**, but it is not a selector-owned dual trace
+  and cannot authorize the N20 cohort. Implementation commit `b1f1a29`
+  adds before/after `randStreamState`, LF-normalized dual-extractor and
+  resolved-Cytokinesis source identity, full continuous restored-RNG
+  `next_update` replay, and fail-closed legacy-vs-authority validation.
+  Old traces still validate for selector/FtsZ use and explicit conditional
+  pilots, but Cytokinesis authority refuses them. The upstream Opus review
+  of `6e7cd84` **REJECTED** its Cyt conditional gate: one mismatch could
+  pass at threshold 1; its OC event timeline was constructed only at Karr
+  event ticks and could not detect overfire; the catalog's preregistered
+  substrates/chromosome surfaces were post-hoc replaced by pinchedDiameter;
+  and the no-known-gap rule forbids any green without real process RNG.
+  Those findings are now implemented as required corrections: all exact
+  thresholds are zero; conditional count/timing are forced non-green; full
+  replay evaluates every tick and detects overfire; payloads pair by
+  `(seed,tick)`; the substrates primary and chromosome output are restored;
+  analytical_check evaluates the injected SUT; the adapter ID resolves to
+  a real class; and authority writing requires exact selector-context seed
+  identity/order. Correction commit `6063c9d` also makes every one of the
+  13 full-replay audit fields mechanically non-PASS under
+  `rederive_process`, zeros the exact timing noise floor, emits no fabricated
+  conditional OC timeline/completion claim, keeps every gating channel in
+  thresholds.json, and keeps the primary out of catalog event_channels per
+  Design-A spec §8.2. The old-format campaign is paused after seed 15 because
+  it cannot satisfy Cyt authority. Final independent Opus 5 review
+  **ACCEPTED** all binding blockers after three corrective review rounds.
+  Validation: final division/evidence suite **371 passed / 1 expected
+  RibosomeAssembly-data skip**; focused blocker suite 87 passed / 1 expected
+  skip; L1b wiring 28/28 plus 63 L1b/provenance tests; tracked evidence audit
+  remains **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE, integrity OK**; Ruff and
+  diff check clean. The separate method-
+  completeness gate remains at its documented pre-existing 76/115 with 39
+  stale anchor errors (including three Cytokinesis line anchors); this branch
+  does not change the OC process file or those unrelated anchors. LLM
+  provenance events:
+  `sha256:f1e17074d2a84d19a194c376b9d8dfe525521adbc41014445375f965ba025fea`
+  (implementation) and
+  `sha256:ccec1a56b14bce39342b82a24b24720f9c76c5b4abd4ffd1a14af58075574c16`
+  (superseded early Opus ACCEPT), plus
+  `sha256:c7221dc6eb0690d08e66372b4ba8d8f13ab8796864705c3494a9774aa680ec23`
+  (binding rejection/correction/final Opus ACCEPT), and
+  `sha256:87615104984af5005111926f4f5d073099540c93baea2277bd05d0fa9d74e0b9`
+  (verified correction commit `6063c9d`). No live process/agent remains.
+  MATLAB canary remains
+  orchestrator/host-cap approval-gated; exact seed-36 slot command and
+  post-run validator are recorded in
+  `docs/phase_f/DIVISION_N20_GATE_SURFACES.md`.
+- FtsZ N=12 mismatch diagnosis lane (2026-09-15 05:52 IST): isolated
+  worktree `E:\opencell-worktrees\fix-ftsz-n20-mismatch`, branch
+  `fix/ftsz-n20-mismatch`, base/gate tip `6e7cd84`; no merge, push, or
+  MATLAB launch. Source-first diagnosis found a real shared defect:
+  MATLAB `FtsZPolymerization.m` reads live `geometry.volume` for both
+  count/concentration conversions and its ODE threshold, while OC used the
+  fixture volume forever and the dual extractor omitted volume entirely.
+  Projection/index alignment is exact; source modified-ODE23S and RNG-offset
+  ablations do not reduce the mismatch. The branch now consumes a
+  caller-supplied geometry-volume port, exposes that store in both chassis
+  topologies, captures scalar `geometry_volume` in future dual traces, and
+  makes the N=20 gate fail closed when it is absent. Chassis source fidelity
+  is explicitly NOT claimed: no dynamic volume producer is wired, so
+  autonomous runs remain fixture-initialized. Historical N=12 distances remain enzymes
+  `0.581578 > 0.174015`, substrates `0.189500 > 0.152667`; the post-fix
+  rerun correctly REFUSES the current 12 files at seed 0 because they lack
+  `geometry_volume`, so no replacement distance is fabricated. Diagnostic:
+  `docs/phase_f/audits/FTSZ_N12_MISMATCH_DIAGNOSIS.md`. Two independent
+  Opus 5 review passes ACCEPTED the behavior after requiring the non-gating
+  audit and combined canary to fail closed too; provenance event
+  `sha256:72d0db159c5fd1bf92928e77b60f4863a1268e7297412be21fc71205e0773ed1`.
+  Implementation/diagnosis commit `c614b9b`; linked implementation event
+  `sha256:5912d1aee32814bc76f79f06921b463a01706992ceceb6470f1ca4736df40269`.
+  Validation: post-review focused suite 111 passed; exhaustive
+  FtsZ-referencing sweep 649 passed / 10 audited data/ensemble skips, with
+  two non-regressions: the FtsZ legacy scorecard expectation already fails
+  identically at base `6e7cd84`, and TxReg strict rubric cannot resolve its
+  gitignored 4000-tick trace in this isolated worktree (the same documented
+  data-mount limitation as the gate branch). L1b is 28/28 plus 19 tests;
+  L2.4 6 passed; provenance 53 passed; focused Ruff and diff checks clean.
+  Remaining blocker: regenerate genuine dual traces with captured
+  `geometry_volume`, then rerun the N=12/N=20 distribution. No live shells
+  or agents.
+  Independent calibration review confirmed the historical exceedance is
+  credible and conservative. The even-N rotating calibrator now retains only
+  the N/2 distinct unordered half-splits (N12 calibration: 3; N20
+  calibration: 5), still with no OC argument or outcome access. Karr-only
+  corrected thresholds are enzymes `0.173409` (distance 3.354x threshold,
+  10.061x q95; decisive) and substrates `0.151067` (1.254x; supportive).
+  `MIN_NONZERO_SAMPLES=30` is now enforced per active component on each side,
+  not after pooling all WIDs/ticks; jointly-zero components are excluded and
+  asymmetric-zero support remains a hard failure. Review-note validation:
+  gate/anti-cheat 72 passed, focused FtsZ 114 passed, L1b 28/28 plus 19,
+  L2.4 6 passed, focused Ruff clean. Calibration-review provenance event:
+  `sha256:9e8ec2240b21806240d1bbcff31c459a3163c5c9a0623d45735e8b08de581209`.
+  Calibration/support implementation commit `86fb962`; linked event
+  `sha256:4b22ce03063621f5bf10802341be286218e40cde47266f67c196c8a52de20a78`.
+  Extraction instruction (2026-09-15 05:28 IST): allow the already-running
+  old-format seed-15 attempt to finish, then pause before seed 16. Old-format
+  FtsZ outputs lack `geometry_volume` and cannot be scored by the repaired
+  gate; do not spend additional multi-hour seeds on that format.
+- Division-gate implementation lane (2026-09-14 22:45 IST): isolated
+  worktree `E:\opencell-worktrees\build-division-n20-gates`, branch
+  `build/division-n20-gates`, base `a021dd4`, now merged with provenance
+  repair main `843f04f` and current published main `6d16559` (TxReg
+  strict-rubric repair). Implementing fail-closed
+  Cytokinesis event and FtsZ windowed-continuous N=20 gates. Raw cohort is
+  read-only from
+  `E:\opencell-worktrees\main-integrate\data\m1_sources\karr_native\
+  dual_division_cohort_current`; pilots write only under untracked
+  `artifacts/division_n20_pilots`, never tracked authority below N=20.
+  No MATLAB is launched by this lane. Long pilot commands use explicit
+  source-root paths and may run for several minutes because Cytokinesis has
+  12 x 5000 captured ticks and FtsZ performs 12 x 200 ODE updates.
+  Implementation/pilot result: Cytokinesis's source-faithful contraction
+  projection is clean at N=12 (147 contraction events/seed; count/timing/
+  next-diameter discrepancies all zero; spans 3676-3943). FtsZ's honest
+  windowed continuous pilot is active and invariant-clean but exceeds the
+  preregistered Karr-only thresholds on the independent 6-seed evaluation
+  half (enzyme scaled W1 0.581578 > 0.174015; substrate 0.1895 >
+  0.152667). Both remain PILOT/INSUFFICIENT; no N<20 authority was written.
+  Cytokinesis's current trace projection cannot gate stochastic substrate/
+  enzyme deltas without the minimal future extractor addition
+  `randStreamState` before/after each Cytokinesis tap; the present gate does
+  not fabricate it. Validation: final event/catalog suites 315 passed / 3
+  expected RibosomeAssembly-data skips; evidence-index strict/portable
+  checks 16 passed and generator audit remains **20 PASS / 0 FAIL / 2
+  MISSING_EVIDENCE**; gate-focused tests 42 passed / 1 expected RA skip;
+  L1b PASS 28/28 plus 19 tests; L2.4 6 passed; provenance 53 passed; focused
+  Ruff clean. Main's exact-byte provenance repair is preserved: Replication,
+  Cytokinesis, and DNADamage dependency coverage and the migrated
+  Replication/DNADamage sentinels remain intact. Implementation/docs/catalog
+  commit: `1826c07`; handoff/provenance commit `e0c000a` (local only; not
+  pushed/merged). Provenance-main integration merge: `3cb4208`; exact-byte
+  Replication/DNADamage evidence migrations and the repaired dependency
+  registry are preserved, and fresh merged validation is 118 passed / 1
+  expected RA-data skip with complete-bundle **20/0/2 integrity OK**.
+  LLM provenance events
+  `sha256:5f3e9af8cd0a753d02dff6500ca75b5e6b073bb459aca41ae1a4dd5f463cc9d6`
+  and
+  `sha256:02cf29d77e5f2c3192237845680c5bb7f5350b58d9989520f1c133a92568d75b`
+  are appended. Post-`6d16559` integration: the complete L2.2 board
+  regenerates at **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE, integrity OK**;
+  division/provenance/index merge validation is 118 passed / 1 expected
+  RA-data skip. The TxReg files are byte-identical to published main and
+  the TxReg strict-rubric/resolver/active-window suite passes 76/76 when
+  executed from `main-integrate`, where its gitignored authoritative
+  4000-tick trace is mounted. Running those same data-dependent tests from
+  this isolated worktree correctly fails because that raw trace is absent;
+  no code divergence was found. Current-main integration commit `62d9cd5`;
+  provenance event
+  `sha256:27ab685ef134f08148ca13a28bec2534bcc7d9874eff3c5bb7e0d4fbb4a7d201`.
 - L2.2 provenance-gap repair (2026-09-14 23:55 IST): merged into current
   `main` from isolated worktree
   `E:\opencell-worktrees\fix-l22-provenance-gaps-final`, branch
@@ -181,7 +413,9 @@ earlier blocks below:**
   canary exception handling, dangling registry prose; retain explicit
   disclosure that FtsZ N20 calibration has 5 distinct Karr splits and 10
   evaluation seeds. Do not mutate the running canary worktree or merge until
-  runtime validation passes. Corrected seed-36 canary subsequently PASSED:
+  runtime validation passes. Combined code from final tip `ddc7722` is now
+  merged into current main and validated: 233 passed / 1 expected skip,
+  focused Ruff clean, board 20/0/2 integrity OK. Corrected seed-36 canary PASSED:
   Cyt SHA `d097a48c...4ec0`, FtsZ SHA `2a207bac...3882`, full Cyt replay
   capability ready, both files source/provider-bound, same completion tick
   31993, inclusive span 4076, margin OK. Final branch cleanup/current-main

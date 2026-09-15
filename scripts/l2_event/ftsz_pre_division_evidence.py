@@ -1,5 +1,13 @@
 """FtsZPolymerization pre-division event-window evidence (catalog-conformant).
 
+2026-09-14 status: this module remains a NON-GATING pilot/audit and still
+computes no threshold. The live catalog is now correctly classified
+``windowed_continuous`` with ``enzymes`` primary and ``substrates``
+secondary; the real gate is
+``scripts/l2_event/ftsz_windowed_n20_gate.py``. Historical references below
+to the prior EVENT_CLASS/``monomers`` catalog row describe why this module
+was originally built, not current authority.
+
 This module replaces the ad hoc "seed 0, ticks 0-99, no division
 correlation" honest-mode diagnostic
 (``tests/vivarium/test_karr_ftsz_polymerization_honest_canary.py``, see
@@ -106,8 +114,9 @@ PROCESS_NAME = "FtsZPolymerization"
 REQUIRED_N_SEEDS = required_completed_windows()  # engineering catalog N_seeds
 REQUIRED_M_TICKS = 200  # catalog M_ticks
 TICK_RANGE_FROM_DIVISION = (-200, 0)  # catalog seed_window.tick_range_from_division
-PRIMARY_CHANNEL = "monomers"  # catalog primary_channel (projected, see module docstring)
+PRIMARY_CHANNEL = "monomers"  # conserved diagnostic projection; not the live catalog primary
 GATE_CHANNELS = ("enzymes", "substrates")
+GEOMETRY_VOLUME_CHANNEL = "geometry_volume"
 
 _EVENT_WINDOW_DIR_PREFIX = "per_process_traces_v2_event_s"
 _SEED_DIR_RE = re.compile(r"^per_process_traces_v2_event_s(\d{3})$")
@@ -194,7 +203,12 @@ def discover_candidate_paths(
 # ---------------------------------------------------------------------------
 
 
-def validate_seed_window(seed: int, trace_path: Path) -> WindowGrid:
+def validate_seed_window(
+    seed: int,
+    trace_path: Path,
+    *,
+    required_observables: tuple[str, ...] = GATE_CHANNELS,
+) -> WindowGrid:
     """Load ``trace_path`` via the shared, unmodified stride-1/M4 loader,
     then enforce the FtsZ catalog's division-anchored ``seed_window``
     contract on top of it. Raises :class:`EventWindowRefused` (generic M4
@@ -202,7 +216,7 @@ def validate_seed_window(seed: int, trace_path: Path) -> WindowGrid:
     -- never silently accepts a malformed or wrongly-shaped window."""
     grid = load_event_window(
         trace_path,
-        required_observables=GATE_CHANNELS,
+        required_observables=required_observables,
         require_stride_contract=True,
     )
     if grid.process_name != PROCESS_NAME:
@@ -244,6 +258,38 @@ def validate_seed_window(seed: int, trace_path: Path) -> WindowGrid:
             f"({trace_path})."
         )
     return grid
+
+
+def geometry_volume_for_tick(grid: WindowGrid, tick: int) -> float:
+    try:
+        volume_before = np.asarray(
+            grid.before(GEOMETRY_VOLUME_CHANNEL, tick),
+            dtype=np.float64,
+        ).reshape(-1)
+        volume_after = np.asarray(
+            grid.after(GEOMETRY_VOLUME_CHANNEL, tick),
+            dtype=np.float64,
+        ).reshape(-1)
+    except KeyError as exc:
+        raise FtsZWindowContractError(
+            f"tick {tick}: missing required {GEOMETRY_VOLUME_CHANNEL!r} replay input"
+        ) from exc
+    if volume_before.size != 1 or volume_after.size != 1:
+        raise FtsZWindowContractError(
+            f"tick {tick}: {GEOMETRY_VOLUME_CHANNEL} must be scalar"
+        )
+    volume_l = float(volume_before[0])
+    if not np.isfinite(volume_l) or volume_l <= 0.0:
+        raise FtsZWindowContractError(
+            f"tick {tick}: {GEOMETRY_VOLUME_CHANNEL} "
+            f"must be finite and positive, got {volume_l}"
+        )
+    if float(volume_after[0]) != volume_l:
+        raise FtsZWindowContractError(
+            f"tick {tick}: FtsZPolymerization changed "
+            f"{GEOMETRY_VOLUME_CHANNEL} within its own evolveState call"
+        )
+    return volume_l
 
 
 # ---------------------------------------------------------------------------
@@ -377,6 +423,7 @@ def compute_seed_evidence(seed: int, grid: WindowGrid) -> SeedWindowEvidence:
                 vector=before_vectors[observable],
                 wids=wids_by_observable[observable],
             )
+        state["geometry"]["volume"] = geometry_volume_for_tick(grid, tick)
         l2.refresh_allocator_views(process, state)
         assert not state.get("trace_hint"), "no-hint contract violated after overlay"
 
@@ -578,7 +625,11 @@ def audit_pre_division_evidence(
         seen_sha[sha] = seed
 
         try:
-            grid = validate_seed_window(seed, path)
+            grid = validate_seed_window(
+                seed,
+                path,
+                required_observables=(*GATE_CHANNELS, GEOMETRY_VOLUME_CHANNEL),
+            )
         except (EventWindowRefused, FtsZWindowContractError) as exc:
             rejected_windows.append({"seed": seed, "path": str(path), "reason": str(exc)})
             continue

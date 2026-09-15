@@ -8,7 +8,7 @@ process:
   oc_file: "opencell/vivarium/karr_ftsz_polymerization.py"
   whole_cell_model_id: "Process_FtsZPolymerization"
   functional_area: "cytokinesis"
-  state_shape_role: "event-class / ring-state wiring row"
+  state_shape_role: "windowed-continuous ODE / ring-state wiring row"
   notes: "The raw MATLAB source file was not present in this checkout; MATLAB anchors below use the checked-in extract doc as the source proxy."
 integration_touchpoints:
   calcResourceRequirements_Current:
@@ -24,12 +24,12 @@ integration_touchpoints:
       symbol: "KarrFtsZPolymerizationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "216-216"
+        lines: "223-303"
         note: "Emits the GTP request directly into `requests[self.name][gtp_wid]`."
         symbol: "KarrFtsZPolymerizationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "1723-1783"
+          lines: "1580-1790"
           note: "Composite allocation consumer list includes `karr_ftsz_polymerization` with GTP."
           symbol: build_karr_chassis_v5
       note: "Request handling lives in-process rather than in a separate request-calculator helper."
@@ -48,12 +48,12 @@ integration_touchpoints:
       symbol: "KarrFtsZPolymerizationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "216-216"
+        lines: "223-303"
         note: "Per-tick update flow: gate, integrate, discretize, clamp, emit deltas."
         symbol: "KarrFtsZPolymerizationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_ftsz_polymerization.py"
-          lines: "295-479"
+          lines: "305-503"
           note: "ODE system and substrate-limit clamps."
           symbol: KarrFtsZPolymerizationProcess.integrate_odes
       note: "Implemented in OC as a direct `next_update` path."
@@ -227,20 +227,28 @@ compartment_routing:
     mismatch: false
     note: "Hydrolysis hydrogen byproduct is cytosolic."
 unit_conversion_chain:
-  source_units: "molecules/tick"
-  target_units: "molecules/tick"
+  source_units: "molecules"
+  target_units: "molecules"
   steps:
-    - from_units: molecules/tick
-      to_units: molecules/tick
-      operation: identity
-      constants: []
+    - from_units: "molecules"
+      to_units: "mol/L"
+      operation: "÷ (nAvogadro × geometry.volume)"
+      constants: ["nAvogadro", "geometry.volume"]
       anchor:
         path: "opencell/vivarium/karr_ftsz_polymerization.py"
-        lines: "216-293"
-        note: Process works directly in per-tick integer counts; no unit conversion needed.
-        symbol: KarrFtsZPolymerizationProcess.next_update
-      note: Process works directly in per-tick integer counts; no unit conversion needed.
-  note: This process does not require unit conversion (per-tick integer counts throughout).
+        lines: "504-513"
+        note: "Convert enzyme/substrate molecule counts to molar concentration using caller-supplied geometry volume. The replay gate supplies captured Karr values; the autonomous chassis currently has no source-faithful dynamic volume producer."
+        symbol: KarrFtsZPolymerizationProcess.molecules_to_concentration
+    - from_units: "mol/L"
+      to_units: "molecules"
+      operation: "× nAvogadro × geometry.volume"
+      constants: ["nAvogadro", "geometry.volume"]
+      anchor:
+        path: "opencell/vivarium/karr_ftsz_polymerization.py"
+        lines: "514-525"
+        note: "Convert the ODE concentration solution back to molecule counts using the same caller-supplied volume; only captured gate replay is currently source-faithful."
+        symbol: KarrFtsZPolymerizationProcess.concentration_to_molecules
+  note: "Karr and OC integrate FtsZ kinetics in concentration space; geometry.volume is a required per-tick reference-frame input. The isolated gate fails closed without captured Karr volume. Autonomous chassis volume remains fixture-initialized because no source-faithful producer is wired."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -272,27 +280,27 @@ source_anchors:
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "64-214"
-      note: "Fixture load, state shape, and ports schema."
+      lines: "64-221"
+      note: "Fixture load, state shape, and geometry.volume port. Captured gate replay is live-volume faithful; chassis default initialization is not a dynamic producer."
       symbol: KarrFtsZPolymerizationProcess
     next_update:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "216-293"
-      note: "Per-tick update flow, request emission, and output writeback."
+      lines: "223-303"
+      note: "Per-tick caller-supplied-volume ODE flow, request emission, and output writeback; missing geometry fails closed."
       symbol: KarrFtsZPolymerizationProcess.next_update
     solver_and_clamps:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "295-479"
+      lines: "305-503"
       note: "ODE integration, discretization, and substrate-limit clamps."
       symbol: KarrFtsZPolymerizationProcess.integrate_odes
     unit_helpers:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "481-587"
-      note: "Concentration conversion and substrate-delta extraction helpers."
+      lines: "504-640"
+      note: "Live-volume concentration conversion and substrate-delta extraction helpers."
       symbol: KarrFtsZPolymerizationProcess.molecules_to_concentration
     composite_allocation:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1723-1783"
+      lines: "1580-1790"
       note: "Composite allocation consumer list wires FtsZ to GTP."
       symbol: build_karr_chassis_v5
 provenance:
@@ -330,7 +338,7 @@ deviations:
       symbol: Verbatim docstring extract
     oc_anchor:
       path: "opencell/vivarium/karr_ftsz_polymerization.py"
-      lines: "216-479"
+      lines: "223-503"
       note: "OC implements direct ODE / clamp logic, not LP bounds."
       symbol: KarrFtsZPolymerizationProcess.next_update
   shared_pool_projection_merges_compartments: false
@@ -338,6 +346,7 @@ deviations:
     - "The raw MATLAB `.m` file was not present in this checkout; MATLAB anchors therefore use the checked-in extract doc rather than a direct source-file read."
     - "OC emits the GTP request directly from `next_update` instead of a separate request-calculator module."
     - "OC reads allocated GTP from `substrates_allocated[self.name]` but still keeps a direct substrate-store fallback path for the no-allocation case."
+    - "Both chassis topologies expose geometry.volume to FtsZ but currently have no source-faithful dynamic volume producer; the store remains fitted-fixture initialized. Only captured isolated gate replay is live-volume authoritative."
     - "OC clamp loops add defensive early-break guards (`positive.size <= 0`, `FtsZ_GDP <= 0`) in `apply_substrate_limits`; MATLAB `applySubstrateLimits` loop body has no corresponding guards."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "Divergences include request timing (MATLAB current counts vs OC post-update counts) and OC-only defensive clamp guards; these are implementation-shape differences around otherwise matched reaction families."

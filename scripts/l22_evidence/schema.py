@@ -43,11 +43,10 @@ EVIDENCE_ROOT = REPO_ROOT / "artifacts" / "l2_2_gates"
 
 # design_a_per_tick harness evidence lives directly under <process>/latest/.
 DESIGN_A_SUBDIR = "latest"
-# event_class processes route to a distinct sub-directory: the L2.event
-# harness does not exist yet (see PROCESS_CATALOG.yaml harness_type policy),
-# so this is reserved for forward compatibility and is expected to be empty
-# (-> MISSING_EVIDENCE) until that harness is built.
+# event_class and windowed_continuous processes route to distinct
+# harness-owned subdirectories.
 EVENT_CLASS_SUBDIR = "latest_event"
+WINDOWED_CONTINUOUS_SUBDIR = "latest_windowed"
 
 # The one tracked generator output.
 INDEX_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_2_design_a" / "evidence_index.json"
@@ -215,6 +214,20 @@ L2_EVENT_RUNNER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "runner.py"
 L2_EVENT_METRICS_MODULE = REPO_ROOT / "scripts" / "l2_event" / "metrics.py"
 L2_EVENT_EVIDENCE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "evidence.py"
 L2_EVENT_REGISTRY_PATH = REPO_ROOT / "docs" / "phase_f" / "l2_event" / "event_registry.yaml"
+DIVISION_GATE_COMMON_MODULE = REPO_ROOT / "scripts" / "l2_event" / "division_gate_common.py"
+DIVISION_COHORT_SELECTOR_MODULE = REPO_ROOT / "scripts" / "l2_event" / "division_cohort_selector.py"
+DIVISION_WINDOW_SPEC_MODULE = REPO_ROOT / "scripts" / "l2_event" / "division_window_spec.py"
+CYTOKINESIS_N20_GATE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "cytokinesis_n20_gate.py"
+CYTOKINESIS_EVENT_ADAPTER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "adapters" / "cytokinesis.py"
+DUAL_DIVISION_VALIDATOR_MODULE = (
+    REPO_ROOT / "scripts" / "l2_event" / "validate_dual_division_canary.py"
+)
+DUAL_DIVISION_EXTRACTOR_MODULE = (
+    REPO_ROOT / "scripts" / "matlab" / "extract_dual_division_window.m"
+)
+EVENT_WINDOW_LOADER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "window_loader.py"
+FTSZ_WINDOWED_N20_GATE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ftsz_windowed_n20_gate.py"
+FTSZ_PRE_DIVISION_EVIDENCE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ftsz_pre_division_evidence.py"
 # "Final zero-cost delta" (Opus5 ACCEPT bbc6aa6 conditional follow-up):
 # every in-scope process's `oc_module` lives under `opencell/vivarium/`
 # (`opencell/vivarium/karr_<process>.py` -- verified against every
@@ -292,6 +305,13 @@ EVENT_CLASS_SOURCE_FILES = {
     "l2_event_runner": L2_EVENT_RUNNER_MODULE,
     "l2_event_metrics": L2_EVENT_METRICS_MODULE,
     "l2_event_evidence": L2_EVENT_EVIDENCE_MODULE,
+    "vivarium_init": VIVARIUM_INIT_MODULE,
+}
+
+WINDOWED_CONTINUOUS_SOURCE_FILES = {
+    "division_gate_common": DIVISION_GATE_COMMON_MODULE,
+    "division_cohort_selector": DIVISION_COHORT_SELECTOR_MODULE,
+    "division_window_spec": DIVISION_WINDOW_SPEC_MODULE,
     "vivarium_init": VIVARIUM_INIT_MODULE,
 }
 
@@ -538,6 +558,14 @@ L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.p
 # either way; see EVIDENCE_INDEX_SPEC.md Section 13.11 for why it is
 # excluded from the audit too (out-of-scope processes are never iterated).
 PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
+    "FtsZPolymerization": {
+        "ftsz_windowed_n20_gate_module": FTSZ_WINDOWED_N20_GATE_MODULE,
+        "ftsz_pre_division_evidence_module": FTSZ_PRE_DIVISION_EVIDENCE_MODULE,
+        "division_gate_common_module": DIVISION_GATE_COMMON_MODULE,
+        "division_cohort_selector_module": DIVISION_COHORT_SELECTOR_MODULE,
+        "division_window_spec_module": DIVISION_WINDOW_SPEC_MODULE,
+        "l2_replay_common": L2_REPLAY_COMMON_MODULE,
+    },
     "Metabolism": {
         "fva_module": FVA_MODULE,
         "calc_flux_bounds_module": CALC_FLUX_BOUNDS_MODULE,
@@ -636,6 +664,14 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     },
     "Cytokinesis": {
         "mcg16807_state_codec_module": MCG16807_STATE_CODEC_MODULE,
+        "cytokinesis_n20_gate_module": CYTOKINESIS_N20_GATE_MODULE,
+        "cytokinesis_event_adapter_module": CYTOKINESIS_EVENT_ADAPTER_MODULE,
+        "dual_division_validator_module": DUAL_DIVISION_VALIDATOR_MODULE,
+        "dual_division_extractor_module": DUAL_DIVISION_EXTRACTOR_MODULE,
+        "event_window_loader_module": EVENT_WINDOW_LOADER_MODULE,
+        "division_gate_common_module": DIVISION_GATE_COMMON_MODULE,
+        "division_cohort_selector_module": DIVISION_COHORT_SELECTOR_MODULE,
+        "division_window_spec_module": DIVISION_WINDOW_SPEC_MODULE,
     },
     "RibosomeAssembly": {
         "l2_event_ribosome_gate_adapter_module": L2_EVENT_RIBOSOME_GATE_ADAPTER_MODULE,
@@ -683,9 +719,9 @@ def process_dependency_hashes(process: str) -> dict[str, str | None]:
 # `"helpers"`) does a bare `import l2_replay_common` and calls its state/
 # projection/update-function helpers for every `design_a_per_tick` process
 # -- verified by direct inspection. This is scoped by `harness_type`
-# (bound for all 18 `design_a_per_tick` processes, never the 4
-# `event_class` ones, which do not go through this runner/helpers module at
-# all) rather than by process name, since it is a runner-harness-level
+# (bound for all 18 `design_a_per_tick` processes, never event_class or
+# windowed_continuous rows, which do not go through this runner/helpers
+# module at all) rather than by process name, since it is a runner-harness-level
 # dependency, not a per-process one -- keyed the same way
 # `SWEEP_PROVENANCE_SOURCE_FILES` is, just scoped narrower than "always".
 HARNESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
@@ -714,7 +750,19 @@ def shared_source_files_for_harness(harness_type: str | None) -> dict[str, Path]
     """
     if harness_type == "event_class":
         return EVENT_CLASS_SOURCE_FILES
+    if harness_type == "windowed_continuous":
+        return WINDOWED_CONTINUOUS_SOURCE_FILES
     return SWEEP_PROVENANCE_SOURCE_FILES
+
+
+def subdir_for_harness(harness_type: str) -> str:
+    if harness_type == "event_class":
+        return EVENT_CLASS_SUBDIR
+    if harness_type == "windowed_continuous":
+        return WINDOWED_CONTINUOUS_SUBDIR
+    if harness_type == "design_a_per_tick":
+        return DESIGN_A_SUBDIR
+    raise ValueError(f"unsupported L2.2 harness_type: {harness_type!r}")
 
 
 def _sha256_module_file(path: Path) -> str | None:

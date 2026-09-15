@@ -46,8 +46,9 @@ which the old rubric conflated:
 between the raw-extraction tooling and the evidence index) and returns
 **every** process flagged `in_scope_L2_2: true`, regardless of
 `harness_type`. As of this commit that is exactly 22 processes: 18
-`design_a_per_tick` + 4 `event_class` (`Cytokinesis`, `DNADamage`,
-`FtsZPolymerization`, `RibosomeAssembly`). Processes with
+`design_a_per_tick` + 3 `event_class` (`Cytokinesis`, `DNADamage`,
+`RibosomeAssembly`) + 1 `windowed_continuous`
+(`FtsZPolymerization`). Processes with
 `in_scope_L2_2: false` (6 processes: `ChromosomeCondensation`,
 `ChromosomeSegregation`, `HostInteraction`, `ProteinActivation`,
 `TerminalOrganelleAssembly`, `TranscriptionalRegulation`) are excluded from
@@ -81,7 +82,8 @@ artifacts/l2_2_gates/
 │   │   ├── analytical_check.json  # required sidecar ({"applicable": false, ...} when N/A)
 │   │   ├── sweep_provenance.json  # required completion sentinel -- written by sweep.py, NOT the runner (see Section 13.1)
 │   │   └── allocator_inputs.json  # informational only -- never required, never bundled, never hashed (see Section 13.7)
-│   └── latest_event/      # event_class harness evidence (L2.event; not yet built)
+│   ├── latest_event/      # event_class harness evidence
+│   └── latest_windowed/   # windowed_continuous harness evidence
 ```
 
 `artifacts/` is gitignored (regeneratable); the raw evidence directories are
@@ -92,11 +94,16 @@ gitignored, a fresh clone has no authority files at all under this path;
 `docs/phase_f/l2_2_design_a/evidence_bundle/` is a tracked, portable
 mirror that closes this gap — see Section 12.
 
-**Event-class routing**: processes with `harness_type: event_class` look for
-evidence under `latest_event/`, not `latest/`, because the L2.event harness
-does not exist yet. Until it is built this directory is empty for all 4
-event-class processes, which the generator reports as explicit
-`MISSING_EVIDENCE` — never silently excluded, never a vacuous PASS.
+**Harness routing**: `event_class` processes look under `latest_event/`;
+`windowed_continuous` processes look under `latest_windowed/`; neither is
+allowed to fall through to the generic `latest/` per-tick directory.
+
+**Division cohort seed identity**: Cytokinesis/FtsZ authority manifests carry
+`seed_selection.selector: division_cohort_selector` and the exact selected
+seed IDs. For these rows, coverage means exactly `N_seeds` unique selected
+COMPLETED seeds, not literal `range(N)`; right-censored seeds create
+intentional holes and never count. All other harnesses retain the historical
+`range(N)` coverage rule.
 
 ## 5. Row schema (schema_version 1)
 
@@ -393,8 +400,9 @@ None of this is done by this task, and none of it is faked here:
    attached) once it completes; `DNARepair`/`ProteinDecay`/
    `ReplicationInitiation` remain additionally blocked on a real
    oracle-tick-depth shortfall independent of the sentinel gap.
-2. **Build the L2.event harness** for the 4 `event_class` processes; until
-   then they remain `MISSING_EVIDENCE` by construction.
+2. **Complete process-specific event/windowed evidence** for the remaining
+   non-generic harness rows; they remain `MISSING_EVIDENCE` until their own
+   authority bundles exist.
 3. **Mechanical evaluators for projection-distance primary channels** —
    **done (2026-07-28)**: `per_component_scaled` (`Replication`,
    `DNASupercoiling`) and `hurdle_event_rate_plus_conditional_scaled_distance`
