@@ -14,11 +14,12 @@ unavailable).
 
 from __future__ import annotations
 
+import hashlib
 import re
 import shutil
 import subprocess
 import sys
-from pathlib import Path
+from pathlib import Path, PureWindowsPath
 
 import pytest
 
@@ -27,6 +28,7 @@ if str(REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(REPO_ROOT))
 
 from scripts.l2_event.evidence import _translate_windows_gitdir  # noqa: E402
+from scripts.l2_event.launcher import lf_normalized_sha256_hex  # noqa: E402
 
 EXTRACTOR_PATH = REPO_ROOT / "scripts" / "matlab" / "extract_dual_division_window.m"
 DRIVER_PATH = REPO_ROOT / "scripts" / "matlab" / "extract_dual_division_window_seeds.m"
@@ -320,6 +322,51 @@ def test_dual_rng_projection_is_source_and_schema_bound_on_both_outputs():
         "temp Cytokinesis output %s must carry before/after randStreamState for every tick"
         in source
     )
+
+
+def test_extractor_self_identity_resolves_extensionless_windows_path_to_real_m_bytes():
+    source = _read(EXTRACTOR_PATH)
+    assert "this_file = mfilename('fullpath');" in source
+    assert "extractor_source_identity = source_identity_for_path(this_file);" in source
+
+    body = _function_body(
+        source,
+        "function resolved_path = resolve_matlab_source_path(path_value)\n",
+    )
+    assert "path_with_m = [path_text '.m'];" in body
+    assert "candidates = {path_with_m, path_text};" in body
+    assert "exist(canonical, 'file') == 2" in body
+    assert "~strcmpi(resolved_ext, '.m')" in body
+
+    identity_body = _function_body(
+        source,
+        "function identity = source_identity_for_path(path_value)\n",
+    )
+    assert "resolved_path = resolve_matlab_source_path(path_value);" in identity_body
+    assert (
+        "'sha256_lf_normalized', sha256_lf_normalized_file_dual(resolved_path)"
+        in identity_body
+    )
+    hash_body = _function_body(
+        source,
+        "function hash_hex = sha256_lf_normalized_file_dual(path_value)\n",
+    )
+    assert "fid = fopen(path_value, 'rb');" in hash_body
+    assert "raw = fread(fid, Inf, '*uint8')';" in hash_body
+    assert "raw(raw == uint8(13)) = [];" in hash_body
+
+    extensionless_windows_path = PureWindowsPath(
+        r"E:\opencell-worktrees\fix-cyt-n20-rng-replay"
+        r"\scripts\matlab\extract_dual_division_window"
+    )
+    assert extensionless_windows_path.suffix == ""
+    assert extensionless_windows_path.with_suffix(".m").name == EXTRACTOR_PATH.name
+    assert EXTRACTOR_PATH.is_file()
+
+    real_bytes = EXTRACTOR_PATH.read_bytes()
+    assert real_bytes
+    expected_hash = hashlib.sha256(real_bytes.replace(b"\r", b"")).hexdigest()
+    assert expected_hash == lf_normalized_sha256_hex(EXTRACTOR_PATH)
 
 
 # ---------------------------------------------------------------------------

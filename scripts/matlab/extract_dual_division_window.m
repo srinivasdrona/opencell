@@ -1331,15 +1331,49 @@ hash_hex = lower(sprintf('%02x', digest_bytes));
 end
 
 function identity = source_identity_for_path(path_value)
-resolved_path = char(java.io.File(path_value).getCanonicalPath());
-if exist(resolved_path, 'file') ~= 2
-    error('extract_dual_division_window:source_identity_missing', ...
-        'source path does not exist: %s', resolved_path);
-end
+resolved_path = resolve_matlab_source_path(path_value);
 identity = struct( ...
     'resolved_path', resolved_path, ...
     'sha256_lf_normalized', sha256_lf_normalized_file_dual(resolved_path) ...
 );
+end
+
+function resolved_path = resolve_matlab_source_path(path_value)
+% mfilename('fullpath') returns the function path without the `.m`
+% extension. Resolve that documented form to the real source file before
+% opening/hash-binding it, while still accepting an already-suffixed path
+% returned by `which(className)`. Extensionless candidates prefer `.m`;
+% identity must never bind an unrelated extensionless file.
+path_text = char(path_value);
+[~, ~, ext] = fileparts(path_text);
+if isempty(ext)
+    path_with_m = [path_text '.m'];
+    candidates = {path_with_m, path_text};
+else
+    candidates = {path_text};
+end
+
+resolved_path = '';
+for i = 1:numel(candidates)
+    candidate = candidates{i};
+    if exist(candidate, 'file') ~= 2
+        continue;
+    end
+    canonical = char(java.io.File(candidate).getCanonicalPath());
+    if exist(canonical, 'file') == 2
+        resolved_path = canonical;
+        break;
+    end
+end
+if isempty(resolved_path)
+    error('extract_dual_division_window:source_identity_missing', ...
+        'source path does not exist (tried: %s)', strjoin(candidates, ', '));
+end
+[~, ~, resolved_ext] = fileparts(resolved_path);
+if ~strcmpi(resolved_ext, '.m')
+    error('extract_dual_division_window:source_identity_not_m_file', ...
+        'source identity must resolve to an existing .m file, got: %s', resolved_path);
+end
 end
 
 function identity = source_identity_for_process(proc)

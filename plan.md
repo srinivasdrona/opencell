@@ -62,6 +62,27 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-15 05:52 IST) — supersedes all
 earlier blocks below:**
 
+- Combined canary self-hash hotfix (2026-09-15 06:52 IST): orchestrator's
+  live seed-36 canary on tip `5501a13` failed before simulation because
+  MATLAB `mfilename('fullpath')` returned extensionless
+  `...\extract_dual_division_window`, and
+  `sha256_lf_normalized_file_dual` tried to open that nonexistent path.
+  No trajectory ran. The extractor now resolves extensionless self paths by
+  preferring `<path>.m`, canonicalizes and verifies the file exists, requires
+  the resolved extension to be `.m`, then LF-hashes those real bytes. Already
+  suffixed `which(className)` process-source paths remain supported.
+  MATLAB-free regression includes the exact Windows extensionless path,
+  pins the `.m` resolution branch, and cross-checks the real source-byte
+  LF hash against the Python authority validator; the live canary remains
+  the final runtime proof. Validation:
+  extractor/dual/gate suite 106 passed; Ruff and diff check clean. Independent
+  Opus 5 review **ACCEPTED** the fail-closed resolution and confirmed both
+  Cyt/FtsZ tap projections remain intact; its non-blocking test-quality note
+  was closed by binding the real-byte hash to the Python validator's
+  LF-normalized implementation. Review provenance:
+  `sha256:e67da8370d059de2094b2fe2b8b034d7eb4407b52cc48a0a77dd7741e3032735`.
+  No MATLAB launched by this branch. The orchestrator retains the
+  one-day-license canary rerun.
 - Combined division re-extraction surface (2026-09-15 06:35 IST): merged
   accepted FtsZ repair tip `0ab6b74` into
   `fix/cyt-n20-rng-replay` as merge commit `23008e2`. Shared conflicts were
