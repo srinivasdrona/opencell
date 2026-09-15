@@ -441,6 +441,14 @@ earlier blocks below:**
   live under the session files directory as `run_combined_n20_worker.ps1`,
   `monitor_combined_n20.ps1`, and `combined_n20_*`. Global bank lock:
   `combined_n20_bank.lock`; stop flag: `combined_n20_complete.flag`.
+  Worker F completed its full shard with new-schema valid seeds 5, 13, 27,
+  33. Current other workers: A seed16, B seed29, C seed19, D seed20,
+  E seed26. The first monitor failed on obsolete projection-v2 seed34;
+  preserved old-format directories 34,35,37-49 were moved (never deleted)
+  from the authoritative bank to
+  `dual_division_cohort_legacy_projection_v2`; new-schema seed36 remains in
+  the bank. Monitor `combined-n20-monitor-r2` continues under the global
+  lock.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
