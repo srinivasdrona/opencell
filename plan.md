@@ -319,6 +319,70 @@ earlier blocks below:**
   `division_n20_resume.status`, `division_n20_resume.log`. The launcher
   banks each attempt, runs the selector, and stops immediately at 20
   completed windows.
+  Division gate candidate `build/division-n20-gates` at `6e7cd84` now
+  implements fail-closed N20 authority surfaces and preserves current main;
+  N12 pilots: Cyt conditional projection is exact, while FtsZ genuinely
+  exceeds Karr-only thresholds (enzymes 0.581578 > 0.174015; substrates
+  0.1895 > 0.152667). Cyt full stochastic replay remains blocked on missing
+  process `randStreamState`. Active follow-ups:
+  - Opus gate review `b611b17c-4f24-4a74-bb08-f335627de9ea`;
+  - FtsZ diagnosis/fix `42f8e764-ab05-4eab-ab2b-d69b0b2d5737`,
+    worktree `E:\opencell-worktrees\fix-ftsz-n20-mismatch`;
+  - Cyt RNG/extractor closure `7fcc7bd1-60f3-4214-bd6a-577bab8a7225`,
+    worktree `E:\opencell-worktrees\fix-cyt-n20-rng-replay`.
+  Opus review `b611b17c-4f24-4a74-bb08-f335627de9ea` **REJECTED Cyt only**:
+  one payload mismatch passes at threshold equality; OC count/timing are
+  evaluated only on Karr contraction ticks and cannot detect overfire; the
+  catalog primary/output surface was post-hoc changed to fit the conditional
+  projection; full stochastic decisions remain untested without
+  `randStreamState`. Opus accepted the FtsZ/cohort plumbing and independently
+  confirmed its N12 enzyme mismatch is credible/conservative. Do not merge
+  `6e7cd84` wholesale or promote either row.   Seed 15 finished as a valid 100,000-tick right-censor and banked; the pause
+  monitor stopped before seed 16 because old-format Cyt traces cannot support
+  the full gate. Authoritative audit: contiguous prefix through 15, **12
+  completed / 4 censored** (6, 12, 14, 15), zero duplicate hashes/source
+  mismatches/invalid censors/rejected traces, seed 16 next. Pause monitor shell
+  `pause-after-seed15-2` used
+  `pause_division_after_seed15.ps1` and stops supervisor PID 2260 only after
+  the log records `seed 15 BANKED`; status is now
+  `PAUSED after_seed=15 reason=await_cyt_rng_and_ftsz_fix` and no MATLAB
+  process remains.
+  FtsZ diagnosis is complete at `fix/ftsz-n20-mismatch` tip `0ab6b74`
+  (behavior commit `c614b9b`, calibration correction `86fb962`), Opus
+  accepted. Root cause: MATLAB reads live per-tick `geometry.volume` for
+  concentration/ODE arithmetic; OC used fixture volume and old dual traces
+  omit this input. The corrected process consumes a live geometry port and
+  the gate/extractor require `geometry_volume`; existing N12 traces now
+  correctly refuse rather than fabricate a post-fix distance. Calibration
+  uses only N/2 distinct symmetric Karr splits and per-active-component
+  support. Cyt agent must integrate this branch so the next dual extraction
+  captures both FtsZ `geometry_volume` and Cyt `randStreamState` in one pass.
+  Combined corrective branch is now `fix/cyt-n20-rng-replay` tip `8b98643`
+  (merge `23008e2`), with both extractor fields and both fail-closed gates;
+  combined tests reported 144 focused, 105 dual validators, L1b 28/28+63,
+  L2.4 6, provenance 44, board 20/0/2. Final combined Opus review agent
+  `7ef577ac-d8e3-4fca-a610-c28a1798495e` is active. Genuine seed-36 canary
+  is OS-detached in shell `combined-seed36-canary`, supervisor PID 23784,
+  MATLAB wrapper/child PIDs 17080/17708; launcher/status/log under session
+  files `run_combined_seed36_canary.ps1`,
+  `combined_division_seed36_canary.status`, and
+  `combined_division_seed36_canary.log`. MATLAB reports the trial license
+  expires in one day. First live canary failed before simulation: MATLAB
+  `mfilename('fullpath')` returned extensionless
+  `...\scripts\matlab\extract_dual_division_window`, and the new extractor
+  source-identity hash tried opening it without `.m`. Exact failure sent back
+  to Cyt agent; fixed/Opus-accepted in `2fc5571` by canonicalizing an
+  extensionless `mfilename` path to an existing `.m` before hashing. Retry is
+  OS-detached in shell `combined-seed36-canary-r2`, supervisor PID 13152,
+  MATLAB wrapper/child PIDs 13800/15912 and has entered the scheduler pass.
+  Final combined Opus review `7ef577ac-d8e3-4fca-a610-c28a1798495e`
+  **ACCEPTED** with no blockers (231 tests/1 data skip, board 20/0/2).
+  Nonblocking cleanup after canary: correct chassis-volume fail-closed
+  overstatement/no-producer default, old-trace doc contradiction, corrupt-HDF5
+  canary exception handling, dangling registry prose; retain explicit
+  disclosure that FtsZ N20 calibration has 5 distinct Karr splits and 10
+  evaluation seeds. Do not mutate the running canary worktree or merge until
+  runtime validation passes.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
