@@ -62,6 +62,26 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-15 05:52 IST) — supersedes all
 earlier blocks below:**
 
+- Combined division re-extraction surface (2026-09-15 06:35 IST): merged
+  accepted FtsZ repair tip `0ab6b74` into
+  `fix/cyt-n20-rng-replay` as merge commit `23008e2`. Shared conflicts were
+  resolved by union, not selection: the single scheduler pass now captures
+  Cytokinesis `randStreamState` immediately before/after its own
+  `evolveState`, and FtsZPolymerization live `geometry_volume` immediately
+  before/after its tap. Temp-output checks and the combined Python canary
+  require both projections; neither field can be dropped silently.
+  `validate_dual_division_canary` on legacy seed 0 fails specifically on
+  missing FtsZ `geometry_volume`, while Cyt full capability independently
+  reports missing RNG/schema/source identity. The genuine separate seed-36
+  Cyt trace still replays **5000/5000, zero mismatches** after the merge.
+  Validation: combined Cyt/FtsZ focused suite 144 passed; both dual static
+  validator suites 105 passed; L1b 28/28 plus 63 L1b/provenance tests; L2.4
+  6 passed; Ruff clean; evidence board remains **20 PASS / 0 FAIL / 2
+  MISSING_EVIDENCE, integrity OK**. Provenance event
+  `sha256:6742e5d1b8f991660298e1aabce37547f6179b4f2d3afaa159183214a10c1d65`.
+  No MATLAB was launched. Old-format extraction remains paused after seed
+  15; every selected completion must be re-extracted once through this
+  combined dual projection before either missing row can become authoritative.
 - Cytokinesis N20 RNG-replay repair (2026-09-15 05:35 IST): complete in isolated
   worktree `E:\opencell-worktrees\fix-cyt-n20-rng-replay`, branch
   `fix/cyt-n20-rng-replay`, based exactly on division-gate candidate
