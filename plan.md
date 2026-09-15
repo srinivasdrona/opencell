@@ -136,11 +136,16 @@ earlier blocks below:**
   projection; full stochastic decisions remain untested without
   `randStreamState`. Opus accepted the FtsZ/cohort plumbing and independently
   confirmed its N12 enzyme mismatch is credible/conservative. Do not merge
-  `6e7cd84` wholesale or promote either row. Seed 15 may finish and bank, but
-  pause before seed 16 because old-format Cyt traces cannot support the full
-  gate. Pause monitor shell `pause-after-seed15-2` uses
+  `6e7cd84` wholesale or promote either row.   Seed 15 finished as a valid 100,000-tick right-censor and banked; the pause
+  monitor stopped before seed 16 because old-format Cyt traces cannot support
+  the full gate. Authoritative audit: contiguous prefix through 15, **12
+  completed / 4 censored** (6, 12, 14, 15), zero duplicate hashes/source
+  mismatches/invalid censors/rejected traces, seed 16 next. Pause monitor shell
+  `pause-after-seed15-2` used
   `pause_division_after_seed15.ps1` and stops supervisor PID 2260 only after
-  the log records `seed 15 BANKED`.
+  the log records `seed 15 BANKED`; status is now
+  `PAUSED after_seed=15 reason=await_cyt_rng_and_ftsz_fix` and no MATLAB
+  process remains.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
