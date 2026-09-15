@@ -156,6 +156,18 @@ earlier blocks below:**
   uses only N/2 distinct symmetric Karr splits and per-active-component
   support. Cyt agent must integrate this branch so the next dual extraction
   captures both FtsZ `geometry_volume` and Cyt `randStreamState` in one pass.
+  Combined corrective branch is now `fix/cyt-n20-rng-replay` tip `5501a13`
+  (merge `23008e2`), with both extractor fields and both fail-closed gates;
+  combined tests reported 144 focused, 105 dual validators, L1b 28/28+63,
+  L2.4 6, provenance 44, board 20/0/2. Final combined Opus review agent
+  `7ef577ac-d8e3-4fca-a610-c28a1798495e` is active. Genuine seed-36 canary
+  is OS-detached in shell `combined-seed36-canary`, supervisor PID 23784,
+  MATLAB wrapper/child PIDs 17080/17708; launcher/status/log under session
+  files `run_combined_seed36_canary.ps1`,
+  `combined_division_seed36_canary.status`, and
+  `combined_division_seed36_canary.log`. MATLAB reports the trial license
+  expires in one day. Do not restart the cohort until this canary passes and
+  the combined review accepts.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
