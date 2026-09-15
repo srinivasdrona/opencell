@@ -199,6 +199,14 @@ earlier blocks below:**
   Each worker must validate completed output, atomically bank under a global
   lock, and honor a shared stop flag once the authoritative selector reaches
   20 completed windows. A separate locked monitor owns full cohort audits.
+  Launched OS-detached at 2026-09-15 08:26 IST: shells
+  `combined-n20-{a,b,c,d,e,f}` plus `combined-n20-monitor`. Current first
+  seeds/PID pairs: A seed0 16432/16116; B seed1 18968/12480; C seed2
+  23888/22948; D seed3 9700/13996; E seed4 23728/12784; F seed5
+  16832/15756. Durable worker/monitor launchers and per-worker logs/status
+  live under the session files directory as `run_combined_n20_worker.ps1`,
+  `monitor_combined_n20.ps1`, and `combined_n20_*`. Global bank lock:
+  `combined_n20_bank.lock`; stop flag: `combined_n20_complete.flag`.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
