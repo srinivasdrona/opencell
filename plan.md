@@ -146,6 +146,16 @@ earlier blocks below:**
   the log records `seed 15 BANKED`; status is now
   `PAUSED after_seed=15 reason=await_cyt_rng_and_ftsz_fix` and no MATLAB
   process remains.
+  FtsZ diagnosis is complete at `fix/ftsz-n20-mismatch` tip `0ab6b74`
+  (behavior commit `c614b9b`, calibration correction `86fb962`), Opus
+  accepted. Root cause: MATLAB reads live per-tick `geometry.volume` for
+  concentration/ODE arithmetic; OC used fixture volume and old dual traces
+  omit this input. The corrected process consumes a live geometry port and
+  the gate/extractor require `geometry_volume`; existing N12 traces now
+  correctly refuse rather than fabricate a post-fix distance. Calibration
+  uses only N/2 distinct symmetric Karr splits and per-active-component
+  support. Cyt agent must integrate this branch so the next dual extraction
+  captures both FtsZ `geometry_volume` and Cyt `randStreamState` in one pass.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
