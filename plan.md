@@ -449,6 +449,14 @@ earlier blocks below:**
   `dual_division_cohort_legacy_projection_v2`; new-schema seed36 remains in
   the bank. Monitor `combined-n20-monitor-r2` continues under the global
   lock.
+  Progress update 2026-09-16 02:00 IST: workers B and C also exhausted their
+  shards. B completed 1,8,17,23,29; C completed 2,9,24,30 and recorded seed19
+  as a valid right-censor. Latest completed monitor audit reached contiguous
+  prefix 21 with 14/20 selected and zero integrity defects; seeds22-24 have
+  since banked and await the next audit. A is running seed28 (0,7,16,22
+  banked), D seed25 (3,10,20 banked), E seed26 (4,11,21 banked). The monitor
+  is alive in an HDF5 audit; target is expected once gaps25/26 resolve and
+  already-new seed27 unlocks, subject to censor outcomes.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
