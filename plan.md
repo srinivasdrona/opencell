@@ -156,7 +156,7 @@ earlier blocks below:**
   uses only N/2 distinct symmetric Karr splits and per-active-component
   support. Cyt agent must integrate this branch so the next dual extraction
   captures both FtsZ `geometry_volume` and Cyt `randStreamState` in one pass.
-  Combined corrective branch is now `fix/cyt-n20-rng-replay` tip `5501a13`
+  Combined corrective branch is now `fix/cyt-n20-rng-replay` tip `8b98643`
   (merge `23008e2`), with both extractor fields and both fail-closed gates;
   combined tests reported 144 focused, 105 dual validators, L1b 28/28+63,
   L2.4 6, provenance 44, board 20/0/2. Final combined Opus review agent
@@ -170,9 +170,12 @@ earlier blocks below:**
   `mfilename('fullpath')` returned extensionless
   `...\scripts\matlab\extract_dual_division_window`, and the new extractor
   source-identity hash tried opening it without `.m`. Exact failure sent back
-  to Cyt agent for fail-closed extension resolution/regression; rerun the
-  canary immediately after its correction. Do not restart the cohort until
-  this canary passes and the combined review accepts.
+  to Cyt agent; fixed/Opus-accepted in `2fc5571` by canonicalizing an
+  extensionless `mfilename` path to an existing `.m` before hashing. Retry is
+  OS-detached in shell `combined-seed36-canary-r2`, supervisor PID 13152,
+  MATLAB wrapper/child PIDs 13800/15912 and has entered the scheduler pass.
+  Do not restart the cohort until this canary passes and the combined review
+  accepts.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
