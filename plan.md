@@ -105,6 +105,8 @@ earlier blocks below:**
   gate/anti-cheat 72 passed, focused FtsZ 114 passed, L1b 28/28 plus 19,
   L2.4 6 passed, focused Ruff clean. Calibration-review provenance event:
   `sha256:9e8ec2240b21806240d1bbcff31c459a3163c5c9a0623d45735e8b08de581209`.
+  Calibration/support implementation commit `86fb962`; linked event
+  `sha256:4b22ce03063621f5bf10802341be286218e40cde47266f67c196c8a52de20a78`.
   Extraction instruction (2026-09-15 05:28 IST): allow the already-running
   old-format seed-15 attempt to finish, then pause before seed 16. Old-format
   FtsZ outputs lack `geometry_volume` and cannot be scored by the repaired
