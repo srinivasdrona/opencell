@@ -187,6 +187,18 @@ earlier blocks below:**
   31993, inclusive span 4076, margin OK. Final branch cleanup/current-main
   integration and actual Cyt 5000-tick/FtsZ live-volume replay are in progress
   before merge; raw canary MAT files remain untracked.
+  Actual gate execution on that canary also passes: Cyt full `next_update`
+  replay checked 5000/5000 ticks with zero mismatches across all 13 audited
+  fields and 147/147 contraction events; FtsZ live-volume replay has Karr+OC
+  activity on all 200 ticks and exact monomer conservation. Six extraction
+  worktrees at accepted tip `8b98643` are ready:
+  `extract-n20-combined-{a..f}`. Seed shards, prioritized to rebuild all
+  selected traces then close the contiguous gap:
+  A `[0,7,16,22,28]`; B `[1,8,17,23,29]`; C `[2,9,19,24,30]`;
+  D `[3,10,20,25,31]`; E `[4,11,21,26,32]`; F `[5,13,27,33]`.
+  Each worker must validate completed output, atomically bank under a global
+  lock, and honor a shared stop flag once the authoritative selector reaches
+  20 completed windows. A separate locked monitor owns full cohort audits.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
