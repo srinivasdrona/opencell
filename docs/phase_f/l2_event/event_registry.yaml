@@ -53,6 +53,8 @@ processes:
     notes: >
       UPDATED 2026-09-15: the registered adapter is driven by
       scripts/l2_event/cytokinesis_n20_gate.py against selector-owned dual
+      traces and resolves to that module's
+      CytokinesisFullReplayAdapter.adapter_id (not a dangling label).
       traces. Full authority requires dual_tap_extractor_schema_version=2,
       current Cytokinesis.m/extractor source identities, and the process's
       private mcg16807 randStreamState before and after every Cytokinesis
@@ -65,6 +67,11 @@ processes:
       cytokinesis.contraction_projection.v2 pilot surface, but they are
       explicitly barred from full-replay authority. Authority also remains
       impossible below exactly N=20; pilots write only untracked diagnostics.
+      Opus rejection of 6e7cd84 is binding: one payload mismatch must fail
+      (all exact thresholds are zero); count/timing come only from full OC
+      next_update evaluation over every tick so overfire is observable; payloads
+      pair by seed/tick; the catalog's substrates/chromosome surfaces are
+      preserved; and every legacy no-RNG pilot is mechanically non-green.
       Historical Canary D closed 2026-08-05: 1 of 50
       required event-window seeds now exists on disk (seed 000 under
       data/m1_sources/karr_native/per_process_traces_v2_event_s000/

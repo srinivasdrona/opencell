@@ -177,10 +177,10 @@ def test_registry_cytokinesis_adapter_id_resolves_to_the_real_adapter():
     `adapter_id` class attribute exactly, so `adapter_id` always resolves
     to real, importable code (never a dangling label some future reader
     could mistake for a distinct adapter that doesn't exist)."""
-    from scripts.l2_event.cytokinesis_n20_gate import ADAPTER_ID
+    from scripts.l2_event.cytokinesis_n20_gate import CytokinesisFullReplayAdapter
 
     registry = load_registry()
-    assert registry["Cytokinesis"].adapter_id == ADAPTER_ID
+    assert registry["Cytokinesis"].adapter_id == CytokinesisFullReplayAdapter.adapter_id
 
 
 def test_registry_ribosome_assembly_adapter_id_resolves_to_the_real_adapter():

@@ -183,6 +183,7 @@ def write_authority_bundle(
     *,
     process: str,
     harness_type: str,
+    expected_selected_seeds: tuple[int, ...],
     result: dict[str, Any],
     inputs: list[dict[str, Any]],
     thresholds: dict[str, Any],
@@ -198,6 +199,7 @@ def write_authority_bundle(
     entry = l22_catalog.in_scope_processes()[process]
     expected_n = required_completed_windows()
     seeds = result.get("seeds")
+    expected_seeds = [int(seed) for seed in expected_selected_seeds]
     if (
         not isinstance(seeds, list)
         or len(seeds) != expected_n
@@ -206,6 +208,12 @@ def write_authority_bundle(
         raise DivisionGateRefusalError(
             f"refusing authority write for {process}: result must carry exactly "
             f"{expected_n} unique selected seeds, got {seeds!r}"
+        )
+    if [int(seed) for seed in seeds] != expected_seeds:
+        raise DivisionGateRefusalError(
+            f"refusing authority write for {process}: result seeds do not "
+            f"exactly match the selector-owned context seeds in order; "
+            f"result={seeds!r}, context={expected_seeds!r}"
         )
     if entry.n_seeds != expected_n:
         raise DivisionGateRefusalError(

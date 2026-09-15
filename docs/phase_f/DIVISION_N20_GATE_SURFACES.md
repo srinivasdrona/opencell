@@ -53,6 +53,25 @@ completed trace used for full N=20 Cytokinesis authority must therefore be
 re-extracted through the one-pass dual Cyt/FtsZ extractor; no field is
 backfilled or inferred from the initial seed.
 
+The Opus rejection of the `6e7cd84` conditional surface is binding:
+
+- exact payload thresholds are zero, so one mismatch fails;
+- conditional projection never supplies an OC count/timing timeline; those
+  channels are forced non-green until full replay can detect both missed
+  events and overfire across every tick;
+- event payloads pair by `(seed, tick)`, never flattened position;
+- the preregistered `substrates` primary and `chromosome` output remain in
+  the catalog. RNG/ring/geometry fields are additive replay requirements,
+  not replacements selected after seeing a pilot result;
+- `analytical_check` passes only after evaluating the injected full SUT;
+- authority writing receives the selector-owned context seed tuple and
+  refuses any result seed/order drift.
+
+The old-format extraction campaign is paused after seed 15 because its output
+cannot satisfy Cytokinesis authority. Existing old-format pairs may remain
+FtsZ inputs and conditional Cytokinesis diagnostics, but they do not close
+the Cytokinesis row.
+
 ### Approval-gated one-seed canary
 
 Do not launch until the orchestrator confirms an available MATLAB host slot.

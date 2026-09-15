@@ -1,10 +1,10 @@
 {
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
-  "catalog_sha256": "c243299da2938b1f6e51108dbef7e76d48d5d24260b110b844387623d4177f57",
-  "content_hash": "fd135143e9a7c5fa9dd36d46b7c9095997231b688923c45caba6efa94235b00c",
+  "catalog_sha256": "a3dec57b3b6d5ed4e31d96c6a78fdf9655af4e74c771e279df7fa281e148f9ce",
+  "content_hash": "a3281157d8d186d7e8eeb51cd29ed75c871d2f8bce2ec622d22913a97fbfe916",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-14T22:28:24.639313+00:00",
+  "generated_at": "2026-09-15T00:07:30.974813+00:00",
   "n_in_scope": 22,
   "rows": [
     {
@@ -16,7 +16,7 @@
         "closed_form_dominant": "false",
         "harness_type": "event_class",
         "in_scope_L2_2": true,
-        "primary_channel": "pinchedDiameter",
+        "primary_channel": "substrates",
         "primary_distance": "per_tick_vector_w1_mean"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Cytokinesis/latest_event",

@@ -615,6 +615,7 @@ def run(*, source_root: Path, mode: str, workers: int = 1) -> dict[str, Any]:
         output_dir = write_authority_bundle(
             process=PROCESS_NAME,
             harness_type=HARNESS_TYPE,
+            expected_selected_seeds=context.selected_seeds,
             result=payload["result"],
             inputs=payload["inputs"],
             thresholds=payload["thresholds"],

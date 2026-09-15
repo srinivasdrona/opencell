@@ -22,6 +22,7 @@ from scripts.l2_event.division_cohort_selector import CohortAudit  # noqa: E402
 from scripts.l2_event.window_loader import WindowGrid  # noqa: E402
 from scripts.l22_evidence import catalog as l22_catalog  # noqa: E402
 from scripts.l22_evidence import generator as l22_generator  # noqa: E402
+from scripts.l22_evidence import verdict as l22_verdict  # noqa: E402
 
 
 def _audit(selected: list[int], *, satisfied: bool) -> CohortAudit:
@@ -122,6 +123,14 @@ def test_generator_refuses_selector_manifest_with_only_n19():
     assert any("NM_MISMATCH" in reason for reason in reasons)
 
 
+def test_cytokinesis_catalog_preserves_declared_surfaces_and_result_semantics():
+    entry = l22_catalog.in_scope_processes()["Cytokinesis"]
+    assert entry.primary_channel == "substrates"
+    assert {"substrates", "chromosome"} <= set(entry.output_channels)
+    assert set(entry.event_channels) == {"pinchedDiameter"}
+    assert entry.primary_channel not in entry.event_channels
+
+
 def test_exact_n20_authority_writes_live_root_only(tmp_path, monkeypatch):
     live_root = tmp_path / "live"
     tracked_root = tmp_path / "tracked"
@@ -147,6 +156,7 @@ def test_exact_n20_authority_writes_live_root_only(tmp_path, monkeypatch):
     output = common.write_authority_bundle(
         process="Cytokinesis",
         harness_type="event_class",
+        expected_selected_seeds=tuple(selected),
         result={
             "process": "Cytokinesis",
             "seeds": selected,
@@ -165,6 +175,28 @@ def test_exact_n20_authority_writes_live_root_only(tmp_path, monkeypatch):
     assert manifest["resolved_seeds"] == selected
     assert manifest["seed_selection"]["selected_seeds"] == selected
     assert all("_verify_path" not in record for record in manifest["inputs"])
+
+
+def test_authority_writer_refuses_result_seed_drift_from_selector_context():
+    selected = tuple(range(20))
+    drifted = [*range(19), 99]
+    with pytest.raises(common.DivisionGateRefusalError, match="selector-owned context"):
+        common.write_authority_bundle(
+            process="Cytokinesis",
+            harness_type="event_class",
+            expected_selected_seeds=selected,
+            result={
+                "process": "Cytokinesis",
+                "seeds": drifted,
+                "ticks": 5000,
+                "channels": {},
+            },
+            inputs=[],
+            thresholds={},
+            null_calibration={},
+            summary={},
+            analytical_check={"applicable": True},
+        )
 
 
 def test_ftsz_calibration_api_cannot_receive_oc_outcomes():
@@ -420,6 +452,44 @@ def _synthetic_evidence(seed: int, grid: WindowGrid) -> cyt_gate.CytokinesisSeed
     )
 
 
+def _gate_surface(
+    *,
+    seed: int,
+    karr_ticks: tuple[int, ...],
+    oc_ticks: tuple[int, ...],
+    karr_payloads: tuple[float, ...],
+    oc_payloads: tuple[float, ...],
+    authority_class: str,
+    mismatches: dict[str, int] | None = None,
+) -> cyt_gate.CytokinesisProjectionSurface:
+    mismatch_counts = {field: 0 for field in cyt_gate.FULL_REPLAY_AUDIT_FIELDS}
+    mismatch_counts.update(mismatches or {})
+    grid = _synthetic_cyt_grid(seed)
+    return cyt_gate.CytokinesisProjectionSurface(
+        evidence=_synthetic_evidence(seed, grid),
+        karr_event_ticks=karr_ticks,
+        oc_event_ticks=(
+            oc_ticks if authority_class == "FULL_NEXT_UPDATE_REPLAY_READY" else ()
+        ),
+        karr_payloads=karr_payloads,
+        oc_payloads=oc_payloads,
+        oc_payload_ticks=oc_ticks,
+        karr_substrate_event_ticks=karr_ticks,
+        oc_substrate_event_ticks=(
+            oc_ticks if authority_class == "FULL_NEXT_UPDATE_REPLAY_READY" else ()
+        ),
+        replay_authority_class=authority_class,
+        replay_capability_reason=(
+            "" if authority_class == "FULL_NEXT_UPDATE_REPLAY_READY" else "missing RNG"
+        ),
+        full_replay_checked_ticks=(
+            grid.n_ticks if authority_class == "FULL_NEXT_UPDATE_REPLAY_READY" else 0
+        ),
+        full_replay_field_mismatch_counts=mismatch_counts,
+        full_replay_first_mismatches=(),
+    )
+
+
 def test_cytokinesis_full_replay_matches_all_captured_fields():
     seed = 7
     grid = _synthetic_full_replay_grid(seed)
@@ -496,6 +566,7 @@ def test_cytokinesis_full_replay_constant_sut_is_detected():
     )
     assert surface.full_replay_passed is False
     assert surface.full_replay_field_mismatch_counts["pinchedDiameter"] > 0
+    assert len(surface.oc_event_ticks) > len(surface.karr_event_ticks)
 
 
 def test_cytokinesis_full_replay_captured_field_mismatch_is_detected():
@@ -518,6 +589,194 @@ def test_cytokinesis_full_replay_captured_field_mismatch_is_detected():
     )
     assert surface.full_replay_passed is False
     assert surface.full_replay_field_mismatch_counts["enzymes"] == 1
+
+
+def test_cytokinesis_payloads_are_paired_by_seed_and_tick_not_flat_position(
+    monkeypatch,
+):
+    surfaces = {
+        seed: _gate_surface(
+            seed=seed,
+            karr_ticks=(1, 2),
+            oc_ticks=(2, 3),
+            karr_payloads=(10.0, 20.0),
+            oc_payloads=(10.0, 20.0),
+            authority_class="CONDITIONAL_PILOT_ONLY",
+        )
+        for seed in (0, 1)
+    }
+    monkeypatch.setattr(
+        cyt_gate,
+        "_evaluate_seed",
+        lambda *, seed, **_kwargs: surfaces[seed],
+    )
+    payload = cyt_gate.build_gate(context=_context([0, 1]), workers=1)
+    pinched = payload["result"]["channels"]["pinchedDiameter"]
+    assert pinched["w1_oc_vs_karr"] == 6.0
+    assert pinched["threshold"] == 0.0
+    assert len(pinched["payload"]["mismatches_paired_by_seed_tick"]) == 6
+
+
+def test_cytokinesis_one_payload_mismatch_fails_exact_threshold(monkeypatch):
+    surfaces = {
+        0: _gate_surface(
+            seed=0,
+            karr_ticks=(1,),
+            oc_ticks=(1,),
+            karr_payloads=(0.0,),
+            oc_payloads=(1.0,),
+            authority_class="CONDITIONAL_PILOT_ONLY",
+        ),
+        1: _gate_surface(
+            seed=1,
+            karr_ticks=(1,),
+            oc_ticks=(1,),
+            karr_payloads=(0.0,),
+            oc_payloads=(0.0,),
+            authority_class="CONDITIONAL_PILOT_ONLY",
+        ),
+    }
+    monkeypatch.setattr(
+        cyt_gate,
+        "_evaluate_seed",
+        lambda *, seed, **_kwargs: surfaces[seed],
+    )
+    payload = cyt_gate.build_gate(context=_context([0, 1]), workers=1)
+    pinched = payload["result"]["channels"]["pinchedDiameter"]
+    assert pinched["w1_oc_vs_karr"] == 1.0
+    assert pinched["threshold"] == 0.0
+    assert pinched["w1_oc_vs_karr"] > pinched["threshold"]
+
+
+def test_cytokinesis_conditional_pilot_is_forced_non_green(monkeypatch):
+    surfaces = {
+        seed: _gate_surface(
+            seed=seed,
+            karr_ticks=(1,),
+            oc_ticks=(1,),
+            karr_payloads=(0.0,),
+            oc_payloads=(0.0,),
+            authority_class="CONDITIONAL_PILOT_ONLY",
+        )
+        for seed in (0, 1)
+    }
+    monkeypatch.setattr(
+        cyt_gate,
+        "_evaluate_seed",
+        lambda *, seed, **_kwargs: surfaces[seed],
+    )
+    payload = cyt_gate.build_gate(context=_context([0, 1]), workers=1)
+    primary = payload["result"]["channels"]["substrates"]
+    assert primary["is_primary"] is True
+    assert primary["w1_oc_vs_karr"] > primary["threshold"]
+    pinched = payload["result"]["channels"]["pinchedDiameter"]
+    assert pinched["w1_oc_vs_karr"] > pinched["threshold"]
+    timing = payload["result"]["channels"]["onset_to_completion_timing"]
+    assert timing["payload"]["onset_to_completion_oc"] is None
+    assert payload["summary"]["oc_completed_seed_count"] is None
+    assert payload["analytical_check"]["passed"] is False
+    assert payload["analytical_check"]["sut_evaluated"] is False
+
+
+def test_cytokinesis_analytical_check_fails_injected_full_replay_sut(
+    monkeypatch,
+):
+    surfaces = {
+        seed: _gate_surface(
+            seed=seed,
+            karr_ticks=(1,),
+            oc_ticks=(1,),
+            karr_payloads=(0.0,),
+            oc_payloads=(0.0,),
+            authority_class="FULL_NEXT_UPDATE_REPLAY_READY",
+            mismatches={"enzymes": 1},
+        )
+        for seed in (0, 1)
+    }
+    monkeypatch.setattr(
+        cyt_gate,
+        "_evaluate_seed",
+        lambda *, seed, **_kwargs: surfaces[seed],
+    )
+    payload = cyt_gate.build_gate(context=_context([0, 1]), workers=1)
+    assert payload["result"]["channels"]["substrates"]["w1_oc_vs_karr"] == 2.0
+    assert payload["analytical_check"]["passed"] is False
+    assert payload["analytical_check"]["sut_evaluated"] is True
+
+
+@pytest.mark.parametrize("mismatch_field", cyt_gate.FULL_REPLAY_AUDIT_FIELDS)
+def test_each_full_replay_mismatch_is_mechanically_non_green(
+    monkeypatch,
+    mismatch_field,
+):
+    selected = list(range(20))
+    surfaces = {
+        seed: _gate_surface(
+            seed=seed,
+            karr_ticks=(1, 2),
+            oc_ticks=(1, 2),
+            karr_payloads=(10.0, 0.0),
+            oc_payloads=(10.0, 0.0),
+            authority_class="FULL_NEXT_UPDATE_REPLAY_READY",
+            mismatches={mismatch_field: 1} if seed == 0 else None,
+        )
+        for seed in selected
+    }
+    monkeypatch.setattr(
+        cyt_gate,
+        "_evaluate_seed",
+        lambda *, seed, **_kwargs: surfaces[seed],
+    )
+    payload = cyt_gate.build_gate(context=_context(selected), workers=1)
+    entry = l22_catalog.in_scope_processes()["Cytokinesis"]
+    verdict = l22_verdict.rederive_process(
+        "Cytokinesis",
+        entry,
+        payload["result"],
+    )
+    assert verdict.mechanical_verdict != "PASS", (
+        mismatch_field,
+        verdict.channel_verdicts,
+        verdict.reasons,
+    )
+    assert mismatch_field in payload["thresholds"]["channels"]
+
+
+def test_shifted_full_replay_timeline_is_not_hidden_by_karr_noise_floor(
+    monkeypatch,
+):
+    selected = list(range(20))
+    surfaces = {
+        seed: _gate_surface(
+            seed=seed,
+            karr_ticks=(1, 2),
+            oc_ticks=((2, 3) if seed == 0 else (1, 2)),
+            karr_payloads=(10.0, 0.0),
+            oc_payloads=(10.0, 0.0),
+            authority_class="FULL_NEXT_UPDATE_REPLAY_READY",
+        )
+        for seed in selected
+    }
+    monkeypatch.setattr(
+        cyt_gate,
+        "_evaluate_seed",
+        lambda *, seed, **_kwargs: surfaces[seed],
+    )
+    payload = cyt_gate.build_gate(context=_context(selected), workers=1)
+    timing = payload["result"]["channels"]["onset_to_completion_timing"]
+    assert timing["w1_oc_vs_karr"] == 2.0
+    assert timing["threshold"] == 0.0
+    assert timing["q95_null"] == 0.0
+    verdict = l22_verdict.rederive_process(
+        "Cytokinesis",
+        l22_catalog.in_scope_processes()["Cytokinesis"],
+        payload["result"],
+    )
+    assert verdict.channel_verdicts["onset_to_completion_timing"] not in {
+        "SEED_NOISE",
+        "PASS",
+    }
+    assert verdict.mechanical_verdict != "PASS"
 
 
 def test_cytokinesis_noop_sut_loses_event_and_payload(monkeypatch):
@@ -556,7 +815,7 @@ def test_cytokinesis_noop_sut_loses_event_and_payload(monkeypatch):
     primary = payload["result"]["channels"]["pinchedDiameter"]
     assert primary["w1_oc_vs_karr"] > primary["threshold"]
     assert payload["result"]["channels"]["contraction_event_count"]["w1_oc_vs_karr"] > 0
-    assert payload["summary"]["oc_completed_seed_count"] == 0
+    assert payload["summary"]["oc_completed_seed_count"] is None
 
 
 def test_cytokinesis_duplicate_completion_semantics_are_rejected():

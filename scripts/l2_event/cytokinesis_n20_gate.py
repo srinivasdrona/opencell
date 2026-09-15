@@ -83,6 +83,7 @@ FULL_REPLAY_REQUIRED_OBSERVABLES = (
 REQUIRED_OBSERVABLES = BASE_REQUIRED_OBSERVABLES
 FULL_REPLAY_NONREDUNDANT_FIELDS = (
     "substrates",
+    "chromosome",
     "enzymes",
     "boundEnzymes",
     "pinchedDiameter",
@@ -185,6 +186,9 @@ class CytokinesisProjectionSurface:
     oc_event_ticks: tuple[int, ...]
     karr_payloads: tuple[float, ...]
     oc_payloads: tuple[float, ...]
+    oc_payload_ticks: tuple[int, ...]
+    karr_substrate_event_ticks: tuple[int, ...]
+    oc_substrate_event_ticks: tuple[int, ...]
     replay_authority_class: str
     replay_capability_reason: str
     full_replay_checked_ticks: int
@@ -196,6 +200,24 @@ class CytokinesisProjectionSurface:
         return (
             self.replay_authority_class == "FULL_NEXT_UPDATE_REPLAY_READY"
             and not any(self.full_replay_field_mismatch_counts.values())
+        )
+
+
+class CytokinesisFullReplayAdapter:
+    """Resolvable adapter surface named by the event registry."""
+
+    adapter_id = FULL_REPLAY_ADAPTER_ID
+
+    @staticmethod
+    def evaluate_seed(
+        *,
+        seed: int,
+        trace_path: Path,
+    ) -> CytokinesisProjectionSurface:
+        return _evaluate_seed(
+            seed=seed,
+            trace_path=trace_path,
+            require_full_replay=True,
         )
 
 
@@ -468,9 +490,10 @@ def _conditional_projection_surface(
     sut_projector: Callable[[float, float], float],
 ) -> CytokinesisProjectionSurface:
     karr_event_ticks: list[int] = []
-    oc_event_ticks: list[int] = []
     karr_payloads: list[float] = []
     oc_payloads: list[float] = []
+    oc_payload_ticks: list[int] = []
+    karr_substrate_event_ticks: list[int] = []
 
     for tick in range(grid.n_ticks):
         before = _scalar(
@@ -481,21 +504,28 @@ def _conditional_projection_surface(
             grid.after("pinchedDiameter", tick),
             label=f"seed {grid.seed} tick {tick} after diameter",
         )
+        substrate_delta = _vector(grid, "substrates", tick, after=True) - _vector(
+            grid, "substrates", tick, after=False
+        )
+        if np.any(substrate_delta != 0.0):
+            karr_substrate_event_ticks.append(tick)
         if after >= before:
             continue
         projected = float(sut_projector(before, process.default_filament_length_nm))
         karr_event_ticks.append(tick)
         karr_payloads.append(after)
-        if projected < before:
-            oc_event_ticks.append(tick)
-            oc_payloads.append(projected)
+        oc_payload_ticks.append(tick)
+        oc_payloads.append(projected)
 
     return CytokinesisProjectionSurface(
         evidence=row,
         karr_event_ticks=tuple(karr_event_ticks),
-        oc_event_ticks=tuple(oc_event_ticks),
+        oc_event_ticks=(),
         karr_payloads=tuple(karr_payloads),
         oc_payloads=tuple(oc_payloads),
+        oc_payload_ticks=tuple(oc_payload_ticks),
+        karr_substrate_event_ticks=tuple(karr_substrate_event_ticks),
+        oc_substrate_event_ticks=(),
         replay_authority_class="CONDITIONAL_PILOT_ONLY",
         replay_capability_reason=capability_reason,
         full_replay_checked_ticks=0,
@@ -520,6 +550,8 @@ def _full_replay_surface(
     oc_event_ticks: list[int] = []
     karr_payloads: list[float] = []
     oc_payloads: list[float] = []
+    karr_substrate_event_ticks: list[int] = []
+    oc_substrate_event_ticks: list[int] = []
 
     def record_mismatch(
         *,
@@ -684,6 +716,14 @@ def _full_replay_surface(
         }
         for observable, oc_after in oc_vectors.items():
             karr_after = _integer_vector(grid, observable, tick, after=True)
+            if observable == "substrates":
+                before_substrates = np.asarray(
+                    before_values["substrates"], dtype=np.int64
+                )
+                if np.any(karr_after != before_substrates):
+                    karr_substrate_event_ticks.append(tick)
+                if np.any(oc_after != before_substrates):
+                    oc_substrate_event_ticks.append(tick)
             if not np.array_equal(oc_after, karr_after):
                 record_mismatch(
                     tick=tick,
@@ -812,10 +852,26 @@ def _full_replay_surface(
             ),
             label=f"seed {grid.seed} tick {tick} after chromosome_segregated",
         )
-        if before_chromosome != after_chromosome:
-            raise CytokinesisGateError(
-                f"{grid.trace_path}: chromosome_segregated changed within Cytokinesis "
-                f"tick {tick}, but Cytokinesis.m only reads this field"
+        chromosome_update = port_update("chromosome")
+        unexpected_chromosome_fields = set(chromosome_update) - {"segregated"}
+        if unexpected_chromosome_fields:
+            record_mismatch(
+                tick=tick,
+                field="outputContract",
+                oc_value=sorted(unexpected_chromosome_fields),
+                karr_value=["segregated"],
+                detail="unexpected chromosome output field",
+            )
+        oc_chromosome = int(
+            bool(chromosome_update.get("segregated", bool(before_chromosome)))
+        )
+        if oc_chromosome != after_chromosome:
+            record_mismatch(
+                tick=tick,
+                field="chromosome",
+                oc_value=oc_chromosome,
+                karr_value=after_chromosome,
+                detail="source-faithful read-only pass-through",
             )
 
         if karr_diameter < before_diameter:
@@ -831,6 +887,9 @@ def _full_replay_surface(
         oc_event_ticks=tuple(oc_event_ticks),
         karr_payloads=tuple(karr_payloads),
         oc_payloads=tuple(oc_payloads),
+        oc_payload_ticks=tuple(oc_event_ticks),
+        karr_substrate_event_ticks=tuple(karr_substrate_event_ticks),
+        oc_substrate_event_ticks=tuple(oc_substrate_event_ticks),
         replay_authority_class="FULL_NEXT_UPDATE_REPLAY_READY",
         replay_capability_reason="",
         full_replay_checked_ticks=grid.n_ticks,
@@ -983,6 +1042,12 @@ def build_gate(
     )
     karr_payload_nonzero = len(karr_payloads)
     oc_payload_nonzero = len(oc_payloads)
+    karr_substrate_event_count = int(
+        sum(len(surface.karr_substrate_event_ticks) for surface in surfaces)
+    )
+    oc_substrate_event_count = int(
+        sum(len(surface.oc_substrate_event_ticks) for surface in surfaces)
+    )
     replay_findings: list[dict[str, Any]] = []
     full_replay_field_mismatch_counts = {
         field: int(
@@ -1028,42 +1093,91 @@ def build_gate(
             }
         )
 
-    timing_q95, timing_threshold = _analytical_timing_threshold(karr_offsets)
-    timing_w1 = float(wasserstein_distance(karr_offsets, oc_offsets))
-    count_w1 = float(wasserstein_distance(karr_event_counts, oc_event_counts))
+    timing_q95, _timing_noise_floor = _analytical_timing_threshold(karr_offsets)
+    timing_mismatches = int(
+        sum(
+            len(set(surface.karr_event_ticks) ^ set(surface.oc_event_ticks))
+            for surface in surfaces
+        )
+    )
+    count_w1 = (
+        float(wasserstein_distance(karr_event_counts, oc_event_counts))
+        if full_replay
+        else 1.0
+    )
+    timing_w1 = float(timing_mismatches) if full_replay else 1.0
     payload_mismatches = 0
-    if len(karr_payloads) != len(oc_payloads):
-        payload_mismatches += abs(len(karr_payloads) - len(oc_payloads))
-    for karr_value, oc_value in zip(karr_payloads, oc_payloads, strict=False):
-        if not math.isclose(karr_value, oc_value, rel_tol=1.0e-12, abs_tol=1.0e-18):
-            payload_mismatches += 1
+    payload_mismatch_records: list[dict[str, Any]] = []
+    for surface in surfaces:
+        karr_by_tick = dict(
+            zip(surface.karr_event_ticks, surface.karr_payloads, strict=True)
+        )
+        oc_by_tick = dict(
+            zip(surface.oc_payload_ticks, surface.oc_payloads, strict=True)
+        )
+        for tick in sorted(set(karr_by_tick) | set(oc_by_tick)):
+            karr_value = karr_by_tick.get(tick)
+            oc_value = oc_by_tick.get(tick)
+            if (
+                karr_value is None
+                or oc_value is None
+                or not math.isclose(
+                    karr_value,
+                    oc_value,
+                    rel_tol=1.0e-12,
+                    abs_tol=1.0e-18,
+                )
+            ):
+                payload_mismatches += 1
+                if len(payload_mismatch_records) < 32:
+                    payload_mismatch_records.append(
+                        {
+                            "seed": surface.evidence.seed,
+                            "tick": tick,
+                            "karr": karr_value,
+                            "oc": oc_value,
+                        }
+                    )
     payload_w1 = float(payload_mismatches)
-    source_projection_ok = all(
+    source_trace_integrity_ok = all(
         row.hydrolysis_stoichiometry_ok
         and not row.source_projection_mismatch_ticks
         and row.polymer_payload_redundant
         for row in evidence_rows
     )
     full_replay_ok = full_replay and full_replay_mismatch_total == 0
-    normalized_timing = (
-        timing_w1 / timing_threshold if math.isfinite(timing_w1) else float("inf")
+    primary_statistic = (
+        float(
+            full_replay_mismatch_total
+            + (0 if source_trace_integrity_ok else 1)
+        )
+        if full_replay
+        else 1.0
     )
-    composite_statistic = max(
-        payload_w1,
-        count_w1,
-        normalized_timing,
-        0.0 if source_projection_ok else 2.0,
-        float(full_replay_mismatch_total) if full_replay else 0.0,
-    )
-
-    primary_threshold = 0.0 if full_replay else 1.0
+    primary_threshold = 0.0
     channels = {
-        "pinchedDiameter": {
+        "substrates": {
             "aggregation": "per_tick_vector_w1_mean",
             "is_primary": True,
             "is_event_channel": False,
-            "w1_oc_vs_karr": composite_statistic,
+            "w1_oc_vs_karr": primary_statistic,
             "threshold": primary_threshold,
+            "q95_null": 0.0,
+            "n_nonzero_oc": oc_substrate_event_count if full_replay else 0,
+            "n_nonzero_karr": karr_substrate_event_count,
+            "payload": {
+                "full_replay_field_mismatch_counts": (
+                    full_replay_field_mismatch_counts
+                ),
+                "conditional_refusal": not full_replay,
+            },
+        },
+        "pinchedDiameter": {
+            "aggregation": "per_tick_vector_w1_mean",
+            "is_primary": False,
+            "is_event_channel": False,
+            "w1_oc_vs_karr": payload_w1 if full_replay else max(1.0, payload_w1),
+            "threshold": 0.0,
             "q95_null": 0.0,
             "n_nonzero_oc": oc_payload_nonzero,
             "n_nonzero_karr": karr_payload_nonzero,
@@ -1071,6 +1185,7 @@ def build_gate(
                 "pinched_diameter_mismatch_count": payload_mismatches,
                 "karr_event_payload_count": len(karr_payloads),
                 "oc_event_payload_count": len(oc_payloads),
+                "mismatches_paired_by_seed_tick": payload_mismatch_records,
                 "full_replay_field_mismatch_counts": (
                     full_replay_field_mismatch_counts
                 ),
@@ -1091,15 +1206,22 @@ def build_gate(
             "is_primary": False,
             "is_event_channel": False,
             "w1_oc_vs_karr": timing_w1,
-            "threshold": timing_threshold,
-            "q95_null": timing_q95,
+            "threshold": 0.0,
+            "q95_null": 0.0,
             "n_nonzero_oc": int(np.sum(oc_event_counts)),
-            "n_nonzero_karr": int(np.count_nonzero(karr_offsets)),
+            "n_nonzero_karr": int(np.sum(karr_event_counts)),
+            "payload": {
+                "comparison": "exact per-seed contraction tick set",
+                "onset_to_completion_karr": karr_offsets.tolist(),
+                "onset_to_completion_oc": (
+                    oc_offsets.tolist() if full_replay else None
+                ),
+            },
         },
     }
     if full_replay:
-        for field in FULL_REPLAY_NONREDUNDANT_FIELDS:
-            if field == "pinchedDiameter":
+        for field in FULL_REPLAY_AUDIT_FIELDS:
+            if field in {"substrates", "pinchedDiameter"}:
                 continue
             mismatch_count = full_replay_field_mismatch_counts[field]
             channels[field] = {
@@ -1141,7 +1263,12 @@ def build_gate(
                 full_replay_field_mismatch_counts
             ),
             "full_replay_passed": full_replay_ok,
-            "event_semantics": "each strict pinchedDiameter decrease is one contraction-cycle event; final zero is completion",
+            "event_semantics": (
+                "full replay compares every OC contraction tick against the "
+                "Karr tick set, so both missed events and overfire fail"
+                if full_replay
+                else "conditional pilot has no authoritative OC event timeline; count/timing are forced non-green"
+            ),
             "payload_semantics": (
                 "full OC next_update with captured before-state and restored "
                 "private process RNG"
@@ -1151,7 +1278,7 @@ def build_gate(
             "meaningful_nonredundant_outputs": (
                 list(FULL_REPLAY_NONREDUNDANT_FIELDS)
                 if full_replay
-                else ["pinchedDiameter"]
+                else []
             ),
             "excluded_redundant_outputs": [
                 "geometry.pinched is determined by pinchedDiameter",
@@ -1203,28 +1330,32 @@ def build_gate(
         )
     )
     threshold_channels: dict[str, dict[str, Any]] = {
-        "pinchedDiameter": {
+        "substrates": {
             "threshold": primary_threshold,
             "rule": (
                 "zero mismatch across every meaningful non-redundant "
                 "full-replay output, plus exact event payload/count/timing"
                 if full_replay
-                else "zero payload mismatches, zero event-count distance, Karr-only timing threshold, and source-projection integrity"
+                else "forced non-green because missing process RNG prevents full replay of the catalog primary"
             ),
+        },
+        "pinchedDiameter": {
+            "threshold": 0.0,
+            "rule": "exact payload identity paired by seed and tick",
         },
         "contraction_event_count": {
             "threshold": 0.0,
-            "rule": "exact contraction-cycle event count under the observed Karr ring schedule",
+            "rule": "exact full-replay contraction count; conditional pilots are forced non-green",
         },
         "onset_to_completion_timing": {
-            "threshold": timing_threshold,
-            "q95_null": timing_q95,
-            "rule": "95th percentile pairwise Karr timing spread, floor 1 tick",
+            "threshold": 0.0,
+            "q95_null": 0.0,
+            "rule": "exact per-seed contraction tick sets; Karr-only onset-span spread is diagnostic",
         },
     }
     if full_replay:
-        for field in FULL_REPLAY_NONREDUNDANT_FIELDS:
-            if field == "pinchedDiameter":
+        for field in FULL_REPLAY_AUDIT_FIELDS:
+            if field in {"substrates", "pinchedDiameter"}:
                 continue
             threshold_channels[field] = {
                 "threshold": 0.0,
@@ -1256,11 +1387,16 @@ def build_gate(
             "cohort_status": context.cohort_status,
             "generated_at": datetime.now(UTC).isoformat(),
             "selected_seeds": list(context.selected_seeds),
-            "oc_completed_seed_count": int(
-                sum(
-                    bool(surface.oc_payloads) and surface.oc_payloads[-1] == 0.0
-                    for surface in surfaces
+            "oc_completed_seed_count": (
+                int(
+                    sum(
+                        bool(surface.oc_payloads)
+                        and surface.oc_payloads[-1] == 0.0
+                        for surface in surfaces
+                    )
                 )
+                if full_replay
+                else None
             ),
             "payload_w1": payload_w1,
             "timing_w1": timing_w1,
@@ -1278,7 +1414,9 @@ def build_gate(
                 if full_replay
                 else "cytokinesis_conditional_source_projection"
             ),
-            "passed": source_projection_ok and (full_replay_ok if full_replay else True),
+            "passed": full_replay and source_trace_integrity_ok and full_replay_ok,
+            "source_trace_integrity_passed": source_trace_integrity_ok,
+            "sut_evaluated": full_replay,
             "checked_transitions": int(
                 sum(row.contraction_cycle_count for row in evidence_rows)
             ),
@@ -1301,6 +1439,7 @@ def run(*, source_root: Path, mode: str, workers: int = 1) -> dict[str, Any]:
         output_dir = write_authority_bundle(
             process=PROCESS_NAME,
             harness_type=HARNESS_TYPE,
+            expected_selected_seeds=context.selected_seeds,
             result=payload["result"],
             inputs=payload["inputs"],
             thresholds=payload["thresholds"],
