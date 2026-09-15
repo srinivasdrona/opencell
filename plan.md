@@ -181,7 +181,12 @@ earlier blocks below:**
   canary exception handling, dangling registry prose; retain explicit
   disclosure that FtsZ N20 calibration has 5 distinct Karr splits and 10
   evaluation seeds. Do not mutate the running canary worktree or merge until
-  runtime validation passes.
+  runtime validation passes. Corrected seed-36 canary subsequently PASSED:
+  Cyt SHA `d097a48c...4ec0`, FtsZ SHA `2a207bac...3882`, full Cyt replay
+  capability ready, both files source/provider-bound, same completion tick
+  31993, inclusive span 4076, margin OK. Final branch cleanup/current-main
+  integration and actual Cyt 5000-tick/FtsZ live-volume replay are in progress
+  before merge; raw canary MAT files remain untracked.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
