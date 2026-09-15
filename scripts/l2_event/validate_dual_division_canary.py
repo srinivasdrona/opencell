@@ -66,6 +66,7 @@ exact reason, never partially promoted or silently accepted.
 from __future__ import annotations
 
 import argparse
+import contextlib
 import hashlib
 import json
 import sys
@@ -235,23 +236,64 @@ def cytokinesis_full_replay_capability(
             dual_tap_extractor_sha256=None,
         )
 
-    expected_source = current_cytokinesis_source_identity()["sha256_lf_normalized"]
-    expected_extractor = launcher.lf_normalized_sha256_hex(DUAL_TAP_EXTRACTOR_PATH)
-    cyt_dual_version = _read_metadata_int(cyt_path, "dual_tap_extractor_schema_version")
-    partner_dual_version = _read_metadata_int(
-        partner_path, "dual_tap_extractor_schema_version"
-    )
-    rng_version = _read_metadata_int(cyt_path, "cytokinesis_rng_replay_schema_version")
-    cyt_source = _read_metadata_string(cyt_path, "cytokinesis_source_resolved_sha256")
-    partner_source = _read_metadata_string(
-        partner_path, "cytokinesis_source_resolved_sha256"
-    )
-    cyt_extractor = _read_metadata_string(
-        cyt_path, "dual_tap_extractor_sha256_lf_normalized"
-    )
-    partner_extractor = _read_metadata_string(
-        partner_path, "dual_tap_extractor_sha256_lf_normalized"
-    )
+    try:
+        expected_source = current_cytokinesis_source_identity()[
+            "sha256_lf_normalized"
+        ]
+        expected_extractor = launcher.lf_normalized_sha256_hex(
+            DUAL_TAP_EXTRACTOR_PATH
+        )
+        cyt_dual_version = _read_metadata_int(
+            cyt_path, "dual_tap_extractor_schema_version"
+        )
+        partner_dual_version = _read_metadata_int(
+            partner_path, "dual_tap_extractor_schema_version"
+        )
+        rng_version = _read_metadata_int(
+            cyt_path, "cytokinesis_rng_replay_schema_version"
+        )
+        cyt_source = _read_metadata_string(
+            cyt_path, "cytokinesis_source_resolved_sha256"
+        )
+        partner_source = _read_metadata_string(
+            partner_path, "cytokinesis_source_resolved_sha256"
+        )
+        cyt_extractor = _read_metadata_string(
+            cyt_path, "dual_tap_extractor_sha256_lf_normalized"
+        )
+        partner_extractor = _read_metadata_string(
+            partner_path, "dual_tap_extractor_sha256_lf_normalized"
+        )
+        hdf5_problems: list[str] = []
+        with h5py.File(cyt_path, "r") as handle:
+            n_ticks = _read_metadata_int(cyt_path, "n_ticks")
+            for group_name in ("states_before", "states_after"):
+                group = handle.get(group_name)
+                if group is None or CYTOKINESIS_RNG_STATE_OBSERVABLE not in group:
+                    hdf5_problems.append(
+                        f"{group_name}.{CYTOKINESIS_RNG_STATE_OBSERVABLE} is missing"
+                    )
+                    continue
+                dataset = group[CYTOKINESIS_RNG_STATE_OBSERVABLE]
+                if n_ticks is None or int(np.prod(dataset.shape)) != n_ticks:
+                    hdf5_problems.append(
+                        f"{group_name}.{CYTOKINESIS_RNG_STATE_OBSERVABLE} has "
+                        f"shape={dataset.shape}, expected {n_ticks} tick entries"
+                    )
+    except (OSError, ValueError, KeyError) as exc:
+        return CytokinesisReplayCapability(
+            ready=False,
+            authority_class="CONDITIONAL_PILOT_ONLY",
+            reason=(
+                "Cytokinesis full-replay projection is unreadable or corrupt: "
+                f"{type(exc).__name__}: {exc}"
+            ),
+            dual_tap_extractor_schema_version=None,
+            cytokinesis_rng_replay_schema_version=None,
+            cytokinesis_source_sha256=None,
+            dual_tap_extractor_sha256=None,
+        )
+    problems.extend(hdf5_problems)
 
     if cyt_dual_version != DUAL_TAP_EXTRACTOR_SCHEMA_VERSION:
         problems.append(
@@ -291,22 +333,6 @@ def cytokinesis_full_replay_capability(
             "dual extractor identity mismatch: "
             f"cyt={cyt_extractor!r}, ftsz={partner_extractor!r}, current={expected_extractor!r}"
         )
-
-    with h5py.File(cyt_path, "r") as handle:
-        n_ticks = _read_metadata_int(cyt_path, "n_ticks")
-        for group_name in ("states_before", "states_after"):
-            group = handle.get(group_name)
-            if group is None or CYTOKINESIS_RNG_STATE_OBSERVABLE not in group:
-                problems.append(
-                    f"{group_name}.{CYTOKINESIS_RNG_STATE_OBSERVABLE} is missing"
-                )
-                continue
-            dataset = group[CYTOKINESIS_RNG_STATE_OBSERVABLE]
-            if n_ticks is None or int(np.prod(dataset.shape)) != n_ticks:
-                problems.append(
-                    f"{group_name}.{CYTOKINESIS_RNG_STATE_OBSERVABLE} has "
-                    f"shape={dataset.shape}, expected {n_ticks} tick entries"
-                )
 
     ready = not problems
     return CytokinesisReplayCapability(
@@ -379,9 +405,13 @@ def validate_dual_division_canary(
     cyt_valid = False
     cyt_reason = "file does not exist"
     if cyt_path.exists():
-        cyt_valid, cyt_reason = launcher.validate_existing_event_window(
-            cyt_path, cytokinesis_anchor_spec(seed)
-        )
+        try:
+            cyt_valid, cyt_reason = launcher.validate_existing_event_window(
+                cyt_path, cytokinesis_anchor_spec(seed)
+            )
+        except Exception as exc:  # noqa: BLE001 - corrupt HDF5 must become a structured FAIL
+            cyt_valid = False
+            cyt_reason = f"{type(exc).__name__}: {exc}"
     if not cyt_valid:
         reasons.append(f"cytokinesis: {cyt_reason}")
 
@@ -422,9 +452,11 @@ def validate_dual_division_canary(
     cyt_anchor = None
     ftsz_anchor = None
     same_completion = False
-    if cyt_path.exists() and ftsz_path.exists():
+    if cyt_valid:
         cyt_anchor = _read_metadata_int(cyt_path, "window_anchor")
+    if ftsz_valid:
         ftsz_anchor = _read_metadata_int(ftsz_path, "window_anchor")
+    if cyt_valid and ftsz_valid:
         same_completion = cyt_anchor is not None and cyt_anchor == ftsz_anchor
         if not same_completion:
             reasons.append(
@@ -435,9 +467,11 @@ def validate_dual_division_canary(
     provider_match = False
     cyt_provider_sha = None
     ftsz_provider_sha = None
-    if cyt_path.exists() and ftsz_path.exists():
+    if cyt_valid:
         cyt_provider_sha = _read_metadata_string(cyt_path, "mnrnd_provider_sha256")
+    if ftsz_valid:
         ftsz_provider_sha = _read_metadata_string(ftsz_path, "mnrnd_provider_sha256")
+    if cyt_valid and ftsz_valid:
         provider_match = (
             cyt_provider_sha is not None and cyt_provider_sha == ftsz_provider_sha
         )
@@ -458,9 +492,17 @@ def validate_dual_division_canary(
     dnadamage_match = False
     cyt_dnadamage_sha = None
     ftsz_dnadamage_sha = None
-    if cyt_path.exists() and ftsz_path.exists():
-        cyt_dnadamage_sha = _read_metadata_string(cyt_path, "dnadamage_source_resolved_sha256")
-        ftsz_dnadamage_sha = _read_metadata_string(ftsz_path, "dnadamage_source_resolved_sha256")
+    if cyt_path.exists():
+        with contextlib.suppress(OSError, ValueError, KeyError):
+            cyt_dnadamage_sha = _read_metadata_string(
+                cyt_path, "dnadamage_source_resolved_sha256"
+            )
+    if ftsz_path.exists():
+        with contextlib.suppress(OSError, ValueError, KeyError):
+            ftsz_dnadamage_sha = _read_metadata_string(
+                ftsz_path, "dnadamage_source_resolved_sha256"
+            )
+    if cyt_dnadamage_sha is not None and ftsz_dnadamage_sha is not None:
         dnadamage_match = (
             cyt_dnadamage_sha is not None and cyt_dnadamage_sha == ftsz_dnadamage_sha
         )
@@ -470,6 +512,11 @@ def validate_dual_division_canary(
                 f"ftsz={ftsz_dnadamage_sha!r} (both taps must have resolved the same DNADamage.m source "
                 "from the same single karr_bootstrap() call -- decisions/dec-005)"
             )
+    elif cyt_valid and ftsz_valid:
+        reasons.append(
+            "dnadamage_source_resolved_sha256 mismatch or missing: "
+            f"cytokinesis={cyt_dnadamage_sha!r} ftsz={ftsz_dnadamage_sha!r}"
+        )
 
     # Provisional-margin gate (Opus final review, 2026-09-04): the real
     # inclusive onset-to-completion span (completion - onset + 1) must
@@ -482,7 +529,7 @@ def validate_dual_division_canary(
     margin_ok = False
     cyt_onset = None
     inclusive_span: int | None = None
-    if cyt_path.exists():
+    if cyt_valid:
         cyt_onset = _read_metadata_int(cyt_path, "onset_tick")
         if cyt_onset is not None and cyt_anchor is not None:
             inclusive_span = cyt_anchor - cyt_onset + 1

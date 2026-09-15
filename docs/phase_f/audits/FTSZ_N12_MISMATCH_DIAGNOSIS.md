@@ -194,7 +194,10 @@ This branch:
 1. makes OpenCell consume `geometry.volume` per tick for both count/concentration
    conversions and the solver absolute threshold; direct callers missing the
    port now fail instead of silently falling back;
-2. wires the FtsZ geometry port into both chassis topologies;
+2. exposes the shared FtsZ geometry port in both chassis topologies, while
+   explicitly retaining the known limitation that no source-faithful dynamic
+   volume producer is wired there (the chassis value remains fitted fixture
+   initialization and is not claimed as live-volume fidelity);
 3. adds `geometry_volume` to future dual FtsZ snapshots as a scalar, avoiding
    cyclic handle serialization;
 4. makes the N=20 gate, non-gating pre-division audit, and combined dual-tap

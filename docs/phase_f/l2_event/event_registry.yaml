@@ -55,7 +55,7 @@ processes:
       scripts/l2_event/cytokinesis_n20_gate.py against selector-owned dual
       traces and resolves to that module's
       CytokinesisFullReplayAdapter.adapter_id (not a dangling label).
-      traces. Full authority requires dual_tap_extractor_schema_version=2,
+      Full authority requires dual_tap_extractor_schema_version=2,
       current Cytokinesis.m/extractor source identities, and the process's
       private mcg16807 randStreamState before and after every Cytokinesis
       evolveState tap. The gate restores the first captured state, verifies

@@ -62,6 +62,33 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-15 05:52 IST) — supersedes all
 earlier blocks below:**
 
+- Final combined-canary cleanup (2026-09-15 09:05 IST): branch
+  `fix/cyt-n20-rng-replay` merged published current main `eb9fa34` at
+  `b9f3932` (provenance/TxReg/handoff only), preserving both repair lines.
+  Orchestrator's live seed-36 canary on `8b98643` passed:
+  Cyt SHA `d097a48c...4ec0`, FtsZ SHA `2a207bac...3882`,
+  `full_replay_ready=true`, inclusive span 4076, and source/provider match.
+  Actual Cyt helper replay is 5000/5000 with zero mismatches across all 13
+  fields, 147/147 contraction events, and 1351/1351 substrate-event ticks.
+  Actual FtsZ live-volume replay covers 200 ticks at
+  `2.1844313724237267e-17..2.192708426282513e-17 L`: both sides active
+  200/200, monomer discrepancy 0; enzymes have 1550 mismatched elements,
+  max abs 6, L1 2383, single-seed scaled W1 0.0743181818181818; substrates
+  have 280 mismatched elements across 165 ticks, max abs 6, L1 449, scaled
+  W1 0.028250000000000008. Raw MATs remain untracked.
+  Final cleanup now states the limited truth: isolated gate replay is
+  captured-volume source-faithful, but neither chassis has a dynamic
+  geometry-volume producer and its store remains fixture-initialized. Old
+  traces are not FtsZ gate inputs. Corrupt Cyt HDF5 now returns structured
+  non-ready/FAIL instead of raising; registry prose is repaired; N20
+  disclosure remains 5 distinct Karr calibration splits + 10 evaluation
+  seeds. Validation: cleanup suite 172 passed / 1 expected
+  RibosomeAssembly-data skip; live combined validator PASS; FtsZ L1b 1/1;
+  Ruff clean; regenerated board **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE,
+  integrity OK**. Quick Opus 5 review **ACCEPTED** the cleanup and
+  independently reproduced all live seed-36 values. Review provenance:
+  `sha256:c23faa5931cec92a550fcbfddb16f35ea5840d4cefa42772e7e47d6f05d469fa`.
+  No MATLAB was launched by this coding-agent run.
 - Combined canary self-hash hotfix (2026-09-15 06:52 IST): orchestrator's
   live seed-36 canary on tip `5501a13` failed before simulation because
   MATLAB `mfilename('fullpath')` returned extensionless
@@ -171,10 +198,12 @@ earlier blocks below:**
   count/concentration conversions and its ODE threshold, while OC used the
   fixture volume forever and the dual extractor omitted volume entirely.
   Projection/index alignment is exact; source modified-ODE23S and RNG-offset
-  ablations do not reduce the mismatch. The branch now consumes a live
-  geometry-volume port, wires it into both chassis topologies, captures
-  scalar `geometry_volume` in future dual traces, and makes the N=20 gate
-  fail closed when it is absent. Historical N=12 distances remain enzymes
+  ablations do not reduce the mismatch. The branch now consumes a
+  caller-supplied geometry-volume port, exposes that store in both chassis
+  topologies, captures scalar `geometry_volume` in future dual traces, and
+  makes the N=20 gate fail closed when it is absent. Chassis source fidelity
+  is explicitly NOT claimed: no dynamic volume producer is wired, so
+  autonomous runs remain fixture-initialized. Historical N=12 distances remain enzymes
   `0.581578 > 0.174015`, substrates `0.189500 > 0.152667`; the post-fix
   rerun correctly REFUSES the current 12 files at seed 0 because they lack
   `geometry_volume`, so no replacement distance is fabricated. Diagnostic:

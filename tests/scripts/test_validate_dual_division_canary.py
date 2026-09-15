@@ -435,6 +435,43 @@ def test_missing_ftsz_file_fails_closed_never_reports_partial_pass(tmp_path):
     assert any("ftsz" in reason for reason in report.reasons)
 
 
+def test_corrupt_cytokinesis_hdf5_is_structured_nonready_and_nonzero(
+    tmp_path,
+    capsys,
+):
+    seed = 49
+    out_dir = event_window_dir(seed, karr_native_root=tmp_path)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    cyt_path = out_dir / f"Cytokinesis_{CYTOKINESIS_N_TICKS}ticks.mat"
+    cyt_path.write_bytes(b"not-an-hdf5-file")
+    completion_tick = 31427
+    ftsz_path = _write_ftsz_trace(
+        out_dir,
+        seed=seed,
+        completion_tick=completion_tick,
+        tick_start=completion_tick - FTSZ_N_TICKS + 1,
+    )
+
+    capability = cytokinesis_full_replay_capability(cyt_path, ftsz_path)
+    assert capability.ready is False
+    assert capability.authority_class == "CONDITIONAL_PILOT_ONLY"
+    assert "unreadable or corrupt" in capability.reason
+
+    report = validate_dual_division_canary(seed, karr_native_root=tmp_path)
+    assert report.status == "FAIL"
+    assert report.cytokinesis_valid is False
+    assert "OSError" in report.cytokinesis_reason
+    assert report.cytokinesis_full_replay_ready is False
+
+    from scripts.l2_event.validate_dual_division_canary import main
+
+    exit_code = main(["--seed", str(seed), "--karr-native-root", str(tmp_path)])
+    assert exit_code != 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["status"] == "FAIL"
+    assert payload["cytokinesis_full_replay_ready"] is False
+
+
 def test_ftsz_trace_without_geometry_volume_fails_combined_canary(tmp_path):
     seed = 49
     out_dir = event_window_dir(seed, karr_native_root=tmp_path)

@@ -12,10 +12,16 @@
 > every count/concentration conversion and its ODE threshold. The current
 > gate requires the newly captured scalar and refuses the existing N=12
 > files; see `docs/phase_f/audits/FTSZ_N12_MISMATCH_DIAGNOSIS.md`.
+> This source-fidelity statement is limited to isolated gate replay:
+> OpenCell's autonomous chassis exposes `geometry.volume` but currently has
+> no source-faithful dynamic producer, so its store remains fixture-initialized
+> unless another process updates it. The gate never uses that fallback.
 > The same review corrected two statistical descriptions without consulting
 > OC outcomes: even-N rotating half-splits contain only N/2 distinct
 > unordered W1 pairs, and the 30-sample guard is enforced per active
 > component rather than after pooling all WIDs.
+> N=20 authority therefore has 5 distinct Karr-only calibration splits and
+> 10 independent evaluation seeds.
 
 > **2026-08-05 update:** the N=1, non-division-anchored honest diagnostic
 > this spec documents (§3 onward) is superseded for CATALOG CONFORMANCE by

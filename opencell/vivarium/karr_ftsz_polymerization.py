@@ -4,7 +4,7 @@ This process mirrors Karr's `FtsZPolymerization.evolveState` flow:
 
 1. Gate on `any(enzymes)`.
 2. Convert enzyme counts to concentrations.
-3. Read the live Karr ``geometry.volume`` concentration reference frame.
+3. Read the caller-supplied ``geometry.volume`` concentration reference frame.
 4. Integrate the activation / exchange / nucleation / elongation ODEs.
 5. Discretize the last all-nonnegative ODE state while preserving monomer mass.
 6. Apply Karr's substrate-limit clamps.
@@ -12,6 +12,13 @@ This process mirrors Karr's `FtsZPolymerization.evolveState` flow:
 The Vivarium-facing surface remains allocator-compatible by requesting GTP and
 consuming only the granted GTP budget while reading GDP / PI / H2O / H from the
 shared substrate store.
+
+Source-fidelity boundary: the division replay gate supplies Karr's captured
+per-tick ``geometry.volume`` and fails closed when it is missing. OpenCell's
+autonomous chassis currently has no source-faithful geometry-volume producer;
+its shared geometry store is initialized from the fitted fixture default.
+That keeps legacy chassis construction operational but is not evidence of
+live-volume chassis fidelity, and no dynamic volume is inferred here.
 """
 
 from __future__ import annotations
@@ -189,6 +196,9 @@ class KarrFtsZPolymerizationProcess(Process):
                     "_emit": True,
                 },
             },
+            # The gate overlays captured Karr volume. In an autonomous
+            # chassis this default is only fitted initialization because no
+            # source-faithful geometry-volume producer is wired yet.
             "geometry": {
                 "volume": {
                     "_default": self._geometry_volume,

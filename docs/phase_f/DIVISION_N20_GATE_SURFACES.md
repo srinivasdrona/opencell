@@ -68,16 +68,39 @@ The Opus rejection of the `6e7cd84` conditional surface is binding:
   refuses any result seed/order drift.
 
 The old-format extraction campaign is paused after seed 15 because its output
-cannot satisfy Cytokinesis authority. Existing old-format pairs may remain
-FtsZ inputs and conditional Cytokinesis diagnostics, but they do not close
-the Cytokinesis row.
+cannot satisfy either authority surface. Existing pairs remain archived
+conditional Cytokinesis diagnostics, but their missing `geometry_volume`
+means they are not valid FtsZ gate inputs and they close neither row.
 
-### Approval-gated one-seed canary
+### Live combined seed-36 canary — PASSED
 
-Do not launch until the orchestrator confirms an available MATLAB host slot.
-Seed 36 is the canary because its patched-source completion/onset coordinates
-are already independently known and a separate genuine single-process trace
-has demonstrated exact 5000-tick OC replay. From PowerShell:
+The orchestrator—not this coding-agent run—launched the canary from branch
+tip `8b98643` on 2026-09-15. The corrected dual extractor produced:
+
+- Cytokinesis SHA-256
+  `d097a48c9c3eebe00594ee67503cf54c693ecc3be5693e05104247b4058d4ec0`;
+- FtsZPolymerization SHA-256
+  `2a207bacad1b5951720bfaeaf0cacf87e147867a6884100d4c6bf35f501b3882`;
+- `full_replay_ready=true`, provider/source identity match, and Cytokinesis
+  inclusive onset-to-completion span `4076` ticks.
+
+The actual Cyt full-replay helper then evaluated all 5000 ticks: zero
+mismatches in all 13 audit fields, 147/147 contraction events, and 1351/1351
+substrate-event ticks. The stored exclusive offset difference is 4075
+(`onset_offset=924`, `completion_offset=4999`), consistent with the inclusive
+span of 4076.
+
+The FtsZ live-volume helper replayed all 200 ticks with captured volume
+`2.1844313724237267e-17` to `2.192708426282513e-17` L. Karr and OC were
+active on 200/200 ticks and monomer-projection maximum discrepancy was
+exactly 0. Enzymes differed on 1550 elements across 200 ticks
+(`max_abs=6`, `L1_total=2383`, single-seed scaled-component W1
+`0.0743181818181818`); substrates differed on 280 elements across 165 ticks
+(`max_abs=6`, `L1_total=449`, single-seed scaled-component W1
+`0.028250000000000008`). These are one-seed diagnostics, not N20 verdicts.
+
+The raw MAT files remain gitignored and are not committed. The reproducible
+slot-managed command was:
 
 ```powershell
 .\scripts\tools\run_matlab_slot.ps1 `
@@ -87,7 +110,7 @@ has demonstrated exact 5000-tick OC replay. From PowerShell:
   -MatlabCommand "addpath(genpath('scripts/matlab')); extract_dual_division_window(uint32(36));"
 ```
 
-Then validate without MATLAB:
+Post-run validation:
 
 ```powershell
 .\bin\oc-py.cmd -m scripts.l2_event.validate_dual_division_canary `
@@ -113,13 +136,22 @@ requires the before value as a replay input while asserting FtsZ did not
 change it. Older windows without `geometry_volume` are refused rather than
 replayed against the fixture default.
 
+This is a **gate-only source-fidelity claim**. Both chassis topologies expose
+the shared `geometry.volume` port, but no source-faithful dynamic volume
+producer is currently wired; autonomous chassis runs therefore start and
+remain on fitted fixture initialization unless another process explicitly
+updates the store. That fallback preserves construction compatibility but is
+not Karr live-volume evidence. The gate never uses it and never invents
+volume: only captured per-tick trace values are authoritative.
+
 The selector-owned cohort is split before OC scoring: first half Karr-only
-calibration, second half independent evaluation (10/10 at N=20; 6/6 in the
-current N=12 pilot). Within the calibration half, circular Karr-vs-Karr
+calibration, second half independent evaluation (**10 evaluation seeds at
+N=20**; 6 in the historical N=12 pilot). Within the calibration half,
+circular Karr-vs-Karr
 splits produce scaled W1 null distances. For the even calibration cohorts
 used here, reversing the two equal halves does not create a new W1 draw, so
 only N/2 distinct unordered split pairs are retained: 3 for the N=12 pilot
-calibration and 5 for N=20 authority calibration. q95 is multiplied by the
+calibration and **5 distinct splits for N=20 authority calibration**. q95 is multiplied by the
 preregistered engineering factor 3. The calibrator API accepts no OC
 argument.
 

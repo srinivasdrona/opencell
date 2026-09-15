@@ -233,6 +233,18 @@ def test_ftsz_odd_karr_calibration_keeps_all_rotations():
     assert calibration.symmetry_collapsed is False
 
 
+def test_ftsz_n20_disclosure_is_five_calibration_splits_ten_evaluation_seeds():
+    calibration_half = tuple(
+        np.asarray([[seed, 0.0], [seed + 1.0, (-1.0) ** seed]])
+        for seed in range(10)
+    )
+    calibration = ftsz_gate.calibrate_karr_only("enzymes", calibration_half)
+    assert calibration.seed_count == 10
+    assert calibration.unique_split_count == 5
+    assert calibration.symmetry_collapsed is True
+    assert 20 - calibration.seed_count == 10
+
+
 def test_ftsz_support_guard_is_per_active_component():
     karr = np.zeros((40, 3), dtype=float)
     oc = np.zeros((40, 3), dtype=float)
