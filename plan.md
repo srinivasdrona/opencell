@@ -81,6 +81,8 @@ earlier blocks below:**
   was closed by binding the real-byte hash to the Python validator's
   LF-normalized implementation. Review provenance:
   `sha256:e67da8370d059de2094b2fe2b8b034d7eb4407b52cc48a0a77dd7741e3032735`.
+  Hotfix commit `2fc5571`; linked implementation provenance:
+  `sha256:c7ab67a01766ec626c801f9814eb9cd43c5298e682387b634678fdfb79ee0e22`.
   No MATLAB launched by this branch. The orchestrator retains the
   one-day-license canary rerun.
 - Combined division re-extraction surface (2026-09-15 06:35 IST): merged
