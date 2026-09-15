@@ -166,8 +166,13 @@ earlier blocks below:**
   files `run_combined_seed36_canary.ps1`,
   `combined_division_seed36_canary.status`, and
   `combined_division_seed36_canary.log`. MATLAB reports the trial license
-  expires in one day. Do not restart the cohort until this canary passes and
-  the combined review accepts.
+  expires in one day. First live canary failed before simulation: MATLAB
+  `mfilename('fullpath')` returned extensionless
+  `...\scripts\matlab\extract_dual_division_window`, and the new extractor
+  source-identity hash tried opening it without `.m`. Exact failure sent back
+  to Cyt agent for fail-closed extension resolution/regression; rerun the
+  canary immediately after its correction. Do not restart the cohort until
+  this canary passes and the combined review accepts.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
