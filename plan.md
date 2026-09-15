@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-14 19:30 IST) — supersedes all
 earlier blocks below:**
 
-- Cytokinesis N20 RNG-replay repair (2026-09-15 04:45 IST): complete in isolated
+- Cytokinesis N20 RNG-replay repair (2026-09-15 05:35 IST): complete in isolated
   worktree `E:\opencell-worktrees\fix-cyt-n20-rng-replay`, branch
   `fix/cyt-n20-rng-replay`, based exactly on division-gate candidate
   `6e7cd84`; no merge/push and no MATLAB launched. Source audit confirmed
@@ -79,10 +79,28 @@ earlier blocks below:**
   resolved-Cytokinesis source identity, full continuous restored-RNG
   `next_update` replay, and fail-closed legacy-vs-authority validation.
   Old traces still validate for selector/FtsZ use and explicit conditional
-  pilots, but Cytokinesis authority refuses them. Independent Opus 5 review
-  **ACCEPTED** the actual MATLAB-source ownership/tap design and full diff
-  with no blocking findings. Validation: division/evidence 351 passed / 1
-  expected RibosomeAssembly-data skip; final focused 99 passed / 1 expected
+  pilots, but Cytokinesis authority refuses them. The upstream Opus review
+  of `6e7cd84` **REJECTED** its Cyt conditional gate: one mismatch could
+  pass at threshold 1; its OC event timeline was constructed only at Karr
+  event ticks and could not detect overfire; the catalog's preregistered
+  substrates/chromosome surfaces were post-hoc replaced by pinchedDiameter;
+  and the no-known-gap rule forbids any green without real process RNG.
+  Those findings are now implemented as required corrections: all exact
+  thresholds are zero; conditional count/timing are forced non-green; full
+  replay evaluates every tick and detects overfire; payloads pair by
+  `(seed,tick)`; the substrates primary and chromosome output are restored;
+  analytical_check evaluates the injected SUT; the adapter ID resolves to
+  a real class; and authority writing requires exact selector-context seed
+  identity/order. Correction commit `6063c9d` also makes every one of the
+  13 full-replay audit fields mechanically non-PASS under
+  `rederive_process`, zeros the exact timing noise floor, emits no fabricated
+  conditional OC timeline/completion claim, keeps every gating channel in
+  thresholds.json, and keeps the primary out of catalog event_channels per
+  Design-A spec §8.2. The old-format campaign is paused after seed 15 because
+  it cannot satisfy Cyt authority. Final independent Opus 5 review
+  **ACCEPTED** all binding blockers after three corrective review rounds.
+  Validation: final division/evidence suite **371 passed / 1 expected
+  RibosomeAssembly-data skip**; focused blocker suite 87 passed / 1 expected
   skip; L1b wiring 28/28 plus 63 L1b/provenance tests; tracked evidence audit
   remains **20 PASS / 0 FAIL / 2 MISSING_EVIDENCE, integrity OK**; Ruff and
   diff check clean. The separate method-
@@ -93,7 +111,12 @@ earlier blocks below:**
   `sha256:f1e17074d2a84d19a194c376b9d8dfe525521adbc41014445375f965ba025fea`
   (implementation) and
   `sha256:ccec1a56b14bce39342b82a24b24720f9c76c5b4abd4ffd1a14af58075574c16`
-  (Opus ACCEPT). No live process/agent remains. MATLAB canary remains
+  (superseded early Opus ACCEPT), plus
+  `sha256:c7221dc6eb0690d08e66372b4ba8d8f13ab8796864705c3494a9774aa680ec23`
+  (binding rejection/correction/final Opus ACCEPT), and
+  `sha256:87615104984af5005111926f4f5d073099540c93baea2277bd05d0fa9d74e0b9`
+  (verified correction commit `6063c9d`). No live process/agent remains.
+  MATLAB canary remains
   orchestrator/host-cap approval-gated; exact seed-36 slot command and
   post-run validator are recorded in
   `docs/phase_f/DIVISION_N20_GATE_SURFACES.md`.
