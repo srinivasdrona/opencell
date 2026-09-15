@@ -3,8 +3,8 @@
 FtsZPolymerization is an ODE/discretization process, not a binary event.
 This gate compares the real per-tick enzyme and substrate update surfaces
 over the selector-owned 200-tick pre-division windows. Thresholds are
-calibrated exclusively from deterministic rotating Karr-only seed splits;
-the calibration API cannot receive OC outcomes.
+calibrated exclusively from deterministic, symmetry-collapsed rotating
+Karr-only seed splits; the calibration API cannot receive OC outcomes.
 """
 
 # ruff: noqa: E402
@@ -67,6 +67,9 @@ class KarrOnlyCalibration:
     channel: str
     q95_null: float
     threshold: float
+    seed_count: int
+    unique_split_count: int
+    symmetry_collapsed: bool
     component_scales: tuple[float, ...]
     split_statistics: tuple[float, ...]
     policy: str
@@ -76,6 +79,9 @@ class KarrOnlyCalibration:
             "channel": self.channel,
             "q95_null": self.q95_null,
             "threshold": self.threshold,
+            "seed_count": self.seed_count,
+            "unique_split_count": self.unique_split_count,
+            "symmetry_collapsed": self.symmetry_collapsed,
             "component_scales": list(self.component_scales),
             "split_statistics": list(self.split_statistics),
             "policy": self.policy,
@@ -158,6 +164,42 @@ def _scaled_component_w1(
     return float(np.mean(distances))
 
 
+def _component_support_findings(
+    karr_seed_arrays: tuple[np.ndarray, ...],
+    oc_seed_arrays: tuple[np.ndarray, ...],
+    *,
+    wids: tuple[str, ...],
+) -> list[dict[str, Any]]:
+    karr_pool = np.concatenate(karr_seed_arrays, axis=0)
+    oc_pool = np.concatenate(oc_seed_arrays, axis=0)
+    if (
+        karr_pool.shape[1] != oc_pool.shape[1]
+        or karr_pool.shape[1] != len(wids)
+    ):
+        raise FtsZGateError("component width mismatch in FtsZ support guard")
+
+    findings: list[dict[str, Any]] = []
+    for idx, wid in enumerate(wids):
+        karr_nonzero = int(np.count_nonzero(karr_pool[:, idx]))
+        oc_nonzero = int(np.count_nonzero(oc_pool[:, idx]))
+        if karr_nonzero == 0 and oc_nonzero == 0:
+            continue
+        if (
+            karr_nonzero < MIN_NONZERO_SAMPLES
+            or oc_nonzero < MIN_NONZERO_SAMPLES
+        ):
+            findings.append(
+                {
+                    "wid": wid,
+                    "karr_nonzero": karr_nonzero,
+                    "oc_nonzero": oc_nonzero,
+                    "minimum_required_per_side": MIN_NONZERO_SAMPLES,
+                    "reason": "insufficient per-component nonzero support",
+                }
+            )
+    return findings
+
+
 def calibrate_karr_only(
     channel: str,
     karr_seed_arrays: tuple[np.ndarray, ...],
@@ -166,8 +208,12 @@ def calibrate_karr_only(
 
     The seed order is selector-owned and fixed before outcomes. For each
     circular rotation, the first floor(N/2) Karr seeds form one sample and
-    the remainder form the holdout. The 95th percentile of those Karr-only
-    distances is multiplied by the preregistered engineering factor 3.
+    the remainder form the holdout. For even N, rotation N/2 only swaps the
+    two halves of rotation 0, and W1 is symmetric, so only the first N/2
+    unordered split pairs are distinct. Odd N has no exact complementary
+    duplicate and retains all N rotations. The 95th percentile of those
+    Karr-only distances is multiplied by the preregistered engineering
+    factor 3.
     """
     if len(karr_seed_arrays) < 4:
         raise DivisionGateRefusalError(
@@ -182,8 +228,10 @@ def calibrate_karr_only(
         raise FtsZGateError(f"{channel}: Karr seed matrices have inconsistent widths")
     scales = _component_scales(matrices)
     split_size = len(matrices) // 2
+    symmetry_collapsed = len(matrices) % 2 == 0
+    rotation_count = split_size if symmetry_collapsed else len(matrices)
     split_statistics: list[float] = []
-    for rotation in range(len(matrices)):
+    for rotation in range(rotation_count):
         rotated = matrices[rotation:] + matrices[:rotation]
         left = rotated[:split_size]
         right = rotated[split_size:]
@@ -194,11 +242,15 @@ def calibrate_karr_only(
         channel=channel,
         q95_null=q95,
         threshold=threshold,
+        seed_count=len(matrices),
+        unique_split_count=len(split_statistics),
+        symmetry_collapsed=symmetry_collapsed,
         component_scales=tuple(float(value) for value in scales),
         split_statistics=tuple(split_statistics),
         policy=(
-            "selector-order rotating Karr-only split/holdout; q95 over split "
-            f"statistics; threshold={ENGINEERING_MULTIPLIER}*q95"
+            "selector-order rotating Karr-only split/holdout; collapse "
+            "complementary half-split duplicates when N is even; q95 over "
+            f"distinct split statistics; threshold={ENGINEERING_MULTIPLIER}*q95"
         ),
     )
 
@@ -439,6 +491,16 @@ def build_gate(
         oc_substrates,
         wids=tuple(probe_process.substrate_wids),
     )
+    enzyme_support_failures = _component_support_findings(
+        karr_enzymes,
+        oc_enzymes,
+        wids=tuple(probe_process.enzyme_wids),
+    )
+    substrate_support_failures = _component_support_findings(
+        karr_substrates,
+        oc_substrates,
+        wids=tuple(probe_process.substrate_wids),
+    )
     activity_failures = [
         {
             "seed": surface.seed,
@@ -466,24 +528,21 @@ def build_gate(
     oc_substrate_nonzero = int(
         np.count_nonzero(np.concatenate(oc_substrates, axis=0))
     )
-    insufficient = (
-        karr_enzyme_nonzero < MIN_NONZERO_SAMPLES
-        or oc_enzyme_nonzero < MIN_NONZERO_SAMPLES
-    )
+    insufficient = bool(enzyme_support_failures)
 
     enzyme_effective_distance = enzyme_distance
     if (
         activity_failures
         or enzyme_zero_mismatches
+        or enzyme_support_failures
         or monomer_failures
-        or insufficient
     ):
         enzyme_effective_distance = max(
             enzyme_effective_distance,
             enzyme_calibration.threshold + max(1.0, enzyme_calibration.q95_null),
         )
     substrate_effective_distance = substrate_distance
-    if substrate_zero_mismatches:
+    if substrate_zero_mismatches or substrate_support_failures:
         substrate_effective_distance = max(
             substrate_effective_distance,
             substrate_calibration.threshold
@@ -501,6 +560,7 @@ def build_gate(
             "n_nonzero_oc": oc_enzyme_nonzero,
             "n_nonzero_karr": karr_enzyme_nonzero,
             "raw_distribution_distance": enzyme_distance,
+            "minimum_nonzero_samples_per_active_component": MIN_NONZERO_SAMPLES,
         },
         "substrates": {
             "aggregation": "per_tick_vector_w1_mean",
@@ -512,6 +572,7 @@ def build_gate(
             "n_nonzero_oc": oc_substrate_nonzero,
             "n_nonzero_karr": karr_substrate_nonzero,
             "raw_distribution_distance": substrate_distance,
+            "minimum_nonzero_samples_per_active_component": MIN_NONZERO_SAMPLES,
         },
     }
     result = {
@@ -528,6 +589,8 @@ def build_gate(
             "activity_failures": activity_failures,
             "enzyme_zero_support_mismatches": enzyme_zero_mismatches,
             "substrate_zero_support_mismatches": substrate_zero_mismatches,
+            "enzyme_component_support_failures": enzyme_support_failures,
+            "substrate_component_support_failures": substrate_support_failures,
             "insufficient_primary_samples": insufficient,
             "monomer_projection_failures": monomer_failures,
             "calibration_seeds": [
@@ -570,7 +633,11 @@ def build_gate(
         "inputs": inputs,
         "thresholds": {
             "process": PROCESS_NAME,
-            "calibration_policy": "Karr-only rotating split/holdout; OC outcomes inaccessible to calibrator",
+            "calibration_policy": (
+                "Karr-only rotating split/holdout with complementary "
+                "half-split duplicates collapsed; OC outcomes inaccessible "
+                "to calibrator"
+            ),
             "calibration_seeds": [
                 surface.seed for surface in calibration_surfaces
             ],
@@ -632,6 +699,8 @@ def build_gate(
             and not monomer_failures
             and not enzyme_zero_mismatches
             and not substrate_zero_mismatches
+            and not enzyme_support_failures
+            and not substrate_support_failures
             and not insufficient,
         },
     }

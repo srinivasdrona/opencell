@@ -35,6 +35,18 @@ Historical baseline at gate-candidate `6e7cd84`, evaluated on seeds
 | enzymes | 0.581578 | 0.174015 | exceeds |
 | substrates | 0.189500 | 0.152667 | exceeds |
 
+Collapsing the duplicated complementary rotations changes only the Karr-only
+null calculation, not the OC distances:
+
+| channel | distinct-split q95 | corrected threshold | exceedance |
+|---|---:|---:|---:|
+| enzymes | 0.057803 | 0.173409 | 3.354x threshold; 10.061x q95 |
+| substrates | 0.050356 | 0.151067 | 1.254x threshold |
+
+This makes the primary enzyme finding slightly more conservative-to-reject
+than the historical calculation; the multiplier remains the preregistered
+3.0 and was not adjusted from OC outcomes.
+
 ### Component diagnostics
 
 The enzyme mismatch is concentrated in the GTP-bound activation/polymer
@@ -130,13 +142,27 @@ fixed-volume enzyme distance at 0.580240-0.581616 and substrate distance at
 
 ### Threshold validity
 
-The N=12 pilot calibration has only three unique complementary circular-split
-statistics, so it is not final statistical authority. However, the observed
-enzyme distance is roughly ten times the Karr-only q95 (`0.058005`). A
-source-equation sensitivity probe changed only the concentration reference
-frame and moved the same comparison well below the unchanged thresholds.
-Therefore threshold small-sample weakness cannot explain the baseline by
-itself.
+The N=12 pilot calibration has only three distinct unordered circular
+half-splits. The original implementation evaluated six rotations, but the
+last three only swapped left/right halves and therefore duplicated the first
+three under symmetric W1. The calibrator now collapses those complements and
+reports the true distinct count; at N=20 authority the ten-seed calibration
+half yields five distinct unordered split pairs. This correction is Karr-only
+and cannot inspect OC outcomes.
+
+Even with only three distinct N=12 calibration draws, the observed enzyme
+distance is about ten times the Karr-only q95 and about 3.3 times the
+engineering threshold: decisive primary evidence. The substrate exceedance
+is smaller and supportive. A source-equation sensitivity probe changed only
+the concentration reference frame and moved the comparison well below the
+independently calibrated threshold. Therefore calibration small-sample
+weakness cannot explain the baseline by itself.
+
+The nonzero-sample guard is now per active component rather than pooled over
+all WIDs and ticks. Each component with any support on either side requires
+at least 30 nonzero observations in both Karr and OC. Jointly zero components
+are excluded from this guard; asymmetric zero support remains a separate hard
+failure.
 
 ## Diagnostic-only concentration sensitivity
 

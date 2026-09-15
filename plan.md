@@ -59,10 +59,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-15 05:25 IST) — supersedes all
+**Current status (2026-09-15 05:52 IST) — supersedes all
 earlier blocks below:**
 
-- FtsZ N=12 mismatch diagnosis lane (2026-09-15 05:25 IST): isolated
+- FtsZ N=12 mismatch diagnosis lane (2026-09-15 05:52 IST): isolated
   worktree `E:\opencell-worktrees\fix-ftsz-n20-mismatch`, branch
   `fix/ftsz-n20-mismatch`, base/gate tip `6e7cd84`; no merge, push, or
   MATLAB launch. Source-first diagnosis found a real shared defect:
@@ -93,6 +93,22 @@ earlier blocks below:**
   Remaining blocker: regenerate genuine dual traces with captured
   `geometry_volume`, then rerun the N=12/N=20 distribution. No live shells
   or agents.
+  Independent calibration review confirmed the historical exceedance is
+  credible and conservative. The even-N rotating calibrator now retains only
+  the N/2 distinct unordered half-splits (N12 calibration: 3; N20
+  calibration: 5), still with no OC argument or outcome access. Karr-only
+  corrected thresholds are enzymes `0.173409` (distance 3.354x threshold,
+  10.061x q95; decisive) and substrates `0.151067` (1.254x; supportive).
+  `MIN_NONZERO_SAMPLES=30` is now enforced per active component on each side,
+  not after pooling all WIDs/ticks; jointly-zero components are excluded and
+  asymmetric-zero support remains a hard failure. Review-note validation:
+  gate/anti-cheat 72 passed, focused FtsZ 114 passed, L1b 28/28 plus 19,
+  L2.4 6 passed, focused Ruff clean. Calibration-review provenance event:
+  `sha256:9e8ec2240b21806240d1bbcff31c459a3163c5c9a0623d45735e8b08de581209`.
+  Extraction instruction (2026-09-15 05:28 IST): allow the already-running
+  old-format seed-15 attempt to finish, then pause before seed 16. Old-format
+  FtsZ outputs lack `geometry_volume` and cannot be scored by the repaired
+  gate; do not spend additional multi-hour seeds on that format.
 - Division-gate implementation lane (2026-09-14 22:45 IST): isolated
   worktree `E:\opencell-worktrees\build-division-n20-gates`, branch
   `build/division-n20-gates`, base `a021dd4`, now merged with provenance
