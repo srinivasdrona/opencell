@@ -88,6 +88,8 @@ earlier blocks below:**
   integrity OK**. Quick Opus 5 review **ACCEPTED** the cleanup and
   independently reproduced all live seed-36 values. Review provenance:
   `sha256:c23faa5931cec92a550fcbfddb16f35ea5840d4cefa42772e7e47d6f05d469fa`.
+  Cleanup commit `4a01d4c`; linked implementation provenance:
+  `sha256:0ebeca2c92c1de15894f9fefc4b107299bba878f69a67ca10cea25fd5033d4b5`.
   No MATLAB was launched by this coding-agent run.
 - Combined canary self-hash hotfix (2026-09-15 06:52 IST): orchestrator's
   live seed-36 canary on tip `5501a13` failed before simulation because
