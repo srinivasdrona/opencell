@@ -59,7 +59,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-09-14 19:30 IST) — supersedes all
+**Current status (2026-09-15 05:52 IST) — supersedes all
 earlier blocks below:**
 
 - Cytokinesis N20 RNG-replay repair (2026-09-15 05:35 IST): complete in isolated
@@ -120,6 +120,55 @@ earlier blocks below:**
   orchestrator/host-cap approval-gated; exact seed-36 slot command and
   post-run validator are recorded in
   `docs/phase_f/DIVISION_N20_GATE_SURFACES.md`.
+- FtsZ N=12 mismatch diagnosis lane (2026-09-15 05:52 IST): isolated
+  worktree `E:\opencell-worktrees\fix-ftsz-n20-mismatch`, branch
+  `fix/ftsz-n20-mismatch`, base/gate tip `6e7cd84`; no merge, push, or
+  MATLAB launch. Source-first diagnosis found a real shared defect:
+  MATLAB `FtsZPolymerization.m` reads live `geometry.volume` for both
+  count/concentration conversions and its ODE threshold, while OC used the
+  fixture volume forever and the dual extractor omitted volume entirely.
+  Projection/index alignment is exact; source modified-ODE23S and RNG-offset
+  ablations do not reduce the mismatch. The branch now consumes a live
+  geometry-volume port, wires it into both chassis topologies, captures
+  scalar `geometry_volume` in future dual traces, and makes the N=20 gate
+  fail closed when it is absent. Historical N=12 distances remain enzymes
+  `0.581578 > 0.174015`, substrates `0.189500 > 0.152667`; the post-fix
+  rerun correctly REFUSES the current 12 files at seed 0 because they lack
+  `geometry_volume`, so no replacement distance is fabricated. Diagnostic:
+  `docs/phase_f/audits/FTSZ_N12_MISMATCH_DIAGNOSIS.md`. Two independent
+  Opus 5 review passes ACCEPTED the behavior after requiring the non-gating
+  audit and combined canary to fail closed too; provenance event
+  `sha256:72d0db159c5fd1bf92928e77b60f4863a1268e7297412be21fc71205e0773ed1`.
+  Implementation/diagnosis commit `c614b9b`; linked implementation event
+  `sha256:5912d1aee32814bc76f79f06921b463a01706992ceceb6470f1ca4736df40269`.
+  Validation: post-review focused suite 111 passed; exhaustive
+  FtsZ-referencing sweep 649 passed / 10 audited data/ensemble skips, with
+  two non-regressions: the FtsZ legacy scorecard expectation already fails
+  identically at base `6e7cd84`, and TxReg strict rubric cannot resolve its
+  gitignored 4000-tick trace in this isolated worktree (the same documented
+  data-mount limitation as the gate branch). L1b is 28/28 plus 19 tests;
+  L2.4 6 passed; provenance 53 passed; focused Ruff and diff checks clean.
+  Remaining blocker: regenerate genuine dual traces with captured
+  `geometry_volume`, then rerun the N=12/N=20 distribution. No live shells
+  or agents.
+  Independent calibration review confirmed the historical exceedance is
+  credible and conservative. The even-N rotating calibrator now retains only
+  the N/2 distinct unordered half-splits (N12 calibration: 3; N20
+  calibration: 5), still with no OC argument or outcome access. Karr-only
+  corrected thresholds are enzymes `0.173409` (distance 3.354x threshold,
+  10.061x q95; decisive) and substrates `0.151067` (1.254x; supportive).
+  `MIN_NONZERO_SAMPLES=30` is now enforced per active component on each side,
+  not after pooling all WIDs/ticks; jointly-zero components are excluded and
+  asymmetric-zero support remains a hard failure. Review-note validation:
+  gate/anti-cheat 72 passed, focused FtsZ 114 passed, L1b 28/28 plus 19,
+  L2.4 6 passed, focused Ruff clean. Calibration-review provenance event:
+  `sha256:9e8ec2240b21806240d1bbcff31c459a3163c5c9a0623d45735e8b08de581209`.
+  Calibration/support implementation commit `86fb962`; linked event
+  `sha256:4b22ce03063621f5bf10802341be286218e40cde47266f67c196c8a52de20a78`.
+  Extraction instruction (2026-09-15 05:28 IST): allow the already-running
+  old-format seed-15 attempt to finish, then pause before seed 16. Old-format
+  FtsZ outputs lack `geometry_volume` and cannot be scored by the repaired
+  gate; do not spend additional multi-hour seeds on that format.
 - Division-gate implementation lane (2026-09-14 22:45 IST): isolated
   worktree `E:\opencell-worktrees\build-division-n20-gates`, branch
   `build/division-n20-gates`, base `a021dd4`, now merged with provenance

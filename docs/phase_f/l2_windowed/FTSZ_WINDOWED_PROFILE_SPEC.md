@@ -7,6 +7,15 @@
 > division-anchored dual traces, gates enzymes/substrates, calibrates from
 > Karr-only split/holdout distances, and refuses authority below N=20.
 > `ftsz_pre_division_evidence.py` remains explicitly non-gating.
+> Source-first diagnosis on 2026-09-15 additionally found that the original
+> dual windows omitted live `geometry.volume`, although MATLAB uses it for
+> every count/concentration conversion and its ODE threshold. The current
+> gate requires the newly captured scalar and refuses the existing N=12
+> files; see `docs/phase_f/audits/FTSZ_N12_MISMATCH_DIAGNOSIS.md`.
+> The same review corrected two statistical descriptions without consulting
+> OC outcomes: even-N rotating half-splits contain only N/2 distinct
+> unordered W1 pairs, and the 30-sample guard is enforced per active
+> component rather than after pooling all WIDs.
 
 > **2026-08-05 update:** the N=1, non-division-anchored honest diagnostic
 > this spec documents (§3 onward) is superseded for CATALOG CONFORMANCE by

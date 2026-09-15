@@ -216,6 +216,90 @@ def test_ftsz_karr_only_calibration_is_deterministic_and_nonzero():
     assert first == second
     assert first.q95_null > 0.0
     assert first.threshold == pytest.approx(3.0 * first.q95_null)
+    assert first.seed_count == 6
+    assert first.unique_split_count == 3
+    assert first.symmetry_collapsed is True
+    assert len(first.split_statistics) == 3
+
+
+def test_ftsz_odd_karr_calibration_keeps_all_rotations():
+    arrays = tuple(
+        np.asarray([[seed, 0.0], [seed + 1.0, (-1.0) ** seed]])
+        for seed in range(5)
+    )
+    calibration = ftsz_gate.calibrate_karr_only("enzymes", arrays)
+    assert calibration.seed_count == 5
+    assert calibration.unique_split_count == 5
+    assert calibration.symmetry_collapsed is False
+
+
+def test_ftsz_support_guard_is_per_active_component():
+    karr = np.zeros((40, 3), dtype=float)
+    oc = np.zeros((40, 3), dtype=float)
+    karr[:, 0] = 1.0
+    oc[:, 0] = 1.0
+    karr[0, 1] = 1.0
+    oc[0, 1] = 1.0
+
+    findings = ftsz_gate._component_support_findings(
+        (karr,),
+        (oc,),
+        wids=("well_supported", "sparse", "jointly_zero"),
+    )
+
+    assert findings == [
+        {
+            "wid": "sparse",
+            "karr_nonzero": 1,
+            "oc_nonzero": 1,
+            "minimum_required_per_side": ftsz_gate.MIN_NONZERO_SAMPLES,
+            "reason": "insufficient per-component nonzero support",
+        }
+    ]
+
+
+def test_ftsz_sparse_active_component_forces_non_green(monkeypatch):
+    selected = list(range(8))
+
+    def fake_surface(*, seed, trace_path, process_factory):
+        del process_factory
+        karr_enzymes = np.zeros((40, 11), dtype=float)
+        karr_enzymes[:, 0] = (np.arange(40) + seed) % 3
+        oc_enzymes = karr_enzymes.copy()
+        if seed >= 4:
+            karr_enzymes[:, 1] = 0.0
+            oc_enzymes[:, 1] = 0.0
+            karr_enzymes[0, 1] = 1.0
+            oc_enzymes[0, 1] = 1.0
+
+        karr_substrates = np.zeros((40, 5), dtype=float)
+        karr_substrates[:, 0] = (np.arange(40) + seed) % 3
+        return ftsz_gate.SeedSurface(
+            seed=seed,
+            trace_path=trace_path,
+            trace_sha256=f"{seed:064x}",
+            karr_enzymes=karr_enzymes,
+            oc_enzymes=oc_enzymes,
+            karr_substrates=karr_substrates,
+            oc_substrates=karr_substrates.copy(),
+            karr_activity_ticks=39,
+            oc_activity_ticks=39,
+            monomer_projection_max_abs_discrepancy=0.0,
+            geometry_volume_min_l=1.0,
+            geometry_volume_max_l=1.0,
+        )
+
+    monkeypatch.setattr(ftsz_gate, "_collect_surface", fake_surface)
+    payload = ftsz_gate.build_gate(context=_context(selected))
+
+    failures = payload["result"]["gate_surface"][
+        "enzyme_component_support_failures"
+    ]
+    assert failures[0]["wid"] == "MG_224_MONOMER_GDP"
+    assert payload["result"]["channels"]["enzymes"]["w1_oc_vs_karr"] > (
+        payload["result"]["channels"]["enzymes"]["threshold"]
+    )
+    assert payload["analytical_check"]["passed"] is False
 
 
 def test_ftsz_constant_noop_surface_is_forced_non_green(monkeypatch):
@@ -239,6 +323,8 @@ def test_ftsz_constant_noop_surface_is_forced_non_green(monkeypatch):
             karr_activity_ticks=39,
             oc_activity_ticks=0,
             monomer_projection_max_abs_discrepancy=10.0,
+            geometry_volume_min_l=1.0,
+            geometry_volume_max_l=1.0,
         )
 
     monkeypatch.setattr(ftsz_gate, "_collect_surface", fake_surface)
@@ -247,6 +333,46 @@ def test_ftsz_constant_noop_surface_is_forced_non_green(monkeypatch):
     assert channel["w1_oc_vs_karr"] > channel["threshold"]
     assert payload["result"]["gate_surface"]["activity_failures"]
     assert payload["analytical_check"]["passed"] is False
+
+
+def test_ftsz_geometry_volume_replay_input_is_fail_closed():
+    base = {
+        "enzymes": np.zeros((1, 11), dtype=float),
+        "substrates": np.zeros((1, 5), dtype=float),
+    }
+    missing = WindowGrid(
+        process_name="FtsZPolymerization",
+        seed=0,
+        n_ticks=1,
+        tick_offset=0.0,
+        trace_path=Path("missing-volume.mat"),
+        observables=tuple(base),
+        states_before=base,
+        states_after=base,
+    )
+    with pytest.raises(ftsz_gate.FtsZGateError, match="missing required"):
+        ftsz_gate._geometry_volume_for_tick(missing, 0)
+
+    with_volume = {
+        **base,
+        ftsz_gate.GEOMETRY_VOLUME_CHANNEL: np.asarray([[1.2e-17]]),
+    }
+    changed_after = {
+        **with_volume,
+        ftsz_gate.GEOMETRY_VOLUME_CHANNEL: np.asarray([[1.3e-17]]),
+    }
+    changed = WindowGrid(
+        process_name="FtsZPolymerization",
+        seed=0,
+        n_ticks=1,
+        tick_offset=0.0,
+        trace_path=Path("changed-volume.mat"),
+        observables=tuple(with_volume),
+        states_before=with_volume,
+        states_after=changed_after,
+    )
+    with pytest.raises(ftsz_gate.FtsZGateError, match="changed geometry_volume"):
+        ftsz_gate._geometry_volume_for_tick(changed, 0)
 
 
 def _synthetic_cyt_grid(seed: int) -> WindowGrid:

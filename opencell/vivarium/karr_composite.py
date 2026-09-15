@@ -1403,6 +1403,7 @@ def build_karr_chassis_v4(
         },
         "karr_ftsz_polymerization": {
             "cell": ("cell",),
+            "geometry": ("geometry",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
@@ -2171,6 +2172,7 @@ def build_karr_chassis_v5(
         },
         "karr_ftsz_polymerization": {
             "cell": ("cell",),
+            "geometry": ("geometry",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),

@@ -106,10 +106,20 @@ adapter. The gate replays every real 200-tick pre-division window without
 - enzyme oligomer-state update vectors (primary);
 - substrate update vectors (secondary).
 
+The primary MATLAB process also reads live `geometry.volume` for every
+count/concentration conversion and for its solver threshold. The dual
+extractor now captures that scalar at both FtsZ tap points, and the gate
+requires the before value as a replay input while asserting FtsZ did not
+change it. Older windows without `geometry_volume` are refused rather than
+replayed against the fixture default.
+
 The selector-owned cohort is split before OC scoring: first half Karr-only
 calibration, second half independent evaluation (10/10 at N=20; 6/6 in the
 current N=12 pilot). Within the calibration half, circular Karr-vs-Karr
-splits produce scaled W1 null distances; q95 is multiplied by the
+splits produce scaled W1 null distances. For the even calibration cohorts
+used here, reversing the two equal halves does not create a new W1 draw, so
+only N/2 distinct unordered split pairs are retained: 3 for the N=12 pilot
+calibration and 5 for N=20 authority calibration. q95 is multiplied by the
 preregistered engineering factor 3. The calibrator API accepts no OC
 argument.
 
@@ -117,7 +127,9 @@ Hard guards precede/augment the distance:
 
 - Karr and OC activity must both be present in every selected seed;
 - zero-vs-nonzero support mismatches fail;
-- primary nonzero sample count must be at least 30;
+- every active component must have at least 30 nonzero observations on each
+  side; components jointly zero in Karr and OC are excluded from this support
+  guard, while asymmetric zero support fails separately;
 - the monomer-equivalent projection discrepancy must remain exactly zero;
 - cohort duplicate/source/selection failures are refused upstream.
 
@@ -141,18 +153,25 @@ Explicit read-only source:
 dual_division_cohort_current`.
 
 Selected completions: `0-5, 7-11, 13`; censors `6, 12, 14` do not count.
+The in-flight old-format seed-15 attempt may finish, but extraction pauses
+before seed 16 because those files do not capture `geometry_volume`.
 
 - **Cytokinesis conditional projection**: contraction counts were 147/seed on both Karr and OC
   projection; count W1=0, timing W1=0, next-diameter payload mismatches=0.
   All 12 projected completion clamps reached zero. Karr
   onset-to-completion spans were 3676-3943 ticks. This is a clean pilot
   surface, not a PASS. All 12 files predate the RNG replay projection and
-  are ineligible for full authority until re-extracted.
-- **FtsZPolymerization**: calibration seeds `0-5`; independent evaluation
-  seeds `7,8,9,10,11,13`. All 6 evaluation seeds had Karr and OC activity;
-  monomer-projection discrepancy remained exactly 0; no component had a
-  zero-vs-nonzero mismatch and sample support was sufficient. The honest
-  distributional comparisons exceeded their Karr-only engineering
-  thresholds: enzymes 0.581578 > 0.174015, substrates 0.1895 > 0.152667.
-  This pilot therefore surfaces a real prospective gate discrepancy; no
-  authority verdict is emitted at N=12.
+  are ineligible for full authority until re-extracted. They also predate
+  the FtsZ live-volume projection.
+- **FtsZPolymerization**: the historical candidate run on calibration seeds
+  `0-5` and evaluation seeds `7,8,9,10,11,13` produced enzymes
+  `0.581578 > 0.174015` and substrates `0.1895 > 0.152667`. Source-first
+  review then collapsed complementary split duplicates using Karr data only:
+  corrected thresholds are enzymes `0.173409` (distance 3.354x threshold,
+  10.061x q95) and substrates `0.151067` (1.254x threshold). The
+  preregistered multiplier remains 3.0 and no OC outcome enters calibration.
+  The source diagnosis also found that both the OC port and extractor had omitted live
+  `geometry.volume`, a required concentration reference frame. After the
+  fail-closed repair, the same N=12 files are refused because none contains
+  `geometry_volume`; no post-fix distance is fabricated. See
+  `docs/phase_f/audits/FTSZ_N12_MISMATCH_DIAGNOSIS.md`.
