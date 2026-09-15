@@ -174,8 +174,14 @@ earlier blocks below:**
   extensionless `mfilename` path to an existing `.m` before hashing. Retry is
   OS-detached in shell `combined-seed36-canary-r2`, supervisor PID 13152,
   MATLAB wrapper/child PIDs 13800/15912 and has entered the scheduler pass.
-  Do not restart the cohort until this canary passes and the combined review
-  accepts.
+  Final combined Opus review `7ef577ac-d8e3-4fca-a610-c28a1798495e`
+  **ACCEPTED** with no blockers (231 tests/1 data skip, board 20/0/2).
+  Nonblocking cleanup after canary: correct chassis-volume fail-closed
+  overstatement/no-producer default, old-trace doc contradiction, corrupt-HDF5
+  canary exception handling, dangling registry prose; retain explicit
+  disclosure that FtsZ N20 calibration has 5 distinct Karr splits and 10
+  evaluation seeds. Do not mutate the running canary worktree or merge until
+  runtime validation passes.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
