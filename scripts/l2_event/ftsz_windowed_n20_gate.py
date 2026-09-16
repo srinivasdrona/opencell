@@ -106,7 +106,7 @@ class SeedSurface:
     def summary_json(self) -> dict[str, Any]:
         return {
             "seed": self.seed,
-            "trace_path": str(self.trace_path),
+            "trace_path": portable_oracle_path(self.trace_path),
             "trace_sha256": self.trace_sha256,
             "karr_activity_ticks": self.karr_activity_ticks,
             "oc_activity_ticks": self.oc_activity_ticks,

@@ -1,14 +1,22 @@
 {
-  "aggregate_verdict": "NON_GREEN",
+  "aggregate_verdict": "GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "a3dec57b3b6d5ed4e31d96c6a78fdf9655af4e74c771e279df7fa281e148f9ce",
-  "content_hash": "a3281157d8d186d7e8eeb51cd29ed75c871d2f8bce2ec622d22913a97fbfe916",
+  "content_hash": "c173a58296656b768727f2999fabf17af226a4920dc3b0489af9e722a9fa531c",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-09-15T03:33:04.806687+00:00",
+  "generated_at": "2026-09-16T06:38:38.287463+00:00",
   "n_in_scope": 22,
   "rows": [
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "c4b4bee65fd51645364fe26993d507aeddea773bfd39f0de3f2030c420d88928",
+        "analytical_check.json": "a8b9d29eeed0efc7aaa08ce3311a6b377e6b01980515ad201746200b80e13e8c",
+        "null_calibration.json": "6e704587cdb451605ff0809d5c8aeb42b5002860d6a12d1c9ce3ada20141e568",
+        "provenance.json": "5309fab31c10f3c6b681fba58c0603a73ab8f788456c22ee3bb6f12c833e4acc",
+        "result.json": "24919c5f6d35101b384945b50a7d465bbe5fb377df829defa5c2003262f086be",
+        "sweep_provenance.json": "87311ff19310b825fd1d13183a17cfe4449a426422963b9e28b0ecb6da647213",
+        "thresholds.json": "77e39a3d5c26d233a49353b2af85af8baad5fc6a33a6bf5b30e56d6d28d669df"
+      },
       "bucket": "EVENT_CLASS",
       "catalog_soft_flags": {
         "M_ticks": 5000,
@@ -19,14 +27,39 @@
         "primary_channel": "substrates",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "boundEnzymes": "SEED_NOISE",
+        "chromosome": "SEED_NOISE",
+        "contraction_event_count": "SEED_NOISE",
+        "derivedOutputs": "SEED_NOISE",
+        "enzymes": "SEED_NOISE",
+        "ftsZRing_numEdgesOneStraight": "SEED_NOISE",
+        "ftsZRing_numEdgesTwoBent": "SEED_NOISE",
+        "ftsZRing_numEdgesTwoStraight": "SEED_NOISE",
+        "ftsZRing_numResidualBent": "SEED_NOISE",
+        "onset_to_completion_timing": "SEED_NOISE",
+        "outputContract": "SEED_NOISE",
+        "pinchedDiameter": "SEED_NOISE",
+        "randStreamState": "SEED_NOISE",
+        "substrates": "SEED_NOISE",
+        "waterRequest": "SEED_NOISE"
+      },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/Cytokinesis/latest_event",
-      "green": false,
+      "green": true,
       "harness_type": "event_class",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "Cytokinesis",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process Cytokinesis"
-      ]
+      "provenance_git_sha": "0e344612b79bd4e572daf775a0977dd1821605ce",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 5,
+        "git_dirty": true,
+        "git_sha": "0e344612b79bd4e572daf775a0977dd1821605ce",
+        "inputs_verified": true,
+        "result_schema_version": 1
+      },
+      "warnings": []
     },
     {
       "artifact_hashes": {
@@ -151,7 +184,15 @@
       "warnings": []
     },
     {
-      "artifact_hashes": {},
+      "artifact_hashes": {
+        "SUMMARY.json": "29c9b97e586ed03872024eb93c9c86fca925fbe99afe91ce2f6acf4ec0de3938",
+        "analytical_check.json": "6ddef1c0fa65e916b0e35e903303a1130a1bd5e2f01a351ae2821b575560a6d9",
+        "null_calibration.json": "4207494b6f0d45e1079a1b1d2c994c65f6989c115068baded3ad669aea464e04",
+        "provenance.json": "0218d859fc3180dcbf6030446cf98d699cfe8bb611ef2a714f7314c663205ecc",
+        "result.json": "291f11a5eab21b2029a2108dcc8c08bbe3c44af329e5d76d7a49a9a96cb3fde6",
+        "sweep_provenance.json": "02e74c15d8f15455262cb07a617ebe8ef026262cb852628087d5eaa03cbb9a3f",
+        "thresholds.json": "c14142cf781b847e1a8a1a798dadfb139adf748ffcaaeaf9b6a6fe29a7923199"
+      },
       "bucket": "WINDOWED_CONTINUOUS_CLASS",
       "catalog_soft_flags": {
         "M_ticks": 200,
@@ -162,14 +203,26 @@
         "primary_channel": "enzymes",
         "primary_distance": "per_tick_vector_w1_mean"
       },
+      "channel_verdicts": {
+        "enzymes": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/FtsZPolymerization/latest_windowed",
-      "green": false,
+      "green": true,
       "harness_type": "windowed_continuous",
-      "mechanical_verdict": "MISSING_EVIDENCE",
+      "mechanical_verdict": "PASS",
       "process": "FtsZPolymerization",
-      "reasons": [
-        "MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process FtsZPolymerization"
-      ]
+      "provenance_git_sha": "0e344612b79bd4e572daf775a0977dd1821605ce",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 5,
+        "git_dirty": true,
+        "git_sha": "0e344612b79bd4e572daf775a0977dd1821605ce",
+        "inputs_verified": true,
+        "result_schema_version": 1
+      },
+      "warnings": []
     },
     {
       "artifact_hashes": {
@@ -886,7 +939,6 @@
   ],
   "schema_version": 1,
   "tally": {
-    "MISSING_EVIDENCE": 2,
-    "PASS": 20
+    "PASS": 22
   }
 }

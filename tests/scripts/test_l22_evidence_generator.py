@@ -217,20 +217,26 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     migrate_r11_repinit_provenance.py`. A genuine, fresh N=50/M=200 sweep
     was run to produce this row's own evidence.
 
+    A SEVENTH evidence-driven change closes the two final rows:
+    Cytokinesis moves MISSING_EVIDENCE -> PASS through exact full
+    next_update replay over 20 genuine 5000-tick division windows
+    (100000 checked ticks, zero mismatches), and FtsZPolymerization moves
+    MISSING_EVIDENCE -> PASS through the preregistered windowed-continuous
+    N20 gate with both measured distances below Karr-only thresholds.
+
     If this test ever needs to change again, that change must be driven by
     real evidence (a sweep rerun populating/changing rows under the evidence
     tree, a broader H12 artifact regeneration, or a further cited evaluator
     correctness fix), not by editing this assertion to make it pass."""
     payload = gen.build_evidence_index()
-    assert payload["aggregate_verdict"] == "NON_GREEN"
+    assert payload["aggregate_verdict"] == "GREEN"
     for row in payload["rows"]:
         if row["green"]:
             assert row["mechanical_verdict"] == schema.STATUS_PASS
         else:
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
-        schema.STATUS_PASS: 20,
-        schema.STATUS_MISSING_EVIDENCE: 2,
+        schema.STATUS_PASS: 22,
     }
     fail_rows = {
         row["process"]: row["reasons"]
@@ -348,10 +354,9 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     # MISSING_EVIDENCE regardless of what the tracked portable bundle says.
     result = gen.audit(index_path=index_path, evidence_root=None)
     assert result.ok is True
-    assert result.aggregate_verdict == "NON_GREEN"
+    assert result.aggregate_verdict == "GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 20,
-        schema.STATUS_MISSING_EVIDENCE: 2,
+        schema.STATUS_PASS: 22,
     }
 
 

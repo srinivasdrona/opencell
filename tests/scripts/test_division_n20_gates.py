@@ -91,6 +91,32 @@ def test_oracle_paths_are_portable_across_worktrees():
     assert portable.startswith("data/m1_sources/karr_native/")
 
 
+def test_per_seed_result_paths_use_portable_oracle_paths():
+    external = Path(
+        "E:/opencell-worktrees/main-integrate/data/m1_sources/karr_native/"
+        "dual_division_cohort_current/per_process_traces_v2_event_s000/"
+        "FtsZPolymerization_200ticks.mat"
+    )
+    surface = ftsz_gate.SeedSurface(
+        seed=0,
+        trace_path=external,
+        trace_sha256="0" * 64,
+        karr_enzymes=np.zeros((1, 1)),
+        oc_enzymes=np.zeros((1, 1)),
+        karr_substrates=np.zeros((1, 1)),
+        oc_substrates=np.zeros((1, 1)),
+        karr_activity_ticks=0,
+        oc_activity_ticks=0,
+        monomer_projection_max_abs_discrepancy=0.0,
+        geometry_volume_min_l=1.0,
+        geometry_volume_max_l=1.0,
+    )
+
+    assert surface.summary_json()["trace_path"].startswith(
+        "data/m1_sources/karr_native/"
+    )
+
+
 def test_generator_accepts_noncontiguous_selector_owned_completed_seeds():
     entry = l22_catalog.in_scope_processes()["Cytokinesis"]
     selected = [0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 13, 15, 16, 17, 18, 19, 20, 21, 22]

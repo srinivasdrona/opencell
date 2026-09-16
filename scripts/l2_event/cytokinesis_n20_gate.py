@@ -163,7 +163,7 @@ class CytokinesisSeedEvidence:
     def to_json(self) -> dict[str, Any]:
         return {
             "seed": self.seed,
-            "trace_path": str(self.trace_path),
+            "trace_path": portable_oracle_path(self.trace_path),
             "trace_sha256": self.trace_sha256,
             "onset_offset": self.onset_offset,
             "completion_offset": self.completion_offset,

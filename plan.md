@@ -457,6 +457,29 @@ earlier blocks below:**
   banked), D seed25 (3,10,20 banked), E seed26 (4,11,21 banked). The monitor
   is alive in an HDF5 audit; target is expected once gaps25/26 resolve and
   already-new seed27 unlocks, subject to censor outcomes.
+  Final extraction/audit: all six workers stopped. Authoritative selector
+  scanned attempts 0-33, found 22 completed / 12 censored, selected the first
+  20 completions `[0,1,2,3,4,5,7,8,9,10,11,13,17,21,22,23,24,27,29,30]`,
+  and reported zero duplicate hashes/source mismatches/invalid censors/
+  rejected traces. Cyt authority: 100,000 replay ticks, zero mismatches
+  across 13 fields, 20/20 completed, count/timing/payload W1 all 0. FtsZ
+  authority: enzymes 0.0226818 < 0.133925, substrates 0.0065 < 0.0801914,
+  all evaluation seeds active, monomer discrepancy 0. Bundled exactly 16
+  authority files for the two processes. Both authorities were rerun after
+  replacing absolute per-seed result paths with portable
+  `data/m1_sources/karr_native/...` paths; live output archived outside the
+  repo to prevent a partial-root default audit. Regenerated board is **22
+  PASS / 0 FAIL / 0 MISSING_EVIDENCE, aggregate GREEN, integrity OK**.
+  Final Opus evidence review **ACCEPTED** with no blockers and reverified all
+  51 input hashes, selector identity, 100,000 Cyt replay ticks, FtsZ
+  calibration, live-to-tracked bytes, and prior 20 rows. Blocking
+  `l2-2-evidence-gate` is now wired in `.github/workflows/ci.yml` using
+  `generator.py audit --require-all-pass`; focused final suite 58/58,
+  workflow parse and Ruff clean, L1b 28/28, L2.4 PASS, provenance 44.
+  Live cohort also contains
+  premature valid seed36; gaps34/35 remain outside the N20 selected prefix
+  and old projection-v2 copies are preserved in the legacy root. Commit/push
+  this closure, then publish the triggered 22/0/0 Tehol/Bugg blog post.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade

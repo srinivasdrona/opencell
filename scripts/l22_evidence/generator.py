@@ -1024,7 +1024,7 @@ def main(argv: list[str] | None = None) -> int:
         "--require-all-pass",
         action="store_true",
         help="Acceptance gate: exit nonzero unless every in-scope process is GREEN. "
-        "Expected to fail (exit 2) until process closure; not yet wired into CI.",
+        "Wired as a blocking CI gate after 22/22 process closure.",
     )
     aud.add_argument(
         "--verify-input-files",

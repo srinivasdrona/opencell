@@ -1,0 +1,41 @@
+{
+  "completion_status": "COMPLETE",
+  "evaluator_schema_version": 5,
+  "git_dirty": true,
+  "git_sha": "0e344612b79bd4e572daf775a0977dd1821605ce",
+  "inputs_verified": true,
+  "m_ticks": 5000,
+  "n_seeds": 20,
+  "process": "Cytokinesis",
+  "result_schema_version": 1,
+  "schema_version": 2,
+  "sidecar_hashes": {
+    "SUMMARY.json": "c4b4bee65fd51645364fe26993d507aeddea773bfd39f0de3f2030c420d88928",
+    "analytical_check.json": "a8b9d29eeed0efc7aaa08ce3311a6b377e6b01980515ad201746200b80e13e8c",
+    "input_manifest.json": "c817d8fb9d4e14301da513cfd999d1397f177441d95150e8c66583aaf54f6cdc",
+    "null_calibration.json": "6e704587cdb451605ff0809d5c8aeb42b5002860d6a12d1c9ce3ada20141e568",
+    "provenance.json": "5309fab31c10f3c6b681fba58c0603a73ab8f788456c22ee3bb6f12c833e4acc",
+    "result.json": "24919c5f6d35101b384945b50a7d465bbe5fb377df829defa5c2003262f086be",
+    "thresholds.json": "77e39a3d5c26d233a49353b2af85af8baad5fc6a33a6bf5b30e56d6d28d669df"
+  },
+  "source_hashes": {
+    "catalog_entry": "26348f16886f4ab4acefe68caab0fd93b184b9b8ab0646134879a8d338c9a358",
+    "cytokinesis_event_adapter_module": "c6990f2b4dcb14d92437cddc8929a33ca380526a0bdc8f733a08158b4b5e442e",
+    "cytokinesis_n20_gate_module": "cf5ef8586d43114a4601ecdb8862106ed49f81253c333d03b4cdca355151a0ae",
+    "division_cohort_selector_module": "8107f1e44e41905374b7c054cbfb3215d4eb40f6620847521d48f233f631eece",
+    "division_gate_common_module": "738dce4402df3bca58b50f1b5f85ab652f535594c175e9029a787ca5e70a7166",
+    "division_window_spec_module": "d75988222e19b188feb5af8db67d6fdd877aa3366da2c12221bf26af20da8f43",
+    "dual_division_extractor_module": "64a1f2cea974b634926f84552e153027b158b5400b961b1041dfc61710447d55",
+    "dual_division_validator_module": "eca0da5b68b172940a2f3bf14de77ed6b8afb8991d210c00c21a24d806b0ff0e",
+    "event_bridge": "421595e16c855b0dea6331781927c8ed573c5a93bc37df7e4720d49e18464145",
+    "event_registry_entry": "1b13deacf462b05e0d0c0e8a52937cd803329aaa66f45544d75c8ad1001b2f2d",
+    "event_window_loader_module": "546f95ea6852c23a3366a792b93f095821372dbf63440eda729063418dae315a",
+    "l2_event_evidence": "731fbf819fd2314e61bee8e63117889769c4e84941ea6f9e9f1969e89c42691c",
+    "l2_event_metrics": "2b194475b53121efd3bb34e865b4ee4053704393d33974cfd4ead31147278eda",
+    "l2_event_runner": "8770a734cd9ea549fa44a4e70d278277cbf6d2de3dc5e412fe5300ef3509da99",
+    "mcg16807_state_codec_module": "be0045904fb9aabe236ca9f713db362da6938a3fac15fe7e4cd7eedc95f64f36",
+    "oc_module": "eb0e21990b1acc0513bc627d956ea32d052c9b4ecd5ec76bb59ed21581deaab3",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+  },
+  "written_at": "2026-09-16T06:37:48.430395+00:00"
+}

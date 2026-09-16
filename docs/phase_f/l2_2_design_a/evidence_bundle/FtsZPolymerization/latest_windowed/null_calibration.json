@@ -1,0 +1,83 @@
+{
+  "calibration_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8,
+    9,
+    10
+  ],
+  "channels": {
+    "enzymes": {
+      "channel": "enzymes",
+      "component_scales": [
+        1.0,
+        7.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0,
+        2.0
+      ],
+      "policy": "selector-order rotating Karr-only split/holdout; collapse complementary half-split duplicates when N is even; q95 over distinct split statistics; threshold=3.0*q95",
+      "q95_null": 0.04464155844155845,
+      "seed_count": 10,
+      "split_statistics": [
+        0.04331168831168831,
+        0.04497402597402598,
+        0.036402597402597416,
+        0.04276623376623378,
+        0.03741558441558442
+      ],
+      "symmetry_collapsed": true,
+      "threshold": 0.13392467532467534,
+      "unique_split_count": 5
+    },
+    "substrates": {
+      "channel": "substrates",
+      "component_scales": [
+        7.0,
+        6.0,
+        1.0,
+        1.0,
+        1.0
+      ],
+      "policy": "selector-order rotating Karr-only split/holdout; collapse complementary half-split duplicates when N is even; q95 over distinct split statistics; threshold=3.0*q95",
+      "q95_null": 0.026730476190476197,
+      "seed_count": 10,
+      "split_statistics": [
+        0.026919047619047627,
+        0.02597619047619048,
+        0.01898571428571429,
+        0.01538571428571429,
+        0.011147619047619049
+      ],
+      "symmetry_collapsed": true,
+      "threshold": 0.0801914285714286,
+      "unique_split_count": 5
+    }
+  },
+  "evaluation_seeds": [
+    11,
+    13,
+    17,
+    21,
+    22,
+    23,
+    24,
+    27,
+    29,
+    30
+  ],
+  "oc_outcomes_read": false,
+  "process": "FtsZPolymerization",
+  "source": "Karr-only"
+}

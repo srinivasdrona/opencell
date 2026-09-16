@@ -1,0 +1,67 @@
+{
+  "calibration_policy": "exact full next_update replay from captured Karr before-state and private process RNG",
+  "channels": {
+    "boundEnzymes": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "chromosome": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "contraction_event_count": {
+      "rule": "exact full-replay contraction count; conditional pilots are forced non-green",
+      "threshold": 0.0
+    },
+    "derivedOutputs": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "enzymes": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "ftsZRing_numEdgesOneStraight": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "ftsZRing_numEdgesTwoBent": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "ftsZRing_numEdgesTwoStraight": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "ftsZRing_numResidualBent": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "onset_to_completion_timing": {
+      "q95_null": 0.0,
+      "rule": "exact per-seed contraction tick sets; Karr-only onset-span spread is diagnostic",
+      "threshold": 0.0
+    },
+    "outputContract": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "pinchedDiameter": {
+      "rule": "exact payload identity paired by seed and tick",
+      "threshold": 0.0
+    },
+    "randStreamState": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    },
+    "substrates": {
+      "rule": "zero mismatch across every meaningful non-redundant full-replay output, plus exact event payload/count/timing",
+      "threshold": 0.0
+    },
+    "waterRequest": {
+      "rule": "exact per-tick full next_update replay identity",
+      "threshold": 0.0
+    }
+  },
+  "process": "Cytokinesis"
+}

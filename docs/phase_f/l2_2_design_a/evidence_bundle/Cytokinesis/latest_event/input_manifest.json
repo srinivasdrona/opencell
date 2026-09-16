@@ -1,0 +1,244 @@
+{
+  "inputs": [
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s000/Cytokinesis_5000ticks.mat",
+      "seed": 0,
+      "sha256": "7326bef869332d8f6414642d16dcbf216c78d6a98a5e4251780d4226b5c366cc",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s001/Cytokinesis_5000ticks.mat",
+      "seed": 1,
+      "sha256": "1fde735caa00aaae8622b0f734ff8c0fc63c4a0e20806fb8e752cbb989f36720",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s002/Cytokinesis_5000ticks.mat",
+      "seed": 2,
+      "sha256": "8f29924c73054873e232ade5ef90682025904b7f71c17457887de717883b568d",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s003/Cytokinesis_5000ticks.mat",
+      "seed": 3,
+      "sha256": "7eb62ba3cfd4515a542015cfa836f7f728f7e17da2751b9810ec27293f1aeae6",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s004/Cytokinesis_5000ticks.mat",
+      "seed": 4,
+      "sha256": "826900381a5372d111ead6de277e214e6e7b3d15ce67beb373c8731f0d0517e2",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s005/Cytokinesis_5000ticks.mat",
+      "seed": 5,
+      "sha256": "7aefb26f4ba28e447c6f061feb7495c3e493e1eb1d67b6cc392e2fe171993f84",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s007/Cytokinesis_5000ticks.mat",
+      "seed": 7,
+      "sha256": "d4a10a4c265b0da599e3b1cb07fcccece0164742cbf10f2273d7e9db799694c0",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s008/Cytokinesis_5000ticks.mat",
+      "seed": 8,
+      "sha256": "4aee3fd05085029a25cb535258803b8e5f491b2dd74d21ee8a61fd95b9791e2d",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s009/Cytokinesis_5000ticks.mat",
+      "seed": 9,
+      "sha256": "322343c8a3427bd08fd8d742d1dfd7f39eef13fc9408453b40c875468c444e45",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s010/Cytokinesis_5000ticks.mat",
+      "seed": 10,
+      "sha256": "3f8383a53873ea654d063ccb2d64cfd771059ac9748c8fa54c79355b96377257",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s011/Cytokinesis_5000ticks.mat",
+      "seed": 11,
+      "sha256": "c3fa34d943438a940cd5a1cbc539cebeab39ffea95f048aacacf641d34596589",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s013/Cytokinesis_5000ticks.mat",
+      "seed": 13,
+      "sha256": "23ac516167b3a9e32ef49999abba538df908211a8bc48fe8bd52e7659b4c2289",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s017/Cytokinesis_5000ticks.mat",
+      "seed": 17,
+      "sha256": "23338590b5d553f8208c2cc8ba0c3a19805efd79e4fb0d854706faf7eb638266",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s021/Cytokinesis_5000ticks.mat",
+      "seed": 21,
+      "sha256": "0bad8b022f64fcaed571ae69f81368723b7f17a5291f651d06699bdca83db281",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s022/Cytokinesis_5000ticks.mat",
+      "seed": 22,
+      "sha256": "8dc188ffe8012fb84ef74fc31d5b7651d16cdc27840cf051c38b76e1125fe4d8",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s023/Cytokinesis_5000ticks.mat",
+      "seed": 23,
+      "sha256": "de393e1fc1aaf0d5ce71426746b22148fda2ca2dba0bf3ac9b0953e05a82ab22",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s024/Cytokinesis_5000ticks.mat",
+      "seed": 24,
+      "sha256": "0f70c120e38d18a4996b973e94279fedc6ff3f4b083b6ca046e2ae042aa95f03",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s027/Cytokinesis_5000ticks.mat",
+      "seed": 27,
+      "sha256": "50f5615012fcfe08d33b1a986cf7c2f798b07bc384655b1b5af09aebee347022",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s029/Cytokinesis_5000ticks.mat",
+      "seed": 29,
+      "sha256": "9362425c4ee8612338f85f2a8066349ea34ea47be5b1fc18f49177e58ed02884",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 5000,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s030/Cytokinesis_5000ticks.mat",
+      "seed": 30,
+      "sha256": "b10601d4769773240caf79224ac8e1342ccb8f0a99a41284c5e6c6a7820000c8",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "code",
+      "path": "scripts/l2_event/cytokinesis_n20_gate.py",
+      "sha256": "cf5ef8586d43114a4601ecdb8862106ed49f81253c333d03b4cdca355151a0ae"
+    },
+    {
+      "kind": "code",
+      "path": "scripts/l2_event/adapters/cytokinesis.py",
+      "sha256": "c6990f2b4dcb14d92437cddc8929a33ca380526a0bdc8f733a08158b4b5e442e"
+    },
+    {
+      "kind": "code",
+      "path": "scripts/l2_event/validate_dual_division_canary.py",
+      "sha256": "eca0da5b68b172940a2f3bf14de77ed6b8afb8991d210c00c21a24d806b0ff0e"
+    },
+    {
+      "kind": "code",
+      "path": "scripts/matlab/extract_dual_division_window.m",
+      "sha256": "64a1f2cea974b634926f84552e153027b158b5400b961b1041dfc61710447d55"
+    },
+    {
+      "kind": "code",
+      "path": "opencell/vivarium/karr_cytokinesis.py",
+      "sha256": "eb0e21990b1acc0513bc627d956ea32d052c9b4ecd5ec76bb59ed21581deaab3"
+    },
+    {
+      "kind": "code",
+      "path": "opencell/util/mcg16807_state_codec.py",
+      "sha256": "be0045904fb9aabe236ca9f713db362da6938a3fac15fe7e4cd7eedc95f64f36"
+    }
+  ],
+  "m_ticks": 5000,
+  "process": "Cytokinesis",
+  "resolved_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8,
+    9,
+    10,
+    11,
+    13,
+    17,
+    21,
+    22,
+    23,
+    24,
+    27,
+    29,
+    30
+  ],
+  "seed_selection": {
+    "required_completed_windows": 20,
+    "selected_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      8,
+      9,
+      10,
+      11,
+      13,
+      17,
+      21,
+      22,
+      23,
+      24,
+      27,
+      29,
+      30
+    ],
+    "selector": "division_cohort_selector"
+  }
+}

@@ -1,0 +1,24 @@
+{
+  "applicable": true,
+  "checked_ticks": 100000,
+  "checked_transitions": 2940,
+  "field_mismatch_counts": {
+    "boundEnzymes": 0,
+    "chromosome": 0,
+    "derivedOutputs": 0,
+    "enzymes": 0,
+    "ftsZRing_numEdgesOneStraight": 0,
+    "ftsZRing_numEdgesTwoBent": 0,
+    "ftsZRing_numEdgesTwoStraight": 0,
+    "ftsZRing_numResidualBent": 0,
+    "outputContract": 0,
+    "pinchedDiameter": 0,
+    "randStreamState": 0,
+    "substrates": 0,
+    "waterRequest": 0
+  },
+  "name": "cytokinesis_full_next_update_replay",
+  "passed": true,
+  "source_trace_integrity_passed": true,
+  "sut_evaluated": true
+}

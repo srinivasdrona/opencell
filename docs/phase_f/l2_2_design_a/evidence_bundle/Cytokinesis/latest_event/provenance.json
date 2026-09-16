@@ -1,0 +1,8 @@
+{
+  "cohort_selector": "scripts/l2_event/division_cohort_selector.py",
+  "gate_kind": "event_class",
+  "generated_at": "2026-09-16T06:37:42.474225+00:00",
+  "git_dirty": true,
+  "git_sha": "0e344612b79bd4e572daf775a0977dd1821605ce",
+  "process": "Cytokinesis"
+}

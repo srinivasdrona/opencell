@@ -1,0 +1,239 @@
+{
+  "inputs": [
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s000/FtsZPolymerization_200ticks.mat",
+      "seed": 0,
+      "sha256": "198f90e8ba7f4e8720722592c66375b0c4782c8882ef43db1101e5ca43ec91a3",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s001/FtsZPolymerization_200ticks.mat",
+      "seed": 1,
+      "sha256": "1662bbef99006b881fe4bc5b387bd2c0acadeb867dc87a4fb1b5893662d2eeac",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s002/FtsZPolymerization_200ticks.mat",
+      "seed": 2,
+      "sha256": "fbfc03b74a3cb89e66e4f333bf08122119b7f3ff5659cb727991e36bdc9cb943",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s003/FtsZPolymerization_200ticks.mat",
+      "seed": 3,
+      "sha256": "34e22824a6aa01bf9abbc613b1f04695e82b83a1d7519df4a96f1c620bc5d5eb",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s004/FtsZPolymerization_200ticks.mat",
+      "seed": 4,
+      "sha256": "af509437eea2144802648d5c42145f2b8d247e1cf6f723c545205fd12875caf7",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s005/FtsZPolymerization_200ticks.mat",
+      "seed": 5,
+      "sha256": "b535e6bd6214aa8ff0a2a65a445a4ba054075b707409f9380d14ab708cd11a82",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s007/FtsZPolymerization_200ticks.mat",
+      "seed": 7,
+      "sha256": "6103b9a65119daaee47a5fc55ce4d2b6231357854913e7d66265d84b4a031843",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s008/FtsZPolymerization_200ticks.mat",
+      "seed": 8,
+      "sha256": "d673277582d5de09d63fb62f60b9d62849c1bd452cea2e48fe48621bc17e9c36",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s009/FtsZPolymerization_200ticks.mat",
+      "seed": 9,
+      "sha256": "e6a868e54b96e9e27e74207db44c039131cbc6f6014a86f348e2eb1e1fe58cc2",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s010/FtsZPolymerization_200ticks.mat",
+      "seed": 10,
+      "sha256": "843fc638530f78864df91ef42351df6b803b097c76b1957db77ff6eec1e8b7ad",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s011/FtsZPolymerization_200ticks.mat",
+      "seed": 11,
+      "sha256": "26ef9e10ad110a79ac025ae0033f894ae46676e53dfb0c475612c17dbe68c49d",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s013/FtsZPolymerization_200ticks.mat",
+      "seed": 13,
+      "sha256": "2d7e3a1e7e99fd761c86db0a2bea35399f36942ca14de518a1520eb2d8a12085",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s017/FtsZPolymerization_200ticks.mat",
+      "seed": 17,
+      "sha256": "039c3aacfc9c401c1947afc0ca80250ff586c4f3f6948d5c2bd2ff968240d442",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s021/FtsZPolymerization_200ticks.mat",
+      "seed": 21,
+      "sha256": "3396db75c0849fffca5dbbeca280525ed68b2f15bbfec206cc89da46e7a5c1b0",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s022/FtsZPolymerization_200ticks.mat",
+      "seed": 22,
+      "sha256": "aa944b13dfdf0c2526f8d98f183c664ff752cae1c7497a433d4cb494a2dbb5a6",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s023/FtsZPolymerization_200ticks.mat",
+      "seed": 23,
+      "sha256": "0fd67ce331e4c0bdbcfd32d070a2ffa0af8691308ede3b20daf1cb6897fba016",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s024/FtsZPolymerization_200ticks.mat",
+      "seed": 24,
+      "sha256": "b9f7beddb4d21159c6c7e4b17594a0cea9a9ae63deb9b0564f5ebaecf7cc4ee4",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s027/FtsZPolymerization_200ticks.mat",
+      "seed": 27,
+      "sha256": "e99d1d1929d68c030f25ece4df3701c25e6b0611032e07239ee503bf7e0986b7",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s029/FtsZPolymerization_200ticks.mat",
+      "seed": 29,
+      "sha256": "dd3cd58efe3c556dcde0d34d8fce6e09f580de2488efad4cd69140dd8e810af3",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "oracle_data",
+      "n_ticks": 200,
+      "path": "data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s030/FtsZPolymerization_200ticks.mat",
+      "seed": 30,
+      "sha256": "9ce11859975d49b8723ff7598e4a5662303bb9b7b95b72f10d1b2a9155994f62",
+      "trace_kind": "dual_division_window"
+    },
+    {
+      "kind": "code",
+      "path": "scripts/l2_event/ftsz_windowed_n20_gate.py",
+      "sha256": "2b0332ec273c32be700aa09601e74f16cefb45a76f82bbf04936f17a765cbf17"
+    },
+    {
+      "kind": "code",
+      "path": "scripts/l2_event/ftsz_pre_division_evidence.py",
+      "sha256": "92988c980ae8d9d0c0d7af5d3c6af9e1fe2fd312f6752650863f536692d88301"
+    },
+    {
+      "kind": "code",
+      "path": "scripts/matlab/extract_dual_division_window.m",
+      "sha256": "64a1f2cea974b634926f84552e153027b158b5400b961b1041dfc61710447d55"
+    },
+    {
+      "kind": "code",
+      "path": "opencell/vivarium/karr_ftsz_polymerization.py",
+      "sha256": "5e14d726723f01c6fb126725840add3d5a77da17701288db3cfd0c88bcace0cb"
+    },
+    {
+      "kind": "code",
+      "path": "tests/vivarium/l2_replay_common.py",
+      "sha256": "1a534b3fadc53a08bbc2365c95505c9d35766878b6286461cc4381d40ffe1215"
+    }
+  ],
+  "m_ticks": 200,
+  "process": "FtsZPolymerization",
+  "resolved_seeds": [
+    0,
+    1,
+    2,
+    3,
+    4,
+    5,
+    7,
+    8,
+    9,
+    10,
+    11,
+    13,
+    17,
+    21,
+    22,
+    23,
+    24,
+    27,
+    29,
+    30
+  ],
+  "seed_selection": {
+    "required_completed_windows": 20,
+    "selected_seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      7,
+      8,
+      9,
+      10,
+      11,
+      13,
+      17,
+      21,
+      22,
+      23,
+      24,
+      27,
+      29,
+      30
+    ],
+    "selector": "division_cohort_selector"
+  }
+}

@@ -8,8 +8,8 @@ That design was circular: both "expected" and "actual" were hand-typed by a
 human, so the test could never catch a wrong claim -- it could only detect
 disagreement between two opinions, neither of which was measured.
 
-This test is the INTEGRITY/AUDIT gate (stage A), not the ACCEPTANCE gate
-(stage B):
+This test covers the integrity/audit gate (stage A) and verifies that the
+acceptance gate (stage B) is wired into CI:
   - Stage A (this file): passes when the tracked `evidence_index.json` is a
     truthful, untampered, byte-for-byte-reproducible (minus `generated_at`)
     reflection of the current catalog + evidence tree. It is expected and
@@ -24,12 +24,10 @@ This test is the INTEGRITY/AUDIT gate (stage A), not the ACCEPTANCE gate
   MISSING_EVIDENCE for all 22 rows today, pending a hardened sweep rerun
   (Phase B). Faking a green -- or a fabricated mixed -- result here would
   be exactly the kind of fabrication this rewrite exists to prevent.
-  - Stage B (NOT this file): `scripts/l22_evidence/generator.py audit
+  - Stage B: `scripts/l22_evidence/generator.py audit
     --require-all-pass` / `scripts/probe_l2_2_strict_audit.py
-    --require-all-pass` returns nonzero until every in-scope process is
-    mechanically GREEN. It is deliberately NOT wired into pytest/CI yet --
-    that wiring is a follow-up activation commit after process closure, not
-    a silently-skipped or xfail'd test today.
+    --require-all-pass` returns nonzero unless every in-scope process is
+    mechanically GREEN. It is now a blocking hosted-CI job.
 """
 
 from __future__ import annotations
@@ -78,9 +76,9 @@ def test_committed_evidence_index_passes_integrity_audit():
     assert result.ok, f"evidence_index.json failed integrity audit: {result.problems}"
 
 
-def test_committed_evidence_index_is_honestly_non_green_today():
-    """This task MUST report a truthful non-green index, never a fabricated
-    PASS. The tally hardcoded here has moved several times since this test
+def test_committed_evidence_index_is_honestly_green_today():
+    """This task MUST report a truthful mechanically derived index, never a
+    fabricated PASS. The tally hardcoded here has moved several times since this test
     was first written (see the historical narrative that used to live in
     this docstring, now superseded -- the full evaluator-only re-derivation
     history for the earlier moves is
@@ -113,17 +111,15 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     independently re-verifies the redaction-equality proof itself before
     writing anything.
 
-    The tally is now PASS: 20, FAIL: 0, MISSING_EVIDENCE: 2, n_in_scope: 22:
-      - PASS (20): DNADamage, DNARepair, DNASupercoiling,
+    The tally is now PASS: 22, FAIL: 0, MISSING_EVIDENCE: 0, n_in_scope: 22:
+      - PASS (22): Cytokinesis, DNADamage, DNARepair, DNASupercoiling,
         MacromolecularComplexation, Metabolism, ProteinDecay, ProteinFolding,
         ProteinModification, ProteinProcessingI, ProteinProcessingII,
         ProteinTranslocation, ReplicationInitiation, RNADecay,
         RNAModification, RNAProcessing, Replication, RibosomeAssembly,
-        Transcription, Translation, tRNAAminoacylation.
+        Transcription, Translation, tRNAAminoacylation, FtsZPolymerization.
       - FAIL (0).
-      - MISSING_EVIDENCE (2): Cytokinesis, FtsZPolymerization (pre-existing,
-        unrelated to this closure -- still mid-extraction in a separate
-        parallel lane).
+      - MISSING_EVIDENCE (0).
 
     This is a deliberate, evidence-driven mechanical re-derivation, not a
     regression or a fabrication: `gen.audit()` reports `integrity: OK` (see
@@ -139,10 +135,9 @@ def test_committed_evidence_index_is_honestly_non_green_today():
     correctness fix with cited raw-metric evidence), not by editing this
     assertion to make it pass."""
     result = gen.audit()
-    assert result.aggregate_verdict == "NON_GREEN"
+    assert result.aggregate_verdict == "GREEN"
     assert result.tally == {
-        schema.STATUS_PASS: 20,
-        schema.STATUS_MISSING_EVIDENCE: 2,
+        schema.STATUS_PASS: 22,
     }
 
 
@@ -157,14 +152,13 @@ def test_committed_evidence_index_covers_scope_exactly_once():
     assert payload["n_in_scope"] == len(entries) == 22
 
 
-def test_require_all_pass_acceptance_gate_is_not_yet_wired_into_ci():
-    """Documents (does not silently skip) that stage B is intentionally not
-    active. This is not a fake/xfail acceptance test -- it asserts the CLI
-    machinery for stage B exists and correctly refuses to claim acceptance
-    today, without pytest itself gating CI on `--require-all-pass`."""
+def test_require_all_pass_acceptance_gate_is_wired_into_ci():
+    """The now-green board must remain protected by a blocking CI command."""
     payload = gen.build_evidence_index()
-    assert payload["aggregate_verdict"] != "GREEN", (
-        "Acceptance gate would need explicit activation (a follow-up commit wiring "
-        "`--require-all-pass` into CI) once this flips to GREEN -- do not wire it "
-        "preemptively while it is still non-green."
+    assert payload["aggregate_verdict"] == "GREEN"
+    workflow = (_REPO / ".github" / "workflows" / "ci.yml").read_text(
+        encoding="utf-8"
     )
+    assert "l2-2-evidence-gate:" in workflow
+    assert "--require-all-pass" in workflow
+    assert "generator.py audit" in workflow
