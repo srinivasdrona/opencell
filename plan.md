@@ -476,10 +476,12 @@ earlier blocks below:**
   `l2-2-evidence-gate` is now wired in `.github/workflows/ci.yml` using
   `generator.py audit --require-all-pass`; focused final suite 58/58,
   workflow parse and Ruff clean, L1b 28/28, L2.4 PASS, provenance 44.
-  Live cohort also contains
+  Closure authority published on `main` at `56fdab7`. Live cohort also contains
   premature valid seed36; gaps34/35 remain outside the N20 selected prefix
-  and old projection-v2 copies are preserved in the legacy root. Commit/push
-  this closure, then publish the triggered 22/0/0 Tehol/Bugg blog post.
+  and old projection-v2 copies are preserved in the legacy root. Triggered
+  22/0/0 Tehol/Bugg post drafted at
+  `docs/blog/2026-09-16-days-114-118-the-last-two-greens-needed-a-clock-a-volume-and-twenty-cells.md`;
+  publish directly on main.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
@@ -590,9 +592,9 @@ earlier blocks below:**
   `d2d04d7a...4588`. Post-merge gates report 98 passed/5 expected
   data-dependent skips and active rubric 14/14.
 - Publication trigger: **20/0/2 milestone post published at `9b72d11`**
-  (using post 1 for voice and the 2026-09-02 post for continuity). Publish
-  the next post only when L2.2 reaches **22 PASS / 0 FAIL / 0 MISSING**; no
-  intermediate candidate count triggers another post.
+  (using post 1 for voice and the 2026-09-02 post for continuity).
+  **22/0/0 reached and its final L2.2 milestone post is drafted for immediate
+  publication on main.**
 - Runtime/session recovery: no agents survived the latest CLI-session
   restart. This long session has repeatedly hit context compaction and
   session-scoped agent cleanup; filesystem worktrees/commits remain intact.
