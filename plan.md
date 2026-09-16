@@ -476,12 +476,16 @@ earlier blocks below:**
   `l2-2-evidence-gate` is now wired in `.github/workflows/ci.yml` using
   `generator.py audit --require-all-pass`; focused final suite 58/58,
   workflow parse and Ruff clean, L1b 28/28, L2.4 PASS, provenance 44.
-  Closure authority published on `main` at `56fdab7`. Live cohort also contains
+  Closure authority published on `main` at `56fdab7`. Final 22/0/0
+  Tehol/Bugg post published at `8b8dda1`. Live cohort also contains
   premature valid seed36; gaps34/35 remain outside the N20 selected prefix
-  and old projection-v2 copies are preserved in the legacy root. Triggered
-  22/0/0 Tehol/Bugg post drafted at
-  `docs/blog/2026-09-16-days-114-118-the-last-two-greens-needed-a-clock-a-volume-and-twenty-cells.md`;
-  publish directly on main.
+  and old projection-v2 copies are preserved in the legacy root.
+  Post-publication CI initially stopped at eight pre-existing Ruff findings
+  in six legacy evidence-bound test files before reaching the new L2.2 job.
+  Added narrow per-file `I001`/`SIM108` debt exceptions in `pyproject.toml`
+  rather than mutating hash-bound source; exact CI command
+  `ruff check opencell/ tests/` and `generator.py audit --require-all-pass`
+  now pass locally. Push and require the replacement CI run to pass.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade

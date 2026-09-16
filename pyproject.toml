@@ -98,6 +98,15 @@ ignore = ["ANN401", "E501"]
     "N806",
     "N999",
 ]
+# Evidence-bound legacy tests: formatting their imports/control flow would
+# mutate source hashes and stale accepted evidence. Keep these exceptions
+# file-scoped so new tests remain subject to I/SIM checks.
+"tests/scripts/test_l22_evidence_catalog_migration.py" = ["I001"]
+"tests/vivarium/_l2_2_design_a_runner_helpers.py" = ["I001"]
+"tests/vivarium/test_karr_dna_supercoiling.py" = ["SIM108"]
+"tests/vivarium/test_l22_dnas_followup7_ledger.py" = ["I001"]
+"tests/vivarium/test_l22_dnas_followup8_ledger.py" = ["I001"]
+"tests/vivarium/test_l22_dnas_source_gap.py" = ["I001"]
 "opencell/analysis/phenotypes.py" = ["N806"]
 "opencell/core/compartments.py" = ["N802", "N803", "N806", "N815"]
 "opencell/core/environment.py" = ["N802", "N803", "N815"]
