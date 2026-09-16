@@ -499,7 +499,12 @@ earlier blocks below:**
   absolute Windows/WSL paths only when they contain the canonical oracle
   directory and end in `.mat`; code files under a similarly named directory
   remain tracked/strict. A native-Linux clone with no raw data now passes
-  `audit --require-all-pass` at 22/22.
+  `audit --require-all-pass` at 22/22. Final fixes published through
+  `324a30f`; GitHub Actions run
+  `https://github.com/srinivasdrona/opencell/actions/runs/35069394648`
+  completed **SUCCESS** (including blocking Ruff, L1b 115/115 + 28/28,
+  and L2.2 22/22 acceptance). All session todos are complete; only untracked
+  raw current/legacy division cohorts remain intentionally on disk.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade
