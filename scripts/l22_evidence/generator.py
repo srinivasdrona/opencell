@@ -957,11 +957,27 @@ def _cmd_audit(args: argparse.Namespace) -> int:
         print(f"  {status}: {count}")
     for problem in result.problems:
         print(f"PROBLEM: {problem}")
+    if result.aggregate_verdict != "GREEN":
+        fresh = build_evidence_index(
+            evidence_root=Path(args.evidence_root) if args.evidence_root else None,
+            catalog_path=Path(args.catalog),
+            registry_path=Path(args.registry),
+            strict_input_files=args.verify_input_files,
+        )
+        for row in fresh["rows"]:
+            if row["green"]:
+                continue
+            print(
+                f"NON_GREEN_ROW: {row['process']} "
+                f"verdict={row['mechanical_verdict']}"
+            )
+            for reason in row["reasons"]:
+                print(f"  REASON: {reason}")
 
     if not result.ok:
         return 1
     if args.require_all_pass and result.aggregate_verdict != "GREEN":
-        print("--require-all-pass: aggregate verdict is not GREEN; this is the acceptance gate, not yet activated in CI")
+        print("--require-all-pass: aggregate verdict is not GREEN; blocking acceptance gate failed")
         return 2
     return 0
 

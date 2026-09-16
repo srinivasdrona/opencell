@@ -485,7 +485,13 @@ earlier blocks below:**
   Added narrow per-file `I001`/`SIM108` debt exceptions in `pyproject.toml`
   rather than mutating hash-bound source; exact CI command
   `ruff check opencell/ tests/` and `generator.py audit --require-all-pass`
-  now pass locally. Push and require the replacement CI run to pass.
+  now pass locally. Replacement CI `35065821176`: Ruff and most jobs pass;
+  L1b Half A exposed 46 stale anchors and L2.2 reported one unnamed CI-only
+  non-green row. L1b map is now mechanically refreshed and semantically
+  remapped for nine RepInit helper renames: **115/115**, wiring 28/28.
+  Native-Linux clean clone with a fresh CI-version dependency environment
+  independently reproduces L2.2 **22/22 GREEN**, so generator audit output
+  now prints exact non-green row/reasons if the hosted discrepancy recurs.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade

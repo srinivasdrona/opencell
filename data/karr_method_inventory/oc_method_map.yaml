@@ -17,20 +17,20 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m:calcResourceRequirements_Current:233
         status: inlined
-        oc: opencell/vivarium/karr_chromosome_condensation.py:KarrChromosomeCondensationProcess.next_update:321
+        oc: opencell/vivarium/karr_chromosome_condensation.py:KarrChromosomeCondensationProcess.next_update:691
         note: No ChromosomeCondensation RequestCalculator exists in karr_request_calculators.py; `next_update`
           computes `request_need = float(max(0, smc_before + smc_delta))` and emits `update["requests"]`
           at lines 435-440.
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m:evolveState:240
         status: confirmed
-        oc: opencell/vivarium/karr_chromosome_condensation.py:KarrChromosomeCondensationProcess.next_update:321
+        oc: opencell/vivarium/karr_chromosome_condensation.py:KarrChromosomeCondensationProcess.next_update:691
         note: Direct OC runtime port of Karr `evolveState`; `next_update` dissociates SMC-ADP, binds SMC,
           updates chromosome/substrates, and returns the update dict.
       calcNewRegions:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m:calcNewRegions:286
         status: inlined
-        oc: opencell/vivarium/karr_chromosome_condensation.py:KarrChromosomeCondensationProcess._sample_binding_positions:693
+        oc: opencell/vivarium/karr_chromosome_condensation.py:KarrChromosomeCondensationProcess._sample_binding_positions:1776
         note: Folded into `_sample_binding_positions`; after each bind OC updates the working regions
           with `exclude_start = int((bind_pos + self._smc_exclusion_offset) % sequence_len)` and `_exclude_interval(...)`
           (lines 747-754). The file docstring says exact region-level binding is deferred to v2.
@@ -75,20 +75,20 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m:calcResourceRequirements_Current:166
         status: inlined
-        oc: opencell/vivarium/karr_cytokinesis.py:KarrCytokinesisProcess.next_update:330
+        oc: opencell/vivarium/karr_cytokinesis.py:KarrCytokinesisProcess.next_update:437
         note: Karr Cytokinesis.m:166-169; OC karr_cytokinesis.py:330/345/368 computes `water_requested
           = self._water_request(ring, geometry, chromosome_state)` and writes `update["requests"]`; no
           Cytokinesis RequestCalculator* in karr_request_calculators.py.
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m:evolveState:173
         status: confirmed
-        oc: opencell/vivarium/karr_cytokinesis.py:KarrCytokinesisProcess.next_update:330
+        oc: opencell/vivarium/karr_cytokinesis.py:KarrCytokinesisProcess.next_update:437
         note: Karr Cytokinesis.m:173-259; OC class docstring says "Faithful port of Karr `Process_Cytokinesis.evolveState`."
           next_update gates on segregated, runs the four phase helpers, and updates geometry/ftsZRing/cell.
       calcNextPinchedDiameter:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Cytokinesis.m:calcNextPinchedDiameter:264
         status: confirmed
-        oc: opencell/vivarium/karr_cytokinesis.py:KarrCytokinesisProcess.calc_next_pinched_diameter:645
+        oc: opencell/vivarium/karr_cytokinesis.py:KarrCytokinesisProcess.calc_next_pinched_diameter:755
         note: Karr Cytokinesis.m:264-284 and OC karr_cytokinesis.py:645-657 use the same floored/new diameter
           formula and zero-out when result <= filament_m.
   DNADamage:
@@ -99,12 +99,12 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:calcResourceRequirements_Current:469
         status: confirmed
-        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.calcResourceRequirements_Current:365
+        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.calcResourceRequirements_Current:577
         note: Dedicated method now computes `max(0, -reactionSmallMoleculeStoichiometryMatrix @ calcExpectedReactionRates())` and `next_update` emits it on `requests`.
       calcExpectedReactionRates:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:calcExpectedReactionRates:474
         status: inlined
-        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.next_update:313
+        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.next_update:447
         note: Folded into `KarrDNADamageProcess.next_update`; the rate loop does `rate_per_s = max(0.0,
           float(self.kind_rates_per_s.get(kind, 0.0)))`, applies `gate_count` from the radiation substrate,
           then `lam = rate_per_s * dt` before Poisson sampling. OC also has `expected_events_per_tick`
@@ -113,12 +113,12 @@ processes:
       calcNumberVulnerableSites:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:calcNumberVulnerableSites:490
         status: confirmed
-        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.calcNumberVulnerableSites:395
+        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.calcNumberVulnerableSites:607
         note: Dedicated helper ports Karr’s motif loop over polymerized DNA + damaged-site motif intersections (including sparse chromosome fields and MunI m6AD exclusion surface).
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNADamage.m:evolveState:535
         status: confirmed
-        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.next_update:287
+        oc: opencell/vivarium/karr_dna_damage.py:KarrDNADamageProcess.next_update:447
         note: 'Dedicated process step; `next_update` is the runtime body. It performs stochastic lesion
           creation, fork-hit detection, and returns `{"chromosome": chromosome_update}`.'
   DNARepair:
@@ -224,19 +224,19 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:calcResourceRequirements_Current:333
         status: inlined
-        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.next_update:406
+        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.next_update:1085
         note: 'Folded into KarrDNASupercoilingProcess.next_update: request_need = self._atp_request(...)
           and update[''requests''] = {self.name: {ATP, H2O}} (560-577).'
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:evolveState:356
         status: confirmed
-        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.next_update:406
+        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.next_update:1085
         note: 'KarrDNASupercoilingProcess.next_update is the runtime state step: it computes chromosome,
           substrates, boundEnzymes, and enzymes deltas, then returns update (567-644).'
       calcRNAPolymeraseBindingProbFoldChange:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/DNASupercoiling.m:calcRNAPolymeraseBindingProbFoldChange:510
         status: confirmed
-        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.calc_rna_polymerase_binding_prob_fold_change:703
+        oc: opencell/vivarium/karr_dna_supercoiling.py:KarrDNASupercoilingProcess.calc_rna_polymerase_binding_prob_fold_change:1667
         note: Dedicated structural port of Karr's sigma-thresholded linear fold-change method; next_update computes and emits tx_rate_fold_change from current linking-number supercoiling state.
   FtsZPolymerization:
     oc_files:
@@ -247,7 +247,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:calcResourceRequirements_Current:189
         status: inlined
-        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.next_update:216
+        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.next_update:233
         note: 'Karr requests GTP as `FtsZ + FtsZ_GDP` (FtsZPolymerization.m:189-193). OpenCell has no
           FtsZ-specific `RequestCalculator*` in `opencell/vivarium/karr_request_calculators.py` (the file
           defines only D2/PD/RibAsm/TRNA/RNAPathway/ProteinPathway/Transcription/Translation/ PTransloc/Metabolism
@@ -259,7 +259,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:evolveState:197
         status: confirmed
-        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.next_update:216
+        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.next_update:233
         note: 'Dedicated process-step counterpart. Like Karr `evolveState` (FtsZPolymerization.m:197-209),
           `next_update` guards on `if not np.any(current_counts): return {}`, then runs `molecules_to_concentration`
           -> `integrate_odes` -> last nonnegative ODE slice (`_last_nonnegative_solution_idx`) -> `discretize_enzymes`
@@ -267,7 +267,7 @@ processes:
       integrateODEs:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:integrateODEs:220
         status: confirmed
-        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.integrate_odes:295
+        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.integrate_odes:315
         note: Dedicated ODE-solver wrapper. Karr packs the eight kinetic parameters plus substrate concentrations
           before integrating over one step (FtsZPolymerization.m:220-236); OpenCell does the same parameter
           packing at `opencell/vivarium/karr_ftsz_polymerization.py:305-318` and solves with `solve_ivp(...,
@@ -275,27 +275,27 @@ processes:
       discretizeEnzymes:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:discretizeEnzymes:374
         status: confirmed
-        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.discretize_enzymes:405
+        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.discretize_enzymes:434
         note: Dedicated discretizer. Both versions start from concentration->molecule stochastic rounding
           and then loop until monomer balance is restored by moving mass between adjacent polymer bins
           (FtsZPolymerization.m:374-390; opencell/vivarium/karr_ftsz_polymerization.py:411-427).
       applySubstrateLimits:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:applySubstrateLimits:403
         status: confirmed
-        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.apply_substrate_limits:438
+        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.apply_substrate_limits:471
         note: Dedicated substrate-limit clamp. OpenCell reproduces Karr's two while loops on GTP first
           and GDP/water second, then updates GTP/GDP counts and applies the `[1,-1,1,-1,1] * gdp_shortfall`
           correction (FtsZPolymerization.m:403-434; opencell/vivarium/karr_ftsz_polymerization.py:448-477).
       moleculesToConcentration:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:moleculesToConcentration:436
         status: confirmed
-        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.molecules_to_concentration:481
+        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.molecules_to_concentration:514
         note: 'Direct helper match: both divide molecule counts by Avogadro * cell volume (FtsZPolymerization.m:436-438;
           opencell/vivarium/karr_ftsz_polymerization.py:481-482).'
       concentrationToMolecules:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/FtsZPolymerization.m:concentrationToMolecules:441
         status: confirmed
-        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.concentration_to_molecules:484
+        oc: opencell/vivarium/karr_ftsz_polymerization.py:KarrFtsZPolymerizationProcess.concentration_to_molecules:524
         note: 'Direct helper match: both multiply concentration by Avogadro * cell volume (FtsZPolymerization.m:441-443;
           opencell/vivarium/karr_ftsz_polymerization.py:484-485).'
   HostInteraction:
@@ -315,7 +315,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m:evolveState:271
         status: confirmed
-        oc: opencell/vivarium/karr_host_interaction.py:KarrHostInteractionProcess.next_update:255
+        oc: opencell/vivarium/karr_host_interaction.py:KarrHostInteractionProcess.next_update:188
         note: HostInteraction.m evolveState (271-300) maps to KarrHostInteractionProcess.next_update;
           the OC docstring says this is Karr-light v1 and defers TLR/NFkB/inflammatory-response signaling.
   MacromolecularComplexation:
@@ -841,7 +841,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calcResourceRequirements_Current:495
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:288
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:669
         note: 'No ReplicationInitiation RequestCalculator* exists in
 
           karr_request_calculators.py (search returned no matches). OC computes
@@ -854,7 +854,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:evolveState:506
         status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:288
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:669
         note: 'Direct process runtime method. next_update mirrors Karr''s tick
 
           orchestration at lines 339-358:
@@ -867,7 +867,7 @@ processes:
       activateFreeDnaA:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:activateFreeDnaA:536
         status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._activate_free_dnaa:740
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._activate_free_dnaa:1484
         note: 'Dedicated helper. OC represents the activatable free pool as
 
           `self._free_dnaa_adp`, then activates it with
@@ -880,7 +880,7 @@ processes:
       inactivateFreeDnaAATP:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:inactivateFreeDnaAATP:560
         status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._inactivate_free_dnaa_atp:749
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._inactivate_free_dnaa_atp:1495
         note: 'Dedicated helper. OC hydrolyzes the free ATP-form pool with
 
           `n_events = int(self._rng.binomial(self._free_dnaa_atp, hydrolysis_p))`,
@@ -893,7 +893,7 @@ processes:
       bindAndPolymerizeDnaAATP:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:bindAndPolymerizeDnaAATP:584
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:288
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:669
         note: 'Inlined in KarrReplicationInitiationProcess.next_update. OC splits
 
           MATLAB''s combined ATP helper into a supercoil-gated polymerization call
@@ -906,7 +906,7 @@ processes:
       bindAndPolymerizeDnaAADP:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:bindAndPolymerizeDnaAADP:640
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:288
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:669
         note: 'Inlined in KarrReplicationInitiationProcess.next_update. OC splits
 
           MATLAB''s combined ADP helper into
@@ -916,54 +916,39 @@ processes:
           (line 350) and `self._bind_dnaa_adp(dt=dt)` later (line 353).'
       polymerizeDnaAATP:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:polymerizeDnaAATP:714
-        status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._polymerize_dnaa_atp:779
-        note: 'Dedicated helper. OC loops over `self.r1234_indices`, computes a
+        status: inlined
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._bind_and_polymerize_dnaa_atp:2591
+        note: 'Inlined in the source-faithful combined ATP bind/polymerize helper. OC computes a
 
           per-site ATP polymerization rate
-
-          `rate = self.kb_atp * float(self._free_dnaa_atp) * cooperativity / ...`,
-
-          increments `self._bound_atp[idx]`, and separately handles R5 with
-
-          `r5_binding_boost` when R1-R4 all clear the threshold (lines 781-815).'
+          via `_calculate_atp_polymerization_rates`, allocates ATP molecules
+          between binding and polymerization, and updates R1-R4 occupancy in
+          `_bind_and_polymerize_dnaa_atp`.'
       polymerizeDnaAADP:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:polymerizeDnaAADP:739
-        status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._polymerize_dnaa_adp:817
-        note: 'Dedicated helper. OC loops over `self.r1234_indices`, computes
-
-          `rate = self.kb_adp * float(self._free_dnaa_adp) * cooperativity / ...`,
-
-          and updates `self._bound_adp[idx] += 1` with
-
-          `self._free_dnaa_adp -= 1` (lines 819-833).'
+        status: inlined
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._bind_and_polymerize_dnaa_adp:2683
+        note: 'Inlined in the source-faithful combined ADP bind/polymerize
+          helper, which computes ADP polymerization rates, allocates free ADP
+          between binding and polymerization, and updates R1-R4 occupancy.'
       bindDnaAATP:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:bindDnaAATP:765
-        status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._bind_dnaa_atp:835
-        note: 'Dedicated helper. OC finds empty boxes with
-
-          `free_sites = np.flatnonzero((self._bound_atp + self._bound_adp) == 0)`,
-
-          computes `bind_p`, samples `chosen = self._rng.choice(...)`, then
-
-          applies `self._bound_atp[chosen] += 1` (lines 838-858).'
+        status: inlined
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._bind_and_polymerize_dnaa_atp:2591
+        note: 'Inlined in the combined ATP bind/polymerize helper, which
+          derives candidate rates and delegates source-ordered site selection
+          and occupancy updates to `_bind_sites`.'
       bindDnaAADP:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:bindDnaAADP:778
-        status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._bind_dnaa_adp:860
-        note: 'Dedicated helper. OC mirrors the ATP binder for ADP:
-
-          `free_sites = np.flatnonzero((self._bound_atp + self._bound_adp) == 0)`,
-
-          `bind_p = ... self.kb_adp ...`, then `self._bound_adp[chosen] += 1`
-
-          (lines 863-883).'
+        status: inlined
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._bind_and_polymerize_dnaa_adp:2683
+        note: 'Inlined in the combined ADP bind/polymerize helper, which
+          derives candidate rates and delegates source-ordered site selection
+          and occupancy updates to `_bind_sites`.'
       releaseDnaAAxP:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:releaseDnaAAxP:791
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:288
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess.next_update:669
         note: 'Inlined in KarrReplicationInitiationProcess.next_update. MATLAB releases
 
           ATP and ADP complexes in one helper; OC splits the behavior across
@@ -974,7 +959,7 @@ processes:
       reactivateFreeDnaAADP:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:reactivateFreeDnaAADP:858
         status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._reactivate_free_dnaa_adp:923
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._reactivate_free_dnaa_adp:2904
         note: 'Dedicated helper. OC computes the membrane-dependent regeneration term
 
           `regen_rate = (self.k_regen * membrane_conc) / (self.k_regen_p4 + membrane_conc)`,
@@ -985,33 +970,19 @@ processes:
       calculateDnaAR1234ATPPolymerizationRates:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234ATPPolymerizationRates:889
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._polymerize_dnaa_atp:779
-        note: 'Inlined in KarrReplicationInitiationProcess._polymerize_dnaa_atp. OC
-
-          computes the ATP polymerization rate on the fly with
-
-          `rate = (self.kb_atp * float(self._free_dnaa_atp) * cooperativity /
-
-          float(self.parameters["polymerization_rate_scale"]))` before sampling
-
-          the event (lines 786-793), rather than returning a separate 4x2 matrix.'
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._calculate_atp_polymerization_rates:1779
+        note: 'Dedicated current helper computes the source-faithful ATP
+          polymerization-rate matrix consumed by the combined ATP path.'
       calculateDnaAR1234ADPPolymerizationRates:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234ADPPolymerizationRates:917
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._polymerize_dnaa_adp:817
-        note: 'Inlined in KarrReplicationInitiationProcess._polymerize_dnaa_adp. OC
-
-          computes the ADP polymerization rate inline as
-
-          `rate = (self.kb_adp * float(self._free_dnaa_adp) * cooperativity /
-
-          float(self.parameters["polymerization_rate_scale"]))` before sampling
-
-          (lines 824-831).'
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._calculate_adp_polymerization_rates:1793
+        note: 'Dedicated current helper computes the source-faithful ADP
+          polymerization-rate matrix consumed by the combined ADP path.'
       calculateDnaAR1234ATPPolymerizationCooperativity:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234ATPPolymerizationCooperativity:939
         status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._oric_cooperativity:940
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._oric_cooperativity:2933
         note: 'Dedicated helper. OC factors cooperativity into
 
           `KarrReplicationInitiationProcess._oric_cooperativity`, which computes
@@ -1022,35 +993,21 @@ processes:
       calculateDnaAATPBindingRates:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAATPBindingRates:958
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._bind_dnaa_atp:835
-        note: 'Inlined in KarrReplicationInitiationProcess._bind_dnaa_atp. OC derives
-
-          the accessible boxes with
-
-          `free_sites = np.flatnonzero((self._bound_atp + self._bound_adp) == 0)`
-
-          and the ATP binding probability with
-
-          `bind_p = self._event_probability(rate=(self.kb_atp * float(self._free_dnaa_atp) /
-
-          float(self.parameters["binding_rate_scale"])), dt=dt)` (lines 838-849),
-
-          rather than materializing a positions/rates table.'
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._calculate_binding_rates:1805
+        note: 'Inlined through the shared source-faithful binding-rate helper
+          with `for_atp=True`, including copy-specific accessibility and
+          7/8/9-mer rate handling.'
       calculateDnaAADPBindingRates:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAADPBindingRates:1016
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._bind_dnaa_adp:860
-        note: 'Inlined in KarrReplicationInitiationProcess._bind_dnaa_adp. OC uses
-
-          `free_sites = np.flatnonzero((self._bound_atp + self._bound_adp) == 0)`
-
-          and `bind_p = ... self.kb_adp ...` (lines 863-874) instead of a
-
-          separate binding-rate helper.'
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._calculate_binding_rates:1805
+        note: 'Inlined through the shared source-faithful binding-rate helper
+          with `for_atp=False`, including copy-specific accessibility and
+          7/8/9-mer rate handling.'
       calculateDnaAR1234Polymerization:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234Polymerization:1060
         status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._resolve_bound_state_from_chromosome:453
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._resolve_bound_state_from_chromosome:911
         note: 'Dedicated state decoder. OC reconstructs bound ATP/ADP occupancy from
 
           `complex_bound_sites` by mapping each triplet''s global index back to
@@ -1063,20 +1020,14 @@ processes:
       calculateDnaAR1234ComplexSize:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaAR1234ComplexSize:1104
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._release_dnaa_atp:885
-        note: 'Inlined in KarrReplicationInitiationProcess._release_dnaa_atp. OC does
-
-          not expose a separate complex-size helper and instead collapses the
-
-          R1-R4 occupancy to
-
-          `min_r1234 = int(np.min(self._bound_atp[self.r1234_indices]))` before
-
-          protecting the completed layer from release (lines 895-898).'
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._oric_complex_size:1747
+        note: 'Dedicated current helper returns the minimum R1-R4 ATP/ADP
+          polymer layer per chromosome copy and is consumed by
+          `_release_dnaa_axp` to protect assembled layers.'
       calcuateIsDnaAR5Occupied:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calcuateIsDnaAR5Occupied:1108
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._check_initiation_trigger:946
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._check_initiation_trigger:2981
         note: 'Inlined in KarrReplicationInitiationProcess._check_initiation_trigger.
 
           OC tests the R5 condition directly as
@@ -1087,7 +1038,7 @@ processes:
       calculateIsDnaAORIComplexAssembled:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateIsDnaAORIComplexAssembled:1120
         status: confirmed
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._check_initiation_trigger:946
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._check_initiation_trigger:2981
         note: 'Dedicated boolean helper. OC checks the assembled trigger as
 
           `r1234_ready = all(self._bound_atp[idx] >= threshold_r1234 for idx in self.r1234_indices)`
@@ -1098,7 +1049,7 @@ processes:
       calculateDnaABoxStatus:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ReplicationInitiation.m:calculateDnaABoxStatus:1133
         status: inlined
-        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._resolve_bound_state_from_chromosome:453
+        oc: opencell/vivarium/karr_replication_initiation.py:KarrReplicationInitiationProcess._resolve_bound_state_from_chromosome:911
         note: 'Inlined in KarrReplicationInitiationProcess._resolve_bound_state_from_chromosome.
 
           OC classifies bound boxes by decoding `complex_bound_sites` and writing
@@ -1206,20 +1157,20 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:evolveState:339
         status: inlined
-        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:350
+        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:1570
         note: Karr `evolveState` at TranscriptionalRegulation.m:339-345 calls `bindTranscriptionFactors()`
           then `calcBindingProbabilityFoldChange()`. OC folds both into `next_update`, which reads TF
           counts, updates binding, and writes `tf_binding`/`tx_rate_fold_change`.
       bindTranscriptionFactors:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:bindTranscriptionFactors:349
         status: inlined
-        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:350
+        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:1570
         note: 'Karr''s standalone binding helper (TranscriptionalRegulation.m:349-381) is inlined in OC
           `next_update`: `for tf_i, tf_wid in enumerate(self.tf_wids): ... row[chosen] = 1`.'
       calcBindingProbabilityFoldChange:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:calcBindingProbabilityFoldChange:383
         status: inlined
-        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:350
+        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:1570
         note: 'Karr''s fold-change helper (TranscriptionalRegulation.m:383-399) is inlined in OC `next_update`:
           `bound_effects = np.where(binding > 0, self.tf_tu_fold_change, 1.0)` and `fold_change_total
           = np.clip(np.prod(bound_effects, axis=0, dtype=np.float64), ...)`.'
