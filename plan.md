@@ -492,6 +492,14 @@ earlier blocks below:**
   Native-Linux clean clone with a fresh CI-version dependency environment
   independently reproduces L2.2 **22/22 GREEN**, so generator audit output
   now prints exact non-green row/reasons if the hosted discrepancy recurs.
+  The diagnostic named DNADamage: its legacy input manifest uses absolute
+  `/mnt/e/.../data/m1_sources/karr_native/.../*.mat` paths, while the
+  portable classifier recognized only repo-relative oracle paths and thus
+  demanded gitignored raw files in CI. Fixed classification to accept
+  absolute Windows/WSL paths only when they contain the canonical oracle
+  directory and end in `.mat`; code files under a similarly named directory
+  remain tracked/strict. A native-Linux clone with no raw data now passes
+  `audit --require-all-pass` at 22/22.
 - Division engineering cohort decision: required COMPLETED windows reduced
   from 50 to **20** before running the current Cytokinesis/FtsZ outcomes;
   N=50 is deferred confirmatory evidence for a later publication-grade

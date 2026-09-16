@@ -330,7 +330,16 @@ def _classify_input_kind(path_str: str) -> str:
         rel = resolved.relative_to(cat.REPO_ROOT).as_posix()
     except ValueError:
         rel = str(path_str).replace("\\", "/")
-    return "oracle_data" if rel.startswith(schema.ORACLE_DATA_PATH_PREFIX) else "code"
+    normalized = rel.replace("\\", "/")
+    oracle_prefix = schema.ORACLE_DATA_PATH_PREFIX.rstrip("/")
+    is_oracle_path = normalized.startswith(oracle_prefix) or (
+        f"/{oracle_prefix}/" in f"/{normalized.lstrip('/')}"
+    )
+    return (
+        "oracle_data"
+        if is_oracle_path and normalized.lower().endswith(".mat")
+        else "code"
+    )
 
 
 def _check_sweep_provenance_staleness(

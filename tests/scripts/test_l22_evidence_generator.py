@@ -366,6 +366,20 @@ def test_audit_reports_failure_when_index_file_absent(tmp_path):
     assert result.problems
 
 
+def test_input_kind_classifies_portable_and_absolute_raw_mat_paths():
+    paths = (
+        "data/m1_sources/karr_native/cohort/seed.mat",
+        "/mnt/e/opencell-worktrees/main-integrate/data/m1_sources/karr_native/cohort/seed.mat",
+        r"E:\opencell-worktrees\main-integrate\data\m1_sources\karr_native\cohort\seed.mat",
+    )
+    assert all(gen._classify_input_kind(path) == "oracle_data" for path in paths)
+
+
+def test_input_kind_does_not_trust_oracle_directory_for_code_files():
+    path = "/tmp/data/m1_sources/karr_native/fake_verifier.py"
+    assert gen._classify_input_kind(path) == "code"
+
+
 # --- Alternate --catalog/--registry threading (R6 follow-up, 2026-09-05) ------
 #
 # A narrower, pre-existing gap this task also closes: `_current_source_hashes`
