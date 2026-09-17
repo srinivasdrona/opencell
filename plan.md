@@ -59,6 +59,54 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-17 17:24 IST) — pre-L2.5 honesty rebaseline:**
+
+- Active worktree:
+  `E:\opencell-worktrees\pre-l25-honesty-rebaseline`; branch
+  `audit/pre-l25-honesty-rebaseline-20260917`; base/published main
+  `6a038b1d084543ddd847528ff6e698a9dba37626`.
+- Live processes/agents: read-only deviation-classifier
+  `ffb6aecd-0de1-4a0f-b753-3437c7e65a7f` completed. A full local L2.4
+  four-seed x 100-tick authority rerun and the genuine L2.0a allocator-oracle
+  gate are about to run from this worktree; no MATLAB process is active.
+- Scope: freeze a machine-readable 28-process pre-L2.5 eligibility baseline
+  before any biology fix. The baseline must distinguish lower-gate PASS from
+  source-faithful/no-known-gap eligibility and must fail closed on unresolved
+  MATLAB-to-OpenCell deviations.
+- Re-verified lower-gate facts on published main: L1b method completeness
+  115/115 PASS; L1b wiring rows 28/28 PASS; L2.2 evidence 22/22 PASS with
+  integrity OK. Important trap: L1b validates that documented deviations have
+  valid anchors; it does not require those deviations to be fixed.
+- Metabolism is the first confirmed blocker. Its L2.2 authority uses
+  `dynamic_bounds=True`, Karr substrate writeback, GLPK, and FVA-feasibility
+  acceptance, while the v6 chassis enables allocator budgeting but retains
+  default HiGHS and does not enable Karr writeback. The tracked semantic audit
+  records four `CODE_DEVIATES`; do not call Metabolism L2.5-eligible until
+  these are re-adjudicated and closed.
+- Frozen result: `docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml`
+  validates with integrity OK at source-tree digest
+  `cdd821ad912d27ba8c38a863ca796f1637a69513a8ced0b8dec1d3381c95201d`
+  over 128 dependencies. Eligibility is **0/28**: 24 blocked by open code
+  deviations and 4 blocked by stale/missing semantic adjudication
+  (ChromosomeCondensation, ChromosomeSegregation, HostInteraction,
+  ProteinActivation). `scripts/pre_l25_honesty.py` derives this result and
+  `scripts/derive_l25_scope.py` now refuses selection unless the hash-locked
+  baseline also marks both pair members eligible.
+- Branch changes are not committed or pushed yet. Added the honesty validator,
+  baseline, focused tests, CI integrity job, scope integration, and
+  `docs/phase_f/PRE_L25_HONESTY_REBASELINE.md`. No process biology changed.
+- Fresh lower-authority reruns from this branch: L2.0a **5 passed**; L2.4
+  **PASS** for seeds 0,1,2,3 x 100 ticks, zero Part-A/Part-B failures and
+  `max_abs_unattributed=0` (124 exchange WIDs intentionally excluded).
+  L2.4 emitted an incompatible updater warning on
+  `enzymes/boundEnzymes.MG_203_204_TETRAMER`: DNASupercoiling declares `set`
+  while ChromosomeSegregation declares `accumulate`. The baseline records this
+  as open blocker `DNA-SUP-UPDATER-CONFLICT`.
+- Operational traps: edit this repo `plan.md`, never session-state plan files;
+  use WSL wrappers for Python/tests; do not touch the untracked canonical
+  division cohorts under `E:\opencell\data\m1_sources\karr_native`; do not
+  remove worktrees recursively because several contain junction-backed data.
+
 **Current status (2026-09-15 05:52 IST) — supersedes all
 earlier blocks below:**
 

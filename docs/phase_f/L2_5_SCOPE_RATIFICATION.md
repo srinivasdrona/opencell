@@ -1,5 +1,12 @@
 # L2.5 Scope Ratification
 
+> **Eligibility supersession (2026-09-17):** structural pair derivation in
+> this document remains useful, but its lower-gate/`trace_hint` eligibility
+> result is superseded by
+> `docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml` and
+> `scripts/pre_l25_honesty.py`. The current fail-closed result is 0/28
+> no-known-gap eligible. See `PRE_L25_HONESTY_REBASELINE.md`.
+
 Status: RATIFIED (REVISION-class scope-derivation; supersedes the Day-33
 `l2_5_gate:` snapshot in `PROCESS_CATALOG.yaml` and all prose pair-count
 claims below, without deleting them).

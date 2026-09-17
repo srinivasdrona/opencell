@@ -123,6 +123,27 @@ jobs:
           pytest tests/scripts/test_l22_evidence_generator.py
           tests/vivarium/test_l2_2_strict_rubric.py -q
 
+  # ── Pre-L2.5 source-faithfulness eligibility — BLOCKING INTEGRITY ──
+  # L1b permits truthfully documented implementation deviations, and L2.2 can
+  # use a process-specific validation configuration. This gate prevents either
+  # fact from being mistaken for no-known-gap L2.5 eligibility. Open findings
+  # are allowed while being repaired, but the 28-process denominator, finding
+  # dispositions, evidence line ranges, and source-tree hash must remain exact.
+  pre-l2-5-honesty:
+    runs-on: ubuntu-latest
+    needs: [l1b-gates, l2-2-evidence-gate]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+      - name: Audit pre-L2.5 honesty baseline integrity
+        run: python scripts/pre_l25_honesty.py audit
+      - name: Pre-L2.5 honesty gate self-tests
+        run: pytest tests/scripts/test_pre_l25_honesty.py -q
+
   # ── Gate 1 input-spec freeze gate — BLOCKING ──
   # Verifies that the committed frozen Karr input-spec artifact remains locked
   # to the tracked per-process fixtures: the committed MANIFEST must cover the

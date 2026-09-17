@@ -1,10 +1,13 @@
 # L2.5 Plan — Shared-Pool Composition Harness Closure
 
-**Status**: draft, **PAUSED pending L2.2 distributional all-green**
+**Status**: draft, **PAUSED pending pre-L2.5 honesty closure (0/28 eligible at
+the 2026-09-17 rebaseline; L2.2 itself is 22/22 green)**
 **Drafted**: 2026-06-03 (Day 19, post-L2.1-FULL-GREEN)
 **Renamed**: 2026-06-04 from `L2_2_PLAN.md` after canonical L-ladder reconciliation (L2.2 = distributional, L2.5 = composition; see plan.md ladder block).
 **Predecessor**: L2.1 sweep (44/46 strict, 46/46 calibrated, 2 legitimate skips) + L2.2 distributional sweep (not yet drafted).
 **Successor**: L3 (direct producer→consumer hand-off, no substrates pool); see `L3_PCV_FRAMEWORK.md`.
+**Entry gate**: `docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml`; both
+members of a composition must be explicitly eligible before pair execution.
 
 ---
 

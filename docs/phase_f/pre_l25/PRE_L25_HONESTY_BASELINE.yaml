@@ -1,0 +1,463 @@
+schema_version: "1.0"
+title: "Pre-L2.5 no-known-gap honesty baseline"
+audit_base_commit: "6a038b1d084543ddd847528ff6e698a9dba37626"
+canonical_process_count: 28
+policy: >-
+  A lower-gate PASS is necessary but not sufficient for L2.5 eligibility.
+  Every unresolved MATLAB-to-OpenCell behavior deviation, validation-versus-
+  production configuration mismatch, or stale/missing semantic adjudication
+  blocks the affected process.
+source_tree:
+  sha256: "cdd821ad912d27ba8c38a863ca796f1637a69513a8ced0b8dec1d3381c95201d"
+  file_count: 128
+authorities:
+  l1b_method_completeness: "PASS 115/115"
+  l1b_wiring_conformance: "PASS 28/28"
+  l2_2_distributional_fidelity: "PASS 22/22; integrity OK"
+  l2_4_chassis_conservation: "PASS 4 seeds x 100 ticks"
+  qualification: >-
+    These authorities retain their existing meanings. This baseline adds the
+    no-known-gap eligibility property that none of them independently proves.
+
+processes:
+  - name: ChromosomeCondensation
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: BLOCKED_STALE_OR_MISSING_AUDIT
+    findings:
+      - id: CC-AUDIT-STALE
+        kind: STALE_OR_MISSING_AUDIT
+        disposition: NEEDS_EXECUTION
+        summary: >-
+          Two wiring-row claims are wrong and allocator timing equivalence is
+          still unadjudicated against current code.
+        evidence:
+          - path: docs/phase_f/audits/ChromosomeCondensation_semantic_audit.md
+            lines: "69-82"
+
+  - name: ChromosomeSegregation
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: BLOCKED_STALE_OR_MISSING_AUDIT
+    findings:
+      - id: CHRSEG-AUDIT-STALE
+        kind: STALE_OR_MISSING_AUDIT
+        disposition: NEEDS_EXECUTION
+        summary: >-
+          Compatibility projections appear benign, but two current audit
+          claims remain wrong and have not been re-baselined.
+        evidence:
+          - path: docs/phase_f/audits/ChromosomeSegregation_semantic_audit.md
+            lines: "58-64"
+
+  - name: Cytokinesis
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: CYT-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Request formulas, lifecycle resource behavior, and the retained
+          zero-GTP compatibility surface differ from MATLAB.
+        evidence:
+          - path: docs/phase_f/audits/Cytokinesis_semantic_audit.md
+            lines: "53-65"
+
+  - name: DNADamage
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: DNA-DMG-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Small-molecule stoichiometry, rate semantics, and allocator/writeback
+          behavior retain unresolved MATLAB-to-OpenCell differences.
+        evidence:
+          - path: docs/phase_f/audits/DNADamage_semantic_audit.md
+            lines: "48-67"
+
+  - name: DNARepair
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: DNA-REP-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Consumed/produced species, random subfunction ordering, and allocator
+          mediation remain non-equivalent to MATLAB.
+        evidence:
+          - path: docs/phase_f/audits/DNARepair_semantic_audit.md
+            lines: "59-82"
+
+  - name: DNASupercoiling
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: DNA-SUP-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The request formula differs and request-allocation-evolve ordering is
+          not represented equivalently.
+        evidence:
+          - path: docs/phase_f/audits/DNASupercoiling_semantic_audit.md
+            lines: "44-58"
+      - id: DNA-SUP-UPDATER-CONFLICT
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          DNASupercoiling declares shared enzyme leaves with set semantics
+          while ChromosomeSegregation declares the same leaves accumulate,
+          producing an order-sensitive Vivarium schema conflict.
+        evidence:
+          - path: opencell/vivarium/karr_dna_supercoiling.py
+            lines: "1037-1049"
+          - path: opencell/vivarium/karr_chromosome_segregation.py
+            lines: "333-343"
+
+  - name: FtsZPolymerization
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: FTSZ-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Non-GTP species bypass allocation and the exact MATLAB request
+          semantics remain unavailable for direct re-adjudication.
+        evidence:
+          - path: docs/phase_f/audits/FtsZPolymerization_semantic_audit.md
+            lines: "26-48"
+
+  - name: HostInteraction
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: BLOCKED_STALE_OR_MISSING_AUDIT
+    findings:
+      - id: HI-AUDIT-STALE
+        kind: STALE_OR_MISSING_AUDIT
+        disposition: NEEDS_EXECUTION
+        summary: >-
+          The behavior port and zero-request equivalence appear closed, but the
+          semantic audit still contains an unresolved wrong row claim.
+        evidence:
+          - path: docs/phase_f/audits/HostInteraction_semantic_audit.md
+            lines: "45-56"
+
+  - name: MacromolecularComplexation
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: MCX-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The cluster-1 fallback guard is behaviorally different and complete
+          substrate coverage is not yet established.
+        evidence:
+          - path: docs/phase_f/audits/MacromolecularComplexation_semantic_audit.md
+            lines: "44-81"
+
+  - name: Metabolism
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: MET-CODE-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Request/allocation integration, execution order, LP-bound input
+          source, and compartment projection remain behaviorally different.
+        evidence:
+          - path: docs/phase_f/audits/Metabolism_semantic_audit.md
+            lines: "40-50"
+      - id: MET-EVIDENCE-CONFIG
+        kind: EVIDENCE_CONFIG_MISMATCH
+        disposition: OPEN
+        summary: >-
+          L2.2 uses dynamic bounds, Karr writeback, and GLPK, while the v6
+          chassis enables allocator budgeting but retains the default solver
+          and writeback behavior.
+        evidence:
+          - path: tests/vivarium/_l2_2_design_a_runner_helpers.py
+            lines: "1517-1544"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "1620-1628"
+          - path: opencell/vivarium/karr_metabolism.py
+            lines: "124-150"
+
+  - name: ProteinActivation
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: BLOCKED_STALE_OR_MISSING_AUDIT
+    findings:
+      - id: PA-AUDIT-STALE
+        kind: STALE_OR_MISSING_AUDIT
+        disposition: NEEDS_EXECUTION
+        summary: >-
+          Four row claims are wrong and two required claims are missing, so
+          current source-faithfulness has not been established.
+        evidence:
+          - path: docs/phase_f/audits/ProteinActivation_semantic_audit.md
+            lines: "76-79"
+
+  - name: ProteinDecay
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: PDEC-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Substrate stoichiometry and process formulas retain unresolved
+          differences, with additional required claims missing.
+        evidence:
+          - path: docs/phase_f/audits/ProteinDecay_semantic_audit.md
+            lines: "52-55"
+
+  - name: ProteinFolding
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: PFOLD-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The recorded prosthetic-group versus ATP consumption difference is
+          unresolved and direct source completeness remains unverified.
+        evidence:
+          - path: docs/phase_f/audits/ProteinFolding_semantic_audit.md
+            lines: "75-77"
+
+  - name: ProteinModification
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: PMOD-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          One implementation deviation remains open and three wiring-row
+          claims are wrong.
+        evidence:
+          - path: docs/phase_f/audits/ProteinModification_semantic_audit.md
+            lines: "56-59"
+
+  - name: ProteinProcessingI
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: PPI-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Formula and writeback behavior retain two unresolved deviations.
+        evidence:
+          - path: docs/phase_f/audits/ProteinProcessingI_semantic_audit.md
+            lines: "77-80"
+
+  - name: ProteinProcessingII
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: PPII-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: "One MATLAB-to-OpenCell implementation deviation remains open."
+        evidence:
+          - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+            lines: "71-74"
+
+  - name: ProteinTranslocation
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: PTRANS-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two behavior deviations remain open and two wiring-row claims are
+          wrong.
+        evidence:
+          - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
+            lines: "58-61"
+
+  - name: RNADecay
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: RDECAY-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          One implementation deviation remains open and two required semantic
+          claims are missing.
+        evidence:
+          - path: docs/phase_f/audits/RNADecay_semantic_audit.md
+            lines: "62-65"
+
+  - name: RNAModification
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: RMOD-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: "Three MATLAB-to-OpenCell implementation deviations remain open."
+        evidence:
+          - path: docs/phase_f/audits/RNAModification_semantic_audit.md
+            lines: "61-64"
+
+  - name: RNAProcessing
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: RPROC-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Three implementation deviations remain open and one required claim
+          is missing.
+        evidence:
+          - path: docs/phase_f/audits/RNAProcessing_semantic_audit.md
+            lines: "58-61"
+
+  - name: Replication
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: REPL-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two implementation deviations, four missing claims, and five wrong
+          row claims remain unresolved.
+        evidence:
+          - path: docs/phase_f/audits/Replication_semantic_audit.md
+            lines: "72-75"
+
+  - name: ReplicationInitiation
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: REPLINIT-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two implementation deviations remain, with one missing and two wrong
+          row claims.
+        evidence:
+          - path: docs/phase_f/audits/ReplicationInitiation_semantic_audit.md
+            lines: "59-62"
+
+  - name: RibosomeAssembly
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: RIBO-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two implementation deviations and one missing semantic claim remain.
+        evidence:
+          - path: docs/phase_f/audits/RibosomeAssembly_semantic_audit.md
+            lines: "54-57"
+
+  - name: TerminalOrganelleAssembly
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: TOA-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two implementation deviations and two missing semantic claims remain.
+        evidence:
+          - path: docs/phase_f/audits/TerminalOrganelleAssembly_semantic_audit.md
+            lines: "67-70"
+
+  - name: Transcription
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: TX-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Four implementation deviations remain open and two row claims are
+          wrong.
+        evidence:
+          - path: docs/phase_f/audits/Transcription_semantic_audit.md
+            lines: "81-83"
+
+  - name: TranscriptionalRegulation
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: TXREG-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          One implementation deviation and one missing semantic claim remain.
+        evidence:
+          - path: docs/phase_f/audits/TranscriptionalRegulation_semantic_audit.md
+            lines: "79-82"
+
+  - name: Translation
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: TL-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Five implementation deviations remain open and four wiring-row
+          claims are wrong.
+        evidence:
+          - path: docs/phase_f/audits/Translation_semantic_audit.md
+            lines: "70-73"
+
+  - name: tRNAAminoacylation
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: BLOCKED_CODE_DEVIATION
+    findings:
+      - id: TRNA-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two implementation deviations and three missing semantic claims
+          remain.
+        evidence:
+          - path: docs/phase_f/audits/tRNAAminoacylation_semantic_audit.md
+            lines: "40-43"
+
+summary:
+  eligible: 0
+  blocked: 28

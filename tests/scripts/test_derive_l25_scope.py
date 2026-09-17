@@ -65,7 +65,13 @@ def _make_pair(
     )
 
 
-def _make_verdict(name: str, *, eligible: bool, gap: bool = False) -> scope.ProcessVerdict:
+def _make_verdict(
+    name: str,
+    *,
+    eligible: bool,
+    gap: bool = False,
+    honesty_eligibility: str = "ELIGIBLE",
+) -> scope.ProcessVerdict:
     return scope.ProcessVerdict(
         name=name,
         bucket="ALGORITHMIC_SHALLOW",
@@ -76,6 +82,9 @@ def _make_verdict(name: str, *, eligible: bool, gap: bool = False) -> scope.Proc
         eligible=eligible,
         known_short_circuit_gap=gap,
         gap_reason="synthetic gap" if gap else None,
+        honesty_eligibility=honesty_eligibility,
+        honesty_blockers=(),
+        honesty_integrity_ok=True,
     )
 
 
@@ -88,6 +97,15 @@ def test_process_verdict_eligible_gap_free_requires_both():
     assert _make_verdict("A", eligible=True, gap=False).eligible_gap_free is True
     assert _make_verdict("A", eligible=True, gap=True).eligible_gap_free is False
     assert _make_verdict("A", eligible=False, gap=False).eligible_gap_free is False
+    assert (
+        _make_verdict(
+            "A",
+            eligible=True,
+            gap=False,
+            honesty_eligibility="BLOCKED_CODE_DEVIATION",
+        ).eligible_gap_free
+        is False
+    )
 
 
 def test_required_coverage_classes_are_derived_from_structural_pairs_only():
