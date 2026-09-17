@@ -63,7 +63,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 - Active worktree:
   `E:\opencell-worktrees\fix-host-interaction-fidelity`; branch
-  `fix/host-interaction-fidelity-20260917`; base `c179ef4`.
+  `fix/host-interaction-fidelity-20260917`; repair commit `039e82f`, based on
+  `c179ef4`; not pushed or merged.
 - Background coding agent `db9a8323-4cfd-48b8-985c-325f93e929ce` completed
   HostInteraction from the validated three-slot prompt. No other deterministic
   process was touched.
