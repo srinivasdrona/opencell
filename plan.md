@@ -65,10 +65,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `E:\opencell-worktrees\pre-l25-honesty-rebaseline`; branch
   `audit/pre-l25-honesty-rebaseline-20260917`; base/published main
   `6a038b1d084543ddd847528ff6e698a9dba37626`.
-- Live processes/agents: read-only deviation-classifier
-  `ffb6aecd-0de1-4a0f-b753-3437c7e65a7f` completed. A full local L2.4
-  four-seed x 100-tick authority rerun and the genuine L2.0a allocator-oracle
-  gate are about to run from this worktree; no MATLAB process is active.
+- Live processes/agents: none. Read-only deviation-classifier
+  `ffb6aecd-0de1-4a0f-b753-3437c7e65a7f` completed; the local L2.4 and L2.0a
+  authority reruns completed; no MATLAB process is active.
 - Scope: freeze a machine-readable 28-process pre-L2.5 eligibility baseline
   before any biology fix. The baseline must distinguish lower-gate PASS from
   source-faithful/no-known-gap eligibility and must fail closed on unresolved
@@ -92,8 +91,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   ProteinActivation). `scripts/pre_l25_honesty.py` derives this result and
   `scripts/derive_l25_scope.py` now refuses selection unless the hash-locked
   baseline also marks both pair members eligible.
-- Branch changes are not committed or pushed yet. Added the honesty validator,
-  baseline, focused tests, CI integrity job, scope integration, and
+- Branch tip `ceee3bc` contains implementation commit `7b405c1` plus its
+  provenance commit. The branch is not pushed or merged. Added the honesty
+  validator, baseline, focused tests, CI integrity job, scope integration, and
   `docs/phase_f/PRE_L25_HONESTY_REBASELINE.md`. No process biology changed.
 - Fresh lower-authority reruns from this branch: L2.0a **5 passed**; L2.4
   **PASS** for seeds 0,1,2,3 x 100 ticks, zero Part-A/Part-B failures and
