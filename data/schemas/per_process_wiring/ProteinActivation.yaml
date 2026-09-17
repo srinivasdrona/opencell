@@ -10,20 +10,23 @@ process:
   functional_area: "protein-synthesis-and-maturation"
   state_shape_role: "rule-based active/inactive protein-state flip; no stoichiometric chemistry"
   notes: >-
-    This row is exemplar-scoped; canonical exemplars are listed and are not an
-    exhaustive enumeration. Raw MATLAB source was not present in the original Day-43
-    authoring checkout, so many anchors point to the verified extract at
-    docs/karr_extracts/process/20_ProteinActivation.md.
+    Exhaustive six-protein active/inactive state-transfer surface. The primary
+    MATLAB source is present and is the authority. MATLAB converts every
+    non-stimulus rule signal to concentration using Avogadro's constant and
+    geometry.volume and evaluates rules per compartment; current OC reads raw
+    flat substrate/stimulus scalars. Production topology also omits
+    inactivatedSubstrates and seeds activation_substrates from the metabolite
+    pool rather than Karr's active/inactive protein state.
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
       source:
-        path: "docs/karr_extracts/process/20_ProteinActivation.md"
-        lines: "49-117"
-        note: "The extract describes boolean rule evaluation and state flips only; no allocator block is present."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+        lines: "353-356"
+        note: "Defines calcResourceRequirements_Current and returns zeros(size(this.substrates))."
         symbol: "calcResourceRequirements_Current"
-      note: "ProteinActivation is allocator-free in the extracted source shape."
+      note: "MATLAB participates in allocator sequencing with an identically zero request."
     oc:
       symbol: "KarrProteinActivationProcess"
       source:
@@ -33,19 +36,19 @@ integration_touchpoints:
         symbol: "KarrProteinActivationProcess"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "1397-1401"
-          note: "Composite wiring maps only substrates, stimuli, and protein for this process."
-          symbol: build_karr_chassis_v4
+          lines: "1580-2405"
+          note: "Production topology at lines 2126-2130 maps substrates, stimuli, and protein but omits inactivatedSubstrates."
+          symbol: build_karr_chassis_v5
       note: "Current OC mirrors the allocator-free shape. OC does not implement this Karr method."
     status: "not_implemented"
-    note: "No per-process resource-request method is described for ProteinActivation in the available source extract. OC does not implement this Karr method."
+    note: "MATLAB defines a zero-return request method; OC has no corresponding request-calculator surface. Resource availability is unchanged because the MATLAB request is identically zero."
   evolveState:
     matlab:
       symbol: "evolveState"
       source:
-        path: "docs/karr_extracts/process/20_ProteinActivation.md"
-        lines: "102-117"
-        note: "Per-compartment boolean activation/deactivation update."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+        lines: "359-394"
+        note: "Per-compartment signal conversion, rule evaluation, and active/inactive transfer."
         symbol: "evolveState"
       note: "Rules are evaluated independently per compartment and toggle active/inactive pools."
     oc:
@@ -61,10 +64,10 @@ integration_touchpoints:
           note: "Ports schema for substrates, inactivatedSubstrates, stimuli, and protein activity."
           symbol: KarrProteinActivationProcess.ports_schema
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "1397-1401"
-          note: "Composite port wiring for the process."
-          symbol: build_karr_chassis_v4
-      note: "OC implements the MATLAB evolveState semantics as a pure next_update shim."
+          lines: "1580-2405"
+          note: "Production topology omits inactivatedSubstrates, so next_update's inactive-pool input/writeback is not connected."
+          symbol: build_karr_chassis_v5
+      note: "The transfer logic exists in next_update, but production topology does not supply or persist its inactivatedSubstrates port."
     status: "implemented"
     note: "This is the core per-tick behavior and is implemented directly in the OC port."
   calcFluxBounds:
@@ -88,156 +91,220 @@ integration_touchpoints:
     note: "ProteinActivation does not participate in the Metabolism-style flux-bound surface. This process does not have Karr's calcFluxBounds method; it does not participate in FBA. OC does not implement this Karr method."
 allocator:
   mode:
-    karr: "bypass"
+    karr: "allocation"
     oc_current: "bypass"
-    note: "Both sides read substrate/state and stimuli directly; there is no `requests` or `substrates_allocated` path."
+    note: "MATLAB is allocator-sequenced but requests an all-zero vector; OC has no request-calculator path. This is a benign structural difference for resource counts."
   request_formula:
     matlab: "ProteinActivation defines calcResourceRequirements_Current but returns zeros(size(this.substrates)); allocator demand is effectively bypassed."
     oc: "NOT_APPLICABLE: current OC shim has no request calculator and no `substrates_allocated` dependency."
-    note: "Allocator mediation is absent for this process."
+    note: "MATLAB's allocator hook is present but zero-demand; OC omits the hook."
   requests: []
   bypasses:
+    - wid: "MG_085_HEXAMER"
+      compartment: "cytosol"
+      source: "both"
+      note: "Active/inactive state is read and transferred directly; MATLAB retains a compartment axis while OC uses a flat WID."
     - wid: "MG_101_MONOMER"
       compartment: "cytosol"
-      source: "oc"
+      source: "both"
       note: "Directly toggled between active and inactive pools via boolean rule evaluation."
     - wid: "MG_127_MONOMER"
       compartment: "cytosol"
-      source: "oc"
+      source: "both"
       note: "Directly toggled between active and inactive pools via boolean rule evaluation."
     - wid: "MG_205_DIMER"
       compartment: "cytosol"
-      source: "oc"
+      source: "both"
       note: "Directly toggled between active and inactive pools via boolean rule evaluation."
     - wid: "MG_236_MONOMER"
       compartment: "cytosol"
-      source: "oc"
+      source: "both"
       note: "Directly toggled between active and inactive pools via boolean rule evaluation."
     - wid: "MG_409_DIMER"
       compartment: "cytosol"
-      source: "oc"
+      source: "both"
       note: "Directly toggled between active and inactive pools via boolean rule evaluation."
 consume_stoichiometry:
-  - wid: "MG_101_MONOMER"
+  - wid: "MG_085_HEXAMER"
     compartment: "cytosol"
-    formula_or_constant: "substrates(MG_101_MONOMER, compartment) when ~rule(MG_101_MONOMER, compartment)"
+    formula_or_constant: "consume active MG_085_HEXAMER when rule is false; consume inactive MG_085_HEXAMER when rule is true"
     matlab_anchor:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "102-117"
-      note: "The false-rule branch moves the protein out of the active pool."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "250-270"
-      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
       symbol: KarrProteinActivationProcess.next_update
-    note: "Canonical deactivation example."
+    note: "Exhaustive regulated-protein state-transfer entry."
+    kind: expression
+  - wid: "MG_101_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "consume active MG_101_MONOMER when rule is false; consume inactive MG_101_MONOMER when rule is true"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
+      symbol: KarrProteinActivationProcess.next_update
+    note: "Exhaustive regulated-protein state-transfer entry."
     kind: expression
   - wid: "MG_127_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "inactivatedSubstrates(MG_127_MONOMER, compartment) when rule(MG_127_MONOMER, compartment)"
+    formula_or_constant: "consume active MG_127_MONOMER when rule is false; consume inactive MG_127_MONOMER when rule is true"
     matlab_anchor:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "102-117"
-      note: "The true-rule branch moves the protein into the active pool."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "250-270"
-      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
       symbol: KarrProteinActivationProcess.next_update
-    note: "Canonical activation example."
+    note: "Exhaustive regulated-protein state-transfer entry."
     kind: expression
   - wid: "MG_205_DIMER"
     compartment: "cytosol"
-    formula_or_constant: "inactivatedSubstrates(MG_205_DIMER, compartment) when rule(MG_205_DIMER, compartment)"
+    formula_or_constant: "consume active MG_205_DIMER when rule is false; consume inactive MG_205_DIMER when rule is true"
     matlab_anchor:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "102-117"
-      note: "The true-rule branch moves the protein into the active pool."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "250-270"
-      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
       symbol: KarrProteinActivationProcess.next_update
-    note: "Canonical activation example."
+    note: "Exhaustive regulated-protein state-transfer entry."
+    kind: expression
+  - wid: "MG_236_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "consume active MG_236_MONOMER when rule is false; consume inactive MG_236_MONOMER when rule is true"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
+      symbol: KarrProteinActivationProcess.next_update
+    note: "Exhaustive regulated-protein state-transfer entry."
     kind: expression
   - wid: "MG_409_DIMER"
     compartment: "cytosol"
-    formula_or_constant: "substrates(MG_409_DIMER, compartment) when ~rule(MG_409_DIMER, compartment)"
+    formula_or_constant: "consume active MG_409_DIMER when rule is false; consume inactive MG_409_DIMER when rule is true"
     matlab_anchor:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "102-117"
-      note: "The false-rule branch moves the protein out of the active pool."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "250-270"
-      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
       symbol: KarrProteinActivationProcess.next_update
-    note: "Canonical deactivation example."
+    note: "Exhaustive regulated-protein state-transfer entry."
     kind: expression
 produce_stoichiometry:
-  - wid: "MG_101_MONOMER"
+  - wid: "MG_085_HEXAMER"
     compartment: "cytosol"
-    formula_or_constant: "inactivatedSubstrates(MG_101_MONOMER, compartment) when ~rule(MG_101_MONOMER, compartment)"
+    formula_or_constant: "produce inactive MG_085_HEXAMER from the active count when rule is false; produce active MG_085_HEXAMER from the inactive count when rule is true"
     matlab_anchor:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "102-117"
-      note: "False-rule branch produces the inactive pool."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "250-270"
-      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
       symbol: KarrProteinActivationProcess.next_update
-    note: "Deactivation product."
+    note: "Exhaustive regulated-protein state-transfer entry."
+    kind: expression
+  - wid: "MG_101_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "produce inactive MG_101_MONOMER from the active count when rule is false; produce active MG_101_MONOMER from the inactive count when rule is true"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
+      symbol: KarrProteinActivationProcess.next_update
+    note: "Exhaustive regulated-protein state-transfer entry."
     kind: expression
   - wid: "MG_127_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "substrates(MG_127_MONOMER, compartment) when rule(MG_127_MONOMER, compartment)"
+    formula_or_constant: "produce inactive MG_127_MONOMER from the active count when rule is false; produce active MG_127_MONOMER from the inactive count when rule is true"
     matlab_anchor:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "102-117"
-      note: "True-rule branch produces the active pool."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "250-270"
-      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
       symbol: KarrProteinActivationProcess.next_update
-    note: "Activation product."
+    note: "Exhaustive regulated-protein state-transfer entry."
     kind: expression
   - wid: "MG_205_DIMER"
     compartment: "cytosol"
-    formula_or_constant: "substrates(MG_205_DIMER, compartment) when rule(MG_205_DIMER, compartment)"
+    formula_or_constant: "produce inactive MG_205_DIMER from the active count when rule is false; produce active MG_205_DIMER from the inactive count when rule is true"
     matlab_anchor:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "102-117"
-      note: "True-rule branch produces the active pool."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "250-270"
-      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
       symbol: KarrProteinActivationProcess.next_update
-    note: "Activation product."
+    note: "Exhaustive regulated-protein state-transfer entry."
+    kind: expression
+  - wid: "MG_236_MONOMER"
+    compartment: "cytosol"
+    formula_or_constant: "produce inactive MG_236_MONOMER from the active count when rule is false; produce active MG_236_MONOMER from the inactive count when rule is true"
+    matlab_anchor:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
+    oc_anchor:
+      path: "opencell/vivarium/karr_protein_activation.py"
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
+      symbol: KarrProteinActivationProcess.next_update
+    note: "Exhaustive regulated-protein state-transfer entry."
     kind: expression
   - wid: "MG_409_DIMER"
     compartment: "cytosol"
-    formula_or_constant: "inactivatedSubstrates(MG_409_DIMER, compartment) when ~rule(MG_409_DIMER, compartment)"
+    formula_or_constant: "produce inactive MG_409_DIMER from the active count when rule is false; produce active MG_409_DIMER from the inactive count when rule is true"
     matlab_anchor:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "102-117"
-      note: "False-rule branch produces the inactive pool."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-366"
+      note: "evolveState transfers the entire active or inactive count according to the rule result."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "250-270"
-      note: "next_update transfers counts between substrates and inactivatedSubstrates."
+      lines: "237-268"
+      note: "next_update transfers the entire active or inactive count according to the compiled rule."
       symbol: KarrProteinActivationProcess.next_update
-    note: "Deactivation product."
+    note: "Exhaustive regulated-protein state-transfer entry."
     kind: expression
 stoichiometry_oracle:
   class: none
@@ -245,31 +312,36 @@ stoichiometry_oracle:
   substrate_count: 0
   note: Exhaustive per-tick substrate set lives in the HB1 oracle; this row's consume/produce arrays carry integration-relevant hand-curated entries.
 compartment_routing:
+  - wid: "MG_085_HEXAMER"
+    consume_compartment: "cytosol"
+    produce_compartment: "cytosol"
+    mismatch: true
+    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
   - wid: "MG_101_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
+    mismatch: true
+    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
   - wid: "MG_127_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
+    mismatch: true
+    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
   - wid: "MG_205_DIMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
+    mismatch: true
+    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
   - wid: "MG_236_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
+    mismatch: true
+    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
   - wid: "MG_409_DIMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: false
-    note: "Exemplar routing entry: MATLAB evaluates and writes per (wid, compartment) tuple, while OC projects to a flat per-WID activation_substrates pool."
+    mismatch: true
+    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
 unit_conversion_chain:
   source_units: "MATLAB: counts -> concentration for non-stimulus signals; OC: raw scalar substrate/stimuli values"
   target_units: "count transitions per tick"
@@ -297,34 +369,29 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "ProteinActivation itself has no process-order exception in the source extract; the only canonical hard order mentioned in the surrounding simulation is tRNAAminoacylation < Translation."
+  note: "ProteinActivation itself has no process-order exception in the primary source; the only canonical hard order in the surrounding simulation is tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
-    class_identity:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "1-7"
-      note: "Canonical metadata header for the process extract."
-      symbol: Karr Process - ProteinActivation
-    biology_and_rule_scope:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "13-47"
-      note: "Docstring biology and the six regulated proteins."
-      symbol: Verbatim docstring extract
-    rule_syntax:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "49-68"
-      note: "Boolean operators and signal types."
-      symbol: Verbatim docstring extract
-    representation_and_initialization:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "76-100"
-      note: "substrates/inactivatedSubstrates/stimuli semantics and initialization path."
-      symbol: Verbatim docstring extract
+    class_and_documentation:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "1-147"
+      note: "Primary-source biology, rule signal units, per-compartment semantics, and state representation."
+      symbol: ProteinActivation
+    initialize_constants:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "166-250"
+      note: "Builds regulated-protein and signal mappings."
+      symbol: initializeConstants
+    current_request:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "353-356"
+      note: "Zero resource-request vector."
+      symbol: calcResourceRequirements_Current
     evolve_state:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "102-117"
-      note: "Per-compartment update loop and active/inactive transition rules."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "359-394"
+      note: "Signal conversion, per-compartment rule evaluation, and active/inactive transitions."
+      symbol: evolveState
   oc_blocks:
     module_and_fixture_load:
       path: "opencell/vivarium/karr_protein_activation.py"
@@ -348,26 +415,25 @@ source_anchors:
       symbol: KarrProteinActivationProcess._collect_rule_signals
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1397-1401"
-      note: "Composite maps the process to activation_substrates, stimuli, and protein stores."
-      symbol: build_karr_chassis_v4
+      lines: "1580-2405"
+      note: "Production topology at lines 2126-2130 omits inactivatedSubstrates."
+      symbol: build_karr_chassis_v5
+    initial_state_seeding:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "1580-2405"
+      note: "Production initialization at lines 2277-2283 fills activation_substrates from initial_substrates (the metabolite pool), not Karr active/inactive protein state."
+      symbol: build_karr_chassis_v5
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/ProteinActivation_flat.mat"
   kb_version: "karr_native_m1__v2"
   extraction_date_utc:
-  notes: >-
-    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
-    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9;
-    matlab_files_referenced=[docs/karr_extracts/process/20_ProteinActivation.md];
-    oc_files_referenced=[opencell/vivarium/karr_protein_activation.py, opencell/vivarium/karr_composite.py];
-    canonical_matlab_path=data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m;
-    raw_matlab_source_missing_in_checkout=true
-  last_audited: '2026-06-29'
-  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
-  oc_commit_sha: 61a5a06
+  notes: "Re-audited directly against the primary MATLAB source and current OC implementation."
+  last_audited: '2026-09-17'
+  audited_by: Copilot documentation rebaseline (primary MATLAB source + current OC)
+  oc_commit_sha: cc1ef696219f41305ef008135cef46c9e65cd947
   matlab_files_referenced:
-    - docs/karr_extracts/process/20_ProteinActivation.md
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m
   oc_files_referenced:
     - opencell/vivarium/karr_protein_activation.py
     - opencell/vivarium/karr_composite.py
@@ -376,10 +442,10 @@ deviations:
     karr: "unknown"
     oc_current: "unknown"
     matlab_anchor:
-      path: "docs/karr_extracts/process/20_ProteinActivation.md"
-      lines: "49-117"
-      note: "No LP or flux-bound surface is described for this process."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
+      lines: "330-394"
+      note: "Primary model methods contain no calcFluxBounds implementation."
+      symbol: ProteinActivation
     oc_anchor:
       path: "opencell/vivarium/karr_protein_activation.py"
       lines: "137-271"
@@ -387,9 +453,11 @@ deviations:
       symbol: KarrProteinActivationProcess
   shared_pool_projection_merges_compartments: true
   known_deviations:
-    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
     - "MATLAB converts non-stimulus activation-rule signals to concentration and evaluates per compartment; OC evaluates raw flat-store scalars."
     - "MATLAB updates compartmented (wid, compartment) substrate tuples; OC projects the surface to flat per-WID activation_substrates stores."
+    - "Production topology maps only substrates/stimuli/protein and omits inactivatedSubstrates (`karr_composite.py:2126-2130`); it also initializes activation_substrates from the metabolite pool (`:2277-2283`) rather than Karr's active/inactive protein state. The implemented transfer logic therefore lacks its required production state surface."
   note: >-
-    MATLAB and OC are both rule-only and allocator-bypass for this process, but
-    known divergences remain in rule-signal conversion and compartment projection.
+    MATLAB and OC are both rule-only. MATLAB's zero request hook versus OC's
+    missing hook is resource-equivalent; the open implementation deviations are
+    rule-signal conversion, compartment projection, and missing/misseeded
+    production active/inactive state.

@@ -61,21 +61,70 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-09-17 17:24 IST) — pre-L2.5 honesty rebaseline:**
 
+- Deterministic-first fidelity correction (2026-09-17 19:30 IST): source audit
+  corrected the terminal split to **4 deterministic processes whose fidelity
+  rung ends at L2.1** (ChromosomeSegregation, HostInteraction,
+  ProteinActivation, TerminalOrganelleAssembly) and **24 stochastic/event-driven
+  processes that require L2.2**. ChromosomeCondensation calls stochastic
+  chromosome binding; TranscriptionalRegulation performs affinity-weighted
+  random binding via the shared Chromosome RNG. The historical "L2.1 11/11"
+  was an active-window repair-manifest subset spanning process categories, not
+  the canonical L2.1 denominator. The corrected L2.2 board is
+  **22 PASS / 2 MISSING_EVIDENCE / 24 required**.
+- Machine status corrected: `PROCESS_CATALOG.yaml` now places
+  ChromosomeCondensation in `ALGORITHMIC_DEEP` and TranscriptionalRegulation in
+  `EVENT_CLASS`; regenerated evidence index has 24 rows with those two
+  `MISSING_EVIDENCE`.
+- Six-process implementation fidelity result (not documentation status):
+  **0/6 currently L2.5-eligible**.
+  - ChromosomeCondensation: seed-0 autonomous core replay is informative and
+    exact on the tested surfaces, but it lacks L2.2 evidence; production omits
+    live enzyme/bound-enzyme topology, uses previous-tick allocation, differs
+    from Karr initialization, and retains non-Karr fallback/aggregate/hint
+    paths.
+  - ChromosomeSegregation: literal deterministic event/stoichiometry passes the
+    genuine active window, but the process consumes the previous-tick grant
+    before its current request is allocated; a shared enzyme updater conflict
+    also remains.
+  - HostInteraction: literal per-tick boolean cascade passes, but measured
+    production initialization starts all six host booleans false while Karr's
+    validated tick-0 pre-state has all six true.
+  - ProteinActivation: active/inactive transfer algebra is implemented, but
+    rule inputs omit Karr concentration conversion and compartment axes;
+    production omits the inactive-state store and seeds a flat surrogate.
+  - TerminalOrganelleAssembly: production uses activity-gated counters, not
+    Karr two-compartment full-count fixed-point transfer; substrate state is not
+    connected and a states-after hint path remains.
+  - TranscriptionalRegulation: ledger-bound active replay passes, but L2.2 is
+    missing; production omits shared chromosome/authoritative occupancy and
+    enzyme writeback, uses a non-interleaved RNG stand-in, emits one of two
+    fold-change columns, and skips Karr t=0 pre-binding.
+- Evidence reruns: six implementation suites **63 passed**; final active-window
+  ChromSeg/Host/TxReg **3 passed**; corrected L2.2 board tests **24 passed**.
+  Standard autonomous rubric: ChromCond/ProteinActivation/TOA GENUINE,
+  ChromSeg/Host UNINFORMATIVE on standard quiescent windows, TxReg standard
+  trace structurally obsolete (final 4000-tick ledger-bound window passes).
+- The first background documentation agent
+  `d4addf9c-b0db-4e99-bee2-1f3892506b45` was cleared before returning and
+  left no file edits. Replacement agent
+  `195a57b6-db9d-4beb-a61f-6b4da8ea5618` completed the six wiring rows and six
+  semantic audits: every row now has zero `ROW_WRONG` and zero `MISSING`;
+  implementation deviations remain explicit.
 - Active worktree:
   `E:\opencell-worktrees\pre-l25-honesty-rebaseline`; branch
   `audit/pre-l25-honesty-rebaseline-20260917`; base/published main
   `6a038b1d084543ddd847528ff6e698a9dba37626`.
 - Live processes/agents: none. Read-only deviation-classifier
-  `ffb6aecd-0de1-4a0f-b753-3437c7e65a7f` completed; the local L2.4 and L2.0a
-  authority reruns completed; no MATLAB process is active.
+  `ffb6aecd-0de1-4a0f-b753-3437c7e65a7f` and documentation agent
+  `195a57b6-db9d-4beb-a61f-6b4da8ea5618` completed; no MATLAB process is active.
 - Scope: freeze a machine-readable 28-process pre-L2.5 eligibility baseline
   before any biology fix. The baseline must distinguish lower-gate PASS from
   source-faithful/no-known-gap eligibility and must fail closed on unresolved
   MATLAB-to-OpenCell deviations.
-- Re-verified lower-gate facts on published main: L1b method completeness
-  115/115 PASS; L1b wiring rows 28/28 PASS; L2.2 evidence 22/22 PASS with
-  integrity OK. Important trap: L1b validates that documented deviations have
-  valid anchors; it does not require those deviations to be fixed.
+- Re-verified lower-gate facts: L1b method completeness 115/115 PASS and L1b
+  wiring rows 28/28 PASS. Published main's old L2.2 board said 22/22; corrected
+  classification is 22 PASS / 2 MISSING / 24 required. Important trap: L1b
+  validates documented deviations; it does not require them to be fixed.
 - Metabolism is the first confirmed blocker. Its L2.2 authority uses
   `dynamic_bounds=True`, Karr substrate writeback, GLPK, and FVA-feasibility
   acceptance, while the v6 chassis enables allocator budgeting but retains
@@ -84,15 +133,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   these are re-adjudicated and closed.
 - Frozen result: `docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml`
   validates with integrity OK at source-tree digest
-  `cdd821ad912d27ba8c38a863ca796f1637a69513a8ced0b8dec1d3381c95201d`
-  over 128 dependencies. Eligibility is **0/28**: 24 blocked by open code
-  deviations and 4 blocked by stale/missing semantic adjudication
-  (ChromosomeCondensation, ChromosomeSegregation, HostInteraction,
-  ProteinActivation). `scripts/pre_l25_honesty.py` derives this result and
+  `91431e572a3516f74840012742353d09077df923ae0b65bc38a450bb541b5a89`
+  over 128 dependencies. Eligibility is **0/28**: 2 blocked first by missing
+  L2.2 evidence and the remaining 26 by open code deviations; none remain
+  blocked merely by documentation incompleteness.
+  `scripts/pre_l25_honesty.py` derives this result and
   `scripts/derive_l25_scope.py` now refuses selection unless the hash-locked
   baseline also marks both pair members eligible.
-- Branch tip `ceee3bc` contains implementation commit `7b405c1` plus its
-  provenance commit. The branch is not pushed or merged. Added the honesty
+- Branch tip before this uncommitted six-process correction is `cc1ef69`
+  (implementation `7b405c1`, provenance `ceee3bc`, handoff `cc1ef69`). The
+  branch is not pushed or merged. Added the honesty
   validator, baseline, focused tests, CI integrity job, scope integration, and
   `docs/phase_f/PRE_L25_HONESTY_REBASELINE.md`. No process biology changed.
 - Fresh lower-authority reruns from this branch: L2.0a **5 passed**; L2.4

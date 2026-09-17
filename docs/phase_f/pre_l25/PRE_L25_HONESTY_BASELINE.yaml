@@ -8,12 +8,12 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "cdd821ad912d27ba8c38a863ca796f1637a69513a8ced0b8dec1d3381c95201d"
+  sha256: "91431e572a3516f74840012742353d09077df923ae0b65bc38a450bb541b5a89"
   file_count: 128
 authorities:
   l1b_method_completeness: "PASS 115/115"
   l1b_wiring_conformance: "PASS 28/28"
-  l2_2_distributional_fidelity: "PASS 22/22; integrity OK"
+  l2_2_distributional_fidelity: "NON_GREEN: 22 PASS / 2 MISSING_EVIDENCE / 24 required"
   l2_4_chassis_conservation: "PASS 4 seeds x 100 ticks"
   qualification: >-
     These authorities retain their existing meanings. This baseline adds the
@@ -21,34 +21,81 @@ authorities:
 
 processes:
   - name: ChromosomeCondensation
-    behavior_gate: L2.1
-    behavior_verdict: GENUINE
-    eligibility: BLOCKED_STALE_OR_MISSING_AUDIT
+    behavior_gate: L2.2
+    behavior_verdict: MISSING_EVIDENCE
+    eligibility: BLOCKED_LOWER_GATE
     findings:
-      - id: CC-AUDIT-STALE
-        kind: STALE_OR_MISSING_AUDIT
-        disposition: NEEDS_EXECUTION
+      - id: CC-PRODUCTION-WIRING
+        kind: CODE_DEVIATION
+        disposition: OPEN
         summary: >-
-          Two wiring-row claims are wrong and allocator timing equivalence is
-          still unadjudicated against current code.
+          The chassis does not connect the process's enzyme/bound-enzyme ports,
+          and next_update reads the previous allocation before its current
+          request is granted by the post-process allocation Step.
         evidence:
-          - path: docs/phase_f/audits/ChromosomeCondensation_semantic_audit.md
-            lines: "69-82"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2153-2158"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2377-2399"
+          - path: opencell/vivarium/karr_chromosome_condensation.py
+            lines: "691-809"
+      - id: CC-NONKARR-PATHS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The module retains aggregate compatibility state, a non-literal
+          fallback, and a trace-hint outcome override outside the literal
+          chromosome-binding path.
+        evidence:
+          - path: opencell/vivarium/karr_chromosome_condensation.py
+            lines: "691-861"
+      - id: CC-COMPARTMENT-PROJECTION
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          MATLAB substrate state is compartment-indexed while the production
+          process writes one flat shared value per WID.
+        evidence:
+          - path: opencell/vivarium/karr_chromosome_condensation.py
+            lines: "650-689"
+      - id: CC-INITIALIZATION
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Karr initializes with twenty stochastic warm-up calls under infinite
+          ATP/H2O; OpenCell seeds fixture/trace-derived state instead.
+        evidence:
+          - path: opencell/vivarium/karr_chromosome_condensation.py
+            lines: "440-473"
 
   - name: ChromosomeSegregation
     behavior_gate: L2.1
     behavior_verdict: GENUINE
-    eligibility: BLOCKED_STALE_OR_MISSING_AUDIT
+    eligibility: BLOCKED_CODE_DEVIATION
     findings:
-      - id: CHRSEG-AUDIT-STALE
-        kind: STALE_OR_MISSING_AUDIT
-        disposition: NEEDS_EXECUTION
+      - id: CHRSEG-REQUEST-TIMING
+        kind: CODE_DEVIATION
+        disposition: OPEN
         summary: >-
-          Compatibility projections appear benign, but two current audit
-          claims remain wrong and have not been re-baselined.
+          The literal transition is implemented, but its request is emitted by
+          the same next_update that already consumed the previous allocation;
+          the current request's grant is not observable until the next tick.
         evidence:
-          - path: docs/phase_f/audits/ChromosomeSegregation_semantic_audit.md
-            lines: "58-64"
+          - path: opencell/vivarium/karr_chromosome_segregation.py
+            lines: "433-503"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2377-2399"
+      - id: CHRSEG-UPDATER-CONFLICT
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Shared enzyme leaves conflict with DNASupercoiling's set updater,
+          producing order-sensitive Vivarium store semantics.
+        evidence:
+          - path: opencell/vivarium/karr_chromosome_segregation.py
+            lines: "333-343"
+          - path: opencell/vivarium/karr_dna_supercoiling.py
+            lines: "1043-1049"
 
   - name: Cytokinesis
     behavior_gate: L2.2
@@ -140,17 +187,20 @@ processes:
   - name: HostInteraction
     behavior_gate: L2.1
     behavior_verdict: GENUINE
-    eligibility: BLOCKED_STALE_OR_MISSING_AUDIT
+    eligibility: BLOCKED_CODE_DEVIATION
     findings:
-      - id: HI-AUDIT-STALE
-        kind: STALE_OR_MISSING_AUDIT
-        disposition: NEEDS_EXECUTION
+      - id: HI-INITIALIZATION
+        kind: CODE_DEVIATION
+        disposition: OPEN
         summary: >-
-          The behavior port and zero-request equivalence appear closed, but the
-          semantic audit still contains an unresolved wrong row claim.
+          The per-tick boolean cascade is literal, but Karr executes it during
+          initializeState while the OpenCell chassis starts all host booleans
+          at their false schema defaults and corrects them only on tick one.
         evidence:
-          - path: docs/phase_f/audits/HostInteraction_semantic_audit.md
-            lines: "45-56"
+          - path: opencell/vivarium/karr_host_interaction.py
+            lines: "188-229"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2491-2497"
 
   - name: MacromolecularComplexation
     behavior_gate: L2.2
@@ -199,17 +249,38 @@ processes:
   - name: ProteinActivation
     behavior_gate: L2.1
     behavior_verdict: GENUINE
-    eligibility: BLOCKED_STALE_OR_MISSING_AUDIT
+    eligibility: BLOCKED_CODE_DEVIATION
     findings:
-      - id: PA-AUDIT-STALE
-        kind: STALE_OR_MISSING_AUDIT
-        disposition: NEEDS_EXECUTION
+      - id: PA-RULE-INPUTS
+        kind: CODE_DEVIATION
+        disposition: OPEN
         summary: >-
-          Four row claims are wrong and two required claims are missing, so
-          current source-faithfulness has not been established.
+          OpenCell evaluates raw signals; Karr converts non-stimulus signals
+          to concentration using cell volume.
         evidence:
-          - path: docs/phase_f/audits/ProteinActivation_semantic_audit.md
-            lines: "76-79"
+          - path: opencell/vivarium/karr_protein_activation.py
+            lines: "226-264"
+      - id: PA-COMPARTMENT-PROJECTION
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Karr evaluates and transfers each protein compartment independently;
+          OpenCell collapses each protein to one flat scalar.
+        evidence:
+          - path: opencell/vivarium/karr_protein_activation.py
+            lines: "194-264"
+      - id: PA-PRODUCTION-STATE
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The chassis maps only a flat activation_substrates store seeded from
+          the metabolite pool and does not map or initialize the required
+          inactivatedSubstrates state.
+        evidence:
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2126-2130"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2277-2283"
 
   - name: ProteinDecay
     behavior_gate: L2.2
@@ -390,14 +461,50 @@ processes:
     behavior_verdict: GENUINE
     eligibility: BLOCKED_CODE_DEVIATION
     findings:
-      - id: TOA-DEVIATIONS
+      - id: TOA-REDUCED-STATE
         kind: CODE_DEVIATION
         disposition: OPEN
         summary: >-
-          Two implementation deviations and two missing semantic claims remain.
+          OpenCell uses protein-activity gates and assembled counters instead
+          of Karr's full unincorporated/incorporated substrate matrices and
+          fixed-point full-count transfer.
         evidence:
-          - path: docs/phase_f/audits/TerminalOrganelleAssembly_semantic_audit.md
-            lines: "67-70"
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "307-350"
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "403-455"
+      - id: TOA-PRODUCTION-TOPOLOGY
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The production topology connects only protein and cell; no substrate
+          compartment state is available for the MATLAB transfer.
+        evidence:
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2195-2198"
+      - id: TOA-TRACE-HINT
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          A replay-only states-after substrate outcome can override the
+          biological transfer path.
+        evidence:
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "357-377"
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "447-452"
+      - id: TOA-COMPARTMENT-PROJECTION
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          OpenCell projects terminal-organelle source/destination compartments
+          to generic keys and does not preserve the biological compartment
+          labels.
+        evidence:
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "190-211"
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "378-401"
 
   - name: Transcription
     behavior_gate: L2.2
@@ -415,18 +522,61 @@ processes:
             lines: "81-83"
 
   - name: TranscriptionalRegulation
-    behavior_gate: L2.1
-    behavior_verdict: GENUINE
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_gate: L2.2
+    behavior_verdict: MISSING_EVIDENCE
+    eligibility: BLOCKED_LOWER_GATE
     findings:
-      - id: TXREG-DEVIATIONS
+      - id: TXREG-PRODUCTION-TOPOLOGY
         kind: CODE_DEVIATION
         disposition: OPEN
         summary: >-
-          One implementation deviation and one missing semantic claim remain.
+          Production connects only protein, complex, and legacy derived
+          outputs; it omits chromosome accessibility, authoritative promoter
+          occupancy, bound-TF state, and enzyme/bound-enzyme writeback.
         evidence:
-          - path: docs/phase_f/audits/TranscriptionalRegulation_semantic_audit.md
-            lines: "79-82"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2071-2076"
+      - id: TXREG-SHARED-CHROMOSOME-WRITEBACK
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Karr writes bound TF footprints into shared chromosome occupancy;
+          OpenCell updates only process-local promoter occupancy.
+        evidence:
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "1491-1569"
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "1632-1647"
+      - id: TXREG-RNG-PROVENANCE
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Autonomous OpenCell uses a local continuously advancing stand-in
+          rather than Karr's chromosome RNG stream interleaved with other
+          chromosome-binding processes.
+        evidence:
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "704-759"
+      - id: TXREG-COPY-REDUCTION
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Karr produces a fold-change value for both chromosome copies;
+          OpenCell sends only the primary-copy column to Transcription.
+        evidence:
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "16-26"
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "1598-1659"
+      - id: TXREG-INITIALIZATION
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Karr pre-binds transcription factors during initializeState;
+          OpenCell starts unbound and first binds during tick one.
+        evidence:
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "36-42"
 
   - name: Translation
     behavior_gate: L2.2

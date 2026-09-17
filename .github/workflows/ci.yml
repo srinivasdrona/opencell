@@ -113,7 +113,7 @@ jobs:
           python-version: "3.12"
       - name: Install dependencies
         run: pip install -e ".[dev]"
-      - name: L2.2 evidence integrity and all-process acceptance (22/22 PASS)
+      - name: L2.2 evidence integrity and all-process acceptance (currently 22/24 PASS)
         run: >-
           python scripts/l22_evidence/generator.py audit
           --evidence-root docs/phase_f/l2_2_design_a/evidence_bundle

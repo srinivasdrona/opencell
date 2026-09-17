@@ -111,15 +111,17 @@ def test_committed_evidence_index_is_honestly_green_today():
     independently re-verifies the redaction-equality proof itself before
     writing anything.
 
-    The tally is now PASS: 22, FAIL: 0, MISSING_EVIDENCE: 0, n_in_scope: 22:
+    The corrected tally is PASS: 22, MISSING_EVIDENCE: 2, n_in_scope: 24.
+    ChromosomeCondensation and TranscriptionalRegulation were previously
+    misclassified as deterministic despite genuine stochastic binding:
       - PASS (22): Cytokinesis, DNADamage, DNARepair, DNASupercoiling,
         MacromolecularComplexation, Metabolism, ProteinDecay, ProteinFolding,
         ProteinModification, ProteinProcessingI, ProteinProcessingII,
         ProteinTranslocation, ReplicationInitiation, RNADecay,
         RNAModification, RNAProcessing, Replication, RibosomeAssembly,
         Transcription, Translation, tRNAAminoacylation, FtsZPolymerization.
-      - FAIL (0).
-      - MISSING_EVIDENCE (0).
+      - MISSING_EVIDENCE (2): ChromosomeCondensation,
+        TranscriptionalRegulation.
 
     This is a deliberate, evidence-driven mechanical re-derivation, not a
     regression or a fabrication: `gen.audit()` reports `integrity: OK` (see
@@ -135,9 +137,10 @@ def test_committed_evidence_index_is_honestly_green_today():
     correctness fix with cited raw-metric evidence), not by editing this
     assertion to make it pass."""
     result = gen.audit()
-    assert result.aggregate_verdict == "GREEN"
+    assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
         schema.STATUS_PASS: 22,
+        schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
 
@@ -149,13 +152,13 @@ def test_committed_evidence_index_covers_scope_exactly_once():
 
     assert len(process_names) == len(set(process_names)), "duplicate rows in evidence index"
     assert set(process_names) == set(entries.keys())
-    assert payload["n_in_scope"] == len(entries) == 22
+    assert payload["n_in_scope"] == len(entries) == 24
 
 
 def test_require_all_pass_acceptance_gate_is_wired_into_ci():
-    """The now-green board must remain protected by a blocking CI command."""
+    """The corrected non-green board remains protected by blocking CI."""
     payload = gen.build_evidence_index()
-    assert payload["aggregate_verdict"] == "GREEN"
+    assert payload["aggregate_verdict"] == "NON_GREEN"
     workflow = (_REPO / ".github" / "workflows" / "ci.yml").read_text(
         encoding="utf-8"
     )

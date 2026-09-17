@@ -8,10 +8,13 @@ process:
   oc_file: "opencell/vivarium/karr_transcriptional_regulation.py"
   whole_cell_model_id: "Process_TranscriptionalRegulation"
   functional_area: "RNA-synthesis-and-maturation"
-  state_shape_role: "regulatory surface (TF binding + fold-change); no substrate stoichiometry"
+  state_shape_role: "stochastic affinity-weighted TF binding plus fold-change; no substrate stoichiometry"
   notes: >-
-    Row anchors use the checked-in MATLAB and OC sources for executable
-    TranscriptionalRegulation semantics.
+    This process is stochastic, not deterministic. MATLAB performs
+    affinity-weighted random TF-site binding on accessible chromosome sites;
+    current OC implements the same stochastic family with explicit chromosome
+    RNG handling. Production topology, however, omits the chromosome and the
+    authoritative binding/writeback ports required by that implementation.
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
@@ -36,22 +39,22 @@ integration_touchpoints:
       source:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
         lines: "339-400"
-        note: "Per-tick TF binding and fold-change update; includes accessibility gating via chromosome.isRegionPolymerized."
+        note: "Per-tick affinity-weighted random TF binding and two-column fold-change update; includes chromosome accessibility gating."
         symbol: "evolveState"
     oc:
       symbol: "KarrTranscriptionalRegulationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_transcriptional_regulation.py"
         lines: "1570-1570"
-        note: "Per-tick TF copy read, chromosome-gated weighted site-level binding, boundTFs/tx_rate_fold_change derivation."
+        note: "Per-tick stochastic TF copy read, chromosome-gated affinity-weighted site binding, boundTFs derivation, and column-0 downstream fold-change projection."
         symbol: "KarrTranscriptionalRegulationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_transcriptional_regulation.py"
-          lines: "1602-1631"
+          lines: "1570-1673"
           note: "Column-0 fold-change product over bound sites and otherActivities TF-presence multiplier, projected into the per-TU `tx_rate_fold_change` output."
           symbol: KarrTranscriptionalRegulationProcess.next_update
     status: "implemented"
-    note: "OC implements the per-tick regulatory sweep in next_update rather than a MATLAB-named evolveState method. MATLAB gates candidate binding sites by chromosome accessibility (isRegionPolymerized) and third-party occupant/footprint overlap; OC now also gates on both (see _is_polymerized / _third_party_site_occluded), closing the L2.1 active-window CODE_GAP. See known_deviations for the remaining disclosed reductions (single-copy downstream fold-change, no shared chromosome-wide writeback)."
+    note: "OC implements the stochastic regulatory sweep in next_update, but production topology exposes only protein/complex/tf_binding/tx_rate_fold_change and omits chromosome, tf_bound_promoters, bound_tfs, enzymes, and boundEnzymes."
   calcFluxBounds:
     matlab:
       symbol: "TranscriptionalRegulation"
@@ -162,26 +165,26 @@ ordering_constraints:
   note: "No process-specific ordering rule is explicitly stated in the local Karr extracts. The only canonical hard ordering constraint found in Simulation.evolveState is tRNAAminoacylation < Translation."
 source_anchors:
   matlab_blocks:
-    process_docstring:
-      path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
-      lines: "1-123"
-      note: "Checked-in extract for the canonical MATLAB source file and docstring summary."
-      symbol: Karr Process - TranscriptionalRegulation
-    allocation_surface:
-      path: "docs/karr_extracts/architecture/03_variable_allocation.md"
-      lines: "7-29"
-      note: "Global allocator block showing how calcResourceRequirements_Current is used when present."
-      symbol: Verbatim extract - allocation block
-    simulation_ordering:
-      path: "docs/karr_extracts/architecture/01_simulation_loop.md"
-      lines: "148-180"
-      note: "Per-tick process loop and the only hard ordering constraint in the simulation harness."
-      symbol: Verbatim extract - `evolveState.m` per-tick algorithm
-    regulatory_summary:
-      path: "docs/design/pb_turn3_transcriptional_regulation.md"
-      lines: "7-32"
-      note: "Turn-3 design summary of TF abundance reads and tx_rate_fold_change writes."
-      symbol: Why this is Phase B Turn 3
+    class_and_documentation:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
+      lines: "1-294"
+      note: "Primary-source biology, representation, TF/site constants, and chromosome mappings."
+      symbol: TranscriptionalRegulation
+    initialize_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
+      lines: "325-331"
+      note: "Initialization performs an immediate evolveState binding sweep."
+      symbol: initializeState
+    current_request:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
+      lines: "334-336"
+      note: "Zero current resource-request vector."
+      symbol: calcResourceRequirements_Current
+    stochastic_binding_and_fold_change:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
+      lines: "339-400"
+      note: "Accessibility-gated affinity-weighted random binding and two-column fold-change emission."
+      symbol: evolveState
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_transcriptional_regulation.py"
@@ -200,12 +203,12 @@ source_anchors:
       symbol: KarrTranscriptionalRegulationProcess.next_update
     composite_topology:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1342-1346"
-      note: "Top-level wiring for protein, complex, tf_binding, and tx_rate_fold_change ports."
-      symbol: build_karr_chassis_v4
+      lines: "1580-2405"
+      note: "Production topology at lines 2071-2076 maps only protein, complex, tf_binding, and tx_rate_fold_change; it omits chromosome and authoritative binding/writeback ports."
+      symbol: build_karr_chassis_v5
     chassis_seeding:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1035-1045"
+      lines: "960-1578"
       note: "Complex TF seeding for the chassis builder."
       symbol: build_karr_chassis_v4
 provenance:
@@ -214,19 +217,12 @@ provenance:
     - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
   kb_version: "unknown"
   extraction_date_utc:
-  notes: >-
-    last_audited=2026-06-29; audited_by=gpt-5.4-mini (codex; row authored Day-43 EOD);
-    oc_commit_sha=61a5a06e8031af3159dffa436655ade330be1fd9; matlab_files_referenced=none in
-    this checkout (raw .m file absent; local surrogate used); oc_files_referenced=
-    opencell/vivarium/karr_transcriptional_regulation.py, opencell/vivarium/karr_composite.py.
-  last_audited: '2026-06-29'
-  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
-  oc_commit_sha: 61a5a06
+  notes: "Re-audited directly against the primary MATLAB source and current OC implementation."
+  last_audited: '2026-09-17'
+  audited_by: Copilot documentation rebaseline (primary MATLAB source + current OC)
+  oc_commit_sha: cc1ef696219f41305ef008135cef46c9e65cd947
   matlab_files_referenced:
-    - docs/karr_extracts/process/10_TranscriptionalRegulation.md
-    - docs/karr_extracts/architecture/03_variable_allocation.md
-    - docs/karr_extracts/architecture/01_simulation_loop.md
-    - docs/design/pb_turn3_transcriptional_regulation.md
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m
   oc_files_referenced:
     - opencell/vivarium/karr_transcriptional_regulation.py
     - opencell/vivarium/karr_composite.py
@@ -235,21 +231,20 @@ deviations:
     karr: "unknown"
     oc_current: "unknown"
     matlab_anchor:
-      path: "docs/karr_extracts/process/10_TranscriptionalRegulation.md"
-      lines: "79-106"
-      note: "No LP or flux-bound logic is described for this regulatory-only process."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m"
+      lines: "310-400"
+      note: "Primary model methods contain no calcFluxBounds implementation."
+      symbol: TranscriptionalRegulation
     oc_anchor:
       path: "opencell/vivarium/karr_transcriptional_regulation.py"
       lines: "782-857"
       note: "No flux-bound helper exists in the OC port. Line range re-fixed 2026-09-08 (twice: once after the accessibility completion, again after extracting candidate_sites_for_tf) -- see l1b_verify_wiring.py check_oc_anchors_resolve. Computed via direct ast.parse (tmp/compute_anchor_lines.py) rather than manual line-counting, to avoid a third drift."
       symbol: KarrTranscriptionalRegulationProcess.ports_schema
-  shared_pool_projection_merges_compartments: true
+  shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC does not implement a request-calculator surface for this process; it reads protein.counts / complex.counts directly."
-    - "2026-09-03 L2.1 fix: MATLAB binds TFs only on chromosome-accessible sites (isRegionPolymerized) not sterically occluded by another bound protein (isRegionAccessible); OC now gates on both (_is_polymerized / _third_party_site_occluded) using the real site-level tf_bound_promoters/bound_tfs surfaces (34-element site x chromosome-copy, 5-element per-TF), replacing the prior TU-level (130-element) approximation and the fabricated release-on-copy-drop logic. 2026-09-05 UPDATE: closed to GENUINE (full 4000/4000-tick bit identity) via a hash-bound per-tick chromosome-randStream draw ledger (dec-006, filed as dec-005 at the time) restoring Karr's real shared-RNG input state, plus two further occlusion-formula corrections (query-TF-own-footprint interval overlap; dsDNA cross-strand-pair occlusion). 2026-09-08 UPDATE (Opus re-review, integration): re-derived `_shifted_damage_position`'s three damage-adjacency shift kinds directly from `Chromosome.m`'s actual property getters (the prior `base5`/`bond5`/`bond3` set for intrastrandCrossLinks/strandBreaks had misattributed the shift/unshift helper each computed property actually uses -- corrected to `base3`/`unbond5`/`unbond3`; hollidayJunctions' bond5/bond3 mapping was already correct), added the two remaining isRegionAccessible components (damage exclusion via _site_damaged; excludeOverlappingRegions self-overlap exclusion via _sites_overlap), and regenerated the chromosome-RNG ledger + manifest hashes against current main. Neither the shift correction nor the two added components changes the validated 4000/4000-tick result (zero damage entries / no self-overlapping draws in the genuine trace) but the algorithm is now genuinely complete and source-verified against Karr's real Chromosome.m::isRegionAccessible, not merely correct-by-absence-of-counterexample. See STATUS_L21_TXREG_ACTIVE_FIX.md's '2026-09-05 chromosome-RNG-ledger closure' section and docs/phase_f/l2_1/L21_ACTIVE_WINDOWS_MANIFEST.json's genuine_evidence note."
-    - "MATLAB participates in allocator sequencing with calcResourceRequirements_Current (zero request vector); OC bypasses allocator mediation for this process."
+    - "Production topology maps only protein/complex/tf_binding/tx_rate_fold_change (`karr_composite.py:2071-2076`). It omits chromosome, authoritative tf_bound_promoters/bound_tfs state, and enzymes/boundEnzymes writeback, so the production chassis does not supply or persist the state surfaces used by the implemented stochastic binding algorithm."
+    - "MATLAB's random binding draws come from the shared chromosome randStream, interleaved with other chromosome-binding processes. OC production uses a continuously advancing process-local stand-in; L2.1 replay restores the real per-tick shared-stream position from a draw ledger, but autonomous chassis execution does not reproduce the same inter-process RNG provenance."
     - "MATLAB stores tx_rate_fold_change with a strand axis (nTU x 2), while OC emits a single scalar fold-change per TU."
+    - "MATLAB bindProteinToChromosome writes newly bound TF footprints into shared chromosome monomerBoundSites/complexBoundSites; OC records its own tf_bound_promoters but does not write those TF footprints back to the shared chromosome occupancy arrays."
     - "OC initializes tf_binding from the first tick rather than performing Karr's documented t=0 pre-binding sweep."
-    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
-  note: "Regulatory-only process with no substrate stoichiometry or LP bounds; MATLAB participates in allocation via a zero-request hook, OC bypasses allocation, and OC projects MATLAB strand-resolved fold-change state to one scalar per TU."
+  note: "Stochastic affinity-weighted binding and accessibility/occlusion logic exist in the process class. MATLAB's zero request hook versus OC's missing hook is resource-equivalent. Open fidelity reductions are missing production topology/state surfaces, autonomous RNG provenance, shared chromosome writeback, t=0 initialization timing, and projection of MATLAB's two fold-change columns to one downstream value."

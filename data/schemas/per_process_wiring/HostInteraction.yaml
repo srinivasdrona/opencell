@@ -9,7 +9,7 @@ process:
   whole_cell_model_id: "Process_HostInteraction"
   functional_area: "host-interaction"
   state_shape_role: "qualitative host-interface state; wiring row adds integration semantics"
-  notes: "MATLAB source is documented in the extract and mirrored upstream; the current OC port is a literal structural port of HostInteraction.m's boolean cascade (adherence/TLR/NF-kB/inflammatory response), reading raw enzyme copy numbers -- see docs/phase_f/l2_1/HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md for the L2.1 closure that replaced the prior Karr-light v1 stochastic approximation."
+  notes: "The current OC update formula is a literal structural port of HostInteraction.m's boolean cascade, but initialization is not literal: MATLAB initializeState calls evolveState, whereas OC v6 begins from false schema defaults and corrects the six host booleans on its first process tick."
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
@@ -28,7 +28,7 @@ integration_touchpoints:
         symbol: "KarrHostInteractionProcess"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "2449-2454"
+          lines: "2410-2510"
           note: "Composite wiring connects HostInteraction only to cell and protein stores."
           symbol: build_karr_chassis_v6
       note: OC does not implement this Karr method.
@@ -55,11 +55,11 @@ integration_touchpoints:
           note: "Port schema exposes cell and protein stores used by next_update."
           symbol: KarrHostInteractionProcess.ports_schema
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "2449-2454"
+          lines: "2410-2510"
           note: "Topology wiring only exposes cell and protein stores to the process."
           symbol: build_karr_chassis_v6
     status: "implemented"
-    note: "Literal structural port of the MATLAB boolean cascade (adherence/TLR/NF-kB/inflammatory response), reading raw enzyme copy numbers via all()/any() nonzero-count semantics matching HostInteraction.m exactly. Replaces the prior Karr-light v1 stochastic aggregate-adhesion approximation (L2.1 closure, 2026-09-04)."
+    note: "Per-tick formula is literal, but MATLAB also invokes evolveState during initializeState. OC v6 does not precompute those booleans before tick 0."
   calcFluxBounds:
     matlab:
       symbol: "NOT_IMPLEMENTED"
@@ -143,17 +143,17 @@ source_anchors:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "259-263"
       note: "Initialize by running evolveState once."
-      symbol: calcResourceRequirements_LifeCycle
+      symbol: initializeState
     calc_resource_requirements_current:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "265-268"
       note: "Zero request vector."
-      symbol: calcResourceRequirements_LifeCycle
+      symbol: calcResourceRequirements_Current
     evolve_state:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "271-303"
       note: "Boolean host-interface state update."
-      symbol: calcResourceRequirements_Current
+      symbol: evolveState
   oc_blocks:
     module_docstring:
       path: "opencell/vivarium/karr_host_interaction.py"
@@ -187,7 +187,7 @@ source_anchors:
       symbol: KarrHostInteractionProcess.next_update
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "2449-2454"
+      lines: "2410-2510"
       note: "HostInteraction topology wiring in the chassis."
       symbol: build_karr_chassis_v6
 provenance:
@@ -204,9 +204,9 @@ provenance:
     oc_files_referenced=["opencell/vivarium/karr_host_interaction.py", "opencell/vivarium/karr_composite.py"]
     fixture_files=["data/karr_fixtures/per_process/HostInteraction_flat.mat", "data/m1_sources/karr_native/per_process_traces/HostInteraction_100ticks.mat"]
     kb_version=unknown
-  last_audited: '2026-06-29'
-  audited_by: gpt-5.4-mini + parallel codex fleet (Day-43 EOD batch)
-  oc_commit_sha: 61a5a06
+  last_audited: '2026-09-17'
+  audited_by: Copilot documentation rebaseline (primary MATLAB source + current OC)
+  oc_commit_sha: cc1ef696219f41305ef008135cef46c9e65cd947
   matlab_files_referenced:
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m
   oc_files_referenced:
@@ -214,13 +214,13 @@ provenance:
     - opencell/vivarium/karr_composite.py
 deviations:
   lp_bounds_source:
-    karr: "allocation"
+    karr: "unknown"
     oc_current: "unknown"
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m"
       lines: "265-268"
       note: "Karr exposes the resource-requirements method but returns an empty/zero vector."
-      symbol: calcResourceRequirements_LifeCycle
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_host_interaction.py"
       lines: "92-232"
@@ -228,7 +228,5 @@ deviations:
       symbol: KarrHostInteractionProcess
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "No substrate stoichiometry or allocator request surface exists in the current OC port because HostInteraction's fixture has no substrate WIDs (matches Karr's own zero-request vector exactly, so this is a structural bypass, not a behavioral divergence)."
-    - "`soft_after: TerminalOrganelleAssembly` is advisory-only; neither MATLAB nor OC encodes an executable HostInteraction-after-TerminalOrganelleAssembly scheduler edge."
-    - "Free-enzyme vs protein-counts topology (verified, not a divergence): Karr's `this.enzymes` for HostInteraction is never partitioned by the allocator (calcResourceRequirements_Current returns an all-zero request), so in Karr itself `this.enzymes` for this process already reflects the raw, unpartitioned global copy number of these 15 WIDs -- confirmed empirically by both the seed-0 canary (tmp/probe_host_interaction_canary.m, now scripts/matlab/probe_host_interaction_canary.m) and the 5 discriminating enzyme-knockout conditions (docs/phase_f/l2_1/HOSTINTERACTION_CONDITION_PREREGISTRATION.md), whose overridden `this.enzymes` values are visible unmodified in HostInteraction's own read. OC's `protein.counts` shared store is the SAME architecture-wide convention every other zero-request/Vacuous process in this codebase reads from (45+ topology bindings across karr_composite.py all route `protein` to the single top-level `(\"protein\",)` store) -- there is no separate free-vs-bound partition modeled anywhere in OC's shared state, so reading `protein.counts` for HostInteraction's enzyme WIDs is the CORRECT match to Karr's `this.enzymes`, not a topology deviation. The `enzymes`/`boundEnzymes`/`substrates` ports on `KarrHostInteractionProcess` are wiring-conformance placeholders only (declared to mirror HostInteraction.m's own enzymeWholeCellModelIDs/substrateWholeCellModelIDs surfaces for auditability) -- never read by `next_update`, and deliberately left unwired in `karr_composite.py`'s HostInteraction topology (only `cell`/`protein` are wired), matching Karr's own declared-but-functionally-bypassed request surface (see the allocator-bypass deviation above)."
-  note: "L2.1 closure (2026-09-04, discriminating-conditions closure 2026-09-05+): OC now literally ports HostInteraction.m's boolean cascade (isBacteriumAdherent/isTLRActivated(1/2/6)/isNFkBActivated/isInflammatoryResponseActivated), reading enzyme copy numbers via all()/any() nonzero-count semantics over the shared `protein.counts` store (verified equivalent to Karr's unpartitioned `this.enzymes` -- see known_deviations), replacing the prior Karr-light v1 stochastic aggregate-adhesion approximation. Evidence now includes both the fitted seed-0 positive-control window (all 6 booleans constant-True) AND 5 preregistered source-legal enzyme-knockout conditions that discriminate a literal port from a constant-True stub (docs/phase_f/l2_1/HOSTINTERACTION_CONDITION_PREREGISTRATION.md). The only remaining structural (not behavioral) deviation is allocator bypass, which produces an identical zero-request outcome to Karr's own empty substrate list."
+    - "Initialization defect: HostInteraction.m::initializeState calls evolveState, and the measured final active trace has all six host booleans true in states_before at tick 0. OC v6 supplies the ports_schema false defaults and does not compute the cascade until the first next_update, creating a one-tick initialization mismatch."
+  note: "The per-tick boolean formulas and raw-count input mapping are source-faithful. MATLAB's zero resource request makes OC's allocator bypass benign; the remaining implementation defect is tick-0 initialization."

@@ -6,11 +6,11 @@
 
 ## Outcome
 
-The lower gates remain green under their existing contracts:
+The lower-gate recheck now reads:
 
 - L1b method completeness: 115/115.
 - L1b wiring conformance: 28/28.
-- L2.2 distributional evidence: 22/22, integrity OK.
+- L2.2 distributional evidence: 22 PASS / 2 MISSING_EVIDENCE / 24 required.
 - L2.4 short-horizon chassis conservation: PASS.
 
 Those results do not establish the separate no-known-gap prerequisite for
@@ -18,14 +18,16 @@ L2.5. L1b accepts a wiring row that truthfully documents an implementation
 deviation, L2.2 may use a process-specific validation configuration, and L2.4
 checks conservation rather than Karr trajectory equivalence.
 
-The fail-closed rebaseline is:
+The two missing rows are ChromosomeCondensation and
+TranscriptionalRegulation, both previously misclassified as deterministic
+despite stochastic chromosome-binding code. The fail-closed rebaseline is:
 
 - **Eligible:** 0/28.
-- **Blocked by current code deviation:** 24/28.
-- **Blocked by stale or incomplete semantic adjudication:** 4/28.
+- **Blocked by a missing lower gate:** 2/28.
+- **Blocked by current code deviation:** 26/28.
 
-This is not a regression in the lower gates. It corrects the prior inference
-that lower-gate green implied source-faithful L2.5 eligibility.
+This is a stochasticity-classification correction, not a new implementation
+regression. The old 22/22 board excluded two processes that require L2.2.
 
 The fresh L2.4 run also emitted an incompatible-updater warning for
 `enzymes.MG_203_204_TETRAMER` and

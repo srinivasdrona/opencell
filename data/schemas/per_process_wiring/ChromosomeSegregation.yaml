@@ -42,9 +42,9 @@ integration_touchpoints:
           lines: "396-410"
           note: "_all_enzymes_present: all 5 fixture enzymes (including topoisomerase IV) nonzero, matching all(this.enzymes) exactly."
           symbol: KarrChromosomeSegregationProcess._all_enzymes_present
-      note: "Request logic is inlined in next_update rather than a separate request-calculator class (matches the note that no ChromosomeSegregation RequestCalculator exists in karr_request_calculators.py)."
+      note: "Request logic is inlined in next_update. The request reaches allocation in the same engine tick, but this process observes the resulting grant on the following tick."
     status: "implemented"
-    note: "Literal port; no known deviations remain in this gate."
+    note: "The literal request formula is implemented. Empirical probing shows a one-tick request-to-consumption lag because next_update reads substrates_allocated before the allocation Step incorporates the request emitted by that same next_update."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -67,12 +67,12 @@ integration_touchpoints:
           note: "_is_fully_supercoiled: literal port of Chromosome.m's calcSupercoiled/calcDoubleStrandedRegions dependent properties, derived from the real polymerizedRegions/linkingNumbers hidden chromosome state."
           symbol: KarrChromosomeSegregationProcess._is_fully_supercoiled
         - path: "opencell/vivarium/karr_chromosome_segregation.py"
-          lines: "460-480"
+          lines: "433-493"
           note: "Allocated-substrate read, exact GTP/H2O consumption and GDP/H/PI production, and segregated=True latch."
           symbol: KarrChromosomeSegregationProcess.next_update
       note: "segregation_progress/segregation_complete/daughter_pole_positions/cell_cycle_event are retained as derived pure 0.0/1.0 projections of segregated, solely for karr_cell_cycle_coordinator.py backward compatibility; they carry no independent state."
     status: "implemented"
-    note: "Literal structural port (2026-09-03 fix); see deviations for the intentionally-retained backward-compat surface."
+    note: "Literal one-shot event and stoichiometry (2026-09-03 fix); see deviations for compatibility fields and the shared-state updater conflict."
   calcFluxBounds:
     matlab:
       symbol: "ChromosomeSegregation"
@@ -96,7 +96,7 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "allocation"
-    note: "Both sides gate on per-process allocated substrates; OC reads states['substrates_allocated'][self.name] and does not fall back to the global substrate pool."
+    note: "Both sides read per-process allocated substrates, but only MATLAB guarantees same-tick request -> allocation -> evolve. OC's in-process request reaches allocation during tick 1 after the process has read the previous grant, so the new grant is consumed no earlier than tick 2."
   request_formula:
     matlab: "if replicated && all(required segregation proteins are present) && ~segregated then request GTP = gtpCost and H2O = gtpCost, else request 0"
     oc: "request_gtp = request_h2o = gtp_cost when can_request else 0.0"
@@ -139,10 +139,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Zero-grant audit cites the GTP gate/consumption branch."
-      symbol: calcResourceRequirements_Current
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
-      lines: "472-478"
+      lines: "433-493"
       note: "Consumes allocated GTP when the request/evolveState gate is fully satisfied (can_request, fully_supercoiled, allocated_gtp/h2o >= gtp_cost)."
       symbol: KarrChromosomeSegregationProcess.next_update
     kind: expression
@@ -153,10 +153,10 @@ consume_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Zero-grant audit cites the water gate/consumption branch."
-      symbol: calcResourceRequirements_Current
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
-      lines: "472-478"
+      lines: "433-493"
       note: "Consumes allocated H2O in lockstep with GTP."
       symbol: KarrChromosomeSegregationProcess.next_update
     kind: expression
@@ -168,10 +168,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Hydrolysis product paired with the GTP gate."
-      symbol: calcResourceRequirements_Current
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
-      lines: "472-478"
+      lines: "433-493"
       note: "Produced alongside PI and H when segregation fires."
       symbol: KarrChromosomeSegregationProcess.next_update
     kind: expression
@@ -182,10 +182,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Hydrolysis proton product."
-      symbol: calcResourceRequirements_Current
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
-      lines: "472-478"
+      lines: "433-493"
       note: "Produced alongside GDP and PI."
       symbol: KarrChromosomeSegregationProcess.next_update
     kind: expression
@@ -196,10 +196,10 @@ produce_stoichiometry:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
       lines: "201-203"
       note: "Hydrolysis phosphate product."
-      symbol: calcResourceRequirements_Current
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
-      lines: "472-478"
+      lines: "433-493"
       note: "Produced alongside GDP and H."
       symbol: KarrChromosomeSegregationProcess.next_update
     kind: expression
@@ -242,10 +242,10 @@ unit_conversion_chain:
       to_units: "molecules/tick"
       operation: "identity for stoichiometry; dt only scales segregation_progress, not substrate counts"
       anchor:
-        path: "docs/design/pc-t5-segregation.md"
-        lines: "68-90"
-        note: "Per-tick algorithm summary: request, consume GTP/H2O, produce GDP/H/PI."
-        symbol: Algorithm (v1)
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+        lines: "193-210"
+        note: "Literal one-shot event and GTP + H2O -> GDP + PI + H count update."
+        symbol: evolveState
       constants: ["gtpCost", "dt"]
   note: "There is no mmol/gDW/hr conversion chain here; the process already works in per-tick molecule counts."
 dependencies:
@@ -258,29 +258,29 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "No process-specific order constraint is documented for ChromosomeSegregation; the only canonical hard order in the global simulation is tRNAAminoacylation < Translation."
+  note: "MATLAB's allocator contract orders calcResourceRequirements_Current -> allocation -> evolveState within one tick. Empirical OC probe: tick1_request=5, tick1_allocation=10, tick1_process_observed=0; tick2_process_observed=10. The request reaches the allocator, but consumption lags by one tick."
 source_anchors:
   matlab_blocks:
-    docstring_and_gate:
-      path: "docs/karr_extracts/process/08_ChromosomeSegregation.md"
-      lines: "49-75"
-      note: "Docstring extract: gtpCost, gate conditions, and the four segregation proteins."
-      symbol: Verbatim docstring extract
-    strict_zero_evidence:
-      path: "opencell/validation/swarm/l5/karr_zero_grant_behavior.md"
-      lines: "29-64"
-      note: "Validation note summarizing the allocation overwrite and the ChromosomeSegregation line citation."
-      symbol: Zero grant behavior in process code
-    allocation_loop:
-      path: "docs/karr_extracts/architecture/01_simulation_loop.md"
-      lines: "122-194"
-      note: "Global allocate-before-process semantics and per-tick overwrite into mod.substrates."
-      symbol: Verbatim extract - `evolveState.m` per-tick algorithm
-    phase_c_design:
-      path: "docs/design/pc-t5-segregation.md"
-      lines: "17-90"
-      note: "Process-level Karr-LIGHT summary, ports, and per-tick behavior."
-      symbol: Process summary (Karr fidelity)
+    class_constants_and_enzyme_set:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+      lines: "85-123"
+      note: "Class constants, five-enzyme list including TopoIV, and gtpCost."
+      symbol: ChromosomeSegregation
+    lifecycle_requirements:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+      lines: "152-171"
+      note: "Life-cycle stoichiometry and minimum expression for every enzyme."
+      symbol: calcResourceRequirements_LifeCycle
+    current_request:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+      lines: "179-189"
+      note: "Request gate: not segregated, fully replicated, and all five enzymes."
+      symbol: calcResourceRequirements_Current
+    evolve_state:
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m"
+      lines: "193-212"
+      note: "Additional supercoiling/grant gates, literal segregated event, and exact stoichiometry."
+      symbol: evolveState
   oc_blocks:
     fixture_and_schema:
       path: "opencell/vivarium/karr_chromosome_segregation.py"
@@ -302,6 +302,11 @@ source_anchors:
       lines: "109-123"
       note: "Shared helper that loads MacromolecularComplexation and RibosomeAssembly fixtures."
       symbol: _canonical_complex_wids
+    allocation_flow:
+      path: "opencell/vivarium/karr_composite.py"
+      lines: "1580-2405"
+      note: "Allocation Step flow context. Empirical probing establishes that an in-process request is incorporated by this Step after that process has already read the tick's pre-Step allocation state."
+      symbol: build_karr_chassis_v5
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/ChromosomeSegregation_flat.mat"
@@ -321,9 +326,9 @@ provenance:
     derived docs because the canonical .m files were absent from that
     checkout; this pass re-derived every anchor directly from the .m
     sources per the project's primary-source-discipline policy.
-  last_audited: '2026-09-03'
-  audited_by: main_agent (l21-chromseg-active-fix session)
-  oc_commit_sha: e199331
+  last_audited: '2026-09-17'
+  audited_by: Copilot documentation rebaseline (primary MATLAB source + current OC)
+  oc_commit_sha: cc1ef696219f41305ef008135cef46c9e65cd947
   matlab_files_referenced:
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeSegregation.m
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+state/Chromosome.m
@@ -345,9 +350,8 @@ deviations:
       symbol: KarrChromosomeSegregationProcess.next_update
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC exposes derived segregation_progress/segregation_complete/daughter_pole_positions/cell_cycle_event fields for opencell/vivarium/karr_cell_cycle_coordinator.py backward compatibility; these are pure 0.0/1.0 projections of the literal `segregated` field (no independent state) and are not read by this process's own gates. NOT a fidelity deviation (the literal field IS produced and IS what Cytokinesis's own gate reads), but a deliberately retained compatibility surface -- documented here so it isn't mistaken for the retired Karr-LIGHT v1 continuous model."
-    - "OC retains a test/config-only `gtp_cost_override` parameter. Production defaults always load `gtpCost` from the Karr fixture; the override is not used by chassis wiring or fidelity evidence."
-    - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
+    - "Open ordering defect: ChromosomeSegregation's in-process GTP/H2O request reaches `karr_allocation_step` in tick 1, but next_update has already read substrates_allocated=0. The process observes the tick-1 grant only on tick 2 (empirical probe: request=5, allocation=10, observed tick1=0, observed tick2=10), creating a one-tick request-to-consumption lag versus Karr's same-tick contract."
+    - "Open integration issue: ChromosomeSegregation declares shared `boundEnzymes` leaves with `_updater: accumulate`, while DNASupercoiling declares the same leaves with `_updater: set`; Vivarium reports an order-sensitive incompatible-updater conflict (including MG_203_204_TETRAMER/TopoIV). This does not change the literal five-enzyme gate or one-shot event implemented here."
   note: >-
     Wiring matches the Karr allocation contract: both sides gate from
     allocated GTP/H2O and do not fall back to the global substrate pool.
@@ -356,4 +360,8 @@ deviations:
     structural port. The prior request-gate supercoiling requirement,
     optional TopoIV gate, and simple boolean supercoiling proxy are resolved:
     request gating now matches MATLAB, all five enzymes are mandatory, and
-    supercoiling is derived from polymerizedRegions/linkingNumbers.
+    supercoiling is derived from polymerizedRegions/linkingNumbers. The
+    one-tick request-to-consumption lag and cross-process boundEnzymes updater
+    conflict remain open. Derived compatibility fields are pure projections of
+    `segregated`, and the test-only gtp_cost_override is not used by production
+    wiring.

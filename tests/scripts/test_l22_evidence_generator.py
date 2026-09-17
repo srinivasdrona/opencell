@@ -53,24 +53,24 @@ EXPECTED_IN_SCOPE_PROCESSES = frozenset(
         "DNADamage",
         "ProteinProcessingI",
         "ProteinProcessingII",
+        "ChromosomeCondensation",
+        "TranscriptionalRegulation",
     }
 )
 EXPECTED_OUT_OF_SCOPE_PROCESSES = frozenset(
     {
-        "ChromosomeCondensation",
         "ChromosomeSegregation",
         "HostInteraction",
         "ProteinActivation",
         "TerminalOrganelleAssembly",
-        "TranscriptionalRegulation",
     }
 )
 
 
-def test_catalog_scope_matches_expected_22_names():
+def test_catalog_scope_matches_expected_24_names():
     entries = cat.in_scope_processes()
     assert set(entries.keys()) == EXPECTED_IN_SCOPE_PROCESSES
-    assert len(entries) == 22
+    assert len(entries) == 24
 
 
 def test_index_has_exactly_one_row_per_in_scope_process_no_extras():
@@ -79,7 +79,7 @@ def test_index_has_exactly_one_row_per_in_scope_process_no_extras():
     assert len(process_names) == len(set(process_names)), "duplicate rows detected"
     assert set(process_names) == EXPECTED_IN_SCOPE_PROCESSES
     assert not (set(process_names) & EXPECTED_OUT_OF_SCOPE_PROCESSES)
-    assert payload["n_in_scope"] == 22
+    assert payload["n_in_scope"] == 24
 
 
 def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
@@ -229,7 +229,7 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
     tree, a broader H12 artifact regeneration, or a further cited evaluator
     correctness fix), not by editing this assertion to make it pass."""
     payload = gen.build_evidence_index()
-    assert payload["aggregate_verdict"] == "GREEN"
+    assert payload["aggregate_verdict"] == "NON_GREEN"
     for row in payload["rows"]:
         if row["green"]:
             assert row["mechanical_verdict"] == schema.STATUS_PASS
@@ -237,6 +237,7 @@ def test_real_sweep_evidence_today_reflects_evaluator_v3_rederivation():
             assert row["mechanical_verdict"] != schema.STATUS_PASS
     assert payload["tally"] == {
         schema.STATUS_PASS: 22,
+        schema.STATUS_MISSING_EVIDENCE: 2,
     }
     fail_rows = {
         row["process"]: row["reasons"]
@@ -354,9 +355,10 @@ def test_write_index_then_audit_round_trips_cleanly(tmp_path):
     # MISSING_EVIDENCE regardless of what the tracked portable bundle says.
     result = gen.audit(index_path=index_path, evidence_root=None)
     assert result.ok is True
-    assert result.aggregate_verdict == "GREEN"
+    assert result.aggregate_verdict == "NON_GREEN"
     assert result.tally == {
         schema.STATUS_PASS: 22,
+        schema.STATUS_MISSING_EVIDENCE: 2,
     }
 
 
