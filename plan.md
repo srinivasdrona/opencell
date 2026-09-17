@@ -140,9 +140,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `scripts/pre_l25_honesty.py` derives this result and
   `scripts/derive_l25_scope.py` now refuses selection unless the hash-locked
   baseline also marks both pair members eligible.
-- Branch tip before this uncommitted six-process correction is `cc1ef69`
-  (implementation `7b405c1`, provenance `ceee3bc`, handoff `cc1ef69`). The
-  branch is not pushed or merged. Added the honesty
+- Branch tip is `7be565e` for the committed six-process fidelity correction;
+  the pending provenance/handoff update references that commit. Earlier
+  baseline commits are implementation `7b405c1`, provenance `ceee3bc`, and
+  handoff `cc1ef69`. The branch is not pushed or merged. Added the honesty
   validator, baseline, focused tests, CI integrity job, scope integration, and
   `docs/phase_f/PRE_L25_HONESTY_REBASELINE.md`. No process biology changed.
 - Fresh lower-authority reruns from this branch: L2.0a **5 passed**; L2.4
