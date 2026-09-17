@@ -2494,7 +2494,17 @@ def build_karr_chassis_v6(
     topology["karr_host_interaction"] = {
         "cell": ("cell",),
         "protein": ("protein",),
+        "complex": ("complex",),
     }
+    protein_counts = initial_state["protein"]["counts"]
+    complex_counts = initial_state["complex"]["counts"]
+    for wid, count in host_interaction_proc.fitted_monomer_counts_by_wid.items():
+        protein_counts[wid] = count
+    for wid, count in host_interaction_proc.fitted_complex_counts_by_wid.items():
+        complex_counts[wid] = count
+    initial_state["cell"].update(
+        host_interaction_proc.calculate_host_state(protein_counts, complex_counts)
+    )
 
     allocation_step = steps["karr_allocation_step"]
     consumer_map: dict[str, list[str]] = {

@@ -4,6 +4,9 @@ import sys
 from pathlib import Path
 from typing import Any
 
+import numpy as np
+import pytest
+
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -15,25 +18,43 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
+import opencell.vivarium.karr_host_interaction as host_interaction_module
 from opencell.vivarium.karr_host_interaction import KarrHostInteractionProcess
 
 
-def _ready_protein_counts(process: KarrHostInteractionProcess) -> dict[str, float]:
-    """All required enzyme WIDs at their fixture reference copy number (all
-    strictly positive), so `_all_nonzero`/`_any_nonzero` are satisfied for
-    every required index set -- the fully-adherent/fully-activated case."""
-    required = (
-        set(process.terminal_organelle_wids)
-        | set(process.adhesin_wids)
-        | set(process.tlr12_ligand_wids)
-        | set(process.tlr26_ligand_wids)
-        | set(process.antigen_wids)
+def _ready_count_stores(
+    process: KarrHostInteractionProcess,
+) -> tuple[dict[str, float], dict[str, float]]:
+    return (
+        dict(process.fitted_monomer_counts_by_wid),
+        dict(process.fitted_complex_counts_by_wid),
     )
-    return {wid: max(1.0, float(process.enzyme_ref_counts[process.enzyme_wids.index(wid)])) for wid in required}
 
 
-def _base_state(protein_counts: dict[str, float], cell_state: dict[str, Any] | None = None) -> dict[str, Any]:
-    return {"cell": dict(cell_state or {}), "protein": {"counts": dict(protein_counts)}}
+def _base_state(
+    protein_counts: dict[str, float],
+    complex_counts: dict[str, float],
+    cell_state: dict[str, Any] | None = None,
+) -> dict[str, Any]:
+    return {
+        "cell": dict(cell_state or {}),
+        "protein": {"counts": dict(protein_counts)},
+        "complex": {"counts": dict(complex_counts)},
+    }
+
+
+def _zero_wids(
+    process: KarrHostInteractionProcess,
+    protein_counts: dict[str, float],
+    complex_counts: dict[str, float],
+    wids: set[str],
+) -> None:
+    for wid in wids:
+        store = process.enzyme_store_by_wid[wid]
+        if store == "protein":
+            protein_counts[wid] = 0.0
+        else:
+            complex_counts[wid] = 0.0
 
 
 _ALL_HOST_FIELDS = (
@@ -43,6 +64,42 @@ _ALL_HOST_FIELDS = (
     "host_tlr6_activated",
     "host_nfkb_activated",
     "host_inflammatory_response_activated",
+)
+
+_PREREGISTERED_CONDITIONS = (
+    ("POSITIVE", set(), (True, True, True, True, True, True)),
+    ("NEG_ADHERENCE", {"MG_218_MONOMER"}, (False, False, False, False, False, False)),
+    (
+        "PARTIAL_ADHERENT_NO_SIGNAL",
+        {
+            "MG_075_MONOMER",
+            "MG_149_MONOMER",
+            "MG_309_MONOMER",
+            "MG_412_MONOMER",
+            "MG_410_411_412_PENTAMER",
+        },
+        (True, False, False, False, False, False),
+    ),
+    ("TLR12_PATH", {"MG_309_MONOMER"}, (True, True, True, False, True, True)),
+    (
+        "TLR26_PATH",
+        {
+            "MG_149_MONOMER",
+            "MG_412_MONOMER",
+            "MG_410_411_412_PENTAMER",
+        },
+        (True, False, True, True, True, True),
+    ),
+    (
+        "ANTIGEN_ONLY",
+        {
+            "MG_149_MONOMER",
+            "MG_309_MONOMER",
+            "MG_412_MONOMER",
+            "MG_410_411_412_PENTAMER",
+        },
+        (True, False, False, False, False, True),
+    ),
 )
 
 
@@ -55,12 +112,146 @@ def test_process_instantiates_and_loads_fixture_index_sets() -> None:
     assert len(p.tlr12_ligand_wids) == 3
     assert len(p.tlr26_ligand_wids) == 1
     assert len(p.antigen_wids) == 5
+    assert len(p.monomer_enzyme_wids) == 14
+    assert p.complex_enzyme_wids == ["MG_410_411_412_PENTAMER"]
+    assert p.fitted_monomer_counts_by_wid == {
+        wid: float(p.enzyme_ref_counts[p.enzyme_wids.index(wid)])
+        for wid in p.monomer_enzyme_wids
+    }
+    assert p.fitted_complex_counts_by_wid == {
+        wid: float(p.enzyme_ref_counts[p.enzyme_wids.index(wid)])
+        for wid in p.complex_enzyme_wids
+    }
 
     schema = p.ports_schema()
     assert set(schema["cell"].keys()) == set(_ALL_HOST_FIELDS)
+    assert set(schema["protein"]["counts"]) == set(p.monomer_enzyme_wids)
+    assert set(schema["complex"]["counts"]) == set(p.complex_enzyme_wids)
     for field in _ALL_HOST_FIELDS:
         assert schema["cell"][field]["_updater"] == "set"
         assert schema["cell"][field]["_default"] is False
+
+
+def test_construction_rejects_canonical_complex_count_projection_mismatch(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    load_fixture = KarrHostInteractionProcess._fixture_struct
+    host_fx = load_fixture(host_interaction_module._DEFAULT_FIXTURE_PATH)
+    complex_fx = load_fixture(host_interaction_module._DEFAULT_COMPLEX_FIXTURE_PATH)
+
+    local_i = int(np.asarray(host_fx.enzymeComplexLocalIndexs).reshape(-1)[0])
+    global_i = int(np.asarray(host_fx.enzymeComplexGlobalIndexs).reshape(-1)[0])
+    compartment_i = int(
+        np.asarray(host_fx.enzymeComplexCompartmentIndexs).reshape(-1)[0]
+    )
+    mature_i = int(np.asarray(complex_fx.matureIndexs).reshape(-1)[global_i - 1])
+    canonical_counts = np.asarray(complex_fx.counts).copy()
+    host_projection = float(np.asarray(host_fx.enzymes).reshape(-1)[local_i - 1])
+    assert canonical_counts[mature_i - 1, compartment_i - 1] == host_projection
+    canonical_counts[mature_i - 1, compartment_i - 1] = host_projection + 1.0
+    complex_fx.counts = canonical_counts
+
+    def fixture_with_independent_canonical_mismatch(path: str | Path) -> object:
+        if str(path) == host_interaction_module._DEFAULT_COMPLEX_FIXTURE_PATH:
+            return complex_fx
+        return load_fixture(path)
+
+    monkeypatch.setattr(
+        KarrHostInteractionProcess,
+        "_fixture_struct",
+        staticmethod(fixture_with_independent_canonical_mismatch),
+    )
+
+    with pytest.raises(
+        ValueError,
+        match="HostInteraction canonical fixture projection mismatch",
+    ):
+        KarrHostInteractionProcess({})
+
+
+@pytest.mark.parametrize(
+    ("condition_id", "zero_wids", "expected"),
+    _PREREGISTERED_CONDITIONS,
+)
+def test_preregistered_condition_vectors(
+    condition_id: str,
+    zero_wids: set[str],
+    expected: tuple[bool, ...],
+) -> None:
+    del condition_id
+    p = KarrHostInteractionProcess({})
+    protein_counts, complex_counts = _ready_count_stores(p)
+    _zero_wids(p, protein_counts, complex_counts, zero_wids)
+
+    computed = p.calculate_host_state(protein_counts, complex_counts)
+    update = p.next_update(1.0, _base_state(protein_counts, complex_counts))
+    observed_update = {
+        field: bool(update.get("cell", {}).get(field, False))
+        for field in _ALL_HOST_FIELDS
+    }
+    expected_map = dict(zip(_ALL_HOST_FIELDS, expected, strict=True))
+
+    assert computed == expected_map
+    assert observed_update == expected_map
+
+
+def test_pentamer_is_read_only_from_live_complex_store() -> None:
+    p = KarrHostInteractionProcess({})
+    protein_counts, complex_counts = _ready_count_stores(p)
+    _zero_wids(
+        p,
+        protein_counts,
+        complex_counts,
+        {
+            "MG_075_MONOMER",
+            "MG_149_MONOMER",
+            "MG_309_MONOMER",
+            "MG_412_MONOMER",
+        },
+    )
+
+    with_pentamer = p.calculate_host_state(protein_counts, complex_counts)
+    complex_counts["MG_410_411_412_PENTAMER"] = 0.0
+    without_pentamer = p.calculate_host_state(protein_counts, complex_counts)
+
+    assert tuple(with_pentamer[field] for field in _ALL_HOST_FIELDS) == (
+        True,
+        True,
+        True,
+        False,
+        True,
+        True,
+    )
+    assert tuple(without_pentamer[field] for field in _ALL_HOST_FIELDS) == (
+        True,
+        False,
+        False,
+        False,
+        False,
+        False,
+    )
+
+
+@pytest.mark.parametrize(
+    ("store_name", "wid"),
+    (
+        ("protein", "MG_075_MONOMER"),
+        ("complex", "MG_410_411_412_PENTAMER"),
+    ),
+)
+def test_missing_canonical_enzyme_key_fails_explicitly(
+    store_name: str,
+    wid: str,
+) -> None:
+    p = KarrHostInteractionProcess({})
+    protein_counts, complex_counts = _ready_count_stores(p)
+    target = protein_counts if store_name == "protein" else complex_counts
+    wrong_store = complex_counts if store_name == "protein" else protein_counts
+    wrong_store[wid] = target[wid]
+    target.pop(wid)
+
+    with pytest.raises(KeyError, match=wid):
+        p.calculate_host_state(protein_counts, complex_counts)
 
 
 def test_all_enzymes_present_activates_full_cascade() -> None:
@@ -71,7 +262,8 @@ def test_all_enzymes_present_activates_full_cascade() -> None:
     (tmp/probe_host_interaction_canary.m), which showed ALL FOUR Host booleans
     are True from tick 1 onward given Karr's fitted initial protein counts."""
     p = KarrHostInteractionProcess({})
-    state = _base_state(_ready_protein_counts(p))
+    protein_counts, complex_counts = _ready_count_stores(p)
+    state = _base_state(protein_counts, complex_counts)
     update = p.next_update(1.0, state)
 
     assert update["cell"] == {field: True for field in _ALL_HOST_FIELDS}
@@ -85,10 +277,10 @@ def test_missing_single_terminal_organelle_protein_deactivates_everything() -> N
     short-circuit semantics exactly (not a fractional/partial-credit
     threshold, as the prior Karr-light v1 approximation used)."""
     p = KarrHostInteractionProcess({})
-    counts = _ready_protein_counts(p)
-    counts["MG_218_MONOMER"] = 0.0
+    protein_counts, complex_counts = _ready_count_stores(p)
+    protein_counts["MG_218_MONOMER"] = 0.0
     cell_state = {field: True for field in _ALL_HOST_FIELDS}
-    state = _base_state(counts, cell_state)
+    state = _base_state(protein_counts, complex_counts, cell_state)
     update = p.next_update(1.0, state)
 
     assert update["cell"] == {field: False for field in _ALL_HOST_FIELDS}
@@ -101,11 +293,16 @@ def test_adherent_without_any_ligand_leaves_tlr_and_downstream_false() -> None:
     terminalOrganelle/adhesin set nonzero) must leave TLR1/2/6, NF-kB, and
     inflammatory response all False even though adherence itself is True."""
     p = KarrHostInteractionProcess({})
-    counts = _ready_protein_counts(p)
-    for wid in set(p.tlr12_ligand_wids) | set(p.tlr26_ligand_wids) | set(p.antigen_wids):
-        if wid not in p.terminal_organelle_wids and wid not in p.adhesin_wids:
-            counts[wid] = 0.0
-    state = _base_state(counts)
+    protein_counts, complex_counts = _ready_count_stores(p)
+    _zero_wids(
+        p,
+        protein_counts,
+        complex_counts,
+        set(p.tlr12_ligand_wids)
+        | set(p.tlr26_ligand_wids)
+        | set(p.antigen_wids),
+    )
+    state = _base_state(protein_counts, complex_counts)
     update = p.next_update(1.0, state)
 
     assert update["cell"]["host_attached"] is True
@@ -125,11 +322,14 @@ def test_nfkb_requires_tlr2_plus_tlr1_or_tlr6_not_tlr1_and_tlr6_alone() -> None:
     TLR2 conjunct entirely) would ALSO pass here, so the companion test
     below exercises TLR1-absent/TLR6-present to rule that out."""
     p = KarrHostInteractionProcess({})
-    counts = _ready_protein_counts(p)
-    for wid in p.tlr26_ligand_wids:
-        if wid not in p.terminal_organelle_wids and wid not in p.adhesin_wids:
-            counts[wid] = 0.0
-    state = _base_state(counts)
+    protein_counts, complex_counts = _ready_count_stores(p)
+    _zero_wids(
+        p,
+        protein_counts,
+        complex_counts,
+        set(p.tlr26_ligand_wids),
+    )
+    state = _base_state(protein_counts, complex_counts)
     update = p.next_update(1.0, state)
 
     assert update["cell"]["host_tlr1_activated"] is True
@@ -147,11 +347,14 @@ def test_tlr2_alone_without_tlr1_or_tlr6_never_activates_nfkb() -> None:
     locks the exact gating in place against a future refactor that
     decouples TLR2 from TLR1/TLR6."""
     p = KarrHostInteractionProcess({})
-    counts = _ready_protein_counts(p)
-    for wid in set(p.tlr12_ligand_wids) | set(p.tlr26_ligand_wids):
-        if wid not in p.terminal_organelle_wids and wid not in p.adhesin_wids:
-            counts[wid] = 0.0
-    state = _base_state(counts)
+    protein_counts, complex_counts = _ready_count_stores(p)
+    _zero_wids(
+        p,
+        protein_counts,
+        complex_counts,
+        set(p.tlr12_ligand_wids) | set(p.tlr26_ligand_wids),
+    )
+    state = _base_state(protein_counts, complex_counts)
     update = p.next_update(1.0, state)
 
     assert update["cell"].get("host_tlr2_activated", False) is False
@@ -165,12 +368,17 @@ def test_inflammatory_response_fires_from_antigen_without_nfkb() -> None:
     nonzero, inflammatory response must still activate via the antigen
     disjunct alone."""
     p = KarrHostInteractionProcess({})
-    counts = _ready_protein_counts(p)
-    for wid in set(p.tlr12_ligand_wids) | set(p.tlr26_ligand_wids) | set(p.antigen_wids):
-        if wid not in p.terminal_organelle_wids and wid not in p.adhesin_wids:
-            counts[wid] = 0.0
-    counts["MG_075_MONOMER"] = 27.0
-    state = _base_state(counts)
+    protein_counts, complex_counts = _ready_count_stores(p)
+    _zero_wids(
+        p,
+        protein_counts,
+        complex_counts,
+        set(p.tlr12_ligand_wids)
+        | set(p.tlr26_ligand_wids)
+        | set(p.antigen_wids),
+    )
+    protein_counts["MG_075_MONOMER"] = 27.0
+    state = _base_state(protein_counts, complex_counts)
     update = p.next_update(1.0, state)
 
     assert update["cell"].get("host_nfkb_activated", False) is False
@@ -183,15 +391,20 @@ def test_no_op_update_when_state_already_matches_computed_cascade() -> None:
     replace every tick) -- if the incoming cell state already equals the
     freshly-computed cascade, the update dict must be empty."""
     p = KarrHostInteractionProcess({})
-    counts = _ready_protein_counts(p)
-    state = _base_state(counts, cell_state={field: True for field in _ALL_HOST_FIELDS})
+    protein_counts, complex_counts = _ready_count_stores(p)
+    state = _base_state(
+        protein_counts,
+        complex_counts,
+        cell_state={field: True for field in _ALL_HOST_FIELDS},
+    )
     update = p.next_update(1.0, state)
     assert update == {}
 
 
 def test_no_substrate_enzyme_or_requests_deltas_emitted() -> None:
     p = KarrHostInteractionProcess({})
-    state = _base_state(_ready_protein_counts(p))
+    protein_counts, complex_counts = _ready_count_stores(p)
+    state = _base_state(protein_counts, complex_counts)
     update = p.next_update(1.0, state)
 
     assert "requests" not in update
@@ -207,11 +420,11 @@ def test_deterministic_no_rng_same_inputs_same_outputs() -> None:
     update dicts every time, with no seed parameter involved at all."""
     p1 = KarrHostInteractionProcess({})
     p2 = KarrHostInteractionProcess({})
-    counts = _ready_protein_counts(p1)
+    protein_counts, complex_counts = _ready_count_stores(p1)
 
     for _ in range(5):
-        u1 = p1.next_update(1.0, _base_state(counts))
-        u2 = p2.next_update(1.0, _base_state(counts))
+        u1 = p1.next_update(1.0, _base_state(protein_counts, complex_counts))
+        u2 = p2.next_update(1.0, _base_state(protein_counts, complex_counts))
         assert u1 == u2
 
 

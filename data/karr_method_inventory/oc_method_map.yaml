@@ -315,9 +315,11 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m:evolveState:271
         status: confirmed
-        oc: opencell/vivarium/karr_host_interaction.py:KarrHostInteractionProcess.next_update:188
-        note: HostInteraction.m evolveState (271-300) maps to KarrHostInteractionProcess.next_update;
-          the OC docstring says this is Karr-light v1 and defers TLR/NFkB/inflammatory-response signaling.
+        oc: opencell/vivarium/karr_host_interaction.py:KarrHostInteractionProcess.next_update:418
+        note: HostInteraction.m evolveState (271-303) maps to
+          KarrHostInteractionProcess.calculate_host_state/next_update; the process reads 14 monomer
+          enzymes from protein.counts and one complex enzyme from complex.counts, then applies the
+          literal adherence/TLR/NFkB/inflammatory-response cascade.
   MacromolecularComplexation:
     oc_files:
     - opencell/vivarium/karr_allocation_step.py

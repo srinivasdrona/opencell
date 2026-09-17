@@ -24,6 +24,15 @@ from opencell.vivarium.karr_composite import (
     build_karr_chassis_v6,
 )
 
+_HOST_FIELDS = (
+    "host_attached",
+    "host_tlr1_activated",
+    "host_tlr2_activated",
+    "host_tlr6_activated",
+    "host_nfkb_activated",
+    "host_inflammatory_response_activated",
+)
+
 
 def _build_engine() -> Engine:
     composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
@@ -63,6 +72,64 @@ def test_v6_one_tick() -> None:
     assert "chromosome" in state
     assert "rna" in state
     assert "protein" in state
+
+
+def test_v6_host_initializes_from_canonical_stores_and_stays_positive() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    process = composite["processes"]["karr_host_interaction"]
+    initial_state = composite["state"]
+    expected = {field: True for field in _HOST_FIELDS}
+
+    assert composite["topology"]["karr_host_interaction"] == {
+        "cell": ("cell",),
+        "protein": ("protein",),
+        "complex": ("complex",),
+    }
+    assert {
+        field: initial_state["cell"][field] for field in _HOST_FIELDS
+    } == expected
+    for wid, count in process.fitted_monomer_counts_by_wid.items():
+        assert initial_state["protein"]["counts"][wid] == count
+    for wid, count in process.fitted_complex_counts_by_wid.items():
+        assert initial_state["complex"]["counts"][wid] == count
+
+    engine = Engine(composite=composite, emit_step=1.0, display_info=False)
+    before_update = engine.state.get_value()
+    assert {field: before_update["cell"][field] for field in _HOST_FIELDS} == expected
+
+    engine.update(1.0)
+    after_update = engine.state.get_value()
+    assert {field: after_update["cell"][field] for field in _HOST_FIELDS} == expected
+
+
+@pytest.mark.parametrize(
+    ("pentamer_count", "expected"),
+    (
+        (17.0, (True, True, True, False, True, True)),
+        (0.0, (True, False, False, False, False, False)),
+    ),
+)
+def test_v6_host_complex_port_drives_engine_cascade(
+    pentamer_count: float,
+    expected: tuple[bool, ...],
+) -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    initial_state = composite["state"]
+    protein_counts = initial_state["protein"]["counts"]
+    for wid in (
+        "MG_075_MONOMER",
+        "MG_149_MONOMER",
+        "MG_309_MONOMER",
+        "MG_412_MONOMER",
+    ):
+        protein_counts[wid] = 0.0
+    initial_state["complex"]["counts"]["MG_410_411_412_PENTAMER"] = pentamer_count
+
+    engine = Engine(composite=composite, emit_step=1.0, display_info=False)
+    engine.update(1.0)
+    cell = engine.state.get_value()["cell"]
+
+    assert tuple(bool(cell[field]) for field in _HOST_FIELDS) == expected
 
 
 def test_v6_chromosome_segregation_complex_seed_gate_and_effect() -> None:

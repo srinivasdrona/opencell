@@ -22,9 +22,9 @@ The two missing rows are ChromosomeCondensation and
 TranscriptionalRegulation, both previously misclassified as deterministic
 despite stochastic chromosome-binding code. The fail-closed rebaseline is:
 
-- **Eligible:** 0/28.
+- **Eligible:** 1/28.
 - **Blocked by a missing lower gate:** 2/28.
-- **Blocked by current code deviation:** 26/28.
+- **Blocked by current code deviation:** 25/28.
 
 This is a stochasticity-classification correction, not a new implementation
 regression. The old 22/22 board excluded two processes that require L2.2.
@@ -81,9 +81,8 @@ pair.
 
 ## Closure order
 
-1. Re-adjudicate the four stale-audit processes:
-   ChromosomeCondensation, ChromosomeSegregation, HostInteraction, and
-   ProteinActivation.
+1. Close the remaining deterministic repairs: ChromosomeSegregation,
+   ProteinActivation, and TerminalOrganelleAssembly.
 2. Close Metabolism's validation-versus-production configuration split and
    allocator-derived LP-bound path.
 3. Group the remaining 23 code-deviation blockers by shared root cause:

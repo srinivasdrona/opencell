@@ -8,7 +8,7 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "91431e572a3516f74840012742353d09077df923ae0b65bc38a450bb541b5a89"
+  sha256: "07a937dc0f7b4c52547b093e56e35132def7c66993a7ea943332c0325507b591"
   file_count: 128
 authorities:
   l1b_method_completeness: "PASS 115/115"
@@ -187,20 +187,19 @@ processes:
   - name: HostInteraction
     behavior_gate: L2.1
     behavior_verdict: GENUINE
-    eligibility: BLOCKED_CODE_DEVIATION
+    eligibility: ELIGIBLE
     findings:
       - id: HI-INITIALIZATION
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          The per-tick boolean cascade is literal, but Karr executes it during
-          initializeState while the OpenCell chassis starts all host booleans
-          at their false schema defaults and corrects them only on tick one.
+          Host now reads canonical monomer/complex state and initializes the
+          six booleans through the same literal cascade used every tick.
         evidence:
           - path: opencell/vivarium/karr_host_interaction.py
-            lines: "188-229"
+            lines: "379-449"
           - path: opencell/vivarium/karr_composite.py
-            lines: "2491-2497"
+            lines: "2491-2507"
 
   - name: MacromolecularComplexation
     behavior_gate: L2.2
@@ -609,5 +608,5 @@ processes:
             lines: "40-43"
 
 summary:
-  eligible: 0
-  blocked: 28
+  eligible: 1
+  blocked: 27

@@ -59,6 +59,48 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-17 21:05 IST) — HostInteraction fidelity repair:**
+
+- Active worktree:
+  `E:\opencell-worktrees\fix-host-interaction-fidelity`; branch
+  `fix/host-interaction-fidelity-20260917`; base `c179ef4`.
+- Background coding agent `db9a8323-4cfd-48b8-985c-325f93e929ce` completed
+  HostInteraction from the validated three-slot prompt. No other deterministic
+  process was touched.
+- Preflight facts: MATLAB `initializeState` calls `evolveState`; the process
+  has 14 monomer enzymes plus one complex enzyme, with local/global type maps
+  present in the Host fixture. In current chassis-v6 all required monomers are
+  zero in `protein.counts`, `MG_410_411_412_PENTAMER=17` exists only in
+  `complex.counts`, Host reads only `protein.counts`, and all six Host booleans
+  remain false after tick 1 versus true in Karr's fitted positive condition.
+- Canonical state fixtures exist at
+  `data/karr_fixtures/per_process/ProteinMonomer_flat.mat` and
+  `ProteinComplex_flat.mat`. Before editing, the agent must prove their mapped
+  counts agree with Host's fixture projection; invented Host-only seed values
+  are forbidden.
+- Anti-laundering: no `trace_hint`, no `states_after` input, no trace reads from
+  production code, no hardcoded output booleans, no test-only constructor or
+  configuration. Traces may be used only as post-update comparison oracles.
+- Operational traps: Python/tests only through WSL wrappers; edit this worktree
+  only; do not modify the audit worktree or raw trace corpus; do not commit or
+  push—the parent will review and integrate.
+- Result: Host's 15-element enzyme projection matches canonical
+  ProteinMonomer/ProteinComplex fixtures exactly (14 monomers + one complex,
+  zero mismatches). Production now reads both live stores, seeds those shared
+  stores from canonical fitted state, and initializes the six Host booleans
+  through the same `calculate_host_state` helper used every tick.
+- Measured production values: before tick and after tick 1 are
+  `(T,T,T,T,T,T)`. Preregistered vectors match: POSITIVE `TTTTTT`,
+  NEG_ADHERENCE `FFFFFF`, PARTIAL `TFFFFF`, TLR12 `TTTFTT`, TLR26
+  `TFTTTT`, ANTIGEN_ONLY `TFFFFT`. Pentamer `17 -> 0` changes
+  `TTTFTT -> TFFFFF` through `complex.counts`.
+- Validation: 40 final scoped/baseline tests pass; genuine 100-tick active
+  replay passes; L1b 115/115 and 28/28; L2.4 4 seeds x 100 ticks PASS;
+  pre-L2.5 baseline integrity OK at
+  `07a937dc0f7b4c52547b093e56e35132def7c66993a7ea943332c0325507b591`,
+  now **1/28 eligible**. Canonical-fixture +1 mutation fails construction as
+  required. Existing ChromSeg/DNAS updater warnings remain unrelated/open.
+
 **Current status (2026-09-17 17:24 IST) — pre-L2.5 honesty rebaseline:**
 
 - Deterministic-first fidelity correction (2026-09-17 19:30 IST): source audit

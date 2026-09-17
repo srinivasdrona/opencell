@@ -10,9 +10,9 @@ Scope: strict documentation completeness.
 Current OC is a literal boolean port, not the retired stochastic
 aggregate-adhesion approximation. MATLAB's resource request is an all-zero
 vector over an empty substrate list. OC's absent request-calculator is therefore
-a benign structural bypass, not a behavioral deviation. Initialization still
-differs: MATLAB evaluates the cascade before tick 0, while OC v6 starts from
-false schema defaults.
+a benign structural bypass, not a behavioral deviation. OC now maps the 14
+monomer enzymes and one complex enzyme to canonical fitted state, evaluates the
+same cascade during chassis construction, and preserves it every tick.
 
 ## Claim table
 
@@ -24,28 +24,30 @@ false schema defaults.
 | HI-S4-01 | S4 | Adherence is the literal conjunction of all terminal-organelle and adhesin counts (`HostInteraction.m:274-279`; `karr_host_interaction.py:195-198`). | VERIFIED |
 | HI-S4-02 | S4 | TLR1/2/6, NF-kB, and inflammatory-response formulas match the MATLAB boolean cascade (`HostInteraction.m:281-302`; OC `:200-217`). | VERIFIED |
 | HI-S5-01 | S5 | There is no substrate compartment-routing surface. OC writes the six booleans to `cell` and reads required counts from `protein.counts`. | VERIFIED |
-| HI-S5-02 | S5 | For this zero-request process, Karr's `this.enzymes` is unpartitioned; the row documents why OC's raw shared protein counts are the equivalent input surface. | VERIFIED |
+| HI-S5-02 | S5 | Host's 15-element enzyme vector maps exactly to 14 canonical ProteinMonomer entries and one ProteinComplex entry; OC reads the corresponding live `protein.counts` and `complex.counts` keys with no cross-store fallback. | VERIFIED |
 | HI-S6-01 | S6 | MATLAB defines `calcResourceRequirements_Current` but returns `zeros(size(this.substrates))` (`HostInteraction.m:265-268`); OC omits the hook. Resource behavior is identical. | VERIFIED |
 | HI-S6-02 | S6 | Neither MATLAB nor OC has a HostInteraction-specific scheduler edge; the old `soft_after: TerminalOrganelleAssembly` claim has been removed. | VERIFIED |
-| HI-S6-03 | S6 | MATLAB `initializeState` calls `evolveState` (`HostInteraction.m:259-263`), and the measured active trace has all six booleans true in `states_before` tick 0 (`HOSTINTERACTION_ACTIVE_WINDOW_DECISION.md:288-304`). OC ports default all six to false and v6 does not precompute them, correcting them only on the first process tick (`karr_host_interaction.py:132-173`). | CODE_DEVIATES |
+| HI-S6-03 | S6 | MATLAB `initializeState` calls `evolveState` (`HostInteraction.m:259-263`). OC chassis construction now calls the same `calculate_host_state` helper used by `next_update`, producing the fitted six-True state before `Engine.update` and preserving it after tick 1. | VERIFIED |
 
 ## Aggregate counts
 
-- VERIFIED: 9
+- VERIFIED: 10
 - ROW_WRONG: 0
-- CODE_DEVIATES: 1
+- CODE_DEVIATES: 0
 - MISSING: 0
 
-## Open implementation deviation
+## Implementation fidelity result
 
-- Tick-0 host booleans are false in OC v6 instead of MATLAB's initialized
-  cascade result.
+- No known HostInteraction implementation deviation remains on the audited
+  state, initialization, routing, and boolean-cascade surfaces.
 
 ## Documentation corrections completed
 
 - Replaced the retired stochastic approximation description with the literal
   boolean cascade.
 - Classified zero resource demand as benign/equivalent.
-- Added the distinct initialization mismatch.
+- Closed the initialization mismatch through the same cascade helper used at
+  runtime.
+- Added canonical monomer/complex fixture projection and live complex routing.
 - Removed the nonexistent executable ordering constraint.
 - Corrected MATLAB method symbols in source anchors.
