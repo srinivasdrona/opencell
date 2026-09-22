@@ -44,7 +44,10 @@ from l2_replay_common import (
 )
 
 from opencell.state.chromosome_store import ChromosomeStore
-from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
+from opencell.vivarium.karr_chromosome_segregation import (
+    KarrChromosomeSegregationEvolutionStep,
+    KarrChromosomeSegregationProcess,
+)
 
 _TRACE_PROCESS_NAME = "ChromosomeSegregation"
 # `segregated` is the literal Karr field this process writes (Chromosome.m
@@ -181,7 +184,10 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
     """Shared per-tick L2.1 bit-identity replay body (used by the standard and
     event-window tests). Assumes the trace is open and has been audited as active."""
     process = KarrChromosomeSegregationProcess({"rng_seed": int(rng_seed)})
-    state_template = build_state_template(process)
+    evolution = KarrChromosomeSegregationEvolutionStep(
+        {"segregation_process": process}
+    )
+    state_template = build_state_template(evolution)
     observables = _observables_for_trace(trace)
 
     wids_by_observable: dict[str, list[str]] = {}
@@ -200,7 +206,7 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
         )
 
     for tick in range(n_ticks):
-        state = build_state_template(process)
+        state = build_state_template(evolution)
         before_vectors = {
             observable: cell_vector(trace, "states_before", observable, tick)
             for observable in observables
@@ -223,7 +229,7 @@ def _run_replay(trace: h5py.File, n_ticks: int, rng_seed: int) -> None:
         _inject_hidden_chromosome_state(trace, state, tick)
         refresh_allocator_views(process, state)
 
-        update = process.next_update(1.0, state)
+        update = evolution.next_update(1.0, state)
         _apply_update(state, update, process)
 
         for observable in observables:

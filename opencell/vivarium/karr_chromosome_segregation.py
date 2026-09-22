@@ -49,7 +49,7 @@ from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
-from vivarium.core.process import Process
+from vivarium.core.process import Process, Step
 
 from opencell.m_gen_constants import GENOME_LENGTH_BP, N_CHROMOSOME_COMPARTMENTS
 from opencell.state.chromosome_store import (
@@ -196,7 +196,7 @@ def _supercoiled_pass_count(
 
 
 class KarrChromosomeSegregationProcess(Process):
-    """Karr Process_ChromosomeSegregation: literal boolean-gated segregation."""
+    """Karr Process_ChromosomeSegregation current-resource request phase."""
 
     name = "karr_chromosome_segregation"
     defaults: dict[str, Any] = {
@@ -295,21 +295,43 @@ class KarrChromosomeSegregationProcess(Process):
     def ports_schema(self) -> dict[str, Any]:
         return {
             "chromosome": {
-                # Literal Karr field (Chromosome.m `segregated` property).
                 "segregated": {
                     "_default": False,
                     "_updater": "set",
                     "_emit": True,
                 },
-                # Read-only hidden inputs: the two raw sparse Chromosome
-                # fields needed to derive the `replicated` and `supercoiled`
-                # gates. Never written by this process.
+                "polymerizedRegions": sparse_triplet_schema(self.chromosome_shape, emit=False),
+            },
+            "protein": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                    for wid in self.monomer_enzyme_wids
+                }
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                    for wid in self.complex_enzyme_wids
+                }
+            },
+            "requests": {
+                self.name: {
+                    self.gtp_wid: {"_default": 0.0, "_updater": "set", "_emit": False},
+                    self.h2o_wid: {"_default": 0.0, "_updater": "set", "_emit": False},
+                }
+            },
+        }
+
+    def evolution_ports_schema(self) -> dict[str, Any]:
+        return {
+            "chromosome": {
+                "segregated": {
+                    "_default": False,
+                    "_updater": "set",
+                    "_emit": True,
+                },
                 "polymerizedRegions": sparse_triplet_schema(self.chromosome_shape, emit=False),
                 "linkingNumbers": sparse_triplet_schema(self.chromosome_shape, emit=False),
-                # Derived compatibility outputs (see module docstring): pure
-                # 0.0/1.0 projections of `segregated`, kept only so
-                # pre-existing consumers of the Karr-LIGHT v1 continuous
-                # surface (karr_cell_cycle_coordinator.py) keep working.
                 "segregation_progress": {
                     "_default": 0.0,
                     "_updater": "accumulate",
@@ -334,14 +356,6 @@ class KarrChromosomeSegregationProcess(Process):
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                 for wid in self.substrate_wids
             },
-            "enzymes": {
-                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                for wid in self.enzyme_wids
-            },
-            "boundEnzymes": {
-                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                for wid in self.enzyme_wids
-            },
             "protein": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
@@ -352,12 +366,6 @@ class KarrChromosomeSegregationProcess(Process):
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.complex_enzyme_wids
-                }
-            },
-            "requests": {
-                self.name: {
-                    self.gtp_wid: {"_default": 0.0, "_updater": "set", "_emit": False},
-                    self.h2o_wid: {"_default": 0.0, "_updater": "set", "_emit": False},
                 }
             },
             "substrates_allocated": {
@@ -381,15 +389,11 @@ class KarrChromosomeSegregationProcess(Process):
     ) -> float:
         if wid in self._required_complex_enzyme_wids_set:
             if wid not in complex_counts:
-                raise KeyError(
-                    f"Missing required complex input '{wid}' in complex.counts for {self.name}"
-                )
+                raise KeyError(f"Missing required complex input '{wid}' for {self.name}")
             return float(complex_counts[wid])
         if wid in self._required_monomer_enzyme_wids_set:
             if wid not in protein_counts:
-                raise KeyError(
-                    f"Missing required monomer input '{wid}' in protein.counts for {self.name}"
-                )
+                raise KeyError(f"Missing required monomer input '{wid}' for {self.name}")
             return float(protein_counts[wid])
         raise KeyError(f"Required enzyme '{wid}' is not classified for {self.name}")
 
@@ -415,24 +419,51 @@ class KarrChromosomeSegregationProcess(Process):
         return total == self.n_compartments * self.sequence_len
 
     def _is_fully_supercoiled(
-        self,
-        *,
-        polymerized: SparseTriplet,
-        linking: SparseTriplet,
+        self, *, polymerized: SparseTriplet, linking: SparseTriplet
     ) -> bool:
-        # Karr: `collapse(c.supercoiled) == c.nCompartments`.
-        pass_count = _supercoiled_pass_count(
+        return _supercoiled_pass_count(
             polymerized=polymerized,
             linking=linking,
             bp_per_turn=self.relaxed_bases_per_turn,
             equilibrium_sigma=self.equilibrium_superhelical_density,
             tolerance=self.supercoiled_tolerance,
-        )
-        return pass_count == self.n_compartments
+        ) == self.n_compartments
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        del timestep  # Karr's gate has no dt-dependence: segregation is a one-shot event.
+        del timestep
+        request = self.calculate_request(states)
+        return {
+            "requests": {
+                self.name: {
+                    self.gtp_wid: request[self.gtp_wid],
+                    self.h2o_wid: request[self.h2o_wid],
+                }
+            }
+        }
 
+    def calculate_request(self, states: dict[str, Any]) -> dict[str, float]:
+        chromosome = states.get("chromosome", {})
+        already_segregated = bool(chromosome.get("segregated", False))
+
+        polymerized = SparseTriplet.from_state(
+            chromosome.get("polymerizedRegions"), shape=self.chromosome_shape
+        )
+        protein_counts = states.get("protein", {}).get("counts", {})
+        complex_counts = states.get("complex", {}).get("counts", {})
+
+        fully_replicated = self._is_fully_replicated(polymerized)
+        all_enzymes_present = self._all_enzymes_present(
+            protein_counts=protein_counts, complex_counts=complex_counts
+        )
+
+        can_request = (not already_segregated) and fully_replicated and all_enzymes_present
+        request_gtp = float(self.gtp_cost) if can_request else 0.0
+        return {
+            self.gtp_wid: request_gtp,
+            self.h2o_wid: request_gtp,
+        }
+
+    def evolve_state(self, states: dict[str, Any]) -> dict[str, Any]:
         chromosome = states.get("chromosome", {})
         already_segregated = bool(chromosome.get("segregated", False))
 
@@ -442,7 +473,6 @@ class KarrChromosomeSegregationProcess(Process):
         linking = SparseTriplet.from_state(
             chromosome.get("linkingNumbers"), shape=self.chromosome_shape
         )
-
         protein_counts = states.get("protein", {}).get("counts", {})
         complex_counts = states.get("complex", {}).get("counts", {})
 
@@ -451,15 +481,9 @@ class KarrChromosomeSegregationProcess(Process):
             protein_counts=protein_counts, complex_counts=complex_counts
         )
 
-        # calcResourceRequirements_Current (ChromosomeSegregation.m:179-189).
-        can_request = (not already_segregated) and fully_replicated and all_enzymes_present
-        request_gtp = float(self.gtp_cost) if can_request else 0.0
-        request_h2o = request_gtp
-
-        # evolveState (ChromosomeSegregation.m:193-212).
         just_segregated = False
         substrate_update: dict[str, float] = {}
-        if can_request:
+        if (not already_segregated) and fully_replicated and all_enzymes_present:
             allocated = states.get("substrates_allocated", {}).get(self.name, {})
             allocated_gtp = self._allocated_or_state(allocated, self.gtp_wid)
             allocated_h2o = self._allocated_or_state(allocated, self.h2o_wid)
@@ -490,18 +514,40 @@ class KarrChromosomeSegregationProcess(Process):
             chromosome_update["segregation_progress"] = 1.0
             chromosome_update["daughter_pole_positions"] = {"left": -1.0, "right": 1.0}
 
-        update: dict[str, Any] = {
-            "requests": {
-                self.name: {
-                    self.gtp_wid: float(request_gtp),
-                    self.h2o_wid: float(request_h2o),
-                }
-            },
-            "chromosome": chromosome_update,
-        }
+        update: dict[str, Any] = {"chromosome": chromosome_update}
         if substrate_update:
             update["substrates"] = substrate_update
         return update
 
+class KarrChromosomeSegregationEvolutionStep(Step):
+    """Execute Karr ChromosomeSegregation.evolveState after allocation."""
 
-__all__ = ["KarrChromosomeSegregationProcess"]
+    name = "karr_chromosome_segregation_evolution"
+    defaults: dict[str, Any] = {"segregation_process": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        process = self.parameters.get("segregation_process")
+        if not isinstance(process, KarrChromosomeSegregationProcess):
+            raise ValueError(
+                "KarrChromosomeSegregationEvolutionStep requires "
+                "parameter: segregation_process"
+            )
+        self._segregation_process = process
+        self.substrate_wids = list(process.substrate_wids)
+        self.enzyme_wids = list(process.enzyme_wids)
+        self.monomer_enzyme_wids = list(process.monomer_enzyme_wids)
+        self.complex_enzyme_wids = list(process.complex_enzyme_wids)
+
+    def ports_schema(self) -> dict[str, Any]:
+        return self._segregation_process.evolution_ports_schema()
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep
+        return self._segregation_process.evolve_state(states)
+
+
+__all__ = [
+    "KarrChromosomeSegregationEvolutionStep",
+    "KarrChromosomeSegregationProcess",
+]
