@@ -68,13 +68,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   process:
   - ChromosomeSegregation:
     `E:\opencell-worktrees\fix-chromseg-fidelity`,
-    branch `fix/chromseg-fidelity-20260922`.
+    branch `fix/chromseg-fidelity-20260922`, agent
+    `b4174bdc-cc7c-4f94-8d4d-e0fa684e692a`.
   - ProteinActivation:
     `E:\opencell-worktrees\fix-protein-activation-fidelity`,
-    branch `fix/protein-activation-fidelity-20260922`.
+    branch `fix/protein-activation-fidelity-20260922`, agent
+    `e835dd8d-691f-4296-896b-f9eb29759e21`.
   - TerminalOrganelleAssembly:
     `E:\opencell-worktrees\fix-terminal-organelle-fidelity`,
-    branch `fix/terminal-organelle-fidelity-20260922`.
+    branch `fix/terminal-organelle-fidelity-20260922`, agent
+    `be3e0d57-5b07-4c7c-97f9-7954da8bd666`.
 - Agents must preflight primary MATLAB source and canonical fixtures before
   editing; fail closed if fixture state cannot support the proposed repair.
   Hard bans: `trace_hint`, `states_after`/event-tick inputs, production trace
@@ -84,6 +87,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   ProteinActivation, TerminalOrganelleAssembly. All three may touch
   `karr_composite.py`; integrate deliberately, never auto-resolve by choosing
   one branch's version.
+- TerminalOrganelle preflight result: **BLOCKED with no edits**. Its fixture
+  is exactly 8 proteins x 2 compartments and exactly matches canonical
+  ProteinMonomer counts, but chassis production exposes only aggregate
+  `protein.counts`. A private 8x2 TOA store would become an unsynchronized
+  second authority. Exact repair first requires compartmental ProteinMonomer
+  state to become authoritative and all aggregate protein consumers to migrate
+  or derive views from it. Worktree remains clean at `26905b8`.
 - Operational traps remain: Python/tests only through WSL wrappers; raw traces
   are read-only; do not remove worktrees recursively; no agent commits/pushes.
 
