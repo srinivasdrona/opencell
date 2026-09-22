@@ -62,7 +62,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-22 19:28 IST) — ChromosomeSegregation repaired:**
 
 - Worktree `E:\opencell-worktrees\fix-chromseg-fidelity`, branch
-  `fix/chromseg-fidelity-20260922`, based on audit tip `26905b8`; not pushed.
+  `fix/chromseg-fidelity-20260922`, repair commit `824cf00`, based on audit tip
+  `26905b8`; not pushed or merged.
 - Agent `b4174bdc-cc7c-4f94-8d4d-e0fa684e692a` completed the three-slot repair.
   Production now runs request-only Process -> Karr allocation Step ->
   segregation evolution Step -> coordinator in one Engine tick.
@@ -74,8 +75,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `e9c6a63ce70387b3858ea4b6aae411ce592b87765ceaa553907353e06d096fc8`,
   now **2/28 eligible**; Ruff/diff clean.
 - No trace hint, states-after input, trace read, threshold change, or test-only
-  production configuration was added. Changes are uncommitted pending parent
-  commit/integration.
+  production configuration was added. Repair is committed pending integration.
 
 **Current status (2026-09-22 18:36 IST) — three deterministic repair lanes:**
 
