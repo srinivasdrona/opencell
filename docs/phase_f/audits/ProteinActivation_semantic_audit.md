@@ -7,11 +7,10 @@ Scope: exhaustive six-protein documentation.
 
 ## Current implementation status
 
-The active/inactive transfer formula is implemented for all six regulated
-proteins. Three implementation deviations remain: OC reads raw flat signals,
-whereas MATLAB converts non-stimulus signals to concentration using cell volume;
-MATLAB evaluates/writes per compartment, whereas OC uses one scalar per WID;
-and production topology omits/misseeds the active/inactive state surface.
+The source-faithful active/inactive transfer is implemented for all six
+regulated proteins and all six compartments. Production uses canonical
+ProteinMonomer/ProteinComplex active and inactive state, live geometry volume,
+raw true stimuli, and Karr count-to-mM conversion for all other signals.
 
 ## Claim table
 
@@ -21,34 +20,30 @@ and production topology omits/misseeds the active/inactive state surface.
 | PA-S2-01 | S2 | Every listed protein has an executable consume path: active count is consumed when its rule is false, inactive count when true (`ProteinActivation.m:359-366`; OC `:237-264`). | VERIFIED |
 | PA-S3-01 | S3 | The produce side is also exhaustive for the same six proteins. | VERIFIED |
 | PA-S4-01 | S4 | Both implementations transfer the whole active/inactive count according to an all-or-nothing rule result. | VERIFIED |
-| PA-S4-02 | S4 | MATLAB converts non-stimulus signals by `(nAvogadro/1000) * geometry.volume`, leaving true stimulus signals raw (`ProteinActivation.m:369-375`). OC reads raw flat `substrates`/`stimuli` values (`karr_protein_activation.py:226-235`). | CODE_DEVIATES |
-| PA-S5-01 | S5 | MATLAB evaluates and updates every `(protein, compartment)` tuple (`ProteinActivation.m:378-394`). OC projects each protein to one flat `activation_substrates` WID (`karr_protein_activation.py:195-204`; `karr_composite.py:2126-2129`). | CODE_DEVIATES |
-| PA-S5-02 | S5 | Production topology maps `substrates`, `stimuli`, and `protein` only, omitting `inactivatedSubstrates` (`karr_composite.py:2126-2130`). It initializes `activation_substrates` from the metabolite `initial_substrates` map rather than Karr active/inactive protein state (`:2277-2283`). | CODE_DEVIATES |
+| PA-S4-02 | S4 | OC leaves true stimulus indices raw and converts every other signal with `count / (nAvogadro/1000) / geometry.volume`, matching MATLAB (`karr_protein_activation.py:677-694`). | VERIFIED |
+| PA-S5-01 | S5 | OC stores and updates every active/inactive `(protein, compartment)` tuple in shared protein/complex roots; compartment 0 retains the existing canonical count leaf and compartments 1-5 have explicit branches. | VERIFIED |
+| PA-S5-02 | S5 | Production topology maps protein, complex, stimuli, and live geometry and seeds canonical active/inactive state from ProteinMonomer/ProteinComplex fixtures (`karr_composite.py:_seed_protein_activation_shared_state`). | VERIFIED |
 | PA-S6-01 | S6 | MATLAB has a zero-return resource hook; OC omits it. The row now records allocator-sequenced zero demand versus bypass as a benign resource-equivalent shape difference. | VERIFIED |
 | PA-S6-02 | S6 | The row now anchors the real MATLAB `calcResourceRequirements_Current` method rather than claiming it is absent. | VERIFIED |
 | PA-S6-03 | S6 | No ProteinActivation-specific scheduler edge or `calcFluxBounds` path exists. | VERIFIED |
 
 ## Aggregate counts
 
-- VERIFIED: 7
+- VERIFIED: 10
 - ROW_WRONG: 0
-- CODE_DEVIATES: 3
+- CODE_DEVIATES: 0
 - MISSING: 0
 
-## Open implementation deviations
+## Implementation fidelity result
 
-- Non-stimulus rule inputs: MATLAB concentration conversion versus OC raw
-  values.
-- Per-compartment MATLAB rule evaluation/writeback versus OC flat per-WID
-  projection.
-- Missing production `inactivatedSubstrates` topology and metabolite-derived
-  `activation_substrates` initialization.
+- No known ProteinActivation implementation deviation remains on the audited
+  signal conversion, compartment state, initialization, transfer, topology,
+  and conservation surfaces.
 
 ## Documentation corrections completed
 
 - Replaced exemplar-only lists with exhaustive six-protein transfer entries.
 - Replaced derived-extract anchors with the primary MATLAB source.
 - Correctly documented the zero-return MATLAB request hook.
-- Reclassified the signal-scaling and compartment differences as code
-  deviations rather than row omissions.
-- Added the production topology/initial-state defect.
+- Closed signal scaling, compartment state, and production initialization
+  through canonical shared stores.

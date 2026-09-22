@@ -175,6 +175,26 @@ def _load_d2_mature_complex_counts_snapshot() -> dict[str, float]:
     }
 
 
+def _seed_protein_activation_shared_state(
+    initial_state: dict[str, Any],
+    process: KarrProteinActivationProcess,
+) -> None:
+    canonical = process.canonical_state()
+    for store_name in ("protein", "complex"):
+        target_store = initial_state.setdefault(store_name, {})
+        source_store = canonical[store_name]
+        target_store.setdefault("counts", {}).update(source_store["counts"])
+        for branch_name, branch_state in source_store.items():
+            if branch_name == "counts":
+                continue
+            if branch_name == "activity":
+                target_store.setdefault("activity", {}).update(branch_state)
+            else:
+                target_store[branch_name] = deepcopy(branch_state)
+    initial_state["stimuli"] = dict(canonical["stimuli"])
+    initial_state["geometry"] = dict(canonical["geometry"])
+
+
 CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
     "karr_replication",
     "karr_replication_initiation",
@@ -1272,8 +1292,17 @@ def build_karr_chassis_v4(
             ",".join(missing_tx_reg_complex_wids),
         )
     zero_seeded_regulatory_tfs: list[str] = []
+    activation_owned_complex_wids = {
+        wid
+        for wid in p_activation_proc.regulated_protein_wids
+        if p_activation_proc.store_by_wid[wid] == "complex"
+    }
     for tf_i, tf_wid in enumerate(tx_reg_proc.tf_wids):
-        if tf_wid not in tx_reg_tf_complex_wids or tf_wid not in mature_complex_counts:
+        if (
+            tf_wid not in tx_reg_tf_complex_wids
+            or tf_wid not in mature_complex_counts
+            or tf_wid in activation_owned_complex_wids
+        ):
             continue
         has_regulatory_target = bool(
             np.any(tx_reg_proc.tf_promoter_affinity[tf_i] > 0.0)
@@ -1401,9 +1430,10 @@ def build_karr_chassis_v4(
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_activation": {
-            "substrates": ("activation_substrates",),
-            "stimuli": ("stimuli",),
             "protein": ("protein",),
+            "complex": ("complex",),
+            "stimuli": ("stimuli",),
+            "geometry": ("geometry",),
         },
         "karr_ftsz_polymerization": {
             "cell": ("cell",),
@@ -1489,10 +1519,7 @@ def build_karr_chassis_v4(
             "activity": protein_activity_init,
         },
         "complex": {"counts": complex_counts},
-        "stimuli": {wid: 0.0 for wid in p_activation_proc.stimuli_wids},
-        "activation_substrates": {
-            wid: float(initial_substrates.get(wid, 0.0)) for wid in p_activation_proc.substrate_wids
-        },
+        "stimuli": {},
         "tx_rate_fold_change": tx_rate_fold_init,
         "cell": {
             "ftsz_ring_count": float(ftsz_proc.initial_ring_count),
@@ -1502,6 +1529,7 @@ def build_karr_chassis_v4(
             ),
         },
     }
+    _seed_protein_activation_shared_state(initial_state, p_activation_proc)
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
         from opencell.vivarium.karr_metabolism import _CYTOSOL_COMPARTMENT_0
@@ -1985,8 +2013,17 @@ def build_karr_chassis_v5(
             ",".join(missing_tx_reg_complex_wids),
         )
     zero_seeded_regulatory_tfs: list[str] = []
+    activation_owned_complex_wids = {
+        wid
+        for wid in p_activation_proc.regulated_protein_wids
+        if p_activation_proc.store_by_wid[wid] == "complex"
+    }
     for tf_i, tf_wid in enumerate(tx_reg_proc.tf_wids):
-        if tf_wid not in tx_reg_tf_complex_wids or tf_wid not in mature_complex_counts:
+        if (
+            tf_wid not in tx_reg_tf_complex_wids
+            or tf_wid not in mature_complex_counts
+            or tf_wid in activation_owned_complex_wids
+        ):
             continue
         has_regulatory_target = bool(
             np.any(tx_reg_proc.tf_promoter_affinity[tf_i] > 0.0)
@@ -2124,9 +2161,10 @@ def build_karr_chassis_v5(
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_activation": {
-            "substrates": ("activation_substrates",),
-            "stimuli": ("stimuli",),
             "protein": ("protein",),
+            "complex": ("complex",),
+            "stimuli": ("stimuli",),
+            "geometry": ("geometry",),
         },
         "karr_replication_initiation": {
             "chromosome": ("chromosome",),
@@ -2277,10 +2315,7 @@ def build_karr_chassis_v5(
             "activity": protein_activity_init,
         },
         "complex": {"counts": complex_counts},
-        "stimuli": {wid: 0.0 for wid in p_activation_proc.stimuli_wids},
-        "activation_substrates": {
-            wid: float(initial_substrates.get(wid, 0.0)) for wid in p_activation_proc.substrate_wids
-        },
+        "stimuli": {},
         "tx_rate_fold_change": tx_rate_fold_init,
         "boundEnzymes": supercoil_init["boundEnzymes"],
         "chromosome": {
@@ -2322,6 +2357,7 @@ def build_karr_chassis_v5(
             },
         },
     }
+    _seed_protein_activation_shared_state(initial_state, p_activation_proc)
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
         from opencell.vivarium.karr_metabolism import _CYTOSOL_COMPARTMENT_0

@@ -253,8 +253,8 @@ def test_tracked_baseline_is_current_and_fail_closed() -> None:
     result = honesty.audit_baseline()
     assert result.integrity_ok
     assert result.process_count == 28
-    assert result.eligible_count == 1
-    assert result.blocked_count == 27
+    assert result.eligible_count == 2
+    assert result.blocked_count == 26
     assert not result.all_eligible
     assert any("Metabolism/MET-CODE-DEVIATIONS" in item for item in result.blockers)
     assert any("Metabolism/MET-EVIDENCE-CONFIG" in item for item in result.blockers)

@@ -74,6 +74,40 @@ def test_v6_one_tick() -> None:
     assert "protein" in state
 
 
+def test_v6_protein_activation_uses_one_shared_canonical_state() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    process = composite["processes"]["karr_protein_activation"]
+    initial_state = composite["state"]
+
+    assert composite["topology"]["karr_protein_activation"] == {
+        "protein": ("protein",),
+        "complex": ("complex",),
+        "stimuli": ("stimuli",),
+        "geometry": ("geometry",),
+    }
+    assert "activation_substrates" not in initial_state
+    assert composite["topology"]["karr_translation"]["protein"] == ("protein",)
+    assert composite["topology"]["karr_transcriptional_regulation"]["protein"] == (
+        "protein",
+    )
+    assert composite["topology"]["karr_transcriptional_regulation"]["complex"] == (
+        "complex",
+    )
+
+    expected = process.canonical_state()
+    expected_active, expected_inactive = process.state_matrices(expected)
+    initial_active, initial_inactive = process.state_matrices(initial_state)
+    np.testing.assert_array_equal(initial_active, expected_active)
+    np.testing.assert_array_equal(initial_inactive, expected_inactive)
+    assert initial_state["geometry"]["volume"] == process.default_geometry_volume
+    assert initial_state["stimuli"] == process.default_stimuli
+
+    engine = Engine(composite=composite, emit_step=1.0, display_info=False)
+    engine_active, engine_inactive = process.state_matrices(engine.state.get_value())
+    np.testing.assert_array_equal(engine_active, expected_active)
+    np.testing.assert_array_equal(engine_inactive, expected_inactive)
+
+
 def test_v6_host_initializes_from_canonical_stores_and_stays_positive() -> None:
     composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
     process = composite["processes"]["karr_host_interaction"]

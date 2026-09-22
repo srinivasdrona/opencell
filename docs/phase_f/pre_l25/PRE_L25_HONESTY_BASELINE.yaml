@@ -8,7 +8,7 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "07a937dc0f7b4c52547b093e56e35132def7c66993a7ea943332c0325507b591"
+  sha256: "dd1a43a6221a731975259d4a57fee562aa6de889f85dd3acb91116a78986ad70"
   file_count: 128
 authorities:
   l1b_method_completeness: "PASS 115/115"
@@ -248,33 +248,32 @@ processes:
   - name: ProteinActivation
     behavior_gate: L2.1
     behavior_verdict: GENUINE
-    eligibility: BLOCKED_CODE_DEVIATION
+    eligibility: ELIGIBLE
     findings:
       - id: PA-RULE-INPUTS
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          OpenCell evaluates raw signals; Karr converts non-stimulus signals
-          to concentration using cell volume.
+          OpenCell now applies Karr's true-stimulus exemption and count-to-mM
+          conversion using live geometry volume.
         evidence:
           - path: opencell/vivarium/karr_protein_activation.py
             lines: "226-264"
       - id: PA-COMPARTMENT-PROJECTION
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          Karr evaluates and transfers each protein compartment independently;
-          OpenCell collapses each protein to one flat scalar.
+          All six protein compartments now have authoritative active/inactive
+          state and exact whole-count transfer.
         evidence:
           - path: opencell/vivarium/karr_protein_activation.py
             lines: "194-264"
       - id: PA-PRODUCTION-STATE
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          The chassis maps only a flat activation_substrates store seeded from
-          the metabolite pool and does not map or initialize the required
-          inactivatedSubstrates state.
+          Production topology now maps protein, complex, stimuli, geometry, and
+          canonical active/inactive state without a metabolite surrogate.
         evidence:
           - path: opencell/vivarium/karr_composite.py
             lines: "2126-2130"
@@ -608,5 +607,5 @@ processes:
             lines: "40-43"
 
 summary:
-  eligible: 1
-  blocked: 27
+  eligible: 2
+  blocked: 26

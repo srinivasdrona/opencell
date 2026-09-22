@@ -10,13 +10,10 @@ process:
   functional_area: "protein-synthesis-and-maturation"
   state_shape_role: "rule-based active/inactive protein-state flip; no stoichiometric chemistry"
   notes: >-
-    Exhaustive six-protein active/inactive state-transfer surface. The primary
-    MATLAB source is present and is the authority. MATLAB converts every
-    non-stimulus rule signal to concentration using Avogadro's constant and
-    geometry.volume and evaluates rules per compartment; current OC reads raw
-    flat substrate/stimulus scalars. Production topology also omits
-    inactivatedSubstrates and seeds activation_substrates from the metabolite
-    pool rather than Karr's active/inactive protein state.
+    Exhaustive source-faithful six-protein x six-compartment active/inactive
+    transfer. OC preserves true stimuli, converts all other signals with live
+    geometry volume, and stores canonical active/inactive tuples in shared
+    protein/complex roots.
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
@@ -31,13 +28,13 @@ integration_touchpoints:
       symbol: "KarrProteinActivationProcess"
       source:
         path: "opencell/vivarium/karr_protein_activation.py"
-        lines: "137-271"
-        note: "The OC port reads substrates and stimuli directly; it has no request calculator or substrates_allocated path. Representative OC anchor for non-implemented correspondence."
+        lines: "154-773"
+        note: "The OC port has no request calculator or substrates_allocated path; MATLAB's request is identically zero."
         symbol: "KarrProteinActivationProcess"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1580-2405"
-          note: "Production topology at lines 2126-2130 maps substrates, stimuli, and protein but omits inactivatedSubstrates."
+          note: "Production topology maps shared protein/complex active/inactive state, stimuli, and live geometry."
           symbol: build_karr_chassis_v5
       note: "Current OC mirrors the allocator-free shape. OC does not implement this Karr method."
     status: "not_implemented"
@@ -55,19 +52,19 @@ integration_touchpoints:
       symbol: "KarrProteinActivationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_activation.py"
-        lines: "240-240"
-        note: "Per-tick boolean evaluation and active/inactive writeback."
+        lines: "242-244"
+        note: "Per-tick entry delegates to exact compartmented rule evaluation and transfer."
         symbol: "KarrProteinActivationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_protein_activation.py"
-          lines: "195-227"
-          note: "Ports schema for substrates, inactivatedSubstrates, stimuli, and protein activity."
+          lines: "210-211"
+          note: "Class entry delegates to the shared protein/complex active/inactive, stimuli, geometry, and derived-activity schema."
           symbol: KarrProteinActivationProcess.ports_schema
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1580-2405"
-          note: "Production topology omits inactivatedSubstrates, so next_update's inactive-pool input/writeback is not connected."
+          note: "Production seeds and maps canonical shared active/inactive state."
           symbol: build_karr_chassis_v5
-      note: "The transfer logic exists in next_update, but production topology does not supply or persist its inactivatedSubstrates port."
+      note: "Production and direct execution use the same compartmented state and transfer."
     status: "implemented"
     note: "This is the core per-tick behavior and is implemented directly in the OC port."
   calcFluxBounds:
@@ -83,7 +80,7 @@ integration_touchpoints:
       symbol: "KarrProteinActivationProcess"
       source:
         path: "opencell/vivarium/karr_protein_activation.py"
-        lines: "137-271"
+        lines: "154-773"
         note: "There is no flux-bound or LP code path in the current OC shim. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrProteinActivationProcess"
       note: "No calcFluxBounds implementation exists for ProteinActivation. OC does not implement this Karr method."
@@ -315,40 +312,40 @@ compartment_routing:
   - wid: "MG_085_HEXAMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: true
-    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
+    mismatch: false
+    note: "Both sides preserve active/inactive state independently for all six compartments."
   - wid: "MG_101_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: true
-    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
+    mismatch: false
+    note: "Both sides preserve active/inactive state independently for all six compartments."
   - wid: "MG_127_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: true
-    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
+    mismatch: false
+    note: "Both sides preserve active/inactive state independently for all six compartments."
   - wid: "MG_205_DIMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: true
-    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
+    mismatch: false
+    note: "Both sides preserve active/inactive state independently for all six compartments."
   - wid: "MG_236_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: true
-    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
+    mismatch: false
+    note: "Both sides preserve active/inactive state independently for all six compartments."
   - wid: "MG_409_DIMER"
     consume_compartment: "cytosol"
     produce_compartment: "cytosol"
-    mismatch: true
-    note: "MATLAB evaluates and writes each (WID, compartment) tuple; OC projects this protein to one flat per-WID activation_substrates entry."
+    mismatch: false
+    note: "Both sides preserve active/inactive state independently for all six compartments."
 unit_conversion_chain:
-  source_units: "MATLAB: counts -> concentration for non-stimulus signals; OC: raw scalar substrate/stimuli values"
+  source_units: "molecule counts or raw true-stimulus values"
   target_units: "count transitions per tick"
   steps:
-    - from_units: "MATLAB: counts -> concentration for non-stimulus signals; OC: raw scalar substrate/stimuli values"
+    - from_units: "molecule counts or raw true-stimulus values"
       to_units: "count transitions per tick"
-      operation: "MATLAB divides non-stimulus rule signals by (nAvogadro/1000) and geometry.volume before per-compartment rule evaluation; OC evaluates flat raw scalar signals and applies whole-count transfers"
+      operation: "Both divide non-stimulus signals by (nAvogadro/1000) and live geometry.volume, preserve true stimuli raw, evaluate per compartment, and apply whole-count transfers"
       anchor:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m"
         lines: "370-375"
@@ -357,7 +354,7 @@ unit_conversion_chain:
       constants:
         - "nAvogadro/1000"
         - "geometry.volume"
-  note: "MATLAB and OC diverge here: MATLAB converts non-stimulus rule signals and evaluates per compartment, while OC evaluates raw flat-store values (CODE_DEVIATES)."
+  note: "Signal-unit conversion and compartment evaluation are source-faithful."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -400,28 +397,28 @@ source_anchors:
       symbol: <module>
     fixture_and_rule_compile:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "146-193"
-      note: "Fixture load, WID parsing, and rule compilation."
-      symbol: KarrProteinActivationProcess.__init__
+      lines: "247-410"
+      note: "Canonical fixture projection, WID/compartment mapping, and rule compilation."
+      symbol: _initialize_process
     ports_schema:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "195-227"
-      note: "Ports for substrates, inactivatedSubstrates, enzymes, stimuli, and protein activity."
+      lines: "210-211"
+      note: "Class ports_schema entry; delegates to the complete shared state schema."
       symbol: KarrProteinActivationProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_protein_activation.py"
-      lines: "229-271"
-      note: "Per-tick boolean evaluation and writeback."
-      symbol: KarrProteinActivationProcess._collect_rule_signals
+      lines: "677-773"
+      note: "Count-to-mM conversion, per-compartment rule evaluation, and exact active/inactive transfer."
+      symbol: _converted_signals
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
       lines: "1580-2405"
-      note: "Production topology at lines 2126-2130 omits inactivatedSubstrates."
+      note: "Production maps shared protein/complex active/inactive state, stimuli, and geometry."
       symbol: build_karr_chassis_v5
     initial_state_seeding:
       path: "opencell/vivarium/karr_composite.py"
       lines: "1580-2405"
-      note: "Production initialization at lines 2277-2283 fills activation_substrates from initial_substrates (the metabolite pool), not Karr active/inactive protein state."
+      note: "Production initialization seeds canonical active/inactive state through _seed_protein_activation_shared_state."
       symbol: build_karr_chassis_v5
 provenance:
   fixture_files:
@@ -451,13 +448,9 @@ deviations:
       lines: "137-271"
       note: "The OC shim has no LP or flux-bound code path."
       symbol: KarrProteinActivationProcess
-  shared_pool_projection_merges_compartments: true
-  known_deviations:
-    - "MATLAB converts non-stimulus activation-rule signals to concentration and evaluates per compartment; OC evaluates raw flat-store scalars."
-    - "MATLAB updates compartmented (wid, compartment) substrate tuples; OC projects the surface to flat per-WID activation_substrates stores."
-    - "Production topology maps only substrates/stimuli/protein and omits inactivatedSubstrates (`karr_composite.py:2126-2130`); it also initializes activation_substrates from the metabolite pool (`:2277-2283`) rather than Karr's active/inactive protein state. The implemented transfer logic therefore lacks its required production state surface."
+  shared_pool_projection_merges_compartments: false
+  known_deviations: []
   note: >-
     MATLAB and OC are both rule-only. MATLAB's zero request hook versus OC's
-    missing hook is resource-equivalent; the open implementation deviations are
-    rule-signal conversion, compartment projection, and missing/misseeded
-    production active/inactive state.
+    missing hook is resource-equivalent. Signal conversion, compartment state,
+    canonical initialization, and active/inactive transfer are source-faithful.
