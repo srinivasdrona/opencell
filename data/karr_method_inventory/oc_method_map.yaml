@@ -387,15 +387,15 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m:evolveState:359
         status: inlined
-        oc: opencell/vivarium/karr_protein_activation.py:KarrProteinActivationProcess.next_update:240
+        oc: opencell/vivarium/karr_protein_activation.py:KarrProteinActivationProcess.next_update:242
         note: Karr's evolveState swaps substrates/inactivatedSubstrates at ProteinActivation.m:359-366;
-          next_update mirrors that state swap after evaluating rules (240-270).
+          next_update delegates to the compartmented active/inactive transfer (737-773).
       evaluateActivationRules:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinActivation.m:evaluateActivationRules:369
         status: inlined
-        oc: opencell/vivarium/karr_protein_activation.py:KarrProteinActivationProcess.next_update:240
+        oc: opencell/vivarium/karr_protein_activation.py:KarrProteinActivationProcess.evaluate_activation_rules:213
         note: Karr's evaluateActivationRules computes stimuli + boolean rules at ProteinActivation.m:369-393;
-          next_update mirrors that rule-eval loop before applying the state deltas (240-270).
+          evaluate_activation_rules converts live signals and evaluates all six compartments (677-710).
   ProteinDecay:
     oc_files:
     - opencell/vivarium/karr_allocation_step.py

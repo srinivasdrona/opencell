@@ -59,6 +59,24 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-22 20:08 IST) — deterministic parallel integration verified:**
+
+- Audit branch now contains the locally merged HostInteraction,
+  ChromosomeSegregation, and ProteinActivation repair code. The combined tree
+  is ready for the ProteinActivation merge commit.
+- Combined baseline is **3/28 eligible**, source digest
+  `6dbf656c4dba53e44954ee82cd64e69285c8256712025f91433a849910a14308`.
+- TerminalOrganelleAssembly remains BLOCKED with no edits: exact repair requires
+  compartmental ProteinMonomer state to become authoritative across the
+  chassis, not a private TOA matrix.
+- Combined verification: 91 deterministic/replay/v6/baseline tests PASS;
+  genuine Host and ChromSeg active replays PASS; L1b method completeness
+  115/115 and wiring 28/28 PASS; honesty baseline `INTEGRITY_OK`, 3/28;
+  L2.4 PASS at four seeds x 100 ticks; Rule-8 no-oracle-read test and Ruff
+  PASS. The v4 integration suite remains at its independently reproduced
+  pre-repair baseline of 7 PASS / 3 FAIL (one folding-progression assertion
+  and two tests seeding absent protein-count paths). No pushes.
+
 **Current status (2026-09-22 19:28 IST) — ChromosomeSegregation repaired:**
 
 - Worktree `E:\opencell-worktrees\fix-chromseg-fidelity`, branch
@@ -76,6 +94,31 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   now **2/28 eligible**; Ruff/diff clean.
 - No trace hint, states-after input, trace read, threshold change, or test-only
   production configuration was added. Repair is committed pending integration.
+
+**Current status (2026-09-22 19:42 IST) — ProteinActivation repaired:**
+
+- Worktree `E:\opencell-worktrees\fix-protein-activation-fidelity`, branch
+  `fix/protein-activation-fidelity-20260922`, repair commit `24f03ec`, based on
+  audit tip `26905b8`; not pushed or merged.
+- Agent `e835dd8d-691f-4296-896b-f9eb29759e21` completed the validated
+  three-slot repair. Production now stores canonical active/inactive state for
+  all six regulated proteins x six compartments in shared protein/complex
+  roots, maps live geometry/stimuli, preserves true stimuli raw, and applies
+  Karr count-to-mM conversion to every other signal.
+- `protein.activity` is derived only; the old metabolite-seeded
+  `activation_substrates` store is removed. Canonical ProteinMonomer/
+  ProteinComplex projections are checked at construction.
+- Verification: scoped/v6 **21 passed**; L2.1 replay passed; L2.4 4x100 PASS;
+  L1b 115/115 +28/28; baseline integrity OK at
+  `dd1a43a6221a731975259d4a57fee562aa6de889f85dd3acb91116a78986ad70`,
+  now **2/28 eligible**; Ruff/diff clean. PI=1000 converts to
+  `0.1382689681128521 mM` and follows the concentration decision, not raw count.
+- Full v4 suite remains 3 failures, reproduced identically on the pre-repair
+  Host-integrated base (folding progression plus two test seeding paths); no new
+  ProteinActivation regression was introduced.
+- No trace hint, states-after input, trace read, hardcoded rule outcome,
+  threshold change, or test-only production mode was added. Repair is
+  committed pending integration.
 
 **Current status (2026-09-22 18:36 IST) — three deterministic repair lanes:**
 
