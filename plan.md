@@ -62,8 +62,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-22 19:42 IST) — ProteinActivation repaired:**
 
 - Worktree `E:\opencell-worktrees\fix-protein-activation-fidelity`, branch
-  `fix/protein-activation-fidelity-20260922`, based on audit tip `26905b8`;
-  not pushed or merged.
+  `fix/protein-activation-fidelity-20260922`, repair commit `24f03ec`, based on
+  audit tip `26905b8`; not pushed or merged.
 - Agent `e835dd8d-691f-4296-896b-f9eb29759e21` completed the validated
   three-slot repair. Production now stores canonical active/inactive state for
   all six regulated proteins x six compartments in shared protein/complex
@@ -81,8 +81,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   Host-integrated base (folding progression plus two test seeding paths); no new
   ProteinActivation regression was introduced.
 - No trace hint, states-after input, trace read, hardcoded rule outcome,
-  threshold change, or test-only production mode was added. Changes are
-  uncommitted pending parent commit/integration.
+  threshold change, or test-only production mode was added. Repair is
+  committed pending integration.
 
 **Current status (2026-09-22 18:36 IST) — three deterministic repair lanes:**
 
