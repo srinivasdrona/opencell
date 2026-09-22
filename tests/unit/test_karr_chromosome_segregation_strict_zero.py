@@ -3,7 +3,10 @@ from __future__ import annotations
 from collections.abc import Iterable
 from typing import Any
 
-from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
+from opencell.vivarium.karr_chromosome_segregation import (
+    KarrChromosomeSegregationEvolutionStep,
+    KarrChromosomeSegregationProcess,
+)
 
 
 class _GuardedSubstrates(dict[str, float]):
@@ -74,7 +77,10 @@ def test_karr_chromosome_segregation_strict_zero_no_global_fallback() -> None:
         "substrates_allocated": {process.name: {process.gtp_wid: 0.0, process.h2o_wid: 0.0}},
     }
 
-    update = process.next_update(1.0, state)
+    evolution = KarrChromosomeSegregationEvolutionStep(
+        {"segregation_process": process}
+    )
+    update = evolution.next_update(1.0, state)
 
     assert "segregated" not in update.get("chromosome", {})
     _assert_zero_or_absent_substrate_delta(update, blocked_wids)

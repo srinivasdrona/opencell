@@ -47,7 +47,10 @@ from opencell.vivarium.karr_cell_cycle_coordinator import CellCycleCoordinator
 from opencell.vivarium.karr_chromosome_condensation import (
     KarrChromosomeCondensationProcess,
 )
-from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
+from opencell.vivarium.karr_chromosome_segregation import (
+    KarrChromosomeSegregationEvolutionStep,
+    KarrChromosomeSegregationProcess,
+)
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
@@ -1701,6 +1704,9 @@ def build_karr_chassis_v5(
     )
     condensation_proc = KarrChromosomeCondensationProcess({"time_step": time_step_s})
     segregation_proc = KarrChromosomeSegregationProcess({"time_step": time_step_s})
+    segregation_evolution_step = KarrChromosomeSegregationEvolutionStep(
+        {"segregation_process": segregation_proc}
+    )
     dna_damage_proc = KarrDNADamageProcess({"time_step": time_step_s})
     dna_repair_proc = KarrDNARepairProcess({"time_step": time_step_s})
     # Geometry.volume is shared into FtsZ below, but this chassis currently
@@ -2160,8 +2166,13 @@ def build_karr_chassis_v5(
             "chromosome": ("chromosome",),
             "protein": ("protein",),
             "complex": ("complex",),
-            "substrates": ("substrates",),
             "requests": ("requests",),
+        },
+        "karr_chromosome_segregation_evolution": {
+            "chromosome": ("chromosome",),
+            "protein": ("protein",),
+            "complex": ("complex",),
+            "substrates": ("substrates",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_dna_damage": {
@@ -2372,6 +2383,7 @@ def build_karr_chassis_v5(
             "request_calculator_transcription": req_transcription,
             "request_calculator_translation": req_translation,
             "karr_allocation_step": allocation_step,
+            "karr_chromosome_segregation_evolution": segregation_evolution_step,
             "cell_cycle_coordinator": coordinator_step,
         },
         flow={
@@ -2397,7 +2409,8 @@ def build_karr_chassis_v5(
                 ("request_calculator_transcription",),
                 ("request_calculator_translation",),
             ],
-            "cell_cycle_coordinator": [("karr_allocation_step",)],
+            "karr_chromosome_segregation_evolution": [("karr_allocation_step",)],
+            "cell_cycle_coordinator": [("karr_chromosome_segregation_evolution",)],
         },
         topology=topology,
         initial_state=initial_state,
@@ -2544,7 +2557,7 @@ def build_karr_chassis_v6(
         "substrates": ("substrates",),
         "phenotype_observables": ("phenotype_observables",),
     }
-    flow["karr_observability_step"] = [("karr_allocation_step",)]
+    flow["karr_observability_step"] = [("karr_chromosome_segregation_evolution",)]
 
     chromosome_state = initial_state.setdefault("chromosome", {})
     chromosome_state.pop("damage_sites", None)

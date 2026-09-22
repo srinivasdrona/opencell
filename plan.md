@@ -59,6 +59,24 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-22 19:28 IST) — ChromosomeSegregation repaired:**
+
+- Worktree `E:\opencell-worktrees\fix-chromseg-fidelity`, branch
+  `fix/chromseg-fidelity-20260922`, based on audit tip `26905b8`; not pushed.
+- Agent `b4174bdc-cc7c-4f94-8d4d-e0fa684e692a` completed the three-slot repair.
+  Production now runs request-only Process -> Karr allocation Step ->
+  segregation evolution Step -> coordinator in one Engine tick.
+- Unused duplicate `enzymes`/`boundEnzymes` ports were removed; enzyme presence
+  reads canonical protein/complex stores, eliminating the prior updater warning
+  from ChromosomeSegregation.
+- Verification: 33 scoped tests + genuine 100-tick active-window replay pass;
+  L2.4 4 seeds x100 ticks PASS; L1b 115/115 + 28/28; baseline integrity OK at
+  `e9c6a63ce70387b3858ea4b6aae411ce592b87765ceaa553907353e06d096fc8`,
+  now **2/28 eligible**; Ruff/diff clean.
+- No trace hint, states-after input, trace read, threshold change, or test-only
+  production configuration was added. Changes are uncommitted pending parent
+  commit/integration.
+
 **Current status (2026-09-22 18:36 IST) — three deterministic repair lanes:**
 
 - HostInteraction is complete and locally integrated at audit tip `d71a5b5`;

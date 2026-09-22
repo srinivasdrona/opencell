@@ -8,7 +8,7 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "07a937dc0f7b4c52547b093e56e35132def7c66993a7ea943332c0325507b591"
+  sha256: "e9c6a63ce70387b3858ea4b6aae411ce592b87765ceaa553907353e06d096fc8"
   file_count: 128
 authorities:
   l1b_method_completeness: "PASS 115/115"
@@ -71,15 +71,14 @@ processes:
   - name: ChromosomeSegregation
     behavior_gate: L2.1
     behavior_verdict: GENUINE
-    eligibility: BLOCKED_CODE_DEVIATION
+    eligibility: ELIGIBLE
     findings:
       - id: CHRSEG-REQUEST-TIMING
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          The literal transition is implemented, but its request is emitted by
-          the same next_update that already consumed the previous allocation;
-          the current request's grant is not observable until the next tick.
+          Request, allocation, and literal evolution now execute in ordered
+          phases within one Engine tick.
         evidence:
           - path: opencell/vivarium/karr_chromosome_segregation.py
             lines: "433-503"
@@ -87,10 +86,10 @@ processes:
             lines: "2377-2399"
       - id: CHRSEG-UPDATER-CONFLICT
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          Shared enzyme leaves conflict with DNASupercoiling's set updater,
-          producing order-sensitive Vivarium store semantics.
+          Unused duplicate enzyme ports were removed; the process reads
+          canonical protein/complex state without an updater conflict.
         evidence:
           - path: opencell/vivarium/karr_chromosome_segregation.py
             lines: "333-343"
@@ -608,5 +607,5 @@ processes:
             lines: "40-43"
 
 summary:
-  eligible: 1
-  blocked: 27
+  eligible: 2
+  blocked: 26
