@@ -62,8 +62,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-09-22 20:08 IST) — deterministic parallel integration verified:**
 
 - Audit branch now contains the locally merged HostInteraction,
-  ChromosomeSegregation, and ProteinActivation repair code. The combined tree
-  is ready for the ProteinActivation merge commit.
+  ChromosomeSegregation, and ProteinActivation repair code. ProteinActivation
+  integration completed in merge commit `3d07103`; the branch is not pushed.
 - Combined baseline is **3/28 eligible**, source digest
   `6dbf656c4dba53e44954ee82cd64e69285c8256712025f91433a849910a14308`.
 - TerminalOrganelleAssembly remains BLOCKED with no edits: exact repair requires
