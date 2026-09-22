@@ -59,6 +59,34 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-22 18:36 IST) — three deterministic repair lanes:**
+
+- HostInteraction is complete and locally integrated at audit tip `d71a5b5`;
+  baseline is 1/28 eligible. Nothing is pushed.
+- Three isolated background coding lanes are about to start from `d71a5b5`,
+  each with a validated three-slot prompt and no permission to touch another
+  process:
+  - ChromosomeSegregation:
+    `E:\opencell-worktrees\fix-chromseg-fidelity`,
+    branch `fix/chromseg-fidelity-20260922`.
+  - ProteinActivation:
+    `E:\opencell-worktrees\fix-protein-activation-fidelity`,
+    branch `fix/protein-activation-fidelity-20260922`.
+  - TerminalOrganelleAssembly:
+    `E:\opencell-worktrees\fix-terminal-organelle-fidelity`,
+    branch `fix/terminal-organelle-fidelity-20260922`.
+- Agents must preflight primary MATLAB source and canonical fixtures before
+  editing; fail closed if fixture state cannot support the proposed repair.
+  Hard bans: `trace_hint`, `states_after`/event-tick inputs, production trace
+  reads, test-only configuration, threshold/metric edits, or documentation as
+  a substitute for code.
+- Expected merge order after independent review: ChromosomeSegregation,
+  ProteinActivation, TerminalOrganelleAssembly. All three may touch
+  `karr_composite.py`; integrate deliberately, never auto-resolve by choosing
+  one branch's version.
+- Operational traps remain: Python/tests only through WSL wrappers; raw traces
+  are read-only; do not remove worktrees recursively; no agent commits/pushes.
+
 **Current status (2026-09-17 21:05 IST) — HostInteraction fidelity repair:**
 
 - Active worktree:
