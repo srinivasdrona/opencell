@@ -269,10 +269,11 @@ def test_c8_conservation_and_integrality() -> None:
     total_after = {wid: sum(mature_state[wid].values()) for wid in TOA_MONOMERS}
 
     for wid in TOA_MONOMERS:
-        assert total_after[wid] == pytest.approx(total_before[wid]), f"Conservation violated for {wid}"
+        assert total_after[wid] == total_before[wid], f"Conservation violated for {wid}"
+        assert float(total_after[wid]).is_integer(), f"Non-integral total count for {wid}: {total_after[wid]}"
         for comp, val in mature_state[wid].items():
             assert val >= 0.0, f"Negative count at {wid}@{comp}: {val}"
-            assert val == round(val), f"Non-integral count at {wid}@{comp}: {val}"
+            assert float(val).is_integer(), f"Non-integral count at {wid}@{comp}: {val}"
 
 
 def test_c9_no_oracle_input_in_toa() -> None:

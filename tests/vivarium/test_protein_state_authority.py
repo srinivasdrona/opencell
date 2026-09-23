@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import pytest
 
@@ -66,7 +67,8 @@ def test_c1_single_authority_write_rejection() -> None:
     mature_row = state_view["protein"]["compartment_counts"]["mature"]["MG_312_MONOMER"]
     expected_sum = float(sum(mature_row[k] for k in COMPARTMENTS))
     current_flat = float(state_view["protein"]["counts"]["MG_312_MONOMER"])
-    assert current_flat == pytest.approx(expected_sum)
+    assert current_flat.is_integer(), f"Expected integer count, got {current_flat}"
+    assert current_flat == expected_sum
 
     # Attempt direct write to flat leaf: MUST raise ProteinFlatProjectionWriteError
     rogue_update = {"protein": {"counts": {"MG_312_MONOMER": 1.0}}}
@@ -81,7 +83,9 @@ def test_c1_single_authority_write_rejection() -> None:
 
     # Leaf value after rejected write MUST remain unchanged
     after_view = engine.state.get_value()
-    assert float(after_view["protein"]["counts"]["MG_312_MONOMER"]) == pytest.approx(expected_sum)
+    after_flat = float(after_view["protein"]["counts"]["MG_312_MONOMER"])
+    assert after_flat.is_integer(), f"Expected integer count, got {after_flat}"
+    assert after_flat == expected_sum
 
 
 def test_c1b_no_leaf_path_drift() -> None:
@@ -152,54 +156,95 @@ def test_c1c_flat_identity_through_reader_port() -> None:
 
     after_state = engine.state.get_value()
     new_flat = float(after_state["protein"]["counts"][wid])
-    assert new_flat == pytest.approx(old_flat + 7.0), f"Expected flat count {old_flat + 7.0}, got {new_flat}"
+    assert new_flat.is_integer(), f"Expected integer count, got {new_flat}"
+    assert new_flat == old_flat + 7.0, f"Expected flat count {old_flat + 7.0}, got {new_flat}"
 
 
 def test_c1d_aggregate_invariance_across_toa_transfer() -> None:
-    """Claim C1d: TOA transfer changes compartment distribution but leaves
+    """Claim C1d: Minimal real Vivarium Engine containing production TOA plus production
 
-    aggregate sum exactly invariant both before and after the step.
+    projection Step proves that TOA transfer changes compartment distribution while
+    leaving aggregate sum exactly invariant (integer-exact) before and after the step.
+    Minimal composition isolates TOA transfer with zero interference from other processes.
     """
+    from vivarium.core.composer import Composite
     from vivarium.core.engine import Engine
 
-    from opencell.vivarium.karr_composite import build_karr_chassis_v6
+    try:
+        from opencell.vivarium.protein_flat_projection_step import (
+            ProteinFlatProjectionStep,
+        )
+        from opencell.vivarium.protein_state import (
+            COMPARTMENTS as PS_COMPARTMENTS,
+        )
+        from opencell.vivarium.protein_state import (
+            FORMS as PS_FORMS,
+        )
+        from opencell.vivarium.protein_state import (
+            MIGRATED_WIDS as PS_MIGRATED_WIDS,
+        )
+    except ImportError as exc:
+        pytest.fail(f"Stage-1 protein_state / projection step not yet implemented: {exc}")
 
-    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
-    engine = Engine(composite=composite)
-    initial_state = engine.state.get_value()
+    from opencell.vivarium.karr_terminal_organelle_assembly import (
+        KarrTerminalOrganelleAssemblyProcess,
+    )
 
-    assert "compartment_counts" in initial_state["protein"], "compartment_counts missing"
+    toa_proc = KarrTerminalOrganelleAssemblyProcess({"time_step": 1.0})
+    proj_step = ProteinFlatProjectionStep({})
 
-    wid = "MG_312_MONOMER"
-    # Seed mature MG_312 = {tc: 26, c: 1}, others 0
-    seed_update = {
+    processes = {"karr_terminal_organelle_assembly": toa_proc}
+    steps = {"protein_flat_projection": proj_step}
+    flow = {"protein_flat_projection": [("karr_terminal_organelle_assembly",)]}
+    topology = {
+        "karr_terminal_organelle_assembly": {"protein": ("protein",)},
+        "protein_flat_projection": {"protein": ("protein",)},
+    }
+
+    initial_state: dict[str, Any] = {
         "protein": {
+            "counts": {wid: 0.0 for wid in PS_MIGRATED_WIDS},
             "compartment_counts": {
-                "mature": {
-                    wid: {
-                        "c": 1.0 - float(initial_state["protein"]["compartment_counts"]["mature"][wid]["c"]),
-                        "tc": 26.0 - float(initial_state["protein"]["compartment_counts"]["mature"][wid]["tc"]),
-                    }
+                form: {
+                    wid: {comp: 0.0 for comp in PS_COMPARTMENTS}
+                    for wid in PS_MIGRATED_WIDS
                 }
-            }
+                for form in PS_FORMS
+            },
         }
     }
-    engine.state.apply_update(seed_update)
-    engine.run_steps()
+    wid = "MG_312_MONOMER"
+    initial_state["protein"]["compartment_counts"]["mature"][wid]["c"] = 1.0
+    initial_state["protein"]["compartment_counts"]["mature"][wid]["tc"] = 26.0
+    initial_state["protein"]["compartment_counts"]["mature"]["MG_218_MONOMER"]["tc"] = 33.0
+
+    composite = Composite(
+        processes=processes,
+        steps=steps,
+        flow=flow,
+        topology=topology,
+        state=initial_state,
+    )
+    engine = Engine(composite=composite)
 
     state_before = engine.state.get_value()
     flat_before = float(state_before["protein"]["counts"][wid])
-    assert flat_before == pytest.approx(27.0)
+    assert flat_before.is_integer(), f"Expected integer count before, got {flat_before}"
+    assert flat_before == 27.0, f"Expected 27.0 before step, got {flat_before}"
 
-    # Execute one simulation tick (running TOA)
+    # Execute one tick (runs TOA process update, then projection step)
     engine.update(1.0)
 
     state_after = engine.state.get_value()
     mature_after = state_after["protein"]["compartment_counts"]["mature"][wid]
     flat_after = float(state_after["protein"]["counts"][wid])
 
-    # Compartments must have shifted: c: 1 -> 0, tc: 26 -> 27
-    assert mature_after["c"] == pytest.approx(0.0)
-    assert mature_after["tc"] == pytest.approx(27.0)
+    # Compartments must have shifted: c: 1 -> 0, tc: 26 -> 27 (integer-exact)
+    assert mature_after["c"] == 0.0, f"Expected c == 0.0, got {mature_after['c']}"
+    assert mature_after["tc"] == 27.0, f"Expected tc == 27.0, got {mature_after['tc']}"
+    assert float(mature_after["c"]).is_integer()
+    assert float(mature_after["tc"]).is_integer()
+
     # Aggregate flat count MUST remain exactly invariant at 27.0
-    assert flat_after == pytest.approx(27.0)
+    assert flat_after.is_integer()
+    assert flat_after == 27.0

@@ -5,7 +5,6 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-import pytest
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -123,12 +122,14 @@ def test_single_step_transfer_via_authority() -> None:
     assert "substrates" not in update
     assert "protein" in update
 
-    # Verify deltas: MG_312_MONOMER must have c: -1.0, tc: +1.0
+    # Verify deltas: MG_312_MONOMER must have c: -1.0, tc: +1.0 (integer-exact)
     prot_up = update["protein"]
     mature_up = prot_up.get("compartment_counts", prot_up).get("mature", prot_up)
     assert "MG_312_MONOMER" in mature_up
-    assert mature_up["MG_312_MONOMER"]["c"] == pytest.approx(-1.0)
-    assert mature_up["MG_312_MONOMER"]["tc"] == pytest.approx(1.0)
+    assert mature_up["MG_312_MONOMER"]["c"] == -1.0
+    assert mature_up["MG_312_MONOMER"]["tc"] == 1.0
+    assert float(mature_up["MG_312_MONOMER"]["c"]).is_integer()
+    assert float(mature_up["MG_312_MONOMER"]["tc"]).is_integer()
 
 
 def test_empty_update_when_unincorporated_is_zero() -> None:

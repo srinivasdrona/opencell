@@ -4,8 +4,6 @@ import sys
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -128,7 +126,9 @@ def test_stage1_translocation_exact_compartments_and_conservation() -> None:
     assert "m" in deltas and "c" in deltas, f"Expected deltas on 'c' and 'm', got {deltas}"
     assert deltas["c"] < 0, f"Expected negative delta on source cytosol 'c', got {deltas['c']}"
     assert deltas["m"] > 0, f"Expected positive delta on destination membrane 'm', got {deltas['m']}"
-    assert deltas["c"] + deltas["m"] == pytest.approx(0.0), "Mass conservation violated in translocation"
+    assert float(deltas["c"]).is_integer(), f"Non-integral delta on 'c': {deltas['c']}"
+    assert float(deltas["m"]).is_integer(), f"Non-integral delta on 'm': {deltas['m']}"
+    assert deltas["c"] + deltas["m"] == 0.0, "Mass conservation violated in translocation"
 
 
 def test_stage1_no_location_string_for_migrated_wids() -> None:

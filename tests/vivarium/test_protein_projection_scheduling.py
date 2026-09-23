@@ -3,8 +3,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
-
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -74,6 +72,7 @@ def test_c12_step_graph_ordering_structurally_correct() -> None:
             )
 
     # Flat reading steps (DERIVED-R) must sit in a layer strictly > some projection instance
+    # Within a layer Vivarium defers updates, so proj_layer must be strictly less than reader_layer.
     flat_reading_step_names = [
         "request_calculator_protein_pathway",
         "request_calculator_protein_translocation",
@@ -83,8 +82,8 @@ def test_c12_step_graph_ordering_structurally_correct() -> None:
     for reader_step in flat_reading_step_names:
         if reader_step in step_layer_map:
             reader_layer = step_layer_map[reader_step]
-            assert any(proj_layer <= reader_layer for proj_layer in projection_layers), (
-                f"DERIVED-R step {reader_step} in layer {reader_layer} has no prior projection step"
+            assert any(proj_layer < reader_layer for proj_layer in projection_layers), (
+                f"DERIVED-R step {reader_step} in layer {reader_layer} has no strictly prior projection step"
             )
 
 
@@ -102,7 +101,6 @@ def test_c13_t0_projection_correctness() -> None:
     engine = Engine(composite=composite)
     state = engine.state.get_value()
 
-
     assert "compartment_counts" in state["protein"], "protein.compartment_counts must exist at t=0"
     mature_counts = state["protein"]["compartment_counts"]["mature"]
     flat_counts = state["protein"]["counts"]
@@ -111,6 +109,7 @@ def test_c13_t0_projection_correctness() -> None:
         assert wid in mature_counts, f"{wid} missing from mature compartment_counts at t=0"
         expected_sum = float(sum(mature_counts[wid][k] for k in COMPARTMENTS))
         actual_flat = float(flat_counts.get(wid, 0.0))
-        assert actual_flat == pytest.approx(expected_sum), (
+        assert actual_flat.is_integer(), f"Non-integral flat count for {wid}: {actual_flat}"
+        assert actual_flat == expected_sum, (
             f"t=0 staleness for {wid}: flat {actual_flat} != authority sum {expected_sum}"
         )
