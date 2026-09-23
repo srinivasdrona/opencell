@@ -59,6 +59,31 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-23 16:50 IST) — Stage 1a accepted; atomic Stage 1b next:**
+
+- Sonnet doer agent `7e4b5ffd-447f-4ebc-842b-1c085cd4c8ac`
+  committed behavior-neutral Stage 1a infrastructure in `192f949` and
+  provenance in `0ab244b`. `MIGRATED_WIDS` remains empty; no frozen test was
+  edited. L2.4 4x100 PASS and representative v6 state is byte-identical to
+  baseline.
+- The doer correctly stopped on a frozen C12 defect instead of modifying it.
+  Gemini fixed path resolution/relative ordering in `6417c9d`; parent
+  reproduced C12 GREEN and C13 RED only because the eight WIDs are not yet
+  enrolled.
+- L1b method completeness remains 115/115. Wiring is temporarily 27/28 only
+  because the RNADecay absolute line anchor for `build_karr_chassis_v6`
+  shifted after required upstream composite edits. Refresh this anchor once,
+  after final Stage 1b line positions settle; do not churn it mid-migration.
+- Stage 1b is one atomic WID slice: enroll all eight TOA WIDs across all ten
+  forms/six compartments, seed exact ProteinMonomer fixture state, rewrite
+  TOA, route the three Stage-1 translocation WIDs, and re-home every legacy
+  writer. No commit boundary may leave one of the eight WIDs with two writable
+  authorities.
+- ProteinProcessingII correction must preserve non-migrated behavior: declare
+  and retain its legacy `counts` write for non-migrated WIDs while routing the
+  eight migrated WIDs through the authority. Do not delete the entire write
+  merely because it was previously undeclared.
+
 **Current status (2026-09-23 14:20 IST) — Gemini tests frozen; Sonnet Stage 1a next:**
 
 - Gemini test-writer agent `e03c394d-81ff-448b-bea6-0b3705918678`
