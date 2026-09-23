@@ -101,6 +101,8 @@ from opencell.vivarium.karr_translation import KarrTranslationProcess
 from opencell.vivarium.karr_translation_v2 import KarrTranslationV2Process
 from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess
+from opencell.vivarium.protein_flat_projection_step import ProteinFlatProjectionStep
+from opencell.vivarium.protein_state import initial_compartment_counts
 
 if TYPE_CHECKING:
     from vivarium.core.engine import Engine
@@ -196,6 +198,22 @@ def _seed_protein_activation_shared_state(
                 target_store[branch_name] = deepcopy(branch_state)
     initial_state["stimuli"] = dict(canonical["stimuli"])
     initial_state["geometry"] = dict(canonical["geometry"])
+
+
+def _new_protein_flat_projection_steps() -> tuple[ProteinFlatProjectionStep, ProteinFlatProjectionStep]:
+    """Construct the Stage-1a `protein_flat_projection_pre`/`_post` Step
+    instances (design D5). `pre` is registered with an empty `flow` entry
+    (layer 0); `post` is registered with a `flow` entry depending on every
+    AUTH-W Step present in the calling builder. Behavior-neutral: with
+    `opencell.vivarium.protein_state.MIGRATED_WIDS` empty in Stage 1a,
+    neither instance reads or writes any leaf (see
+    `protein_flat_projection_step.py`).
+    """
+    pre_step = ProteinFlatProjectionStep({})
+    pre_step.name = "protein_flat_projection_pre"
+    post_step = ProteinFlatProjectionStep({})
+    post_step.name = "protein_flat_projection_post"
+    return pre_step, post_step
 
 
 CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
@@ -814,6 +832,9 @@ def build_karr_chassis_v3(
     req_protein_translocation = RequestCalculatorPTransloc(
         {"protein_translocation_proc": p_trans_proc}
     )
+    protein_flat_projection_pre, protein_flat_projection_post = (
+        _new_protein_flat_projection_steps()
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -913,6 +934,9 @@ def build_karr_chassis_v3(
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
         },
+        # Stage 1a (design D5): behavior-neutral flat-projection Steps.
+        "protein_flat_projection_pre": {"protein": ("protein",)},
+        "protein_flat_projection_post": {"protein": ("protein",)},
     }
 
     initial_state: dict[str, Any] = {
@@ -926,6 +950,7 @@ def build_karr_chassis_v3(
         "protein": {
             "counts": prot_init,
             "location": {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids},
+            "compartment_counts": initial_compartment_counts(),
         },
         "complex": {"counts": complex_counts},
     }
@@ -955,6 +980,8 @@ def build_karr_chassis_v3(
             "request_calculator_translation": req_translation,
             "request_calculator_protein_translocation": req_protein_translocation,
             "karr_allocation_step": allocation_step,
+            "protein_flat_projection_pre": protein_flat_projection_pre,
+            "protein_flat_projection_post": protein_flat_projection_post,
         },
         flow={
             "request_calculator_d2": [],
@@ -962,7 +989,7 @@ def build_karr_chassis_v3(
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
-            "request_calculator_protein_translocation": [],
+            "request_calculator_protein_translocation": [("protein_flat_projection_pre",)],
             "karr_allocation_step": [
                 ("request_calculator_d2",),
                 ("request_calculator_pd",),
@@ -971,6 +998,8 @@ def build_karr_chassis_v3(
                 ("request_calculator_translation",),
                 ("request_calculator_protein_translocation",),
             ],
+            "protein_flat_projection_pre": [],
+            "protein_flat_projection_post": [("karr_allocation_step",)],
         },
         topology=topology,
         initial_state=initial_state,
@@ -1189,6 +1218,9 @@ def build_karr_chassis_v4(
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
     req_protein_translocation = RequestCalculatorPTransloc(
         {"protein_translocation_proc": p_trans_proc}
+    )
+    protein_flat_projection_pre, protein_flat_projection_post = (
+        _new_protein_flat_projection_steps()
     )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
@@ -1495,6 +1527,9 @@ def build_karr_chassis_v4(
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
         },
+        # Stage 1a (design D5): behavior-neutral flat-projection Steps.
+        "protein_flat_projection_pre": {"protein": ("protein",)},
+        "protein_flat_projection_post": {"protein": ("protein",)},
     }
 
     initial_state: dict[str, Any] = {
@@ -1520,6 +1555,7 @@ def build_karr_chassis_v4(
             "enzyme_counts": protein_enzyme_init,
             "location": protein_location_init,
             "activity": protein_activity_init,
+            "compartment_counts": initial_compartment_counts(),
         },
         "complex": {"counts": complex_counts},
         "stimuli": {},
@@ -1574,18 +1610,20 @@ def build_karr_chassis_v4(
             "request_calculator_translation": req_translation,
             "request_calculator_protein_translocation": req_protein_translocation,
             "karr_allocation_step": allocation_step,
+            "protein_flat_projection_pre": protein_flat_projection_pre,
+            "protein_flat_projection_post": protein_flat_projection_post,
         },
         flow={
             "request_calculator_d2": [],
             "request_calculator_pd": [],
-            "request_calculator_ribasm": [],
+            "request_calculator_ribasm": [("protein_flat_projection_pre",)],
             "request_calculator_trna": [],
             "request_calculator_rna_pathway": [],
-            "request_calculator_protein_pathway": [],
+            "request_calculator_protein_pathway": [("protein_flat_projection_pre",)],
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
-            "request_calculator_protein_translocation": [],
+            "request_calculator_protein_translocation": [("protein_flat_projection_pre",)],
             "karr_allocation_step": [
                 ("request_calculator_d2",),
                 ("request_calculator_pd",),
@@ -1598,6 +1636,8 @@ def build_karr_chassis_v4(
                 ("request_calculator_translation",),
                 ("request_calculator_protein_translocation",),
             ],
+            "protein_flat_projection_pre": [],
+            "protein_flat_projection_post": [("karr_allocation_step",)],
         },
         topology=topology,
         initial_state=initial_state,
@@ -1875,6 +1915,9 @@ def build_karr_chassis_v5(
     req_translation = RequestCalculatorTranslation({"translation_proc": m3_proc})
     req_protein_translocation = RequestCalculatorPTransloc(
         {"protein_translocation_proc": p_trans_proc}
+    )
+    protein_flat_projection_pre, protein_flat_projection_post = (
+        _new_protein_flat_projection_steps()
     )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
@@ -2299,6 +2342,9 @@ def build_karr_chassis_v5(
             "chromosome": ("chromosome",),
             "cell": ("cell",),
         },
+        # Stage 1a (design D5): behavior-neutral flat-projection Steps.
+        "protein_flat_projection_pre": {"protein": ("protein",)},
+        "protein_flat_projection_post": {"protein": ("protein",)},
     }
 
     initial_state: dict[str, Any] = {
@@ -2324,6 +2370,7 @@ def build_karr_chassis_v5(
             "enzyme_counts": protein_enzyme_init,
             "location": protein_location_init,
             "activity": protein_activity_init,
+            "compartment_counts": initial_compartment_counts(),
         },
         "complex": {"counts": complex_counts},
         "stimuli": {},
@@ -2421,15 +2468,17 @@ def build_karr_chassis_v5(
             "karr_allocation_step": allocation_step,
             "karr_chromosome_segregation_evolution": segregation_evolution_step,
             "cell_cycle_coordinator": coordinator_step,
+            "protein_flat_projection_pre": protein_flat_projection_pre,
+            "protein_flat_projection_post": protein_flat_projection_post,
         },
         flow={
             "request_calculator_d2": [],
             "request_calculator_pd": [],
-            "request_calculator_ribasm": [],
+            "request_calculator_ribasm": [("protein_flat_projection_pre",)],
             "request_calculator_trna": [],
             "request_calculator_rna_pathway": [],
-            "request_calculator_protein_pathway": [],
-            "request_calculator_protein_translocation": [],
+            "request_calculator_protein_pathway": [("protein_flat_projection_pre",)],
+            "request_calculator_protein_translocation": [("protein_flat_projection_pre",)],
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
@@ -2447,6 +2496,11 @@ def build_karr_chassis_v5(
             ],
             "karr_chromosome_segregation_evolution": [("karr_allocation_step",)],
             "cell_cycle_coordinator": [("karr_chromosome_segregation_evolution",)],
+            "protein_flat_projection_pre": [],
+            "protein_flat_projection_post": [
+                ("karr_allocation_step",),
+                ("karr_chromosome_segregation_evolution",),
+            ],
         },
         topology=topology,
         initial_state=initial_state,
@@ -2593,7 +2647,10 @@ def build_karr_chassis_v6(
         "substrates": ("substrates",),
         "phenotype_observables": ("phenotype_observables",),
     }
-    flow["karr_observability_step"] = [("karr_chromosome_segregation_evolution",)]
+    flow["karr_observability_step"] = [
+        ("karr_chromosome_segregation_evolution",),
+        ("protein_flat_projection_post",),
+    ]
 
     chromosome_state = initial_state.setdefault("chromosome", {})
     chromosome_state.pop("damage_sites", None)
