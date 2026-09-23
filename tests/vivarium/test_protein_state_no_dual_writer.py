@@ -55,6 +55,7 @@ PROTEIN_PROCESS_MANIFEST = (
     ("opencell.vivarium.karr_chromosome_segregation", "KarrChromosomeSegregationProcess", ("counts",), "AUTH-W"),
     ("opencell.vivarium.karr_replication_initiation", "KarrReplicationInitiationProcess", ("counts",), "AUTH-W"),
     ("opencell.vivarium.karr_dna_supercoiling", "KarrDNASupercoilingProcess", ("counts",), "AUTH-W"),
+    ("opencell.vivarium.protein_flat_projection_step", "ProteinFlatProjectionStep", (), "DERIVED-W/AUTH-W"),
     # Readers (DERIVED-R) / Excluded
     ("opencell.vivarium.karr_dna_repair", "KarrDNARepairProcess", (), "DERIVED-R"),
     ("opencell.vivarium.karr_host_interaction", "KarrHostInteractionProcess", (), "DERIVED-R"),
