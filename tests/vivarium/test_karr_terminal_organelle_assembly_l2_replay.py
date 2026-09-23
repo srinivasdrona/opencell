@@ -27,9 +27,6 @@ from l2_replay_common import (
     assert_delta_integral as _assert_delta_integral_shared,
 )
 from l2_replay_common import (
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
-)
-from l2_replay_common import (
     audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
 )
 from l2_replay_common import (
@@ -135,19 +132,23 @@ def _apply_update(
                     target_mature[wid][comp] = float(target_mature[wid][comp] + float(delta))
 
 
-def _assert_identity_or_tolerance(
+def _assert_integer_exact_equality(
     *,
     tick: int,
     observable: str,
     oc_after: np.ndarray,
     karr_after: np.ndarray,
 ) -> None:
-    _assert_identity_or_tolerance_shared(
-        tick=tick,
-        observable=observable,
-        oc_after=oc_after,
-        karr_after=karr_after,
-    )
+    """Rule 2: Unconditional integer-exact compare on all count observables."""
+    assert np.array_equal(np.rint(karr_after), karr_after), f"Tick {tick}: Karr after {observable} non-integral"
+    assert np.array_equal(np.rint(oc_after), oc_after), f"Tick {tick}: OC after {observable} non-integral"
+    if not np.array_equal(oc_after, karr_after):
+        diff_indices = np.flatnonzero(oc_after != karr_after)
+        first_idx = int(diff_indices[0])
+        pytest.fail(
+            f"Tick {tick} {observable} exact integer mismatch at index {first_idx}: "
+            f"OC={oc_after[first_idx]}, Karr={karr_after[first_idx]}"
+        )
 
 
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
@@ -173,10 +174,6 @@ def test_karr_terminal_organelle_assembly_l2_replay_identity_per_tick(rng_seed: 
 
         # Construct process once outside the tick loop (Rule 5)
         process = KarrTerminalOrganelleAssemblyProcess({"rng_seed": int(rng_seed)})
-
-        # WID-length alignment guard check (Rule 3)
-        sample_substrates = cell_vector(trace, "states_before", "substrates", 0)
-        assert sample_substrates.shape[0] == 16, f"Expected 16 substrate values (8x2), got {sample_substrates.shape[0]}"
 
         # Known mutated oracle ticks in TOA
         known_active_ticks = {6, 46, 68}
@@ -224,16 +221,25 @@ def test_karr_terminal_organelle_assembly_l2_replay_identity_per_tick(rng_seed: 
                     f"Tick {tick}: anti-identity violation: output equals input on known active tick"
                 )
 
-            # Integer exactness comparison across all observables (Rule 2)
+            # Integer exactness comparison across all observables (Rule 2) and Rule 3 WID-length guard
             for observable in _OBSERVABLES:
                 karr_after = cell_vector(trace, "states_after", observable, tick)
                 oc_after = projected_after[observable]
 
-                # Assert integrality
-                assert np.array_equal(np.rint(karr_after), karr_after), f"Tick {tick}: Karr after non-integral"
-                assert np.array_equal(np.rint(oc_after), oc_after), f"Tick {tick}: OC after non-integral"
+                # Rule 3: WID-length alignment guard on every tick and observable
+                expected_len = 16 if observable == "substrates" else len(process.enzyme_wids)
+                if karr_after.shape[0] != expected_len:
+                    pytest.fail(
+                        f"L2a wid-length drift at tick={tick}, observable={observable}: "
+                        f"karr_len={karr_after.shape[0]}, expected_len={expected_len}"
+                    )
+                if oc_after.shape[0] != expected_len:
+                    pytest.fail(
+                        f"L2a OC wid-length drift at tick={tick}, observable={observable}: "
+                        f"oc_len={oc_after.shape[0]}, expected_len={expected_len}"
+                    )
 
-                _assert_identity_or_tolerance(
+                _assert_integer_exact_equality(
                     tick=tick,
                     observable=observable,
                     oc_after=oc_after,
