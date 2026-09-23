@@ -59,6 +59,32 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-23 12:25 IST) — compartmental ProteinMonomer migration wave:**
+
+- Active worktree `E:\opencell-worktrees\fix-compartmental-protein-state`,
+  branch `fix/compartmental-protein-state-20260923`, base `962ce79`; nothing
+  pushed.
+- The authorized workflow is sequential and role-separated:
+  **Opus planner -> Gemini test writer -> Sonnet doer -> GPT reviewer**.
+  Every role receives a three-slot prompt. Tests must be committed before the
+  doer starts; the doer may not weaken or replace them.
+- Planner authority is the local primary MATLAB source, especially
+  `ProteinMonomer.m`, `TerminalOrganelleAssembly.m`, and
+  `ProteinTranslocation.m`, plus the canonical ProteinMonomer and TOA fixtures.
+  Existing OpenCell code is evidence about the current implementation, not the
+  specification.
+- Target property: one authoritative compartmental ProteinMonomer state with
+  an exact derived aggregate view for legacy readers; no private TOA matrix,
+  dual-writer synchronization, `trace_hint`, `states_after` input, production
+  trace read, or test-only production mode.
+- Migration must explicitly cover TOA and ProteinTranslocation and inventory
+  every flat `protein.counts` reader/writer before implementation scope is
+  approved. TerminalOrganelle remains blocked until the planner and frozen
+  adversarial tests establish this ownership contract.
+- Operational traps: run Python/tests only through WSL wrappers; do not remove
+  worktrees recursively; no role may push; parent orchestrator owns integration
+  and baseline digest updates.
+
 **Current status (2026-09-22 20:08 IST) — deterministic parallel integration verified:**
 
 - Audit branch now contains the locally merged HostInteraction,
