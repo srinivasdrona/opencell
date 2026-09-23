@@ -69,6 +69,41 @@ def _as_int_array(value: object) -> np.ndarray:
     return np.asarray(value, dtype=np.int64)
 
 
+def _read_integral_nonnegative_count(value: float, *, wid: str, compartment: str) -> int:
+    """Read one TerminalOrganelleAssembly authority cell as an exact,
+
+    nonnegative integral molecule count.
+
+    Karr's `ProteinMonomer.counts` is a uint16 matrix (`ProteinMonomer.m`):
+    every legitimate authority cell TOA reads is an exact integer >= 0.
+    Silently rounding/flooring/clipping a fractional, negative, or
+    non-finite value would hide a genuine authority-consistency bug
+    upstream instead of surfacing it -- so this raises loudly instead
+    (frozen C8: fractional input must raise `ValueError`, never be
+    tolerated).
+    """
+    numeric = float(value)
+    if not np.isfinite(numeric):
+        raise ValueError(
+            f"TerminalOrganelleAssembly authority read for {wid!r} at "
+            f"compartment {compartment!r} must be a finite integral molecule "
+            f"count, got {value!r}"
+        )
+    if numeric < 0.0:
+        raise ValueError(
+            f"TerminalOrganelleAssembly authority read for {wid!r} at "
+            f"compartment {compartment!r} must be a nonnegative integral "
+            f"molecule count, got {numeric}"
+        )
+    if not numeric.is_integer():
+        raise ValueError(
+            f"TerminalOrganelleAssembly authority read for {wid!r} at "
+            f"compartment {compartment!r} must be an exact integral molecule "
+            f"count, got non-integral value {numeric}"
+        )
+    return int(numeric)
+
+
 @dataclass(frozen=True)
 class _LocalizationReaction:
     target_idx: int
@@ -240,8 +275,14 @@ class KarrTerminalOrganelleAssemblyProcess(Process):
         uninc = np.zeros(len(self.component_wids), dtype=np.int64)
         for i, wid in enumerate(self.component_wids):
             row = mature_state.get(wid, {})
-            inc[i] = int(round(float(row.get(self.incorporated_compartment_by_wid[wid], 0.0))))
-            uninc[i] = int(round(float(row.get(self.unincorporated_compartment_by_wid[wid], 0.0))))
+            inc_comp = self.incorporated_compartment_by_wid[wid]
+            uninc_comp = self.unincorporated_compartment_by_wid[wid]
+            inc[i] = _read_integral_nonnegative_count(
+                row.get(inc_comp, 0.0), wid=wid, compartment=inc_comp
+            )
+            uninc[i] = _read_integral_nonnegative_count(
+                row.get(uninc_comp, 0.0), wid=wid, compartment=uninc_comp
+            )
 
         inc_initial = inc.copy()
         uninc_initial = uninc.copy()

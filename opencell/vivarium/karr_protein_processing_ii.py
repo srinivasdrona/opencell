@@ -181,27 +181,26 @@ class KarrProteinProcessingIIProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.enzyme_wids
                 },
-                # Design 9.3/M05-M08: the legacy `counts` write was
-                # undeclared (M08). Declaring it EMPTY here (rather than
-                # scoped to `unprocessed_monomer_wids`) satisfies frozen
-                # C2b's AST-based "is 'counts' a declared branch key"
-                # check without creating any NEW store node: Vivarium's
-                # `Store.set_value`/`apply_update` silently ignore keys with
-                # no existing node (`store.py:1168-1177`, `:1601-1607`), so
-                # at baseline this write only ever reached WIDs some OTHER
-                # process's schema had already created (its own enzyme/
-                # substrate WIDs) -- everything else was a silent no-op.
-                # Scoping this declaration to `unprocessed_monomer_wids`
-                # (PP2's own substrate list) would newly CREATE those nodes
-                # and expose the unconditional processedI->processedII
+                # Design 9.3/M05-M08: the legacy `protein.counts` write
+                # (`_build_update`'s `protein_update["counts"] =
+                # unprocessed_update`, below) is deliberately left
+                # undeclared here, exactly matching this process's
+                # pre-Stage-1 baseline. Declaring it -- even as an empty
+                # placeholder -- would either (a) newly create store nodes
+                # for WIDs no other process's schema had ever declared,
+                # exposing the unconditional processedI->processedII
                 # pass-through's full-pool drain to WIDs it never
-                # legitimately touched before, corrupting the flat
-                # aggregate for unrelated WIDs (verified: crashes
-                # `protein.counts` from ~16.4k to ~275 copies in one tick).
-                # An empty declaration keeps the write's *effective* scope
-                # identical to baseline (whatever node some other process
-                # already created) while still satisfying C2b's key check.
-                "counts": {},
+                # legitimately touched (verified: crashed `protein.counts`
+                # from ~16.4k to ~275 copies in one tick), or (b) be a fake
+                # empty declaration whose only purpose is to satisfy an AST
+                # key-presence scan while the dynamic write stays
+                # unchanged underneath -- exactly the test-gaming
+                # `test_c2b_no_fake_empty_counts_declaration_in_pp2` (frozen)
+                # forbids. Non-migrated `counts` behavior is out of scope
+                # for Stage 1 (only the 8 migrated WIDs are authorized) and
+                # is left completely alone: not declared, not rerouted, not
+                # deleted.
+                #
                 # Design 9.3/M05-M07: migrated WIDs' processedI->processedII
                 # transition (ProteinProcessingII.m's unconditional pass-
                 # through for non-lipoprotein/non-secreted proteins,
