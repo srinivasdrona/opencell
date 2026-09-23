@@ -59,6 +59,27 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-23 20:45 IST) — Stage 1b behavior green; warning fix pending:**
+
+- Sonnet completed the atomic Stage 1b production edit in the worktree but
+  correctly left it uncommitted when three frozen tests proved invalid.
+  Gemini corrected those framework assumptions in test commit `87d67b4`.
+- Parent now reproduces **33/33 frozen tests PASS**, exact TOA replay PASS,
+  mutation canaries PASS, L2.4 4x100 PASS, and direct Engine authority
+  assertions PASS. No frozen test is modified by the doer.
+- The 33-test run still emits 80 incompatible-updater warnings. Root cause:
+  `karr_host_interaction.py` and `karr_observability_step.py` are read-only
+  consumers of migrated flat counts but declare `accumulate` updater ownership
+  for those leaves, conflicting with the projection's rejecting updater.
+- Extend doer scope only to filter the eight `MIGRATED_WIDS` from those two
+  reader schema declarations while preserving their WID read lists and runtime
+  behavior. Required result: 33/33 with warnings-as-errors and v6 one-tick
+  warning gate green. Then commit the entire Stage 1b production slice
+  atomically and log provenance.
+- L1b method/wiring line anchors remain intentionally stale until the final
+  code commit fixes line positions; parent reviewer will regenerate/refresh
+  anchors afterward, not the doer.
+
 **Current status (2026-09-23 16:50 IST) — Stage 1a accepted; atomic Stage 1b next:**
 
 - Sonnet doer agent `7e4b5ffd-447f-4ebc-842b-1c085cd4c8ac`
