@@ -59,6 +59,32 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-23 13:25 IST) — Opus plan complete; Gemini tests next:**
+
+- Opus planner agent `9f7335a9-251f-46ee-ae40-afc7d8b7a6d4` completed
+  `docs/design/compartmental_protein_state_migration.md` in commit `7875728`.
+  No production or test code changed.
+- Primary finding: Karr TOA owns no private state. Its 8x2 substrate matrix is
+  a linear-index view of `ProteinMonomer.counts[4820,6]`, refreshed and written
+  back by `Process.m`. The design therefore rejects any TOA-private matrix.
+- New source defects found: current TOA reads localization requirement planes
+  transposed (`TOA-PLANE-SWAP`), and ProteinProcessingII writes an undeclared
+  `protein.counts` branch. The existing TOA oracle's only active ticks move one
+  copy, so it cannot distinguish Karr's full-count transfer from the old +1
+  fallback; constructed multi-copy/fixed-point tests are mandatory.
+- Accepted defaults for the authorized first slice: biological compartment id
+  `d` for the unused second column; rewrite the TOA replay against the authority
+  and drop unused TOA enzyme ports; flat compatibility view is the mature-row
+  sum across six compartments; split implementation into behavior-neutral
+  Stage 1a then eight-WID Stage 1b; defer ProteinDecay algorithm work.
+- Before implementation, Gemini must freeze Stage-1 adversarial tests and run
+  the two unresolved inventory probes: dynamic DNASupercoiling intersection
+  with the eight TOA WIDs, and persistence/divider writable-flat-state sweep.
+  No production edits are allowed in the test-writer role.
+- Active worktree/branch remain
+  `E:\opencell-worktrees\fix-compartmental-protein-state` /
+  `fix/compartmental-protein-state-20260923`; nothing pushed.
+
 **Current status (2026-09-23 12:25 IST) — compartmental ProteinMonomer migration wave:**
 
 - Active worktree `E:\opencell-worktrees\fix-compartmental-protein-state`,
