@@ -1,8 +1,8 @@
 ---
-title: "Days 119-125: Three Honest Ports, Twenty-Five Blockers, and the Matrix We Refused to Fake"
+title: "Days 119-125: Four Honest Ports, Twenty-Four Blockers, and the Matrix We Refused to Fake"
 date: 2026-09-23
 authors: [sdrona]
-tags: [opencell, matlab, fidelity, l2.1, l2.2, l2.5, vivarium, multi-agent]
+tags: [opencell, matlab, fidelity, l2.1, l2.2, l2.5, vivarium, multi-agent, terminal-organelle]
 ---
 
 **Tehol:** Bugg.
@@ -258,6 +258,78 @@ derived view until their own fidelity work requires more.
 
 ---
 
+**Tehol:** And then.
+
+**Bugg:** Four roles, in sequence. The Opus planner read the primary MATLAB
+state and process code before anyone wrote another test.
+
+**Tehol:** Finding.
+
+**Bugg:** Karr's TOA matrix is not TOA state at all. It is a linear-index view
+of one `ProteinMonomer.counts` matrix: 4,820 protein-form rows by six
+compartments. Karr refreshes the process view from that matrix and writes it
+straight back after every process call.
+
+**Tehol:** So our proposed private matrix would have been structurally wrong
+even if every number matched.
+
+**Bugg:** Exactly. The planner also found that our Python port had the
+incorporated and unincorporated requirement planes reversed.
+
+**Tehol:** Did the old replay catch that.
+
+**Bugg:** It could not. The only three active ticks in the hundred-tick oracle
+each moved exactly one molecule. A broken one-copy implementation and Karr's
+full-count transfer produce the same answer on those ticks.
+
+**Tehol:** Then the test writer.
+
+**Bugg:** Gemini wrote the cases the oracle could not supply: five copies must
+move in one tick; a three-hop HMW1-to-HMW3-to-P32-to-P65 hierarchy must reach
+its fixed point in one call; incorporated and unincorporated requirements must
+not be swapped; direct writes to the flat compatibility view must fail.
+Planted one-copy, single-pass and plane-swapped implementations all failed.
+
+**Tehol:** The doer.
+
+**Bugg:** Sonnet added the compartmental authority for the eight terminal-
+organelle proteins across all ten protein forms and six compartments: 480
+authoritative leaves. Translation, processing, folding, modification,
+translocation, decay and TOA now share that ownership boundary. The old flat
+`protein.counts` values for those WIDs are derived mature-row sums protected
+against ordinary writes.
+
+**Tehol:** Reviewer.
+
+**Bugg:** Rejected three test assumptions about Vivarium's graph and exception
+mechanics, then found two more false greens after everything passed.
+
+**Tehol:** Which two.
+
+**Bugg:** ProteinProcessingII satisfied a generic "declared writes" test by
+declaring an empty dictionary while still emitting dynamic keys. And TOA
+silently rounded fractional molecule counts instead of failing. The tests went
+back to Gemini; the fixes went back to Sonnet. We also removed a "last schema
+wins" ordering workaround once reader schemas shared the correct rejecting
+updater.
+
+**Tehol:** Final result.
+
+**Bugg:** Thirty-five compartment-state tests green. Forty-seven
+migration-plus-v6 tests green with warnings treated as errors. Exact TOA replay
+green. L2.4 green over four seeds and one hundred ticks. The honesty baseline
+now derives four eligible processes.
+
+**Tehol:** TerminalOrganelleAssembly.
+
+**Bugg:** Eligible.
+
+**Tehol:** Four out of four deterministic.
+
+**Bugg:** Four out of four.
+
+---
+
 **Tehol:** You used the three-slot prompts again.
 
 **Bugg:** Deliberate-action prefix, domain rules, case-specific contract.
@@ -298,8 +370,8 @@ re-derives the verdict from source and production behavior.
 
 | Gate or scope | Current verified status |
 |---|---|
-| **Pre-L2.5 no-known-gap eligibility** | **3 eligible / 25 blocked** |
-| **Deterministic terminal processes** | **3 eligible / 1 architectural blocker** |
+| **Pre-L2.5 no-known-gap eligibility** | **4 eligible / 24 blocked**, integrity OK |
+| **Deterministic terminal processes** | **4 / 4 eligible** |
 | **L2.2 corrected denominator** | **22 PASS / 2 MISSING_EVIDENCE / 24 required** |
 | **L1b method completeness** | **115 / 115 resolved** |
 | **L1b wiring conformance** | **28 / 28 PASS** |
@@ -309,15 +381,15 @@ re-derives the verdict from source and production behavior.
 
 **Tehol:** Caveats.
 
-**Bugg:** The three repairs are verified together on the honesty integration
-branch; this post is publishing before that branch is promoted to main. The
-older v4 integration suite still has three reproduced pre-existing failures:
+**Bugg:** The four repairs are verified together on local integration
+branches; this post is publishing before those code branches are promoted to
+main. The older v4 integration suite still has three reproduced pre-existing failures:
 one folding-progression assertion and two tests that seed absent protein-count
-paths. We did not relabel them as new activation regressions.
+paths. We did not relabel them as migration regressions.
 
-**Tehol:** And twenty-five processes are still blocked.
+**Tehol:** And twenty-four processes are still blocked.
 
-**Bugg:** Yes. Three honest ports do not make a whole-cell port.
+**Bugg:** Yes. Four honest ports do not make a whole-cell port.
 
 **Tehol:** But they establish the repair method.
 
@@ -327,16 +399,20 @@ for known code deviations.
 
 **Tehol:** What begins now.
 
-**Bugg:** The compartmental ProteinMonomer migration. Planner, test writer,
-doer, reviewer. Then TerminalOrganelleAssembly gets another turn.
+**Bugg:** The stochastic and event-driven blockers. ChromosomeCondensation and
+TranscriptionalRegulation still lack their corrected-denominator L2.2 evidence,
+and twenty-two other processes retain known code deviations.
 
-**Tehol:** And if the planner says the migration is larger than we think.
+**Tehol:** Did the compartment migration help anything besides TOA.
 
-**Bugg:** We will publish the larger truth instead of the smaller fiction.
+**Bugg:** It moved MG_191, MG_192 and MG_318 onto real processed-I
+compartments in ProteinTranslocation and established the shared authority the
+remaining protein processes can adopt. It did not complete ProteinTranslocation
+or ProteinDecay, and we did not claim that it did.
 
-**Tehol:** Three out of twenty-eight.
+**Tehol:** Four out of twenty-eight.
 
-**Bugg:** Three out of twenty-eight.
+**Bugg:** Four out of twenty-eight.
 
 **Tehol:** It sounds worse than twenty-two out of twenty-two.
 
@@ -346,6 +422,5 @@ doer, reviewer. Then TerminalOrganelleAssembly gets another turn.
 
 *This is the OpenCell dev blog. The repo is
 [github.com/srinivasdrona/opencell](https://github.com/srinivasdrona/opencell).
-The next post will follow one compartmental protein state from MATLAB fixture
-to shared production authority—and report whether TerminalOrganelleAssembly
-finally becomes four out of four.*
+The four deterministic processes are now eligible. The next repair wave
+returns to the twenty-four stochastic and event-driven processes that remain.*
