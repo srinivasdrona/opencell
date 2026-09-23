@@ -2656,19 +2656,6 @@ def build_karr_chassis_v6(
         ("protein_flat_projection_post",),
     ]
 
-    # Vivarium applies per-leaf schema (including `_updater`) in Step dict
-    # insertion order, last writer wins (store.py `generate()` ->
-    # `_generate_paths`, processed after ALL processes but in `steps.items()`
-    # order). `karr_observability_step` (added just above) declares a plain
-    # `accumulate` schema for `protein.counts` covering all 482 monomer
-    # WIDs, which would otherwise be applied AFTER (and silently overwrite)
-    # `protein_flat_projection_post`'s rejecting updater for the 8 migrated
-    # WIDs (design D3/C1). Re-inserting moves it to the end of the dict so
-    # its schema is applied last, without touching
-    # `karr_observability_step.py` (out of Stage-1b's write scope) or
-    # changing any flow/dependency edge.
-    steps["protein_flat_projection_post"] = steps.pop("protein_flat_projection_post")
-
     chromosome_state = initial_state.setdefault("chromosome", {})
     chromosome_state.pop("damage_sites", None)
     chromosome_state.setdefault("damage_events_cumulative", [])
