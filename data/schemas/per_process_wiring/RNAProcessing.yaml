@@ -368,7 +368,7 @@ source_anchors:
       symbol: KarrRNAProcessingProcess._compute_processing_events
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1044-1165"
+      lines: "1017-1653"
       note: "Current chassis wiring for RNAProcessing and the shared RNA request step."
       symbol: build_karr_chassis_v4
 provenance:

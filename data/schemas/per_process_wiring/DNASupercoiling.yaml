@@ -357,7 +357,7 @@ source_anchors:
       symbol: KarrAllocationStep.ports_schema
     composite_enrollment:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "2107-2113"
+      lines: "1658-2513"
       note: "Composite wiring for the DNASupercoiling process ports."
       symbol: build_karr_chassis_v5
 provenance:

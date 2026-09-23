@@ -23,12 +23,12 @@ integration_touchpoints:
       symbol: "KarrHostInteractionProcess"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
-        lines: "95-449"
+        lines: "97-486"
         note: "Current OC port has no request-calculator surface and never reads substrates_allocated or substrates. Representative OC anchor for the benign zero-request omission."
         symbol: "KarrHostInteractionProcess"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "2410-2510"
+          lines: "2517-2671"
           note: "Composite wiring connects HostInteraction to cell, protein, and complex stores and initializes the cascade from canonical fitted counts."
           symbol: build_karr_chassis_v6
       note: OC does not implement this Karr method.
@@ -46,16 +46,16 @@ integration_touchpoints:
       symbol: "KarrHostInteractionProcess.next_update"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
-        lines: "418-449"
+        lines: "455-486"
         note: "Literal port: reads monomer enzymes from protein.counts and the pentamer enzyme from complex.counts, then writes the six Host booleans."
         symbol: "KarrHostInteractionProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_host_interaction.py"
-          lines: "299-345"
+          lines: "301-375"
           note: "Port schema exposes cell, protein, and complex stores used by next_update."
           symbol: KarrHostInteractionProcess.ports_schema
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "2410-2510"
+          lines: "2517-2671"
           note: "Topology wiring exposes cell, protein, and complex stores and computes initial booleans from the same cascade helper."
           symbol: build_karr_chassis_v6
     status: "implemented"
@@ -72,7 +72,7 @@ integration_touchpoints:
       symbol: "KarrHostInteractionProcess"
       source:
         path: "opencell/vivarium/karr_host_interaction.py"
-        lines: "95-449"
+        lines: "97-486"
         note: "No flux-bound equivalent exists in the current OC port. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrHostInteractionProcess"
       note: OC does not implement this Karr method.
@@ -107,7 +107,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_host_interaction.py"
-        lines: "418-449"
+        lines: "455-486"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrHostInteractionProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -162,32 +162,32 @@ source_anchors:
       symbol: <module>
     helper_functions:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "44-83"
+      lines: "46-56"
       note: "Fixture path/scalar/WID/index-array parsing helpers plus the _HOST_BOOLEAN_FIELDS tuple."
       symbol: _resolve_path
     process_class:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "95-118"
+      lines: "97-486"
       note: "Process class definition and constructor."
       symbol: KarrHostInteractionProcess
     fixture_loader:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "120-297"
+      lines: "122-299"
       note: "Fixture-backed index-set loading plus exact canonical ProteinMonomer/ProteinComplex projection validation."
       symbol: KarrHostInteractionProcess._load_fixture
     ports_schema:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "299-345"
+      lines: "301-375"
       note: "Cell, protein, and complex ports used by the process."
       symbol: KarrHostInteractionProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "418-449"
+      lines: "455-486"
       note: "Literal per-tick boolean cascade: adherence, TLR1/2/6, NF-kB, inflammatory response."
       symbol: KarrHostInteractionProcess.next_update
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "2410-2510"
+      lines: "2517-2671"
       note: "HostInteraction topology wiring in the chassis."
       symbol: build_karr_chassis_v6
 provenance:
@@ -223,7 +223,7 @@ deviations:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_host_interaction.py"
-      lines: "95-449"
+      lines: "97-486"
       note: "Current OC port has no LP or request-calculator path."
       symbol: KarrHostInteractionProcess
   shared_pool_projection_merges_compartments: false

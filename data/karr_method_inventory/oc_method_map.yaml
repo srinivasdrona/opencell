@@ -299,7 +299,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/HostInteraction.m:evolveState:271
         status: confirmed
-        oc: opencell/vivarium/karr_host_interaction.py:KarrHostInteractionProcess.next_update:418
+        oc: opencell/vivarium/karr_host_interaction.py:KarrHostInteractionProcess.next_update:455
         note: HostInteraction.m evolveState (271-303) maps to
           KarrHostInteractionProcess.calculate_host_state/next_update; the process reads 14 monomer
           enzymes from protein.counts and one complex enzyme from complex.counts, then applies the
@@ -427,7 +427,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState:532
         status: confirmed
-        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.next_update:946
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.next_update:956
         note: 'Direct runtime method for the OC ProteinDecay class actually wired into
 
           the chassis. The file header says `Vivarium Process for Karr
@@ -446,7 +446,7 @@ processes:
       evolveState_MisfoldProteins:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_MisfoldProteins:544
         status: confirmed
-        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.evolveState_MisfoldProteins:509
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.evolveState_MisfoldProteins:519
         note: 'Direct port of Karr misfolding (`ProteinDecay.m:544-596`): reads
 
           mature/bound/inactivated monomer and complex forms, stochastically rounds
@@ -459,7 +459,7 @@ processes:
       evolveState_RefoldProteins:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_RefoldProteins:598
         status: confirmed
-        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.evolveState_RefoldProteins:545
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.evolveState_RefoldProteins:555
         note: 'Direct port of Karr ClpB refolding (`ProteinDecay.m:598-679`):
 
           stochastically selects misfolded cytosolic/terminal-cytosolic monomers and
@@ -470,7 +470,7 @@ processes:
       evolveState_DegradeComplexes:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_DegradeComplexes:681
         status: inlined
-        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.next_update:946
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.next_update:956
         note: 'Folded into `ProteinDecayLightProcess.next_update`. The inlined complex
 
           decay path is `n_decay = self._rng.poisson(expected)`,
@@ -487,7 +487,7 @@ processes:
       evolveState_DegradeAbortedPolypeptides:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_DegradeAbortedPolypeptides:766
         status: confirmed
-        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.evolveState_DegradeAbortedPolypeptides:626
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess.evolveState_DegradeAbortedPolypeptides:636
         note: 'Direct port of aborted-polypeptide proteolysis (`ProteinDecay.m:766-843`):
 
           randomizes `polypeptide.abortedPolypeptides`, computes cleavage/peptidase/FtsH
@@ -500,7 +500,7 @@ processes:
       evolveState_DegradeMonomers:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:evolveState_DegradeMonomers:844
         status: inlined
-        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess._latent_monomer_substrate_delta:743
+        oc: opencell/vivarium/karr_protein_decay_light.py:ProteinDecayLightProcess._latent_monomer_substrate_delta:753
         note: 'Only a latent proxy exists, folded into
 
           `ProteinDecayLightProcess._latent_monomer_substrate_delta` and called from
@@ -539,7 +539,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m:evolveState:519
         status: confirmed
-        oc: opencell/vivarium/karr_protein_folding.py:KarrProteinFoldingProcess.next_update:237
+        oc: opencell/vivarium/karr_protein_folding.py:KarrProteinFoldingProcess.next_update:268
         note: Karr line 519 maps directly to KarrProteinFoldingProcess.next_update, which performs phase1
           ion binding and phase2 chaperone folding.
   ProteinModification:
@@ -560,7 +560,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m:evolveState:331
         status: confirmed
-        oc: opencell/vivarium/karr_protein_modification.py:KarrProteinModificationProcess.next_update:196
+        oc: opencell/vivarium/karr_protein_modification.py:KarrProteinModificationProcess.next_update:289
         note: MATLAB ProteinModification.m:331-335 begins `evolveState` by updating `modifiedMonomers(this.monomerIndexs_notmodified)`
           from `unmodifiedMonomers(this.monomerIndexs_notmodified)`. OC next_update at KarrProteinModificationProcess.next_update:196
           reads allocated substrate state with `allocated_state = states.get("substrates_allocated", {}).get(self.name,
@@ -581,7 +581,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m:evolveState:236
         status: confirmed
-        oc: opencell/vivarium/karr_protein_processing_i.py:KarrProteinProcessingIProcess.next_update:182
+        oc: opencell/vivarium/karr_protein_processing_i.py:KarrProteinProcessingIProcess.next_update:195
         note: dedicated OC def; next_update implements the deformylation + N-Met cleavage update loop,
           matching Karr evolveState at lines 236-320 (water/enzyme limits, weighted events, substrate/protein
           deltas).
@@ -602,7 +602,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m:evolveState:348
         status: confirmed
-        oc: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.next_update:178
+        oc: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.next_update:227
         note: Dedicated PP2 port. OC line 211 says `MATLAB evolveState first transitions non-lipoprotein/non-secreted
           monomers directly`, and lines 211-295 mirror ProteinProcessingII.m:348-415 (pass-through, peptidase/transferase
           limits, stochastic clipping, substrate updates).
@@ -624,7 +624,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m:evolveState:305
         status: confirmed
-        oc: opencell/vivarium/karr_protein_translocation.py:KarrProteinTranslocationProcess.next_update:307
+        oc: opencell/vivarium/karr_protein_translocation.py:KarrProteinTranslocationProcess.next_update:339
         note: Direct process runtime method. Karr ProteinTranslocation.m:305 evolves state by randomly
           selecting translocating monomers, updating protein counts/locations, and subtracting ATP/GTP/H2O;
           OC KarrProteinTranslocationProcess.next_update at karr_protein_translocation.py:307 does the
@@ -1091,7 +1091,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m:evolveState:316
         status: confirmed
-        oc: opencell/vivarium/karr_terminal_organelle_assembly.py:KarrTerminalOrganelleAssemblyProcess.next_update:403
+        oc: opencell/vivarium/karr_terminal_organelle_assembly.py:KarrTerminalOrganelleAssemblyProcess.next_update:265
         note: Karr evolveState loops until no additional proteins can localize (TerminalOrganelleAssembly.m:316-337).
           OC implements that behavior in KarrTerminalOrganelleAssemblyProcess.next_update, which runs
           the localization eligibility loop and emits the cell/substrate deltas (karr_terminal_organelle_assembly.py:403-458).
@@ -1180,7 +1180,7 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m:evolveState:599
         status: confirmed
-        oc: opencell/vivarium/karr_translation_v3.py:KarrTranslationV3Process.next_update:695
+        oc: opencell/vivarium/karr_translation_v3.py:KarrTranslationV3Process.next_update:703
         note: Karr evolveState mutates ribosome/polypeptide state directly. OC's canonical runtime class
           is KarrTranslationV3Process (karr_composite.py:211 maps karr_translation to it); next_update
           computes synth_per_s = tl_v2.predict_synthesis_per_s(self.mechanism_inputs, n_active=n_active_ribosomes)

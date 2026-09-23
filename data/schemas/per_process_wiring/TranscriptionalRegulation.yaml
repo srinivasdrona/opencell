@@ -203,12 +203,12 @@ source_anchors:
       symbol: KarrTranscriptionalRegulationProcess.next_update
     composite_topology:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1580-2405"
+      lines: "1658-2513"
       note: "Production topology at lines 2071-2076 maps only protein, complex, tf_binding, and tx_rate_fold_change; it omits chromosome and authoritative binding/writeback ports."
       symbol: build_karr_chassis_v5
     chassis_seeding:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "960-1578"
+      lines: "1017-1653"
       note: "Complex TF seeding for the chassis builder."
       symbol: build_karr_chassis_v4
 provenance:

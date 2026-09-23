@@ -22,9 +22,9 @@ The two missing rows are ChromosomeCondensation and
 TranscriptionalRegulation, both previously misclassified as deterministic
 despite stochastic chromosome-binding code. The fail-closed rebaseline is:
 
-- **Eligible:** 3/28.
+- **Eligible:** 4/28.
 - **Blocked by a missing lower gate:** 2/28.
-- **Blocked by current code deviation:** 23/28.
+- **Blocked by current code deviation:** 22/28.
 
 This is a stochasticity-classification correction, not a new implementation
 regression. The old 22/22 board excluded two processes that require L2.2.
@@ -81,10 +81,11 @@ pair.
 
 ## Closure order
 
-1. Close the remaining deterministic repair: TerminalOrganelleAssembly.
+1. Deterministic closure is complete: all four terminal L2.1 processes are
+   eligible.
 2. Close Metabolism's validation-versus-production configuration split and
    allocator-derived LP-bound path.
-3. Group the remaining 23 code-deviation blockers by shared root cause:
+3. Group the remaining 22 code-deviation blockers by shared root cause:
    request/allocation timing, compartment projection, stoichiometry, and
    reduced biology.
 4. Refresh the hash-locked baseline after each verified closure.

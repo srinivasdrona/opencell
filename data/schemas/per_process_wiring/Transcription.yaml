@@ -29,7 +29,7 @@ integration_touchpoints:
         symbol: "RequestCalculatorTranscription.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "778-789"
+          lines: "729-1014"
           note: "Composite wiring that instantiates the transcription request calculator."
           symbol: build_karr_chassis_v3
       note: "Current OC requests only ATP/CTP/GTP/UTP; water is not part of the request calculator today."
@@ -378,7 +378,7 @@ source_anchors:
       symbol: RequestCalculatorTranscription
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "778-834"
+      lines: "729-1014"
       note: "Current composite instantiation and topology wiring for transcription."
       symbol: build_karr_chassis_v3
     mechanism_helper:

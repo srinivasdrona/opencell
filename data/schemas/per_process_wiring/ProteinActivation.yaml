@@ -33,7 +33,7 @@ integration_touchpoints:
         symbol: "KarrProteinActivationProcess"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "1580-2405"
+          lines: "1658-2513"
           note: "Production topology maps shared protein/complex active/inactive state, stimuli, and live geometry."
           symbol: build_karr_chassis_v5
       note: "Current OC mirrors the allocator-free shape. OC does not implement this Karr method."
@@ -61,7 +61,7 @@ integration_touchpoints:
           note: "Class entry delegates to the shared protein/complex active/inactive, stimuli, geometry, and derived-activity schema."
           symbol: KarrProteinActivationProcess.ports_schema
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "1580-2405"
+          lines: "1658-2513"
           note: "Production seeds and maps canonical shared active/inactive state."
           symbol: build_karr_chassis_v5
       note: "Production and direct execution use the same compartmented state and transfer."
@@ -412,12 +412,12 @@ source_anchors:
       symbol: _converted_signals
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1580-2405"
+      lines: "1658-2513"
       note: "Production maps shared protein/complex active/inactive state, stimuli, and geometry."
       symbol: build_karr_chassis_v5
     initial_state_seeding:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1580-2405"
+      lines: "1658-2513"
       note: "Production initialization seeds canonical active/inactive state through _seed_protein_activation_shared_state."
       symbol: build_karr_chassis_v5
 provenance:

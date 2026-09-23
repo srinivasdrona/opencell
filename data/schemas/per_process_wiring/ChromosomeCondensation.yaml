@@ -334,12 +334,12 @@ source_anchors:
       symbol: KarrChromosomeCondensationProcess._allocated_or_state
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1580-2398"
+      lines: "1658-2513"
       note: "Port mapping for karr_chromosome_condensation in the chassis."
       symbol: build_karr_chassis_v5
     composite_registration:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1580-2398"
+      lines: "1658-2513"
       note: "Process registration in the chassis assembly."
       symbol: build_karr_chassis_v5
 provenance:

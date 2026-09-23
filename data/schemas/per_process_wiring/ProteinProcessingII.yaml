@@ -32,7 +32,7 @@ integration_touchpoints:
           note: "Availability-based request helper used by the pathway calculator."
           symbol: _request_from_available
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "2063-2067"
+          lines: "1658-2513"
           note: "Current chassis wiring for karr_protein_processing_ii."
           symbol: build_karr_chassis_v5
     status: "implemented"
@@ -49,20 +49,20 @@ integration_touchpoints:
       symbol: "KarrProteinProcessingIIProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "178-178"
+        lines: "227-365"
         note: "Reads allocated substrates, applies the same two-phase maturation, and returns sparse deltas."
         symbol: "KarrProteinProcessingIIProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_protein_processing_ii.py"
-          lines: "180-185"
+          lines: "227-365"
           note: "Strict-zero allocator read path."
           symbol: KarrProteinProcessingIIProcess.next_update
         - path: "opencell/vivarium/karr_protein_processing_ii.py"
-          lines: "304-347"
+          lines: "367-430"
           note: "Sparse update builder used for writeback."
           symbol: KarrProteinProcessingIIProcess._build_update
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "2063-2067"
+          lines: "1658-2513"
           note: "Current chassis wiring for karr_protein_processing_ii."
           symbol: build_karr_chassis_v5
     status: "implemented"
@@ -80,7 +80,7 @@ integration_touchpoints:
       symbol: "KarrProteinProcessingIIProcess"
       source:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "49-434"
+        lines: "51-517"
         note: "No flux-bound builder or equivalent helper exists in the current OC port. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrProteinProcessingIIProcess"
       note: OC does not implement this Karr method.
@@ -136,7 +136,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "427-434"
+      lines: "489-517"
       note: "Water decrement in the strict-zero OC update."
       symbol: KarrProteinProcessingIIProcess._apply_transformations
     kind: expression
@@ -150,7 +150,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "430-434"
+      lines: "489-517"
       note: "PG160 decrement in the strict-zero OC update."
       symbol: KarrProteinProcessingIIProcess._apply_transformations
     kind: expression
@@ -165,7 +165,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "430-434"
+      lines: "489-517"
       note: "sn-glycerol-1-phosphate byproduct in the OC update."
       symbol: KarrProteinProcessingIIProcess._apply_transformations
     kind: expression
@@ -179,7 +179,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "430-434"
+      lines: "489-517"
       note: "Hydrogen byproduct in the OC update."
       symbol: KarrProteinProcessingIIProcess._apply_transformations
     kind: expression
@@ -224,7 +224,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "178-302"
+        lines: "227-365"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrProteinProcessingIIProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -285,22 +285,22 @@ source_anchors:
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "49-437"
+      lines: "51-517"
       note: "OC process class and fixture loader."
       symbol: KarrProteinProcessingIIProcess
     ports_schema:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "124-176"
+      lines: "141-225"
       note: "Shared substrate/protein/request store declarations."
       symbol: KarrProteinProcessingIIProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "178-302"
+      lines: "227-365"
       note: "Count-space maturation update path."
       symbol: KarrProteinProcessingIIProcess.next_update
     build_update:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "304-347"
+      lines: "367-430"
       note: "Sparse delta emission."
       symbol: KarrProteinProcessingIIProcess._build_update
     request_calculator:
@@ -310,7 +310,7 @@ source_anchors:
       symbol: RequestCalculatorProteinPathway
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "2063-2067"
+      lines: "1658-2513"
       note: "Current chassis wiring for karr_protein_processing_ii."
       symbol: build_karr_chassis_v5
 provenance:

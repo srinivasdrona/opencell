@@ -304,7 +304,7 @@ source_anchors:
       symbol: _canonical_complex_wids
     allocation_flow:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "2389-2413"
+      lines: "1658-2513"
       note: "Request Process -> allocation Step -> segregation evolution Step -> coordinator."
       symbol: build_karr_chassis_v5
 provenance:

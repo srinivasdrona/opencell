@@ -8,8 +8,8 @@ process:
   oc_file: "opencell/vivarium/karr_terminal_organelle_assembly.py"
   whole_cell_model_id: "Process_TerminalOrganelleAssembly"
   functional_area: "cell-organization"
-  state_shape_role: "hierarchical terminal-organelle localization represented by activity/assembled abstractions in OC"
-  notes: "MATLAB repeatedly transfers full eligible unincorporated compartment counts until a fixed point. Current OC drives coarse activity/assembled counters and separately exposes trace-hint and one-copy fallback substrate paths."
+  state_shape_role: "authoritative compartment-resolved ProteinMonomer mature-state localization"
+  notes: "MATLAB and OC both derive the eight-protein incorporated/unincorporated view from the authoritative ProteinMonomer compartment state and transfer full eligible counts to a fixed point."
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
@@ -23,12 +23,12 @@ integration_touchpoints:
       symbol: "KarrTerminalOrganelleAssemblyProcess"
       source:
         path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-        lines: "89-458"
-        note: "OC `next_update` reads and updates `states['substrates']` directly; there is no dedicated request calculator. Representative OC anchor for non-implemented correspondence."
+        lines: "115-326"
+        note: "OC omits the identically-zero request hook; the process reads no allocator resource."
         symbol: "KarrTerminalOrganelleAssemblyProcess"
-      note: OC does not implement this Karr method.
+      note: Resource-equivalent omission of Karr's all-zero request hook.
     status: "not_implemented"
-    note: "The MATLAB hook exists but is identically zero, and the current OC runtime bypasses allocator mediation entirely. OC does not implement this Karr method."
+    note: "Karr returns an all-zero request matrix; OC has no request hook and consumes no allocated resource, which is behaviorally equivalent."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -41,16 +41,20 @@ integration_touchpoints:
       symbol: "KarrTerminalOrganelleAssemblyProcess.next_update"
       source:
         path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-        lines: "403-403"
-        note: "Per-tick update path for cell counters and substrate deltas."
+        lines: "265-326"
+        note: "Builds the 8x2 authority view, evaluates source-ordered requirements, and emits full-count fixed-point compartment deltas."
         symbol: "KarrTerminalOrganelleAssemblyProcess.next_update"
       supporting:
-        - path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-          lines: "357-401"
-          note: "Trace-hint override plus compartment-transfer fallback for substrate deltas."
-          symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
+        - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+          lines: 250-263
+          note: Evaluates incorporated and unincorporated requirement planes in MATLAB order.
+          symbol: KarrTerminalOrganelleAssemblyProcess._active_reactions
+        - path: opencell/vivarium/protein_state.py
+          lines: 178-200
+          note: Defines the single compartmental authority and protected mature aggregate.
+          symbol: compartment_counts_schema
     status: "implemented"
-    note: "OC replaces MATLAB's full-count fixed-point substrate loop with activity-gated assembled counters; substrate writeback is a separate trace-hint or one-copy fallback path."
+    note: "OC is a direct port of MATLAB's full-count fixed-point localization over the shared ProteinMonomer authority."
   calcFluxBounds:
     matlab:
       symbol: "TerminalOrganelleAssembly"
@@ -64,8 +68,8 @@ integration_touchpoints:
       symbol: "KarrTerminalOrganelleAssemblyProcess"
       source:
         path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-        lines: "89-458"
-        note: "No bounds helper exists in the OC port. Representative OC anchor for non-implemented correspondence."
+        lines: "115-326"
+        note: "No LP-bound method exists; this state-local process only transfers protein counts."
         symbol: "KarrTerminalOrganelleAssemblyProcess"
       note: OC does not implement this Karr method.
     status: "not_implemented"
@@ -74,49 +78,49 @@ allocator:
   mode:
     karr: "allocation"
     oc_current: "bypass"
-    note: "MATLAB exposes the allocator hook even though it returns a zero matrix; the OC port works directly from `states['substrates']`."
+    note: "Karr exposes an identically-zero request hook; OC omits it and consumes no allocated resource."
   request_formula:
     matlab: "zeros(size(this.substrates))"
-    oc: "N/A; no request calculator exists and `next_update` reads `states['substrates']` directly."
-    note: "The request hook is degenerate on the MATLAB side and absent on the OC side."
+    oc: "N/A; resource-equivalent omission of the all-zero Karr hook."
+    note: "No resource demand exists on either runtime path."
   requests: []
   bypasses:
     - wid: "MG_191_MONOMER"
       compartment: "membrane"
       source: "oc"
-      note: "Direct substrate touch in the OC port; fixture maps membrane -> terminal-organelle membrane."
+      note: "Direct authoritative ProteinMonomer compartment transfer; not an allocator-mediated resource."
     - wid: "MG_192_MONOMER"
       compartment: "membrane"
       source: "oc"
-      note: "Direct substrate touch in the OC trace-hint/fallback surface; fixture maps membrane -> terminal-organelle membrane."
+      note: "Direct authoritative ProteinMonomer compartment transfer; not an allocator-mediated resource."
     - wid: "MG_217_MONOMER"
       compartment: "cytosol"
       source: "oc"
-      note: "Direct substrate touch in the OC port; fixture maps cytosol -> terminal-organelle cytosol."
+      note: "Direct authoritative ProteinMonomer compartment transfer; not an allocator-mediated resource."
     - wid: "MG_218_MONOMER"
       compartment: "cytosol"
       source: "oc"
-      note: "Direct substrate touch in the OC port; fixture maps cytosol -> terminal-organelle cytosol."
+      note: "Direct authoritative ProteinMonomer compartment transfer; not an allocator-mediated resource."
     - wid: "MG_312_MONOMER"
       compartment: "cytosol"
       source: "oc"
-      note: "Direct substrate touch in the OC trace-hint/fallback surface; fixture maps cytosol -> terminal-organelle cytosol."
+      note: "Direct authoritative ProteinMonomer compartment transfer; not an allocator-mediated resource."
     - wid: "MG_317_MONOMER"
       compartment: "cytosol"
       source: "oc"
-      note: "Direct substrate touch in the OC trace-hint/fallback surface; fixture maps cytosol -> terminal-organelle cytosol."
+      note: "Direct authoritative ProteinMonomer compartment transfer; not an allocator-mediated resource."
     - wid: "MG_318_MONOMER"
       compartment: "membrane"
       source: "oc"
-      note: "Direct substrate touch in the OC port; fixture maps membrane -> terminal-organelle membrane."
+      note: "Direct authoritative ProteinMonomer compartment transfer; not an allocator-mediated resource."
     - wid: "MG_386_MONOMER"
       compartment: "cytosol"
       source: "oc"
-      note: "Direct substrate touch in the OC port; fixture maps cytosol -> terminal-organelle cytosol."
+      note: "Direct authoritative ProteinMonomer compartment transfer; not an allocator-mediated resource."
 consume_stoichiometry:
   - wid: "MG_191_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "MATLAB: -this.substrates(MG_191_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: negative of the full eligible unincorporated count in the source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
@@ -124,14 +128,14 @@ consume_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical membrane-localized substrate transfer entry."
+      lines: "265-326"
+      note: "Exact full-count decrement from the authoritative c/m source compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful unincorporated compartment transfer entry."
     kind: expression
   - wid: "MG_192_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "MATLAB: -this.substrates(MG_192_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: negative of the full eligible unincorporated count in the source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
@@ -139,14 +143,14 @@ consume_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical membrane-localized substrate transfer entry (P110)."
+      lines: "265-326"
+      note: "Exact full-count decrement from the authoritative c/m source compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful unincorporated compartment transfer entry."
     kind: expression
   - wid: "MG_217_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: -this.substrates(MG_217_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: negative of the full eligible unincorporated count in the source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
@@ -154,14 +158,14 @@ consume_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry."
+      lines: "265-326"
+      note: "Exact full-count decrement from the authoritative c/m source compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful unincorporated compartment transfer entry."
     kind: expression
   - wid: "MG_218_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: -this.substrates(MG_218_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: negative of the full eligible unincorporated count in the source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
@@ -169,14 +173,14 @@ consume_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry (HMW2)."
+      lines: "265-326"
+      note: "Exact full-count decrement from the authoritative c/m source compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful unincorporated compartment transfer entry."
     kind: expression
   - wid: "MG_312_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: -this.substrates(MG_312_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: negative of the full eligible unincorporated count in the source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
@@ -184,14 +188,14 @@ consume_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry (HMW1)."
+      lines: "265-326"
+      note: "Exact full-count decrement from the authoritative c/m source compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful unincorporated compartment transfer entry."
     kind: expression
   - wid: "MG_317_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: -this.substrates(MG_317_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: negative of the full eligible unincorporated count in the source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
@@ -199,14 +203,14 @@ consume_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry (HMW3)."
+      lines: "265-326"
+      note: "Exact full-count decrement from the authoritative c/m source compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful unincorporated compartment transfer entry."
     kind: expression
   - wid: "MG_318_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "MATLAB: -this.substrates(MG_318_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: negative of the full eligible unincorporated count in the source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
@@ -214,14 +218,14 @@ consume_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical membrane-localized substrate transfer entry (P32)."
+      lines: "265-326"
+      note: "Exact full-count decrement from the authoritative c/m source compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful unincorporated compartment transfer entry."
     kind: expression
   - wid: "MG_386_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: -this.substrates(MG_386_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: -1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: negative of the full eligible unincorporated count in the source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "320-336"
@@ -229,15 +233,15 @@ consume_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path decrements one copy from unincorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry (P200)."
+      lines: "265-326"
+      note: "Exact full-count decrement from the authoritative c/m source compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful unincorporated compartment transfer entry."
     kind: expression
 produce_stoichiometry:
   - wid: "MG_191_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "MATLAB: +this.substrates(MG_191_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: positive full count removed from the paired unincorporated source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
@@ -245,14 +249,14 @@ produce_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical membrane-localized substrate transfer entry."
+      lines: "265-326"
+      note: "Exact full-count increment into the authoritative tc/tm destination compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful incorporated compartment transfer entry."
     kind: expression
   - wid: "MG_192_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "MATLAB: +this.substrates(MG_192_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: positive full count removed from the paired unincorporated source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
@@ -260,14 +264,14 @@ produce_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical membrane-localized substrate transfer entry (P110)."
+      lines: "265-326"
+      note: "Exact full-count increment into the authoritative tc/tm destination compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful incorporated compartment transfer entry."
     kind: expression
   - wid: "MG_217_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: +this.substrates(MG_217_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: positive full count removed from the paired unincorporated source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
@@ -275,14 +279,14 @@ produce_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry."
+      lines: "265-326"
+      note: "Exact full-count increment into the authoritative tc/tm destination compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful incorporated compartment transfer entry."
     kind: expression
   - wid: "MG_218_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: +this.substrates(MG_218_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: positive full count removed from the paired unincorporated source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
@@ -290,14 +294,14 @@ produce_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry (HMW2)."
+      lines: "265-326"
+      note: "Exact full-count increment into the authoritative tc/tm destination compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful incorporated compartment transfer entry."
     kind: expression
   - wid: "MG_312_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: +this.substrates(MG_312_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: positive full count removed from the paired unincorporated source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
@@ -305,14 +309,14 @@ produce_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry (HMW1)."
+      lines: "265-326"
+      note: "Exact full-count increment into the authoritative tc/tm destination compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful incorporated compartment transfer entry."
     kind: expression
   - wid: "MG_317_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: +this.substrates(MG_317_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: positive full count removed from the paired unincorporated source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
@@ -320,14 +324,14 @@ produce_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry (HMW3)."
+      lines: "265-326"
+      note: "Exact full-count increment into the authoritative tc/tm destination compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful incorporated compartment transfer entry."
     kind: expression
   - wid: "MG_318_MONOMER"
     compartment: "membrane"
-    formula_or_constant: "MATLAB: +this.substrates(MG_318_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: positive full count removed from the paired unincorporated source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
@@ -335,14 +339,14 @@ produce_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical membrane-localized substrate transfer entry (P32)."
+      lines: "265-326"
+      note: "Exact full-count increment into the authoritative tc/tm destination compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful incorporated compartment transfer entry."
     kind: expression
   - wid: "MG_386_MONOMER"
     compartment: "cytosol"
-    formula_or_constant: "MATLAB: +this.substrates(MG_386_MONOMER, this.compartmentIndexs_unincorporated); OC fallback: +1 when unincorporated > 0 (trace-hint path may override with arbitrary integer delta)."
+    formula_or_constant: "MATLAB/OC: positive full count removed from the paired unincorporated source compartment."
     matlab_anchor:
       path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
       lines: "333-336"
@@ -350,10 +354,10 @@ produce_stoichiometry:
       symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-401"
-      note: "Trace-hint path can apply arbitrary integral deltas; fallback path increments one copy into incorporated per tick."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    note: "Canonical cytosol-localized substrate transfer entry (P200)."
+      lines: "265-326"
+      note: "Exact full-count increment into the authoritative tc/tm destination compartment."
+      symbol: KarrTerminalOrganelleAssemblyProcess.next_update
+    note: "Source-faithful incorporated compartment transfer entry."
     kind: expression
 stoichiometry_oracle:
   class: none
@@ -365,55 +369,55 @@ compartment_routing:
     consume_compartment: "membrane"
     produce_compartment:
     mismatch: true
-    note: "MATLAB routes unincorporated membrane [6] -> incorporated terminal-organelle membrane [4]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+    note: "MATLAB and OC route membrane to terminal-organelle membrane (tm); the v2 row schema cannot encode terminal-organelle destinations, so produce_compartment is null."
   - wid: "MG_192_MONOMER"
     consume_compartment: "membrane"
     produce_compartment:
     mismatch: true
-    note: "MATLAB routes unincorporated membrane [6] -> incorporated terminal-organelle membrane [4]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+    note: "MATLAB and OC route membrane to terminal-organelle membrane (tm); the v2 row schema cannot encode terminal-organelle destinations, so produce_compartment is null."
   - wid: "MG_217_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment:
     mismatch: true
-    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+    note: "MATLAB and OC route cytosol to terminal-organelle cytosol (tc); the v2 row schema cannot encode terminal-organelle destinations, so produce_compartment is null."
   - wid: "MG_218_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment:
     mismatch: true
-    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+    note: "MATLAB and OC route cytosol to terminal-organelle cytosol (tc); the v2 row schema cannot encode terminal-organelle destinations, so produce_compartment is null."
   - wid: "MG_312_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment:
     mismatch: true
-    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+    note: "MATLAB and OC route cytosol to terminal-organelle cytosol (tc); the v2 row schema cannot encode terminal-organelle destinations, so produce_compartment is null."
   - wid: "MG_317_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment:
     mismatch: true
-    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+    note: "MATLAB and OC route cytosol to terminal-organelle cytosol (tc); the v2 row schema cannot encode terminal-organelle destinations, so produce_compartment is null."
   - wid: "MG_318_MONOMER"
     consume_compartment: "membrane"
     produce_compartment:
     mismatch: true
-    note: "MATLAB routes unincorporated membrane [6] -> incorporated terminal-organelle membrane [4]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+    note: "MATLAB and OC route membrane to terminal-organelle membrane (tm); the v2 row schema cannot encode terminal-organelle destinations, so produce_compartment is null."
   - wid: "MG_386_MONOMER"
     consume_compartment: "cytosol"
     produce_compartment:
     mismatch: true
-    note: "MATLAB routes unincorporated cytosol [5] -> incorporated terminal-organelle cytosol [1]; schema enum has no terminal-organelle label, so produce_compartment is null. OC projection is compartment_1 -> compartment_0."
+    note: "MATLAB and OC route cytosol to terminal-organelle cytosol (tc); the v2 row schema cannot encode terminal-organelle destinations, so produce_compartment is null."
 unit_conversion_chain:
   source_units: "substrate counts"
   target_units: "substrate count deltas/tick"
   steps:
     - from_units: "substrate counts"
       to_units: "substrate count deltas/tick"
-      operation: "MATLAB identity/full-count transfer repeated until no eligible unincorporated count remains; OC trace-hint applies target deltas and fallback moves one copy per WID"
+      operation: "integer full-count compartment transfer repeated to a fixed point"
       anchor:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m"
         lines: "320-336"
         note: "MATLAB in-place localization loop."
         symbol: evolveState
-  note: "There is no mmol/gDW/hr or per-second scaling here; the process transfers integer substrate counts directly."
+  note: "No scaling or concentration conversion; MATLAB and OC transfer exact integer molecule counts."
 dependencies:
   produces_inputs_for: []
   consumes_outputs_of:
@@ -459,44 +463,34 @@ source_anchors:
       symbol: getDryWeight
   oc_blocks:
     process_class:
-      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "89-109"
-      note: "OC process class, defaults, and constructor."
+      path: opencell/vivarium/karr_terminal_organelle_assembly.py
+      lines: 115-326
+      note: Source-faithful one-port TOA process.
       symbol: KarrTerminalOrganelleAssemblyProcess
     fixture_load:
-      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "111-180"
-      note: "Fixture load and localization rule parsing."
+      path: opencell/vivarium/karr_terminal_organelle_assembly.py
+      lines: 131-236
+      note: Loads WIDs, localization matrices, thresholds, and biological compartments.
       symbol: KarrTerminalOrganelleAssemblyProcess._load_fixture
-    schema_projection:
-      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "182-269"
-      note: "Schema load and flattened substrate projection."
-      symbol: KarrTerminalOrganelleAssemblyProcess._load_substrate_projection_schema
     ports_schema:
-      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "271-302"
-      note: "Port defaults for substrates, enzymes, and cell counters."
+      path: opencell/vivarium/karr_terminal_organelle_assembly.py
+      lines: 238-248
+      note: Declares only the shared compartmental protein authority.
       symbol: KarrTerminalOrganelleAssemblyProcess.ports_schema
-    trace_hint_update:
-      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "357-376"
-      note: "Trace-hint substrate writeback override."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_trace_hint
-    compartment_transfer_update:
-      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "378-401"
-      note: "Fallback compartment transfer when no trace hint is present."
-      symbol: KarrTerminalOrganelleAssemblyProcess._substrate_deltas_from_compartment_transfer
+    active_reactions:
+      path: opencell/vivarium/karr_terminal_organelle_assembly.py
+      lines: 250-263
+      note: Evaluates source-ordered incorporated/unincorporated requirements.
+      symbol: KarrTerminalOrganelleAssemblyProcess._active_reactions
     next_update:
-      path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "403-458"
-      note: "Per-tick state update and emitted deltas."
+      path: opencell/vivarium/karr_terminal_organelle_assembly.py
+      lines: 265-326
+      note: Performs full-count fixed-point localization and emits conserved deltas.
       symbol: KarrTerminalOrganelleAssemblyProcess.next_update
     composite_wiring:
-      path: "opencell/vivarium/karr_composite.py"
-      lines: "1580-2398"
-      note: "Chassis-v5 maps only protein and cell; chassis-v6 inherits that topology, so substrates and trace_hint are not connected."
+      path: opencell/vivarium/karr_composite.py
+      lines: 1658-2513
+      note: Chassis-v5/v6 map TOA's sole protein port to the shared authority.
       symbol: build_karr_chassis_v5
 provenance:
   fixture_files:
@@ -505,9 +499,9 @@ provenance:
   kb_version: "karr_native_m1__v2"
   extraction_date_utc:
   notes: "Audited against the mirrored MATLAB source and the OC port; the only explicit version string exposed in the OC path is the extracted karr_native_m1__v2 lineage."
-  last_audited: '2026-09-17'
-  audited_by: Copilot documentation rebaseline (primary MATLAB source + current OC)
-  oc_commit_sha: cc1ef696219f41305ef008135cef46c9e65cd947
+  last_audited: '2026-09-23'
+  audited_by: GPT reviewer (primary MATLAB source + four-role implementation verification)
+  oc_commit_sha: 21f6961ca353a5878dfcd9e2ce21c260ccf063b9
   matlab_files_referenced:
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TerminalOrganelleAssembly.m
   oc_files_referenced:
@@ -523,13 +517,9 @@ deviations:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_terminal_organelle_assembly.py"
-      lines: "403-458"
-      note: "The OC port uses direct state updates instead of a flux-bound stage."
+      lines: "265-326"
+      note: "Direct state-local count transfer; no LP-bound stage exists."
       symbol: KarrTerminalOrganelleAssemblyProcess.next_update
   shared_pool_projection_merges_compartments: false
-  known_deviations:
-    - "The OC port tracks `protein.activity`-gated `cell.terminal_organelle_count` and `cell.terminal_organelle_components_assembled` abstractions instead of deriving assembly directly from MATLAB's two-column substrate matrix."
-    - "MATLAB transfers the full eligible unincorporated count and repeats the hierarchy until a fixed point in one evolveState call. OC instead applies a trace-hint target delta when provided, or a one-copy-per-WID fallback when no activity gate is on."
-    - "In chassis-v6, TerminalOrganelleAssembly is wired only to `protein` and `cell`; its declared `substrates` port and `trace_hint` path are not connected to the shared chassis stores."
-    - "MATLAB routes unincorporated cytosol/membrane into terminal-organelle compartments; OC exposes projected `compartment_1 -> compartment_0` substrate keys and does not preserve terminal-organelle labels."
-  note: "The row separates the open assembly/substrate/topology deviations from the benign zero-request allocator shape difference."
+  known_deviations: []
+  note: "No known TerminalOrganelleAssembly implementation deviation remains; the zero-request hook omission is resource-equivalent."

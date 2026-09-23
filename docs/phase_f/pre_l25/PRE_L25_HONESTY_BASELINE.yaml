@@ -8,7 +8,7 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "6dbf656c4dba53e44954ee82cd64e69285c8256712025f91433a849910a14308"
+  sha256: "dd80f0892e35936c1ac808f4de247337cb9ae94007bd251f1b28306382520310"
   file_count: 128
 authorities:
   l1b_method_completeness: "PASS 115/115"
@@ -456,52 +456,65 @@ processes:
   - name: TerminalOrganelleAssembly
     behavior_gate: L2.1
     behavior_verdict: GENUINE
-    eligibility: BLOCKED_CODE_DEVIATION
+    eligibility: ELIGIBLE
     findings:
       - id: TOA-REDUCED-STATE
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          OpenCell uses protein-activity gates and assembled counters instead
-          of Karr's full unincorporated/incorporated substrate matrices and
-          fixed-point full-count transfer.
+          Resolved: TOA now derives its incorporated/unincorporated view from
+          the shared compartmental ProteinMonomer authority and performs the
+          complete fixed-point full-count transfer.
         evidence:
           - path: opencell/vivarium/karr_terminal_organelle_assembly.py
-            lines: "307-350"
-          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
-            lines: "403-455"
+            lines: "265-326"
+          - path: tests/vivarium/test_toa_karr_transfer.py
+            lines: "135-239"
       - id: TOA-PRODUCTION-TOPOLOGY
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          The production topology connects only protein and cell; no substrate
-          compartment state is available for the MATLAB transfer.
+          Resolved: the sole TOA protein port maps to the shared compartmental
+          authority; the obsolete cell/substrate/hint surfaces are removed.
         evidence:
           - path: opencell/vivarium/karr_composite.py
-            lines: "2195-2198"
+            lines: "2294-2296"
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "238-248"
       - id: TOA-TRACE-HINT
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          A replay-only states-after substrate outcome can override the
-          biological transfer path.
+          Resolved: production TOA has no trace-hint or oracle-input surface;
+          every delta derives from live compartment counts and fixture rules.
         evidence:
           - path: opencell/vivarium/karr_terminal_organelle_assembly.py
-            lines: "357-377"
-          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
-            lines: "447-452"
+            lines: "265-326"
+          - path: tests/vivarium/test_toa_karr_transfer.py
+            lines: "263-285"
       - id: TOA-COMPARTMENT-PROJECTION
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          OpenCell projects terminal-organelle source/destination compartments
-          to generic keys and does not preserve the biological compartment
-          labels.
+          Resolved: source and destination compartments retain biological
+          c/m/tc/tm identities loaded from the canonical fixture.
         evidence:
           - path: opencell/vivarium/karr_terminal_organelle_assembly.py
-            lines: "190-211"
+            lines: "184-205"
+          - path: tests/vivarium/test_protein_state_static_lint.py
+            lines: "87-132"
+      - id: TOA-PLANE-SWAP
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Resolved during the repair: localization requirement plane 1 is
+          evaluated against incorporated counts and plane 2 against
+          unincorporated counts, matching MATLAB.
+        evidence:
           - path: opencell/vivarium/karr_terminal_organelle_assembly.py
-            lines: "378-401"
+            lines: "206-234"
+          - path: tests/vivarium/test_toa_karr_transfer.py
+            lines: "196-239"
 
   - name: Transcription
     behavior_gate: L2.2
@@ -606,5 +619,5 @@ processes:
             lines: "40-43"
 
 summary:
-  eligible: 3
-  blocked: 25
+  eligible: 4
+  blocked: 24

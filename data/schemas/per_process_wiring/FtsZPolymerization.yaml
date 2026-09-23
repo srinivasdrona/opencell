@@ -29,7 +29,7 @@ integration_touchpoints:
         symbol: "KarrFtsZPolymerizationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "1580-1790"
+          lines: "1658-2513"
           note: "Composite allocation consumer list includes `karr_ftsz_polymerization` with GTP."
           symbol: build_karr_chassis_v5
       note: "Request handling lives in-process rather than in a separate request-calculator helper."
@@ -300,7 +300,7 @@ source_anchors:
       symbol: KarrFtsZPolymerizationProcess.molecules_to_concentration
     composite_allocation:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1580-1790"
+      lines: "1658-2513"
       note: "Composite allocation consumer list wires FtsZ to GTP."
       symbol: build_karr_chassis_v5
 provenance:

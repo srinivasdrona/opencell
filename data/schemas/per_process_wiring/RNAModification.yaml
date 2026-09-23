@@ -33,7 +33,7 @@ integration_touchpoints:
         symbol: "RequestCalculatorRNAPathway.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "1052-1138"
+          lines: "1017-1653"
           note: "Current chassis wiring that instantiates the shared RNA-pathway request calculator."
           symbol: build_karr_chassis_v4
       note: >-
@@ -441,7 +441,7 @@ source_anchors:
       symbol: RequestCalculatorRNAPathway
     chassis_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1052-1138"
+      lines: "1017-1653"
       note: "Current chassis builder wires RNAModification and the RNA-pathway request step."
       symbol: build_karr_chassis_v4
 provenance:

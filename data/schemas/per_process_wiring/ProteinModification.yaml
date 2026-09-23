@@ -52,16 +52,16 @@ integration_touchpoints:
       symbol: "KarrProteinModificationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_modification.py"
-        lines: "196-196"
+        lines: "289-420"
         note: "Current OC per-tick maturation update."
         symbol: "KarrProteinModificationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_protein_modification.py"
-          lines: "373-481"
+          lines: "497-553"
           note: "Feasibility limits, stochastic round, weighted selection, and stoichiometric projection."
           symbol: KarrProteinModificationProcess._sample_protein_fluxes
         - path: "opencell/vivarium/karr_protein_modification.py"
-          lines: "205-263"
+          lines: "289-420"
           note: "Strict-zero allocator read path and substrate writeback."
           symbol: KarrProteinModificationProcess.next_update
       note: "OC follows the same stochastic structure, but it also has replay-only hint short-circuiting."
@@ -80,7 +80,7 @@ integration_touchpoints:
       symbol: "KarrProteinModificationProcess"
       source:
         path: "opencell/vivarium/karr_protein_modification.py"
-        lines: "61-547"
+        lines: "63-671"
         note: "Class init / fixture load only; no bounds method. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrProteinModificationProcess"
       note: "No OC calcFluxBounds implementation exists for this process. OC does not implement this Karr method."
@@ -140,7 +140,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "244-263"
+      lines: "289-420"
       note: "substrate_delta = self.reaction_stoich @ reaction_fluxes"
       symbol: KarrProteinModificationProcess.next_update
     kind: per_flux
@@ -154,7 +154,7 @@ consume_stoichiometry:
       symbol: Why this is Phase B Turn 8
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "244-263"
+      lines: "289-420"
       note: "Same stoichiometric projection as ATP."
       symbol: KarrProteinModificationProcess.next_update
     kind: per_flux
@@ -168,7 +168,7 @@ consume_stoichiometry:
       symbol: Why this is Phase B Turn 8
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "244-263"
+      lines: "289-420"
       note: "Same stoichiometric projection as ATP."
       symbol: KarrProteinModificationProcess.next_update
     kind: per_flux
@@ -183,7 +183,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "244-263"
+      lines: "289-420"
       note: "Same substrate_delta projection."
       symbol: KarrProteinModificationProcess.next_update
     kind: per_flux
@@ -197,7 +197,7 @@ produce_stoichiometry:
       symbol: Algorithm
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "244-263"
+      lines: "289-420"
       note: "Same substrate_delta projection."
       symbol: KarrProteinModificationProcess.next_update
     kind: per_flux
@@ -211,7 +211,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "244-263"
+      lines: "289-420"
       note: "Same substrate_delta projection."
       symbol: KarrProteinModificationProcess.next_update
     kind: per_flux
@@ -225,7 +225,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "244-263"
+      lines: "289-420"
       note: "Same substrate_delta projection."
       symbol: KarrProteinModificationProcess.next_update
     kind: per_flux
@@ -296,7 +296,7 @@ unit_conversion_chain:
       operation: "stochastic feasibility search -> weighted reaction selection -> reaction_stoich @ reaction_fluxes"
       anchor:
         path: "opencell/vivarium/karr_protein_modification.py"
-        lines: "196-481"
+        lines: "289-420"
         note: "Process update and sampling helpers. (normalized from invalid lines='196-354, 373-481' for schema validation)"
         symbol: KarrProteinModificationProcess.next_update
 dependencies:
@@ -342,17 +342,17 @@ source_anchors:
   oc_blocks:
     class_and_fixture_load:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "61-133"
+      lines: "63-671"
       note: "Class definition, fixture load, and state-shape setup."
       symbol: KarrProteinModificationProcess
     allocator_and_next_update:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "196-354"
+      lines: "289-420"
       note: "Strict-zero substrate read path, stochastic tick update, and substrate writeback."
       symbol: KarrProteinModificationProcess.next_update
     biology_sampler:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "356-481"
+      lines: "480-495"
       note: "Feasibility helpers, weighted sampling, and stoichiometric projection."
       symbol: KarrProteinModificationProcess._read_required_enzyme_count
     request_calculator:
@@ -402,7 +402,7 @@ deviations:
       symbol: Algorithm
     oc_anchor:
       path: "opencell/vivarium/karr_protein_modification.py"
-      lines: "61-133"
+      lines: "63-671"
       note: "OC class load path; no LP bounds method exists."
       symbol: KarrProteinModificationProcess
   shared_pool_projection_merges_compartments: false

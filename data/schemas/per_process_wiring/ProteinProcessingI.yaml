@@ -28,7 +28,7 @@ integration_touchpoints:
         symbol: "RequestCalculatorProteinPathway.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "1107-1158"
+          lines: "1017-1653"
           note: "Wires the protein-pathway request calculator and allocation step."
           symbol: build_karr_chassis_v4
     status: "implemented"
@@ -45,12 +45,12 @@ integration_touchpoints:
       symbol: "KarrProteinProcessingIProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_processing_i.py"
-        lines: "182-182"
+        lines: "195-359"
         note: "Allocator-backed tick update with water gating, stochastic event sampling, and writeback."
         symbol: "KarrProteinProcessingIProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_protein_processing_i.py"
-          lines: "312-378"
+          lines: "361-416"
           note: "Helper readers that split protein enzyme sourcing from substrate allocation."
           symbol: KarrProteinProcessingIProcess._read_enzyme_counts
     status: "implemented"
@@ -68,7 +68,7 @@ integration_touchpoints:
       symbol: "KarrProteinProcessingIProcess"
       source:
         path: "opencell/vivarium/karr_protein_processing_i.py"
-        lines: "33-416"
+        lines: "34-465"
         note: "Current OC port has no LP-bound API; resource control is handled through the request calculator and next_update. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrProteinProcessingIProcess"
       note: OC does not implement this Karr method.
@@ -112,7 +112,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
-      lines: "273-308"
+      lines: "195-359"
       note: "Water delta is computed from total processed events and the cleavable subset."
       symbol: KarrProteinProcessingIProcess.next_update
     kind: expression
@@ -127,7 +127,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
-      lines: "273-308"
+      lines: "195-359"
       note: "Hydrogen delta follows the total processed count."
       symbol: KarrProteinProcessingIProcess.next_update
     kind: expression
@@ -141,7 +141,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
-      lines: "273-308"
+      lines: "195-359"
       note: "Formate delta follows the total processed count."
       symbol: KarrProteinProcessingIProcess.next_update
     kind: expression
@@ -155,7 +155,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
-      lines: "273-308"
+      lines: "195-359"
       note: "Methionine delta follows the cleavable subset only."
       symbol: KarrProteinProcessingIProcess.next_update
     kind: expression
@@ -195,7 +195,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_protein_processing_i.py"
-        lines: "182-310"
+        lines: "195-359"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrProteinProcessingIProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -251,22 +251,22 @@ source_anchors:
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_protein_processing_i.py"
-      lines: "33-119"
+      lines: "34-465"
       note: "Class definition, fixture loading, and validation."
       symbol: KarrProteinProcessingIProcess
     ports_schema:
       path: "opencell/vivarium/karr_protein_processing_i.py"
-      lines: "121-180"
+      lines: "122-193"
       note: "Allocator, protein, and substrate store shape."
       symbol: KarrProteinProcessingIProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_protein_processing_i.py"
-      lines: "182-310"
+      lines: "195-359"
       note: "Allocator-backed tick update and writeback."
       symbol: KarrProteinProcessingIProcess.next_update
     helper_reads:
       path: "opencell/vivarium/karr_protein_processing_i.py"
-      lines: "312-378"
+      lines: "361-416"
       note: "Allocator substrate read and enzyme-source split."
       symbol: KarrProteinProcessingIProcess._read_enzyme_counts
     request_calculator:
@@ -276,12 +276,12 @@ source_anchors:
       symbol: RequestCalculatorProteinPathway
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1107-1158"
+      lines: "1017-1653"
       note: "Protein-pathway request calculator and allocation-step wiring."
       symbol: build_karr_chassis_v4
     topology:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "2056-2062"
+      lines: "1658-2513"
       note: "ProteinProcessingI process topology wiring."
       symbol: build_karr_chassis_v5
 provenance:
@@ -315,7 +315,7 @@ deviations:
       symbol: ProteinProcessingI
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_i.py"
-      lines: "33-419"
+      lines: "34-465"
       note: "Current OC port has no flux-bound API."
       symbol: KarrProteinProcessingIProcess
   shared_pool_projection_merges_compartments: false

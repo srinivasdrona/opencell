@@ -59,6 +59,35 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-23 22:05 IST) — four-role migration complete; TOA eligible:**
+
+- Four-role workflow completed:
+  Opus plan `7875728`; Gemini frozen tests and corrections through `3932b5f`;
+  Sonnet Stage 1a `192f949`, atomic Stage 1b `21f6961`, reviewer-return fix
+  `397950b`; GPT reviewer cleanup `0fcea56`. All agents are idle; no live
+  background processes remain.
+- TerminalOrganelleAssembly now has one authoritative compartmental
+  ProteinMonomer state, exact full-count fixed-point localization, biological
+  c/m/tc/tm routing, correct requirement planes, and no trace hint/private
+  matrix/activity gate/counter cap. The eight-WID authority contains exactly
+  480 leaves and rejects direct flat-count writes.
+- Machine baseline is `INTEGRITY_OK`, **4/28 eligible / 24 blocked**, source
+  digest `dd80f0892e35936c1ac808f4de247337cb9ae94007bd251f1b28306382520310`.
+  All four deterministic terminal processes are eligible.
+- Final independent verification: migration/v6 **47 PASS** with
+  warnings-as-errors; honesty/wiring validator tests **27 PASS**; L1b method
+  completeness **115/115** and wiring **28/28**; Rule 8 and Ruff PASS; L2.4
+  four seeds x100 ticks PASS. The v4 suite remains its reproduced baseline of
+  7 PASS / 3 known failure classes (folding progression plus two absent
+  protein-count seeding paths).
+- ProteinTranslocation benefits partially: MG_191/MG_192/MG_318 now move on
+  authoritative processed-I compartments, but the remaining translocatable
+  set still uses the legacy location/queue representation, so its honesty
+  blocker remains open. ProteinDecay algorithm work is likewise not claimed.
+- Branch/worktree:
+  `fix/compartmental-protein-state-20260923` /
+  `E:\opencell-worktrees\fix-compartmental-protein-state`; not pushed.
+
 **Current status (2026-09-23 21:30 IST) — GPT review reopened two acceptance gaps:**
 
 - Independent reviewer gates pass: 91 targeted tests, 33/33 frozen migration
