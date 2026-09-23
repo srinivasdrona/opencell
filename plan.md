@@ -59,6 +59,29 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-23 14:20 IST) — Gemini tests frozen; Sonnet Stage 1a next:**
+
+- Gemini test-writer agent `e03c394d-81ff-448b-bea6-0b3705918678`
+  committed the Stage-1 acceptance suite in `f6dac97`, followed by review
+  cleanup commits `55d123b`, `9f4d4bf`, and `7fdee02`. Production code was
+  untouched and the tests are now frozen for the doer.
+- Parent independently reproduced **33 collected: 21 intentional RED,
+  12 GREEN, 0 skips/xfails**. Ruff and `git diff --check` pass. All count
+  comparisons are integer-exact; TOA replay has no calibrated-tolerance path.
+- Mutation canaries execute and reject one-copy transfer, single-pass
+  localization, and swapped requirement planes. Static probes prove
+  DNASupercoiling's only protein WID is `MG_122_MONOMER` (zero intersection
+  with the eight TOA WIDs) and no persistence/divider protein writer exists.
+- Sonnet doer must not edit any frozen test. Implementation is decomposed:
+  Stage 1a adds behavior-neutral authority/projection infrastructure with an
+  empty migrated set and commits it; parent reviews before Stage 1b flips the
+  eight WIDs and rewrites TOA/writers. Stage 1a is not expected to make the
+  combined frozen suite green; it must preserve all pre-existing behavior.
+- Note the frozen C13 test asserts the final eight-WID Stage-1b state, so it
+  remains intentionally RED after an empty-set Stage 1a even though the
+  infrastructure is correct. C12 plus existing regression gates distinguish
+  Stage 1a.
+
 **Current status (2026-09-23 13:25 IST) — Opus plan complete; Gemini tests next:**
 
 - Opus planner agent `9f7335a9-251f-46ee-ae40-afc7d8b7a6d4` completed
