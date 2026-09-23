@@ -276,6 +276,30 @@ def test_c8_conservation_and_integrality() -> None:
             assert float(val).is_integer(), f"Non-integral count at {wid}@{comp}: {val}"
 
 
+def test_c8_fractional_count_raises_value_error() -> None:
+    """Claim C8: Supplying a fractional authoritative molecule count must raise ValueError
+
+    with an integral-count message before any transfer. Karr state is uint16; fail loud,
+    never round/floor/clip.
+    """
+    proc = KarrTerminalOrganelleAssemblyProcess({})
+    mature_state = _empty_mature_state()
+    # Fractional count: 1.5 copies of MG_192 in unincorporated compartment 'm'
+    mature_state["MG_192_MONOMER"]["m"] = 1.5
+
+    state_input = _build_toa_input_state(mature_state)
+    with pytest.raises(ValueError) as exc_info:
+        proc.next_update(1.0, state_input)
+
+    err_str = str(exc_info.value).lower()
+    assert (
+        "integral" in err_str
+        or "integer" in err_str
+        or "fractional" in err_str
+        or "non-integral" in err_str
+    ), f"Expected integral-count message in ValueError, got: {exc_info.value}"
+
+
 def test_c9_no_oracle_input_in_toa() -> None:
     """Claim C9: TOA production code contains no trace_hint, states_after, or states_before."""
     src_path = _REPO_ROOT / "opencell" / "vivarium" / "karr_terminal_organelle_assembly.py"
