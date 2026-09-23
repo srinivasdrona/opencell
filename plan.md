@@ -59,6 +59,30 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-09-23 21:30 IST) — GPT review reopened two acceptance gaps:**
+
+- Independent reviewer gates pass: 91 targeted tests, 33/33 frozen migration
+  tests with warnings-as-errors, Rule 8, Ruff, L2.4 4x100, L1b 115/115 and
+  28/28 after mechanical anchor refresh. Machine eligibility is being
+  re-derived at 4/28.
+- Reviewer removed the obsolete v6 `steps` insertion-order workaround; reader
+  schemas now share the same rejecting updater, so correctness no longer
+  depends on "last schema wins."
+- Acceptance gap 1: ProteinProcessingII declares an empty `counts` schema
+  while still emitting dynamic non-migrated keys. This preserves legacy
+  behavior but games the branch-level C2b AST test and does not make those
+  writes declared. Stage 1 is authorized only for the eight migrated WIDs;
+  Gemini must replace C2b with a migrated-WID write-path invariant and add a
+  guard that an empty declaration cannot masquerade as exhaustive coverage.
+  Sonnet must then remove the empty declaration while retaining the explicitly
+  out-of-scope non-migrated legacy behavior.
+- Acceptance gap 2: TOA rounds fractional authority counts with `round()`.
+  Karr counts are integral; fractional input must fail loudly rather than be
+  silently coerced. Gemini must freeze that inversion test, then Sonnet fixes
+  production.
+- Do not promote or push until both returned tests are green and reviewer
+  reruns the complete gate set.
+
 **Current status (2026-09-23 20:45 IST) — Stage 1b behavior green; warning fix pending:**
 
 - Sonnet completed the atomic Stage 1b production edit in the worktree but
