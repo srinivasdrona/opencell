@@ -150,4 +150,3 @@ def test_empty_update_when_unincorporated_is_zero() -> None:
 
     update = process.next_update(1.0, state)
     assert update == {}, f"Expected empty update when uninc is 0, got {update}"
-

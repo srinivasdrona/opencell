@@ -239,4 +239,3 @@ def test_karr_terminal_organelle_assembly_l2_replay_identity_per_tick(rng_seed: 
                     oc_after=oc_after,
                     karr_after=karr_after,
                 )
-

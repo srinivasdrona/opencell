@@ -155,4 +155,3 @@ def test_stage1_no_location_string_for_migrated_wids() -> None:
             assert wid not in written_locations, (
                 f"Design C15 violation: 'location' string still written for migrated WID {wid}"
             )
-
