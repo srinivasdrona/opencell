@@ -27,9 +27,10 @@ COMPARTMENTS = ("c", "d", "e", "m", "tc", "tm")
 
 
 def test_c12_step_graph_ordering_structurally_correct() -> None:
-    """Claim C12: Step-graph execution layers must place a projection step in layer 0
+    """Claim C12: Step-graph execution layers must place a pre-projection step strictly
 
-    (before readers) and another projection step strictly after authority-writing Steps.
+    before flat-reading Steps, and a post-projection step strictly after authority-writing
+    Steps and strictly before post-write readers (observability).
     """
     from vivarium.core.engine import Engine
 
@@ -39,52 +40,81 @@ def test_c12_step_graph_ordering_structurally_correct() -> None:
     engine = Engine(composite=composite)
     layers = engine._step_graph.get_execution_layers()
 
-
-    # Find step layers by step name / class
+    # Resolve each HierarchyPath tuple to its registered step name / object via engine._step_paths
     step_layer_map: dict[str, int] = {}
     projection_layers: list[int] = []
+    pre_projection_layer: int | None = None
+    post_projection_layer: int | None = None
 
     for layer_idx, layer in enumerate(layers):
-        for step in layer:
-            step_name = getattr(step, "name", step.__class__.__name__)
+        for path in layer:
+            step_obj = engine._step_paths.get(path)
+            step_key = path[-1] if path else ""
+            step_name = getattr(step_obj, "name", step_key) if step_obj else step_key
+            step_layer_map[step_key] = layer_idx
             step_layer_map[step_name] = layer_idx
-            if "protein_flat_projection" in step_name or "Projection" in step.__class__.__name__:
+            if step_obj is not None:
+                step_layer_map[step_obj.__class__.__name__] = layer_idx
+
+            is_projection = (
+                "protein_flat_projection" in step_key
+                or "protein_flat_projection" in step_name
+                or (step_obj is not None and "ProteinFlatProjection" in step_obj.__class__.__name__)
+            )
+            if is_projection:
                 projection_layers.append(layer_idx)
+                if "pre" in step_key or "pre" in step_name:
+                    pre_projection_layer = layer_idx
+                elif "post" in step_key or "post" in step_name:
+                    post_projection_layer = layer_idx
 
     assert projection_layers, (
         f"No protein_flat_projection step found in execution layers: {layers}"
     )
-    # A projection instance must exist in the FIRST layer (layer 0)
-    assert 0 in projection_layers, (
-        f"Projection instance must exist in layer 0 (found projection in layers: {projection_layers})"
-    )
 
-    # Authority-writing steps (AUTH-W) must be in layers strictly < a post-projection step
-    auth_writing_step_names = [
-        "karr_chromosome_segregation_evolution",
-        "karr_allocation_step",
-    ]
-    for auth_step in auth_writing_step_names:
-        if auth_step in step_layer_map:
-            auth_layer = step_layer_map[auth_step]
-            assert any(proj_layer > auth_layer for proj_layer in projection_layers), (
-                f"AUTH-W step {auth_step} in layer {auth_layer} has no subsequent projection step"
-            )
+    if pre_projection_layer is None:
+        pre_projection_layer = min(projection_layers)
+    if post_projection_layer is None:
+        post_projection_layer = max(projection_layers)
 
-    # Flat reading steps (DERIVED-R) must sit in a layer strictly > some projection instance
-    # Within a layer Vivarium defers updates, so proj_layer must be strictly less than reader_layer.
-    flat_reading_step_names = [
+    # 1. Pre-projection layer must be strictly less than every specified flat-count reader layer
+    flat_reading_steps = [
         "request_calculator_protein_pathway",
         "request_calculator_protein_translocation",
         "request_calculator_ribasm",
+    ]
+    for reader in flat_reading_steps:
+        assert reader in step_layer_map, f"Flat-count reader {reader} missing from step graph"
+        reader_layer = step_layer_map[reader]
+        assert pre_projection_layer < reader_layer, (
+            f"Pre-projection layer {pre_projection_layer} must be strictly less than "
+            f"reader {reader} layer {reader_layer}"
+        )
+
+    # 2. Every authority-writing Step must be strictly less than post-projection layer
+    auth_writing_steps = [
+        "karr_allocation_step",
+        "karr_chromosome_segregation_evolution",
+    ]
+    for auth_step in auth_writing_steps:
+        assert auth_step in step_layer_map, f"AUTH-W step {auth_step} missing from step graph"
+        auth_layer = step_layer_map[auth_step]
+        assert auth_layer < post_projection_layer, (
+            f"AUTH-W step {auth_step} layer {auth_layer} must be strictly less than "
+            f"post-projection layer {post_projection_layer}"
+        )
+
+    # 3. Post-projection layer must be strictly less than observability/derived readers requiring post-write state
+    post_write_readers = [
         "karr_observability_step",
     ]
-    for reader_step in flat_reading_step_names:
-        if reader_step in step_layer_map:
-            reader_layer = step_layer_map[reader_step]
-            assert any(proj_layer < reader_layer for proj_layer in projection_layers), (
-                f"DERIVED-R step {reader_step} in layer {reader_layer} has no strictly prior projection step"
-            )
+    for obs_step in post_write_readers:
+        assert obs_step in step_layer_map, f"Post-write reader {obs_step} missing from step graph"
+        obs_layer = step_layer_map[obs_step]
+        assert post_projection_layer < obs_layer, (
+            f"Post-projection layer {post_projection_layer} must be strictly less than "
+            f"observability step {obs_step} layer {obs_layer}"
+        )
 
 
 def test_c13_t0_projection_correctness() -> None:
