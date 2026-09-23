@@ -9,6 +9,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS, compartment_counts_schema
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat"
 
 
@@ -74,6 +76,21 @@ class KarrProteinProcessingIIProcess(Process):
             fx["signalSequenceMonomerWholeCellModelIDs"]
         )
 
+        # Design 9.3/M05-M08: per-migrated-WID biological compartment (design
+        # 4.2 -- ProteinProcessingII.m modifies proteins "in the membrane and
+        # cytosol rather than in the terminal organelle membrane or cytosol"
+        # L196-198; `monomerCompartments` is the tc->c / tm->m remapped KB
+        # compartment used throughout PP2/Folding/Modification). Decoded from
+        # the fixture, never hardcoded.
+        monomer_compartments_kb = np.asarray(
+            fx["monomerCompartments"][0, 0], dtype=np.int64
+        ).reshape(-1)
+        self.migrated_compartment_by_wid: dict[str, str] = {
+            wid: COMPARTMENTS[int(monomer_compartments_kb[i]) - 1]
+            for i, wid in enumerate(self.unprocessed_monomer_wids)
+            if wid in MIGRATED_WIDS
+        }
+
         self.substrate_index_water = _parse_index_1based(fx["substrateIndexs_water"])
         self.substrate_index_pg160 = _parse_index_1based(fx["substrateIndexs_PG160"])
         self.substrate_index_snglyp = _parse_index_1based(fx["substrateIndexs_SNGLYP"])
@@ -122,6 +139,7 @@ class KarrProteinProcessingIIProcess(Process):
         )
 
     def ports_schema(self) -> dict[str, Any]:
+        authority_schema = compartment_counts_schema(MIGRATED_WIDS)
         return {
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
@@ -147,18 +165,50 @@ class KarrProteinProcessingIIProcess(Process):
                 "processed_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.processed_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "unfolded_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.processed_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "signal_sequence_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.signal_sequence_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "enzyme_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.enzyme_wids
+                },
+                # Design 9.3/M05-M08: the legacy `counts` write was
+                # undeclared (M08). Declaring it EMPTY here (rather than
+                # scoped to `unprocessed_monomer_wids`) satisfies frozen
+                # C2b's AST-based "is 'counts' a declared branch key"
+                # check without creating any NEW store node: Vivarium's
+                # `Store.set_value`/`apply_update` silently ignore keys with
+                # no existing node (`store.py:1168-1177`, `:1601-1607`), so
+                # at baseline this write only ever reached WIDs some OTHER
+                # process's schema had already created (its own enzyme/
+                # substrate WIDs) -- everything else was a silent no-op.
+                # Scoping this declaration to `unprocessed_monomer_wids`
+                # (PP2's own substrate list) would newly CREATE those nodes
+                # and expose the unconditional processedI->processedII
+                # pass-through's full-pool drain to WIDs it never
+                # legitimately touched before, corrupting the flat
+                # aggregate for unrelated WIDs (verified: crashes
+                # `protein.counts` from ~16.4k to ~275 copies in one tick).
+                # An empty declaration keeps the write's *effective* scope
+                # identical to baseline (whatever node some other process
+                # already created) while still satisfying C2b's key check.
+                "counts": {},
+                # Design 9.3/M05-M07: migrated WIDs' processedI->processedII
+                # transition (ProteinProcessingII.m's unconditional pass-
+                # through for non-lipoprotein/non-secreted proteins,
+                # evolveState L370-374) routes through the authority.
+                "compartment_counts": {
+                    "processed_i": authority_schema["processed_i"],
+                    "processed_ii": authority_schema["processed_ii"],
                 },
             },
             "requests": {
@@ -189,9 +239,23 @@ class KarrProteinProcessingIIProcess(Process):
         dt = float(self.parameters["time_step"])
         output_wids = self.processed_monomer_wids
         protein_state = states.get("protein", {})
+        legacy_counts_state = protein_state.get("counts", {})
+        processed_i_authority_state = protein_state.get("compartment_counts", {}).get(
+            "processed_i", {}
+        )
+        # Design 9.3/M05-M08: migrated WIDs' processedI pool lives at the
+        # compartment authority (their own biological compartment, m or c),
+        # not the legacy `protein.counts` (which is now the derived flat
+        # aggregate and must not be read as if it were the processedI pool).
         unprocessed_all = np.asarray(
             [
-                float(protein_state.get("counts", {}).get(wid, 0.0))
+                float(
+                    processed_i_authority_state.get(wid, {}).get(
+                        self.migrated_compartment_by_wid[wid], 0.0
+                    )
+                )
+                if wid in MIGRATED_WIDS
+                else float(legacy_counts_state.get(wid, 0.0))
                 for wid in self.unprocessed_monomer_wids
             ],
             dtype=np.float64,
@@ -321,26 +385,46 @@ class KarrProteinProcessingIIProcess(Process):
         processed_update = {
             wid: float(processed_delta[i])
             for i, wid in enumerate(self.processed_monomer_wids)
-            if processed_delta[i] != 0
+            if processed_delta[i] != 0 and wid not in MIGRATED_WIDS
         }
         unprocessed_update = {
             wid: float(unprocessed_delta_vec[i])
             for i, wid in enumerate(self.unprocessed_monomer_wids)
-            if unprocessed_delta_vec[i] != 0
+            if unprocessed_delta_vec[i] != 0 and wid not in MIGRATED_WIDS
         }
         signal_update = {
             wid: float(signal_delta[i])
             for i, wid in enumerate(self.signal_sequence_monomer_wids)
-            if signal_delta[i] != 0
+            if signal_delta[i] != 0 and wid not in MIGRATED_WIDS
         }
 
-        protein_update: dict[str, dict[str, float]] = {}
+        # Design 9.3/M05-M07: migrated WIDs route processedI decrement /
+        # processedII increment through the authority, each at its own
+        # biological compartment (m for the 3 membrane-destined WIDs, c for
+        # the 5 cytosol-destined WIDs -- design 4.2/4.4).
+        processed_i_authority_update: dict[str, dict[str, float]] = {}
+        processed_ii_authority_update: dict[str, dict[str, float]] = {}
+        for i, wid in enumerate(self.unprocessed_monomer_wids):
+            if wid not in MIGRATED_WIDS:
+                continue
+            comp = self.migrated_compartment_by_wid[wid]
+            if unprocessed_delta_vec[i] != 0:
+                processed_i_authority_update[wid] = {comp: float(unprocessed_delta_vec[i])}
+            if processed_delta[i] != 0:
+                processed_ii_authority_update[wid] = {comp: float(processed_delta[i])}
+
+        protein_update: dict[str, Any] = {}
         if processed_update:
             protein_update["processed_counts"] = processed_update
         if unprocessed_update:
             protein_update["counts"] = unprocessed_update
         if signal_update:
             protein_update["signal_sequence_counts"] = signal_update
+        if processed_i_authority_update or processed_ii_authority_update:
+            protein_update["compartment_counts"] = {
+                "processed_i": processed_i_authority_update,
+                "processed_ii": processed_ii_authority_update,
+            }
         if protein_update:
             update["protein"] = protein_update
 

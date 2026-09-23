@@ -17,6 +17,7 @@ from opencell.analysis.cell_mass import AVOGADRO
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
 from opencell.m3 import translation as tl
+from opencell.vivarium.protein_state import MIGRATED_WIDS, flat_counts_schema
 
 
 def _load_rna_mw(m2_model: tx.KarrTranscriptionModel) -> dict[str, float]:
@@ -118,13 +119,48 @@ class KarrObservabilityStep(Step):
                 "modified_counts": counts_schema,
             },
             "protein": {
+                # Design 9.3 (compartmental protein-state migration, Stage
+                # 1b): this Step is a READ-ONLY consumer of every protein
+                # WID's derived flat `protein.counts` value for the
+                # `protein_mass_g` aggregate below -- it never writes any
+                # of them (see `next_update`: the only update key is
+                # `phenotype_observables`).
+                #
+                # For the 8 migrated WIDs, `protein.counts[wid]` is now
+                # `Pi(compartment_counts.mature[wid])`, exclusively owned
+                # by `ProteinFlatProjectionStep`'s rejecting updater
+                # (protein_state.py D3). Dropping those 8 leaves from this
+                # schema entirely is NOT equivalent to "read-only":
+                # Vivarium projects each process's own per-tick `states`
+                # view from its OWN declared ports_schema, so omitting a
+                # leaf here would make `next_update` stop *seeing* it too
+                # (confirmed empirically against `karr_host_interaction.py`
+                # -- the analogous omission there raised a KeyError for
+                # exactly these 8 WIDs). Instead, `flat_counts_schema`
+                # (protein_state.py) hands back the *same* `@cache`-
+                # memoised rejecting-updater object `ProteinFlatProjectionStep`
+                # already declares for these WIDs -- reusing it here means
+                # both declarations compare equal (`store.py:536`, identity
+                # equality on the callable), so there is no conflict and no
+                # warning, while `self._protein_wids` (the mass-calculation
+                # inventory) and `next_update`'s unconditional
+                # `states.get("protein", {}).get("counts", {})` read both
+                # keep seeing every protein WID exactly as before.
                 "counts": {
-                    wid: {
-                        "_default": 0.0,
-                        "_updater": "accumulate",
-                        "_emit": False,
-                    }
-                    for wid in self._protein_wids
+                    **{
+                        wid: {
+                            "_default": 0.0,
+                            "_updater": "accumulate",
+                            "_emit": False,
+                        }
+                        for wid in self._protein_wids
+                        if wid not in MIGRATED_WIDS
+                    },
+                    **{
+                        wid: schema
+                        for wid, schema in flat_counts_schema(MIGRATED_WIDS).items()
+                        if wid in self._protein_wids
+                    },
                 }
             },
             "chromosome": {

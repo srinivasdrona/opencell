@@ -36,6 +36,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.vivarium.protein_state import MIGRATED_WIDS, flat_counts_schema
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/HostInteraction_flat.mat"
 _DEFAULT_MONOMER_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinMonomer_flat.mat"
 _DEFAULT_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinComplex_flat.mat"
@@ -324,9 +326,44 @@ class KarrHostInteractionProcess(Process):
                 for field in _HOST_BOOLEAN_FIELDS
             },
             "protein": {
+                # Design 9.3 (compartmental protein-state migration, Stage
+                # 1b): this process is a READ-ONLY consumer of the 8
+                # terminal-organelle/adhesin monomer WIDs' derived flat
+                # `protein.counts` value (several of `monomer_enzyme_wids`
+                # ARE those WIDs -- HostInteraction reads terminal-organelle
+                # and adhesin enzyme levels). It never writes them (see
+                # `next_update` below: the only update key is `cell`).
+                #
+                # `protein.counts[wid]` for these 8 is now `Pi(compartment_
+                # counts.mature[wid])`, exclusively owned by
+                # `ProteinFlatProjectionStep`'s rejecting updater
+                # (protein_state.py D3). A plain "accumulate" declaration
+                # for the same leaves is a schema-ownership conflict.
+                # Dropping the leaves from this schema entirely is NOT
+                # equivalent to "read-only": Vivarium projects each
+                # process's own per-tick `states` view from its OWN
+                # declared ports_schema, so omitting a leaf here would make
+                # `next_update` stop *seeing* it too (confirmed: caused a
+                # KeyError in `_enzyme_counts_from_split_stores` for
+                # exactly these 8 WIDs). Instead, `flat_counts_schema`
+                # (protein_state.py) hands back the *same* `@cache`-memoised
+                # rejecting-updater object `ProteinFlatProjectionStep`
+                # already declares for these WIDs -- reusing it here means
+                # both declarations compare equal (`store.py:536`, identity
+                # equality on the callable), so there is no conflict and no
+                # warning, while the leaf stays visible in this process's
+                # view exactly as before.
                 "counts": {
-                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in self.monomer_enzyme_wids
+                    **{
+                        wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                        for wid in self.monomer_enzyme_wids
+                        if wid not in MIGRATED_WIDS
+                    },
+                    **{
+                        wid: schema
+                        for wid, schema in flat_counts_schema(MIGRATED_WIDS).items()
+                        if wid in self.monomer_enzyme_wids
+                    },
                 }
             },
             "complex": {

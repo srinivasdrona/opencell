@@ -11,6 +11,7 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 from opencell.util import MatlabRandStream
+from opencell.vivarium.protein_state import MIGRATED_WIDS, compartment_counts_schema
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat"
 _MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = (
@@ -20,9 +21,8 @@ _RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssemb
 _CYTOPLASM = "cytoplasm"
 _MEMBRANE = "membrane"
 _EXTRACELLULAR = "extracellular"
-
-# These two terminal-organelle proteins are assembled in a dedicated process.
-_TERMINAL_ORGANELLE_EXCLUSIONS = {"MG_191_MONOMER", "MG_192_MONOMER"}
+_MEMBRANE_COMPARTMENT = "m"
+_PROCESSED_I_CYTOSOL_COMPARTMENT = "c"
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -192,8 +192,6 @@ class KarrProteinTranslocationProcess(Process):
 
         for idx in translocating_indices.tolist():
             wid = self.monomer_wids[int(idx)]
-            if wid in _TERMINAL_ORGANELLE_EXCLUSIONS:
-                continue
 
             destination = _MEMBRANE
             destination_class = "integral_membrane"
@@ -243,9 +241,26 @@ class KarrProteinTranslocationProcess(Process):
             wid for wid in self.translocatable_wids if self.pathway_by_wid[wid] == "direct"
         ]
 
-        self.protein_count_wids = list(
-            dict.fromkeys(self.monomer_enzyme_wids + self.translocatable_wids)
-        )
+        # Design 9.3/M14-M15: the Stage-1 migrated translocating subset
+        # (MG_191, MG_192, MG_318 -- the only 3 of the 8 TOA WIDs whose KB
+        # compartment remaps to non-cytosol, design 4.1; the other 5 never
+        # appear in `translocatable_wids` at all). These route through the
+        # authority's `processed_i` row instead of the legacy
+        # `unprocessed_counts`/`location` branches.
+        self.migrated_translocating_wids = set(MIGRATED_WIDS) & set(self.translocatable_wids)
+
+        # `protein_count_wids` is read externally by
+        # `RequestCalculatorPTransloc.ports_schema()` (out of Stage-1b's
+        # write scope) to build ITS OWN flat `protein.counts` schema
+        # declaration; it must respect the same authority boundary as this
+        # process's own `ports_schema()` (2 blocks below) or that external
+        # Step re-declares a plain "accumulate" updater over a migrated WID's
+        # rejecting-updater leaf (design D3 S12/9.3).
+        self.protein_count_wids = [
+            wid
+            for wid in dict.fromkeys(self.monomer_enzyme_wids + self.translocatable_wids)
+            if wid not in MIGRATED_WIDS
+        ]
         self.complex_count_wids = list(dict.fromkeys(self.complex_enzyme_wids))
 
     def ports_schema(self) -> dict[str, Any]:
@@ -267,17 +282,34 @@ class KarrProteinTranslocationProcess(Process):
                 for wid in self.monomer_wids
             },
             "protein": {
+                # Migrated translocating WIDs excluded: `protein.counts` is
+                # now the rejecting-updater-protected flat projection for
+                # them (design D3); this process never reads/writes their
+                # enzyme-pool leaf, so no schema conflict risk is taken.
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.protein_count_wids
+                    if wid not in self.migrated_translocating_wids
                 },
                 "unprocessed_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.translocatable_wids
+                    if wid not in self.migrated_translocating_wids
                 },
                 "location": {
                     wid: {"_default": _CYTOPLASM, "_updater": "set", "_emit": True}
                     for wid in self.translocatable_wids
+                    if wid not in self.migrated_translocating_wids
+                },
+                # Design 9.3/M14-M15: MG_191/MG_192/MG_318's processedI pool
+                # lives at the compartment authority (cytosol source, `m`
+                # destination -- ProteinTranslocation.m:198-200 remap), not
+                # the legacy `unprocessed_counts`/`location` branches above.
+                "compartment_counts": {
+                    "processed_i": {
+                        wid: compartment_counts_schema(MIGRATED_WIDS)["processed_i"][wid]
+                        for wid in self.migrated_translocating_wids
+                    }
                 },
             },
             "complex": {
@@ -324,7 +356,8 @@ class KarrProteinTranslocationProcess(Process):
         cytoplasmic_counts = {
             wid: _read_nonnegative_count(queue_counts_state, wid)
             for wid in self.translocatable_wids_in_fixture_order
-            if str(location_state.get(wid, _CYTOPLASM)) == _CYTOPLASM
+            if wid not in self.migrated_translocating_wids
+            and str(location_state.get(wid, _CYTOPLASM)) == _CYTOPLASM
             and _read_nonnegative_count(queue_counts_state, wid) > 0
         }
         if not cytoplasmic_counts:
@@ -333,8 +366,22 @@ class KarrProteinTranslocationProcess(Process):
             cytoplasmic_counts = {
                 wid: _read_nonnegative_count(queue_counts_state, wid)
                 for wid in self.translocatable_wids_in_fixture_order
-                if _read_nonnegative_count(queue_counts_state, wid) > 0
+                if wid not in self.migrated_translocating_wids
+                and _read_nonnegative_count(queue_counts_state, wid) > 0
             }
+        # Design 9.3/M14-M15: MG_191/MG_192/MG_318 read their cytosolic
+        # processedI pool from the compartment authority instead, and
+        # compete for translocation resources in the SAME randperm draw as
+        # every other translocatable WID (unchanged allocator contract).
+        processed_i_authority_state = protein_state.get("compartment_counts", {}).get(
+            "processed_i", {}
+        )
+        for wid in self.migrated_translocating_wids:
+            count = _read_nonnegative_count(
+                processed_i_authority_state.get(wid, {}), _PROCESSED_I_CYTOSOL_COMPARTMENT
+            )
+            if count > 0:
+                cytoplasmic_counts[wid] = count
         if not cytoplasmic_counts:
             return {}
 
@@ -426,15 +473,36 @@ class KarrProteinTranslocationProcess(Process):
 
         hydrolysis_spent = atp_spent + gtp_spent
 
-        location_update = {wid: self.destination_by_wid[wid] for wid in translocated_counts}
-        unprocessed_update = {wid: -float(cnt) for wid, cnt in translocated_counts.items()}
-
-        update: dict[str, Any] = {
-            "protein": {
-                "location": location_update,
-                "unprocessed_counts": unprocessed_update,
-            }
+        location_update = {
+            wid: self.destination_by_wid[wid]
+            for wid in translocated_counts
+            if wid not in self.migrated_translocating_wids
         }
+        unprocessed_update = {
+            wid: -float(cnt)
+            for wid, cnt in translocated_counts.items()
+            if wid not in self.migrated_translocating_wids
+        }
+        # Design 9.3/M14-M15: migrated WIDs conserve copies via an authority
+        # c -> m transfer (no location string, no queue decrement -- design
+        # C15/C16) instead of the legacy destination-string + decrement.
+        processed_i_authority_update: dict[str, dict[str, float]] = {}
+        for wid, cnt in translocated_counts.items():
+            if wid not in self.migrated_translocating_wids:
+                continue
+            processed_i_authority_update[wid] = {
+                _PROCESSED_I_CYTOSOL_COMPARTMENT: -float(cnt),
+                _MEMBRANE_COMPARTMENT: float(cnt),
+            }
+
+        protein_update: dict[str, Any] = {}
+        if location_update or unprocessed_update:
+            protein_update["location"] = location_update
+            protein_update["unprocessed_counts"] = unprocessed_update
+        if processed_i_authority_update:
+            protein_update["compartment_counts"] = {"processed_i": processed_i_authority_update}
+
+        update: dict[str, Any] = {"protein": protein_update}
         if atp_spent > 0:
             substrate_update: dict[str, float] = {
                 self.atp_wid: -float(atp_spent),

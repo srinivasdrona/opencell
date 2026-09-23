@@ -102,7 +102,10 @@ from opencell.vivarium.karr_translation_v2 import KarrTranslationV2Process
 from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess
 from opencell.vivarium.protein_flat_projection_step import ProteinFlatProjectionStep
-from opencell.vivarium.protein_state import initial_compartment_counts
+from opencell.vivarium.protein_state import (
+    initial_compartment_counts,
+    load_mature_seed_from_canonical_fixture,
+)
 
 if TYPE_CHECKING:
     from vivarium.core.engine import Engine
@@ -950,7 +953,9 @@ def build_karr_chassis_v3(
         "protein": {
             "counts": prot_init,
             "location": {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids},
-            "compartment_counts": initial_compartment_counts(),
+            "compartment_counts": initial_compartment_counts(
+                seed_mature=load_mature_seed_from_canonical_fixture()
+            ),
         },
         "complex": {"counts": complex_counts},
     }
@@ -1555,7 +1560,9 @@ def build_karr_chassis_v4(
             "enzyme_counts": protein_enzyme_init,
             "location": protein_location_init,
             "activity": protein_activity_init,
-            "compartment_counts": initial_compartment_counts(),
+            "compartment_counts": initial_compartment_counts(
+                seed_mature=load_mature_seed_from_canonical_fixture()
+            ),
         },
         "complex": {"counts": complex_counts},
         "stimuli": {},
@@ -2286,7 +2293,6 @@ def build_karr_chassis_v5(
         },
         "karr_terminal_organelle_assembly": {
             "protein": ("protein",),
-            "cell": ("cell",),
         },
         "request_calculator_d2": {
             "complex": ("complex",),
@@ -2370,7 +2376,9 @@ def build_karr_chassis_v5(
             "enzyme_counts": protein_enzyme_init,
             "location": protein_location_init,
             "activity": protein_activity_init,
-            "compartment_counts": initial_compartment_counts(),
+            "compartment_counts": initial_compartment_counts(
+                seed_mature=load_mature_seed_from_canonical_fixture()
+            ),
         },
         "complex": {"counts": complex_counts},
         "stimuli": {},
@@ -2409,10 +2417,6 @@ def build_karr_chassis_v5(
             "division_progress": 0.0,
             "division_complete": False,
             "division_event_count": 0.0,
-            "terminal_organelle_count": 0.0,
-            "terminal_organelle_components_assembled": {
-                wid: 0.0 for wid in terminal_organelle_proc.component_wids
-            },
         },
     }
     _seed_protein_activation_shared_state(initial_state, p_activation_proc)
@@ -2651,6 +2655,19 @@ def build_karr_chassis_v6(
         ("karr_chromosome_segregation_evolution",),
         ("protein_flat_projection_post",),
     ]
+
+    # Vivarium applies per-leaf schema (including `_updater`) in Step dict
+    # insertion order, last writer wins (store.py `generate()` ->
+    # `_generate_paths`, processed after ALL processes but in `steps.items()`
+    # order). `karr_observability_step` (added just above) declares a plain
+    # `accumulate` schema for `protein.counts` covering all 482 monomer
+    # WIDs, which would otherwise be applied AFTER (and silently overwrite)
+    # `protein_flat_projection_post`'s rejecting updater for the 8 migrated
+    # WIDs (design D3/C1). Re-inserting moves it to the end of the dict so
+    # its schema is applied last, without touching
+    # `karr_observability_step.py` (out of Stage-1b's write scope) or
+    # changing any flow/dependency edge.
+    steps["protein_flat_projection_post"] = steps.pop("protein_flat_projection_post")
 
     chromosome_state = initial_state.setdefault("chromosome", {})
     chromosome_state.pop("damage_sites", None)

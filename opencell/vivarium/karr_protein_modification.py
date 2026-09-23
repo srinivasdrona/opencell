@@ -10,6 +10,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS, compartment_counts_schema
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinModification_flat.mat"
 _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
 _MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
@@ -128,6 +130,32 @@ class KarrProteinModificationProcess(Process):
         self.modified_monomer_wids = [all_modified_wids[idx] for idx in self.active_protein_indices]
         self.reaction_modification = full_reaction_modification[:, self.active_protein_indices]
 
+        # Design 9.3/M11-M12: per-migrated-WID biological compartment
+        # (design 4.2 -- ProteinModification "modifies proteins in the
+        # membrane and cytosol rather than in the terminal organelle
+        # membrane or cytosol", copyFromState/copyToState remapped
+        # `mComps`). Decoded from the fixture, never hardcoded. Covers all
+        # 8 migrated WIDs: the 2 that undergo real modification chemistry
+        # (folded->mature via reaction_modification, same as any of the
+        # other ~18 actively-modified proteins) and the 6 that require the
+        # unconditional folded->mature pass-through
+        # (`monomerIndexs_notmodified`, evolveState L332-335) that this OC
+        # port did not previously implement for any WID.
+        monomer_compartments_kb = np.asarray(
+            fx["monomerCompartments"][0, 0], dtype=np.int64
+        ).reshape(-1)
+        self.migrated_compartment_by_wid: dict[str, str] = {
+            wid: COMPARTMENTS[int(monomer_compartments_kb[i]) - 1]
+            for i, wid in enumerate(all_unmodified_wids)
+            if wid in MIGRATED_WIDS
+        }
+        self.migrated_active_wids = [
+            wid for wid in self.unmodified_monomer_wids if wid in MIGRATED_WIDS
+        ]
+        self.migrated_pass_through_wids = [
+            wid for wid in MIGRATED_WIDS if wid not in self.unmodified_monomer_wids
+        ]
+
         if self.reaction_stoich.shape[1] != self.reaction_catalysis.shape[0]:
             raise ValueError("Reaction dimension mismatch between stoichiometry and catalysis")
         if self.reaction_stoich.shape[1] != self.reaction_modification.shape[0]:
@@ -138,6 +166,7 @@ class KarrProteinModificationProcess(Process):
             raise ValueError("Enzyme dimension mismatch between catalysis and WIDs")
 
     def ports_schema(self) -> dict[str, Any]:
+        authority_schema = compartment_counts_schema(MIGRATED_WIDS)
         return {
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
@@ -167,10 +196,21 @@ class KarrProteinModificationProcess(Process):
                 "unmodified_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.unmodified_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "modified_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.modified_monomer_wids
+                    if wid not in MIGRATED_WIDS
+                },
+                # Design 9.3/M11-M12: all 8 migrated WIDs' folded->mature
+                # transition (real modification chemistry for
+                # `migrated_active_wids`; unconditional pass-through for
+                # `migrated_pass_through_wids`, ProteinModification.m
+                # evolveState L332-335) routes through the authority.
+                "compartment_counts": {
+                    "folded": authority_schema["folded"],
+                    "mature": authority_schema["mature"],
                 },
             },
             "complex": {
@@ -193,6 +233,59 @@ class KarrProteinModificationProcess(Process):
             },
         }
 
+    def _pass_through_folded_to_mature(self, protein_state: dict[str, Any]) -> dict[str, Any]:
+        """Design 9.3/M11-M12: Karr's unconditional folded->mature transition
+
+        for proteins requiring no modification (ProteinModification.m
+        evolveState L332-335, `monomerIndexs_notmodified`), applied to the 6
+        of 8 migrated WIDs outside the ~20-protein actively-modified subset.
+        Full-count transfer every tick, independent of enzyme/substrate
+        availability (Karr has no such dependency for this transition).
+        """
+        if not self.migrated_pass_through_wids:
+            return {}
+        folded_state = protein_state.get("compartment_counts", {}).get("folded", {})
+        folded_deltas: dict[str, dict[str, float]] = {}
+        mature_deltas: dict[str, dict[str, float]] = {}
+        for wid in self.migrated_pass_through_wids:
+            comp = self.migrated_compartment_by_wid[wid]
+            amount = float(folded_state.get(wid, {}).get(comp, 0.0))
+            if amount > 0:
+                folded_deltas[wid] = {comp: -amount}
+                mature_deltas[wid] = {comp: amount}
+        if not folded_deltas:
+            return {}
+        return {
+            "protein": {
+                "compartment_counts": {
+                    "folded": folded_deltas,
+                    "mature": mature_deltas,
+                }
+            }
+        }
+
+    @staticmethod
+    def _merge_compartment_counts_update(
+        base: dict[str, Any], addition: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Merge two `{"protein": {"compartment_counts": {form: {wid: {comp: d}}}}}`
+
+        update dicts (disjoint WID keys by construction: `migrated_active_wids`
+        vs `migrated_pass_through_wids` never overlap).
+        """
+        if not addition:
+            return base
+        if not base:
+            return addition
+        merged = {k: dict(v) for k, v in base.get("protein", {}).items()}
+        addition_cc = addition.get("protein", {}).get("compartment_counts", {})
+        base_cc = dict(merged.get("compartment_counts", {}))
+        for form, wid_deltas in addition_cc.items():
+            base_cc[form] = {**base_cc.get(form, {}), **wid_deltas}
+        merged["compartment_counts"] = base_cc
+        base["protein"] = merged
+        return base
+
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
         protein_state = states.get("protein", {})
@@ -201,6 +294,8 @@ class KarrProteinModificationProcess(Process):
         complex_state = states.get("complex", {})
         if not isinstance(complex_state, dict):
             complex_state = {}
+
+        pass_through_update = self._pass_through_folded_to_mature(protein_state)
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         # Strict-zero allocator contract: do not fallback to global substrate pools.
@@ -236,16 +331,23 @@ class KarrProteinModificationProcess(Process):
                 states.get("unmodifiedMonomers"),
                 self.unmodified_monomer_wids,
             )
+        # Design 9.3/M11-M12: the 2 migrated WIDs among the ~20 actively-
+        # modified proteins (MG_217, MG_317) read their unmodified input
+        # from the compartment authority's `folded` row instead of the
+        # legacy `unmodified_counts`.
+        folded_authority_state = protein_state.get("compartment_counts", {}).get("folded", {})
         unmodified = np.asarray(
             [
-                float(unmodified_store.get(wid, 0.0))
+                float(folded_authority_state.get(wid, {}).get(self.migrated_compartment_by_wid[wid], 0.0))
+                if wid in MIGRATED_WIDS
+                else float(unmodified_store.get(wid, 0.0))
                 for wid in self.unmodified_monomer_wids
             ],
             dtype=np.float64,
         )
         if unmodified.sum() <= 0.0:
             self._n_completed[:] = 0
-            return {}
+            return pass_through_update
 
         self._n_completed = self._estimate_partial_completion_counts(
             unmodified=unmodified,
@@ -261,7 +363,7 @@ class KarrProteinModificationProcess(Process):
                 dt=dt,
             )
         if not np.any(protein_fluxes > 0):
-            return {}
+            return pass_through_update
         self._n_completed[protein_fluxes > 0] = 0
 
         reaction_fluxes = self.reaction_modification @ protein_fluxes
@@ -280,18 +382,40 @@ class KarrProteinModificationProcess(Process):
         unmodified_updates = {
             wid: float(-protein_completions[i])
             for i, wid in enumerate(self.unmodified_monomer_wids)
-            if protein_completions[i] > 0
+            if protein_completions[i] > 0 and wid not in MIGRATED_WIDS
         }
         modified_updates = {
             wid: float(protein_completions[i])
             for i, wid in enumerate(self.modified_monomer_wids)
-            if protein_completions[i] > 0
+            if protein_completions[i] > 0 and wid not in MIGRATED_WIDS
         }
         if unmodified_updates or modified_updates:
             update["protein"] = {
                 "unmodified_counts": unmodified_updates,
                 "modified_counts": modified_updates,
             }
+
+        # Design 9.3/M11-M12: MG_217/MG_317 (the migrated WIDs among the
+        # actively-modified subset) route their folded decrement / mature
+        # increment through the authority instead of the legacy branches.
+        migrated_authority_update: dict[str, Any] = {}
+        for i, wid in enumerate(self.unmodified_monomer_wids):
+            if wid not in MIGRATED_WIDS or protein_completions[i] <= 0:
+                continue
+            comp = self.migrated_compartment_by_wid[wid]
+            migrated_authority_update = self._merge_compartment_counts_update(
+                migrated_authority_update,
+                {
+                    "protein": {
+                        "compartment_counts": {
+                            "folded": {wid: {comp: float(-protein_completions[i])}},
+                            "mature": {wid: {comp: float(protein_completions[i])}},
+                        }
+                    }
+                },
+            )
+        update = self._merge_compartment_counts_update(update, migrated_authority_update)
+        update = self._merge_compartment_counts_update(update, pass_through_update)
 
         return update
 

@@ -15,6 +15,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS, compartment_counts_schema
+
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinFolding_flat.mat"
 _D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
 _RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
@@ -143,6 +145,21 @@ class KarrProteinFoldingProcess(Process):
         self.unfolded_monomer_wids = _parse_wid_array(fx["unfoldedMonomerWholeCellModelIDs"])
         self.folded_monomer_wids = _parse_wid_array(fx["foldedMonomerWholeCellModelIDs"])
 
+        # Design 9.3/M09-M10: per-migrated-WID biological compartment (design
+        # 4.2 -- ProteinFolding's `monomerCompartments` is the tc->c/tm->m
+        # remapped KB compartment, same convention as ProteinProcessingII).
+        # Decoded from the fixture, never hardcoded.
+        monomer_compartments_kb = _parse_count_array(
+            fx["monomerCompartments"],
+            expected_size=len(self.unfolded_monomer_wids),
+            field_name="monomerCompartments",
+        ).astype(np.int64)
+        self.migrated_compartment_by_wid: dict[str, str] = {
+            wid: COMPARTMENTS[int(monomer_compartments_kb[i]) - 1]
+            for i, wid in enumerate(self.unfolded_monomer_wids)
+            if wid in MIGRATED_WIDS
+        }
+
         n_monomers = len(self.unfolded_monomer_wids)
         self.protein_prosthetic_matrix = np.asarray(
             fx["proteinProstheticGroupMatrix"][0, 0], dtype=np.int64
@@ -182,7 +199,12 @@ class KarrProteinFoldingProcess(Process):
                 )
 
     def ports_schema(self) -> dict[str, Any]:
-        count_wids = list(dict.fromkeys([*self.folded_monomer_wids, *self.protein_enzyme_wids]))
+        count_wids = [
+            wid
+            for wid in dict.fromkeys([*self.folded_monomer_wids, *self.protein_enzyme_wids])
+            if wid not in MIGRATED_WIDS
+        ]
+        authority_schema = compartment_counts_schema(MIGRATED_WIDS)
         schema: dict[str, Any] = {
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
@@ -216,6 +238,15 @@ class KarrProteinFoldingProcess(Process):
                 "unfolded_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.unfolded_monomer_wids
+                    if wid not in MIGRATED_WIDS
+                },
+                # Design 9.3/M09-M10: migrated WIDs' processedII->folded
+                # transition (ProteinFolding.m, this process's own
+                # `foldedIndexs` output row) routes through the authority,
+                # each at its own biological compartment.
+                "compartment_counts": {
+                    "processed_ii": authority_schema["processed_ii"],
+                    "folded": authority_schema["folded"],
                 },
             },
             "substrates_allocated": {
@@ -259,10 +290,22 @@ class KarrProteinFoldingProcess(Process):
                 states.get("unfoldedMonomers"),
                 self.unfolded_monomer_wids,
             )
+        # Design 9.3/M09-M10: migrated WIDs' unfolded (processedII) pool
+        # lives at the compartment authority, at each WID's own biological
+        # compartment, not the legacy `unfolded_counts`.
+        processed_ii_authority_state = protein_state.get("compartment_counts", {}).get(
+            "processed_ii", {}
+        )
 
         unfolded_pool = np.asarray(
             [
-                float(unfolded_store.get(wid, 0.0))
+                float(
+                    processed_ii_authority_state.get(wid, {}).get(
+                        self.migrated_compartment_by_wid[wid], 0.0
+                    )
+                )
+                if wid in MIGRATED_WIDS
+                else float(unfolded_store.get(wid, 0.0))
                 for wid in self.unfolded_monomer_wids
             ],
             dtype=np.float64,
@@ -302,18 +345,38 @@ class KarrProteinFoldingProcess(Process):
         unfolded_update = {
             wid: float(unfolded_delta[idx])
             for idx, wid in enumerate(self.unfolded_monomer_wids)
-            if unfolded_delta[idx] != 0
+            if unfolded_delta[idx] != 0 and wid not in MIGRATED_WIDS
         }
         folded_update = {
             wid: float(folded_delta[idx])
             for idx, wid in enumerate(self.folded_monomer_wids)
-            if folded_delta[idx] != 0
+            if folded_delta[idx] != 0 and wid not in MIGRATED_WIDS
         }
+        # Design 9.3/M09-M10: migrated WIDs route processedII decrement /
+        # folded increment through the authority, each at its own
+        # biological compartment.
+        processed_ii_authority_update: dict[str, dict[str, float]] = {}
+        folded_authority_update: dict[str, dict[str, float]] = {}
+        for idx, wid in enumerate(self.unfolded_monomer_wids):
+            if wid not in MIGRATED_WIDS:
+                continue
+            comp = self.migrated_compartment_by_wid[wid]
+            if unfolded_delta[idx] != 0:
+                processed_ii_authority_update[wid] = {comp: float(unfolded_delta[idx])}
+            if folded_delta[idx] != 0:
+                folded_authority_update[wid] = {comp: float(folded_delta[idx])}
+
+        protein_update: dict[str, Any] = {}
         if unfolded_update or folded_update:
-            update["protein"] = {
-                "unfolded_counts": unfolded_update,
-                "counts": folded_update,
+            protein_update["unfolded_counts"] = unfolded_update
+            protein_update["counts"] = folded_update
+        if processed_ii_authority_update or folded_authority_update:
+            protein_update["compartment_counts"] = {
+                "processed_ii": processed_ii_authority_update,
+                "folded": folded_authority_update,
             }
+        if protein_update:
+            update["protein"] = protein_update
 
         return update
 

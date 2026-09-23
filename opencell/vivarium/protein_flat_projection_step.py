@@ -24,8 +24,8 @@ from typing import Any
 from vivarium.core.process import Step
 
 from opencell.vivarium.protein_state import (
-    COMPARTMENTS,
     MIGRATED_WIDS,
+    compartment_counts_schema,
     flat_counts_schema,
     make_privileged_projection_write,
     project_mature_row,
@@ -47,12 +47,19 @@ class ProteinFlatProjectionStep(Step):
         migrated = tuple(MIGRATED_WIDS)
         return {
             "protein": {
-                "compartment_counts": {
-                    "mature": {
-                        wid: {comp: {"_default": 0.0} for comp in COMPARTMENTS}
-                        for wid in migrated
-                    }
-                },
+                # Declare the FULL 10-form authority shape here, not just
+                # `mature`: this Step is the one code path every composite
+                # builder wires in regardless of which forms any given
+                # legacy writer happens to touch (design 9.3/C1b -- 10 forms
+                # x 8 WIDs x 6 compartments = 480 leaves must exist even for
+                # forms no Stage-1b writer reads/writes yet, e.g.
+                # `signal_sequence`/`inactivated`/`bound`/`misfolded`/
+                # `damaged`). Individual writer modules additionally declare
+                # their own narrower subset of forms for their own reads/
+                # writes; Vivarium unions these declarations, so this Step's
+                # full declaration is what guarantees the other forms exist
+                # at all.
+                "compartment_counts": compartment_counts_schema(migrated),
                 "counts": flat_counts_schema(migrated),
             }
         }
