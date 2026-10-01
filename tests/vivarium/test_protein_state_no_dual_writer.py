@@ -96,6 +96,42 @@ PROTEIN_PROCESS_MANIFEST = (
 )
 
 
+def _instantiate_process_with_dependencies(cls: type) -> Any:
+    """Instantiate Process/Step classes with explicit dependencies where required."""
+    name = cls.__name__
+    if name == "RequestCalculatorPTransloc":
+        from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
+
+        return cls({"protein_translocation_proc": KarrProteinTranslocationProcess({})})
+    if name == "RequestCalculatorRibAsm":
+        from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
+
+        return cls({"ribasm_proc": KarrRibosomeAssemblyProcess({})})
+    if name == "RequestCalculatorProteinPathway":
+        from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
+        from opencell.vivarium.karr_protein_modification import (
+            KarrProteinModificationProcess,
+        )
+        from opencell.vivarium.karr_protein_processing_i import (
+            KarrProteinProcessingIProcess,
+        )
+        from opencell.vivarium.karr_protein_processing_ii import (
+            KarrProteinProcessingIIProcess,
+        )
+        from opencell.vivarium.karr_protein_translocation import (
+            KarrProteinTranslocationProcess,
+        )
+
+        return cls({
+            "protein_processing_i_proc": KarrProteinProcessingIProcess({}),
+            "protein_processing_ii_proc": KarrProteinProcessingIIProcess({}),
+            "protein_modification_proc": KarrProteinModificationProcess({}),
+            "protein_folding_proc": KarrProteinFoldingProcess({}),
+            "protein_translocation_proc": KarrProteinTranslocationProcess({}),
+        })
+    return cls({})
+
+
 def _find_all_vivarium_process_classes() -> list[tuple[str, type]]:
     """Discover all Process subclasses defined in opencell/vivarium/."""
     from vivarium.core.process import Process, Step
@@ -129,8 +165,7 @@ def test_c2_manifest_completeness_and_classification() -> None:
     unclassified_with_protein = []
     for mod_name, cls in discovered:
         try:
-            # instantiate with default/empty params
-            proc = cls({})
+            proc = _instantiate_process_with_dependencies(cls)
             schema = proc.ports_schema()
             if "protein" in schema and cls.__name__ not in manifest_classes:
                 unclassified_with_protein.append((mod_name, cls.__name__))
@@ -163,7 +198,7 @@ def test_c3_legacy_leaves_exclude_migrated_wids() -> None:
         mod = importlib.import_module(mod_name)
         cls = getattr(mod, cls_name)
         try:
-            proc = cls({})
+            proc = _instantiate_process_with_dependencies(cls)
             schema = proc.ports_schema()
         except Exception as exc:
             violations.append(f"{cls_name}: failed to instantiate ports_schema: {exc}")
@@ -196,48 +231,355 @@ def test_c3_legacy_leaves_exclude_migrated_wids() -> None:
 test_c2_legacy_leaves_exclude_migrated_wids = test_c3_legacy_leaves_exclude_migrated_wids
 
 
-def test_c5_declared_writes_only() -> None:
-    """Claim C5: Actual written protein paths are declared for the 9-module scope;
+def _extract_protein_leaf_paths(d: Any, prefix: tuple[str, ...] = ("protein",)) -> list[tuple[str, ...]]:
+    paths: list[tuple[str, ...]] = []
+    if isinstance(d, dict):
+        if not d:
+            return []
+        for k, v in d.items():
+            if isinstance(v, dict) and v:
+                paths.extend(_extract_protein_leaf_paths(v, prefix + (str(k),)))
+            else:
+                paths.append(prefix + (str(k),))
+    return paths
 
-    no empty-schema trick (empty dict in ports_schema to bypass checks).
-    """
-    modules_in_scope = (
-        ("opencell.vivarium.karr_translation_v3", "KarrTranslationV3Process"),
-        ("opencell.vivarium.karr_protein_processing_i", "KarrProteinProcessingIProcess"),
-        ("opencell.vivarium.karr_protein_processing_ii", "KarrProteinProcessingIIProcess"),
-        ("opencell.vivarium.karr_protein_folding", "KarrProteinFoldingProcess"),
-        ("opencell.vivarium.karr_protein_modification", "KarrProteinModificationProcess"),
-        ("opencell.vivarium.karr_protein_translocation", "KarrProteinTranslocationProcess"),
-        ("opencell.vivarium.karr_protein_decay_light", "ProteinDecayLightProcess"),
-        ("opencell.vivarium.karr_terminal_organelle_assembly", "KarrTerminalOrganelleAssemblyProcess"),
-        ("opencell.vivarium.protein_flat_projection_step", "ProteinFlatProjectionStep"),
+
+def _is_path_declared(schema_protein: dict[str, Any], leaf_path: tuple[str, ...]) -> bool:
+    curr: Any = schema_protein
+    for part in leaf_path[1:]:
+        if not isinstance(curr, dict) or part not in curr:
+            return False
+        curr = curr[part]
+    return True
+
+
+def _verify_emitted_protein_update(proc: Any, update: dict[str, Any]) -> list[str]:
+    violations: list[str] = []
+    protein_update = update.get("protein", {})
+    if not protein_update:
+        return [f"{proc.name}: emitted empty protein update"]
+
+    leaf_paths = _extract_protein_leaf_paths(protein_update)
+    if not leaf_paths:
+        return [f"{proc.name}: no leaf paths in protein update"]
+
+    schema = proc.ports_schema()
+    protein_schema = schema.get("protein", {})
+
+    for path in leaf_paths:
+        if not _is_path_declared(protein_schema, path):
+            violations.append(
+                f"{proc.name}: emitted undeclared protein leaf path: {'.'.join(path)}"
+            )
+        # For maturation writers, verify no migrated WID is emitted on legacy branches
+        if proc.name != "protein_flat_projection" and len(path) >= 3 and path[1] in LEGACY_BRANCHES:
+            wid = path[2]
+            if wid in MIGRATED_WIDS:
+                violations.append(
+                    f"{proc.name}: migrated WID {wid!r} emitted on legacy branch {path[1]!r}: {'.'.join(path)}"
+                )
+    return violations
+
+
+def _activate_translation_v3() -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
+
+    proc = KarrTranslationV3Process({})
+    state = {
+        "protein": {
+            "counts": {
+                pid: float(proc.kinetics_model.counts_mature[i])
+                for i, pid in enumerate(proc.protein_ids)
+            }
+        },
+        "complex": {"counts": {"RIBOSOME_70S": 100.0}},
+        "substrates": {wid: 10000.0 for wid in proc.substrate_wids},
+        "substrates_allocated": {proc.name: {wid: 10000.0 for wid in proc.substrate_wids}},
+        "requests": {proc.name: {wid: 0.0 for wid in proc.substrate_wids}},
+    }
+    return proc, proc.next_update(1.0, state)
+
+
+def _activate_protein_processing_i() -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
+
+    proc = KarrProteinProcessingIProcess({})
+    state = {
+        "substrates": {wid: 1000.0 for wid in proc.substrate_wids},
+        "protein": {
+            "unprocessed_counts": {
+                wid: 5.0 for wid in proc.unprocessed_monomer_wids if wid not in MIGRATED_WIDS
+            },
+            "processed_counts": {wid: 0.0 for wid in proc.processed_monomer_wids},
+            "counts": {wid: 1000.0 for wid in proc.protein_enzyme_wids},
+            "enzyme_counts": {wid: 1000.0 for wid in proc.protein_enzyme_wids},
+            "compartment_counts": {
+                "nascent": {wid: {"c": 5.0} for wid in MIGRATED_WIDS},
+                "processed_i": {wid: {"c": 0.0} for wid in MIGRATED_WIDS},
+            },
+        },
+        "complex": {"counts": {wid: 1000.0 for wid in proc.complex_enzyme_wids}},
+        "requests": {proc.name: {wid: 0.0 for wid in proc.substrate_wids}},
+        "substrates_allocated": {proc.name: {wid: 1000.0 for wid in proc.substrate_wids}},
+    }
+    return proc, proc.next_update(1.0, state)
+
+
+def _activate_protein_processing_ii() -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
+
+    proc = KarrProteinProcessingIIProcess({})
+    state = {
+        "protein": {
+            "counts": {},
+            "processed_counts": {
+                wid: 0.0 for wid in proc.processed_monomer_wids if wid not in MIGRATED_WIDS
+            },
+            "unfolded_counts": {
+                wid: 0.0 for wid in proc.processed_monomer_wids if wid not in MIGRATED_WIDS
+            },
+            "signal_sequence_counts": {
+                wid: 0.0 for wid in proc.signal_sequence_monomer_wids if wid not in MIGRATED_WIDS
+            },
+            "enzyme_counts": {wid: 100000.0 for wid in proc.enzyme_wids},
+            "compartment_counts": {
+                "processed_i": {
+                    wid: {c: 0.0 for c in ("c", "d", "e", "m", "tc", "tm")}
+                    for wid in MIGRATED_WIDS
+                },
+                "processed_ii": {
+                    wid: {c: 0.0 for c in ("c", "d", "e", "m", "tc", "tm")}
+                    for wid in MIGRATED_WIDS
+                },
+            },
+        },
+        "processedMonomers": {wid: 0.0 for wid in proc.processed_monomer_wids},
+        "unprocessedMonomers": {wid: 0.0 for wid in proc.unprocessed_monomer_wids},
+        "requests": {proc.name: {wid: 0.0 for wid in proc.substrate_wids}},
+        "substrates_allocated": {proc.name: {wid: 100000.0 for wid in proc.substrate_wids}},
+    }
+    for wid in MIGRATED_WIDS:
+        home = proc.migrated_compartment_by_wid[wid]
+        state["protein"]["compartment_counts"]["processed_i"][wid][home] = 2.0
+    return proc, proc.next_update(1.0, state)
+
+
+def _activate_protein_folding() -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
+
+    proc = KarrProteinFoldingProcess({})
+    state = {
+        "substrates": {wid: 1000.0 for wid in proc.substrate_wids},
+        "substrates_allocated": {proc.name: {wid: 1000.0 for wid in proc.substrate_wids}},
+        "requests": {proc.name: {wid: 0.0 for wid in proc.substrate_wids}},
+        "complex": {"counts": {wid: 1000.0 for wid in proc.complex_enzyme_wids}},
+        "protein": {
+            "counts": {wid: 1000.0 for wid in proc.protein_enzyme_wids},
+            "enzyme_counts": {wid: 1000.0 for wid in proc.protein_enzyme_wids},
+            "unfolded_counts": {
+                wid: 5.0 for wid in proc.unfolded_monomer_wids if wid not in MIGRATED_WIDS
+            },
+            "compartment_counts": {
+                "processed_ii": {
+                    wid: {
+                        c: (5.0 if c == proc.migrated_compartment_by_wid[wid] else 0.0)
+                        for c in ("c", "d", "e", "m", "tc", "tm")
+                    }
+                    for wid in MIGRATED_WIDS
+                },
+                "folded": {
+                    wid: {c: 0.0 for c in ("c", "d", "e", "m", "tc", "tm")}
+                    for wid in MIGRATED_WIDS
+                },
+            },
+        },
+    }
+    return proc, proc.next_update(1.0, state)
+
+
+def _activate_protein_modification() -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.karr_protein_modification import (
+        KarrProteinModificationProcess,
     )
 
-    violations: list[str] = []
-    for mod_name, cls_name in modules_in_scope:
-        mod = importlib.import_module(mod_name)
-        cls = getattr(mod, cls_name)
-        try:
-            proc = cls({})
-            schema = proc.ports_schema()
-        except Exception as exc:
-            violations.append(f"{cls_name}: failed to instantiate: {exc}")
-            continue
+    proc = KarrProteinModificationProcess({})
+    state = {
+        "substrates": {wid: 10000.0 for wid in proc.substrate_wids},
+        "substrates_allocated": {proc.name: {wid: 10000.0 for wid in proc.substrate_wids}},
+        "requests": {proc.name: {wid: 0.0 for wid in proc.substrate_wids}},
+        "complex": {"counts": {wid: 1000.0 for wid in proc.complex_enzyme_wids}},
+        "protein": {
+            "counts": {wid: 1000.0 for wid in proc.monomer_enzyme_wids},
+            "enzyme_counts": {wid: 1000.0 for wid in proc.monomer_enzyme_wids},
+            "unmodified_counts": {
+                wid: 5.0 for wid in proc.unmodified_monomer_wids if wid not in MIGRATED_WIDS
+            },
+            "modified_counts": {
+                wid: 0.0 for wid in proc.modified_monomer_wids if wid not in MIGRATED_WIDS
+            },
+            "compartment_counts": {
+                "folded": {
+                    wid: {
+                        c: (5.0 if c == proc.migrated_compartment_by_wid[wid] else 0.0)
+                        for c in ("c", "d", "e", "m", "tc", "tm")
+                    }
+                    for wid in MIGRATED_WIDS
+                },
+                "mature": {
+                    wid: {c: 0.0 for c in ("c", "d", "e", "m", "tc", "tm")}
+                    for wid in MIGRATED_WIDS
+                },
+            },
+        },
+    }
+    return proc, proc.next_update(1.0, state)
 
+
+def _activate_protein_translocation() -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.karr_protein_translocation import (
+        KarrProteinTranslocationProcess,
+    )
+
+    proc = KarrProteinTranslocationProcess({})
+    test_wids = ["MG_014_MONOMER", "MG_191_MONOMER", "MG_032_MONOMER"]
+    state = {
+        "substrates": {wid: 10000.0 for wid in proc.substrate_wids},
+        "complex": {"counts": {wid: 1000.0 for wid in proc.complex_count_wids}},
+        "protein": {
+            "counts": {"MG_297_MONOMER": 1000.0},
+            "compartment_counts": {
+                "processed_i": {
+                    wid: {
+                        c: (2.0 if c == "c" and wid in test_wids else 0.0)
+                        for c in ("c", "d", "e", "m", "tc", "tm")
+                    }
+                    for wid in proc.translocatable_wids
+                }
+            },
+        },
+        "requests": {proc.name: {wid: 0.0 for wid in proc.request_wids}},
+        "substrates_allocated": {proc.name: {wid: 10000.0 for wid in proc.vector_wids}},
+    }
+    return proc, proc.next_update(1.0, state)
+
+
+def _activate_protein_decay_light() -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess
+
+    proc = ProteinDecayLightProcess({})
+    state = {
+        "complex": {"counts": {wid: 1000000.0 for wid in proc.complex_wids}},
+        "protein": {
+            "counts": {wid: 1000000.0 for wid in proc.protein_wids if wid not in MIGRATED_WIDS},
+        },
+        "substrates": {wid: 1e9 for wid in proc.substrate_wids},
+    }
+    return proc, proc.next_update(1000.0, state)
+
+
+def _activate_terminal_organelle_assembly() -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.karr_terminal_organelle_assembly import (
+        KarrTerminalOrganelleAssemblyProcess,
+    )
+
+    proc = KarrTerminalOrganelleAssemblyProcess({})
+    state = {
+        "protein": {
+            "compartment_counts": {
+                "mature": {
+                    wid: {
+                        proc.unincorporated_compartment_by_wid[wid]: 10.0,
+                        proc.incorporated_compartment_by_wid[wid]: 0.0,
+                    }
+                    for wid in proc.component_wids
+                }
+            }
+        }
+    }
+    return proc, proc.next_update(1.0, state)
+
+
+def _activate_protein_flat_projection() -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.protein_flat_projection_step import ProteinFlatProjectionStep
+
+    step = ProteinFlatProjectionStep({})
+    state = {
+        "protein": {
+            "compartment_counts": {
+                "mature": {
+                    wid: {"c": 5.0, "d": 0.0, "e": 0.0, "m": 0.0, "tc": 0.0, "tm": 0.0}
+                    for wid in MIGRATED_WIDS
+                }
+            }
+        }
+    }
+    return step, step.next_update(1.0, state)
+
+
+def test_c5_declared_writes_only() -> None:
+    """Claim C5: Activate every scoped protein writer named by the Stage 2 design,
+
+    call real next_update, flatten actual emitted protein leaf paths, and prove every
+    emitted path is declared and no migrated WID is emitted on legacy branches.
+    Also proves no empty-schema trick (empty dict in ports_schema to bypass checks).
+    """
+    activators = (
+        _activate_translation_v3,
+        _activate_protein_processing_i,
+        _activate_protein_processing_ii,
+        _activate_protein_folding,
+        _activate_protein_modification,
+        _activate_protein_translocation,
+        _activate_protein_decay_light,
+        _activate_terminal_organelle_assembly,
+        _activate_protein_flat_projection,
+    )
+
+    all_violations: list[str] = []
+    for activate_fn in activators:
+        proc, update = activate_fn()
+        violations = _verify_emitted_protein_update(proc, update)
+        all_violations.extend(violations)
+
+        # Also check for empty-schema trick in ports_schema
+        schema = proc.ports_schema()
         protein_schema = schema.get("protein", {})
-        if not protein_schema:
-            continue
-
-        # Check for empty-schema trick: no leaf branch should be empty dict
         for branch, decl in protein_schema.items():
             if isinstance(decl, dict) and len(decl) == 0:
-                violations.append(
-                    f"{cls_name}: declares empty dict for branch protein.{branch!r} (empty-schema trick)"
+                all_violations.append(
+                    f"{proc.name}: declares empty dict for branch protein.{branch!r} (empty-schema trick)"
                 )
 
-    assert not violations, (
-        "Claim C5 violation: empty-schema trick detected:\n"
-        + "\n".join(violations)
+    assert not all_violations, (
+        "Claim C5 violation: emitted undeclared writes, emitted migrated WIDs on legacy branches, "
+        "or detected empty-schema trick:\n"
+        + "\n".join(all_violations)
+    )
+
+
+def test_canary_c5_rejects_undeclared_migrated_wid_write() -> None:
+    """Canary B1: Reject broken process that emits an undeclared migrated-WID write
+
+    on a legacy branch (reviewer planted {"protein": {"counts": {migrated_wid: 1.0}}} in PPII).
+    Must fail based on actual emitted update paths, not class/source inspection.
+    """
+    from opencell.vivarium.karr_protein_processing_ii import (
+        KarrProteinProcessingIIProcess,
+    )
+
+    proc = KarrProteinProcessingIIProcess({})
+    migrated_wid = next(iter(sorted(MIGRATED_WIDS)))
+
+    # Plant undeclared write on legacy counts branch
+    broken_update = {
+        "protein": {
+            "counts": {migrated_wid: 1.0},
+        }
+    }
+    violations = _verify_emitted_protein_update(proc, broken_update)
+    assert violations, "Canary failed: audit must reject undeclared migrated WID write on legacy branch"
+    assert any("counts" in v and migrated_wid in v for v in violations), (
+        f"Expected violation naming 'counts' and {migrated_wid}, got {violations}"
     )
 
 

@@ -267,17 +267,12 @@ def test_c10_water_identity() -> None:
 # Claim C12: Real Engine same-tick pipeline reads authority and complex port
 # ==============================================================================
 
-def test_c12_engine_same_tick_pipeline() -> None:
-    """Claim C12: In a real Vivarium Engine, same-tick request->allocation->evolution
-
-    reads authority processed_i cytosol counts and complex port, never flat mature counts.
-    """
+def _run_and_verify_c12_engine_tick(proc: Any) -> dict[str, Any]:
     from vivarium.core.composer import Composite
     from vivarium.core.engine import Engine
 
     from opencell.vivarium.karr_allocation_step import KarrAllocationStep
 
-    proc = KarrProteinTranslocationProcess({})
     calc = RequestCalculatorPTransloc({"protein_translocation_proc": proc})
     alloc = KarrAllocationStep({
         "consumer_processes": [(proc.name, list(proc.allocation_substrate_wids))],
@@ -314,15 +309,15 @@ def test_c12_engine_same_tick_pipeline() -> None:
         },
     }
 
-    # Setup state: 10 copies of MG_014 in processed_i cytosol
+    # Setup state: 10 copies of MG_014 (direct, dest m) and 7 copies of MG_032 (SRP, dest m) in processed_i cytosol
     state = _build_test_state(
         proc,
         atpase=1000.0,
         pore=1000.0,
         srp=1000.0,
         receptor=1000.0,
-        pending_c={"MG_014_MONOMER": 10.0},
-        pool={"ATP": 1000.0, "GTP": 1000.0, "H2O": 2000.0},
+        pending_c={"MG_014_MONOMER": 10.0, "MG_032_MONOMER": 7.0},
+        pool={"ATP": 320.0, "GTP": 14.0, "H2O": 334.0},
     )
     # Give allocation store and requests store initial empty dicts
     state["requests"] = {proc.name: {}}
@@ -337,15 +332,77 @@ def test_c12_engine_same_tick_pipeline() -> None:
     )
     engine = Engine(composite=composite)
 
-    # Step calculator and allocator
+    # 1. Step request calculator and allocator: capture requests and substrates_allocated
     engine.run_steps()
+    step_st = engine.state.get_value()
+
+    # Exact request evidence (MG_014: 10*18=180 ATP, 0 GTP, 180 H2O; MG_032: 7*20=140 ATP, 7*2=14 GTP, 154 H2O -> total 320 ATP, 14 GTP, 334 H2O)
+    reqs = step_st["requests"][proc.name]
+    assert reqs["ATP"] == 320.0, f"Expected ATP request 320.0, got {reqs.get('ATP')}"
+    assert reqs["GTP"] == 14.0, f"Expected GTP request 14.0, got {reqs.get('GTP')}"
+    assert reqs["H2O"] == 334.0, f"Expected H2O request 334.0, got {reqs.get('H2O')}"
+
+    # Exact allocation evidence
+    alloc_granted = step_st["substrates_allocated"][proc.name]
+    assert alloc_granted["ATP"] == 320.0, f"Expected allocated ATP 320.0, got {alloc_granted.get('ATP')}"
+    assert alloc_granted["GTP"] == 14.0, f"Expected allocated GTP 14.0, got {alloc_granted.get('GTP')}"
+    assert alloc_granted["H2O"] == 334.0, f"Expected allocated H2O 334.0, got {alloc_granted.get('H2O')}"
+
+    # 2. Run ProteinTranslocation evolution in the same tick
+    engine.update(1.0)
     st = engine.state.get_value()
 
-    # Calculator must have emitted request of 180 ATP, 0 GTP, 180 H2O (MG_014 len 623 -> 18 ATP/copy * 10 = 180)
-    reqs = st["requests"][proc.name]
-    assert reqs["ATP"] == 180.0
-    assert reqs["GTP"] == 0.0
-    assert reqs["H2O"] == 180.0
+    # 3. Evolution: cytosol decrement and destination increment in processed_i
+    proc_i = st["protein"]["compartment_counts"]["processed_i"]
+    assert proc_i["MG_014_MONOMER"]["c"] == 0.0, f"Expected MG_014 cytosol 0.0 (decremented by 10), got {proc_i['MG_014_MONOMER']['c']}"
+    assert proc_i["MG_014_MONOMER"]["m"] == 10.0, f"Expected MG_014 destination m 10.0 (incremented by 10), got {proc_i['MG_014_MONOMER']['m']}"
+    assert proc_i["MG_032_MONOMER"]["c"] == 0.0, f"Expected MG_032 cytosol 0.0 (decremented by 7), got {proc_i['MG_032_MONOMER']['c']}"
+    assert proc_i["MG_032_MONOMER"]["e"] == 7.0, f"Expected MG_032 destination e 7.0 (incremented by 7), got {proc_i['MG_032_MONOMER']['e']}"
+
+    # 4. Evolution: substrate hydrolysis and product deltas in the same tick
+    subs = st["substrates"]
+    assert subs["ATP"] == 0.0, f"Expected ATP 0.0, got {subs['ATP']}"
+    assert subs["GTP"] == 0.0, f"Expected GTP 0.0, got {subs['GTP']}"
+    assert subs["H2O"] == 0.0, f"Expected H2O 0.0, got {subs['H2O']}"
+    assert subs["ADP"] == 320.0, f"Expected ADP 320.0, got {subs['ADP']}"
+    assert subs["GDP"] == 14.0, f"Expected GDP 14.0, got {subs['GDP']}"
+    assert subs["PI"] == 334.0, f"Expected PI 334.0, got {subs['PI']}"
+    assert subs["H"] == 334.0, f"Expected H 334.0, got {subs['H']}"
+
+    return st
+
+
+def test_c12_engine_same_tick_pipeline() -> None:
+    """Claim C12: In a real Vivarium Engine, same-tick request->allocation->evolution
+
+    reads authority processed_i cytosol counts and complex port, executes evolution in the
+    same tick, and asserts exact request/allocation evidence, cytosol decrement, destination increment,
+    and ATP/GTP/H2O hydrolysis/product deltas.
+    """
+    proc = KarrProteinTranslocationProcess({})
+    _run_and_verify_c12_engine_tick(proc)
+
+
+def test_canary_c12_rejects_no_evolution_process() -> None:
+    """Canary B3: Reject broken process whose next_update emits no evolution."""
+    class BrokenNoEvolutionProcess(KarrProteinTranslocationProcess):
+        def next_update(self, timestep: float, state: dict[str, Any]) -> dict[str, Any]:
+            return {}
+
+    broken_proc = BrokenNoEvolutionProcess({})
+    with pytest.raises(AssertionError, match="decremented"):
+        _run_and_verify_c12_engine_tick(broken_proc)
+
+
+def test_canary_c12_rejects_raising_process() -> None:
+    """Canary B3: Reject broken process whose next_update raises during evolution."""
+    class BrokenRaisingProcess(KarrProteinTranslocationProcess):
+        def next_update(self, timestep: float, state: dict[str, Any]) -> dict[str, Any]:
+            raise RuntimeError("Planted failure during evolution")
+
+    broken_proc = BrokenRaisingProcess({})
+    with pytest.raises(RuntimeError, match="Planted failure"):
+        _run_and_verify_c12_engine_tick(broken_proc)
 
 
 # ==============================================================================

@@ -211,11 +211,11 @@ def _verify_c11_persistence_and_order(proc: Any) -> None:
     )
 
     # Known-seed reference test on seed 2 with 50 ATP:
-    # At seed 2, MatlabRandStream(2).randperm(3)[0] == 2.
-    # Under fixture order [MG_014 (pos 0), MG_191 (pos 49), MG_468 (pos 118)],
-    # cumulative copy 2 maps to MG_191_MONOMER (cost 42 <= 50).
-    # Under legacy/set-appended order [MG_014, MG_468, MG_191], copy 2 maps to MG_468_MONOMER (cost 51 > 50 -> empty update).
-    # Multi-call: run >=3 calls on the single instance.
+    # At seed 2, MatlabRandStream(2) sequence across 3 calls with 3 copies:
+    #   Call 1: randperm(3) -> [2, 1, 3] -> draw 2 maps to MG_191 (pos 49, cost 42 <= 50 -> moved; remaining ATP 8).
+    #   Call 2: randperm(3) -> [3, 2, 1] -> draw 3 maps to MG_468 (pos 118, cost 51 > 50 -> break; empty move).
+    #   Call 3: randperm(3) -> [1, 3, 2] -> draw 1 maps to MG_014 (pos 0, cost 18 <= 50 -> moved; remaining ATP 32).
+    # Multi-call: run >=3 calls on the single instance and assert the EXACT selection/output sequence.
     proc._rng = MatlabRandStream(2)
     state: dict[str, Any] = {
         "substrates": {wid: 1000.0 for wid in proc.substrate_wids},
@@ -248,32 +248,55 @@ def _verify_c11_persistence_and_order(proc: Any) -> None:
     for w in probe_wids:
         state["protein"]["compartment_counts"]["processed_i"][w]["c"] = 1.0
 
+    # Call 1: assert exact output (MG_191 translocated)
     update1 = proc.next_update(1.0, deepcopy(state))
-    moved_wids = set()
-    comp_delta = update1.get("protein", {}).get("compartment_counts", {}).get("processed_i", {})
-    for w, d in comp_delta.items():
-        if d.get("c", 0.0) < 0:
-            moved_wids.add(w)
-    loc_delta = update1.get("protein", {}).get("location", {})
-    for w in loc_delta:
-        moved_wids.add(w)
+    comp_delta1 = update1.get("protein", {}).get("compartment_counts", {}).get("processed_i", {})
+    moved_wids1 = {w for w, d in comp_delta1.items() if d.get("c", 0.0) < 0}
+    loc_delta1 = update1.get("protein", {}).get("location", {})
+    for w in loc_delta1:
+        moved_wids1.add(w)
 
-    assert "MG_191_MONOMER" in moved_wids, (
-        f"Claim C11 fixture-order invariant failure: seed 2 randperm draw 2 must map to "
-        f"fixture-order second copy MG_191_MONOMER, but moved {moved_wids}. "
+    assert moved_wids1 == {"MG_191_MONOMER"}, (
+        f"Claim C11 Call 1 fixture-order invariant failure: seed 2 randperm draw 2 must map to "
+        f"fixture-order second copy MG_191_MONOMER, but moved {moved_wids1}. "
         "Current production appends migrated WIDs at tail or iterates set, selecting MG_468."
+    )
+    assert comp_delta1["MG_191_MONOMER"] == {"c": -1.0, "m": 1.0}, (
+        f"Claim C11 Call 1 delta failure: expected c: -1.0, m: +1.0 for MG_191, got {comp_delta1.get('MG_191_MONOMER')}"
     )
     rng_state_1 = list(proc._rng.get_state()["mt"])
 
-    # Call 2: verify stream advances on the same instance
-    proc.next_update(1.0, deepcopy(state))
+    # Call 2: verify stream advances on the same instance and assert exact output (empty move: MG_468 draw exceeds ATP budget)
+    update2 = proc.next_update(1.0, deepcopy(state))
+    comp_delta2 = update2.get("protein", {}).get("compartment_counts", {}).get("processed_i", {})
+    moved_wids2 = {w for w, d in comp_delta2.items() if d.get("c", 0.0) < 0}
+    loc_delta2 = update2.get("protein", {}).get("location", {})
+    for w in loc_delta2:
+        moved_wids2.add(w)
+
+    assert moved_wids2 == set(), (
+        f"Claim C11 Call 2: expected no moved WIDs (MG_468 cost 51 > 50 ATP -> break), but moved {moved_wids2}"
+    )
     rng_state_2 = list(proc._rng.get_state()["mt"])
     assert rng_state_1 != rng_state_2, (
         "Claim C11 stream persistence failure: RNG stream was reseeded or did not advance between call 1 and call 2"
     )
 
-    # Call 3: verify stream continues advancing on the same instance
-    proc.next_update(1.0, deepcopy(state))
+    # Call 3: verify stream continues advancing on the same instance and assert exact output (MG_014 translocated)
+    update3 = proc.next_update(1.0, deepcopy(state))
+    comp_delta3 = update3.get("protein", {}).get("compartment_counts", {}).get("processed_i", {})
+    moved_wids3 = {w for w, d in comp_delta3.items() if d.get("c", 0.0) < 0}
+    loc_delta3 = update3.get("protein", {}).get("location", {})
+    for w in loc_delta3:
+        moved_wids3.add(w)
+
+    assert moved_wids3 == {"MG_014_MONOMER"}, (
+        f"Claim C11 Call 3 failure: seed 2 randperm draw 1 must map to "
+        f"fixture-order first copy MG_014_MONOMER, but moved {moved_wids3}"
+    )
+    assert comp_delta3["MG_014_MONOMER"] == {"c": -1.0, "m": 1.0}, (
+        f"Claim C11 Call 3 delta failure: expected c: -1.0, m: +1.0 for MG_014, got {comp_delta3.get('MG_014_MONOMER')}"
+    )
     rng_state_3 = list(proc._rng.get_state()["mt"])
     assert rng_state_2 != rng_state_3, (
         "Claim C11 stream persistence failure: RNG stream was reseeded or did not advance between call 2 and call 3"
@@ -402,7 +425,32 @@ def test_canary_rejects_reseed_rng() -> None:
             return super().next_update(timestep, state)
 
     proc = BrokenReseedRNGProcess({"rng_seed": 2})
-    with pytest.raises(AssertionError, match="stream persistence failure"):
+    with pytest.raises(AssertionError):
+        _verify_c11_persistence_and_order(proc)
+
+
+def test_canary_rejects_repeated_selection_stream_with_advancing_rng() -> None:
+    """Canary B2: Reject broken subclass that advances persistent _rng so MT state changes,
+
+    but uses a fresh seed-2 stream for selection/output on every call.
+    Must be rejected because its repeated observable outputs are wrong (Call 2 moves MG_191 again
+    instead of emitting empty).
+    """
+    class BrokenRepeatedStreamProcess(KarrProteinTranslocationProcess):
+        def next_update(self, timestep: float, state: dict[str, Any]) -> dict[str, Any]:
+            # Advance internal persistent _rng so get_state changes
+            if hasattr(self._rng, "randperm"):
+                self._rng.randperm(5)
+            # But swap in fresh seed-2 stream for actual execution
+            saved_rng = self._rng
+            self._rng = MatlabRandStream(2)
+            try:
+                return super().next_update(timestep, state)
+            finally:
+                self._rng = saved_rng
+
+    proc = BrokenRepeatedStreamProcess({"rng_seed": 2})
+    with pytest.raises(AssertionError, match="Claim C11 Call 2"):
         _verify_c11_persistence_and_order(proc)
 
 
