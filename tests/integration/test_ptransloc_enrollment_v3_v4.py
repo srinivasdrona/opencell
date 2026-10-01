@@ -49,3 +49,41 @@ def test_ptransloc_request_calculator_wired_v4() -> None:
     step = engine.steps["request_calculator_protein_translocation"]
     assert isinstance(step, RequestCalculatorPTransloc)
 
+
+def test_ptransloc_request_calculator_declares_complex_port() -> None:
+    """D4 requirement: RequestCalculatorPTransloc must declare a 'complex' port
+
+    so that complex enzymes (MG_0001_048, MG_072_DIMER, MG_055_170_277_464_476_20MER)
+    can be read to calculate capacity.
+    """
+    from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
+
+    pt_proc = KarrProteinTranslocationProcess({})
+    calc = RequestCalculatorPTransloc({"protein_translocation_proc": pt_proc})
+    schema = calc.ports_schema()
+    assert "complex" in schema, "RequestCalculatorPTransloc must declare 'complex' port"
+    assert "counts" in schema["complex"], "RequestCalculatorPTransloc must declare 'counts' under 'complex' port"
+
+
+def test_ptransloc_request_calculator_complex_wired_in_chassis_v3_and_v4() -> None:
+    """D4 requirement: Composite topology must wire request_calculator_protein_translocation's
+
+    'complex' port to ('complex',).
+    """
+    for builder, label in [
+        (build_karr_chassis_v3, "v3"),
+        (build_karr_chassis_v4, "v4"),
+    ]:
+        engine = builder(time_step_s=1.0, emit_step_s=1.0)
+        # Check topology in composite
+        composite = getattr(engine, "composite", engine)
+        topology = composite.topology if hasattr(composite, "topology") else engine.topology
+        step_topo = topology.get("request_calculator_protein_translocation", {})
+        assert "complex" in step_topo, (
+            f"request_calculator_protein_translocation in {label} must wire 'complex' port"
+        )
+        assert tuple(step_topo["complex"]) == ("complex",), (
+            f"request_calculator_protein_translocation in {label} must wire 'complex' to ('complex',)"
+        )
+
+

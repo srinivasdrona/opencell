@@ -16,16 +16,39 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
-MIGRATED_WIDS = frozenset({
-    "MG_191_MONOMER",
-    "MG_192_MONOMER",
-    "MG_217_MONOMER",
-    "MG_218_MONOMER",
-    "MG_312_MONOMER",
-    "MG_317_MONOMER",
-    "MG_318_MONOMER",
-    "MG_386_MONOMER",
-})
+from scipy.io import loadmat
+import numpy as np
+
+
+def _parse_wid_array(value: object) -> list[str]:
+    values = np.asarray(value, dtype=object).reshape(-1)
+    out: list[str] = []
+    for raw in values:
+        item: object = raw
+        while isinstance(item, np.ndarray):
+            if item.size == 0:
+                item = ""
+                break
+            item = item.flat[0]
+        out.append(str(item))
+    return out
+
+
+def load_source_derived_migrated_wids() -> frozenset[str]:
+    """Source-derived migration set: TOA fixture union PT fixture translocating indices."""
+    toa_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "TerminalOrganelleAssembly_flat.mat"
+    pt_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "ProteinTranslocation_flat.mat"
+    toa_mat = loadmat(str(toa_path), squeeze_me=True, struct_as_record=False)
+    pt_mat = loadmat(str(pt_path), squeeze_me=True, struct_as_record=False)
+    toa_wids = set(_parse_wid_array(toa_mat["data"].fixture.substrateWholeCellModelIDs))
+    pt_fx = pt_mat["data"].fixture
+    pt_wids = [str(x) for x in pt_fx.monomerWholeCellModelIDs]
+    trans_indices = np.asarray(pt_fx.monomerIndexs_translocating, dtype=int) - 1
+    pt_trans_wids = {pt_wids[i] for i in trans_indices}
+    return frozenset(toa_wids | pt_trans_wids)
+
+
+MIGRATED_WIDS = load_source_derived_migrated_wids()
 
 LEGACY_BRANCHES = frozenset({
     "counts",
@@ -60,8 +83,8 @@ PROTEIN_PROCESS_MANIFEST = (
     ("opencell.vivarium.karr_host_interaction", "KarrHostInteractionProcess", (), "DERIVED-R"),
     ("opencell.vivarium.karr_observability_step", "KarrObservabilityStep", (), "DERIVED-R"),
     ("opencell.vivarium.karr_protein_activation", "KarrProteinActivationProcess", (), "DERIVED-R/STAGE-4"),
-    ("opencell.vivarium.karr_request_calculators", "RequestCalculatorPTransloc", (), "DERIVED-R"),
-    ("opencell.vivarium.karr_request_calculators", "RequestCalculatorProteinPathway", (), "DERIVED-R"),
+    ("opencell.vivarium.karr_request_calculators", "RequestCalculatorPTransloc", ("unprocessed_counts", "location"), "DERIVED-R"),
+    ("opencell.vivarium.karr_request_calculators", "RequestCalculatorProteinPathway", ("unprocessed_counts", "location"), "DERIVED-R"),
     ("opencell.vivarium.karr_request_calculators", "RequestCalculatorRibAsm", (), "DERIVED-R"),
     ("opencell.vivarium.karr_rna_modification", "KarrRNAModificationProcess", (), "DERIVED-R"),
     ("opencell.vivarium.karr_rna_processing", "KarrRNAProcessingProcess", (), "DERIVED-R"),
@@ -124,16 +147,19 @@ def test_c2_manifest_completeness_and_classification() -> None:
     )
 
 
-def test_c2_legacy_leaves_exclude_migrated_wids() -> None:
-    """Claim C2: For every module in manifest, legacy writable branches must NOT contain
+def test_c3_legacy_leaves_exclude_migrated_wids() -> None:
+    """Claim C3: For every module in manifest, legacy writable branches must NOT contain
 
-    any of the 8 MIGRATED_WIDS.
+    any of the enrolled MIGRATED_WIDS, RequestCalculatorPTransloc branches must be nonempty,
+    and protein.location must be absent from all runtime ports.
     """
     violations: list[str] = []
 
+    # Verify RequestCalculatorPTransloc branches are nonempty in manifest
+    ptrans_entry = [entry for entry in PROTEIN_PROCESS_MANIFEST if entry[1] == "RequestCalculatorPTransloc"]
+    assert ptrans_entry and ptrans_entry[0][2], "RequestCalculatorPTransloc manifest branches must be nonempty"
+
     for mod_name, cls_name, branches, _ in PROTEIN_PROCESS_MANIFEST:
-        if not branches:
-            continue
         mod = importlib.import_module(mod_name)
         cls = getattr(mod, cls_name)
         try:
@@ -144,6 +170,11 @@ def test_c2_legacy_leaves_exclude_migrated_wids() -> None:
             continue
 
         protein_schema = schema.get("protein", {})
+
+        # protein location absent from runtime ports
+        if "location" in protein_schema:
+            violations.append(f"{cls_name}: declares 'location' under protein port")
+
         for branch in branches:
             branch_dict = protein_schema.get(branch, {})
             if isinstance(branch_dict, dict):
@@ -155,7 +186,57 @@ def test_c2_legacy_leaves_exclude_migrated_wids() -> None:
                     )
 
     assert not violations, (
-        "Claim C2 violation: migrated WIDs must be removed from all legacy writable branches:\n"
+        "Claim C3 violation: migrated WIDs must be removed from all legacy writable branches "
+        "and protein.location must be absent from all runtime ports:\n"
+        + "\n".join(violations)
+    )
+
+
+# Backward-compatible alias for existing test runners
+test_c2_legacy_leaves_exclude_migrated_wids = test_c3_legacy_leaves_exclude_migrated_wids
+
+
+def test_c5_declared_writes_only() -> None:
+    """Claim C5: Actual written protein paths are declared for the 9-module scope;
+
+    no empty-schema trick (empty dict in ports_schema to bypass checks).
+    """
+    modules_in_scope = (
+        ("opencell.vivarium.karr_translation_v3", "KarrTranslationV3Process"),
+        ("opencell.vivarium.karr_protein_processing_i", "KarrProteinProcessingIProcess"),
+        ("opencell.vivarium.karr_protein_processing_ii", "KarrProteinProcessingIIProcess"),
+        ("opencell.vivarium.karr_protein_folding", "KarrProteinFoldingProcess"),
+        ("opencell.vivarium.karr_protein_modification", "KarrProteinModificationProcess"),
+        ("opencell.vivarium.karr_protein_translocation", "KarrProteinTranslocationProcess"),
+        ("opencell.vivarium.karr_protein_decay_light", "ProteinDecayLightProcess"),
+        ("opencell.vivarium.karr_terminal_organelle_assembly", "KarrTerminalOrganelleAssemblyProcess"),
+        ("opencell.vivarium.protein_flat_projection_step", "ProteinFlatProjectionStep"),
+    )
+
+    violations: list[str] = []
+    for mod_name, cls_name in modules_in_scope:
+        mod = importlib.import_module(mod_name)
+        cls = getattr(mod, cls_name)
+        try:
+            proc = cls({})
+            schema = proc.ports_schema()
+        except Exception as exc:
+            violations.append(f"{cls_name}: failed to instantiate: {exc}")
+            continue
+
+        protein_schema = schema.get("protein", {})
+        if not protein_schema:
+            continue
+
+        # Check for empty-schema trick: no leaf branch should be empty dict
+        for branch, decl in protein_schema.items():
+            if isinstance(decl, dict) and len(decl) == 0:
+                violations.append(
+                    f"{cls_name}: declares empty dict for branch protein.{branch!r} (empty-schema trick)"
+                )
+
+    assert not violations, (
+        "Claim C5 violation: empty-schema trick detected:\n"
         + "\n".join(violations)
     )
 

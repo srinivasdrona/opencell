@@ -31,16 +31,38 @@ FORMS = (
     "damaged",
 )
 COMPARTMENTS = ("c", "d", "e", "m", "tc", "tm")
-MIGRATED_WIDS = (
-    "MG_191_MONOMER",
-    "MG_192_MONOMER",
-    "MG_217_MONOMER",
-    "MG_218_MONOMER",
-    "MG_312_MONOMER",
-    "MG_317_MONOMER",
-    "MG_318_MONOMER",
-    "MG_386_MONOMER",
-)
+from scipy.io import loadmat
+import numpy as np
+
+
+def _parse_wid_array(value: object) -> list[str]:
+    values = np.asarray(value, dtype=object).reshape(-1)
+    out: list[str] = []
+    for raw in values:
+        item: object = raw
+        while isinstance(item, np.ndarray):
+            if item.size == 0:
+                item = ""
+                break
+            item = item.flat[0]
+        out.append(str(item))
+    return out
+
+
+def load_source_derived_migrated_wids() -> tuple[str, ...]:
+    toa_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "TerminalOrganelleAssembly_flat.mat"
+    pt_path = _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "ProteinTranslocation_flat.mat"
+    toa_mat = loadmat(str(toa_path), squeeze_me=True, struct_as_record=False)
+    pt_mat = loadmat(str(pt_path), squeeze_me=True, struct_as_record=False)
+    toa_wids = set(_parse_wid_array(toa_mat["data"].fixture.substrateWholeCellModelIDs))
+    pt_fx = pt_mat["data"].fixture
+    pt_wids = [str(x) for x in pt_fx.monomerWholeCellModelIDs]
+    trans_indices = np.asarray(pt_fx.monomerIndexs_translocating, dtype=int) - 1
+    pt_trans_wids = {pt_wids[i] for i in trans_indices}
+    return tuple(sorted(toa_wids | pt_trans_wids))
+
+
+MIGRATED_WIDS = load_source_derived_migrated_wids()
 
 
 def test_c1_single_authority_write_rejection() -> None:
@@ -124,8 +146,8 @@ def test_c1b_no_leaf_path_drift() -> None:
         for wid in MIGRATED_WIDS
         for comp in COMPARTMENTS
     }
+    assert len(observed_paths) == 7440, f"Expected exactly 7440 leaves (10 forms x 124 WIDs x 6 compartments), found {len(observed_paths)}"
     assert observed_paths == expected_paths
-    assert len(observed_paths) == 480, f"Expected exactly 480 leaves, found {len(observed_paths)}"
 
 
 def test_c1c_flat_identity_through_reader_port() -> None:
@@ -251,3 +273,58 @@ def test_c1d_aggregate_invariance_across_toa_transfer() -> None:
     # Aggregate flat count MUST remain exactly invariant at 27.0
     assert flat_after.is_integer()
     assert flat_after == 27.0
+
+
+def test_c6_no_path_resurrection_after_100_ticks() -> None:
+    """Claim C6: 100-tick realized store has no resurrected legacy path for any of the 124 WIDs.
+
+    Running the full chassis for 100 ticks must preserve single-authority invariance:
+    no undeclared protein.counts leaf, no resurrected legacy branches for any enrolled WID,
+    and direct flat writes continue to be rejected.
+    """
+    from vivarium.core.engine import Engine
+    from opencell.vivarium.karr_composite import build_karr_chassis_v6
+
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    engine = Engine(composite=composite)
+
+    # Run for 100 ticks
+    engine.update(100.0)
+
+    final_state = engine.state.get_value()
+    protein_state = final_state.get("protein", {})
+    assert "compartment_counts" in protein_state, "compartment_counts missing after 100 ticks"
+    mature_store = protein_state["compartment_counts"].get("mature", {})
+    flat_counts = protein_state.get("counts", {})
+
+    legacy_branches = (
+        "unprocessed_counts",
+        "processed_counts",
+        "unfolded_counts",
+        "unmodified_counts",
+        "modified_counts",
+        "signal_sequence_counts",
+        "location",
+    )
+
+    resurrected: list[str] = []
+    for wid in MIGRATED_WIDS:
+        # 1. No legacy branch in store may contain enrolled WID
+        for branch in legacy_branches:
+            if branch in protein_state and wid in protein_state[branch]:
+                resurrected.append(f"WID {wid} resurrected under protein.{branch}")
+
+        # 2. Flat count must match sum across compartments
+        if wid in mature_store:
+            expected_flat = sum(float(mature_store[wid].get(c, 0.0)) for c in COMPARTMENTS)
+            actual_flat = float(flat_counts.get(wid, 0.0))
+            assert actual_flat.is_integer(), f"Non-integer flat count for {wid}: {actual_flat}"
+            assert actual_flat == expected_flat, f"Flat mismatch for {wid}: flat={actual_flat}, comp_sum={expected_flat}"
+
+    assert not resurrected, "Resurrected legacy paths found after 100 ticks:\n" + "\n".join(resurrected)
+
+    # 3. Direct write to flat counts for an enrolled WID must still be rejected
+    test_wid = MIGRATED_WIDS[0]
+    with pytest.raises(Exception):
+        engine.state.apply_update({"protein": {"counts": {test_wid: 999.0}}})
+
