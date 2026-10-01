@@ -59,6 +59,25 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-01 20:30 IST) — Gemini tests frozen; Sonnet next:**
+
+- Gemini test-writer agent `535084f1-232b-402d-b524-77d3e2844419`
+  committed Stage-2 tests/harness at `6fd19e6` and C11/replay hardening at
+  `42be5bd`. Production remains unchanged.
+- Scoped pre-implementation result: **51 collected, 24 intentional RED,
+  27 GREEN**, no skips/collection errors. Seven mutation canaries pass.
+- Parent rejected the initial hollow C11; corrected C11 now fails current code
+  on seed-2 fixture ordering (MG_191 must be selected before MG_468) while
+  separately proving the existing RNG stream advances.
+- Frozen acceptance covers 124 source-derived WIDs / 7,440 leaves, no legacy
+  location/queue authority, exact Karr requests, pool independence, capacity
+  mins, full 2,892-position replay, persistent fixture-ordered RNG mapping,
+  same-tick Engine request/allocation/evolution, and +4,203 mature seed
+  accounting.
+- Sonnet may edit only the nine production files authorized by the plan plus
+  provenance. The 124-WID enrollment and all writer re-homing are one atomic
+  commit; tests, evidence, metadata, and L2.5 surfaces are frozen/out of scope.
+
 **Current status (2026-10-01 18:55 IST) — Opus Stage-2 plan complete:**
 
 - Opus planner agent `eec252a2-30cd-4f2f-8fc9-1bf7ec4c1faf`
