@@ -9,11 +9,13 @@ This module is the single source of truth for that (form, WID, compartment)
 authority and for the mechanism that keeps the legacy flat `protein.counts`
 view an exact, unwritable derived projection of it.
 
-Stage 1b (this commit): `MIGRATED_WIDS` is the 8 terminal-organelle WIDs
-(design 9.3). Every builder below is a pure function of `MIGRATED_WIDS`, so
-the authority schema, the rejecting-updater attachment, and the projection
-Step's key set all enroll exactly these 8 WIDs across all 10 forms x 6
-compartments (480 leaves) -- see `protein_flat_projection_step.py`.
+Stage 2 (`docs/design/protein_translocation_stage2.md` D1): `MIGRATED_WIDS`
+is the source-derived union of TerminalOrganelleAssembly's 8 substrate WIDs
+and ProteinTranslocation's 119 translocating monomer WIDs -- 124 total, no
+literal WID list. Every builder below is a pure function of `MIGRATED_WIDS`,
+so the authority schema, the rejecting-updater attachment, and the
+projection Step's key set all enroll exactly these 124 WIDs across all 10
+forms x 6 compartments (7,440 leaves) -- see `protein_flat_projection_step.py`.
 """
 
 from __future__ import annotations
@@ -46,28 +48,90 @@ FORMS: tuple[str, ...] = (
 # design 4.1 Beat-4 inversion); no arithmetic in this module depends on it.
 COMPARTMENTS: tuple[str, ...] = ("c", "d", "e", "m", "tc", "tm")
 
-# Historical record of the Stage-1b target set (design 9.3): the 8
-# terminal-organelle monomer WIDs, in `TerminalOrganelleAssembly.m`'s sorted
-# `substrateWholeCellModelIDs__` order. Retained under its Stage-1a name for
-# traceability; `_migration_wid_sets` below cross-checks it against the same
-# WIDs loaded independently from the canonical TOA fixture (not merely
-# compared to `MIGRATED_WIDS` itself).
-PENDING_STAGE_1B_TERMINAL_ORGANELLE_WIDS: tuple[str, ...] = (
-    "MG_191_MONOMER",
-    "MG_192_MONOMER",
-    "MG_217_MONOMER",
-    "MG_218_MONOMER",
-    "MG_312_MONOMER",
-    "MG_317_MONOMER",
-    "MG_318_MONOMER",
-    "MG_386_MONOMER",
+_TERMINAL_ORGANELLE_FIXTURE_PATH = (
+    "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat"
+)
+_PROTEIN_TRANSLOCATION_FIXTURE_PATH = (
+    "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat"
 )
 
-# Stage-1b authoritative migration set: the 8 terminal-organelle WIDs. Every
-# builder in this module takes `migrated_wids` as an explicit parameter
-# defaulting to this constant, so every schema contribution, projection
-# write, and rejecting-updater attachment enrolls exactly these 8 WIDs.
-MIGRATED_WIDS: tuple[str, ...] = PENDING_STAGE_1B_TERMINAL_ORGANELLE_WIDS
+
+def _resolve_data_path(path: str) -> Path:
+    candidate = Path(path)
+    if candidate.exists():
+        return candidate
+    repo_root = Path(__file__).resolve().parents[2]
+    rooted = repo_root / candidate
+    if rooted.exists():
+        return rooted
+    raise FileNotFoundError(f"Fixture not found: {path}")
+
+
+def _parse_wid_array(cell_array: Any) -> list[str]:
+    values = np.asarray(cell_array, dtype=object)
+    if values.shape == (1, 1):
+        values = np.asarray(values[0, 0], dtype=object)
+    out: list[str] = []
+    for raw in values.ravel():
+        value: object = raw
+        while isinstance(value, np.ndarray):
+            if value.size == 0:
+                value = ""
+                break
+            value = value.flat[0]
+        out.append(str(value))
+    return out
+
+
+@lru_cache(maxsize=1)
+def _load_toa_fixture_substrate_wids() -> frozenset[str]:
+    """Load the 8 terminal-organelle substrate WIDs from
+    `TerminalOrganelleAssembly_flat.mat`'s own `substrateWholeCellModelIDs`
+    (design 9.3) -- one of the two disjoint sources `MIGRATED_WIDS` unions
+    (design D1).
+    """
+    resolved = _resolve_data_path(_TERMINAL_ORGANELLE_FIXTURE_PATH)
+    mat = loadmat(str(resolved))
+    fx = mat["data"]["fixture"][0, 0]
+    return frozenset(_parse_wid_array(fx["substrateWholeCellModelIDs"]))
+
+
+@lru_cache(maxsize=1)
+def _load_pt_fixture_translocating_wids() -> frozenset[str]:
+    """Load ProteinTranslocation's 119 translocating monomer WIDs from
+    `ProteinTranslocation_flat.mat`'s `monomerIndexs_translocating` over
+    `monomerWholeCellModelIDs` (design D1, P1) -- the other of the two
+    disjoint sources `MIGRATED_WIDS` unions. No literal WID list or
+    cardinality is hardcoded; both the index set and the WID strings are
+    read directly from the fixture.
+    """
+    resolved = _resolve_data_path(_PROTEIN_TRANSLOCATION_FIXTURE_PATH)
+    mat = loadmat(str(resolved))
+    fx = mat["data"]["fixture"][0, 0]
+    all_wids = _parse_wid_array(fx["monomerWholeCellModelIDs"])
+    indices = (
+        np.asarray(fx["monomerIndexs_translocating"][0, 0], dtype=np.int64).reshape(-1) - 1
+    )
+    return frozenset(all_wids[int(idx)] for idx in indices)
+
+
+@lru_cache(maxsize=1)
+def _load_source_derived_migrated_wids() -> frozenset[str]:
+    """R1 (design D1): the Stage-2 migration set is the union of TOA's 8
+    substrate WIDs and ProteinTranslocation's 119 translocating monomer
+    WIDs -- 124 total (116 new over Stage 1b's 8, 3 already shared). No
+    literal WID list anywhere in this derivation; both operands are loaded
+    directly from their respective canonical fixtures.
+    """
+    return _load_toa_fixture_substrate_wids() | _load_pt_fixture_translocating_wids()
+
+
+# Stage-2 authoritative migration set (design D1): the source-derived union
+# above. Every builder in this module takes `migrated_wids` as an explicit
+# parameter defaulting to this constant, so every schema contribution,
+# projection write, and rejecting-updater attachment enrolls exactly these
+# 124 WIDs.
+MIGRATED_WIDS: tuple[str, ...] = tuple(sorted(_load_source_derived_migrated_wids()))
 
 
 class ProteinFlatProjectionWriteError(Exception):
@@ -233,36 +297,6 @@ def project_mature_row(mature_row: Mapping[str, float]) -> float:
 
 
 _PROTEIN_MONOMER_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinMonomer_flat.mat"
-_TERMINAL_ORGANELLE_FIXTURE_PATH = (
-    "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat"
-)
-
-
-def _resolve_data_path(path: str) -> Path:
-    candidate = Path(path)
-    if candidate.exists():
-        return candidate
-    repo_root = Path(__file__).resolve().parents[2]
-    rooted = repo_root / candidate
-    if rooted.exists():
-        return rooted
-    raise FileNotFoundError(f"Fixture not found: {path}")
-
-
-def _parse_wid_array(cell_array: Any) -> list[str]:
-    values = np.asarray(cell_array, dtype=object)
-    if values.shape == (1, 1):
-        values = np.asarray(values[0, 0], dtype=object)
-    out: list[str] = []
-    for raw in values.ravel():
-        value: object = raw
-        while isinstance(value, np.ndarray):
-            if value.size == 0:
-                value = ""
-                break
-            value = value.flat[0]
-        out.append(str(value))
-    return out
 
 
 @lru_cache(maxsize=1)
@@ -297,27 +331,16 @@ def load_mature_seed_from_canonical_fixture() -> dict[str, dict[str, float]]:
     return seed
 
 
-@lru_cache(maxsize=1)
-def _load_toa_fixture_substrate_wids() -> frozenset[str]:
-    """Independently load the 8 terminal-organelle substrate WIDs from
-    `TerminalOrganelleAssembly_flat.mat` -- a source disjoint from any Python
-    constant in this module -- for the partial-migration detector below.
-    """
-    resolved = _resolve_data_path(_TERMINAL_ORGANELLE_FIXTURE_PATH)
-    mat = loadmat(str(resolved))
-    fx = mat["data"]["fixture"][0, 0]
-    return frozenset(_parse_wid_array(fx["substrateWholeCellModelIDs"]))
-
-
 def compartment_delta(form: str, wid: str, compartment: str, n: float) -> dict[str, Any]:
     """The only sanctioned constructor for an authority update dict (design
     D2 Beat-4 guard): validates `form`/`wid`/`compartment` and raises
     `ValueError` otherwise, so a typo'd key cannot silently establish a new
     store path.
 
-    `wid` must be a currently-migrated WID; Stage 1b's `MIGRATED_WIDS` is the
-    8 terminal-organelle WIDs, so this function accepts exactly those and
-    raises for any other WID (e.g. a not-yet-migrated Stage-2+ WID).
+    `wid` must be a currently-migrated WID; Stage 2's `MIGRATED_WIDS` is the
+    source-derived 124-WID union (design D1), so this function accepts
+    exactly those and raises for any other WID (e.g. a not-yet-migrated
+    Stage-3+ WID).
     """
     if form not in FORMS:
         raise ValueError(f"Unknown protein form {form!r}; must be one of {FORMS}")
@@ -342,26 +365,33 @@ def compartment_delta(form: str, wid: str, compartment: str, n: float) -> dict[s
 def _migration_wid_sets() -> dict[str, frozenset[str]]:
     """The WID sets the partial-migration detector (design 9.7 item 3) must
     agree on: the authority schema's `mature`-row key set, the
-    rejecting-updater's key set, the projection Step's target key set
-    (`MIGRATED_WIDS` itself), and an INDEPENDENTLY loaded external source --
-    `TerminalOrganelleAssembly_flat.mat`'s own `substrateWholeCellModelIDs`
-    (design 4.2) -- rather than a second alias of the same Python constant.
-    A mismatch here means `MIGRATED_WIDS` has drifted from the canonical set
-    of terminal-organelle WIDs the fixture itself declares.
+    rejecting-updater's key set, and the projection Step's target key set
+    (`MIGRATED_WIDS` itself). A mismatch here means a schema-builder
+    function has drifted from `MIGRATED_WIDS` (e.g. one builder was edited
+    to take a stale default).
     """
     return {
         "authority_schema": frozenset(compartment_counts_schema(MIGRATED_WIDS)["mature"]),
         "rejecting_updater": frozenset(flat_counts_schema(MIGRATED_WIDS)),
         "projection_step": frozenset(MIGRATED_WIDS),
-        "toa_fixture_substrates": _load_toa_fixture_substrate_wids(),
     }
 
 
 def assert_migration_consistency() -> None:
-    """Raise `ProteinStateMigrationInconsistent` if the four WID sets in
-    `_migration_wid_sets` disagree. Called at import time below so a
-    half-applied migration stage fails loudly at build time (design 9.7
+    """Raise `ProteinStateMigrationInconsistent` if any WID set this module
+    computes disagrees with `MIGRATED_WIDS`. Called at import time below so
+    a half-applied migration stage fails loudly at build time (design 9.7
     item 3), not silently at some later tick.
+
+    Design D1 (Stage 2): `MIGRATED_WIDS` is itself fixture-derived (no
+    longer a hand-typed literal), so the partial-migration detector's most
+    valuable check is no longer "does the literal match the fixture" but
+    "does the union still decompose into exactly the expected structural
+    counts": 8 TOA substrate WIDs, 119 PT-translocating monomer WIDs, a
+    3-WID overlap (MG_191/192/318, the Stage-1b WIDs whose KB compartment
+    remaps to non-cytosol), and a 124-WID union. A drift in any of these
+    four numbers means a fixture field, index base, or set operation in
+    `_load_source_derived_migrated_wids` silently changed shape.
     """
     sets = _migration_wid_sets()
     reference = frozenset(MIGRATED_WIDS)
@@ -372,6 +402,32 @@ def assert_migration_consistency() -> None:
             f"(expected {sorted(reference)}): {mismatched}"
         )
 
+    toa_wids = _load_toa_fixture_substrate_wids()
+    pt_translocating_wids = _load_pt_fixture_translocating_wids()
+    overlap = toa_wids & pt_translocating_wids
+    union = toa_wids | pt_translocating_wids
+    structural = {
+        "toa_substrate_count": (len(toa_wids), 8),
+        "pt_translocating_count": (len(pt_translocating_wids), 119),
+        "toa_pt_overlap_count": (len(overlap), 3),
+        "union_count": (len(union), 124),
+    }
+    bad_structure = {
+        name: actual for name, (actual, expected) in structural.items() if actual != expected
+    }
+    if bad_structure:
+        raise ProteinStateMigrationInconsistent(
+            "protein_state's independently-loaded TOA/PT fixture union no "
+            f"longer has the expected Stage-2 structural counts: {bad_structure} "
+            f"(expected toa_substrate_count=8, pt_translocating_count=119, "
+            f"toa_pt_overlap_count=3, union_count=124)"
+        )
+    if union != reference:
+        raise ProteinStateMigrationInconsistent(
+            "MIGRATED_WIDS does not equal the independently-loaded TOA ∪ "
+            f"PT-translocating union; symmetric difference={sorted(union ^ reference)}"
+        )
+
 
 assert_migration_consistency()
 
@@ -380,7 +436,6 @@ __all__ = [
     "COMPARTMENTS",
     "FORMS",
     "MIGRATED_WIDS",
-    "PENDING_STAGE_1B_TERMINAL_ORGANELLE_WIDS",
     "ProteinFlatProjectionWriteError",
     "ProteinStateMigrationInconsistent",
     "assert_migration_consistency",

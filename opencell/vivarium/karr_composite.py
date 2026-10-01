@@ -103,6 +103,7 @@ from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess
 from opencell.vivarium.protein_flat_projection_step import ProteinFlatProjectionStep
 from opencell.vivarium.protein_state import (
+    MIGRATED_WIDS,
     initial_compartment_counts,
     load_mature_seed_from_canonical_fixture,
 )
@@ -930,6 +931,7 @@ def build_karr_chassis_v3(
         "request_calculator_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "karr_allocation_step": {
@@ -952,7 +954,6 @@ def build_karr_chassis_v3(
         "rna": {"counts": rna_init},
         "protein": {
             "counts": prot_init,
-            "location": {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids},
             "compartment_counts": initial_compartment_counts(
                 seed_mature=load_mature_seed_from_canonical_fixture()
             ),
@@ -1267,13 +1268,20 @@ def build_karr_chassis_v4(
         for wid in sorted(
             set(pp1_proc.unprocessed_monomer_wids) | set(pp2_proc.unprocessed_monomer_wids)
         )
+        if wid not in MIGRATED_WIDS
     }
-    protein_unfolded_init = {wid: 0.0 for wid in p_fold_proc.unfolded_monomer_wids}
+    protein_unfolded_init = {
+        wid: 0.0 for wid in p_fold_proc.unfolded_monomer_wids if wid not in MIGRATED_WIDS
+    }
     protein_unmodified_init = {
         wid: float(prot_init.get(wid, 0.0)) for wid in p_mod_proc.unmodified_monomer_wids
     }
-    protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
-    protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
+    protein_processed_init = {
+        wid: 0.0 for wid in pp2_proc.processed_monomer_wids if wid not in MIGRATED_WIDS
+    }
+    protein_signal_seq_init = {
+        wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids if wid not in MIGRATED_WIDS
+    }
     protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
     protein_enzyme_init = {
         wid: float(prot_init.get(wid, 0.0))
@@ -1281,7 +1289,6 @@ def build_karr_chassis_v4(
     }
     protein_enzyme_init.pop("MG_106_DIMER", None)
     protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
-    protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
     mature_complex_counts = _load_d2_mature_complex_counts_snapshot()
@@ -1525,6 +1532,7 @@ def build_karr_chassis_v4(
         "request_calculator_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "karr_allocation_step": {
@@ -1558,7 +1566,6 @@ def build_karr_chassis_v4(
             "signal_sequence_counts": protein_signal_seq_init,
             "modified_counts": protein_modified_init,
             "enzyme_counts": protein_enzyme_init,
-            "location": protein_location_init,
             "activity": protein_activity_init,
             "compartment_counts": initial_compartment_counts(
                 seed_mature=load_mature_seed_from_canonical_fixture()
@@ -1988,18 +1995,30 @@ def build_karr_chassis_v5(
         # Ensure every translation monomer is explicitly initialized so ports-schema
         # defaults cannot reintroduce non-zero counts_mature values.
         unprocessed_monomer_wids |= set(m3_model.protein_wcm_ids)
+    # Design D1/C6: every translocatable WID is migrated (Stage 2); its
+    # nascent pool lives at `compartment_counts.nascent`, not this legacy
+    # queue -- seeding it here would resurrect a leaf no reader consults
+    # (confirmed empirically: `build_karr_chassis_v6`'s realized store had
+    # `unprocessed_counts` keys for every then-migrated WID before this fix).
+    unprocessed_monomer_wids -= set(MIGRATED_WIDS)
     protein_unprocessed_init = {
         wid: float(protein_unprocessed_seed.get(wid, 0.0))
         for wid in sorted(unprocessed_monomer_wids)
     }
     protein_unfolded_init = {
-        wid: float(prot_init.get(wid, 0.0)) for wid in p_fold_proc.unfolded_monomer_wids
+        wid: float(prot_init.get(wid, 0.0))
+        for wid in p_fold_proc.unfolded_monomer_wids
+        if wid not in MIGRATED_WIDS
     }
     protein_unmodified_init = {
         wid: float(prot_init.get(wid, 0.0)) for wid in p_mod_proc.unmodified_monomer_wids
     }
-    protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
-    protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
+    protein_processed_init = {
+        wid: 0.0 for wid in pp2_proc.processed_monomer_wids if wid not in MIGRATED_WIDS
+    }
+    protein_signal_seq_init = {
+        wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids if wid not in MIGRATED_WIDS
+    }
     protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
     protein_enzyme_init = {
         wid: float(prot_init.get(wid, 0.0))
@@ -2007,7 +2026,6 @@ def build_karr_chassis_v5(
     }
     protein_enzyme_init.pop("MG_106_DIMER", None)
     protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
-    protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
     mature_complex_counts = _load_d2_mature_complex_counts_snapshot()
@@ -2326,6 +2344,7 @@ def build_karr_chassis_v5(
         "request_calculator_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_metabolism": {
@@ -2374,7 +2393,6 @@ def build_karr_chassis_v5(
             "signal_sequence_counts": protein_signal_seq_init,
             "modified_counts": protein_modified_init,
             "enzyme_counts": protein_enzyme_init,
-            "location": protein_location_init,
             "activity": protein_activity_init,
             "compartment_counts": initial_compartment_counts(
                 seed_mature=load_mature_seed_from_canonical_fixture()
