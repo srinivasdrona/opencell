@@ -59,6 +59,23 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-01 18:15 IST) — 4/28 integration base complete:**
+
+- `fix/compartmental-protein-state-20260923` fast-forwarded into
+  `audit/pre-l25-honesty-rebaseline-20260917`; current published `main`
+  (blog + append-only provenance) merged at `c18c1bd`. Nothing pushed.
+- Merge changed two hash-locked audit files only by CRLF checkout. They were
+  normalized back to LF; the original verified source digest
+  `dd80f0892e35936c1ac808f4de247337cb9ae94007bd251f1b28306382520310`
+  returned exactly.
+- Combined-tree verification: baseline `INTEGRITY_OK` at **4/28**, L1b
+  **115/115** and **28/28**, migration/v6 **47 PASS** with warnings-as-errors,
+  and L2.4 four seeds x100 ticks PASS.
+- This merge commit is the required base for the next repair. Recommended next
+  scope remains ProteinTranslocation Stage 2: migrate the remaining
+  translocatable WIDs and remove the request-floor deviation; do not begin
+  L2.5 pair execution.
+
 **Current status (2026-09-23 22:05 IST) — four-role migration complete; TOA eligible:**
 
 - Four-role workflow completed:
