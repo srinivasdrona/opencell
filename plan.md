@@ -59,6 +59,33 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-01 18:20 IST) — ProteinTranslocation Stage 2 wave:**
+
+- Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
+  branch `fix/protein-translocation-stage2-20261001`, base `4b08282`; nothing
+  pushed.
+- Sequential separated roles:
+  **Opus planner -> Gemini test writer -> Sonnet doer -> GPT reviewer**.
+  Every role receives the three-slot prompt. Tests commit before implementation
+  and are frozen for the doer.
+- Primary authority is local
+  `ProteinTranslocation.m`, `ProteinMonomer.m`, `Process.m`, the canonical
+  ProteinTranslocation/ProteinMonomer fixtures, and the existing F trace.
+  No network fetch is needed.
+- Stage-2 target: extend `protein.compartment_counts.processed_i` ownership
+  from MG_191/MG_192/MG_318 to the complete source-derived translocatable WID
+  set, eliminate their legacy `protein.location`/`unprocessed_counts`
+  bookkeeping, and replace the request calculator's current-pool floor with
+  Karr's capacity- and pending-copy-bounded ATP/GTP/H2O request.
+- Preserve the existing per-copy randperm, allocator contract, energy
+  writeback, all non-translocating protein state, and the 4/28 authority.
+  No L2.5 pair work, trace hints, output-oracle inputs, dual-write mode, or
+  test-only production configuration.
+- Expected honest outcome after full review: ProteinTranslocation becomes
+  eligible and the fail-closed baseline moves from 4/28 to 5/28. If source
+  preflight reveals another blocker, stop before implementation rather than
+  narrow the claim.
+
 **Current status (2026-10-01 18:15 IST) — 4/28 integration base complete:**
 
 - `fix/compartmental-protein-state-20260923` fast-forwarded into
