@@ -6,11 +6,9 @@ and mutation canaries.
 from __future__ import annotations
 
 import sys
-from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-import numpy as np
 import pytest
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -276,6 +274,7 @@ def test_c12_engine_same_tick_pipeline() -> None:
     """
     from vivarium.core.composer import Composite
     from vivarium.core.engine import Engine
+
     from opencell.vivarium.karr_allocation_step import KarrAllocationStep
 
     proc = KarrProteinTranslocationProcess({})

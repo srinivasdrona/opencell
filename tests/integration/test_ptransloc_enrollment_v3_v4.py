@@ -85,5 +85,3 @@ def test_ptransloc_request_calculator_complex_wired_in_chassis_v3_and_v4() -> No
         assert tuple(step_topo["complex"]) == ("complex",), (
             f"request_calculator_protein_translocation in {label} must wire 'complex' to ('complex',)"
         )
-
-

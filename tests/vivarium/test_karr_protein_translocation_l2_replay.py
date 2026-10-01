@@ -138,11 +138,9 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
         mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
         mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
         if sum(mutated_tick_counts.values()) == 0:
-            pytest.skip(
-                "L2.1 N/A: no-op trace. Every mutated observable "
-                f"({list(mutated_obs)}) is identical between states_before and "
-                f"states_after across all {n_ticks} ticks. Per-observable "
-                f"nonzero-delta counts: {mutated_tick_counts}."
+            pytest.fail(
+                "L2.1 failure: no-op trace. Claimed active F trace produced zero mutated ticks "
+                f"across all {n_ticks} ticks: {mutated_tick_counts}."
             )
 
         process = KarrProteinTranslocationProcess({"rng_seed": int(rng_seed)})

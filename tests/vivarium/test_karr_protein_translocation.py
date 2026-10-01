@@ -5,8 +5,6 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
-import pytest
-
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -19,7 +17,6 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
-
 
 _COMPARTMENTS = ("c", "d", "e", "m", "tc", "tm")
 

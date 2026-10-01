@@ -16,8 +16,8 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
-from scipy.io import loadmat
 import numpy as np
+from scipy.io import loadmat
 
 
 def _parse_wid_array(value: object) -> list[str]:

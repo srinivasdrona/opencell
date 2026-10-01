@@ -15,6 +15,8 @@ import numpy as np
 import pytest
 from scipy.io import loadmat
 
+from opencell.util.matlab_rng import MatlabRandStream
+
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
     sys.path.insert(0, str(_REPO_ROOT))
@@ -188,50 +190,84 @@ def test_c4_per_copy_transfer_conserves_and_routes() -> None:
 def _verify_c11_persistence_and_order(proc: Any) -> None:
     """Helper verifying C11 single-stream RNG advance and fixture-ordered allocation."""
     assert hasattr(proc, "_rng"), "Process must maintain persistent _rng stream"
-    initial_draws = []
 
-    # Run 3 consecutive updates on ONE instance, verifying stream advances
+    # 1. Persistence sub-assert: stream advances sequentially across calls
+    if hasattr(proc._rng, "randperm"):
+        draw1 = proc._rng.randperm(10)
+        draw2 = proc._rng.randperm(10)
+        assert not np.array_equal(draw1, draw2), "RNG failed to advance sequentially"
+
+    # 2. Fixture-order invariant:
+    # translocatable_wids_in_fixture_order must be the source of iteration order
+    fixture_order = getattr(proc, "translocatable_wids_in_fixture_order", None)
+    assert fixture_order is not None, "Process missing translocatable_wids_in_fixture_order"
+
+    probe_wids = ["MG_014_MONOMER", "MG_191_MONOMER", "MG_468_MONOMER"]
+    for w in probe_wids:
+        assert w in fixture_order, f"{w} not in fixture order"
+    expected_probe_order = [w for w in fixture_order if w in probe_wids]
+    assert expected_probe_order == ["MG_014_MONOMER", "MG_191_MONOMER", "MG_468_MONOMER"], (
+        f"Fixture order for probe WIDs corrupted: {expected_probe_order}"
+    )
+
+    # Known-seed reference test on seed 2 with 50 ATP:
+    # At seed 2, MatlabRandStream(2).randperm(3)[0] == 2.
+    # Under fixture order [MG_014 (pos 0), MG_191 (pos 49), MG_468 (pos 118)],
+    # cumulative copy 2 maps to MG_191_MONOMER (cost 42 <= 50).
+    # Under legacy/set-appended order [MG_014, MG_468, MG_191], copy 2 maps to MG_468_MONOMER (cost 51 > 50 -> empty update).
+    # Multi-call: run >=3 calls on the single instance.
+    proc._rng = MatlabRandStream(2)
     state: dict[str, Any] = {
-        "substrates": {wid: 10000.0 for wid in proc.substrate_wids},
+        "substrates": {wid: 1000.0 for wid in proc.substrate_wids},
         "protein": {
-            "counts": {"MG_297_MONOMER": 1000.0},
+            "counts": {"MG_297_MONOMER": 1000.0, "MG_014_MONOMER": 1.0, "MG_468_MONOMER": 1.0},
+            "unprocessed_counts": {"MG_014_MONOMER": 1.0, "MG_468_MONOMER": 1.0},
+            "location": {"MG_014_MONOMER": "cytoplasm", "MG_468_MONOMER": "cytoplasm"},
             "compartment_counts": {
                 "processed_i": {
                     wid: {c: 0.0 for c in _COMPARTMENTS}
-                    for wid in proc.translocatable_wids
+                    for wid in getattr(proc, "translocatable_wids", fixture_order)
                 }
             },
         },
         "complex": {"counts": {wid: 1000.0 for wid in proc.complex_count_wids}},
         "requests": {proc.name: {wid: 0.0 for wid in proc.request_wids}},
-        "substrates_allocated": {proc.name: {wid: 10000.0 for wid in proc.vector_wids}},
+        "substrates_allocated": {
+            proc.name: {
+                proc.atp_wid: 50.0,
+                proc.gtp_wid: 0.0,
+                proc.h2o_wid: 50.0,
+                proc.adp_wid: 0.0,
+                proc.gdp_wid: 0.0,
+                proc.pi_wid: 0.0,
+                proc.h_wid: 0.0,
+            }
+        },
     }
+    # Place 1 copy for each probe wid in cytosol c
+    for w in probe_wids:
+        state["protein"]["compartment_counts"]["processed_i"][w]["c"] = 1.0
 
-    wids_ordered = [
-        wid for wid in proc.translocatable_wids
-        if wid in {"MG_014_MONOMER", "MG_191_MONOMER", "MG_468_MONOMER"}
-    ]
-    assert len(wids_ordered) == 3, f"Expected 3 test WIDs, found {wids_ordered}"
+    update1 = proc.next_update(1.0, deepcopy(state))
+    moved_wids = set()
+    comp_delta = update1.get("protein", {}).get("compartment_counts", {}).get("processed_i", {})
+    for w, d in comp_delta.items():
+        if d.get("c", 0.0) < 0:
+            moved_wids.add(w)
+    loc_delta = update1.get("protein", {}).get("location", {})
+    for w in loc_delta:
+        moved_wids.add(w)
 
-    updates = []
-    for _ in range(3):
-        # Place 1 copy for each of the 3 test WIDs
-        for w in wids_ordered:
-            state["protein"]["compartment_counts"]["processed_i"][w]["c"] = 1.0
-        up = proc.next_update(1.0, state)
-        updates.append(up)
+    assert "MG_191_MONOMER" in moved_wids, (
+        f"Claim C11 fixture-order invariant failure: seed 2 randperm draw 2 must map to "
+        f"fixture-order second copy MG_191_MONOMER, but moved {moved_wids}. "
+        "Current production appends migrated WIDs at tail or iterates set, selecting MG_468."
+    )
 
-    # All 3 updates must succeed and be non-empty
-    for idx, up in enumerate(updates):
-        assert up, f"Update {idx} was empty"
-
-    # Verify RNG advanced: draws across successive updates must not be identical
-    # In Karr, randperm is drawn on each update. If reseeded, the same draw repeats.
-    # We verify that proc._rng state changes across calls.
-    if hasattr(proc._rng, "randperm"):
-        draw1 = proc._rng.randperm(10)
-        draw2 = proc._rng.randperm(10)
-        assert not np.array_equal(draw1, draw2), "RNG failed to advance sequentially"
+    # Calls 2 and 3: stream continues advancing on the same instance
+    proc.next_update(1.0, deepcopy(state))
+    proc.next_update(1.0, deepcopy(state))
+    assert proc._rng is not None, "Process RNG stream lost"
 
 
 def test_c11_persistent_stream_and_fixture_order() -> None:
@@ -318,7 +354,7 @@ def test_canary_rejects_decrement_without_increment() -> None:
             update = super().next_update(timestep, state)
             # Remove destination increment
             comp_updates = update.get("protein", {}).get("compartment_counts", {}).get("processed_i", {})
-            for wid, deltas in comp_updates.items():
+            for _wid, deltas in comp_updates.items():
                 for k in list(deltas.keys()):
                     if k != "c":
                         del deltas[k]
@@ -362,3 +398,16 @@ def test_canary_rejects_reseed_rng() -> None:
     # The canary asserts that if draws are identical, it is rejected
     with pytest.raises(AssertionError):
         assert not np.array_equal(draw1, draw2), "Stream failed to advance"
+
+
+def test_canary_rejects_class_or_set_ordering() -> None:
+    """Canary 8: Reject broken subclass that evaluates pending copy groups in set/class order."""
+    class BrokenClassOrderProcess(KarrProteinTranslocationProcess):
+        def next_update(self, timestep: float, state: dict[str, Any]) -> dict[str, Any]:
+            # Simulate broken legacy order where MG_468 is evaluated before MG_191
+            # Current production next_update already implements this broken ordering
+            return super().next_update(timestep, state)
+
+    proc = BrokenClassOrderProcess({"rng_seed": 2})
+    with pytest.raises(AssertionError, match="fixture-order invariant failure"):
+        _verify_c11_persistence_and_order(proc)

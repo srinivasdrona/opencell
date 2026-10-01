@@ -31,8 +31,8 @@ FORMS = (
     "damaged",
 )
 COMPARTMENTS = ("c", "d", "e", "m", "tc", "tm")
-from scipy.io import loadmat
 import numpy as np
+from scipy.io import loadmat
 
 
 def _parse_wid_array(value: object) -> list[str]:
@@ -283,6 +283,7 @@ def test_c6_no_path_resurrection_after_100_ticks() -> None:
     and direct flat writes continue to be rejected.
     """
     from vivarium.core.engine import Engine
+
     from opencell.vivarium.karr_composite import build_karr_chassis_v6
 
     composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
@@ -327,4 +328,3 @@ def test_c6_no_path_resurrection_after_100_ticks() -> None:
     test_wid = MIGRATED_WIDS[0]
     with pytest.raises(Exception):
         engine.state.apply_update({"protein": {"counts": {test_wid: 999.0}}})
-
