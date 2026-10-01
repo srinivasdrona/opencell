@@ -59,26 +59,26 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-02 00:05 IST) — Sonnet code complete; tests returned:**
+**Current status (2026-10-02 02:05 IST) — Stage 2 reviewer-ready:**
 
-- Sonnet doer agent `470c0fed-7950-45f9-9f6d-0047ea84532b`
-  committed atomic production Stage 2 at `32f20ad` and provenance at
-  `4dc078c`. Production diff is limited to four authorized files; no frozen
-  test/evidence/metadata edit.
-- Direct verification is source-consistent: 124 WIDs / 7,440 leaves, exact
-  request cases, fixture-order RNG mapping, no legacy resurrection after 100
-  ticks, PT replay totals 13 active ticks and -17c/+4e/+13m, L2.4 4x100 PASS.
-- Literal frozen suite is 48/52 because four test/harness defects remain:
-  non-mutating ordering canary; invalid string Step dependency; PP2 planted
-  state omits extracellular `e`; processed-I replay defaults nontranslocating
-  pass-through WIDs to zero. These return to Gemini, not the doer.
-- Two older tests also assert intentionally deleted representations:
-  `test_protein_translocation_full_vector.py` seeds location/queue state and
-  `test_karr_translation_v3.py` assumes all deltas live in
-  `unprocessed_counts`. Gemini must rewrite them against the authority without
-  weakening biology/energy assertions.
-- Do not promote, refresh evidence, or update L1b anchors until the corrected
-  tests are green against the unchanged production commit.
+- No live agents or shell processes. Active worktree
+  `E:\opencell-worktrees\fix-protein-translocation-stage2`, branch
+  `fix/protein-translocation-stage2-20261001`, HEAD `5836567`; nothing pushed.
+- Sonnet production remains unchanged at `32f20ad` with provenance `4dc078c`.
+  Gemini corrected only tests/harness at `c64d216`, `8f86437`, and `5836567`.
+- The two final hollow greens are closed: PP2 plants every migrated WID only
+  at its exact mapped home compartment; C11 proves RNG-state advancement
+  across three real `next_update` calls, and its reseed canary routes the
+  broken subclass through the same helper.
+- Parent independently reran the corrected canaries (**3/3 PASS**) and the
+  complete frozen Stage 2/collateral/Stage 1 suite (**74/74 PASS in 183.55s**);
+  Ruff and `git diff --check` pass.
+- Direct verification remains source-consistent: 124 WIDs / 7,440 leaves,
+  exact request cases, fixture-order RNG mapping, no legacy resurrection,
+  and replay totals 13 active ticks / -17c / +4e / +13m.
+- Next dependency is independent GPT review of `4b08282..5836567` against
+  local MATLAB source and fixtures. Do not refresh evidence, wiring, semantic
+  audit, or the 4/28 baseline until that review accepts production and tests.
 
 **Current status (2026-10-01 20:30 IST) — Gemini tests frozen; Sonnet next:**
 
