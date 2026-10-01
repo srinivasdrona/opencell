@@ -291,13 +291,10 @@ def test_c2b_migrated_wids_never_emitted_to_legacy_branches() -> None:
         "substrates_allocated": {proc.name: {wid: 100000.0 for wid in proc.substrate_wids}},
     }
 
-    # Plant migrated counts in processed_i at each WID's real source/home compartment
+    # Plant migrated counts in processed_i ONLY at each WID's exact mapped home compartment
     for wid in MIGRATED_WIDS:
-        home = proc.migrated_compartment_by_wid.get(wid, "c")
+        home = proc.migrated_compartment_by_wid[wid]
         state["protein"]["compartment_counts"]["processed_i"][wid][home] = 2.0
-        state["protein"]["compartment_counts"]["processed_i"][wid]["c"] = 2.0
-        state["protein"]["compartment_counts"]["processed_i"][wid]["m"] = 2.0
-        state["protein"]["compartment_counts"]["processed_i"][wid]["e"] = 2.0
 
     update = proc.next_update(1.0, state)
     prot_update = update.get("protein", {})
