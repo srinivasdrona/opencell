@@ -257,6 +257,7 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
                     wids=wids_by_observable[observable],
                     bound_enzymes_before=before_vectors.get("boundEnzymes"),
                     store_path_override=_STORE_PATH_OVERRIDE,
+                    before_vector=before_vectors.get(observable),
                 )
                 oc_after = _snap_integral_counts(
                     tick=tick,

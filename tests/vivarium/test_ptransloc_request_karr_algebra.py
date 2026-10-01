@@ -291,7 +291,7 @@ def test_c12_engine_same_tick_pipeline() -> None:
     }
     flow = {
         "calc": [],
-        "alloc": ["calc"],
+        "alloc": [("calc",)],
     }
     topology = {
         proc.name: {

@@ -655,6 +655,7 @@ def project_observable_from_state(
     wids: list[str],
     bound_enzymes_before: np.ndarray | None,
     store_path_override: dict[str, tuple[str, ...]] | None = None,
+    before_vector: np.ndarray | None = None,
 ) -> np.ndarray:
     if observable == "boundEnzymes":
         store_path = observable_store_path(
@@ -686,7 +687,10 @@ def project_observable_from_state(
         monomer_wids = getattr(process, "monomer_wids", None)
         if monomer_wids is not None:
             comp_counts = _get_nested_mapping(state, store_path) or {}
-            out = np.zeros(6 * len(monomer_wids), dtype=np.float64)
+            if before_vector is not None and len(before_vector) == 6 * len(monomer_wids):
+                out = np.asarray(before_vector, dtype=np.float64).copy()
+            else:
+                out = np.zeros(6 * len(monomer_wids), dtype=np.float64)
             for c_idx, comp in enumerate(("c", "d", "e", "m", "tc", "tm")):
                 offset = c_idx * len(monomer_wids)
                 for m_idx, wid in enumerate(monomer_wids):

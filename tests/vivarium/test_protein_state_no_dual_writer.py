@@ -279,7 +279,7 @@ def test_c2b_migrated_wids_never_emitted_to_legacy_branches() -> None:
             "processed_counts": {wid: 0.0 for wid in proc.processed_monomer_wids if wid not in MIGRATED_WIDS},
             "unfolded_counts": {wid: 0.0 for wid in proc.processed_monomer_wids if wid not in MIGRATED_WIDS},
             "signal_sequence_counts": {wid: 0.0 for wid in proc.signal_sequence_monomer_wids if wid not in MIGRATED_WIDS},
-            "enzyme_counts": {wid: 10.0 for wid in proc.enzyme_wids},
+            "enzyme_counts": {wid: 100000.0 for wid in proc.enzyme_wids},
             "compartment_counts": {
                 "processed_i": {wid: {c: 0.0 for c in ("c", "d", "e", "m", "tc", "tm")} for wid in MIGRATED_WIDS},
                 "processed_ii": {wid: {c: 0.0 for c in ("c", "d", "e", "m", "tc", "tm")} for wid in MIGRATED_WIDS},
@@ -288,13 +288,16 @@ def test_c2b_migrated_wids_never_emitted_to_legacy_branches() -> None:
         "processedMonomers": {wid: 0.0 for wid in proc.processed_monomer_wids},
         "unprocessedMonomers": {wid: 0.0 for wid in proc.unprocessed_monomer_wids},
         "requests": {proc.name: {wid: 0.0 for wid in proc.substrate_wids}},
-        "substrates_allocated": {proc.name: {wid: 1000.0 for wid in proc.substrate_wids}},
+        "substrates_allocated": {proc.name: {wid: 100000.0 for wid in proc.substrate_wids}},
     }
 
-    # Plant migrated counts in processed_i across cytosol and membrane
+    # Plant migrated counts in processed_i at each WID's real source/home compartment
     for wid in MIGRATED_WIDS:
+        home = proc.migrated_compartment_by_wid.get(wid, "c")
+        state["protein"]["compartment_counts"]["processed_i"][wid][home] = 2.0
         state["protein"]["compartment_counts"]["processed_i"][wid]["c"] = 2.0
         state["protein"]["compartment_counts"]["processed_i"][wid]["m"] = 2.0
+        state["protein"]["compartment_counts"]["processed_i"][wid]["e"] = 2.0
 
     update = proc.next_update(1.0, state)
     prot_update = update.get("protein", {})

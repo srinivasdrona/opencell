@@ -404,9 +404,14 @@ def test_canary_rejects_class_or_set_ordering() -> None:
     """Canary 8: Reject broken subclass that evaluates pending copy groups in set/class order."""
     class BrokenClassOrderProcess(KarrProteinTranslocationProcess):
         def next_update(self, timestep: float, state: dict[str, Any]) -> dict[str, Any]:
-            # Simulate broken legacy order where MG_468 is evaluated before MG_191
-            # Current production next_update already implements this broken ordering
-            return super().next_update(timestep, state)
+            # Explicit broken mutation: put MG_191 at the tail after MG_468 (set/migrated-tail order)
+            real_order = self.translocatable_wids_in_fixture_order
+            broken_order = [w for w in real_order if w != "MG_191_MONOMER"] + ["MG_191_MONOMER"]
+            self.translocatable_wids_in_fixture_order = broken_order
+            try:
+                return super().next_update(timestep, state)
+            finally:
+                self.translocatable_wids_in_fixture_order = real_order
 
     proc = BrokenClassOrderProcess({"rng_seed": 2})
     with pytest.raises(AssertionError, match="fixture-order invariant failure"):

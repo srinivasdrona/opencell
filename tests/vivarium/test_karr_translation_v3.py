@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import replace
+from typing import Any
 
 import numpy as np
 import pytest
@@ -80,9 +81,17 @@ def _run_ordered_m3(order: tuple[str, str]) -> np.ndarray:
     )
     engine.update(1.0)
     ts = engine.emitter.get_timeseries()
-    return np.array(
-        [float(ts["protein"]["unprocessed_counts"][pid][-1]) for pid in kinetics.protein_wcm_ids]
-    )
+    deltas = []
+    unproc = ts.get("protein", {}).get("unprocessed_counts", {})
+    nascent = ts.get("protein", {}).get("compartment_counts", {}).get("nascent", {})
+    for pid in kinetics.protein_wcm_ids:
+        if pid in unproc and len(unproc[pid]) > 0:
+            deltas.append(float(unproc[pid][-1]))
+        elif pid in nascent and "c" in nascent[pid] and len(nascent[pid]["c"]) > 0:
+            deltas.append(float(nascent[pid]["c"][-1]))
+        else:
+            deltas.append(0.0)
+    return np.array(deltas)
 
 
 def test_delta_equals_v2_absolute() -> None:
@@ -103,8 +112,19 @@ def test_delta_equals_v2_absolute() -> None:
     update_v3 = v3.next_update(1.0, state)
 
     v2_abs = np.array([float(update_v2["protein"]["counts"][pid]) for pid in v2.protein_ids])
+
+    def _extract_v3_delta(update: dict[str, Any], pid: str) -> float:
+        prot = update.get("protein", {})
+        unproc = prot.get("unprocessed_counts", {})
+        if pid in unproc:
+            return float(unproc[pid])
+        nascent = prot.get("compartment_counts", {}).get("nascent", {})
+        if pid in nascent:
+            return float(nascent[pid].get("c", 0.0))
+        return 0.0
+
     v3_delta = np.array(
-        [float(update_v3["protein"]["unprocessed_counts"][pid]) for pid in v3.protein_ids]
+        [_extract_v3_delta(update_v3, pid) for pid in v3.protein_ids]
     )
     expected_v3 = KarrTranslationV3Process(
         {"kinetics_model": kinetics, "mechanism_inputs": mechanism_inputs}
@@ -202,7 +222,9 @@ def test_substrate_deltas_emit_faithful_energy_cycle() -> None:
     update_v3 = v3.next_update(1.0, state)
 
     substrate_update = update_v3["substrates"]
-    protein_delta_update = update_v3["protein"]["unprocessed_counts"]
+    prot_update = update_v3.get("protein", {})
+    unprocessed = prot_update.get("unprocessed_counts", {})
+    nascent = prot_update.get("compartment_counts", {}).get("nascent", {})
     aa_consumed = sum(
         int(-substrate_update[aa])
         for aa in v3.aa_ids
@@ -210,8 +232,12 @@ def test_substrate_deltas_emit_faithful_energy_cycle() -> None:
     )
     n_proteins = sum(
         int(delta)
-        for delta in protein_delta_update.values()
+        for delta in unprocessed.values()
         if float(delta) > 0.0
+    ) + sum(
+        int(deltas.get("c", 0.0))
+        for deltas in nascent.values()
+        if float(deltas.get("c", 0.0)) > 0.0
     )
     expected_energy = 2 * aa_consumed + 3 * n_proteins
 
