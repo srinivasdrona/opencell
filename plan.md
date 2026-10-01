@@ -59,26 +59,26 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-02 02:05 IST) — Stage 2 reviewer-ready:**
+**Current status (2026-10-02) — Stage 2 review failed closed; repair wave next:**
 
-- No live agents or shell processes. Active worktree
-  `E:\opencell-worktrees\fix-protein-translocation-stage2`, branch
-  `fix/protein-translocation-stage2-20261001`, HEAD `5836567`; nothing pushed.
-- Sonnet production remains unchanged at `32f20ad` with provenance `4dc078c`.
-  Gemini corrected only tests/harness at `c64d216`, `8f86437`, and `5836567`.
-- The two final hollow greens are closed: PP2 plants every migrated WID only
-  at its exact mapped home compartment; C11 proves RNG-state advancement
-  across three real `next_update` calls, and its reseed canary routes the
-  broken subclass through the same helper.
-- Parent independently reran the corrected canaries (**3/3 PASS**) and the
-  complete frozen Stage 2/collateral/Stage 1 suite (**74/74 PASS in 183.55s**);
-  Ruff and `git diff --check` pass.
-- Direct verification remains source-consistent: 124 WIDs / 7,440 leaves,
-  exact request cases, fixture-order RNG mapping, no legacy resurrection,
-  and replay totals 13 active ticks / -17c / +4e / +13m.
-- Next dependency is independent GPT review of `4b08282..5836567` against
-  local MATLAB source and fixtures. Do not refresh evidence, wiring, semantic
-  audit, or the 4/28 baseline until that review accepts production and tests.
+- Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `10b6409`; nothing
+  pushed. GPT reviewer `8d293393-e755-4eaf-8639-9cddcacdea43` is idle after a
+  `VERDICT: DID NOT MATCH` review of `4b08282..5836567`.
+- Five blocking findings remain. C5 inspects declarations but never compares
+  real emitted writes; C11 checks internal RNG advancement but not the
+  independently expected three-call output sequence; C12 inspects requests
+  without running evolution. The reachable NumPy RNG fallback supplies
+  zero-based draws to one-based mapping, and request-calculator constructors
+  silently create default dependencies for manifest tests instead of failing
+  closed.
+- The previous 74/74 acceptance result is invalid as promotion evidence because
+  those three contracts were hollow. Keep evidence, wiring YAML, semantic
+  audit, and the fail-closed baseline unchanged at 4/28.
+- Next sequence is Gemini test-writer repair for all five findings, including
+  planted rejecting mutations; Sonnet production repair against frozen tests;
+  parent acceptance rerun; then a fresh independent GPT review. Do not weaken
+  existing PP2, replay anti-oracle, request-algebra, or seed-accounting checks.
 
 **Current status (2026-10-01 20:30 IST) — Gemini tests frozen; Sonnet next:**
 
