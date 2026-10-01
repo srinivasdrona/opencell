@@ -59,6 +59,30 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-01 18:55 IST) — Opus Stage-2 plan complete:**
+
+- Opus planner agent `eec252a2-30cd-4f2f-8fc9-1bf7ec4c1faf`
+  committed `docs/design/protein_translocation_stage2.md` at `a522437`
+  (provenance `0d5dd7d`). No production or test code changed.
+- Primary-source result: exactly **119** translocatable WIDs (20 extracellular,
+  99 membrane; 34 SRP, 85 direct). Three are already migrated, so Stage 2
+  adds **116** WIDs and expands the authority from 8 to **124 WIDs / 7,440
+  leaves**. The prior “117+2” wording was wrong.
+- Karr request algebra is now explicit. Current-pool flooring can inflate a
+  zero-enzyme request to 500000/400000/900000. Correct requests are bounded by
+  pending processed-I copies and enzyme capacity; SRP cap and water identity
+  require constructed tests because the F trace never binds capacity.
+- Additional defects found: request-calculator legacy leaves for the three
+  Stage-1 WIDs; fixture-order violation from appending a hash-ordered migrated
+  set; replay currently routes monomers into a branch Stage 2 deletes and
+  compares only cytosolic departures, not e/m arrivals.
+- Source-faithful Stage 2 is bounded to nine production files plus test-harness
+  routing. It preserves all 358 nontranslocating WIDs. Expected t0 mature seed
+  increase is +4,203 copies and must be measured by L2.4.
+- Gemini must freeze C1-C14 and planted inversions before any implementation.
+  Row/audit corrections remain reviewer work after code; no eligibility
+  promotion from documentation alone.
+
 **Current status (2026-10-01 18:20 IST) — ProteinTranslocation Stage 2 wave:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
