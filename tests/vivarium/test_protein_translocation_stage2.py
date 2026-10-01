@@ -263,11 +263,21 @@ def _verify_c11_persistence_and_order(proc: Any) -> None:
         f"fixture-order second copy MG_191_MONOMER, but moved {moved_wids}. "
         "Current production appends migrated WIDs at tail or iterates set, selecting MG_468."
     )
+    rng_state_1 = list(proc._rng.get_state()["mt"])
 
-    # Calls 2 and 3: stream continues advancing on the same instance
+    # Call 2: verify stream advances on the same instance
     proc.next_update(1.0, deepcopy(state))
+    rng_state_2 = list(proc._rng.get_state()["mt"])
+    assert rng_state_1 != rng_state_2, (
+        "Claim C11 stream persistence failure: RNG stream was reseeded or did not advance between call 1 and call 2"
+    )
+
+    # Call 3: verify stream continues advancing on the same instance
     proc.next_update(1.0, deepcopy(state))
-    assert proc._rng is not None, "Process RNG stream lost"
+    rng_state_3 = list(proc._rng.get_state()["mt"])
+    assert rng_state_2 != rng_state_3, (
+        "Claim C11 stream persistence failure: RNG stream was reseeded or did not advance between call 2 and call 3"
+    )
 
 
 def test_c11_persistent_stream_and_fixture_order() -> None:
@@ -382,22 +392,18 @@ def test_canary_rejects_use_tm_for_mg191() -> None:
 
 def test_canary_rejects_reseed_rng() -> None:
     """Canary 5: Reject broken subclass that reseeds RNG inside next_update."""
-    from opencell.util.matlab_rng import MatlabRandStream
-
     class BrokenReseedRNGProcess(KarrProteinTranslocationProcess):
+        def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+            super().__init__(parameters)
+            self._initial_seed = int(self.parameters.get("rng_seed", 0))
+
         def next_update(self, timestep: float, state: dict[str, Any]) -> dict[str, Any]:
-            self._rng = MatlabRandStream(42)  # Reseeding resets stream
+            self._rng = MatlabRandStream(self._initial_seed)
             return super().next_update(timestep, state)
 
-    proc = BrokenReseedRNGProcess({"rng_seed": 42})
-    # Resetting RNG each tick causes identical subsequent randperm draws
-    proc._rng = MatlabRandStream(42)
-    draw1 = proc._rng.randperm(10)
-    proc._rng = MatlabRandStream(42)  # Simulate reseed
-    draw2 = proc._rng.randperm(10)
-    # The canary asserts that if draws are identical, it is rejected
-    with pytest.raises(AssertionError):
-        assert not np.array_equal(draw1, draw2), "Stream failed to advance"
+    proc = BrokenReseedRNGProcess({"rng_seed": 2})
+    with pytest.raises(AssertionError, match="stream persistence failure"):
+        _verify_c11_persistence_and_order(proc)
 
 
 def test_canary_rejects_class_or_set_ordering() -> None:
