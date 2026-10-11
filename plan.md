@@ -62,10 +62,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-10-11) — hardened B1-B5 tests frozen; Sonnet repair next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
-  branch `fix/protein-translocation-stage2-20261001`, HEAD `7e4a368`; nothing
-  pushed. No live process or agent remains from the test-writer passes.
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `08079e6`; nothing
+  pushed. No live process or agent currently owns the worktree.
 - Gemini test repairs landed at `19dcc4e` / `94dd26f`, with final B4/B5
-  hardening at `ac5761a` / `7e4a368`. Parent WSL reproduction matched
+  hardening at `ac5761a` / `7e4a368` and a narrow regex correction at
+  `4cf4e3a` / `08079e6`. Parent WSL reproduction matched
   **37 GREEN / 8 intentional RED** across 45 focused tests, with zero skips or
   collection errors.
 - B1-C5 now executes nine real writers and rejects undeclared migrated-WID
@@ -78,6 +79,12 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   tests and six B5 tests. The previous 74/74 result remains invalid as
   promotion evidence. Keep evidence, wiring YAML, semantic audit, and the
   fail-closed baseline unchanged at 4/28.
+- Sonnet's first implementation pass correctly stopped without committing when
+  the frozen test used `slot.replace("_proc", "")`, producing the impossible
+  regex `proteinessing_i`. The test author replaced only those three calls with
+  `removesuffix`. Sonnet's clean four-file production patch is preserved at
+  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\b4b5_production_repair.patch`;
+  `git apply --check` passes on the corrected HEAD.
 - Next sequence: Sonnet repairs only `karr_protein_translocation.py`,
   `karr_request_calculators.py`, `scripts/l2_4_verify_conservation.py`, and
   `scripts/run_chassis_v6_32400t.py`; parent acceptance rerun; fresh independent
