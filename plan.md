@@ -59,6 +59,34 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-11) — honest 5/28 integrated into the audit branch:**
+
+- Worktree `E:\opencell-worktrees\pre-l25-honesty-rebaseline`, branch
+  `audit/pre-l25-honesty-rebaseline-20260917`, fast-forwarded cleanly from
+  `4b08282` to ProteinTranslocation Stage-2 tip `8a9a003`; nothing pushed.
+  The source repair branch remains at the same integrated tip.
+- Post-integration verification: `pre_l25_honesty.py audit` is
+  **INTEGRITY_OK, 5/28 eligible / 23 blocked**, source digest
+  `9dcb2830b3d4b8e75edda88512ebad10b5ef82c01914d398edb38a1896bcab81`;
+  baseline regression tests are **8/8**.
+- ProteinTranslocation has two independent `VERDICT: MATCHED` reviews,
+  **50/50** final focused acceptance, L1b **115/115** and **28/28**, semantic
+  audit **10 VERIFIED / 0 ROW_WRONG / 0 CODE_DEVIATES**, L2.4 4x100 PASS, and
+  genuine Design-A evidence from **50 Karr seeds x 50 OC seeds x 100 ticks**
+  over all 2,892 monomer positions.
+- The MATLAB installation currently fails with license-expired error 10. The
+  genuine ProteinTranslocation seed-1...49 traces were recovered from nine
+  local historical worktrees only after byte-hash and embedded-metadata
+  verification, then copied to the canonical gitignored data root.
+- Explicit debt remains: the repository-wide L2.2 evidence-index audit is stale
+  for unrelated blocked processes because of earlier shared-helper/production
+  changes. The official generator independently derives ProteinTranslocation's
+  bundled row as green/PASS with no reasons or warnings; no unrelated row is
+  claimed refreshed.
+- No live agents or processes. Recommended next bounded task is to re-audit the
+  actual `ChromosomeCondensation` blockers against MATLAB/fixtures before
+  choosing implementation scope; do not begin L2.5 composition work.
+
 **Current status (2026-10-11) — ProteinTranslocation promoted to honest 5/28; integration next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
