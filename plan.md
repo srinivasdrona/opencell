@@ -59,27 +59,29 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-11) — B1-B5 harness returned for two final corrections:**
+**Current status (2026-10-11) — hardened B1-B5 tests frozen; Sonnet repair next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
-  branch `fix/protein-translocation-stage2-20261001`, HEAD `94dd26f`; nothing
-  pushed. No live process or agent remains from the first repair pass.
-- Gemini committed test-only B1-B5 repairs at `19dcc4e` and provenance at
-  `94dd26f`. Parent WSL reproduction matched **36 GREEN / 5 intentional RED**
-  across 41 focused tests: B1-C5, B2-C11, and B3-C12 are now substantive;
-  current production remains RED only on the intended B4 and B5 contracts.
-- Do not freeze the suite yet. The B4 script-source check can be laundered by
-  adding an unused `MatlabRandStream` token while retaining the blind NumPy RNG
-  assignment. B5 rejects missing/`None` dependencies but does not yet reject
-  wrong dependency types, despite the reviewer requiring missing **or
-  mismatched** dependencies to fail closed.
-- The previous 74/74 acceptance result remains invalid as promotion evidence.
-  Keep evidence, wiring YAML, semantic audit, and the fail-closed baseline
-  unchanged at 4/28.
-- Next sequence: narrow Gemini correction for those two test gaps with planted
-  rejecting mutations; freeze the tests; Sonnet production repair; parent
-  acceptance rerun; fresh independent GPT review. Do not weaken existing PP2,
-  replay anti-oracle, request-algebra, seed-accounting, or B1-B3 checks.
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `7e4a368`; nothing
+  pushed. No live process or agent remains from the test-writer passes.
+- Gemini test repairs landed at `19dcc4e` / `94dd26f`, with final B4/B5
+  hardening at `ac5761a` / `7e4a368`. Parent WSL reproduction matched
+  **37 GREEN / 8 intentional RED** across 45 focused tests, with zero skips or
+  collection errors.
+- B1-C5 now executes nine real writers and rejects undeclared migrated-WID
+  output; B2-C11 pins the exact three-call observable sequence; B3-C12 executes
+  request, allocation, and evolution in a real Engine tick. B4 behaviorally
+  proves both chassis seeders preserve `MatlabRandStream` and kills a blind
+  overwrite with an unused-token laundering canary. B5 separately rejects
+  missing and wrong-type dependencies for every constructor slot.
+- The frozen RED boundary is exactly the remaining production work: two B4
+  tests and six B5 tests. The previous 74/74 result remains invalid as
+  promotion evidence. Keep evidence, wiring YAML, semantic audit, and the
+  fail-closed baseline unchanged at 4/28.
+- Next sequence: Sonnet repairs only `karr_protein_translocation.py`,
+  `karr_request_calculators.py`, `scripts/l2_4_verify_conservation.py`, and
+  `scripts/run_chassis_v6_32400t.py`; parent acceptance rerun; fresh independent
+  GPT review. Tests and all downstream evidence surfaces are frozen.
 
 **Current status (2026-10-01 20:30 IST) — Gemini tests frozen; Sonnet next:**
 
