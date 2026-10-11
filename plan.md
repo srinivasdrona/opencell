@@ -59,6 +59,39 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-11) — ProteinTranslocation promoted to honest 5/28; integration next:**
+
+- Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `e1ca0f8`; nothing
+  pushed and no live processes or agents.
+- Code review and the returned full-vector evidence-harness review both ended
+  **`VERDICT: MATCHED`** with zero blockers. The accepted implementation has
+  fail-closed one-based RNG handling, explicit constructor dependencies, full
+  119-WID compartment transfer, Karr-exact request algebra, and no legacy
+  location/queue authority.
+- Final parent validation: frozen Stage-2 suite **50/50**, related Stage-1 /
+  replay suite **70 PASS / 1 audited N/A skip**, L1b **115/115** and **28/28**,
+  L1b integration **19/19**, L2.4 four seeds x 100 ticks PASS, honesty tests
+  **8/8**, Ruff/diff-check clean.
+- Semantic audit is **10 VERIFIED / 0 ROW_WRONG / 0 CODE_DEVIATES**.
+  ProteinTranslocation wiring now cites executable MATLAB and current OC
+  anchors.
+- Genuine Design-A evidence is bundled at
+  `docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest`:
+  **50 canonical Karr seeds x 50 OC seeds x 100 ticks**, full 2,892-position
+  monomer vectors, PASS, zero warnings, monomer W1 `0.0`, substrate W1
+  `0.005714`.
+- Machine baseline is `INTEGRITY_OK`, **5/28 eligible / 23 blocked**, source
+  digest `9dcb2830b3d4b8e75edda88512ebad10b5ef82c01914d398edb38a1896bcab81`.
+- Explicit non-blocking debt: the repository-wide L2.2 evidence index audit is
+  already stale for unrelated processes (shared helper and prior production
+  changes). The official generator independently derives the new
+  ProteinTranslocation row as green/PASS with no reasons or warnings; this work
+  does not claim to refresh unrelated rows.
+- Next action: fast-forward/merge `e1ca0f8` into
+  `audit/pre-l25-honesty-rebaseline-20260917`, rerun the baseline integrity
+  check there, and do not push unless explicitly requested.
+
 **Current status (2026-10-11) — fresh GPT review MATCHED; evidence refresh next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
