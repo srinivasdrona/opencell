@@ -59,7 +59,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-11) — B1-B5 production repair accepted; fresh GPT review next:**
+**Current status (2026-10-11) — fresh GPT review MATCHED; evidence refresh next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
   branch `fix/protein-translocation-stage2-20261001`, HEAD `41b960b`; nothing
@@ -90,12 +90,20 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   authority / replay suite **70 PASS / 1 audited N/A skip**, process-file Ruff
   PASS, `git diff --check` PASS, and L2.4 four seeds x 100 ticks PASS with
   `exchange_wids_skipped=124`.
+- Fresh independent GPT reviewer `590e3aa4-9fad-43ac-b9f0-792e6f951548`
+  returned **`VERDICT: MATCHED`** for `4b08282..41b960b`, with zero blocking
+  and zero non-blocking findings. It independently re-probed all five prior
+  blockers, 119/116/124/7,440 cardinality, all four request cases, one-based
+  fixture-order RNG, the 2,892-position replay totals, +4,203 seed accounting,
+  and untouched downstream evidence surfaces.
 - The previous 74/74 result remains invalid historical evidence; the corrected
   acceptance above supersedes it for code review only. Keep evidence, wiring
   YAML, semantic audit, and the fail-closed baseline unchanged at 4/28.
-- Next sequence: fresh independent GPT review of `4b08282..41b960b`, explicitly
-  rechecking all five prior blockers and primary-source fidelity. Only a
-  `VERDICT: MATCHED` permits evidence, wiring, audit, or baseline work.
+- The reviewer verdict permits, but does not itself perform, promotion work.
+  Next sequence: refresh L1b anchors and ProteinTranslocation wiring metadata;
+  regenerate 50-seed x 100-tick L2.2 evidence; mechanically re-adjudicate the
+  semantic audit; promote only after zero `ROW_WRONG` / zero `CODE_DEVIATES`
+  and `pre_l25_honesty.py audit` returns `INTEGRITY_OK`.
 
 **Current status (2026-10-01 20:30 IST) — Gemini tests frozen; Sonnet next:**
 
