@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-10-11) — fresh GPT review MATCHED; evidence refresh next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
-  branch `fix/protein-translocation-stage2-20261001`, HEAD `7f0b8e4`; nothing
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `4835fde`; nothing
   pushed. No live process or agent currently owns the worktree.
 - Gemini test repairs landed at `19dcc4e` / `94dd26f`, with final B4/B5
   hardening at `ac5761a` / `7e4a368` and a narrow regex correction at
@@ -128,6 +128,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   full 2,892 vectors in the ProteinTranslocation oracle adapter/loader and pass
   the full pre-state vector through projection so non-authority positions remain
   exact. Tests, production, metadata, evidence, and baseline remain frozen.
+- Sonnet's first helper pass correctly stopped because Contract 5 asserted a
+  top-level verdict instead of the established `payload["result"]["verdict"]`.
+  Gemini corrected only that test at `e3c7e46` / `4835fde`; parent reproduced
+  the same **1 GREEN / 4 intentional RED** boundary. The clean helper patch is
+  preserved at
+  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\ptransloc_fullvector_helper.patch`
+  and still passes `git apply --check`.
 - After a PASS: bundle the compact authority files, regenerate and audit
   `evidence_index.json`, update the baseline entry and source digest, and require
   `pre_l25_honesty.py audit` to return `INTEGRITY_OK` at 5/28 before integration.
