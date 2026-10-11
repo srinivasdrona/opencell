@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-10-11) — fresh GPT review MATCHED; evidence refresh next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
-  branch `fix/protein-translocation-stage2-20261001`, HEAD `41b960b`; nothing
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `bc52f33`; nothing
   pushed. No live process or agent currently owns the worktree.
 - Gemini test repairs landed at `19dcc4e` / `94dd26f`, with final B4/B5
   hardening at `ac5761a` / `7e4a368` and a narrow regex correction at
@@ -100,10 +100,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   acceptance above supersedes it for code review only. Keep evidence, wiring
   YAML, semantic audit, and the fail-closed baseline unchanged at 4/28.
 - The reviewer verdict permits, but does not itself perform, promotion work.
-  Next sequence: refresh L1b anchors and ProteinTranslocation wiring metadata;
-  regenerate 50-seed x 100-tick L2.2 evidence; mechanically re-adjudicate the
-  semantic audit; promote only after zero `ROW_WRONG` / zero `CODE_DEVIATES`
-  and `pre_l25_honesty.py audit` returns `INTEGRITY_OK`.
+  Half-A/half-B anchors and ProteinTranslocation wiring were refreshed at
+  `bc52f33`; L1b is restored to **115/115** and **28/28**, the L1b integration
+  suite is **19/19**, and the semantic audit is **10 VERIFIED / 0 ROW_WRONG /
+  0 CODE_DEVIATES**.
+- Next long process uses shell ID `ptrans-l22-evidence` to force-regenerate only
+  ProteinTranslocation Design-A evidence at 50 seeds x 100 ticks under
+  `artifacts/l2_2_gates/ProteinTranslocation/latest`. Its report is written to
+  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\ptrans_l22_sweep_report.json`.
+- After a PASS: bundle the compact authority files, regenerate and audit
+  `evidence_index.json`, update the baseline entry and source digest, and require
+  `pre_l25_honesty.py audit` to return `INTEGRITY_OK` at 5/28 before integration.
 
 **Current status (2026-10-01 20:30 IST) — Gemini tests frozen; Sonnet next:**
 
