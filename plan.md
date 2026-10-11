@@ -108,6 +108,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   ProteinTranslocation Design-A evidence at 50 seeds x 100 ticks under
   `artifacts/l2_2_gates/ProteinTranslocation/latest`. Its report is written to
   `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\ptrans_l22_sweep_report.json`.
+- That first sweep failed safely after 28.7 s with no evidence swap:
+  `could not broadcast input array from shape (2892,) into shape (482,)`.
+  The stale Design-A oracle loader still sums six compartments to 482 totals,
+  while the Stage-2 process and replay contract now preserve all 2,892
+  compartment positions. Retaining the collapse would launder the exact
+  cytosol-to-e/m movement this repair is meant to validate.
+- The old tracked bundle and old live `latest/` remain intact. Next sequence is
+  a narrow Gemini test freeze for full 2,892-position oracle/input/output
+  behavior, Sonnet harness repair without production changes, parent rerun, and
+  a focused independent GPT review before refiring the 50-seed sweep.
 - After a PASS: bundle the compact authority files, regenerate and audit
   `evidence_index.json`, update the baseline entry and source digest, and require
   `pre_l25_honesty.py audit` to return `INTEGRITY_OK` at 5/28 before integration.
