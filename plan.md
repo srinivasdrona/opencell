@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-10-11) — fresh GPT review MATCHED; evidence refresh next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
-  branch `fix/protein-translocation-stage2-20261001`, HEAD `bc52f33`; nothing
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `7f0b8e4`; nothing
   pushed. No live process or agent currently owns the worktree.
 - Gemini test repairs landed at `19dcc4e` / `94dd26f`, with final B4/B5
   hardening at `ac5761a` / `7e4a368` and a narrow regex correction at
@@ -118,6 +118,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   a narrow Gemini test freeze for full 2,892-position oracle/input/output
   behavior, Sonnet harness repair without production changes, parent rerun, and
   a focused independent GPT review before refiring the 50-seed sweep.
+- Gemini froze that contract at `3e71f27` with provenance `7f0b8e4`.
+  Parent reproduced **5 collected: 1 mutation-canary GREEN / 4 intentional
+  RED**. The REDs separately prove the oracle adapter and real one-seed loader
+  collapse to 482, the tick runner loses non-authority positions without a
+  `before_vector` pass-through, and `run_design_a` broadcasts 2,892 into 482.
+- Sonnet may now edit only
+  `tests/vivarium/_l2_2_design_a_runner_helpers.py` plus provenance: preserve
+  full 2,892 vectors in the ProteinTranslocation oracle adapter/loader and pass
+  the full pre-state vector through projection so non-authority positions remain
+  exact. Tests, production, metadata, evidence, and baseline remain frozen.
 - After a PASS: bundle the compact authority files, regenerate and audit
   `evidence_index.json`, update the baseline entry and source digest, and require
   `pre_l25_honesty.py audit` to return `INTEGRITY_OK` at 5/28 before integration.
