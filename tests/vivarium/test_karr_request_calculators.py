@@ -147,12 +147,12 @@ def test_b5_request_calculator_protein_pathway_rejects_missing_dependencies() ->
     # Partial dependencies (omitted slots) and None values must fail closed
     for slot in valid_deps:
         omitted = {k: v for k, v in valid_deps.items() if k != slot}
-        with pytest.raises(ValueError, match=r"(?i)" + slot.replace("_proc", "")):
+        with pytest.raises(ValueError, match=r"(?i)" + slot.removesuffix("_proc")):
             RequestCalculatorProteinPathway(omitted)
 
         none_param = dict(valid_deps)
         none_param[slot] = None
-        with pytest.raises(ValueError, match=r"(?i)" + slot.replace("_proc", "")):
+        with pytest.raises(ValueError, match=r"(?i)" + slot.removesuffix("_proc")):
             RequestCalculatorProteinPathway(none_param)
 
     # Legitimate explicit dependency construction passes
@@ -181,7 +181,7 @@ def test_b5_request_calculator_protein_pathway_rejects_mismatched_dependencies()
         for bad_val in (object(), wrong_proc, "invalid_dependency_type"):
             corrupted = dict(valid_deps)
             corrupted[slot] = bad_val
-            with pytest.raises(ValueError, match=r"(?i)" + slot.replace("_proc", "")):
+            with pytest.raises(ValueError, match=r"(?i)" + slot.removesuffix("_proc")):
                 RequestCalculatorProteinPathway(corrupted)
 
     # Legitimate explicit dependency construction passes
