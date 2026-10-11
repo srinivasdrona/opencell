@@ -59,10 +59,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-11) — hardened B1-B5 tests frozen; Sonnet repair next:**
+**Current status (2026-10-11) — B1-B5 production repair accepted; fresh GPT review next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
-  branch `fix/protein-translocation-stage2-20261001`, HEAD `08079e6`; nothing
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `41b960b`; nothing
   pushed. No live process or agent currently owns the worktree.
 - Gemini test repairs landed at `19dcc4e` / `94dd26f`, with final B4/B5
   hardening at `ac5761a` / `7e4a368` and a narrow regex correction at
@@ -75,20 +75,27 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   proves both chassis seeders preserve `MatlabRandStream` and kills a blind
   overwrite with an unused-token laundering canary. B5 separately rejects
   missing and wrong-type dependencies for every constructor slot.
-- The frozen RED boundary is exactly the remaining production work: two B4
-  tests and six B5 tests. The previous 74/74 result remains invalid as
-  promotion evidence. Keep evidence, wiring YAML, semantic audit, and the
-  fail-closed baseline unchanged at 4/28.
+- Sonnet production repair landed at `cef6542` with provenance `41b960b`.
+  ProteinTranslocation now rejects non-`MatlabRandStream` RNGs before reading
+  state, both chassis seeders preserve/reseed MATLAB streams, and all three
+  request-calculator constructors reject missing or wrong-type dependencies.
+  Only the four authorized production/script files changed.
 - Sonnet's first implementation pass correctly stopped without committing when
   the frozen test used `slot.replace("_proc", "")`, producing the impossible
   regex `proteinessing_i`. The test author replaced only those three calls with
   `removesuffix`. Sonnet's clean four-file production patch is preserved at
   `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\b4b5_production_repair.patch`;
-  `git apply --check` passes on the corrected HEAD.
-- Next sequence: Sonnet repairs only `karr_protein_translocation.py`,
-  `karr_request_calculators.py`, `scripts/l2_4_verify_conservation.py`, and
-  `scripts/run_chassis_v6_32400t.py`; parent acceptance rerun; fresh independent
-  GPT review. Tests and all downstream evidence surfaces are frozen.
+  it was then applied unchanged.
+- Parent acceptance is clean: frozen B1-B5 suite **45/45**, related Stage-1 /
+  authority / replay suite **70 PASS / 1 audited N/A skip**, process-file Ruff
+  PASS, `git diff --check` PASS, and L2.4 four seeds x 100 ticks PASS with
+  `exchange_wids_skipped=124`.
+- The previous 74/74 result remains invalid historical evidence; the corrected
+  acceptance above supersedes it for code review only. Keep evidence, wiring
+  YAML, semantic audit, and the fail-closed baseline unchanged at 4/28.
+- Next sequence: fresh independent GPT review of `4b08282..41b960b`, explicitly
+  rechecking all five prior blockers and primary-source fidelity. Only a
+  `VERDICT: MATCHED` permits evidence, wiring, audit, or baseline work.
 
 **Current status (2026-10-01 20:30 IST) — Gemini tests frozen; Sonnet next:**
 
