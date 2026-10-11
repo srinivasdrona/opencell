@@ -7,6 +7,7 @@ rather than install NumPy generators.
 
 from __future__ import annotations
 
+import importlib.util
 import sys
 from pathlib import Path
 from typing import Any
@@ -24,6 +25,7 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
+from opencell.util.matlab_rng import MatlabRandStream
 from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
 
 
@@ -108,36 +110,125 @@ def test_b4_reviewer_seed0_numpy_draw_demonstrates_corruption() -> None:
     assert 2 not in indices, "MG_468 was unexpectedly reached"
 
 
+class _DummyMatlabEntity(KarrProteinTranslocationProcess):
+    """Dummy entity with a real MatlabRandStream for testing seeder behavior."""
+
+    def __init__(self, seed: int = 12345) -> None:
+        super().__init__({"rng_seed": seed})
+
+
+class _DummyOrdinaryEntity:
+    """Dummy entity with an ordinary NumPy generator for testing seeder behavior."""
+
+    def __init__(self, seed: int = 54321) -> None:
+        self.name = "dummy_ordinary_process"
+        self.parameters = {"rng_seed": seed}
+        self._rng = np.random.default_rng(seed)
+
+
+def _verify_collector_preserves_matlab_rng(collector_cls: type) -> None:
+    """Behavioral/runtime verifier: assert collector._seed_entities preserves MatlabRandStream
+
+    and does not replace it with np.random.default_rng.
+    """
+    instance = collector_cls.__new__(collector_cls)
+    matlab_entity = _DummyMatlabEntity(seed=12345)
+    ordinary_entity = _DummyOrdinaryEntity(seed=54321)
+    orig_matlab_rng = matlab_entity._rng
+    orig_numpy_rng = ordinary_entity._rng
+
+    instance._entities = {
+        "karr_protein_translocation": matlab_entity,
+        "dummy_ordinary_process": ordinary_entity,
+    }
+    instance._seed_entities(seed=42)
+
+    # 1. Ordinary entity must have an appropriate NumPy generator, freshly reseeded
+    if not isinstance(ordinary_entity._rng, np.random.Generator):
+        raise AssertionError(
+            f"Expected ordinary entity _rng to be np.random.Generator, got {type(ordinary_entity._rng)}"
+        )
+    if ordinary_entity._rng is orig_numpy_rng:
+        raise AssertionError("Ordinary entity NumPy generator was not freshly reseeded")
+
+    # 2. Matlab entity must still have a freshly seeded MatlabRandStream, NEVER a NumPy Generator
+    if isinstance(matlab_entity._rng, np.random.Generator):
+        raise AssertionError(
+            "Matlab entity _rng was replaced with a NumPy Generator; must preserve MatlabRandStream"
+        )
+    if not isinstance(matlab_entity._rng, MatlabRandStream):
+        raise AssertionError(
+            f"Expected Matlab entity _rng to be MatlabRandStream, got {type(matlab_entity._rng)}"
+        )
+    reseeded = (matlab_entity._rng is not orig_matlab_rng) or (
+        getattr(matlab_entity._rng, "_seed", None) != 12345
+    )
+    if not reseeded:
+        raise AssertionError("Matlab entity MatlabRandStream was not freshly reseeded")
+
+
+def _load_script_module(script_rel_path: str, module_name: str) -> Any:
+    script_path = _REPO_ROOT / script_rel_path
+    spec = importlib.util.spec_from_file_location(module_name, str(script_path))
+    if spec is None or spec.loader is None:
+        raise ImportError(f"Cannot load module spec from {script_path}")
+    mod = importlib.util.module_from_spec(spec)
+    sys.modules[module_name] = mod
+    spec.loader.exec_module(mod)
+    return mod
+
+
 def test_b4_scripts_do_not_replace_translocation_rng_with_numpy() -> None:
-    """B4 static/runtime contract: scripts/l2_4_verify_conservation.py and
+    """B4 behavioral/runtime proof: scripts/l2_4_verify_conservation.py and
 
     scripts/run_chassis_v6_32400t.py must preserve MatlabRandStream for
     KarrProteinTranslocationProcess, never replace it with np.random.default_rng.
     """
-    scripts_to_check = [
-        _REPO_ROOT / "scripts" / "l2_4_verify_conservation.py",
-        _REPO_ROOT / "scripts" / "run_chassis_v6_32400t.py",
-    ]
-
-    violations = []
-    for script_path in scripts_to_check:
-        src = script_path.read_text(encoding="utf-8")
-        if "entity._rng = np.random.default_rng" in src:
-            has_protection = (
-                "MatlabRandStream" in src
-                or "isinstance(entity, KarrProteinTranslocationProcess)" in src
-                or 'isinstance(getattr(entity, "_rng", None), MatlabRandStream)' in src
-                or 'not isinstance(getattr(entity, "_rng", None), MatlabRandStream)' in src
-                or 'entity.name != "karr_protein_translocation"' in src
-                or 'hasattr(entity._rng, "randperm")' in src
-            )
-            if not has_protection:
-                violations.append(
-                    f"{script_path.name}: blindly replaces entity._rng with np.random.default_rng "
-                    "without preserving MatlabRandStream for ProteinTranslocation"
-                )
-
-    assert not violations, (
-        "Claim B4 violation: autonomous/chassis scripts must seed/preserve MatlabRandStream "
-        "rather than install NumPy generators:\n" + "\n".join(violations)
+    l2_4_mod = _load_script_module(
+        "scripts/l2_4_verify_conservation.py", "scripts_l2_4_verify_conservation"
     )
+    conservation_collector_cls = getattr(l2_4_mod, "ConservationCollector")
+    _verify_collector_preserves_matlab_rng(conservation_collector_cls)
+
+    chassis_mod = _load_script_module(
+        "scripts/run_chassis_v6_32400t.py", "scripts_run_chassis_v6_32400t"
+    )
+    diagnostic_collector_cls = getattr(chassis_mod, "DiagnosticCollector")
+    _verify_collector_preserves_matlab_rng(diagnostic_collector_cls)
+
+
+class _PlantedBrokenSeederWithUnusedMatlabTokenCollector:
+    """Planted broken seeder that contains an unused MatlabRandStream token / import,
+
+    but blindly overwrites every _rng with np.random.default_rng.
+    The verifier must reject it despite the token presence.
+    """
+
+    _unused_token = MatlabRandStream
+
+    def _seed_entities(self, *, seed: int) -> None:
+        names = sorted(self._entities.keys())
+        children = np.random.SeedSequence(int(seed)).spawn(len(names))
+        for idx, name in enumerate(names):
+            entity = self._entities[name]
+            child = children[idx]
+            entity_seed = int(child.generate_state(1, dtype=np.uint32)[0])
+            params = getattr(entity, "parameters", None)
+            if isinstance(params, dict) and "rng_seed" in params:
+                params["rng_seed"] = entity_seed
+            if hasattr(entity, "_rng"):
+                entity._rng = np.random.default_rng(entity_seed)
+
+
+def test_b4_planted_broken_seeder_canary_rejected() -> None:
+    """Canary: Prove the verifier rejects a planted broken seeder that blindly overwrites
+
+    _rng with np.random.default_rng, even when an unused MatlabRandStream token is present.
+    """
+    with pytest.raises(
+        AssertionError,
+        match=r"(?i)Matlab entity _rng was replaced with a NumPy Generator|must preserve MatlabRandStream",
+    ):
+        _verify_collector_preserves_matlab_rng(
+            _PlantedBrokenSeederWithUnusedMatlabTokenCollector
+        )

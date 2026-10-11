@@ -99,15 +99,15 @@ def test_pp2_request_ignores_non_lipo_processed_pool() -> None:
 
 
 # ==============================================================================
-# Finding B5: fail-closed constructor tests (reject missing dependencies)
+# Finding B5: fail-closed constructor tests (reject missing or mismatched dependencies)
 # ==============================================================================
 
 
 def test_b5_request_calculator_ribasm_rejects_missing_dependencies() -> None:
-    """B5 contract: RequestCalculatorRibAsm must raise ValueError when ribasm_proc is missing."""
-    with pytest.raises(ValueError, match="ribasm_proc"):
+    """B5 contract: RequestCalculatorRibAsm must raise ValueError when ribasm_proc is missing or None."""
+    with pytest.raises(ValueError, match=r"(?i)ribasm"):
         RequestCalculatorRibAsm({})
-    with pytest.raises(ValueError, match="ribasm_proc"):
+    with pytest.raises(ValueError, match=r"(?i)ribasm"):
         RequestCalculatorRibAsm({"ribasm_proc": None})
 
     # Legitimate explicit dependency construction passes
@@ -117,30 +117,99 @@ def test_b5_request_calculator_ribasm_rejects_missing_dependencies() -> None:
     assert "requests" in calc.ports_schema()
 
 
-def test_b5_request_calculator_protein_pathway_rejects_missing_dependencies() -> None:
-    """B5 contract: RequestCalculatorProteinPathway must raise ValueError when any dependency is missing."""
-    with pytest.raises(ValueError, match="requires"):
-        RequestCalculatorProteinPathway({})
-
-    # Partial dependencies must also fail closed
-    with pytest.raises(ValueError, match="requires"):
-        RequestCalculatorProteinPathway({
-            "protein_processing_i_proc": KarrProteinProcessingIProcess({}),
-        })
+def test_b5_request_calculator_ribasm_rejects_mismatched_dependencies() -> None:
+    """B5 contract: RequestCalculatorRibAsm must raise ValueError when ribasm_proc is wrong type."""
+    wrong_proc = KarrProteinFoldingProcess({})
+    for bad_val in (object(), wrong_proc, "invalid_ribasm_dependency"):
+        with pytest.raises(ValueError, match=r"(?i)ribasm"):
+            RequestCalculatorRibAsm({"ribasm_proc": bad_val})
 
     # Legitimate explicit dependency construction passes
-    calc = _build_calc()
-    assert calc._pp1_proc is not None
-    assert calc._pt_proc is not None
+    ribasm = KarrRibosomeAssemblyProcess({})
+    calc = RequestCalculatorRibAsm({"ribasm_proc": ribasm})
+    assert calc._ribasm_proc is ribasm
+    assert "requests" in calc.ports_schema()
+
+
+def test_b5_request_calculator_protein_pathway_rejects_missing_dependencies() -> None:
+    """B5 contract: RequestCalculatorProteinPathway must raise ValueError when any dependency is missing or None."""
+    with pytest.raises(ValueError, match=r"(?i)require|missing"):
+        RequestCalculatorProteinPathway({})
+
+    valid_deps = {
+        "protein_processing_i_proc": KarrProteinProcessingIProcess({}),
+        "protein_processing_ii_proc": KarrProteinProcessingIIProcess({}),
+        "protein_modification_proc": KarrProteinModificationProcess({}),
+        "protein_folding_proc": KarrProteinFoldingProcess({}),
+        "protein_translocation_proc": KarrProteinTranslocationProcess({}),
+    }
+
+    # Partial dependencies (omitted slots) and None values must fail closed
+    for slot in valid_deps:
+        omitted = {k: v for k, v in valid_deps.items() if k != slot}
+        with pytest.raises(ValueError, match=r"(?i)" + slot.replace("_proc", "")):
+            RequestCalculatorProteinPathway(omitted)
+
+        none_param = dict(valid_deps)
+        none_param[slot] = None
+        with pytest.raises(ValueError, match=r"(?i)" + slot.replace("_proc", "")):
+            RequestCalculatorProteinPathway(none_param)
+
+    # Legitimate explicit dependency construction passes
+    calc = RequestCalculatorProteinPathway(valid_deps)
+    assert calc._pp1_proc is valid_deps["protein_processing_i_proc"]
+    assert calc._pp2_proc is valid_deps["protein_processing_ii_proc"]
+    assert calc._pm_proc is valid_deps["protein_modification_proc"]
+    assert calc._pf_proc is valid_deps["protein_folding_proc"]
+    assert calc._pt_proc is valid_deps["protein_translocation_proc"]
+    assert "requests" in calc.ports_schema()
+
+
+def test_b5_request_calculator_protein_pathway_rejects_mismatched_dependencies() -> None:
+    """B5 contract: RequestCalculatorProteinPathway must raise ValueError when any dependency has wrong type."""
+    valid_deps = {
+        "protein_processing_i_proc": KarrProteinProcessingIProcess({}),
+        "protein_processing_ii_proc": KarrProteinProcessingIIProcess({}),
+        "protein_modification_proc": KarrProteinModificationProcess({}),
+        "protein_folding_proc": KarrProteinFoldingProcess({}),
+        "protein_translocation_proc": KarrProteinTranslocationProcess({}),
+    }
+    wrong_proc = KarrRibosomeAssemblyProcess({})
+
+    # Every named slot must reject wrong types (object(), wrong process class, string)
+    for slot in valid_deps:
+        for bad_val in (object(), wrong_proc, "invalid_dependency_type"):
+            corrupted = dict(valid_deps)
+            corrupted[slot] = bad_val
+            with pytest.raises(ValueError, match=r"(?i)" + slot.replace("_proc", "")):
+                RequestCalculatorProteinPathway(corrupted)
+
+    # Legitimate explicit dependency construction passes
+    calc = RequestCalculatorProteinPathway(valid_deps)
+    assert calc._pp1_proc is valid_deps["protein_processing_i_proc"]
     assert "requests" in calc.ports_schema()
 
 
 def test_b5_request_calculator_ptransloc_rejects_missing_dependencies() -> None:
-    """B5 contract: RequestCalculatorPTransloc must raise ValueError when protein_translocation_proc is missing."""
-    with pytest.raises(ValueError, match="protein_translocation_proc"):
+    """B5 contract: RequestCalculatorPTransloc must raise ValueError when protein_translocation_proc is missing or None."""
+    with pytest.raises(ValueError, match=r"(?i)protein_translocation"):
         RequestCalculatorPTransloc({})
-    with pytest.raises(ValueError, match="protein_translocation_proc"):
+    with pytest.raises(ValueError, match=r"(?i)protein_translocation"):
         RequestCalculatorPTransloc({"protein_translocation_proc": None})
+
+    # Legitimate explicit dependency construction passes
+    pt = KarrProteinTranslocationProcess({})
+    calc = RequestCalculatorPTransloc({"protein_translocation_proc": pt})
+    assert calc._pt_proc is pt
+    assert "requests" in calc.ports_schema()
+
+
+def test_b5_request_calculator_ptransloc_rejects_mismatched_dependencies() -> None:
+    """B5 contract: RequestCalculatorPTransloc must raise ValueError when protein_translocation_proc is wrong type."""
+    wrong_proc = KarrRibosomeAssemblyProcess({})
+    for bad_val in (object(), wrong_proc, "invalid_translocation_dependency"):
+        with pytest.raises(ValueError, match=r"(?i)protein_translocation"):
+            RequestCalculatorPTransloc({"protein_translocation_proc": bad_val})
 
     # Legitimate explicit dependency construction passes
     pt = KarrProteinTranslocationProcess({})
