@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-10-11) — fresh GPT review MATCHED; evidence refresh next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
-  branch `fix/protein-translocation-stage2-20261001`, HEAD `dc97776`; nothing
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `130bec9`; nothing
   pushed. No live process or agent currently owns the worktree.
 - Gemini test repairs landed at `19dcc4e` / `94dd26f`, with final B4/B5
   hardening at `ac5761a` / `7e4a368` and a narrow regex correction at
@@ -144,6 +144,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   explicitly checking for output-oracle input, compartment-order mistakes,
   non-authority laundering, and evidence-provenance blast radius. Only a
   `VERDICT: MATCHED` permits the 50-seed sweep to be refired.
+- Fresh GPT reviewer `c73d1d04-47ac-49bc-9543-c1e20bd2f253` returned
+  **`VERDICT: MATCHED`** with zero blockers. Independent probes confirmed raw
+  `(6,482)` / 2,892-position order, 13 real movement ticks hidden by 482-total
+  collapse, exact non-authority pass-through, and oracle-after independence.
+- Non-blocking debt is explicit: the shared generic helper hash changed from
+  `016c0d86...` to `b1fc70e5...`, so unrelated Design-A rows that bind that
+  shared hash remain stale. Fresh ProteinTranslocation evidence is trustworthy
+  because it will record the current helper and tick-runner hashes; this repair
+  does not claim to refresh unrelated rows.
+- Refire the forced 50-seed x 100-tick sweep under shell ID
+  `ptrans-l22-evidence-2`, preserving atomic replacement semantics.
 - After a PASS: bundle the compact authority files, regenerate and audit
   `evidence_index.json`, update the baseline entry and source digest, and require
   `pre_l25_honesty.py audit` to return `INTEGRITY_OK` at 5/28 before integration.
