@@ -155,6 +155,21 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   does not claim to refresh unrelated rows.
 - Refire the forced 50-seed x 100-tick sweep under shell ID
   `ptrans-l22-evidence-2`, preserving atomic replacement semantics.
+- That sweep executed 50 OC seeds but found only canonical Karr seed 0.
+  `sweep.py status` accepted the files structurally, while the evidence
+  evaluator correctly returned mechanical FAIL with
+  `SENTINEL_FAIL: KARR_SINGLE_SEED_REUSED`; nothing was bundled or promoted.
+- MATLAB is installed but its license is expired. Before accepting that as a
+  blocker, local verification found nine historical worktrees containing
+  genuine `ProteinTranslocation` seeds 1-49. Two complete sets were byte-for-
+  byte identical; the selected set had 49/49 correct embedded `rng_seed`,
+  `n_ticks=100`, `tick_offset=0`, matching channel schemas, and `(6,482)`
+  monomer matrices. The verified files were copied into the canonical
+  `E:\opencell\data\m1_sources\karr_native` root with zero hash mismatches.
+- Current loader probe is now genuinely
+  `canonical_seed_count=50`, `before/after=(50,100,2892)`, warnings empty.
+  Refire under shell ID `ptrans-l22-evidence-3`; the current one-seed live
+  evidence is not promotion authority and must be atomically replaced.
 - After a PASS: bundle the compact authority files, regenerate and audit
   `evidence_index.json`, update the baseline entry and source digest, and require
   `pre_l25_honesty.py audit` to return `INTEGRITY_OK` at 5/28 before integration.
