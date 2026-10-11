@@ -199,23 +199,30 @@ def test_contract_4_planted_collapsed_sum_mutation_canary() -> None:
         _verify_translocation_monomer_adapter(_planted_collapsed_sum_adapter)
 
 
-def test_contract_5_design_a_integration_fails_on_broadcast_without_shape_coercion(
+def test_contract_5_design_a_integration_completes_with_full_vector_shape(
     tmp_path: Path,
 ) -> None:
     """Contract 5: Minimal 1-seed / 1-tick run_design_a integration must complete
 
-    without shape coercion. Currently reproduces the 2892->482 broadcast failure:
-    ValueError: could not broadcast input array from shape (2892,) into shape (482,).
+    successfully with full-vector shape without shape coercion or broadcast failure.
+    Asserts payload structure {result, summary, null_calibration, thresholds} and
+    valid payload["result"]["verdict"] (accepting NO_GATEABLE_CHANNELS for 1 seed x 1 tick).
     """
     out_dir = tmp_path / "design_a_ptransloc"
     out_dir.mkdir(parents=True, exist_ok=True)
 
-    result = run_design_a(
+    payload = run_design_a(
         process="ProteinTranslocation",
         seeds=[0],
         m_ticks=1,
         out_dir=out_dir,
         bootstrap_B=2,
     )
-    assert result is not None, "run_design_a returned None"
-    assert "verdict" in result, "run_design_a output missing 'verdict'"
+    assert isinstance(payload, dict), "run_design_a returned non-dict payload"
+    for key in ("result", "summary", "null_calibration", "thresholds"):
+        assert key in payload, f"run_design_a payload missing expected key {key!r}"
+
+    verdict = payload["result"].get("verdict")
+    assert verdict in {"PASS", "FAIL", "NO_GATEABLE_CHANNELS"}, (
+        f"Unexpected run_design_a verdict: {verdict!r}"
+    )
