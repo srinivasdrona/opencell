@@ -62,7 +62,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Current status (2026-10-11) — fresh GPT review MATCHED; evidence refresh next:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
-  branch `fix/protein-translocation-stage2-20261001`, HEAD `4835fde`; nothing
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `dc97776`; nothing
   pushed. No live process or agent currently owns the worktree.
 - Gemini test repairs landed at `19dcc4e` / `94dd26f`, with final B4/B5
   hardening at `ac5761a` / `7e4a368` and a narrow regex correction at
@@ -135,6 +135,15 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   preserved at
   `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\ptransloc_fullvector_helper.patch`
   and still passes `git apply --check`.
+- Sonnet then landed the helper-only repair at `a5117f1` with provenance
+  `dc97776`: the oracle adapter/loader retain all 2,892 positions and the tick
+  projection overlays authority updates on the full pre-state vector. Parent
+  acceptance is **50/50** across the five full-vector contracts plus the frozen
+  B1-B5 suite; Ruff and diff-check are clean.
+- Next sequence: focused independent GPT review of `3e71f27..dc97776`,
+  explicitly checking for output-oracle input, compartment-order mistakes,
+  non-authority laundering, and evidence-provenance blast radius. Only a
+  `VERDICT: MATCHED` permits the 50-seed sweep to be refired.
 - After a PASS: bundle the compact authority files, regenerate and audit
   `evidence_index.json`, update the baseline entry and source digest, and require
   `pre_l25_honesty.py audit` to return `INTEGRITY_OK` at 5/28 before integration.
