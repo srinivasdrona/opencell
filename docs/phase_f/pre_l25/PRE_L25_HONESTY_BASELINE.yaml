@@ -1,6 +1,6 @@
 schema_version: "1.0"
 title: "Pre-L2.5 no-known-gap honesty baseline"
-audit_base_commit: "6a038b1d084543ddd847528ff6e698a9dba37626"
+audit_base_commit: "023bda80a6b65b4ebfb72af68022ecb9f2184896"
 canonical_process_count: 28
 policy: >-
   A lower-gate PASS is necessary but not sufficient for L2.5 eligibility.
@@ -8,7 +8,7 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "dd80f0892e35936c1ac808f4de247337cb9ae94007bd251f1b28306382520310"
+  sha256: "9dcb2830b3d4b8e75edda88512ebad10b5ef82c01914d398edb38a1896bcab81"
   file_count: 128
 authorities:
   l1b_method_completeness: "PASS 115/115"
@@ -354,17 +354,31 @@ processes:
   - name: ProteinTranslocation
     behavior_gate: L2.2
     behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    eligibility: ELIGIBLE
     findings:
-      - id: PTRANS-DEVIATIONS
+      - id: PTRANS-STAGE2-ALGORITHM
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          Two behavior deviations remain open and two wiring-row claims are
-          wrong.
+          All 119 translocatable WIDs now use the compartment authority, the
+          request calculator implements MATLAB's capacity-clipped ATP/GTP/H2O
+          algebra without a current-pool floor, and one-based persistent RNG
+          behavior fails closed.
         evidence:
           - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
-            lines: "58-61"
+            lines: "44-61"
+      - id: PTRANS-GENUINE-EVIDENCE
+        kind: EVIDENCE_CONFIG_MISMATCH
+        disposition: RESOLVED
+        summary: >-
+          Design-A now compares all 2,892 compartment positions using 50
+          genuine Karr seeds x 50 OpenCell seeds x 100 ticks; the mechanical
+          verdict is PASS with zero warnings and no single-seed reuse.
+        evidence:
+          - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/result.json
+            lines: "1-152"
+          - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json
+            lines: "1-34"
 
   - name: RNADecay
     behavior_gate: L2.2
@@ -619,5 +633,5 @@ processes:
             lines: "40-43"
 
 summary:
-  eligible: 4
-  blocked: 24
+  eligible: 5
+  blocked: 23
