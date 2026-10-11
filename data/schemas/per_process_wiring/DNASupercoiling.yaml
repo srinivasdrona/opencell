@@ -251,7 +251,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_dna_supercoiling.py"
-        lines: "360-644"
+        lines: "1012-1083"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrDNASupercoilingProcess.ports_schema
       note: Process works directly in per-tick integer counts; no unit conversion needed.

@@ -313,7 +313,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/MacromolecularComplexation.m:calcResourceRequirements_Current:285
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:87
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorD2.next_update:105
         note: Karr MacromolecularComplexation.m:285 returns zeros(size(this.substrates)); OC wires RequestCalculatorD2
           to d2_proc in karr_composite.py:756-784 and RequestCalculatorD2.next_update returns zero requests.
       evolveState:
@@ -335,7 +335,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m:calcResourceRequirements_Current:1188
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorMetabolism.next_update:806
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorMetabolism.next_update:898
         note: 'Karr has a dedicated current-demand method (`function result = calcResourceRequirements_Current(this)`
           at Metabolism.m:1188). OC has a dedicated request-step counterpart: `RequestCalculatorMetabolism`
           says "Emit allocator requests for dynamic-bounds metabolism substrate demand", then `requests
@@ -406,7 +406,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinDecay.m:calcResourceRequirements_Current:488
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorPD.next_update:122
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorPD.next_update:140
         note: 'Dedicated per-tick request calculator for the wired PD-light process.
 
           `karr_composite.py:757,773,785` instantiates `ProteinDecayLightProcess`,
@@ -533,7 +533,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m:calcResourceRequirements_Current:507
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:468
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:537
         note: 'Karr line 507 maps to the shared RequestCalculatorProteinPathway.next_update; the ProteinFolding
           slice is the pf_req = { ... } branch and is emitted as self._pf_proc.name: pf_req.'
       evolveState:
@@ -551,7 +551,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m:calcResourceRequirements_Current:324
         status: inlined
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:468
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:537
         note: 'MATLAB ProteinModification.m:324-327 computes `max(0,-reactionStoichiometryMatrix) * min(ceil(reactionCatalysisMatrix
           * enzymes * stepSizeSec), reactionModificationMatrix * unmodifiedMonomers)`. OC has no ProteinModification
           token in karr_request_calculators.py; PM request logic is folded into RequestCalculatorProteinPathway.next_update,
@@ -574,7 +574,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m:calcResourceRequirements_Current:218
         status: inlined
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:468
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:537
         note: inlined into RequestCalculatorProteinPathway.next_update; "pp1_req[self._pp1_proc.substrate_wids[self._pp1_proc.substrate_idx_water]]
           = (...) if pp1_active else 0.0" and the return maps it under self._pp1_proc.name; karr_composite.py:1144-1150
           wires protein_processing_i_proc into this shared calculator.
@@ -594,7 +594,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m:calcResourceRequirements_Current:325
         status: inlined
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:513
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:537
         note: 'Parent RequestCalculatorProteinPathway.next_update; OC line 513 starts `pp2_req = {wid:
           0.0 for wid in self._pp2_proc.substrate_wids}` and line 514-515 updates from `_request_from_available(...)`.
           karr_composite.py:1144-1151 wires pp2_proc into this shared calculator, and Karr ProteinProcessingII.m:325-344
@@ -615,21 +615,25 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m:calcResourceRequirements_Current:281
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorPTransloc.next_update:710
-        note: 'Dedicated allocator-step port. Karr ProteinTranslocation.m:281 computes ATP/GTP/H2O needs
-          from translocatable monomers; OC wires RequestCalculatorPTransloc in karr_composite.py:789,
-          and RequestCalculatorPTransloc.next_update at karr_request_calculators.py:710 emits requests
-          from pending translocatable_wids: "requests[self._atp_wid] = max(max(0.0, atp_need), max(0.0,
-          float(substrate_state.get(self._atp_wid, 0.0))))".'
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorPTransloc.next_update:804
+        note: 'Dedicated allocator-step port. Karr ProteinTranslocation.m:281-301
+          applies translocase/SRP capacity mins to authoritative cytosolic
+          processed-I demand and sets H2O = ATP + GTP. OC wires
+          RequestCalculatorPTransloc in karr_composite.py and
+          RequestCalculatorPTransloc.next_update at
+          karr_request_calculators.py:804-846 implements the same algebra
+          without a current-pool floor.'
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m:evolveState:305
         status: confirmed
-        oc: opencell/vivarium/karr_protein_translocation.py:KarrProteinTranslocationProcess.next_update:339
-        note: Direct process runtime method. Karr ProteinTranslocation.m:305 evolves state by randomly
-          selecting translocating monomers, updating protein counts/locations, and subtracting ATP/GTP/H2O;
-          OC KarrProteinTranslocationProcess.next_update at karr_protein_translocation.py:307 does the
-          same via randperm over copies and writes protein.location/unprocessed_counts plus substrate
-          deltas.
+        oc: opencell/vivarium/karr_protein_translocation.py:KarrProteinTranslocationProcess.next_update:347
+        note: Direct process runtime method. Karr ProteinTranslocation.m:305-369
+          uses one persistent one-based randperm over fixture-ordered copies,
+          breaks on the first infeasible copy, transfers processed-I counts
+          from cytosol to the mapped compartment, and writes hydrolysis deltas.
+          OC KarrProteinTranslocationProcess.next_update at
+          karr_protein_translocation.py:347-517 implements the same behavior
+          over the compartment authority and rejects non-MatlabRandStream RNGs.
   RNADecay:
     oc_files:
     - opencell/vivarium/karr_allocation_step.py
@@ -678,7 +682,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m:calcResourceRequirements_Current:289
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorRNAPathway.next_update:335
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorRNAPathway.next_update:357
         note: 'Shared RNAProcessing + RNAModification request step; `RequestCalculatorRNAPathway.next_update`
 
           builds `rm_request` via `_request_from_available(substrate_state, self._rm_consumed, active=rm_active)`,
@@ -703,7 +707,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m:calcResourceRequirements_Current:406
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorRNAPathway.next_update:335
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorRNAPathway.next_update:357
         note: 'Shared request calculator for RNAProcessing + RNAModification.
 
           `karr_composite.py:1138-1142` instantiates `RequestCalculatorRNAPathway`
@@ -1057,7 +1061,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RibosomeAssembly.m:calcResourceRequirements_Current:277
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorRibAsm.next_update:210
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorRibAsm.next_update:232
         note: Karr request block at RibosomeAssembly.m:277-298; OC computes GTP/H2O demand in RequestCalculatorRibAsm.next_update:210-226
           via estimate_formable_without_substrates() and n_gtpases_per_particle.
       evolveState:
@@ -1106,7 +1110,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m:calcResourceRequirements_Current:609
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTranscription.next_update:586
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTranscription.next_update:650
         note: Karr 609-615 requests ATP/CTP/GTP/UTP + water; OC's dedicated RequestCalculatorTranscription.next_update
           emits the NTP quartet from RNA_POLYMERASE counts via `per_ntp_need = max(0.0, total_nt / 4.0
           * self._safe_dt(timestep))`, so this is the allocator counterpart even though water is omitted.
@@ -1172,7 +1176,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m:calcResourceRequirements_Current:570
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTranslation.next_update:639
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTranslation.next_update:703
         note: OC implements the per-tick request surface as a dedicated Translation request calculator
           (AA budget, not Karr's GTP/H2O bookkeeping); karr_composite.py:788 wires RequestCalculatorTranslation
           for m3_proc, and the core line is need_by_aa = self._tl_proc._predict_substrate_need(rates,
@@ -1194,7 +1198,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/tRNAAminoacylation.m:calcResourceRequirements_Current:380
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTRNA.next_update:266
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTRNA.next_update:288
         note: 'Karr''s resource-req hook is `calcResourceRequirements_Current` in `tRNAAminoacylation.m:380-385`.
           OC serves that role with the dedicated `RequestCalculatorTRNA` step: it is constructed in `karr_composite.py:1137`,
           wired through `_internal_requests_trna` at `karr_composite.py:1531`, and its `next_update` returns

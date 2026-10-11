@@ -23,12 +23,12 @@ integration_touchpoints:
       symbol: "RequestCalculatorProteinPathway.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "513-513"
+        lines: "537-613"
         note: "Protein-pathway request calculator that emits the PP2 request slice."
         symbol: "RequestCalculatorProteinPathway.next_update"
       supporting:
         - path: "opencell/vivarium/karr_request_calculators.py"
-          lines: "21-29"
+          lines: "39-47"
           note: "Availability-based request helper used by the pathway calculator."
           symbol: _request_from_available
         - path: "opencell/vivarium/karr_composite.py"

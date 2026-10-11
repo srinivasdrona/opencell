@@ -28,7 +28,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorRNAPathway.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "335-335"
+        lines: "357-381"
         note: "Shared RNAProcessing + RNAModification request step."
         symbol: "RequestCalculatorRNAPathway.next_update"
       supporting:

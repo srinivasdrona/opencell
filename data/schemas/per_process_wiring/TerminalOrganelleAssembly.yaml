@@ -50,7 +50,7 @@ integration_touchpoints:
           note: Evaluates incorporated and unincorporated requirement planes in MATLAB order.
           symbol: KarrTerminalOrganelleAssemblyProcess._active_reactions
         - path: opencell/vivarium/protein_state.py
-          lines: 178-200
+          lines: 242-264
           note: Defines the single compartmental authority and protected mature aggregate.
           symbol: compartment_counts_schema
     status: "implemented"

@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorProteinPathway.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "468-468"
+        lines: "537-613"
         note: "Shared protein-pathway request helper; ProteinFolding request logic lives inside the shared calculator."
         symbol: "RequestCalculatorProteinPathway.next_update"
       supporting:

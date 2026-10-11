@@ -28,7 +28,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorTRNA.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "266-266"
+        lines: "288-305"
         note: "Availability-based request builder for allocation."
         symbol: "RequestCalculatorTRNA.next_update"
       supporting:
