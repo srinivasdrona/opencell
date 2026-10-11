@@ -59,26 +59,27 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-02) — Stage 2 review failed closed; repair wave next:**
+**Current status (2026-10-11) — B1-B5 harness returned for two final corrections:**
 
 - Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
-  branch `fix/protein-translocation-stage2-20261001`, HEAD `10b6409`; nothing
-  pushed. GPT reviewer `8d293393-e755-4eaf-8639-9cddcacdea43` is idle after a
-  `VERDICT: DID NOT MATCH` review of `4b08282..5836567`.
-- Five blocking findings remain. C5 inspects declarations but never compares
-  real emitted writes; C11 checks internal RNG advancement but not the
-  independently expected three-call output sequence; C12 inspects requests
-  without running evolution. The reachable NumPy RNG fallback supplies
-  zero-based draws to one-based mapping, and request-calculator constructors
-  silently create default dependencies for manifest tests instead of failing
-  closed.
-- The previous 74/74 acceptance result is invalid as promotion evidence because
-  those three contracts were hollow. Keep evidence, wiring YAML, semantic
-  audit, and the fail-closed baseline unchanged at 4/28.
-- Next sequence is Gemini test-writer repair for all five findings, including
-  planted rejecting mutations; Sonnet production repair against frozen tests;
-  parent acceptance rerun; then a fresh independent GPT review. Do not weaken
-  existing PP2, replay anti-oracle, request-algebra, or seed-accounting checks.
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `94dd26f`; nothing
+  pushed. No live process or agent remains from the first repair pass.
+- Gemini committed test-only B1-B5 repairs at `19dcc4e` and provenance at
+  `94dd26f`. Parent WSL reproduction matched **36 GREEN / 5 intentional RED**
+  across 41 focused tests: B1-C5, B2-C11, and B3-C12 are now substantive;
+  current production remains RED only on the intended B4 and B5 contracts.
+- Do not freeze the suite yet. The B4 script-source check can be laundered by
+  adding an unused `MatlabRandStream` token while retaining the blind NumPy RNG
+  assignment. B5 rejects missing/`None` dependencies but does not yet reject
+  wrong dependency types, despite the reviewer requiring missing **or
+  mismatched** dependencies to fail closed.
+- The previous 74/74 acceptance result remains invalid as promotion evidence.
+  Keep evidence, wiring YAML, semantic audit, and the fail-closed baseline
+  unchanged at 4/28.
+- Next sequence: narrow Gemini correction for those two test gaps with planted
+  rejecting mutations; freeze the tests; Sonnet production repair; parent
+  acceptance rerun; fresh independent GPT review. Do not weaken existing PP2,
+  replay anti-oracle, request-algebra, seed-accounting, or B1-B3 checks.
 
 **Current status (2026-10-01 20:30 IST) — Gemini tests frozen; Sonnet next:**
 
