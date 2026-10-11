@@ -19,6 +19,23 @@ def _consumed_wids_from_stoich(substrate_wids: list[str], stoich: np.ndarray) ->
     return [substrate_wids[int(idx)] for idx in consumed_idx]
 
 
+def _require_process_dependencies(
+    owner: str, parameters: dict[str, Any], expected: dict[str, type]
+) -> None:
+    """Fail closed at construction unless every named parameter is the exact process family."""
+    problems: list[str] = []
+    for parameter, expected_cls in expected.items():
+        value = parameters.get(parameter)
+        if value is None:
+            problems.append(f"{parameter} is missing (expected {expected_cls.__name__})")
+        elif not isinstance(value, expected_cls):
+            problems.append(
+                f"{parameter} must be a {expected_cls.__name__}, got {type(value).__name__}"
+            )
+    if problems:
+        raise ValueError(f"{owner} requires explicit process dependencies: " + "; ".join(problems))
+
+
 def _request_from_available(
     substrate_state: dict[str, Any],
     target_wids: list[str],
@@ -169,17 +186,14 @@ class RequestCalculatorRibAsm(Step):
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
-        ribasm_proc = self.parameters.get("ribasm_proc")
-        if ribasm_proc is None:
-            # Precedent: `KarrObservabilityStep` defaults its model
-            # dependencies the same way, so this Step stays introspectable
-            # via `cls({})` (required by
-            # `PROTEIN_PROCESS_MANIFEST`-walking tests) without a live
-            # sibling process reference.
-            from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
+        from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
 
-            ribasm_proc = KarrRibosomeAssemblyProcess({})
-        self._ribasm_proc = ribasm_proc
+        _require_process_dependencies(
+            type(self).__name__,
+            self.parameters,
+            {"ribasm_proc": KarrRibosomeAssemblyProcess},
+        )
+        self._ribasm_proc = self.parameters["ribasm_proc"]
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -381,42 +395,36 @@ class RequestCalculatorProteinPathway(Step):
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
-        self._pp1_proc = self.parameters.get("protein_processing_i_proc")
-        self._pp2_proc = self.parameters.get("protein_processing_ii_proc")
-        self._pm_proc = self.parameters.get("protein_modification_proc")
-        self._pf_proc = self.parameters.get("protein_folding_proc")
-        self._pt_proc = self.parameters.get("protein_translocation_proc")
-        if any(
-            p is None
-            for p in (self._pp1_proc, self._pp2_proc, self._pm_proc, self._pf_proc, self._pt_proc)
-        ):
-            # Precedent: `KarrObservabilityStep` defaults its model
-            # dependencies the same way, so this Step stays introspectable
-            # via `cls({})` without live sibling process references.
-            from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
-            from opencell.vivarium.karr_protein_modification import (
-                KarrProteinModificationProcess,
-            )
-            from opencell.vivarium.karr_protein_processing_i import (
-                KarrProteinProcessingIProcess,
-            )
-            from opencell.vivarium.karr_protein_processing_ii import (
-                KarrProteinProcessingIIProcess,
-            )
-            from opencell.vivarium.karr_protein_translocation import (
-                KarrProteinTranslocationProcess,
-            )
+        from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
+        from opencell.vivarium.karr_protein_modification import (
+            KarrProteinModificationProcess,
+        )
+        from opencell.vivarium.karr_protein_processing_i import (
+            KarrProteinProcessingIProcess,
+        )
+        from opencell.vivarium.karr_protein_processing_ii import (
+            KarrProteinProcessingIIProcess,
+        )
+        from opencell.vivarium.karr_protein_translocation import (
+            KarrProteinTranslocationProcess,
+        )
 
-            if self._pp1_proc is None:
-                self._pp1_proc = KarrProteinProcessingIProcess({})
-            if self._pp2_proc is None:
-                self._pp2_proc = KarrProteinProcessingIIProcess({})
-            if self._pm_proc is None:
-                self._pm_proc = KarrProteinModificationProcess({})
-            if self._pf_proc is None:
-                self._pf_proc = KarrProteinFoldingProcess({})
-            if self._pt_proc is None:
-                self._pt_proc = KarrProteinTranslocationProcess({})
+        _require_process_dependencies(
+            type(self).__name__,
+            self.parameters,
+            {
+                "protein_processing_i_proc": KarrProteinProcessingIProcess,
+                "protein_processing_ii_proc": KarrProteinProcessingIIProcess,
+                "protein_modification_proc": KarrProteinModificationProcess,
+                "protein_folding_proc": KarrProteinFoldingProcess,
+                "protein_translocation_proc": KarrProteinTranslocationProcess,
+            },
+        )
+        self._pp1_proc = self.parameters["protein_processing_i_proc"]
+        self._pp2_proc = self.parameters["protein_processing_ii_proc"]
+        self._pm_proc = self.parameters["protein_modification_proc"]
+        self._pf_proc = self.parameters["protein_folding_proc"]
+        self._pt_proc = self.parameters["protein_translocation_proc"]
 
         self._pp2_consumed = _consumed_wids_from_stoich(
             self._pp2_proc.substrate_wids, self._pp2_proc.reaction_stoich
@@ -729,18 +737,16 @@ class RequestCalculatorPTransloc(_SafeDtMixin, Step):
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
-        pt_proc = self.parameters.get("protein_translocation_proc")
-        if pt_proc is None:
-            # Precedent: `KarrObservabilityStep` defaults its model
-            # dependencies the same way, so this Step stays introspectable
-            # via `cls({})` (required by
-            # `PROTEIN_PROCESS_MANIFEST`-walking tests) without a live
-            # sibling process reference.
-            from opencell.vivarium.karr_protein_translocation import (
-                KarrProteinTranslocationProcess,
-            )
+        from opencell.vivarium.karr_protein_translocation import (
+            KarrProteinTranslocationProcess,
+        )
 
-            pt_proc = KarrProteinTranslocationProcess({})
+        _require_process_dependencies(
+            type(self).__name__,
+            self.parameters,
+            {"protein_translocation_proc": KarrProteinTranslocationProcess},
+        )
+        pt_proc = self.parameters["protein_translocation_proc"]
         self._pt_proc = pt_proc
         self._proc = pt_proc
         self._request_wids = list(self._pt_proc.allocation_substrate_wids)

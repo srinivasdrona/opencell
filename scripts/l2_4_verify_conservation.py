@@ -222,6 +222,8 @@ class ConservationCollector:
         self.per_tick_process_wid_deltas.clear()
 
     def _seed_entities(self, *, seed: int) -> None:
+        from opencell.util.matlab_rng import MatlabRandStream
+
         names = sorted(self._entities.keys())
         children = np.random.SeedSequence(int(seed)).spawn(len(names))
         for idx, name in enumerate(names):
@@ -232,7 +234,10 @@ class ConservationCollector:
             if isinstance(params, dict) and "rng_seed" in params:
                 params["rng_seed"] = entity_seed
             if hasattr(entity, "_rng"):
-                entity._rng = np.random.default_rng(entity_seed)
+                if isinstance(entity._rng, MatlabRandStream):
+                    entity._rng = MatlabRandStream(entity_seed)
+                else:
+                    entity._rng = np.random.default_rng(entity_seed)
 
     def _patch_entities(self) -> None:
         for entity_name, entity_obj in self._entities.items():

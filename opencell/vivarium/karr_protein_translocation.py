@@ -345,6 +345,17 @@ class KarrProteinTranslocationProcess(Process):
         return int(max(0.0, np.floor(allocated)))
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        # Fail closed before reading or selecting anything: the copy-order
+        # mapping below (`searchsorted(..., side="left")`) is only correct for
+        # MATLAB's one-based `randperm`; a zero-based NumPy permutation
+        # silently duplicates/skips WIDs.
+        if not isinstance(self._rng, MatlabRandStream):
+            raise TypeError(
+                "karr_protein_translocation requires a MatlabRandStream _rng "
+                "(one-based MATLAB randperm behavior); got "
+                f"{type(self._rng).__name__}"
+            )
+
         protein_state = states.get("protein", {})
         protein_counts_state = protein_state.get("counts", {})
         enzyme_counts_state = protein_state.get("enzyme_counts", {})
@@ -400,10 +411,7 @@ class KarrProteinTranslocationProcess(Process):
         # the F-trace oracle: drawing after the feasibility check desyncs
         # the stream the first time pending>0 coincides with a zero-ATP
         # tick, silently flipping which WID a later tick's draw selects.
-        if hasattr(self._rng, "randperm"):
-            copy_order = self._rng.randperm(total_copies)
-        else:
-            copy_order = self._rng.permutation(total_copies)
+        copy_order = self._rng.randperm(total_copies)
 
         atp_remaining = self._available_substrate(allocated_state, self.atp_wid)
         gtp_remaining = self._available_substrate(allocated_state, self.gtp_wid)
