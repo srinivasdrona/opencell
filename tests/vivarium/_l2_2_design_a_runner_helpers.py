@@ -871,12 +871,11 @@ def _format_ensemble_oracle(
             "before_substrates": before_channel("substrates", "before_substrates"),
             "before_enzymes": before_channel("enzymes", "before_enzymes"),
             "before_bound_enzymes": before_channel("boundEnzymes", "before_bound_enzymes"),
-            # Day-37 fix: ProteinTranslocation's trace stores monomers as
-            # (6 compartments, 482 base proteins) per tick. The v2 ensemble
-            # loader flattens this to a 1-D vector of length 2892. Project
-            # back to 482 by summing across compartments before passing to
-            # the runner — OC's monomer_wids has 482 entries and would
-            # crash on shape mismatch otherwise. See probe_monomer_shape.py.
+            # ProteinTranslocation's trace stores monomers as (6 compartments,
+            # 482 base proteins) per tick; the v2 ensemble loader flattens
+            # this to 2892 compartment-major positions. Keep all 2892: the
+            # compartment axis is exactly what translocation moves copies
+            # across, so collapsing it would hide that movement.
             "before_monomers": np.asarray(
                 [_project_protein_translocation_monomer_cube(seed_matrix) for seed_matrix in before_monomers_raw],
                 dtype=np.float64,
@@ -2565,6 +2564,9 @@ def _run_protein_translocation_tick(seed: int, tick: int, state: dict[str, Any])
                 observable="monomers",
                 wids=monomer_wids,
                 bound_enzymes_before=bound_enzymes_before,
+                # Positions outside the translocation authority pass through
+                # exactly; only the authority WIDs take the process's update.
+                before_vector=np.asarray(state["oracle_before_monomers"], dtype=np.float64),
             ),
             dtype=np.float64,
         ),
@@ -3012,49 +3014,35 @@ def _project_protein_decay_monomer_cube(values: np.ndarray) -> np.ndarray:
 
 
 def _project_protein_translocation_monomer_cube(values: np.ndarray) -> np.ndarray:
-    """Project ProteinTranslocation's per-tick monomer cube down to the 482-protein base.
+    """Return ProteinTranslocation's per-tick monomer cube as full 2,892-position vectors.
 
-    Day-37 fix: ProteinTranslocation's trace stores monomers as
-    (6 compartments, 482 base proteins) per tick (NOT 4820-form-flattened
-    like ProteinDecay — Translocation operates on base proteins, not forms).
-    The v2 ensemble loader flattens to length 6*482=2892. Reshape back to
-    (6, 482) per tick, then sum across compartments to get (482,).
+    The trace stores monomers as (6 compartments, 482 base proteins) per tick, in
+    Karr compartment order c, d, e, m, tc, tm. The v2 ensemble loader flattens each
+    tick to 6*482=2892 positions, compartment-major (offset = compartment * 482 +
+    protein index). Accept (ticks, 2892) or (ticks, 6, 482) and return
+    (ticks, 2892) in that order.
 
-    Rationale for compartment-sum (vs cytosol-only): OC's KarrProteinTranslocation
-    biology tracks total protein count and uses `protein.location` to track
-    where each protein is. The L2.2 distributional comparison is against the
-    total count per WID, summed across compartments. This matches Karr's
-    biology semantics — Translocation MOVES proteins between compartments;
-    the total count is invariant during translocation (only locations change).
-
-    A previous attempt (no projection at all) caused a shape (482,) into
-    shape (2892,) crash in _run_protein_translocation_tick's overlay step.
-    See scripts/probe_monomer_shape.py for the trace-shape audit.
+    Translocation conserves the per-WID total across compartments and only moves
+    copies between them, so summing compartments (or keeping a single one) would
+    erase exactly the movement this process performs. The compartment axis is
+    therefore never collapsed here, and the legacy (ticks, 482) shape is rejected
+    rather than treated as a sufficient observable.
     """
     arr = np.asarray(values, dtype=np.float64)
     compartment_count = 6
     protein_count = 482
     flat_width = compartment_count * protein_count
 
-    if arr.ndim == 2:
-        if arr.shape[-1] == flat_width:
-            arr = arr.reshape(arr.shape[0], compartment_count, protein_count)
-        elif arr.shape[-1] == protein_count:
-            # Already projected; pass through.
-            return arr.astype(np.float64)
-        else:
-            raise ValueError(
-                f"ProteinTranslocation monomers ensemble width {arr.shape[-1]} "
-                f"is neither flat_width={flat_width} nor projected={protein_count}"
-            )
-    elif arr.ndim != 3:
-        raise ValueError(
-            f"ProteinTranslocation monomers ensemble has unexpected ndim={arr.ndim}, "
-            f"shape={arr.shape}"
-        )
-
-    # Sum across compartments (axis=1 if ndim==3 after reshape: (n_ticks, 6, 482) -> (n_ticks, 482))
-    return arr.sum(axis=1, dtype=np.float64)
+    if arr.ndim == 2 and arr.shape[-1] == flat_width:
+        return arr.copy()
+    if arr.ndim == 3 and arr.shape[1:] == (compartment_count, protein_count):
+        return arr.reshape(arr.shape[0], flat_width)
+    raise ValueError(
+        "ProteinTranslocation monomers ensemble must be (ticks, "
+        f"{flat_width}) or (ticks, {compartment_count}, {protein_count}); got "
+        f"shape={arr.shape}. The compartment-collapsed (ticks, {protein_count}) "
+        "projection is rejected because it hides translocation movement."
+    )
 
 
 def _project_metabolism_substrate_cube(values: np.ndarray) -> np.ndarray:
