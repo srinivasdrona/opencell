@@ -17,6 +17,7 @@ Freezes the following contracts for ChromosomeCondensation live chassis integrat
 7. Same-tick request -> allocator grant -> SMC binding contract (Iteration 2).
 8. Engine construction must not mutate CC-owned biological initial state before update.
 9. KarrChromosomeCondensationEvolutionStep must enforce one-shot init lifecycle.
+10. Reusing the same Composite across multiple Engine constructions must preserve biological state.
 """
 
 from __future__ import annotations
@@ -1263,3 +1264,94 @@ def test_chassis_v6_chromosome_condensation_evolution_step_lifecycle_contract() 
     active_state["complex"]["counts"][cc.smc_adp_wid] = 3.0
 
     verify_step_one_shot_lifecycle(step, init_state=init_state, active_state=active_state, cc=cc)
+
+
+# ==============================================================================
+# Contract 10: Composite-reuse Engine initialization state preservation contract.
+# ==============================================================================
+
+
+def test_chassis_v6_chromosome_condensation_composite_reuse_engine_init_preserves_biological_state_contract() -> None:
+    """Contract 10: Reusing a Composite across multiple Engine constructions must preserve biological state.
+
+    Positive hard-RED regression test (fails on current fc16545 because the Step's initialization
+    call flag is spent during Engine #1, causing Engine #2 construction to mutate biological state at t=0):
+    1. Builds one production v6 Composite and snapshots all CC-owned biological state.
+    2. Constructs Engine #1 from that Composite, no update; asserts biological state unchanged.
+    3. Constructs Engine #2 from the SAME Composite object, no update; asserts biological state still unchanged.
+    4. Normalizes absent request/allocation mappings and Engine-declared zero defaults.
+    """
+    composite = build_karr_chassis_v6()
+    cc = composite["processes"]["karr_chromosome_condensation"]
+
+    # Snapshot CC-owned state before any Engine construction
+    smc_before = float(composite["state"]["complex"]["counts"][cc.smc_wid])
+    smc_adp_before = float(composite["state"]["complex"]["counts"][cc.smc_adp_wid])
+    bound_before = float(composite["state"]["boundEnzymes"][cc.smc_adp_wid])
+    chrom_count_before = float(composite["state"]["chromosome"]["smc_bound_count"])
+    cond_before = float(composite["state"]["chromosome"]["condensation_level"])
+    complex_bound_sites_before = deepcopy(composite["state"]["chromosome"].get("complexBoundSites"))
+
+    tracked_substrates = [cc.atp_wid, cc.water_wid, cc.pi_wid, cc.hydrogen_wid, "ADP"]
+    substrates_before = {
+        wid: float(composite["state"]["substrates"].get(wid, 0.0))
+        for wid in tracked_substrates
+    }
+
+    # Construct Engine #1 from the Composite without updating
+    engine1 = Engine(composite=composite, emit_step=1.0, display_info=False)
+    s1 = deepcopy(engine1.state.get_value())
+
+    # Assert biological states are unchanged after Engine #1
+    s1_smc = float(s1["complex"]["counts"][cc.smc_wid])
+    assert s1_smc == smc_before, f"Free SMC mutated on Engine #1 init: {smc_before} -> {s1_smc}"
+    s1_smc_adp = float(s1["complex"]["counts"][cc.smc_adp_wid])
+    assert s1_smc_adp == smc_adp_before, f"Free SMC-ADP mutated on Engine #1 init: {smc_adp_before} -> {s1_smc_adp}"
+    s1_bound = float(s1["boundEnzymes"][cc.smc_adp_wid])
+    assert s1_bound == bound_before, f"Bound SMC-ADP mutated on Engine #1 init: {bound_before} -> {s1_bound}"
+    s1_chrom_count = float(s1["chromosome"]["smc_bound_count"])
+    assert s1_chrom_count == chrom_count_before, f"Chromosome smc_bound_count mutated on Engine #1 init: {chrom_count_before} -> {s1_chrom_count}"
+    s1_cond = float(s1["chromosome"]["condensation_level"])
+    assert s1_cond == cond_before, f"Chromosome condensation_level mutated on Engine #1 init: {cond_before} -> {s1_cond}"
+    for wid in tracked_substrates:
+        s1_sub = float(s1["substrates"].get(wid, 0.0))
+        assert s1_sub == substrates_before[wid], f"Substrate '{wid}' mutated on Engine #1 init: {substrates_before[wid]} -> {s1_sub}"
+    if complex_bound_sites_before is not None:
+        assert_sparse_triplets_equal(
+            s1["chromosome"].get("complexBoundSites"),
+            complex_bound_sites_before,
+            msg="Chromosome complexBoundSites on Engine #1",
+        )
+    for wid, val in s1.get("requests", {}).get(cc.name, {}).items():
+        assert float(val) == 0.0, f"CC request '{wid}' must be zero on Engine #1 init, got {val}"
+    for wid, val in s1.get("substrates_allocated", {}).get(cc.name, {}).items():
+        assert float(val) == 0.0, f"CC allocation '{wid}' must be zero on Engine #1 init, got {val}"
+
+    # Construct Engine #2 from the SAME Composite object without updating
+    engine2 = Engine(composite=composite, emit_step=1.0, display_info=False)
+    s2 = deepcopy(engine2.state.get_value())
+
+    # Assert biological states are still unchanged after Engine #2
+    s2_smc = float(s2["complex"]["counts"][cc.smc_wid])
+    assert s2_smc == smc_before, f"Free SMC mutated on Engine #2 init: {smc_before} -> {s2_smc}"
+    s2_smc_adp = float(s2["complex"]["counts"][cc.smc_adp_wid])
+    assert s2_smc_adp == smc_adp_before, f"Free SMC-ADP mutated on Engine #2 init: {smc_adp_before} -> {s2_smc_adp}"
+    s2_bound = float(s2["boundEnzymes"][cc.smc_adp_wid])
+    assert s2_bound == bound_before, f"Bound SMC-ADP mutated on Engine #2 init: {bound_before} -> {s2_bound}"
+    s2_chrom_count = float(s2["chromosome"]["smc_bound_count"])
+    assert s2_chrom_count == chrom_count_before, f"Chromosome smc_bound_count mutated on Engine #2 init: {chrom_count_before} -> {s2_chrom_count}"
+    s2_cond = float(s2["chromosome"]["condensation_level"])
+    assert s2_cond == cond_before, f"Chromosome condensation_level mutated on Engine #2 init: {cond_before} -> {s2_cond}"
+    for wid in tracked_substrates:
+        s2_sub = float(s2["substrates"].get(wid, 0.0))
+        assert s2_sub == substrates_before[wid], f"Substrate '{wid}' mutated on Engine #2 init: {substrates_before[wid]} -> {s2_sub}"
+    if complex_bound_sites_before is not None:
+        assert_sparse_triplets_equal(
+            s2["chromosome"].get("complexBoundSites"),
+            complex_bound_sites_before,
+            msg="Chromosome complexBoundSites on Engine #2",
+        )
+    for wid, val in s2.get("requests", {}).get(cc.name, {}).items():
+        assert float(val) == 0.0, f"CC request '{wid}' must be zero on Engine #2 init, got {val}"
+    for wid, val in s2.get("substrates_allocated", {}).get(cc.name, {}).items():
+        assert float(val) == 0.0, f"CC allocation '{wid}' must be zero on Engine #2 init, got {val}"
