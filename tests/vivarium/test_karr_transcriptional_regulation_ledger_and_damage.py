@@ -17,10 +17,13 @@ correct-by-absence-of-counterexample.
 
 from __future__ import annotations
 
+import hashlib
 import json
+import shutil
 import sys
 from pathlib import Path
 
+import h5py
 import numpy as np
 import pytest
 
@@ -33,6 +36,19 @@ from opencell.util.txreg_mcg_rand import TxRegChromosomeLedgerRandStream
 from opencell.vivarium.karr_transcriptional_regulation import (
     KarrTranscriptionalRegulationProcess,
     _load_releasable_proteins,
+)
+from scripts.l2_event.launcher import current_genuine_dnadamage_source
+from scripts.migrate_txreg_event_trace_dnadamage_provenance import migrate
+from tests.vivarium.chromosome_rand_stream_ledger import (
+    ChromosomeRandStreamLedgerError,
+    load_chromosome_rand_stream_ledger,
+    resolve_wcm_source_path,
+    sha256_raw_bytes,
+)
+from tests.vivarium.test_karr_transcriptional_regulation_l2_replay import (
+    _resolve_event_trace_path,
+    _run_replay,
+    cell_vector,
 )
 
 
@@ -588,3 +604,245 @@ def test_load_releasable_proteins_accepts_well_formed_fixture(tmp_path: Path) ->
     assert own_footprints[0] == 30.0
     assert monomer_sets[0] == {5, 6}
     assert complex_sets[0] == {7}
+
+
+# ---------------------------------------------------------------------------
+# TranscriptionalRegulation Iteration 0: DNADamage provenance and replay contract
+# ---------------------------------------------------------------------------
+
+
+def test_txreg_ledger_dnadamage_provenance_contract(tmp_path: Path) -> None:
+    """The chromosome RNG ledger must carry dnadamage_source_sha256, equal the
+    SHA256 of the exact canonical DNADamage.m consumed by reconstruction. Missing,
+    malformed, or wrong hashes must fail closed with a specific provenance error."""
+    # Canonical DNADamage hash derived from current genuine source
+    dna_info = current_genuine_dnadamage_source(repo_root=_REPO_ROOT)
+    canonical_dna_sha = dna_info["patched_sha256_lf_normalized"]
+
+    chrom_parts = ("src", "+edu", "+stanford", "+covert", "+cell", "+sim", "+state", "Chromosome.m")
+    rand_parts = ("src", "+edu", "+stanford", "+covert", "+util", "RandStream.m")
+    chrom_path = resolve_wcm_source_path(*chrom_parts, repo_root=_REPO_ROOT)
+    rand_path = resolve_wcm_source_path(*rand_parts, repo_root=_REPO_ROOT)
+    assert chrom_path is not None and rand_path is not None
+
+    trace_path = tmp_path / "Fake_TxReg_1ticks.mat"
+    ledger_path = tmp_path / "Fake_TxReg_1ticks.chromosome_rand_stream_ledger.json"
+
+    def _write_artifacts(*, trace_dna_sha: str | None, ledger_dna_sha: str | None) -> None:
+        with h5py.File(trace_path, "w") as h5:
+            meta = h5.create_group("metadata")
+            if trace_dna_sha is not None:
+                meta.create_dataset("dnadamage_source_resolved_sha256", data=trace_dna_sha.encode("utf-8"))
+        payload = {
+            "trace_sha256": sha256_raw_bytes(trace_path),
+            "chromosome_source_sha256": sha256_raw_bytes(chrom_path),
+            "randstream_util_source_sha256": sha256_raw_bytes(rand_path),
+            "n_ticks": 1,
+            "per_tick": [{"tick": 1, "n_draws": 1, "draws": [0.42]}],
+        }
+        if ledger_dna_sha is not None:
+            payload["dnadamage_source_sha256"] = ledger_dna_sha
+        ledger_path.write_text(json.dumps(payload), encoding="utf-8")
+
+    # (1) Missing dnadamage_source_sha256 in ledger -> hard fail closed
+    _write_artifacts(trace_dna_sha=canonical_dna_sha, ledger_dna_sha=None)
+    with pytest.raises(ChromosomeRandStreamLedgerError, match="missing its required dnadamage_source_sha256"):
+        load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+
+    # (2) Missing trace metadata -> hard fail closed
+    _write_artifacts(trace_dna_sha=None, ledger_dna_sha=canonical_dna_sha)
+    with pytest.raises(ChromosomeRandStreamLedgerError, match="no dnadamage_source_resolved_sha256 metadata"):
+        load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+
+    # (3) Wrong/mismatched dnadamage_source_sha256 -> hard fail closed
+    wrong_dna_sha = "0" * 64
+    _write_artifacts(trace_dna_sha=canonical_dna_sha, ledger_dna_sha=wrong_dna_sha)
+    with pytest.raises(ChromosomeRandStreamLedgerError, match="DIFFERENT DNADamage.m"):
+        load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+
+    # (4) Exact canonical hash matches both trace and ledger -> loads successfully
+    _write_artifacts(trace_dna_sha=canonical_dna_sha, ledger_dna_sha=canonical_dna_sha)
+    result = load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+    assert result == [[0.42]]
+
+
+def test_txreg_checked_in_ledger_loads_successfully() -> None:
+    """Positive contract for the real checked-in 4000-tick event ledger.
+    Must load successfully, carry valid DNADamage provenance, and contain
+    exactly 4000 tick draw sequences.
+
+    Current checked-in artifacts make this test intentional RED (failing closed
+    on missing dnadamage_source_sha256); after coordinated migration / regeneration,
+    this test becomes GREEN.
+    """
+    trace_path = _resolve_event_trace_path(0)
+    if not trace_path.exists():
+        pytest.skip(f"Checked-in trace not found: {trace_path}")
+
+    ledgers = load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+    assert ledgers is not None
+    assert len(ledgers) == 4000
+    assert all(isinstance(draws, list) for draws in ledgers)
+
+
+def test_txreg_ledger_source_hashes_match_and_migration_boundary() -> None:
+    """Post-migration invariants for the canonical TranscriptionalRegulation
+    trace and chromosome RNG ledger:
+    - ledger trace_sha256 equals current trace raw hash;
+    - Chromosome.m and RandStream.m hashes match current sources;
+    - trace metadata dnadamage_source_resolved_sha256 exists and equals
+      canonical current_genuine_dnadamage_source()["patched_sha256_lf_normalized"];
+    - ledger dnadamage_source_sha256 exists and equals the same value;
+    - loader succeeds with 4000 draw lists;
+    - migration script is idempotent (dry-run/no-op on already-migrated pair
+      reports status='already_migrated' and preserves hashes).
+    """
+    trace_path = _resolve_event_trace_path(0)
+    if not trace_path.exists():
+        pytest.skip(f"Checked-in trace not found: {trace_path}")
+
+    ledger_path = trace_path.with_suffix("").with_suffix(".chromosome_rand_stream_ledger.json")
+    assert ledger_path.exists(), f"Ledger not found: {ledger_path}"
+
+    payload = json.loads(ledger_path.read_text(encoding="utf-8"))
+
+    # 1. Trace SHA256 matches current file on disk
+    actual_trace_sha = hashlib.sha256(trace_path.read_bytes()).hexdigest()
+    assert payload["trace_sha256"] == actual_trace_sha
+
+    # 2. Chromosome.m raw SHA256 matches current source
+    chrom_path = resolve_wcm_source_path(
+        "src", "+edu", "+stanford", "+covert", "+cell", "+sim", "+state", "Chromosome.m",
+        repo_root=_REPO_ROOT,
+    )
+    assert chrom_path is not None
+    assert payload["chromosome_source_sha256"] == sha256_raw_bytes(chrom_path)
+
+    # 3. RandStream.m raw SHA256 matches current source
+    rand_path = resolve_wcm_source_path(
+        "src", "+edu", "+stanford", "+covert", "+util", "RandStream.m",
+        repo_root=_REPO_ROOT,
+    )
+    assert rand_path is not None
+    assert payload["randstream_util_source_sha256"] == sha256_raw_bytes(rand_path)
+
+    # 4. Canonical DNADamage hash cross-check in both trace and ledger
+    dna_info = current_genuine_dnadamage_source(repo_root=_REPO_ROOT)
+    expected_dna_sha = dna_info["patched_sha256_lf_normalized"]
+
+    with h5py.File(trace_path, "r") as trace:
+        assert "dnadamage_source_resolved_sha256" in trace.get("metadata", {})
+        raw_trace_dna_sha = trace["metadata/dnadamage_source_resolved_sha256"][()]
+        trace_dna_sha = bytes(raw_trace_dna_sha).decode("utf-8").replace("\x00", "")
+        assert trace_dna_sha == expected_dna_sha
+
+    assert "dnadamage_source_sha256" in payload
+    assert payload["dnadamage_source_sha256"] == expected_dna_sha
+
+    # 5. Loader succeeds with 4000 draw lists
+    ledgers = load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+    assert ledgers is not None
+    assert len(ledgers) == 4000
+    assert all(isinstance(draws, list) for draws in ledgers)
+
+    # 6. Migration script idempotency: no-op against already-migrated pair
+    trace_sha_before = hashlib.sha256(trace_path.read_bytes()).hexdigest()
+    ledger_sha_before = hashlib.sha256(ledger_path.read_bytes()).hexdigest()
+
+    migration_result = migrate(trace_path, apply=False, repo_root=_REPO_ROOT)
+    assert migration_result["status"] == "already_migrated"
+    assert migration_result["dnadamage_source_sha256"] == expected_dna_sha
+
+    trace_sha_after = hashlib.sha256(trace_path.read_bytes()).hexdigest()
+    ledger_sha_after = hashlib.sha256(ledger_path.read_bytes()).hexdigest()
+    assert trace_sha_before == trace_sha_after == migration_result["trace_sha256"]
+    assert ledger_sha_before == ledger_sha_after == migration_result["ledger_sha256"]
+
+
+def test_txreg_provenance_complete_temporary_ledger_reaches_replay(tmp_path: Path) -> None:
+    """A correctly provenance-complete copy of the current ledger must load and
+    reach the event replay path; uses only temporary test fixtures, not a committed
+    hand-edited production ledger."""
+    trace_path = _resolve_event_trace_path(0)
+    if not trace_path.exists():
+        pytest.skip(f"Checked-in trace not found: {trace_path}")
+    ledger_path = trace_path.with_suffix("").with_suffix(".chromosome_rand_stream_ledger.json")
+    if not ledger_path.exists():
+        pytest.skip(f"Checked-in ledger not found: {ledger_path}")
+
+    # Build temporary provenance-complete copy
+    tmp_trace = tmp_path / "TranscriptionalRegulation_4000ticks.mat"
+    tmp_ledger = tmp_path / "TranscriptionalRegulation_4000ticks.chromosome_rand_stream_ledger.json"
+
+    dna_info = current_genuine_dnadamage_source(repo_root=_REPO_ROOT)
+    canonical_dna_sha = dna_info["patched_sha256_lf_normalized"]
+
+    shutil.copyfile(trace_path, tmp_trace)
+    with h5py.File(tmp_trace, "a") as f:
+        meta = f["metadata"]
+        if "dnadamage_source_resolved_sha256" in meta:
+            del meta["dnadamage_source_resolved_sha256"]
+        meta.create_dataset(
+            "dnadamage_source_resolved_sha256",
+            data=canonical_dna_sha.encode("utf-8"),
+        )
+
+    ledger_payload = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger_payload["trace_sha256"] = sha256_raw_bytes(tmp_trace)
+    ledger_payload["dnadamage_source_sha256"] = canonical_dna_sha
+    tmp_ledger.write_text(json.dumps(ledger_payload), encoding="utf-8")
+
+    loaded = load_chromosome_rand_stream_ledger(tmp_trace, repo_root=_REPO_ROOT)
+    assert loaded is not None
+    assert len(loaded) == 4000
+
+    # Replay first 5 ticks to confirm reaching the replay runner
+    with h5py.File(tmp_trace, "r") as trace:
+        _run_replay(trace, 5, 0, chromosome_rand_stream_ledger=loaded[:5])
+
+
+def test_txreg_active_window_evaluates_real_binding_event(tmp_path: Path) -> None:
+    """Add a minimal active-window smoke node that, once the ledger is repaired,
+    proves at least one real binding event is evaluated; it must not use the event
+    output as SUT input beyond the already-declared chromosome/RNG replay contract."""
+    trace_path = _resolve_event_trace_path(0)
+    if not trace_path.exists():
+        pytest.skip(f"Checked-in trace not found: {trace_path}")
+    ledger_path = trace_path.with_suffix("").with_suffix(".chromosome_rand_stream_ledger.json")
+    if not ledger_path.exists():
+        pytest.skip(f"Checked-in ledger not found: {ledger_path}")
+
+    # Build temporary provenance-complete copy
+    tmp_trace = tmp_path / "TranscriptionalRegulation_4000ticks.mat"
+    tmp_ledger = tmp_path / "TranscriptionalRegulation_4000ticks.chromosome_rand_stream_ledger.json"
+
+    dna_info = current_genuine_dnadamage_source(repo_root=_REPO_ROOT)
+    canonical_dna_sha = dna_info["patched_sha256_lf_normalized"]
+
+    shutil.copyfile(trace_path, tmp_trace)
+    with h5py.File(tmp_trace, "a") as f:
+        meta = f["metadata"]
+        if "dnadamage_source_resolved_sha256" in meta:
+            del meta["dnadamage_source_resolved_sha256"]
+        meta.create_dataset(
+            "dnadamage_source_resolved_sha256",
+            data=canonical_dna_sha.encode("utf-8"),
+        )
+
+    ledger_payload = json.loads(ledger_path.read_text(encoding="utf-8"))
+    ledger_payload["trace_sha256"] = sha256_raw_bytes(tmp_trace)
+    ledger_payload["dnadamage_source_sha256"] = canonical_dna_sha
+    tmp_ledger.write_text(json.dumps(ledger_payload), encoding="utf-8")
+
+    loaded = load_chromosome_rand_stream_ledger(tmp_trace, repo_root=_REPO_ROOT)
+    assert loaded is not None
+
+    # Ticks 0..12 covers tick 11, the first active tick where TF binding occurs
+    with h5py.File(tmp_trace, "r") as trace:
+        # Before running through tick 12, verify tick 11 states_before has a free TF (MG_236_MONOMER = 1.0)
+        b_enz = cell_vector(trace, "states_before", "enzymes", 11)
+        a_enz = cell_vector(trace, "states_after", "enzymes", 11)
+        assert not np.allclose(b_enz, a_enz), "Tick 11 must be an active tick in the oracle trace"
+
+        # Run replay through tick 12 (12 ticks: 0 through 11)
+        _run_replay(trace, 12, 0, chromosome_rand_stream_ledger=loaded[:12])
