@@ -145,6 +145,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   trace/hash fields changed. One frozen test still asserts the pre-migration
   metadata field is absent; test author must replace it with post-migration
   hash/metadata/idempotency assertions before review.
+- TxReg post-migration tests are now frozen through `dfd005b`. Parent acceptance
+  is **97/97** fast tests, **2/2** replay including all 4000 ticks, and migration
+  CLI idempotency returns `already_migrated` with trace hash `645a2e68...`,
+  ledger hash `ac2426dc...`, 135 active draw ticks, and unchanged draw digest
+  `88c7c28c...`. Fresh GPT review is required before integration.
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
