@@ -120,6 +120,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   source seed remains a strict XFAIL due to external allocator/request
   starvation. No fabricated `60`-copy constant or direct allocation injection
   is allowed. Same-tick consumption remains a separate strict XFAIL.
+- The first derived-threshold revision was off by one because it combined
+  post-tick competing requests with the pre-tick ATP pool (`36234` vs real
+  post-tick `36229`). Request 28 therefore floors to zero; request 29 grants one.
+  The helper must derive both requests and pools from the same post-tick Engine
+  snapshot before CC implementation can commit.
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
