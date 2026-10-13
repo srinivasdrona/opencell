@@ -139,6 +139,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Shared-state Stage A+B test worktree:
   `E:\opencell-worktrees\fix-shared-chromosome-state-stage-ab`, base `a804eb7`.
   Live Gemini test writer: `e6e8dbc6-ce88-428d-9b36-a32070b0afea`.
+- Stage A+B tests landed at `2b4e7a1` / `e9a8f8a` with reported
+  **12 PASS / 7 intentional RED**, while the existing TxReg fast/replay baseline
+  remains green. Parent review of the frozen contracts is pending before any
+  implementer launch.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
@@ -157,6 +161,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   post-allocation evolution Step referencing that exact instance.
 - Live CC Iteration-2 implementer:
   `8f4a1991-d56a-411b-a946-96261fd6aa82`.
+- CC implementer landed production `e81edc5` / provenance `fbd4040`, but three
+  frozen tests are invalid after the phase split: the old two-tick stress test
+  requires binding specifically on tick 2 even when same-tick binding correctly
+  occurs on tick 1; mutation wrappers placed in `steps` subclass `Process`
+  instead of `Step`; and the lag wrapper consumes its first call during Engine
+  initialization. Tests must be corrected before acceptance; production is not
+  integrated.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
