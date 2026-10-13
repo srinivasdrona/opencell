@@ -11,12 +11,12 @@ Freezes the following contracts for ChromosomeCondensation live chassis integrat
    ATP/H2O, produces ADP/PI/H, and conserves SMC complex stoichiometry across ticks.
 5. Verifier and planted canaries prove that removing enzyme topology, substituting
    zero enzyme input, deferring evolution by one tick, duplicating evolution, or
-   evolving at timestep 0.0 fails closed, and that aggregate condensation_level
-   relaxation is never accepted as binding activity.
+   failing the step lifecycle (always-evolve on init or always-noop on ticks) fails
+   closed, and that aggregate condensation_level relaxation is never accepted as binding activity.
 6. Authoritative CC Process is request-only in orchestrated chassis mode (Iteration 2).
 7. Same-tick request -> allocator grant -> SMC binding contract (Iteration 2).
 8. Engine construction must not mutate CC-owned biological initial state before update.
-9. KarrChromosomeCondensationEvolutionStep must return empty update on timestep=0.0.
+9. KarrChromosomeCondensationEvolutionStep must enforce one-shot init lifecycle.
 """
 
 from __future__ import annotations
@@ -970,23 +970,94 @@ class _AlwaysEvolveEvolutionWrapper(Step):
         }
 
 
-def verify_step_zero_timestep_no_op(step: Any, states: dict[str, Any]) -> None:
-    """Verify that calling step.next_update with timestep=0.0 returns an empty dict and effects no evolution."""
-    update = step.next_update(0.0, states)
-    if update != {}:
+class _AlwaysNoopEvolutionWrapper(Step):
+    """Planted mutation wrapper: always return empty update (never evolve on active ticks)."""
+
+    def __init__(self, target: Any) -> None:
+        object.__setattr__(self, "_target", target)
+        super().__init__(parameters=dict(getattr(target, "parameters", {})))
+        self.name = getattr(target, "name", "always_noop_wrapper")
+
+    def __getattr__(self, name: str) -> Any:
+        if name == "_target":
+            raise AttributeError(name)
+        target = self.__dict__.get("_target")
+        if target is None:
+            raise AttributeError(name)
+        return getattr(target, name)
+
+    def ports_schema(self) -> dict[str, Any]:
+        return self._target.ports_schema()
+
+    def calculate_timestep(self, states: dict[str, Any]) -> float:
+        calc_fn = getattr(self._target, "calculate_timestep", None)
+        if callable(calc_fn):
+            return float(calc_fn(states))
+        return 1.0
+
+    def update_condition(self, timestep: float, states: dict[str, Any]) -> bool:
+        cond_fn = getattr(self._target, "update_condition", None)
+        if callable(cond_fn):
+            return bool(cond_fn(timestep, states))
+        return True
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep, states
+        return {}
+
+
+def verify_step_one_shot_lifecycle(
+    step: Any,
+    *,
+    init_state: dict[str, Any],
+    active_state: dict[str, Any],
+    cc: Any,
+) -> None:
+    """Verify one-shot lifecycle: call 1 (Engine init) returns {}, call 2+ executes evolution."""
+    update1 = step.next_update(0.0, init_state)
+    if update1 != {}:
         raise AssertionError(
-            f"Step {getattr(step, 'name', type(step).__name__)}.next_update must return empty dict on "
-            f"timestep=0.0 (Engine initialization), but returned non-empty updates: {list(update.keys())} -> {update}"
+            f"Step {getattr(step, 'name', type(step).__name__)}.next_update first invocation (Engine initialization) "
+            f"must return empty dict {{}}, but returned non-empty updates: {list(update1.keys())} -> {update1}"
+        )
+
+    update2 = step.next_update(0.0, active_state)
+    bound_delta = float(update2.get("boundEnzymes", {}).get(cc.smc_adp_wid, 0.0))
+    if bound_delta <= 0.0:
+        raise AssertionError(
+            f"Step {getattr(step, 'name', type(step).__name__)}.next_update subsequent invocation with active "
+            f"allocated grant must execute evolution, but returned no bound SMC: update={update2}"
         )
 
 
 def test_planted_canary_verifier_rejects_always_evolve_step_mutation() -> None:
-    """Canary (f): verifier must reject an evolution step that updates state at timestep 0.0."""
+    """Canary (f1): verifier must reject an evolution step that mutates state on initial call."""
     composite = build_karr_chassis_v6()
+    cc = composite["processes"]["karr_chromosome_condensation"]
     step = composite["steps"]["karr_chromosome_condensation_evolution"]
     mutated_step = _AlwaysEvolveEvolutionWrapper(step)
-    with pytest.raises(AssertionError, match="must return empty dict on timestep=0.0"):
-        verify_step_zero_timestep_no_op(mutated_step, composite["state"])
+
+    init_state = deepcopy(composite["state"])
+    active_state = deepcopy(composite["state"])
+    active_state["substrates_allocated"] = {cc.name: {cc.atp_wid: 50.0, cc.water_wid: 50.0}}
+
+    with pytest.raises(AssertionError, match="must return empty dict"):
+        verify_step_one_shot_lifecycle(mutated_step, init_state=init_state, active_state=active_state, cc=cc)
+
+
+def test_planted_canary_verifier_rejects_always_noop_step_mutation() -> None:
+    """Canary (f2): verifier must reject an evolution step that remains a no-op on active ticks."""
+    composite = build_karr_chassis_v6()
+    cc = composite["processes"]["karr_chromosome_condensation"]
+    step = composite["steps"]["karr_chromosome_condensation_evolution"]
+    mutated_step = _AlwaysNoopEvolutionWrapper(step)
+
+    init_state = deepcopy(composite["state"])
+    active_state = deepcopy(composite["state"])
+    active_state["substrates_allocated"] = {cc.name: {cc.atp_wid: 50.0, cc.water_wid: 50.0}}
+
+    with pytest.raises(AssertionError, match="must execute evolution"):
+        verify_step_one_shot_lifecycle(mutated_step, init_state=init_state, active_state=active_state, cc=cc)
 
 
 # ==============================================================================
@@ -1052,7 +1123,9 @@ def test_chassis_v6_chromosome_condensation_engine_init_preserves_biological_sta
        free SMC / SMC-ADP, root bound SMC-ADP, chromosome smc_bound_count / condensation_level /
        complexBoundSites, CC substrates (ATP, H2O, PI, H, ADP), and requests/allocations.
     2. Constructs Engine(composite=...) without calling engine.update.
-    3. Asserts all biological state values remain completely unchanged.
+    3. Normalizes absent request/allocation mappings and Engine-declared zero defaults as equivalent
+       structural bookkeeping; asserts all request and allocation values remain zero.
+    4. Asserts all biological state values remain completely unchanged.
     """
     composite = build_karr_chassis_v6()
     cc = composite["processes"]["karr_chromosome_condensation"]
@@ -1070,14 +1143,12 @@ def test_chassis_v6_chromosome_condensation_engine_init_preserves_biological_sta
         wid: float(composite["state"]["substrates"].get(wid, 0.0))
         for wid in tracked_substrates
     }
-    requests_before = deepcopy(composite["state"].get("requests", {}).get(cc.name, {}))
-    allocations_before = deepcopy(composite["state"].get("substrates_allocated", {}).get(cc.name, {}))
 
     # Construct Engine without updating
     engine = Engine(composite=composite, emit_step=1.0, display_info=False)
     s0 = deepcopy(engine.state.get_value())
 
-    # Assert biological states are unchanged
+    # Assert biological states are strictly unchanged
     s0_smc = float(s0["complex"]["counts"][cc.smc_wid])
     assert s0_smc == smc_before, (
         f"Free SMC mutated on Engine init: {smc_before} -> {s0_smc}"
@@ -1104,31 +1175,47 @@ def test_chassis_v6_chromosome_condensation_engine_init_preserves_biological_sta
             f"Substrate '{wid}' mutated on Engine init: {substrates_before[wid]} -> {s0_sub}"
         )
 
-    assert s0.get("requests", {}).get(cc.name, {}) == requests_before, (
-        f"Requests mutated on Engine init: {requests_before} -> {s0.get('requests', {}).get(cc.name)}"
-    )
-    assert s0.get("substrates_allocated", {}).get(cc.name, {}) == allocations_before, (
-        f"Allocations mutated on Engine init: {allocations_before} -> {s0.get('substrates_allocated', {}).get(cc.name)}"
-    )
     if complex_bound_sites_before is not None:
         assert s0["chromosome"].get("complexBoundSites") == complex_bound_sites_before, (
             "Chromosome complexBoundSites mutated on Engine init"
         )
 
+    # Normalize request and allocation mappings: allow Engine-declared zero defaults as equivalent structural bookkeeping
+    s0_cc_requests = s0.get("requests", {}).get(cc.name, {})
+    for wid, val in s0_cc_requests.items():
+        assert float(val) == 0.0, (
+            f"CC request '{wid}' must be zero on Engine init, got {val}"
+        )
+
+    s0_cc_alloc = s0.get("substrates_allocated", {}).get(cc.name, {})
+    for wid, val in s0_cc_alloc.items():
+        assert float(val) == 0.0, (
+            f"CC allocation '{wid}' must be zero on Engine init, got {val}"
+        )
+
 
 # ==============================================================================
-# Contract 9: Evolution Step zero timestep no-op contract.
+# Contract 9: Evolution Step one-shot lifecycle contract.
 # ==============================================================================
 
 
-def test_chassis_v6_chromosome_condensation_evolution_step_zero_timestep_no_op_contract() -> None:
-    """Contract 9: KarrChromosomeCondensationEvolutionStep must return {} on timestep=0.0.
+def test_chassis_v6_chromosome_condensation_evolution_step_lifecycle_contract() -> None:
+    """Contract 9: KarrChromosomeCondensationEvolutionStep must enforce one-shot init lifecycle.
 
-    Direct step contract (fails on current code because next_update ignores timestep):
-    Engine initialization runs all Steps at t=0 with timestep=0.0. The evolution step
-    must not execute evolveState or return state modifications when timestep=0.0.
+    Direct step contract (fails on current code because first call executes evolveState):
+    1. First invocation (Engine initialization at t=0): must return {} and effect no evolution.
+    2. Subsequent invocation(s) with active allocated grant: must execute evolution normally,
+       even when called with timestep=0.0.
     """
     composite = build_karr_chassis_v6()
+    cc = composite["processes"]["karr_chromosome_condensation"]
     step = composite["steps"].get("karr_chromosome_condensation_evolution")
     assert step is not None, "Chassis v6 must contain 'karr_chromosome_condensation_evolution' step"
-    verify_step_zero_timestep_no_op(step, composite["state"])
+
+    init_state = deepcopy(composite["state"])
+    active_state = deepcopy(composite["state"])
+    active_state["substrates_allocated"] = {cc.name: {cc.atp_wid: 50.0, cc.water_wid: 50.0}}
+    active_state["complex"]["counts"][cc.smc_wid] = 10.0
+    active_state["complex"]["counts"][cc.smc_adp_wid] = 3.0
+
+    verify_step_one_shot_lifecycle(step, init_state=init_state, active_state=active_state, cc=cc)
