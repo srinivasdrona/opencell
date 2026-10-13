@@ -159,10 +159,9 @@ def _build_reference_wired_composite() -> Any:
     cc = c["processes"]["karr_chromosome_condensation"]
     c["topology"]["karr_chromosome_condensation"]["enzymes"] = ("complex", "counts")
     c["topology"]["karr_chromosome_condensation"]["boundEnzymes"] = ("boundEnzymes",)
+    c["state"]["complex"]["counts"][cc.smc_wid] = float(cc._fixture_enzyme_smc)
+    c["state"]["complex"]["counts"][cc.smc_adp_wid] = float(cc._fixture_enzyme_smc_adp)
     c["state"]["boundEnzymes"][cc.smc_adp_wid] = float(cc.trace_anchor_bound)
-    c["state"]["complex"]["counts"][cc.smc_wid] = 60.0
-    c["state"]["substrates"]["ATP"] = 50_000_000.0
-    c["state"]["substrates"]["H2O"] = 50_000_000.0
     return c
 
 
@@ -189,8 +188,16 @@ def test_chassis_v6_chromosome_condensation_topology_enzymes_contract() -> None:
     assert cc.smc_wid in complex_counts, (
         f"Live complex counts must include free SMC complex '{cc.smc_wid}'"
     )
+    assert complex_counts[cc.smc_wid] == float(cc._fixture_enzyme_smc), (
+        f"Initial free SMC count in complex.counts must equal fixture value "
+        f"{cc._fixture_enzyme_smc}, got {complex_counts.get(cc.smc_wid)}"
+    )
     assert cc.smc_adp_wid in complex_counts, (
         f"Live complex counts must include free SMC-ADP complex '{cc.smc_adp_wid}'"
+    )
+    assert complex_counts[cc.smc_adp_wid] == float(cc._fixture_enzyme_smc_adp), (
+        f"Initial free SMC-ADP count in complex.counts must equal fixture value "
+        f"{cc._fixture_enzyme_smc_adp}, got {complex_counts.get(cc.smc_adp_wid)}"
     )
 
 
@@ -279,11 +286,11 @@ def test_chassis_v6_chromosome_condensation_live_execution_binds_smc() -> None:
     composite = build_karr_chassis_v6()
     cc = composite["processes"]["karr_chromosome_condensation"]
 
-    # Provide adequate ATP/H2O and source-derived free SMC pool in canonical stores.
-    # Topology is NOT modified; tests the production chassis as built.
-    composite["state"]["complex"]["counts"][cc.smc_wid] = 60.0
-    composite["state"]["substrates"]["ATP"] = 50_000_000.0
-    composite["state"]["substrates"]["H2O"] = 50_000_000.0
+    # Production chassis must supply exact fixture-derived enzyme counts and
+    # existing source-derived substrate pools without test overrides.
+    complex_counts = composite["state"]["complex"]["counts"]
+    assert complex_counts.get(cc.smc_wid) == float(cc._fixture_enzyme_smc)
+    assert complex_counts.get(cc.smc_adp_wid) == float(cc._fixture_enzyme_smc_adp)
 
     deltas = verify_chassis_smc_binding(composite, n_ticks=2)
     assert deltas["delta_bound"] > 0.0
@@ -305,10 +312,11 @@ def test_planted_canary_verifier_rejects_missing_enzyme_topology() -> None:
 
 
 def test_planted_canary_verifier_rejects_zero_or_default_enzyme_input() -> None:
-    """Canary (b): verifier must reject composite when free SMC input is zero."""
+    """Canary (b): verifier must reject composite when free SMC and SMC-ADP inputs are zero."""
     composite = _build_reference_wired_composite()
     cc = composite["processes"]["karr_chromosome_condensation"]
     composite["state"]["complex"]["counts"][cc.smc_wid] = 0.0
+    composite["state"]["complex"]["counts"][cc.smc_adp_wid] = 0.0
 
     with pytest.raises(AssertionError, match="Zero-SMC no-op"):
         verify_chassis_smc_binding(composite, n_ticks=2)
@@ -330,13 +338,17 @@ def test_planted_canary_verifier_rejects_condensation_level_relaxation_without_b
 # ==============================================================================
 
 
+@pytest.mark.xfail(
+    strict=True,
+    reason="Iteration 2: same-tick request consumption not yet implemented (one-tick lag active)",
+)
 def test_diagnostic_iteration2_same_tick_consumption_is_red() -> None:
     """Iteration 2 diagnostic: prove current request is not consumed same tick.
 
     Even on a wired chassis, tick 1 exhibits the known one-tick request lag
     (requests are computed in the Process phase, while allocations are computed
     in the following Step phase). Same-tick consumption is out of scope for
-    Iteration 1 and remains an intentional RED diagnostic here.
+    Iteration 1 and remains an intentional strict XFAIL diagnostic here.
     """
     composite = _build_reference_wired_composite()
     cc = composite["processes"]["karr_chromosome_condensation"]
