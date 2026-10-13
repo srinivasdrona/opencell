@@ -2755,6 +2755,10 @@ def build_karr_chassis_v6(
     chromosome_state.setdefault("repair_events_cumulative", [])
     assert_chassis_runtime_identity(processes)
 
+    # The temporary v5 Engine already spent the evolution Step's initialization call;
+    # re-arm it so the final v6 Engine construction is a no-op for CC evolution.
+    steps["karr_chromosome_condensation_evolution"].reset_for_engine_initialization()
+
     return Composite(
         processes=processes,
         steps=steps,

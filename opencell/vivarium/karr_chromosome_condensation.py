@@ -2080,12 +2080,22 @@ class KarrChromosomeCondensationEvolutionStep(Step):
                 "(a combined process would evolve twice per tick)"
             )
         self._condensation_process = process
+        # Engine construction invokes every Step once before any tick, and Vivarium
+        # passes timestep 0.0 on real ticks too, so the timestep cannot tell them apart.
+        self._initialization_call_spent = False
+
+    def reset_for_engine_initialization(self) -> None:
+        """Re-arm the first-call no-op for the next Engine construction."""
+        self._initialization_call_spent = False
 
     def ports_schema(self) -> dict[str, Any]:
         return self._condensation_process.evolution_ports_schema()
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
+        if not self._initialization_call_spent:
+            self._initialization_call_spent = True
+            return {}
         return self._condensation_process.evolve_state(states)
 
 
