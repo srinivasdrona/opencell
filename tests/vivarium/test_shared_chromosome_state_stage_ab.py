@@ -926,3 +926,264 @@ def test_stage_ab_preconditions_and_dec007_gate() -> None:
     assert (
         "ChromosomeStateRandStream" in dec007_text or "_shared_rand_stream_state" in dec007_text
     ), "dec-007 must record the production stream substrate or leaf"
+
+
+# ---------------------------------------------------------------------------
+# Stage A+B: Autonomous Run-Seed Propagation & Seeder Contracts
+# ---------------------------------------------------------------------------
+
+
+def test_stage_ab_composite_builders_initial_state_chromosome_rand_stream() -> None:
+    """Stage A+B Contract: Composite initial-state contract for builders (v4/v5/v6).
+
+    chromosome._shared_rand_stream_state must be present at construction in initial_state
+    with exact state of ChromosomeStateRandStream(run_seed), seeded once (not unseeded sentinel).
+    """
+    try:
+        from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+    except ImportError:
+        pytest.fail(
+            "Stage A+B requires ChromosomeStateRandStream in opencell.util.chromosome_state_rand "
+            "(unified stream substrate not yet implemented)."
+        )
+
+    # 1. AST check: builders must explicitly include _shared_rand_stream_state in initial_state['chromosome']
+    comp_src = _COMPOSITE_SRC_PATH.read_text(encoding="utf-8")
+    comp_tree = ast.parse(comp_src, filename=str(_COMPOSITE_SRC_PATH))
+
+    target_builders = ["build_karr_chassis_v4", "build_karr_chassis_v5"]
+    for node in comp_tree.body:
+        if isinstance(node, ast.FunctionDef) and node.name in target_builders:
+            found_chrom_leaf = False
+            for stmt in ast.walk(node):
+                if isinstance(stmt, ast.Constant) and stmt.value == _EXPECTED_LEAF_KEY:
+                    found_chrom_leaf = True
+                    break
+            assert found_chrom_leaf, (
+                f"{node.name} must place '{_EXPECTED_LEAF_KEY}' in initial_state['chromosome'] at construction"
+            )
+
+    # 2. Builder invocation check
+    from opencell.vivarium.karr_composite import (
+        build_karr_chassis_v4,
+        build_karr_chassis_v5,
+        build_karr_chassis_v6,
+    )
+
+    builders = [build_karr_chassis_v4, build_karr_chassis_v5, build_karr_chassis_v6]
+    for builder in builders:
+        sig = inspect.signature(builder)
+        seed_param_name = None
+        for name in ("seed", "rng_seed", "run_seed"):
+            if name in sig.parameters:
+                seed_param_name = name
+                break
+
+        test_seed = 42
+        kwargs = {seed_param_name: test_seed} if seed_param_name else {}
+        chassis = builder(**kwargs)
+
+        initial_state = getattr(chassis, "initial_state", None)
+        assert isinstance(initial_state, dict), f"{builder.__name__} must expose initial_state dict"
+        chrom_state = initial_state.get("chromosome", {})
+        assert _EXPECTED_LEAF_KEY in chrom_state, (
+            f"{builder.__name__} initial_state['chromosome'] must contain '{_EXPECTED_LEAF_KEY}'"
+        )
+        leaf_val = chrom_state[_EXPECTED_LEAF_KEY]
+        assert isinstance(leaf_val, np.ndarray), "Leaf must be numpy ndarray"
+        assert leaf_val.shape == (2,), f"Leaf shape must be (2,), got {leaf_val.shape}"
+        assert leaf_val.dtype == np.int64, f"Leaf dtype must be int64, got {leaf_val.dtype}"
+        assert not np.array_equal(leaf_val, _UNSEEDED_SENTINEL), "Leaf must be seeded, not sentinel"
+
+        expected_seed = test_seed if seed_param_name else 0
+        expected_stream = ChromosomeStateRandStream(expected_seed)
+        assert int(leaf_val[0]) == expected_seed, f"Leaf seed mismatch in {builder.__name__}"
+        assert int(leaf_val[1]) == expected_stream._mcg_state, f"Leaf mcg_state mismatch in {builder.__name__}"
+
+
+def test_stage_ab_conservation_collector_seed_behavior() -> None:
+    """Stage A+B Contract: ConservationCollector sets/resets shared chromosome state leaf to run_seed.
+
+    scripts/l2_4_verify_conservation.py::ConservationCollector(composite=..., seed=N)
+    must set/reset the shared chromosome state leaf to [N, ChromosomeStateRandStream(N)._mcg_state]
+    before Engine execution, while ordinary entity RNG seeding remains unchanged.
+    """
+    try:
+        from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+    except ImportError:
+        pytest.fail(
+            "Stage A+B requires ChromosomeStateRandStream in opencell.util.chromosome_state_rand "
+            "(unified stream substrate not yet implemented)."
+        )
+
+    from scripts.l2_4_verify_conservation import ConservationCollector
+
+    class MockEntity:
+        def __init__(self) -> None:
+            self.parameters = {"rng_seed": 0}
+            self._rng = np.random.default_rng(0)
+
+        def ports_schema(self) -> dict[str, Any]:
+            return {}
+
+        def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+            return {}
+
+    class MockComposite:
+        def __init__(self) -> None:
+            self.processes = {"mock_proc": MockEntity()}
+            self.steps = {}
+            self.topology = {"mock_proc": {}}
+            self.initial_state = {
+                "chromosome": {
+                    _EXPECTED_LEAF_KEY: np.array([-1, -1], dtype=np.int64),
+                }
+            }
+
+    mock_comp = MockComposite()
+    test_seed = 42
+
+    _collector = ConservationCollector(composite=mock_comp, seed=test_seed)
+
+    # 1. Ordinary entity seeding remains unchanged (SeedSequence assigned child seed != 0)
+    proc = mock_comp.processes["mock_proc"]
+    assert proc.parameters["rng_seed"] != 0, "Ordinary entity seeding must be active"
+
+    # 2. Shared chromosome state leaf must be set to [test_seed, ChromosomeStateRandStream(test_seed)._mcg_state]
+    chrom_state = mock_comp.initial_state.get("chromosome", {})
+    assert _EXPECTED_LEAF_KEY in chrom_state, (
+        f"ConservationCollector must ensure '{_EXPECTED_LEAF_KEY}' in composite initial_state"
+    )
+    val = chrom_state[_EXPECTED_LEAF_KEY]
+    expected_stream = ChromosomeStateRandStream(test_seed)
+    assert int(val[0]) == test_seed, f"Shared stream seed mismatch: {val[0]} != {test_seed}"
+    assert int(val[1]) == expected_stream._mcg_state, "Shared stream mcg_state mismatch"
+
+
+def test_stage_ab_diagnostic_collector_seed_behavior(tmp_path: Path) -> None:
+    """Stage A+B Contract: DiagnosticCollector sets/resets shared chromosome state leaf to run_seed.
+
+    scripts/run_chassis_v6_32400t.py::DiagnosticCollector(composite=..., seed=N)
+    must set/reset the shared chromosome state leaf to [N, ChromosomeStateRandStream(N)._mcg_state]
+    before Engine execution, while ordinary entity RNG seeding remains unchanged.
+    """
+    try:
+        from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+    except ImportError:
+        pytest.fail(
+            "Stage A+B requires ChromosomeStateRandStream in opencell.util.chromosome_state_rand "
+            "(unified stream substrate not yet implemented)."
+        )
+
+    from scripts.run_chassis_v6_32400t import DiagnosticCollector
+
+    class MockEntity:
+        def __init__(self) -> None:
+            self.parameters = {"rng_seed": 0}
+            self._rng = np.random.default_rng(0)
+
+        def ports_schema(self) -> dict[str, Any]:
+            return {}
+
+        def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+            return {}
+
+    class MockComposite:
+        def __init__(self) -> None:
+            self.processes = {"mock_proc": MockEntity()}
+            self.steps = {}
+            self.topology = {"mock_proc": {}}
+            self.initial_state = {
+                "chromosome": {
+                    _EXPECTED_LEAF_KEY: np.array([-1, -1], dtype=np.int64),
+                }
+            }
+
+    mock_comp = MockComposite()
+    test_seed = 42
+
+    collector = DiagnosticCollector(
+        composite=mock_comp,
+        process_traces_dir=tmp_path / "traces",
+        process_trace_stride=1,
+        seed=test_seed,
+    )
+    try:
+        # 1. Ordinary entity seeding remains unchanged
+        proc = mock_comp.processes["mock_proc"]
+        assert proc.parameters["rng_seed"] != 0, "Ordinary entity seeding must be active"
+
+        # 2. Shared chromosome state leaf must be set to [test_seed, ChromosomeStateRandStream(test_seed)._mcg_state]
+        chrom_state = mock_comp.initial_state.get("chromosome", {})
+        assert _EXPECTED_LEAF_KEY in chrom_state, (
+            f"DiagnosticCollector must ensure '{_EXPECTED_LEAF_KEY}' in composite initial_state"
+        )
+        val = chrom_state[_EXPECTED_LEAF_KEY]
+        expected_stream = ChromosomeStateRandStream(test_seed)
+        assert int(val[0]) == test_seed, f"Shared stream seed mismatch: {val[0]} != {test_seed}"
+        assert int(val[1]) == expected_stream._mcg_state, "Shared stream mcg_state mismatch"
+    finally:
+        collector.close()
+
+
+def test_stage_ab_seed_determinism_and_distinct_initial_states() -> None:
+    """Stage A+B Contract: Distinct run seeds produce distinct initial mcg_state, deterministic rebuild.
+
+    For seeds {0, 1, 2, 42, 12345}:
+    - Rebuilding with the same seed is deterministic (identical mcg_state and draw sequence).
+    - Distinct seeds produce distinct initial mcg_state values and distinct draw sequences.
+    """
+    try:
+        from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+    except ImportError:
+        pytest.fail(
+            "Stage A+B requires ChromosomeStateRandStream in opencell.util.chromosome_state_rand "
+            "(unified stream substrate not yet implemented)."
+        )
+
+    test_seeds = [0, 1, 2, 42, 12345]
+    initial_states: dict[int, int] = {}
+
+    for s in test_seeds:
+        stream_a = ChromosomeStateRandStream(s)
+        stream_b = ChromosomeStateRandStream(s)
+        assert stream_a._mcg_state == stream_b._mcg_state, f"Rebuilding seed {s} must be deterministic"
+        draws_a = stream_a.rand(10)
+        draws_b = stream_b.rand(10)
+        np.testing.assert_array_equal(draws_a, draws_b, err_msg=f"Draws for seed {s} must be deterministic")
+        initial_states[s] = int(stream_a._mcg_state)
+
+    # Distinct seeds must yield distinct mcg_state
+    unique_states = set(initial_states.values())
+    assert len(unique_states) == len(test_seeds), (
+        f"Distinct run seeds must produce distinct initial mcg_state: {initial_states}"
+    )
+
+
+def test_canary_seeder_stuck_at_seed_zero_rejected() -> None:
+    """Planted Canary: A seeder that leaves the shared leaf at seed 0 for run seed 1 or 2 is rejected."""
+
+    def validate_run_seed_chromosome_state(target_run_seed: int, chromosome_state: dict[str, Any]) -> None:
+        if _EXPECTED_LEAF_KEY not in chromosome_state:
+            raise AssertionError(f"Missing '{_EXPECTED_LEAF_KEY}' leaf in chromosome state")
+        val = chromosome_state[_EXPECTED_LEAF_KEY]
+        if int(val[0]) != target_run_seed:
+            raise AssertionError(
+                f"SEED_PROPAGATION_FAILURE: chromosome state has seed {val[0]}, expected run seed {target_run_seed}"
+            )
+
+    # Rogue state where process entities were seeded for run 1, but chromosome leaf was left at seed 0
+    rogue_state_run1 = {
+        _EXPECTED_LEAF_KEY: np.array([0, 931316785], dtype=np.int64),
+    }
+
+    with pytest.raises(AssertionError, match="SEED_PROPAGATION_FAILURE"):
+        validate_run_seed_chromosome_state(1, rogue_state_run1)
+
+    # Rogue state where process entities were seeded for run 2, but chromosome leaf was left at seed 0
+    rogue_state_run2 = {
+        _EXPECTED_LEAF_KEY: np.array([0, 931316785], dtype=np.int64),
+    }
+
+    with pytest.raises(AssertionError, match="SEED_PROPAGATION_FAILURE"):
+        validate_run_seed_chromosome_state(2, rogue_state_run2)
