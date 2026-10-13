@@ -38,6 +38,7 @@ from opencell.vivarium.karr_transcriptional_regulation import (
     _load_releasable_proteins,
 )
 from scripts.l2_event.launcher import current_genuine_dnadamage_source
+from scripts.migrate_txreg_event_trace_dnadamage_provenance import migrate
 from tests.vivarium.chromosome_rand_stream_ledger import (
     ChromosomeRandStreamLedgerError,
     load_chromosome_rand_stream_ledger,
@@ -685,9 +686,17 @@ def test_txreg_checked_in_ledger_loads_successfully() -> None:
 
 
 def test_txreg_ledger_source_hashes_match_and_migration_boundary() -> None:
-    """Mechanically prove all existing ledger-bound source hashes and trace hash
-    match current files before evaluating migration safety, and freeze that a
-    metadata migration of the ledger alone cannot succeed against the checked-in trace."""
+    """Post-migration invariants for the canonical TranscriptionalRegulation
+    trace and chromosome RNG ledger:
+    - ledger trace_sha256 equals current trace raw hash;
+    - Chromosome.m and RandStream.m hashes match current sources;
+    - trace metadata dnadamage_source_resolved_sha256 exists and equals
+      canonical current_genuine_dnadamage_source()["patched_sha256_lf_normalized"];
+    - ledger dnadamage_source_sha256 exists and equals the same value;
+    - loader succeeds with 4000 draw lists;
+    - migration script is idempotent (dry-run/no-op on already-migrated pair
+      reports status='already_migrated' and preserves hashes).
+    """
     trace_path = _resolve_event_trace_path(0)
     if not trace_path.exists():
         pytest.skip(f"Checked-in trace not found: {trace_path}")
@@ -717,16 +726,37 @@ def test_txreg_ledger_source_hashes_match_and_migration_boundary() -> None:
     assert rand_path is not None
     assert payload["randstream_util_source_sha256"] == sha256_raw_bytes(rand_path)
 
-    # 4. Mechanical check on trace metadata:
-    # The checked-in trace lacks dnadamage_source_resolved_sha256
-    with h5py.File(trace_path, "r") as trace:
-        assert "dnadamage_source_resolved_sha256" not in trace.get("metadata", {})
+    # 4. Canonical DNADamage hash cross-check in both trace and ledger
+    dna_info = current_genuine_dnadamage_source(repo_root=_REPO_ROOT)
+    expected_dna_sha = dna_info["patched_sha256_lf_normalized"]
 
-    # Consequence: adding dnadamage_source_sha256 ONLY to the ledger JSON is NOT
-    # a viable standalone migration against the checked-in trace. The loader
-    # cross-checks ledger against trace, so the trace must also contain the metadata,
-    # which in turn alters the trace's SHA256. Therefore, dual-artifact update or
-    # trace re-extraction with unconditional DNADamage metadata binding is required.
+    with h5py.File(trace_path, "r") as trace:
+        assert "dnadamage_source_resolved_sha256" in trace.get("metadata", {})
+        raw_trace_dna_sha = trace["metadata/dnadamage_source_resolved_sha256"][()]
+        trace_dna_sha = bytes(raw_trace_dna_sha).decode("utf-8").replace("\x00", "")
+        assert trace_dna_sha == expected_dna_sha
+
+    assert "dnadamage_source_sha256" in payload
+    assert payload["dnadamage_source_sha256"] == expected_dna_sha
+
+    # 5. Loader succeeds with 4000 draw lists
+    ledgers = load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+    assert ledgers is not None
+    assert len(ledgers) == 4000
+    assert all(isinstance(draws, list) for draws in ledgers)
+
+    # 6. Migration script idempotency: no-op against already-migrated pair
+    trace_sha_before = hashlib.sha256(trace_path.read_bytes()).hexdigest()
+    ledger_sha_before = hashlib.sha256(ledger_path.read_bytes()).hexdigest()
+
+    migration_result = migrate(trace_path, apply=False, repo_root=_REPO_ROOT)
+    assert migration_result["status"] == "already_migrated"
+    assert migration_result["dnadamage_source_sha256"] == expected_dna_sha
+
+    trace_sha_after = hashlib.sha256(trace_path.read_bytes()).hexdigest()
+    ledger_sha_after = hashlib.sha256(ledger_path.read_bytes()).hexdigest()
+    assert trace_sha_before == trace_sha_after == migration_result["trace_sha256"]
+    assert ledger_sha_before == ledger_sha_after == migration_result["ledger_sha256"]
 
 
 def test_txreg_provenance_complete_temporary_ledger_reaches_replay(tmp_path: Path) -> None:
