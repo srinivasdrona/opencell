@@ -134,6 +134,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   whether the derived stress canary proves real topology execution without
   laundering the default-starvation blocker.
 - Live CC reviewer: `49fcf57d-18e5-497b-baf0-155fd870c16c`.
+- CC fresh review returned **`VERDICT: MATCHED`** with zero findings. Reviewer
+  independently confirmed v5/v6 source-derived 5/3/78 seeding, duplicate
+  guards, updater order-independence, real stress allocation/binding, and both
+  strict diagnostics. Integration is ready after targeted cleanup of a mangled
+  untracked `C` output path created by a Windows path passed through `oc-py`.
+- TxReg migration landed at script `351370c` / provenance `cb5eb0e`; canonical
+  trace+ledger migration is applied. Full 4000-tick replay is **2/2 PASS**,
+  per-tick draws are unchanged, and only the DNADamage metadata plus bound
+  trace/hash fields changed. One frozen test still asserts the pre-migration
+  metadata field is absent; test author must replace it with post-migration
+  hash/metadata/idempotency assertions before review.
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
