@@ -131,6 +131,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   per-process generation-tagged intent leaves, and bind/damage/release intent
   families (including Replication SSB release) are now specified. The same GPT
   reviewer must re-adjudicate before tests.
+- Fresh GPT re-review returned **`VERDICT: MATCHED`**. Stage A+B is accepted as
+  the first slice: exact fail-closed serialized stream state plus TxReg as one
+  RNG-only consumer; footprint authority removal remains Stage C. Non-blocking
+  implementation details to pin later are the Stage-E generation/tick source
+  and test-ledger adapter writeback facade.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
