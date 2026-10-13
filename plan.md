@@ -143,6 +143,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   **12 PASS / 7 intentional RED**, while the existing TxReg fast/replay baseline
   remains green. Parent review of the frozen contracts is pending before any
   implementer launch.
+- Parent reproduced **12 PASS / 7 RED** but found three hollow greens:
+  production continuity stops after the zero-draw tick without tick-3/reference
+  comparison; candidate parity compares `TxRegMcgRandStream` to itself instead
+  of the future state-owned stream; and the dec-007 gate checks only dec-006.
+  Test author must correct all three before Stage A+B implementation.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
