@@ -257,7 +257,7 @@ ordering_constraints:
   hard_after: []
   soft_before: []
   soft_after: []
-  note: "MATLAB enforces same-tick `calcResourceRequirements_Current -> allocation injection -> evolveState` in Simulation.evolveState (`@Simulation/evolveState.m:24-37,63-70`). Empirical Vivarium probing shows the OC in-process request reaches allocation in tick 1, but next_update has already read the prior zero grant; the tick-1 grant is observed and consumable only on tick 2 (one-tick request-to-consumption lag; CODE_DEVIATES)."
+  note: "MATLAB enforces same-tick `calcResourceRequirements_Current -> allocation injection -> evolveState` in Simulation.evolveState (`@Simulation/evolveState.m:24-37,63-70`). OC now mirrors that phase order with the request-only authoritative Process before `karr_allocation_step` and one post-allocation evolution Step, coordinated by the internal `request_ready` handshake."
 source_anchors:
   matlab_blocks:
     class_def:
@@ -368,8 +368,8 @@ provenance:
     - data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat
     kb_version_hint: V2 trace manifest for ChromosomeCondensation_100ticks.mat; fixture JSON has no explicit kb_version field.
   last_audited: '2026-09-17'
-  audited_by: Copilot Iteration-1 re-adjudication + independent GPT review
-  oc_commit_sha: aab74ed
+  audited_by: Copilot Iteration-2 re-adjudication + independent GPT review
+  oc_commit_sha: a31606f
   matlab_files_referenced:
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m
@@ -393,6 +393,5 @@ deviations:
   shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC's literal-chromosome path is stochastic and position-resolved, but the module also retains aggregate `smc_bound_count` / `condensation_level` compatibility outputs, a non-literal Karr-light fallback, and a `trace_hint.boundEnzymes_next` replay override; those paths are not MATLAB's autonomous state/behavior."
-    - "MATLAB enforces same-tick request -> allocation -> evolve ordering. In OC the in-process request does reach allocation in tick 1, but next_update already read substrates_allocated=0 before the allocation Step ran; it observes the tick-1 grant only on tick 2, creating a one-tick request-to-consumption lag."
     - "Karr initializeState performs a 20-step warm-up loop with ATP/H2O set to Inf; OC seeds from fixture and trace defaults instead."
-  note: "Stochasticity itself is source-faithful. The flat substrate projection is accepted-equivalent because every ChromosomeCondensation substrate is cytosolic-only. Live free/bound SMC topology and source-derived seeding were resolved in Iteration 1; remaining gaps are compatibility paths, request timing, initialization, and default allocator starvation from unrelated request competition."
+  note: "Stochasticity itself is source-faithful. The flat substrate projection is accepted-equivalent because every ChromosomeCondensation substrate is cytosolic-only. Live free/bound SMC topology and source-derived seeding were resolved in Iteration 1; same-tick request-allocation-evolution was resolved in Iteration 2. Remaining gaps are compatibility paths, initialization, and default allocator starvation from unrelated request competition."

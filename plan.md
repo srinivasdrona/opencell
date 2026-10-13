@@ -59,6 +59,26 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-14) — CC Iteration 2 integrated and re-adjudicated; baseline remains 5/28:**
+
+- Audit branch tip before this metadata checkpoint is merge `3df0f7f`.
+  Nothing is pushed; no agents or long-running shells are live.
+- ChromosomeCondensation same-tick request -> allocation -> evolution is
+  resolved through the explicit `request_ready` handshake. Semantic audit is
+  now **9 VERIFIED / 2 CODE_DEVIATES**; only compatibility/fallback/hint paths
+  and non-MATLAB initialization remain open.
+- Integrated acceptance: CC **38 PASS / 1 strict XFAIL**, L2.4 **4 seeds x
+  100 ticks PASS**, L1b **115/115** and **28/28**, baseline/L1b regression
+  **33 PASS**, and `pre_l25_honesty.py audit` **INTEGRITY_OK 5/28**.
+- Refreshed source digest:
+  `e828cc7587e850f44b67b907a290e523de3f5f16fe4e187d71d07c0a90580935`
+  over 128 files.
+- ChromosomeCondensation is not promoted: L2.2 remains
+  `MISSING_EVIDENCE`, and the two production deviations remain open.
+- Immediate next step: bring `fix/shared-chromosome-state-stage-ab-20261013`
+  (frozen boundary `27fd135`, **12 PASS / 13 RED**) onto the latest audit tip,
+  preserving provenance by unique `event_id`, then implement/review Stage A+B.
+
 **Current status (2026-10-13) — CC Iteration 1 and TxReg Iteration 0 integrated; baseline stays 5/28:**
 
 - Audit branch integration commits: `f744bd6` (ChromosomeCondensation Iteration
@@ -136,6 +156,35 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   RNG-only consumer; footprint authority removal remains Stage C. Non-blocking
   implementation details to pin later are the Stage-E generation/tick source
   and test-ledger adapter writeback facade.
+- Shared-state Stage A+B test worktree:
+  `E:\opencell-worktrees\fix-shared-chromosome-state-stage-ab`, base `a804eb7`.
+  Live Gemini test writer: `e6e8dbc6-ce88-428d-9b36-a32070b0afea`.
+- Stage A+B tests landed at `2b4e7a1` / `e9a8f8a` with reported
+  **12 PASS / 7 intentional RED**, while the existing TxReg fast/replay baseline
+  remains green. Parent review of the frozen contracts is pending before any
+  implementer launch.
+- Parent reproduced **12 PASS / 7 RED** but found three hollow greens:
+  production continuity stops after the zero-draw tick without tick-3/reference
+  comparison; candidate parity compares `TxRegMcgRandStream` to itself instead
+  of the future state-owned stream; and the dec-007 gate checks only dec-006.
+  Test author must correct all three before Stage A+B implementation.
+- Corrected Stage A+B tests landed at `89ef6fa` / `65ea553`; parent now
+  reproduces **10 guard GREEN / 10 hard RED**. Three-tick store continuity,
+  future-provider candidate parity, state round-trip continuation, and a real
+  dec-007 registry/file gate are frozen. Opus must author dec-007 on the Stage
+  A+B branch before Sonnet implementation; production remains frozen.
+- dec-007 landed at `ad2a2a7` / `80064c6`; the gate now passes and parent
+  boundary is **11 GREEN / 9 RED**. One source-faithfulness gap remains before
+  implementation: no test proves the composite seeds the leaf once or that
+  L2.4/long-run chassis seeders set the shared chromosome stream from the
+  requested run seed. Without it, multi-seed runs could all reuse seed 0.
+- Run-seed contracts landed at `8a21d44` / `27fd135`; parent now reproduces
+  **12 GREEN / 13 hard RED**. Composite v4/v5/v6 initialization,
+  ConservationCollector/DiagnosticCollector propagation, deterministic distinct
+  seeds, three-tick continuity, future-provider parity, and dec-007 are frozen.
+- Stage A+B implementation is intentionally queued behind CC Iteration-2
+  integration because both edit `karr_composite.py`; production branches must
+  remain sequential to avoid conflicting shared chassis changes.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
@@ -154,6 +203,96 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   post-allocation evolution Step referencing that exact instance.
 - Live CC Iteration-2 implementer:
   `8f4a1991-d56a-411b-a946-96261fd6aa82`.
+- CC implementer landed production `e81edc5` / provenance `fbd4040`, but three
+  frozen tests are invalid after the phase split: the old two-tick stress test
+  requires binding specifically on tick 2 even when same-tick binding correctly
+  occurs on tick 1; mutation wrappers placed in `steps` subclass `Process`
+  instead of `Step`; and the lag wrapper consumes its first call during Engine
+  initialization. Tests must be corrected before acceptance; production is not
+  integrated.
+- CC test corrections landed at `0c88fd3` / `8d5571f`. Parent acceptance is
+  now **31 PASS / 1 strict XFAIL** with L2.4 4x100 PASS. The request-only
+  authoritative process and post-allocation evolution Step are ready for fresh
+  GPT review; default allocator starvation remains the sole strict diagnostic.
+- Live CC Iteration-2 reviewer: `0522f35e-50f0-46ec-b662-e628d2352e63`.
+- CC reviewer returned **`VERDICT: DID NOT MATCH`**: Vivarium calls the
+  evolution Step at `timestep=0` during Engine construction, and the Step
+  currently dissociates free SMC-ADP/produces ADP before tick 1. Test author
+  must freeze initial-state immutability across Engine construction; then the
+  evolution Step must return `{}` for initialization/no-op calls before any
+  biological evolution.
+- Engine-init regressions landed at `d9cc80c` / `0672331`; current boundary is
+  **12 PASS / 2 hard RED / 1 strict XFAIL** in the focused file plus 20/20
+  existing CC tests. Sonnet may now add only the timestep<=0 no-op guard and
+  revalidate the unchanged phase-split behavior.
+- The narrow `timestep<=0` fix is invalid because Vivarium passes `0.0` to
+  Steps during initialization **and every tick**. Correct production semantics
+  require a one-shot Step lifecycle guard: first invocation no-ops, subsequent
+  invocations evolve. The frozen init test also wrongly treats Engine-created
+  zero-valued request/allocation defaults as biological mutation; absent and
+  declared-zero structural bookkeeping must be normalized as equivalent.
+- Lifecycle tests landed at `a30f704` / `e6d5e14`; current focused boundary is
+  **13 PASS / 2 hard RED / 1 strict XFAIL** plus 20/20 existing tests. Sonnet
+  may now implement only a private one-shot Step initialization guard: first
+  invocation returns `{}`, subsequent invocations evolve regardless of timestep.
+- The one-shot implementation probe exposed three final contract/lifecycle
+  details:
+  1. v6 reuses Step objects from the temporary v5 Engine, so the initialization
+     guard must be explicitly reset before constructing the v6 Engine.
+  2. SMC conservation must include free SMC + free SMC-ADP + bound SMC; Karr
+     dissociates all free SMC-ADP at evolveState start, so `delta_free ==
+     -delta_bound` alone is false after init is correctly no-op.
+  3. `complexBoundSites` sparse arrays require structural comparison, not raw
+     dict `==`.
+- Test author must freeze these corrections before the production lifecycle
+  guard can commit.
+- Final corrections landed at `6faa4e4` / `3fb3b5e`; focused boundary is again
+  **13 PASS / 2 hard RED / 1 strict XFAIL**, with only Engine-init mutation and
+  fresh-Step lifecycle RED. Sonnet may implement a one-shot guard plus a narrow
+  `reset_for_engine_initialization()` re-arm in v6 after the temporary v5 Engine
+  has consumed the first call.
+- Lifecycle fix landed at `fc16545` / verified provenance `ef58a2d`. Parent
+  acceptance is **35 PASS / 1 strict XFAIL**, Engine construction leaves CC
+  biology unchanged, tick 1 requests/grants/binds once, L2.4 4x100 PASS, and
+  diff/L1b/Ruff are clean. The same GPT reviewer must re-adjudicate before
+  integration.
+- Re-review still returned **`DID NOT MATCH`**: the one-shot flag lives on the
+  reusable Step instance, so constructing a second Engine from the same
+  Composite consumes biological evolution during the second initialization.
+  Tests must freeze per-Engine-lifecycle re-arming (two Engine constructions,
+  neither mutates CC state) before the implementation can bind reset to a real
+  Vivarium construction hook/schema lifecycle.
+- Composite-reuse regression landed at `2a60215` / `596d71c`; current focused
+  boundary is **15 PASS / 1 hard RED / 1 strict XFAIL**. Vivarium
+  `Process.get_schema()` runs during each Engine store construction, providing a
+  per-Engine lifecycle hook to re-arm the existing one-shot guard.
+- Final re-arm fix landed at `3cc602b` / verified provenance `ca441b4`. Parent
+  acceptance is **36 PASS / 1 strict XFAIL**, two Engines from one Composite
+  preserve init state, tick 1 evolves exactly once, and L2.4 4x100 PASS. The
+  original reviewer must re-adjudicate before integration.
+- Re-review found `get_schema()` re-arming unsafe: read-only schema inspection
+  can skip the next real evolution tick. The hidden lifecycle flag must be
+  removed. Replace it with an explicit internal request-ready handshake store:
+  request-only process sets ready each process phase; evolution Step runs only
+  when ready, clears it after exactly one evolution; Engine initialization and
+  repeated Composite construction see ready=false. Tests must freeze the port,
+  topology, set/clear semantics, and stale/double-consumption canaries.
+- Explicit handshake tests landed at `6e672d3` / `7995935`; current focused
+  boundary is **13 PASS / 5 hard RED / 1 strict XFAIL** plus 20/20 existing CC
+  tests. Sonnet may now remove the one-shot/get_schema/reset machinery and wire
+  one boolean `request_ready` state leaf shared by the request process and
+  evolution Step.
+- Handshake implementation landed at `a31606f` / verified provenance `0bca00e`.
+  Parent acceptance is **38 PASS / 1 strict XFAIL**, repeated Engine/schema
+  access is side-effect free, request/evolution run exactly once per tick,
+  request_ready clears each tick, and L2.4 4x100 PASS. Final reviewer
+  re-adjudication is required before integration.
+- Final GPT re-review returned **`VERDICT: MATCHED`** at `0bca00e`, with zero
+  findings. The explicit request_ready handshake survives repeated Engines and
+  schema reads, evolves exactly once after allocation, clears per tick, and
+  preserves standalone replay. Integrate Iteration 2, resolve the request-timing
+  audit/baseline claim, refresh digest, but keep CC blocked on missing L2.2
+  evidence plus remaining compatibility/initialization gaps.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 

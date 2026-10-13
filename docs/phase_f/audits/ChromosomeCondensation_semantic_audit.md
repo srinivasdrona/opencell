@@ -28,22 +28,20 @@ deviation.
 | CC-S4-03 | S4 | The row discloses that OC also retains aggregate `smc_bound_count`/`condensation_level`, a trace-hint override, and a non-literal fallback (`karr_chromosome_condensation.py:646-689,741-760,856-861`). These are not MATLAB state/behavior. | CODE_DEVIATES |
 | CC-S5-01 | S5 | MATLAB substrate writeback is compartment-indexed, while OC exposes a flat per-WID shared substrate surface. All five process substrates are cytosolic-only, so this merge is an accepted-equivalent projection for ChromosomeCondensation. | VERIFIED |
 | CC-S6-01 | S6 | ATP/H2O grants are allocated-only in OC (`karr_chromosome_condensation.py:693-696`); the prior “fallback to global substrates” statement is absent. | VERIFIED |
-| CC-S6-02 | S6 | MATLAB orders request → allocation → evolve in one tick. Empirical Vivarium probing shows OC's tick-1 request reaches allocation (`request=5`, `allocation=10`), but the process already observed `substrates_allocated=0`; it observes that grant only on tick 2 (`10`). This is a one-tick request-to-consumption lag, not a failure to reach the allocator. | CODE_DEVIATES |
+| CC-S6-02 | S6 | MATLAB orders request → allocation → evolve in one tick. OC now uses the authoritative request-only process in the normal process phase and one evolution Step after `karr_allocation_step`, coordinated by an explicit `request_ready` store handshake (`karr_chromosome_condensation.py:2055-2118`; `karr_composite.py:2329-2338,2590-2597`). A real Engine tick requests, receives, and consumes the grant while binding SMC exactly once. | VERIFIED |
 | CC-S6-03 | S6 | MATLAB initializes with 20 stochastic warm-up calls under infinite ATP/H2O (`ChromosomeCondensation.m:220-230`); OC initializes from fixture/trace-derived state and seeded streams (`karr_chromosome_condensation.py:465-473`). | CODE_DEVIATES |
 | CC-S6-04 | S6 | Chassis v5/v6 maps `enzymes` to canonical `complex.counts` and `boundEnzymes` to the existing root store, seeds free SMC/SMC-ADP/bound SMC-ADP from fixture/trace values, and rejects incompatible duplicate seeds (`karr_composite.py:139-183,2173-2178,2317-2323,2684-2688`). | VERIFIED |
 
 ## Aggregate counts
 
-- VERIFIED: 8
+- VERIFIED: 9
 - ROW_WRONG: 0
-- CODE_DEVIATES: 3
+- CODE_DEVIATES: 2
 - MISSING: 0
 
 ## Open implementation deviations
 
 - Aggregate/fallback/trace-hint behavior outside the literal stochastic path.
-- One-tick request-to-consumption lag: the allocation Step sees the request
-  after the process has already read the prior grant.
 - Initialization differs from MATLAB's 20-step stochastic warm-up.
 
 ## Iteration-1 integration status
@@ -53,8 +51,14 @@ deviation.
   post-tick snapshot, receives a real allocator grant, binds SMC, and conserves
   free/bound counts and hydrolysis.
 - The exact default source seed remains allocator-starved by unrelated request
-  competition, and same-tick request consumption remains absent. Both are
-  retained as strict diagnostics and are not counted as Iteration-1 repairs.
+  competition; it remains a strict diagnostic and is not counted as repaired.
+
+## Iteration-2 integration status
+
+- Request, allocation, and evolution now occur in one Engine tick.
+- An explicit internal `request_ready` handshake prevents Engine-construction
+  evolution, stale/double consumption, and schema/lifecycle side effects.
+- Standalone combined `next_update` remains unchanged for replay compatibility.
 
 ## Documentation corrections completed
 
