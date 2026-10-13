@@ -1,6 +1,6 @@
 schema_version: "1.0"
 title: "Pre-L2.5 no-known-gap honesty baseline"
-audit_base_commit: "b351897"
+audit_base_commit: "3df0f7f"
 canonical_process_count: 28
 policy: >-
   A lower-gate PASS is necessary but not sufficient for L2.5 eligibility.
@@ -8,7 +8,7 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "abc50be529364dd4c59acd646f56c11fda7979c47d015fb88bf58add009024b6"
+  sha256: "e828cc7587e850f44b67b907a290e523de3f5f16fe4e187d71d07c0a90580935"
   file_count: 128
 authorities:
   l1b_method_completeness: "PASS 115/115"
@@ -45,14 +45,18 @@ processes:
             lines: "33-33"
       - id: CC-REQUEST-TIMING
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          The in-process request reaches the allocator only after next_update
-          has read the prior grant, producing a one-tick request-to-consumption
-          lag relative to MATLAB's same-tick request-allocation-evolve order.
+          The authoritative process emits requests before allocation and one
+          post-allocation evolution Step consumes the same-tick grant exactly
+          once through an explicit request-ready handshake.
         evidence:
           - path: opencell/vivarium/karr_chromosome_condensation.py
-            lines: "691-809"
+            lines: "2055-2118"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2329-2338"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2590-2597"
           - path: docs/phase_f/audits/ChromosomeCondensation_semantic_audit.md
             lines: "31-31"
       - id: CC-NONKARR-PATHS

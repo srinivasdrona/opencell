@@ -59,6 +59,26 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-14) — CC Iteration 2 integrated and re-adjudicated; baseline remains 5/28:**
+
+- Audit branch tip before this metadata checkpoint is merge `3df0f7f`.
+  Nothing is pushed; no agents or long-running shells are live.
+- ChromosomeCondensation same-tick request -> allocation -> evolution is
+  resolved through the explicit `request_ready` handshake. Semantic audit is
+  now **9 VERIFIED / 2 CODE_DEVIATES**; only compatibility/fallback/hint paths
+  and non-MATLAB initialization remain open.
+- Integrated acceptance: CC **38 PASS / 1 strict XFAIL**, L2.4 **4 seeds x
+  100 ticks PASS**, L1b **115/115** and **28/28**, baseline/L1b regression
+  **33 PASS**, and `pre_l25_honesty.py audit` **INTEGRITY_OK 5/28**.
+- Refreshed source digest:
+  `e828cc7587e850f44b67b907a290e523de3f5f16fe4e187d71d07c0a90580935`
+  over 128 files.
+- ChromosomeCondensation is not promoted: L2.2 remains
+  `MISSING_EVIDENCE`, and the two production deviations remain open.
+- Immediate next step: bring `fix/shared-chromosome-state-stage-ab-20261013`
+  (frozen boundary `27fd135`, **12 PASS / 13 RED**) onto the latest audit tip,
+  preserving provenance by unique `event_id`, then implement/review Stage A+B.
+
 **Current status (2026-10-13) — CC Iteration 1 and TxReg Iteration 0 integrated; baseline stays 5/28:**
 
 - Audit branch integration commits: `f744bd6` (ChromosomeCondensation Iteration
