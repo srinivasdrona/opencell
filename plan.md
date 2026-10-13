@@ -109,6 +109,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `61e4076b-40cd-4fbe-9552-c11cf8cf2bc9`. It may add one fail-closed migration
   script and modify only the canonical trace+ledger pair outside git; full
   4000-tick replay is required before acceptance.
+- CC implementer returned without committing. Its saved `karr_composite.py`
+  patch correctly wires/seeds the process and passes L2.4/L1b, but the frozen
+  source-seed live test remains red because proportional allocation grants CC
+  zero ATP: unrelated request paths demand ~1.01M ATP against ~36k available.
+  Increasing the pool does not necessarily help because several competing
+  requests scale with the pool.
+- CC test contract must separate two facts: (a) wiring is executable under a
+  mechanically derived allocation-threshold stress state; (b) the real default
+  source seed remains a strict XFAIL due to external allocator/request
+  starvation. No fabricated `60`-copy constant or direct allocation injection
+  is allowed. Same-tick consumption remains a separate strict XFAIL.
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
