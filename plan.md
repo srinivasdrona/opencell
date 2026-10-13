@@ -211,6 +211,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   invocations evolve. The frozen init test also wrongly treats Engine-created
   zero-valued request/allocation defaults as biological mutation; absent and
   declared-zero structural bookkeeping must be normalized as equivalent.
+- Lifecycle tests landed at `a30f704` / `e6d5e14`; current focused boundary is
+  **13 PASS / 2 hard RED / 1 strict XFAIL** plus 20/20 existing tests. Sonnet
+  may now implement only a private one-shot Step initialization guard: first
+  invocation returns `{}`, subsequent invocations evolve regardless of timestep.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
