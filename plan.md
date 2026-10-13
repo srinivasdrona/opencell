@@ -267,6 +267,12 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   access is side-effect free, request/evolution run exactly once per tick,
   request_ready clears each tick, and L2.4 4x100 PASS. Final reviewer
   re-adjudication is required before integration.
+- Final GPT re-review returned **`VERDICT: MATCHED`** at `0bca00e`, with zero
+  findings. The explicit request_ready handshake survives repeated Engines and
+  schema reads, evolves exactly once after allocation, clears per tick, and
+  preserves standalone replay. Integrate Iteration 2, resolve the request-timing
+  audit/baseline claim, refresh digest, but keep CC blocked on missing L2.2
+  evidence plus remaining compatibility/initialization gaps.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
