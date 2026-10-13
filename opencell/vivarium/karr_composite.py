@@ -139,6 +139,51 @@ def _seed_required_complex_wids(
         complex_counts.setdefault(wid, float(defaults[wid]))
 
 
+def _seed_or_verify_count(
+    counts: dict[str, float],
+    *,
+    wid: str,
+    value: float,
+    store_label: str,
+) -> None:
+    """Seed ``wid`` with a source-derived value, or verify an existing duplicate matches it."""
+    existing = counts.get(wid)
+    if existing is None:
+        counts[wid] = float(value)
+    elif float(existing) != float(value):
+        raise ValueError(
+            f"Incompatible duplicate seed for {store_label}['{wid}']: "
+            f"existing={float(existing)} vs ChromosomeCondensation source-derived={float(value)}"
+        )
+
+
+def _seed_condensation_enzyme_state(
+    *,
+    complex_counts: dict[str, float],
+    bound_enzymes: dict[str, float],
+    condensation_proc: KarrChromosomeCondensationProcess,
+) -> None:
+    """Seed ChromosomeCondensation's free/bound SMC state from its fixture and trace anchor."""
+    _seed_or_verify_count(
+        complex_counts,
+        wid=condensation_proc.smc_wid,
+        value=float(condensation_proc._fixture_enzyme_smc),
+        store_label="complex.counts",
+    )
+    _seed_or_verify_count(
+        complex_counts,
+        wid=condensation_proc.smc_adp_wid,
+        value=float(condensation_proc._fixture_enzyme_smc_adp),
+        store_label="complex.counts",
+    )
+    _seed_or_verify_count(
+        bound_enzymes,
+        wid=condensation_proc.smc_adp_wid,
+        value=float(condensation_proc.trace_anchor_bound),
+        store_label="boundEnzymes",
+    )
+
+
 def _load_karr_initial_substrate_counts(
     m1_model: km.KarrMetabolismModel,
 ) -> dict[str, float]:
@@ -2125,6 +2170,13 @@ def build_karr_chassis_v5(
     else:
         prot_init[supercoil_proc.gyrase_wid] = float(supercoil_init["free_gyrase_count"])
 
+    bound_enzymes_init = dict(supercoil_init["boundEnzymes"])
+    _seed_condensation_enzyme_state(
+        complex_counts=complex_counts,
+        bound_enzymes=bound_enzymes_init,
+        condensation_proc=condensation_proc,
+    )
+
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
         "substrates": ("substrates",),
@@ -2264,6 +2316,8 @@ def build_karr_chassis_v5(
         },
         "karr_chromosome_condensation": {
             "chromosome": ("chromosome",),
+            "enzymes": ("complex", "counts"),
+            "boundEnzymes": ("boundEnzymes",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
@@ -2401,7 +2455,7 @@ def build_karr_chassis_v5(
         "complex": {"counts": complex_counts},
         "stimuli": {},
         "tx_rate_fold_change": tx_rate_fold_init,
-        "boundEnzymes": supercoil_init["boundEnzymes"],
+        "boundEnzymes": bound_enzymes_init,
         "chromosome": {
             **supercoil_init["chromosome"],
             "fork_position_bp": {"left": 0.0, "right": 0.0},
@@ -2627,6 +2681,11 @@ def build_karr_chassis_v6(
         protein_counts[wid] = count
     for wid, count in host_interaction_proc.fitted_complex_counts_by_wid.items():
         complex_counts[wid] = count
+    _seed_condensation_enzyme_state(
+        complex_counts=complex_counts,
+        bound_enzymes=initial_state["boundEnzymes"],
+        condensation_proc=processes["karr_chromosome_condensation"],
+    )
     initial_state["cell"].update(
         host_interaction_proc.calculate_host_state(protein_counts, complex_counts)
     )
