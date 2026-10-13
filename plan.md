@@ -79,6 +79,23 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - TxReg implementation remains evidence/harness-only. CC production repair may
   start only after the corrected test boundary is parent-accepted.
 
+**Frozen iteration tips (parent-reproduced):**
+
+- ChromosomeCondensation worktree
+  `E:\opencell-worktrees\fix-chromosome-condensation-iter1`, HEAD `bc374fe`:
+  **15 PASS / 3 hard RED / 1 strict XFAIL**. The hard REDs are exactly missing
+  enzyme topology, missing bound-enzyme topology/seed, and zero-SMC live
+  execution. The strict XFAIL preserves the Iteration-2 same-tick contract.
+- TranscriptionalRegulation worktree
+  `E:\opencell-worktrees\fix-transcriptional-regulation-iter0`, HEAD `73771f7`:
+  **97/97** fast tests. The checked-in event replay is independently reproduced
+  at **1 PASS / 1 intentional provenance RED** on missing
+  `dnadamage_source_sha256`.
+- Next implementers are isolated and non-overlapping:
+  CC may edit chassis topology/seeding only; TxReg may add/run a fail-closed
+  coordinated trace+ledger provenance migration only. Neither may edit shared
+  chromosome production behavior in this iteration.
+
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
 - Both auditors converged on **MIXED** RNG ownership from primary MATLAB:
