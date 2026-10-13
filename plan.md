@@ -250,6 +250,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   acceptance is **36 PASS / 1 strict XFAIL**, two Engines from one Composite
   preserve init state, tick 1 evolves exactly once, and L2.4 4x100 PASS. The
   original reviewer must re-adjudicate before integration.
+- Re-review found `get_schema()` re-arming unsafe: read-only schema inspection
+  can skip the next real evolution tick. The hidden lifecycle flag must be
+  removed. Replace it with an explicit internal request-ready handshake store:
+  request-only process sets ready each process phase; evolution Step runs only
+  when ready, clears it after exactly one evolution; Engine initialization and
+  repeated Composite construction see ready=false. Tests must freeze the port,
+  topology, set/clear semantics, and stale/double-consumption canaries.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
