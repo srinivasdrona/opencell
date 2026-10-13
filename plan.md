@@ -150,6 +150,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   CLI idempotency returns `already_migrated` with trace hash `645a2e68...`,
   ledger hash `ac2426dc...`, 135 active draw ticks, and unchanged draw digest
   `88c7c28c...`. Fresh GPT review is required before integration.
+- Live TxReg reviewer: `0b4e917c-a72d-4059-85e7-e394ce9679d4`.
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
