@@ -95,6 +95,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   CC may edit chassis topology/seeding only; TxReg may add/run a fail-closed
   coordinated trace+ledger provenance migration only. Neither may edit shared
   chromosome production behavior in this iteration.
+- Live work:
+  - CC Iteration-1 Sonnet implementer:
+    `671725c0-21eb-4b69-97a4-e3968fdd5960`
+  - TxReg test author is correcting the checked-in ledger contract from
+    bug-expected GREEN (`pytest.raises`) to repair-expected RED (positive load).
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
