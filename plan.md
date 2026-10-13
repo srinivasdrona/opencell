@@ -69,6 +69,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   use local MATLAB/fixtures/traces as authority, and must independently
   reproduce or reject every recorded blocker. No production, test, audit,
   wiring, evidence, baseline, or plan edit is authorized.
+- Live read-only agents:
+  - ChromosomeCondensation audit: `4d56f594-2241-44ac-a1e4-27631ebcf243`
+  - TranscriptionalRegulation audit: `6270517f-3022-4695-9e94-52ab22c65488`
 - Iteration rule after reports: parent validates both, then repairs one process
   at a time through frozen tests -> Sonnet implementation -> GPT review ->
   evidence/audit/baseline. Shared chromosome/RNG surfaces must not be edited by
