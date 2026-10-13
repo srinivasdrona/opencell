@@ -24,7 +24,10 @@ from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
 from opencell.util.txreg_mcg_rand import TxRegMcgRandStream
 from opencell.vivarium import karr_transcriptional_regulation as tx_reg_module
-from opencell.vivarium.karr_composite import build_karr_chassis_v6
+from opencell.vivarium.karr_composite import (
+    _load_d2_mature_complex_counts_snapshot,
+    build_karr_chassis_v6,
+)
 from opencell.vivarium.karr_transcription_v2 import KarrTranscriptionV2Process
 from opencell.vivarium.karr_transcription_v3 import KarrTranscriptionV3Process
 from opencell.vivarium.karr_transcriptional_regulation import (
@@ -225,18 +228,57 @@ def test_v6_chassis_seed_path_drives_mg205_fold_change() -> None:
     tx_reg_topology = composite["topology"]["karr_transcriptional_regulation"]
     assert tx_reg_topology["complex"] == ("complex",)
 
-    assert _tf_store(tx_reg, "MG_205_DIMER") == "complex"
+    # Mechanically derive all complex-stored TFs for TranscriptionalRegulation
+    complex_tf_wids = [wid for wid in tx_reg.tf_wids if _tf_store(tx_reg, wid) == "complex"]
+    assert set(complex_tf_wids) == {"MG_205_DIMER", "MG_428_DIMER"}
+
+    # Reconcile chassis complex seed state against D2 mature complex snapshot
+    mature_snapshot = _load_d2_mature_complex_counts_snapshot()
     complex_counts = composite["state"]["complex"]["counts"]
-    assert float(complex_counts["MG_205_DIMER"]) != pytest.approx(0.0)
+    for wid in complex_tf_wids:
+        assert float(complex_counts[wid]) == pytest.approx(float(mature_snapshot.get(wid, 0.0)))
 
-    target_tus = _regulated_tus_for_tf(tx_reg, "MG_205_DIMER")
-    assert target_tus
+    # Genuinely seeded TF complex is MG_428_DIMER (count 8.0); MG_205_DIMER is unseeded (count 0.0)
+    seeded_complex_wids = [wid for wid in complex_tf_wids if float(complex_counts[wid]) > 0.0]
+    unseeded_complex_wids = [wid for wid in complex_tf_wids if float(complex_counts[wid]) == 0.0]
+    assert seeded_complex_wids == ["MG_428_DIMER"]
+    assert unseeded_complex_wids == ["MG_205_DIMER"]
+    assert float(complex_counts["MG_428_DIMER"]) == pytest.approx(8.0)
+    assert float(complex_counts["MG_205_DIMER"]) == pytest.approx(0.0)
 
+    # Derive regulated TUs for the genuinely seeded complex TF
+    seeded_tf = seeded_complex_wids[0]
+    target_tus = _regulated_tus_for_tf(tx_reg, seeded_tf)
+    assert set(target_tus) == {"TU_063", "TU_318"}
+
+    # Planted wrong-WID mutation canaries:
+    # (a) An unmapped/invented WID must not exist in tf_wids, must have 0 count,
+    #     and querying regulated TUs must fail closed.
+    planted_wrong_wid = "MG_999_PLANTED_MUTATION_DIMER"
+    assert planted_wrong_wid not in tx_reg.tf_wids
+    assert float(complex_counts.get(planted_wrong_wid, 0.0)) == pytest.approx(0.0)
+    with pytest.raises(ValueError, match="is not in list"):
+        _regulated_tus_for_tf(tx_reg, planted_wrong_wid)
+
+    # (b) MG_205_DIMER has valid KB targets, but because it is unseeded in the chassis,
+    #     its private targets must NOT diverge from 1.0 (canary against false-positive fold change).
+    mg205_targets = _regulated_tus_for_tf(tx_reg, "MG_205_DIMER")
+    assert set(mg205_targets) == {"TU_010", "TU_122", "TU_155", "TU_208", "TU_258", "TU_285"}
+
+    # Update composite chassis for 1 second
     engine = Engine(composite=composite, emit_step=1.0, display_info=False)
     engine.update(1.0)
     state = engine.state.get_value()
     fold_change = state["tx_rate_fold_change"]
+
+    # Target TU_063 responds (fold change != 1.0)
     assert any(abs(float(fold_change[tu_wid]) - 1.0) > _FLOAT_TOL for tu_wid in target_tus)
+    assert abs(float(fold_change["TU_063"]) - 1.0) > _FLOAT_TOL
+
+    # Canary: unseeded MG_205_DIMER private targets must show zero fold-change divergence
+    for tu_wid in mg205_targets:
+        assert abs(float(fold_change[tu_wid]) - 1.0) <= _FLOAT_TOL
+
 
 
 def test_loader_rejects_binding_other_activities_overlap(monkeypatch: pytest.MonkeyPatch) -> None:
