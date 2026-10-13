@@ -59,6 +59,31 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-13) — CC Iteration 1 and TxReg Iteration 0 integrated; baseline stays 5/28:**
+
+- Audit branch integration commits: `f744bd6` (ChromosomeCondensation Iteration
+  1) and `b351897` (TranscriptionalRegulation Iteration 0). Nothing pushed; all
+  agents are idle.
+- CC live SMC/free-bound wiring is resolved and independently MATCHED. Semantic
+  audit is now **8 VERIFIED / 3 CODE_DEVIATES**: remaining gaps are one-tick
+  request timing, aggregate/fallback/hint compatibility paths, and cold-start
+  initialization. Flat substrate routing is accepted-equivalent.
+- TxReg canonical seed-0 active-window replay baseline is restored and
+  independently MATCHED. Canonical migrated hashes: trace `645a2e68...`,
+  ledger `ac2426dc...`, draw digest `88c7c28c...`; full 4000-tick replay passes.
+  All five production blockers remain open.
+- Final integrated verification: focused CC+TxReg **85 PASS / 2 strict XFAIL**,
+  L1b **115/115** and **28/28**, baseline/L1b regression **27/27**,
+  `pre_l25_honesty.py audit` **INTEGRITY_OK 5/28**, source digest
+  `abc50be529364dd4c59acd646f56c11fda7979c47d015fb88bf58add009024b6`.
+- Next iterative round:
+  1. ChromosomeCondensation Iteration 2 — freeze and repair same-tick
+     request -> allocation -> consume behavior; default allocator starvation
+     remains a separate upstream diagnostic.
+  2. TranscriptionalRegulation — Opus design of the shared chromosome-state
+     subsystem (footprint arrays, shared state RNG commit stream, unified t0
+     initialization), before any production test freeze.
+
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
 - ChromosomeCondensation Iteration 1 branch tip `849011b` has independent

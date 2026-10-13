@@ -48,6 +48,16 @@ requires stochastic/distributional fidelity evidence.
 - Downstream fold-change collapses MATLAB's two columns to chromosome copy 0.
 - No MATLAB-equivalent t=0 pre-binding sweep.
 
+## Iteration-0 evidence baseline
+
+- The canonical 4000-tick seed-0 event trace and chromosome RNG ledger now
+  carry matching DNADamage source provenance.
+- A coordinated migration proved every pre-existing HDF5 payload and every
+  per-tick RNG draw unchanged; the full active-window replay passes bit-identical.
+- This restores the single-seed replay baseline only. It does not resolve any
+  production deviation above, does not provide multi-seed distributional
+  evidence, and does not change eligibility.
+
 ## Documentation corrections completed
 
 - Removed the deterministic implication and recorded affinity-weighted random

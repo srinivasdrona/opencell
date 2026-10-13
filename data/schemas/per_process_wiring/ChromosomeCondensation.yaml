@@ -68,6 +68,10 @@ integration_touchpoints:
           lines: "1916-1922"
           note: "Allocated-value helper that clamps `substrates_allocated` grants to non-negative values."
           symbol: KarrChromosomeCondensationProcess._allocated_or_state
+        - path: "opencell/vivarium/karr_chromosome_condensation.py"
+          lines: "691-813"
+          note: "Accepted-equivalent flat projection: all ChromosomeCondensation substrates are cytosolic-only, so the shared per-WID substrate surface preserves this process's compartment semantics."
+          symbol: KarrChromosomeCondensationProcess.next_update
     status: "implemented"
     note: "The literal-surface path performs stochastic per-position binding; aggregate compatibility outputs and a non-literal fallback remain separate implementation reductions."
   calcFluxBounds:
@@ -364,8 +368,8 @@ provenance:
     - data/m1_sources/karr_native/per_process_traces_v2/ChromosomeCondensation_100ticks.mat
     kb_version_hint: V2 trace manifest for ChromosomeCondensation_100ticks.mat; fixture JSON has no explicit kb_version field.
   last_audited: '2026-09-17'
-  audited_by: Copilot documentation rebaseline (primary MATLAB source + current OC)
-  oc_commit_sha: cc1ef696219f41305ef008135cef46c9e65cd947
+  audited_by: Copilot Iteration-1 re-adjudication + independent GPT review
+  oc_commit_sha: aab74ed
   matlab_files_referenced:
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m
@@ -389,8 +393,6 @@ deviations:
   shared_pool_projection_merges_compartments: true
   known_deviations:
     - "OC's literal-chromosome path is stochastic and position-resolved, but the module also retains aggregate `smc_bound_count` / `condensation_level` compatibility outputs, a non-literal Karr-light fallback, and a `trace_hint.boundEnzymes_next` replay override; those paths are not MATLAB's autonomous state/behavior."
-    - "MATLAB substrate routing/writeback is compartment-indexed, but OC ChromosomeCondensation uses a flat per-WID shared substrate surface (merged compartment projection)."
     - "MATLAB enforces same-tick request -> allocation -> evolve ordering. In OC the in-process request does reach allocation in tick 1, but next_update already read substrates_allocated=0 before the allocation Step ran; it observes the tick-1 grant only on tick 2, creating a one-tick request-to-consumption lag."
-    - "The chassis-v6 topology maps chromosome/substrates/requests/substrates_allocated but not this process's `enzymes` or `boundEnzymes` ports, even though next_update reads both. The autonomous chassis therefore does not receive Karr's live free/bound SMC state through those declared ports."
     - "Karr initializeState performs a 20-step warm-up loop with ATP/H2O set to Inf; OC seeds from fixture and trace defaults instead."
-  note: "Stochasticity itself is source-faithful; the listed gaps are representation, replay, initialization, or chassis-wiring deviations."
+  note: "Stochasticity itself is source-faithful. The flat substrate projection is accepted-equivalent because every ChromosomeCondensation substrate is cytosolic-only. Live free/bound SMC topology and source-derived seeding were resolved in Iteration 1; remaining gaps are compatibility paths, request timing, initialization, and default allocator starvation from unrelated request competition."

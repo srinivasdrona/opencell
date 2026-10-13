@@ -1,6 +1,6 @@
 schema_version: "1.0"
 title: "Pre-L2.5 no-known-gap honesty baseline"
-audit_base_commit: "023bda80a6b65b4ebfb72af68022ecb9f2184896"
+audit_base_commit: "b351897"
 canonical_process_count: 28
 policy: >-
   A lower-gate PASS is necessary but not sufficient for L2.5 eligibility.
@@ -8,7 +8,7 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "9dcb2830b3d4b8e75edda88512ebad10b5ef82c01914d398edb38a1896bcab81"
+  sha256: "abc50be529364dd4c59acd646f56c11fda7979c47d015fb88bf58add009024b6"
   file_count: 128
 authorities:
   l1b_method_completeness: "PASS 115/115"
@@ -27,18 +27,34 @@ processes:
     findings:
       - id: CC-PRODUCTION-WIRING
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          The chassis does not connect the process's enzyme/bound-enzyme ports,
-          and next_update reads the previous allocation before its current
-          request is granted by the post-process allocation Step.
+          Chassis v5/v6 now connect live free/bound SMC state, seed fixture/trace
+          counts fail-closed, and preserve order-independent shared-store
+          updater semantics.
         evidence:
           - path: opencell/vivarium/karr_composite.py
-            lines: "2153-2158"
+            lines: "139-183"
           - path: opencell/vivarium/karr_composite.py
-            lines: "2377-2399"
+            lines: "2173-2178"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2317-2323"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2684-2688"
+          - path: docs/phase_f/audits/ChromosomeCondensation_semantic_audit.md
+            lines: "33-33"
+      - id: CC-REQUEST-TIMING
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The in-process request reaches the allocator only after next_update
+          has read the prior grant, producing a one-tick request-to-consumption
+          lag relative to MATLAB's same-tick request-allocation-evolve order.
+        evidence:
           - path: opencell/vivarium/karr_chromosome_condensation.py
             lines: "691-809"
+          - path: docs/phase_f/audits/ChromosomeCondensation_semantic_audit.md
+            lines: "31-31"
       - id: CC-NONKARR-PATHS
         kind: CODE_DEVIATION
         disposition: OPEN
@@ -50,14 +66,15 @@ processes:
           - path: opencell/vivarium/karr_chromosome_condensation.py
             lines: "691-861"
       - id: CC-COMPARTMENT-PROJECTION
-        kind: CODE_DEVIATION
-        disposition: OPEN
+        kind: REPRESENTATION_DIFFERENCE
+        disposition: ACCEPTED_EQUIVALENT
         summary: >-
-          MATLAB substrate state is compartment-indexed while the production
-          process writes one flat shared value per WID.
+          MATLAB substrate state is compartment-indexed while OpenCell uses a
+          flat shared value per WID; this is behavior-equivalent here because
+          every ChromosomeCondensation substrate is cytosolic-only.
         evidence:
-          - path: opencell/vivarium/karr_chromosome_condensation.py
-            lines: "650-689"
+          - path: docs/phase_f/audits/ChromosomeCondensation_semantic_audit.md
+            lines: "29-29"
       - id: CC-INITIALIZATION
         kind: CODE_DEVIATION
         disposition: OPEN
