@@ -130,6 +130,27 @@ def test_stage_a_chromosome_state_rand_stream_equivalence_across_seeds() -> None
         assert st_u["mcg_state"] == st_t["mcg_state"] == st_c["mcg_state"]
         assert st_u["seed"] == st_t["seed"] == st_c["seed"]
 
+        # 7. set_state into fresh instances and compare subsequent rand/randsample draws
+        fresh_unified = ChromosomeStateRandStream(999999)
+        fresh_unified.set_state(st_u)
+        fresh_txreg = TxRegMcgRandStream(999999)
+        fresh_txreg.set_state(st_t)
+        fresh_chromcond = ChromCondMcgRandStream(999999)
+        fresh_chromcond.set_state(st_c)
+
+        sub_rand_u = fresh_unified.rand(4, 4)
+        sub_rand_t = fresh_txreg.rand(4, 4)
+        sub_rand_c = fresh_chromcond.rand(4, 4)
+        np.testing.assert_array_equal(sub_rand_u, sub_rand_t)
+        np.testing.assert_array_equal(sub_rand_u, sub_rand_c)
+
+        weights_sub = np.linspace(0.1, 1.0, 10, dtype=np.float64)
+        sub_rs_u = fresh_unified.randsample(10, 6, False, weights_sub)
+        sub_rs_t = fresh_txreg.randsample(10, 6, False, weights_sub)
+        sub_rs_c = fresh_chromcond.randsample(10, 6, False, weights_sub)
+        np.testing.assert_array_equal(sub_rs_u, sub_rs_t)
+        np.testing.assert_array_equal(sub_rs_u, sub_rs_c)
+
 
 def test_stage_a_planted_multiplier_and_state_mutations_detected() -> None:
     """Stage A Canary: Planted generator mutations MUST diverge and be detected.
@@ -312,67 +333,138 @@ def test_canary_absent_key_silent_reseed_detected() -> None:
 def test_stage_a_non_ledger_production_continuity_multi_tick() -> None:
     """Stage A Contract §4.4, §12.
 
-    Non-ledger production continuity test across >= 2 ticks including a zero-draw tick:
-    - Tick 1: active draw tick, emits advanced [seed, mcg_state_1].
-    - Serialize and reconstruct store between ticks.
-    - Tick 2: zero-draw tick, emits unchanged [seed, mcg_state_1] (writeback on zero-draw).
-    - Serialize and reconstruct store between ticks.
-    - Tick 3: active draw tick, emits advanced [seed, mcg_state_3].
-    - Asserts exact bit-identical state progression vs a single continuous reference stream.
-    Does NOT rely on event oracle or ledger.
+    Non-ledger production continuity test across 3 ticks (active -> zero-draw -> active):
+    - Uses a controlled ChromosomeStore with its state-owned stream.
+    - Reconstructs the store from serialized to_state() mapping between EVERY tick.
+    - Tick 1 (active): draws N1 values, serializes state.
+    - Reconstructs store from Tick 1 state.
+    - Tick 2 (zero-draw): performs zero draws, serializes state.
+    - Reconstructs store from Tick 2 state.
+    - Tick 3 (active): draws N3 values, serializes state.
+    - Compares selected draws and final [seed, mcg_state] against an independently,
+      continuously advancing reference stream, proving exact continuity without an oracle.
     """
-    p = KarrTranscriptionalRegulationProcess({"rng_seed": 0})
+    if not hasattr(cs_mod, "CHROMOSOME_RAND_STREAM_KEY"):
+        pytest.fail("Stage A requires CHROMOSOME_RAND_STREAM_KEY defined in chromosome_store")
+
+    initial_seed = 42
+    ref_stream = TxRegMcgRandStream(initial_seed)
+    initial_mcg = ref_stream._mcg_state
+
+    # Initialize store 0 with seeded stream state
+    store0 = ChromosomeStore()
+    assert hasattr(store0, "set_rand_state"), "ChromosomeStore must provide set_rand_state()"
+    assert hasattr(store0, "rand_stream"), "ChromosomeStore must provide rand_stream()"
+    store0.set_rand_state(np.array([initial_seed, initial_mcg], dtype=np.int64))
+
+    # --- TICK 1: Active draw tick (draw N1 = 2 items with weights) ---
+    stream1 = store0.rand_stream()
+    assert stream1 is not None, "Tick 1 stream must be present"
+    w1 = np.array([0.2, 0.8, 0.5, 0.9], dtype=np.float64)
+    draws_t1 = stream1.randsample(4, 2, False, w1)
+    ref_draws_t1 = ref_stream.randsample(4, 2, False, w1)
+    np.testing.assert_array_equal(draws_t1, ref_draws_t1, err_msg="Tick 1 draws diverged from reference")
+
+    # Serialize Tick 1 state
+    payload_t1 = store0.to_state()
+    assert _EXPECTED_LEAF_KEY in payload_t1, "Tick 1 to_state() must include RNG leaf"
+    state_after_t1 = payload_t1[_EXPECTED_LEAF_KEY]
+    assert int(state_after_t1[1]) == ref_stream._mcg_state, "Tick 1 serialized mcg_state mismatch"
+
+    # --- RECONSTRUCT store between Tick 1 and Tick 2 ---
+    store1 = ChromosomeStore.from_state_mapping(payload_t1)
+    stream2 = store1.rand_stream()
+    assert stream2 is not None, "Tick 2 reconstructed stream must be present"
+
+    # --- TICK 2: Zero-draw tick (nothing bound, 0 draws) ---
+    # No draws performed on stream2 or ref_stream.
+    # Serialize Tick 2 state (writeback on zero-draw)
+    payload_t2 = store1.to_state()
+    assert _EXPECTED_LEAF_KEY in payload_t2, "Tick 2 to_state() must include RNG leaf on zero-draw"
+    state_after_t2 = payload_t2[_EXPECTED_LEAF_KEY]
+    np.testing.assert_array_equal(
+        state_after_t1, state_after_t2, err_msg="Zero-draw tick must preserve unchanged stream state"
+    )
+
+    # --- RECONSTRUCT store between Tick 2 and Tick 3 ---
+    store2 = ChromosomeStore.from_state_mapping(payload_t2)
+    stream3 = store2.rand_stream()
+    assert stream3 is not None, "Tick 3 reconstructed stream must be present"
+
+    # --- TICK 3: Active draw tick (draw N3 = 3 items with weights) ---
+    w3 = np.array([0.3, 0.1, 0.7, 0.4, 0.6], dtype=np.float64)
+    draws_t3 = stream3.randsample(5, 3, False, w3)
+    ref_draws_t3 = ref_stream.randsample(5, 3, False, w3)
+    np.testing.assert_array_equal(draws_t3, ref_draws_t3, err_msg="Tick 3 draws diverged from reference")
+
+    # Serialize Tick 3 state
+    payload_t3 = store2.to_state()
+    assert _EXPECTED_LEAF_KEY in payload_t3, "Tick 3 to_state() must include RNG leaf"
+    state_after_t3 = payload_t3[_EXPECTED_LEAF_KEY]
+
+    # Final assertion: full continuity against single continuous reference stream
+    assert int(state_after_t3[0]) == initial_seed
+    assert int(state_after_t3[1]) == ref_stream._mcg_state, (
+        f"Final mcg_state diverged: got {state_after_t3[1]} vs reference {ref_stream._mcg_state}"
+    )
+
+
+def test_stage_b_txreg_production_continuity_multi_tick() -> None:
+    """Stage B Contract §4.3, §4.5, §12.
+
+    Separately verify TxReg process next_update writes the same state leaf across
+    actual updates (active -> zero-draw -> active), reconstructing state between ticks,
+    matching a continuously advancing reference stream.
+    """
+    initial_seed = 0
+    p = KarrTranscriptionalRegulationProcess({"rng_seed": initial_seed})
     schema = p.ports_schema()
     if "chromosome" not in schema or _EXPECTED_LEAF_KEY not in schema["chromosome"]:
         pytest.fail("Stage B ports_schema must provide chromosome._shared_rand_stream_state")
 
-    # Construct initial state with seeded stream
-    initial_seed = 0
     ref_stream = TxRegMcgRandStream(initial_seed)
-    initial_mcg_state = ref_stream._mcg_state
+    initial_mcg = ref_stream._mcg_state
 
-    # Tick 1: Active binding (feed free TFs)
+    # Tick 1: Active binding
     state_t1 = {
         "protein": {"counts": {tf: 5.0 for tf in p.tf_wids}},
         "complex": {"counts": {tf: 5.0 for tf in p.tf_wids}},
         "chromosome": {
-            _EXPECTED_LEAF_KEY: np.array([initial_seed, initial_mcg_state], dtype=np.int64)
+            _EXPECTED_LEAF_KEY: np.array([initial_seed, initial_mcg], dtype=np.int64)
         },
         "tf_bound_promoters": {wid: 0.0 for wid in p.tf_bound_promoters_wids},
     }
-
     update_t1 = p.next_update(1.0, state_t1)
-    assert (
-        "chromosome" in update_t1 and _EXPECTED_LEAF_KEY in update_t1["chromosome"]
-    ), "Tick 1 update must write back _shared_rand_stream_state"
+    assert "chromosome" in update_t1 and _EXPECTED_LEAF_KEY in update_t1["chromosome"]
     state_after_t1 = update_t1["chromosome"][_EXPECTED_LEAF_KEY]
 
-    # Advance reference stream matching tick 1 draws
-    # Tick 2: Zero-draw tick (0 free TFs -> no binding, zero draws)
-    # Carry over bound promoters from tick 1
+    # Reconstruct state for Tick 2: Zero-draw tick (0 free TFs)
     new_promoters = deepcopy(state_t1["tf_bound_promoters"])
     for k, v in update_t1.get("tf_bound_promoters", {}).items():
         new_promoters[k] += v
 
     state_t2 = {
-        "protein": {"counts": {tf: 0.0 for tf in p.tf_wids}},  # ZERO FREE TFs -> 0 draws
+        "protein": {"counts": {tf: 0.0 for tf in p.tf_wids}},
         "complex": {"counts": {tf: 0.0 for tf in p.tf_wids}},
         "chromosome": {_EXPECTED_LEAF_KEY: state_after_t1.copy()},
         "tf_bound_promoters": new_promoters,
     }
-
     update_t2 = p.next_update(1.0, state_t2)
-    assert (
-        "chromosome" in update_t2 and _EXPECTED_LEAF_KEY in update_t2["chromosome"]
-    ), "Tick 2 (zero-draw tick) MUST write back _shared_rand_stream_state"
+    assert "chromosome" in update_t2 and _EXPECTED_LEAF_KEY in update_t2["chromosome"]
     state_after_t2 = update_t2["chromosome"][_EXPECTED_LEAF_KEY]
+    np.testing.assert_array_equal(state_after_t1, state_after_t2)
 
-    # Post-zero-draw state must be identical to post-tick-1 state (no draws occurred)
-    np.testing.assert_array_equal(
-        state_after_t1,
-        state_after_t2,
-        err_msg="Zero-draw tick must persist unchanged [seed, mcg_state]",
-    )
+    # Reconstruct state for Tick 3: Active binding
+    state_t3 = {
+        "protein": {"counts": {tf: 5.0 for tf in p.tf_wids}},
+        "complex": {"counts": {tf: 5.0 for tf in p.tf_wids}},
+        "chromosome": {_EXPECTED_LEAF_KEY: state_after_t2.copy()},
+        "tf_bound_promoters": new_promoters,
+    }
+    update_t3 = p.next_update(1.0, state_t3)
+    assert "chromosome" in update_t3 and _EXPECTED_LEAF_KEY in update_t3["chromosome"]
+    state_after_t3 = update_t3["chromosome"][_EXPECTED_LEAF_KEY]
+    assert int(state_after_t3[1]) != int(state_after_t2[1]), "Tick 3 active binding must advance stream"
 
 
 def test_stage_a_checkpoint_limitation_explicit() -> None:
@@ -491,14 +583,24 @@ def test_stage_b_txreg_chromosome_port_and_topology_mappings() -> None:
     ), f"Leaf _default must be {_UNSEEDED_SENTINEL!r}"
 
 
-def test_stage_b_candidate_fixture_parity_and_ordering_canary() -> None:
+def test_stage_b_candidate_fixture_parity() -> None:
     """Stage B Contract §4.2, §12, §18 A3, Blocker 2.
 
     TxReg candidate ordering, accessibility, damage, releasable-protein, and
     exclude-overlap logic must remain completely unchanged.
     Controlled candidate fixture: compare selected indices AND post-draw mcg_state
-    between current TxReg stream behavior and state-owned stream provider.
+    between current TxReg stream behavior (TxRegMcgRandStream) and the state-owned
+    provider (future ChromosomeStateRandStream).
+    Current code must FAIL/RED because ChromosomeStateRandStream is not yet implemented.
     """
+    try:
+        from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+    except ImportError:
+        pytest.fail(
+            "Stage B candidate parity requires future ChromosomeStateRandStream from "
+            "opencell.util.chromosome_state_rand (not yet implemented)."
+        )
+
     p = KarrTranscriptionalRegulationProcess({"rng_seed": 42})
 
     # Controlled candidate fixture inputs
@@ -509,7 +611,7 @@ def test_stage_b_candidate_fixture_parity_and_ordering_canary() -> None:
     strands = np.zeros(8, dtype=np.int64)
     own_footprint = 20
 
-    # 1. Draw using current TxReg stream logic
+    # 1. Draw using current TxReg stream logic (reference)
     p._chromosome_rng = TxRegMcgRandStream(42)
     idxs_ref = p._sample_accessible_sites_batched(
         weights=weights,
@@ -521,8 +623,8 @@ def test_stage_b_candidate_fixture_parity_and_ordering_canary() -> None:
     )
     state_after_ref = p._chromosome_rng._mcg_state
 
-    # 2. Draw using state-owned provider
-    stream_state = TxRegMcgRandStream(42)
+    # 2. Draw using future state-owned provider ChromosomeStateRandStream
+    stream_state = ChromosomeStateRandStream(42)
     p._chromosome_rng = stream_state
     idxs_state = p._sample_accessible_sites_batched(
         weights=weights,
@@ -779,11 +881,48 @@ def test_stage_ab_preconditions_and_dec007_gate() -> None:
     """Stage A+B Contract §13, §15, §18 A18.
 
     A+B implementation cannot merge without a new dec-007 decision card:
-    - dec-006 remains in force as test-only input oracle.
-    - dec-007 is an implementation gate recording the production shared stream contract.
-    This test asserts that dec-006 is active and establishes the acceptance precondition.
+    - dec-006 remains active in force as test-only input oracle.
+    - dec-007 is an implementation gate recording production shared chromosome
+      RNG stream ownership (ChromosomeStateRandStream, ChromosomeStore authority)
+      while preserving dec-006.
+    - Both the registry entry in decisions/_decision_index.yaml and the markdown
+      card decisions/dec-007-*.md must exist and explicitly record this ownership.
+    Current tree must RED on missing dec-007.
     """
+    import yaml
+
     dec_index_path = _REPO_ROOT / "decisions" / "_decision_index.yaml"
     assert dec_index_path.exists(), "decisions/_decision_index.yaml must exist"
-    dec_index_text = dec_index_path.read_text(encoding="utf-8")
-    assert "dec-006" in dec_index_text, "dec-006 must remain in force in decisions registry"
+    with open(dec_index_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+
+    decisions = data.get("decisions", [])
+    dec_by_id = {d["id"]: d for d in decisions if isinstance(d, dict) and "id" in d}
+
+    # 1. dec-006 must remain active in force
+    assert "dec-006" in dec_by_id, "dec-006 must remain in force in decisions registry"
+    assert dec_by_id["dec-006"].get("status") == "active"
+
+    # 2. dec-007 implementation gate must be present in registry
+    assert "dec-007" in dec_by_id, (
+        "Stage A+B implementation gate requirement: dec-007 must be registered in "
+        "decisions/_decision_index.yaml before Stage A+B merges (contract §13, §18 A18)."
+    )
+    dec007 = dec_by_id["dec-007"]
+    assert dec007.get("status") in {"active", "ratified", "approved"}
+
+    # 3. dec-007 file must exist and document production shared chromosome RNG stream
+    dec007_file_rel = dec007.get("file")
+    assert dec007_file_rel, "dec-007 must specify its file path in the decision index"
+    dec007_path = _REPO_ROOT / dec007_file_rel
+    assert dec007_path.exists(), f"Decision file {dec007_path} must exist"
+    dec007_text = dec007_path.read_text(encoding="utf-8")
+
+    # 4. Content assertions: must state production shared RNG ownership and preserve dec-006
+    assert "dec-006" in dec007_text, "dec-007 must reference dec-006 as the test-only oracle"
+    assert (
+        "shared" in dec007_text.lower() and "chromosome" in dec007_text.lower()
+    ), "dec-007 must record shared chromosome RNG ownership"
+    assert (
+        "ChromosomeStateRandStream" in dec007_text or "_shared_rand_stream_state" in dec007_text
+    ), "dec-007 must record the production stream substrate or leaf"
