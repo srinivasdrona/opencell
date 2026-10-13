@@ -665,16 +665,23 @@ def test_txreg_ledger_dnadamage_provenance_contract(tmp_path: Path) -> None:
     assert result == [[0.42]]
 
 
-def test_txreg_checked_in_ledger_intentional_red() -> None:
-    """The real checked-in ledger remains intentional RED until the subsequent
-    harness/evidence repair supplies valid provenance."""
+def test_txreg_checked_in_ledger_loads_successfully() -> None:
+    """Positive contract for the real checked-in 4000-tick event ledger.
+    Must load successfully, carry valid DNADamage provenance, and contain
+    exactly 4000 tick draw sequences.
+
+    Current checked-in artifacts make this test intentional RED (failing closed
+    on missing dnadamage_source_sha256); after coordinated migration / regeneration,
+    this test becomes GREEN.
+    """
     trace_path = _resolve_event_trace_path(0)
     if not trace_path.exists():
         pytest.skip(f"Checked-in trace not found: {trace_path}")
 
-    # Must fail closed because checked-in ledger lacks dnadamage_source_sha256
-    with pytest.raises(ChromosomeRandStreamLedgerError, match="missing its required dnadamage_source_sha256"):
-        load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+    ledgers = load_chromosome_rand_stream_ledger(trace_path, repo_root=_REPO_ROOT)
+    assert ledgers is not None
+    assert len(ledgers) == 4000
+    assert all(isinstance(draws, list) for draws in ledgers)
 
 
 def test_txreg_ledger_source_hashes_match_and_migration_boundary() -> None:
