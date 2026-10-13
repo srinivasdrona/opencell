@@ -134,6 +134,14 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   Step. The test must require request-only process output in orchestrated
   chassis mode plus one evolution Step after allocation, preventing duplicate
   evolution without inventing a dummy request Step.
+- CC test correction landed at `5342d62` / `eb3fb95`; parent now reproduces
+  **29 PASS / 2 hard RED / 1 strict XFAIL**. The REDs are request-only
+  authoritative process behavior and same-tick binding. The test also rejects
+  duplicate evolution; default allocator starvation remains strict XFAIL.
+- Sonnet may implement the established ChromosomeSegregation-style phase split:
+  preserve standalone combined `next_update` for replay compatibility, use a
+  request-only authoritative process instance in chassis v5/v6, and add one
+  post-allocation evolution Step referencing that exact instance.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
