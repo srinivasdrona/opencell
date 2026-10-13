@@ -242,6 +242,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   Tests must freeze per-Engine-lifecycle re-arming (two Engine constructions,
   neither mutates CC state) before the implementation can bind reset to a real
   Vivarium construction hook/schema lifecycle.
+- Composite-reuse regression landed at `2a60215` / `596d71c`; current focused
+  boundary is **15 PASS / 1 hard RED / 1 strict XFAIL**. Vivarium
+  `Process.get_schema()` runs during each Engine store construction, providing a
+  per-Engine lifecycle hook to re-arm the existing one-shot guard.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
