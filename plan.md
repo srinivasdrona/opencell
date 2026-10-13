@@ -205,6 +205,12 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   **12 PASS / 2 hard RED / 1 strict XFAIL** in the focused file plus 20/20
   existing CC tests. Sonnet may now add only the timestep<=0 no-op guard and
   revalidate the unchanged phase-split behavior.
+- The narrow `timestep<=0` fix is invalid because Vivarium passes `0.0` to
+  Steps during initialization **and every tick**. Correct production semantics
+  require a one-shot Step lifecycle guard: first invocation no-ops, subsequent
+  invocations evolve. The frozen init test also wrongly treats Engine-created
+  zero-valued request/allocation defaults as biological mutation; absent and
+  declared-zero structural bookkeeping must be normalized as equivalent.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
