@@ -215,6 +215,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   **13 PASS / 2 hard RED / 1 strict XFAIL** plus 20/20 existing tests. Sonnet
   may now implement only a private one-shot Step initialization guard: first
   invocation returns `{}`, subsequent invocations evolve regardless of timestep.
+- The one-shot implementation probe exposed three final contract/lifecycle
+  details:
+  1. v6 reuses Step objects from the temporary v5 Engine, so the initialization
+     guard must be explicitly reset before constructing the v6 Engine.
+  2. SMC conservation must include free SMC + free SMC-ADP + bound SMC; Karr
+     dissociates all free SMC-ADP at evolveState start, so `delta_free ==
+     -delta_bound` alone is false after init is correctly no-op.
+  3. `complexBoundSites` sparse arrays require structural comparison, not raw
+     dict `==`.
+- Test author must freeze these corrections before the production lifecycle
+  guard can commit.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
