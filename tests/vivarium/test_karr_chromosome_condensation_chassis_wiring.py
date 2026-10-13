@@ -266,6 +266,13 @@ def verify_process_is_request_only(cc: Any) -> None:
             f"CC process must emit positive ATP/H2O requests in next_update: got {cc_requests}"
         )
 
+    # Handshake requirement 1: Request-only CC process must emit phase.request_ready=True every process phase
+    ready_val = update.get("phase", {}).get("request_ready")
+    if ready_val is not True:
+        raise AssertionError(
+            f"CC process must emit phase.request_ready=True when emitting requests: got phase={update.get('phase')}"
+        )
+
     forbidden_evolution_keys = {"boundEnzymes", "chromosome", "complex", "enzymes", "substrates"}
     emitted_evolution_keys = forbidden_evolution_keys & set(update.keys())
     if emitted_evolution_keys:
@@ -974,13 +981,13 @@ def test_planted_canary_verifier_rejects_duplicate_evolution_mutation() -> None:
         verify_chassis_smc_binding(mutated, n_ticks=2)
 
 
-class _AlwaysEvolveEvolutionWrapper(Step):
-    """Planted mutation wrapper: always evolve even on timestep 0.0 (Engine initialization)."""
+class _StepIgnoresReadyFalseWrapper(Step):
+    """Planted mutation wrapper: evolution step ignores request_ready=False and always evolves."""
 
     def __init__(self, target: Any) -> None:
         object.__setattr__(self, "_target", target)
         super().__init__(parameters=dict(getattr(target, "parameters", {})))
-        self.name = getattr(target, "name", "always_evolve_wrapper")
+        self.name = getattr(target, "name", "ignores_ready_wrapper")
 
     def __getattr__(self, name: str) -> Any:
         if name == "_target":
@@ -1010,16 +1017,17 @@ class _AlwaysEvolveEvolutionWrapper(Step):
         return {
             "boundEnzymes": {"MG_213_214_298_6MER_ADP": 1.0},
             "chromosome": {"smc_bound_count": 1.0},
+            "phase": {"request_ready": False},
         }
 
 
-class _AlwaysNoopEvolutionWrapper(Step):
-    """Planted mutation wrapper: always return empty update (never evolve on active ticks)."""
+class _StepFailsToClearReadyWrapper(Step):
+    """Planted mutation wrapper: evolution step executes when ready=True, but omits request_ready=False."""
 
     def __init__(self, target: Any) -> None:
         object.__setattr__(self, "_target", target)
         super().__init__(parameters=dict(getattr(target, "parameters", {})))
-        self.name = getattr(target, "name", "always_noop_wrapper")
+        self.name = getattr(target, "name", "no_clear_wrapper")
 
     def __getattr__(self, name: str) -> Any:
         if name == "_target":
@@ -1045,62 +1053,138 @@ class _AlwaysNoopEvolutionWrapper(Step):
         return True
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        del timestep, states
-        return {}
+        ready = states.get("phase", {}).get("request_ready", False)
+        if not ready:
+            return {}
+        # Evolve but omit setting request_ready=False
+        return {
+            "boundEnzymes": {"MG_213_214_298_6MER_ADP": 1.0},
+            "chromosome": {"smc_bound_count": 1.0},
+        }
 
 
-def verify_step_one_shot_lifecycle(
+def verify_process_emits_request_ready(cc: Any) -> None:
+    """Assert CC process sets phase.request_ready=True in its update when emitting requests."""
+    probe_state = {
+        "substrates_allocated": {cc.name: {cc.atp_wid: 50.0, cc.water_wid: 50.0}},
+        "substrates": {cc.atp_wid: 1000.0, cc.water_wid: 1000.0, cc.pi_wid: 100.0, cc.hydrogen_wid: 100.0},
+        "enzymes": {cc.smc_wid: 10.0, cc.smc_adp_wid: 5.0},
+        "complex": {"counts": {cc.smc_wid: 10.0, cc.smc_adp_wid: 5.0}},
+        "boundEnzymes": {cc.smc_adp_wid: float(cc.trace_anchor_bound)},
+        "chromosome": {"smc_bound_count": float(cc.trace_anchor_bound), "condensation_level": float(cc.default_condensation_level)},
+    }
+    update = cc.next_update(1.0, probe_state)
+    ready = update.get("phase", {}).get("request_ready")
+    if ready is not True:
+        raise AssertionError(
+            f"CC process must emit phase.request_ready=True when emitting requests: got phase={update.get('phase')}"
+        )
+
+
+def verify_step_handshake_lifecycle(
     step: Any,
     *,
     init_state: dict[str, Any],
     active_state: dict[str, Any],
     cc: Any,
 ) -> None:
-    """Verify one-shot lifecycle: call 1 (Engine init) returns {}, call 2+ executes evolution."""
-    update1 = step.next_update(0.0, init_state)
+    """Verify explicit request_ready store handshake lifecycle.
+
+    1. When request_ready is False (Engine init / unready call), returns {} and leaves biology unchanged.
+    2. When request_ready is True (active tick), executes evolution and sets request_ready=False in same update.
+    3. When request_ready is False on a subsequent call, returns {} again (proves state-driven, not call-counter).
+    """
+    state_ready_false = deepcopy(init_state)
+    state_ready_false.setdefault("phase", {})["request_ready"] = False
+
+    state_ready_true = deepcopy(active_state)
+    state_ready_true.setdefault("phase", {})["request_ready"] = True
+
+    # Call 1: ready=False -> must return {}
+    update1 = step.next_update(0.0, state_ready_false)
     if update1 != {}:
         raise AssertionError(
-            f"Step {getattr(step, 'name', type(step).__name__)}.next_update first invocation (Engine initialization) "
-            f"must return empty dict {{}}, but returned non-empty updates: {list(update1.keys())} -> {update1}"
+            f"Step {getattr(step, 'name', type(step).__name__)}.next_update with request_ready=False "
+            f"(Engine initialization) must return empty dict {{}}, but returned: {list(update1.keys())} -> {update1}"
         )
 
-    update2 = step.next_update(0.0, active_state)
+    # Call 2: ready=True -> must evolve and emit phase: {request_ready: False}
+    update2 = step.next_update(0.0, state_ready_true)
     bound_delta = float(update2.get("boundEnzymes", {}).get(cc.smc_adp_wid, 0.0))
     if bound_delta <= 0.0:
         raise AssertionError(
-            f"Step {getattr(step, 'name', type(step).__name__)}.next_update subsequent invocation with active "
-            f"allocated grant must execute evolution, but returned no bound SMC: update={update2}"
+            f"Step {getattr(step, 'name', type(step).__name__)}.next_update with request_ready=True "
+            f"must execute evolution and bind >0 SMC, got: {update2}"
+        )
+    step_cleared_ready = update2.get("phase", {}).get("request_ready")
+    if step_cleared_ready is not False:
+        raise AssertionError(
+            f"Step {getattr(step, 'name', type(step).__name__)}.next_update with request_ready=True "
+            f"must set phase.request_ready=False in same update, got phase={update2.get('phase')}"
+        )
+
+    # Call 3: ready=False again -> must return {} again
+    update3 = step.next_update(0.0, state_ready_false)
+    if update3 != {}:
+        raise AssertionError(
+            f"Step {getattr(step, 'name', type(step).__name__)}.next_update with request_ready=False "
+            f"must return empty dict {{}} on subsequent unready calls, but returned: {list(update3.keys())} -> {update3}"
         )
 
 
-def test_planted_canary_verifier_rejects_always_evolve_step_mutation() -> None:
-    """Canary (f1): verifier must reject an evolution step that mutates state on initial call."""
+def test_planted_canary_verifier_rejects_step_ignoring_ready_false() -> None:
+    """Canary (f1): verifier must reject an evolution step that mutates state when request_ready=False."""
     composite = build_karr_chassis_v6()
     cc = composite["processes"]["karr_chromosome_condensation"]
     step = composite["steps"]["karr_chromosome_condensation_evolution"]
-    mutated_step = _AlwaysEvolveEvolutionWrapper(step)
+    mutated_step = _StepIgnoresReadyFalseWrapper(step)
 
     init_state = deepcopy(composite["state"])
     active_state = deepcopy(composite["state"])
     active_state["substrates_allocated"] = {cc.name: {cc.atp_wid: 50.0, cc.water_wid: 50.0}}
 
-    with pytest.raises(AssertionError, match="must return empty dict"):
-        verify_step_one_shot_lifecycle(mutated_step, init_state=init_state, active_state=active_state, cc=cc)
+    with pytest.raises(AssertionError, match="with request_ready=False"):
+        verify_step_handshake_lifecycle(mutated_step, init_state=init_state, active_state=active_state, cc=cc)
 
 
-def test_planted_canary_verifier_rejects_always_noop_step_mutation() -> None:
-    """Canary (f2): verifier must reject an evolution step that remains a no-op on active ticks."""
+def test_planted_canary_verifier_rejects_step_failing_to_clear_ready() -> None:
+    """Canary (f2): verifier must reject an evolution step that fails to set request_ready=False upon evolution."""
     composite = build_karr_chassis_v6()
     cc = composite["processes"]["karr_chromosome_condensation"]
     step = composite["steps"]["karr_chromosome_condensation_evolution"]
-    mutated_step = _AlwaysNoopEvolutionWrapper(step)
+    mutated_step = _StepFailsToClearReadyWrapper(step)
 
     init_state = deepcopy(composite["state"])
     active_state = deepcopy(composite["state"])
     active_state["substrates_allocated"] = {cc.name: {cc.atp_wid: 50.0, cc.water_wid: 50.0}}
 
-    with pytest.raises(AssertionError, match="must execute evolution"):
-        verify_step_one_shot_lifecycle(mutated_step, init_state=init_state, active_state=active_state, cc=cc)
+    with pytest.raises(AssertionError, match="must set phase.request_ready=False"):
+        verify_step_handshake_lifecycle(mutated_step, init_state=init_state, active_state=active_state, cc=cc)
+
+
+def test_planted_canary_verifier_rejects_process_failing_to_set_ready() -> None:
+    """Canary (f3): verifier must reject request process that fails to emit request_ready=True."""
+    composite = build_karr_chassis_v6()
+    cc = composite["processes"]["karr_chromosome_condensation"]
+
+    class _NoReadyProcessWrapper:
+        def __init__(self, target: Any) -> None:
+            self._target = target
+            self.name = getattr(target, "name", "no_ready_proc")
+
+        def __getattr__(self, name: str) -> Any:
+            return getattr(self._target, name)
+
+        def ports_schema(self) -> dict[str, Any]:
+            return self._target.ports_schema()
+
+        def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+            res = self._target.next_update(timestep, states)
+            return {k: v for k, v in res.items() if k != "phase"}
+
+    wrapped = _NoReadyProcessWrapper(cc)
+    with pytest.raises(AssertionError, match="must emit phase.request_ready=True"):
+        verify_process_emits_request_ready(wrapped)
 
 
 # ==============================================================================
@@ -1263,7 +1347,7 @@ def test_chassis_v6_chromosome_condensation_evolution_step_lifecycle_contract() 
     active_state["complex"]["counts"][cc.smc_wid] = 10.0
     active_state["complex"]["counts"][cc.smc_adp_wid] = 3.0
 
-    verify_step_one_shot_lifecycle(step, init_state=init_state, active_state=active_state, cc=cc)
+    verify_step_handshake_lifecycle(step, init_state=init_state, active_state=active_state, cc=cc)
 
 
 # ==============================================================================
@@ -1355,3 +1439,70 @@ def test_chassis_v6_chromosome_condensation_composite_reuse_engine_init_preserve
         assert float(val) == 0.0, f"CC request '{wid}' must be zero on Engine #2 init, got {val}"
     for wid, val in s2.get("substrates_allocated", {}).get(cc.name, {}).items():
         assert float(val) == 0.0, f"CC allocation '{wid}' must be zero on Engine #2 init, got {val}"
+
+    # Forbid side-effectful schema methods on evolution step
+    step = composite["steps"].get("karr_chromosome_condensation_evolution")
+    assert not hasattr(step, "reset_for_engine_initialization"), (
+        "Evolution Step must not define reset_for_engine_initialization"
+    )
+
+
+# ==============================================================================
+# Contract 11: Request-ready handshake topology and side-effect-free schema contract.
+# ==============================================================================
+
+
+def test_chassis_v6_chromosome_condensation_request_ready_handshake_topology_contract() -> None:
+    """Contract 11: CC process and evolution Step must wire to shared request_ready phase store.
+
+    Freezes:
+    1. Composite topology maps both 'karr_chromosome_condensation' and
+       'karr_chromosome_condensation_evolution' 'phase' port to
+       ('_internal_chromosome_condensation_phase',).
+    2. Initial state declares '_internal_chromosome_condensation_phase': {'request_ready': False}.
+    3. Ports schema of process and step declare 'phase' with 'request_ready' (default False, updater 'set').
+    4. Evolution step must NOT have side-effectful reset_for_engine_initialization method.
+    """
+    composite = build_karr_chassis_v6()
+    cc = composite["processes"]["karr_chromosome_condensation"]
+    step = composite["steps"].get("karr_chromosome_condensation_evolution")
+    assert step is not None, "Chassis v6 must contain 'karr_chromosome_condensation_evolution' step"
+
+    # 1. Topology mapping
+    proc_topo = composite["topology"].get("karr_chromosome_condensation", {})
+    step_topo = composite["topology"].get("karr_chromosome_condensation_evolution", {})
+    assert "phase" in proc_topo, "Process topology must declare 'phase' port"
+    assert "phase" in step_topo, "Evolution Step topology must declare 'phase' port"
+    assert proc_topo["phase"] == ("_internal_chromosome_condensation_phase",), (
+        f"Process phase port must map to ('_internal_chromosome_condensation_phase',), got {proc_topo.get('phase')}"
+    )
+    assert step_topo["phase"] == ("_internal_chromosome_condensation_phase",), (
+        f"Step phase port must map to ('_internal_chromosome_condensation_phase',), got {step_topo.get('phase')}"
+    )
+
+    # 2. Initial state
+    phase_state = composite["state"].get("_internal_chromosome_condensation_phase", {})
+    assert "request_ready" in phase_state, (
+        "Initial state must contain '_internal_chromosome_condensation_phase' with 'request_ready'"
+    )
+    assert phase_state["request_ready"] is False, (
+        f"Initial request_ready must be False, got {phase_state['request_ready']}"
+    )
+
+    # 3. Ports schema
+    proc_schema = cc.ports_schema().get("phase", {}).get("request_ready", {})
+    assert proc_schema.get("_default") is False, "Process phase.request_ready default must be False"
+    assert proc_schema.get("_updater") == "set", "Process phase.request_ready updater must be 'set'"
+
+    step_schema = step.ports_schema().get("phase", {}).get("request_ready", {})
+    assert step_schema.get("_default") is False, "Step phase.request_ready default must be False"
+    assert step_schema.get("_updater") == "set", "Step phase.request_ready updater must be 'set'"
+
+    # 4. Forbid hidden reset methods / side-effectful schema access
+    assert not hasattr(step, "reset_for_engine_initialization"), (
+        "Evolution Step must not define reset_for_engine_initialization; "
+        "lifecycle must be governed by explicit request_ready store handshake"
+    )
+    assert getattr(step, "_initialization_call_spent", None) is None, (
+        "Evolution Step must not use internal _initialization_call_spent flag"
+    )
