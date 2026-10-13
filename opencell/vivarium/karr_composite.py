@@ -45,7 +45,9 @@ from opencell.m3 import translation_v2 as tl_v2
 from opencell.vivarium.karr_allocation_step import KarrAllocationStep
 from opencell.vivarium.karr_cell_cycle_coordinator import CellCycleCoordinator
 from opencell.vivarium.karr_chromosome_condensation import (
+    KarrChromosomeCondensationEvolutionStep,
     KarrChromosomeCondensationProcess,
+    KarrChromosomeCondensationRequestProcess,
 )
 from opencell.vivarium.karr_chromosome_segregation import (
     KarrChromosomeSegregationEvolutionStep,
@@ -1829,7 +1831,10 @@ def build_karr_chassis_v5(
             "process_rng_ledger_path": False,
         }
     )
-    condensation_proc = KarrChromosomeCondensationProcess({"time_step": time_step_s})
+    condensation_proc = KarrChromosomeCondensationRequestProcess({"time_step": time_step_s})
+    condensation_evolution_step = KarrChromosomeCondensationEvolutionStep(
+        {"condensation_process": condensation_proc}
+    )
     segregation_proc = KarrChromosomeSegregationProcess({"time_step": time_step_s})
     segregation_evolution_step = KarrChromosomeSegregationEvolutionStep(
         {"segregation_process": segregation_proc}
@@ -2322,6 +2327,13 @@ def build_karr_chassis_v5(
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
         },
+        "karr_chromosome_condensation_evolution": {
+            "chromosome": ("chromosome",),
+            "enzymes": ("complex", "counts"),
+            "boundEnzymes": ("boundEnzymes",),
+            "substrates": ("substrates",),
+            "substrates_allocated": ("substrates_allocated",),
+        },
         "karr_chromosome_segregation": {
             "chromosome": ("chromosome",),
             "protein": ("protein",),
@@ -2542,6 +2554,7 @@ def build_karr_chassis_v5(
             "request_calculator_transcription": req_transcription,
             "request_calculator_translation": req_translation,
             "karr_allocation_step": allocation_step,
+            "karr_chromosome_condensation_evolution": condensation_evolution_step,
             "karr_chromosome_segregation_evolution": segregation_evolution_step,
             "cell_cycle_coordinator": coordinator_step,
             "protein_flat_projection_pre": protein_flat_projection_pre,
@@ -2570,11 +2583,13 @@ def build_karr_chassis_v5(
                 ("request_calculator_transcription",),
                 ("request_calculator_translation",),
             ],
+            "karr_chromosome_condensation_evolution": [("karr_allocation_step",)],
             "karr_chromosome_segregation_evolution": [("karr_allocation_step",)],
             "cell_cycle_coordinator": [("karr_chromosome_segregation_evolution",)],
             "protein_flat_projection_pre": [],
             "protein_flat_projection_post": [
                 ("karr_allocation_step",),
+                ("karr_chromosome_condensation_evolution",),
                 ("karr_chromosome_segregation_evolution",),
             ],
         },
@@ -2729,6 +2744,7 @@ def build_karr_chassis_v6(
         "phenotype_observables": ("phenotype_observables",),
     }
     flow["karr_observability_step"] = [
+        ("karr_chromosome_condensation_evolution",),
         ("karr_chromosome_segregation_evolution",),
         ("protein_flat_projection_post",),
     ]
