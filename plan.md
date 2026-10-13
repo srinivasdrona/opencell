@@ -226,6 +226,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
      dict `==`.
 - Test author must freeze these corrections before the production lifecycle
   guard can commit.
+- Final corrections landed at `6faa4e4` / `3fb3b5e`; focused boundary is again
+  **13 PASS / 2 hard RED / 1 strict XFAIL**, with only Engine-init mutation and
+  fresh-Step lifecycle RED. Sonnet may implement a one-shot guard plus a narrow
+  `reset_for_engine_initialization()` re-arm in v6 after the temporary v5 Engine
+  has consumed the first call.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
