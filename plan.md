@@ -183,6 +183,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   instead of `Step`; and the lag wrapper consumes its first call during Engine
   initialization. Tests must be corrected before acceptance; production is not
   integrated.
+- CC test corrections landed at `0c88fd3` / `8d5571f`. Parent acceptance is
+  now **31 PASS / 1 strict XFAIL** with L2.4 4x100 PASS. The request-only
+  authoritative process and post-allocation evolution Step are ready for fresh
+  GPT review; default allocator starvation remains the sole strict diagnostic.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
