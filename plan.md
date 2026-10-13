@@ -78,6 +78,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Immediate next step: bring `fix/shared-chromosome-state-stage-ab-20261013`
   (frozen boundary `27fd135`, **12 PASS / 13 RED**) onto the latest audit tip,
   preserving provenance by unique `event_id`, then implement/review Stage A+B.
+- Stage A+B is now refreshed at merge `ab53ef5`; the frozen boundary reproduces
+  exactly **12 PASS / 13 RED**. A bounded implementer is next; no broader
+  footprint-authority, t0-sweep, multi-consumer, or two-column work is allowed.
 
 **Current status (2026-10-13) — CC Iteration 1 and TxReg Iteration 0 integrated; baseline stays 5/28:**
 
