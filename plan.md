@@ -187,6 +187,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   now **31 PASS / 1 strict XFAIL** with L2.4 4x100 PASS. The request-only
   authoritative process and post-allocation evolution Step are ready for fresh
   GPT review; default allocator starvation remains the sole strict diagnostic.
+- Live CC Iteration-2 reviewer: `0522f35e-50f0-46ec-b662-e628d2352e63`.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
