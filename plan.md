@@ -262,6 +262,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   tests. Sonnet may now remove the one-shot/get_schema/reset machinery and wire
   one boolean `request_ready` state leaf shared by the request process and
   evolution Step.
+- Handshake implementation landed at `a31606f` / verified provenance `0bca00e`.
+  Parent acceptance is **38 PASS / 1 strict XFAIL**, repeated Engine/schema
+  access is side-effect free, request/evolution run exactly once per tick,
+  request_ready clears each tick, and L2.4 4x100 PASS. Final reviewer
+  re-adjudication is required before integration.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
