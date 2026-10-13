@@ -44,14 +44,17 @@ before a real second chromosome copy and consumer exist.
 |---|---|
 | `monomerBoundSites`/`complexBoundSites` are `[positions x strands]` sparse mats; chromosome copies live in the strand/compartment columns | `+state\Chromosome.m:203-204`; alloc `:451-452` (`CircularSparseMat([],[],[sequenceLen,nCompartments,numTimePoints],1)`) |
 | Bound-site values are protein/complex indices; widths from `monomerDNAFootprints`/`complexDNAFootprints` | `+state\Chromosome.m:180-185,398-399,1192-1194,1263-1265` |
-| Weighted accessible-site sampling draws from the **Chromosome state** `this.randStream` | `+state\Chromosome.m:482-505` (`:502` `this.randStream.randsample(...)`); `:579-581,617-618` |
+| Weighted accessible-site sampling draws from the **Chromosome state** `this.randStream`; **empty `weights` are normalized to ones** before sampling, so any commit with `maxBindings≥1` and ≥1 candidate advances the stream | `+state\Chromosome.m:482-505` (`:493-494` `weights = ones(...)`; `:500-502` `this.randStream.randsample(...)`); `:579-581,617-618` |
+| `bindProteinToChromosome` early-returns with **zero draws only when `maxBindings==0`** (no candidates / nothing to bind); else empty weights→ones and commit draws | `ChromosomeProcessAspect.m:286-345` (`:294-303` early return; `:308-310` ones; `:342` `setSiteProteinBound`) → `Chromosome.m:2043` |
+| DNADamage draws reaction **order** from its **process** stream, and damage-**site** selection from the **Chromosome state** `this.randStream` via `setSiteDamaged` | `+process\DNADamage.m:537` (`randStream.randperm`), `:559` (`chromosome.setSiteDamaged`) → `Chromosome.m:2490+` (`sampleAccessibleSites`/`stochasticRound`/`randomlySelectNRows`) |
+| DNADamage has an **empty `initializeState`** (no t0 damage sweep) | `+process\DNADamage.m:465` (`function initializeState(~)`) |
 | Release-rate draws use the **Chromosome state** `this.randStream` | `+state\Chromosome.m:2423-2427` |
 | Deterministic commit `setSiteProteinBound` writes indices (delegates sampling to `sampleAccessibleRegions`) | `+state\Chromosome.m:2025-2048,2100-2106` |
 | Each **Process** has its own `randStream`; each **CellState** (Chromosome) has its own separate `randStream` | `Process.m:69-71,282-290`; `CellState.m:19-22,42-50`; `Chromosome.m:30` (`Chromosome < CellState`) |
 | Streams are seeded identically (`mcg16807`); states serialized/restored separately | `Simulation.m:400-405,454-458` |
 | Per-tick process order is a fresh **random permutation** on the Simulation's own `randStream`; each process does `copyFromState → evolveState → copyToState`; chromosome commit is via `copyToState` | `@Simulation\evolveState.m:44-53,56-72` |
 | t=0 init order is deterministic `processesInInitOrder`; per process `copyFromState → initializeState → copyToState` | `@Simulation\initializeState.m:267-273`; `Simulation.m:596-597` |
-| CC **region + position decisions** draw from the **process** stream, then bind explicit positions | `ChromosomeProcessAspect.m:44-120` (`:96` `this.randStream.randsample`; `:99` `this.randStream.rand`) |
+| CC **region + position decisions** draw from the **process** stream, then the **commit draws from the shared chromosome stream** (empty weights→ones) on every real bind | `ChromosomeProcessAspect.m:44-120` (`:96` `randStream.randsample`; `:99` `randStream.rand`), commit `:286-345` → `Chromosome.m:493-494,500-502` |
 | TxReg binds TFs with affinity weights; the weighted draw happens in `sampleAccessibleRegions` (chromosome stream), so TxReg has **no** process decision draw | `TranscriptionalRegulation.m:348-379` (`:376` `bindProteinToChromosome`) → `Chromosome.m:500-504` |
 | TxReg fold-change matrix is `nTU x 2` (one column per chromosome copy); site surface is `N x 2` | `TranscriptionalRegulation.m:381-399,405-407` |
 | TxReg/CC t=0 sweeps: TxReg `initializeState → evolveState`; CC `initializeState` = 20 warm-up `evolveState` under infinite ATP/H2O | `TranscriptionalRegulation.m:325-331`; `ChromosomeCondensation.m:220-230,256-268` |
@@ -61,7 +64,7 @@ before a real second chromosome copy and consumer exist.
 | Fact | Anchor |
 |---|---|
 | `ChromosomeStore` single state authority; 11 fields; binding write API takes **pre-selected** positions | `opencell\state\chromosome_store.py:13-25,583-600`; `set_site_protein_bound:884-1019`; `set_region_protein_unbound:811-883`; `from_state_mapping:1034-1062` |
-| Per-process chromosome RNG shims — **byte-identical** MCG16807 (probe §9.2) | `opencell\util\chromcond_mcg_rand.py:35-170`; `opencell\util\txreg_mcg_rand.py:81-264` |
+| Per-process chromosome RNG shims — **byte-identical** MCG16807 (probe §19 P1) | `opencell\util\chromcond_mcg_rand.py:35-170`; `opencell\util\txreg_mcg_rand.py:81-264` |
 | Test-only ledger replay stream; fails closed; `assert_fully_consumed()` | `opencell\util\txreg_mcg_rand.py:333-380` |
 | TxReg production stand-in for the shared stream is a single continuously-advancing per-process `TxRegMcgRandStream`; replay swaps a fresh ledger stream per tick | `opencell\vivarium\karr_transcriptional_regulation.py:726-759` |
 | TxReg already reconstructs a `ChromosomeStore` from its state mapping but has no `chromosome` port | `karr_transcriptional_regulation.py:898-899` |
@@ -121,27 +124,33 @@ process-stream provenance. **Anchor:** as cited.
 arithmetic into a single `ChromosomeStateRandStream` (mcg16807; `get_state`/
 `set_state` for serialization). Per-process **ledger-replay subclasses stay**
 (dec-006 provenance isolation) and become thin adapters over the unified base.
-**Why.** §9.2 proves the two shims yield identical `rand`, `randsample`, and
+**Why.** §19 P1 proves the two shims yield identical `rand`, `randsample`, and
 state round-trips across seeds {0,1,42,123456789}; two copies of one generator
 is latent drift, not two authorities. **Rejected:** a brand-new generator — it
 would be a *second* RNG authority (pre-mortem red line). **Anchor:**
-`chromcond_mcg_rand.py:35-186`; `txreg_mcg_rand.py:81-264`; probe §9.2.
+`chromcond_mcg_rand.py:35-186`; `txreg_mcg_rand.py:81-264`; probe §19 P1.
 
-### DC-5 — Deterministic flow-DAG order now; Karr `randperm` scheduler deferred
-**Decision.** In autonomous production the shared stream advances in the
-**deterministic Vivarium `flow` topological order** of chromosome-binders, with
-the request→allocation phase completing before the commit/chromosome-draw phase
-(Karr's allocate-then-evolve). OC does **not** reproduce Karr's per-tick
-`randperm` process order in this subsystem.
-**Why.** Karr randomizes process order via the *Simulation* stream each tick
-(`evolveState.m:44-53`); reproducing that is a whole-scheduler change and is the
-only way to get bit-identical interleaving — which the dec-006 ledger already
-supplies for *replay*. Autonomous runs need determinism + per-seed
-reproducibility (L2.2/L2.4), not Karr-order bit-identity. The order is chosen
-from the flow DAG, **never from the ledger/oracle**. **Rejected:** reading Karr's
-per-tick order from the trace to order production draws — that is oracle-in-
-production (pre-mortem red line). **Anchor:** `evolveState.m:44-72`;
-`karr_composite.py:253-262,2731-2745`.
+### DC-5 — Deterministic commit-owner order; Karr `randperm` scheduler deferred
+**Decision.** Chromosome accessibility/commit/release draws are serialized by a
+single sequential **chromosome-commit owner** (a Vivarium Step, DC-9) in a fixed
+deterministic canonical order — **not** by the process `flow` DAG and **not** by
+in-place draws inside each process's `next_update`. OC does not reproduce Karr's
+per-tick `randperm` process order in this subsystem.
+**Why.** Probe P6 (§19) proves ordinary Vivarium Processes each compute
+`next_update` from the **same tick-start store view** — `engine.py run_for`
+buffers every process update in `self.front` and applies them via
+`_send_updates` only after all processes have computed; a stream mutated
+in-place by process A is invisible to process B in that tick (and in-place
+mutation is not even a declared update). Steps run after the process phase and
+**do** see merged state (P6). Hence the only correct multi-consumer mechanism is
+one owner advancing the single stream sequentially — which is also source-
+faithful, since Karr's chromosome draws all occur inside the one `Chromosome`
+state object as each `evolveState` calls into it. The canonical order is fixed
+(not Karr `randperm`, deferred; not read from the oracle). **Rejected:** flow-DAG
+ordering of per-process in-place draws (empirically broken, P6); reading Karr's
+per-tick order from the trace (oracle-in-production red line). **Anchor:**
+`engine.py` `run_for`/`_send_updates` (§19 P6); `evolveState.m:44-72`;
+`Chromosome.m` `setSiteProteinBound`/`setSiteDamaged`.
 
 ### DC-6 — Replay ledger stays a test-only input oracle (preserve dec-006)
 **Decision.** The per-tick chromosome RNG ledger may **seed/verify test
@@ -167,20 +176,50 @@ unconsumed, unvalidatable surface. **Rejected:** landing `nTU x 2` now
 `karr_transcriptional_regulation.py:1598-1608`; `karr_composite.py:2308-2316`
 (DNASupercoiling already consumes `tx_rate_fold_change`).
 
-### DC-8 — CC reconciliation: CC decision RNG stays local; shared-commit participation represented but not required for CC Iter 2
-**Decision.** ChromosomeCondensation keeps its process-local decision stream.
-Its participation in the **shared commit draw** is *represented* in the stream
-contract (so later composition composes correctly) but CC Iteration 2 (same-tick
-request→allocation→consume) proceeds independently and is **not** gated on this
-subsystem.
-**Why.** CC's stochastic decisions are process-stream (DC-3). Its commit passes
-**explicit** positions with **empty weights**, so `sampleAccessibleRegions`
-draws zero extra sites (`Chromosome.m:500` `nMoreSites =
-min(max(2*(nSites-numel(idxs)),10), nnz(weights))`, with `weights=[]` ⇒
-`nnz=0` ⇒ `0`) — CC's shared-stream consumption is conditional/minimal.
-**Rejected:** forcing CC onto the shared stream now (would couple CC Iter 2 to
-this design and risk a false second consumer). **Anchor:**
-`ChromosomeProcessAspect.m:44-120`; `Chromosome.m:500-504`.
+### DC-8 — CC reconciliation: CC decision RNG local; CC **is** a shared-commit consumer; CC Iter 2 still independent
+**Decision.** ChromosomeCondensation keeps its process-local **decision** stream
+(region/position). Its **commit draws from the shared chromosome stream on every
+real bind** and MUST be represented as a genuine shared-stream consumer in the
+ordering/draw-accounting (DC-9). CC Iteration 2 (same-tick request→allocation→
+consume) still proceeds independently — it concerns allocation timing, not the
+shared RNG stream.
+**Why — CORRECTED (prior "zero-draw" claim was wrong).**
+`bindProteinToChromosome` early-returns with zero draws **only when
+`maxBindings==0`** (no candidate positions, or nothing to bind;
+`ChromosomeProcessAspect.m:294-303`). Otherwise empty `weights` are normalized
+to ones (`:308-310`, and again in `sampleAccessibleRegions`,
+`Chromosome.m:493-494`), so `nnz(weights)>0`; `setSiteProteinBound:2043` always
+calls `sampleAccessibleRegions`, whose `this.randStream.randsample`
+(`Chromosome.m:500-502`) advances the shared stream. Thus CC draws from **both**
+streams: process (region/position, `ChromosomeProcessAspect.m:96,99`) and shared
+chromosome (commit resample among CC's pre-selected positions). The exact
+zero-draw condition is `maxBindings==0` only. CC Iter 2 stays independent because
+its allocation-timing repair neither needs nor edits the shared stream.
+**Rejected:** treating CC commit as zero/negligible draw (source-refuted);
+coupling CC Iter-2 to this subsystem (false dependency). **Anchor:**
+`ChromosomeProcessAspect.m:286-345`; `Chromosome.m:493-494,500-502,2043`.
+
+### DC-9 — Single sequential chromosome-commit owner (Step) receives intents
+**Decision.** For any stage with **more than one** shared-stream consumer,
+introduce one `ChromosomeCommitStep` (Vivarium Step) that owns the shared
+chromosome state + stream. Chromosome-binding processes emit binding/damage
+**intents** (enzyme, process-stream-selected candidate positions/weights,
+`maxBindings`) as updates to an intent-buffer port during the process phase. The
+Step, running after that phase via the `flow` DAG, consumes the merged intents
+in a fixed canonical order and — per intent — runs accessibility+selection
+drawing from the single shared stream against the **accumulating** chromosome
+state, commits bound-sites/damage via `set_site_protein_bound`/`setSiteDamaged`,
+and advances the stream once. The single-consumer stages (B–D) are the explicit
+exception: TxReg, as sole consumer, may draw within its own `next_update` and
+write back the stream state (no cross-process visibility problem).
+**Why.** Only a single owner can serialize shared draws across consumers under
+Vivarium's compute-from-tick-start-state model (DC-5/P6); Steps see merged
+post-process state (P6), so intents emitted by processes are visible to the Step.
+It is source-faithful: Karr advances the one `Chromosome.randStream` sequentially
+as each `evolveState` calls into the single state object. **Rejected:** each
+process drawing+writing the stream in its own `next_update` beyond one consumer
+(P6-broken, collides draws). **Anchor:** §19 P6; `engine.py` `run_steps`;
+`Chromosome.m setSiteProteinBound/setSiteDamaged`.
 
 ---
 
@@ -227,9 +266,12 @@ ChromosomeStore.rand_state() -> opaque scalar       # get_state (serialization)
 ChromosomeStore.set_rand_state(state)               # set_state (restore)
 ```
 The store stream exposes `rand/randi/randperm/randsample/get_state/set_state`
-(already present on the shims, DC-4). No process constructs its own shared
-stream; processes receive the store (already wired via the `chromosome` port)
-and call `sample_accessible_regions`.
+(already present on the shims, §19 P1). No process constructs its own shared
+stream. **Single consumer (Stages B–D):** TxReg receives the store (via the
+`chromosome` port) and calls `sample_accessible_regions` directly. **Multiple
+consumers (Stage E+):** processes do not call it; they emit intents and the DC-9
+`ChromosomeCommitStep` owner calls `sample_accessible_regions` on their behalf,
+in canonical order, against the accumulating state.
 
 ### 4.3 State representation & seeding
 - Stream state = `{"generator":"mcg16807","seed":…,"mcg_state":…}`
@@ -247,11 +289,19 @@ existing chromosome state (de)serialization. **STOP gate:** a
 dump→reload→continue probe must reproduce the next N draws bit-identically
 before any second consumer is added.
 
-### 4.5 How process order advances it
-Within a tick, each chromosome-binder that reaches its commit phase pulls its
-accessibility draws from the single store stream in flow-DAG order (DC-5); the
-stream's `mcg_state` monotonically advances; `copyToState`-equivalent writeback
-persists both the bound-site deltas and the advanced stream state.
+### 4.5 How the stream advances within a tick
+- **Single consumer (Stages B–D):** TxReg draws from the store stream inside its
+  own `next_update` (reading the serialized tick-start stream state) and writes
+  the advanced stream state back as a `set`-updater scalar. Correct because
+  TxReg is the only consumer, so no other process reads/advances the stream that
+  tick (DC-9 exception).
+- **Multiple consumers (Stage E+):** processes do **not** draw in-place
+  (Vivarium gives each the same tick-start state, P6). Each emits a binding/
+  damage **intent**; the single `ChromosomeCommitStep` owner (DC-9) consumes the
+  merged intents in a fixed canonical order, advances the one stream
+  sequentially, commits, and writes back the bound-site deltas + advanced stream
+  state. This reproduces Karr's single-owner sequential advancement
+  (`Chromosome.randStream` advanced inside the one state object).
 
 ---
 
@@ -262,42 +312,58 @@ via the bind/sample/release family):**
 
 | Process | MATLAB anchor | OC `chromosome` port today | Role |
 |---|---|---|---|
-| TranscriptionalRegulation | `TranscriptionalRegulation.m:376` → `Chromosome.m:502` | **No** (`karr_composite.py:1469-1474`) | write TF + **sole** shared-draw consumer (no process stream) |
-| Transcription | `Transcription.m:505-506,807-808` (stochastic bind) | n/a (no store import today) | write RNAP, read occupancy |
-| DNASupercoiling | `DNASupercoiling.m:325-326,382-388,464-465` | Yes `:2308` | bind gyrase/topoIV, release (release-rate draw), read |
-| DNARepair | `DNARepair.m:963-1043,1344` | Yes `:2344` | bind repair enzymes |
-| Replication | `Replication.m:660,748-751,1265-1268` | Yes `:2302` | bind/release pol/helicase/clamp, read |
-| ReplicationInitiation | `ReplicationInitiation.m:410-412,464-465,596` | Yes `:2295` | bind DnaA, read |
-| ChromosomeCondensation | `ChromosomeCondensation.m:256-268` | Yes `:2317` | **decision on process stream** (DC-8); commit draw conditional/minimal |
+| TranscriptionalRegulation | `TranscriptionalRegulation.m:376` → `Chromosome.m:493-494,500-502` | **No** (`karr_composite.py:1469-1474`) | write TF; **sole** shared-draw consumer (no process decision stream) |
+| DNADamage | process order `DNADamage.m:537`; site selection `:559` → `Chromosome.m:2490+` (`setSiteDamaged`) | Yes `:2338` | **dual-stream**: process (reaction order) + shared (damage-site selection) |
+| Transcription | `Transcription.m:505-506,807-808` (stochastic bind) | n/a (no store import today) | **dual-stream** (process region/pos + shared commit); write RNAP, read occupancy |
+| DNASupercoiling | `DNASupercoiling.m:325-326,382-388,464-465` | Yes `:2308` | **dual-stream** (process + shared); bind gyrase/topoIV, release (release-rate draw), read |
+| DNARepair | `DNARepair.m:963-1043,1344` | Yes `:2344` | shared commit; bind repair enzymes |
+| Replication | `Replication.m:660,748-751,1265-1268` | Yes `:2302` | shared commit; bind/release pol/helicase/clamp, read |
+| ReplicationInitiation | `ReplicationInitiation.m:410-412,464-465,596` | Yes `:2295` | shared commit; bind DnaA, read |
+| ChromosomeCondensation | `ChromosomeCondensation.m:256-268` → `Chromosome.m:493-494,500-502` | Yes `:2317` | **dual-stream**: process (region/position) + shared (commit on every bind, DC-8) |
 
 **Deferred / non-participants (no bound-site bind/sample/release call found):**
 `FtsZPolymerization`, `ChromosomeSegregation` (reads copy structure, no
 bind/sample/release). Cytokinesis reads `chromosome` but does not sample.
 
 **Migration posture:** only **TxReg** migrates onto the shared stream in this
-subsystem's first stages. Transcription/DNASupercoiling/DNARepair/Replication/
-RepInit are **enrolled in the contract** (so the stream is designed to compose)
-but their draw-routing migration is sequenced later and is **not faked** —
-each moves only when its own iteration runs.
+subsystem's first stages. DNADamage, Transcription, DNASupercoiling, DNARepair,
+Replication, and RepInit are **enrolled in the contract** (so the stream + the
+DC-9 owner are designed to compose) but their draw-routing migration is
+sequenced later and is **not faked** — each moves only when its own iteration
+runs. DNADamage and DNASupercoiling are the strongest second-consumer
+candidates: both already have chromosome-stream ledger/replay infrastructure
+(dec-006 named DNADamage and TxReg as the two discovery lanes;
+`dnas_chromosome_release_ledger.py` exists for DNASupercoiling).
 
 ---
 
 ## 6. Deterministic intra-tick ordering contract (SLOT 4)
 
-1. **Phases per tick (Karr `evolveState` mapped to OC):**
-   `request` → `allocation` (allocator grants) → `evolve/commit` (chromosome
-   accessibility + bound-site writeback). Matches Karr allocate-then-evolve
+1. **Phases per tick (Karr `evolveState` → OC):** `request` → `allocation`
+   (allocator grants) → `process phase` (each binder emits its intent, computed
+   from tick-start state + its process-stream decisions) → `commit phase` (the
+   DC-9 `ChromosomeCommitStep` owner consumes intents, draws from the shared
+   stream, commits, writes back). Matches Karr allocate-then-evolve
    (`evolveState.m:56-72`; request/allocation already separate OC steps).
-2. **Chromosome-draw order within the commit phase:** the fixed topological
-   order of chromosome-binders in the Vivarium `flow` DAG (DC-5). Stable across
-   ticks and seeds; it is the production order contract.
-3. **No oracle in the order choice.** The order is derived from the flow DAG,
-   not from the trace/ledger. Bit-identity to Karr's randomized order is a
-   **replay-only** property supplied by the dec-006 ledger.
-4. **Single-consumer invariant (first stages).** While TxReg is the sole
-   migrated consumer, order is trivially well-defined; multi-consumer ordering
-   is only exercised when a second process migrates (later stage), gated by a
-   STOP test (§10).
+2. **Chromosome-draw order (commit phase):** a **fixed canonical order over the
+   intents** inside the single owner — e.g. a frozen participant list derived
+   from Karr's `processMetadata.evalOrder` (static), applied deterministically
+   every tick. It is **not** the `flow` DAG over processes (which cannot
+   serialize per-process in-place draws, P6), **not** Karr's per-tick `randperm`
+   (deferred), and **not** read from the oracle.
+3. **No oracle in the order choice (AO-4).** The order is a static constant;
+   bit-identity to Karr's randomized interleaving is a **replay-only** property
+   supplied by the dec-006 ledger.
+4. **Single-consumer invariant (Stages B–D).** While TxReg is the sole migrated
+   consumer there is exactly one intent per tick, so order is trivial and the
+   owner Step is not yet required (TxReg self-draws, DC-9 exception). The owner +
+   canonical order are introduced at the first multi-consumer stage (E), gated by
+   a STOP test (§12).
+5. **Accumulating-state faithfulness.** Because each intent is applied against
+   the chromosome state the owner has already mutated for earlier intents this
+   tick, a later binder sees earlier binders' footprints — matching Karr's
+   sequential `copyToState` between processes. Processes cannot do this in their
+   own `next_update` (tick-start state only, P6); the owner is what restores it.
 
 ---
 
@@ -322,7 +388,9 @@ stream (`ChromosomeCondensation.m:220-230`).
 4. **Staged rollout, no faking.** Processes without an OC init-binding path are
    **not** warmed up with invented draws; they join when their iteration lands.
    The init order for migrated processes follows Karr's `initOrder` for those
-   processes only.
+   processes only. DNADamage is a concrete example of correct non-participation:
+   its `initializeState` is empty (`DNADamage.m:465`), so it performs **no** t0
+   chromosome draw and must not be warmed up.
 
 **STOP gate:** t0 sweep must leave the single-seed replay baseline (trace
 `645a2e68…`, ledger `ac2426dc…`, draw digest `88c7c28c…`, 135 active ticks /
@@ -387,14 +455,19 @@ Until all four hold, keep column-0 emission (`karr_transcriptional_regulation.py
 - **AO-1 No-ledger-in-production:** assert the production code path never
   imports/constructs a `*LedgerRandStream` nor reads a ledger file (static +
   runtime import guard).
-- **AO-2 Fail-closed:** over-consumption raises (`RuntimeError`, probe §9.2
+- **AO-2 Fail-closed:** over-consumption raises (`RuntimeError`, probe §19 P2
   confirmed), under-consumption trips `assert_fully_consumed()`
   (`txreg_mcg_rand.py:333-380`).
 - **AO-3 Ledger-binding:** a ledger bound to a different trace SHA or different
   `Chromosome.m`/`RandStream.m` source bytes fails closed (dec-006 §Decision #3).
+  This includes the **`dnadamage_source_sha256`** cross-check: because DNADamage
+  advances the shared stream (§5), a ledger's recorded draw sequence is only
+  valid for the exact DNADamage source bytes it was reconstructed against, so a
+  mismatch must fail closed (dec-006 integration addendum; the TxReg Iteration-0
+  migration landed exactly this metadata).
 - **AO-4 Order-not-from-oracle:** mutate the trace's recorded per-tick process
-  order and assert the **production** draw order (flow DAG) is unchanged
-  (guards DC-5).
+  order and assert the **production** draw order (the DC-9 owner's fixed
+  canonical order) is unchanged (guards DC-5).
 
 ---
 
@@ -408,30 +481,65 @@ ends at a STOP gate (§12 tests).
   `ChromosomeStore.sample_accessible_regions`/`rand_state`. **No consumer wired.**
   Rollback = revert; no flag. Behavior-neutral (like the D5 pre/post pattern,
   `karr_composite.py:253-262`).
-- **Stage B — TxReg sole consumer (FIRST IMPLEMENTABLE SLICE).** Add TxReg
+- **Stage B — TxReg sole consumer (part of the FIRST SLICE).** Add TxReg
   `chromosome` port; route the TxReg binding draw through
-  `sample_accessible_regions` on the shared stream; keep projection reads. With
-  TxReg the only consumer, the draw **sequence is unchanged** vs the current
-  per-process stand-in, so the single-seed replay baseline stays bit-identical.
+  `sample_accessible_regions` on the shared stream; TxReg self-draws in its own
+  `next_update` and writes back the advanced stream state (DC-9 exception, valid
+  for a single consumer). Keep projection reads. With TxReg the only consumer the
+  draw **sequence is unchanged** vs the current per-process stand-in, so the
+  single-seed replay baseline stays bit-identical.
 - **Stage C — Shared writeback + authority removal.** Commit TF footprints to
   `monomer/complexBoundSites`; switch `tf_bound_promoters`/`bound_tfs` to store
-  projections; delete the TxReg-local occupancy authority.
+  projections; delete the TxReg-local occupancy authority. Still single consumer.
 - **Stage D — TxReg t0 pre-binding sweep** (§7) on the shared stream.
-- **Stage E+ — Second consumer** (Transcription or DNASupercoiling): exercises
-  true multi-consumer flow-DAG ordering (DC-5) and footprint cross-visibility.
+- **Stage E — Second consumer + the DC-9 commit owner (implementable spec).**
+  This is where multi-consumer ordering lands. Concretely:
+  1. Add `ChromosomeCommitStep(Step)` with ports `{chromosome, intents,
+     substrates_allocated}`; it owns the serialized stream state and the
+     `monomer/complexBoundSites` writeback.
+  2. Add an `intents` store leaf (list/dict buffer, `set`-updater, cleared each
+     tick by the owner) and give each participating process an `intents` output
+     port. Each process's `next_update` emits
+     `{"intents": {proc_key: {enzyme, positions, strands, weights, maxBindings}}}`
+     computed from tick-start state + its process-stream decisions — it performs
+     **no** shared-stream draw.
+  3. Register the owner in `flow` with a dependency on every intent-emitting
+     process so it runs in the step phase after they compute (Steps see merged
+     state, P6).
+  4. The owner iterates intents in the **fixed canonical order** (§6.2); per
+     intent it calls `sample_accessible_regions` (shared-stream draw against the
+     accumulating chromosome state) then `set_site_protein_bound`/`setSiteDamaged`,
+     advancing the one stream; finally it writes the stream state + bound-site
+     deltas back.
+  5. Migrate TxReg from self-draw (Stage B) to intent-emit; add the second
+     consumer (DNADamage or DNASupercoiling) as a second intent-emitter.
+  STOP gate: deterministic two-consumer order over two seeds; each consumer's own
+  draw count matches its isolated L2.1; no draw collision.
 - **Deferred joint stage** — two-column fold-change (§9).
 
-**Why Stage B is the lowest-risk first slice (not big-bang):**
-1. **Single consumer** ⇒ no interleaving semantics to get right yet.
-2. **TxReg has no process decision stream** ⇒ no mixed-stream split to
-   implement; the whole TxReg stochastic step maps 1:1 to the shared draw.
+**Why the first slice is Stage A+B shipped together (not Stage A alone, not
+big-bang):**
+1. **Stage A alone is consumer-less infrastructure.** A landed stream class +
+   serialization with no reader is exactly the "infrastructure cosplay" the
+   operator's smallest-thing principle rejects — it adds a schema field and a
+   module that nothing exercises end-to-end. So Stage A is **not** landed as a
+   standalone slice; it ships with its first real consumer (B).
+2. **A+B is still the smallest thing that delivers behavior:** one substrate +
+   one real consumer (TxReg), nothing more. TxReg has no process decision stream,
+   so the whole TxReg stochastic step maps 1:1 to the shared draw — no
+   mixed-stream split, no owner Step yet (single consumer, DC-9 exception).
 3. **Draw sequence is preserved** for a TxReg-only run ⇒ the existing dec-006
    L2.1 replay is a ready bit-identity falsification test, not a rewrite.
-4. **Two-column fold-change and scheduler `randperm` are deferred** ⇒ the
-   hardest, lowest-value pieces are out of the first slice.
-A big-bang migration (all 7 binders + shared ordering + two-column + t0 at once)
-would entangle the untestable scheduler-permutation faithfulness with the
-testable single-consumer refactor and has no intermediate green gate.
+4. **Independent STOP gates within the one slice.** Gate A (stream round-trip +
+   shim-equivalence unit tests) and Gate B (TxReg L2.1 replay bit-identity +
+   `INTEGRITY_OK 5/28`) are separately runnable and separately attributable even
+   though shipped in one slice, satisfying "each STOP gate independent."
+5. **The hardest, lowest-value pieces are deferred** — the DC-9 owner (Stage E),
+   two-column fold-change, and the `randperm` scheduler are all out of the first
+   slice.
+A big-bang migration (all 7 binders + the owner + two-column + t0 at once) would
+entangle untestable multi-consumer ordering with the testable single-consumer
+refactor and has no intermediate green gate.
 
 ---
 
@@ -446,7 +554,10 @@ testable single-consumer refactor and has no intermediate green gate.
 | C | TF footprints visible to readers | after TxReg bind, `complexBoundSites` has the TF index at `tfPositionStrands` | skip writeback ⇒ occupancy absent |
 | C | no dual authority | single-source read assert | reintroduce local map ⇒ divergence vs store |
 | D | t0 sweep bit-identical | replay from `initial_state` | reorder/duplicate t0 binds ⇒ draw-digest change |
-| E | multi-consumer order deterministic | two-seed, two-consumer order stable | shuffle flow edges ⇒ order change (AO-4 guards against oracle order) |
+| E | commit owner serializes draws | two-consumer run: each consumer's draw count == its isolated L2.1 count; no collision | let two processes self-draw the stream in `next_update` ⇒ identical (colliding) draws, count mismatch (proves P6 hazard) |
+| E | multi-consumer order deterministic & not-from-oracle | two-seed, two-consumer owner order stable | shuffle the canonical intent order ⇒ draw sequence change; mutate trace process order ⇒ production unchanged (AO-4) |
+| E | DNADamage dual-stream routed correctly | DNADamage reaction order on its process stream; damage-site draws on shared stream via owner | route DNADamage damage-site draw to its process stream ⇒ shared-stream draw count wrong vs ledger |
+| E | ledger DNADamage-hash bound | AO-3 with `dnadamage_source_sha256` | swap DNADamage source bytes ⇒ ledger load fails closed |
 
 **Evidence impacts.**
 - **L2.1 (bit-identity, σ=0):** unchanged through Stage D (single consumer,
@@ -473,19 +584,31 @@ testable single-consumer refactor and has no intermediate green gate.
 - MODIFY `opencell/vivarium/karr_transcriptional_regulation.py` — consume shared
   stream; projection reads; footprint writeback; t0 sweep (B–D).
 - MODIFY `opencell/vivarium/karr_composite.py` — add TxReg `chromosome` port
-  (both mappings); serialize stream state in chromosome `initial_state` (B).
-- TEST (separate authors) — Stage A/B/C/D suites + anti-oracle tests (§10).
+  (both mappings); serialize stream state in chromosome `initial_state` (B); at
+  Stage E add the `ChromosomeCommitStep` to `steps`/`flow`, the `intents` store
+  leaf, and `intents` output ports on participating processes.
+- NEW `opencell/vivarium/chromosome_commit_step.py` — the DC-9 sequential commit
+  owner (Stage E).
+- MODIFY (Stage E, each when its iteration runs) the second consumer's module —
+  **DNADamage** (`karr_dna_damage.py`) or DNASupercoiling (`karr_dna_supercoiling.py`):
+  emit intents instead of self-drawing; keep the process-stream decision draw
+  (DNADamage reaction order, `DNADamage.m:537`).
+- TEST (separate authors) — Stage A/B/C/D suites + Stage-E owner/second-consumer
+  suite + anti-oracle tests (§10).
 - DEC (at implementation time, not here) — author **dec-007** referencing
   dec-006: dec-006 governs the *test* ledger oracle and stays in force; dec-007
-  adds the *production* single shared stream (the gap dec-006 left — "production
-  code paths are unaffected"). dec-007 does **not** supersede dec-006; it is
-  additive and compatible.
+  adds the *production* single shared stream + the DC-9 commit owner (the gap
+  dec-006 left — "production code paths are unaffected"). dec-007 does **not**
+  supersede dec-006; it is additive and compatible.
 
 **Schema/topology changes:**
-- Topology: `+1` port (`chromosome`) on TxReg (both composite mappings).
+- Topology: `+1` port (`chromosome`) on TxReg (both composite mappings) at
+  Stage B; at Stage E, `+1` `intents` output port per participating process and a
+  new `ChromosomeCommitStep` in `steps`/`flow`.
 - Chromosome state mapping: `+1` reserved scalar (`_shared_rand_stream_state`).
   Back-compat: **absent ⇒ freshly seeded stream** (existing traces unaffected;
-  no re-extraction required to load).
+  no re-extraction required to load). Stage E: `+1` `intents` store leaf
+  (transient per-tick buffer, not persisted across ticks).
 
 **Compatibility removal schedule:**
 - TxReg-local `tf_bound_promoters` authority removed at **Stage C** (only after
@@ -506,26 +629,33 @@ gate is green; no flag may persist past its stage.
 
 - CC's **local decision RNG remains** (process stream; region/position draws,
   `ChromosomeProcessAspect.m:96,99`). This subsystem does not touch it.
-- CC's **shared-commit participation is represented**: the stream contract
-  (§4, §6) documents that CC's commit *may* conditionally advance the shared
-  stream (empty-weights explicit-position binds draw zero extra sites today,
-  DC-8), so when CC later composes with TxReg on the shared stream the ordering
-  and draw-accounting already account for a (currently zero-draw) CC slot.
+- CC **is a genuine shared-commit consumer** (CORRECTED): every real SMC bind
+  advances the shared chromosome stream via `setSiteProteinBound →
+  sampleAccessibleRegions` with empty weights normalized to ones
+  (`Chromosome.m:493-494,500-502`); the only zero-draw case is `maxBindings==0`
+  (`ChromosomeProcessAspect.m:294-303`). So CC occupies a **non-trivial** slot in
+  the DC-9 owner's canonical order and draw-accounting when it later composes —
+  it is not a zero-draw placeholder.
 - **CC Iteration 2 proceeds independently.** Its same-tick
-  request→allocation→consume repair (plan "Next iterative round" item 1) does
-  not depend on, and is not blocked by, this subsystem; the two iterations do
-  not edit the same shared chromosome production surface concurrently.
+  request→allocation→consume repair (plan "Next iterative round" item 1) concerns
+  allocation timing, not the shared RNG stream; it neither needs nor edits the
+  shared stream, and the two iterations do not edit the same shared chromosome
+  production surface concurrently.
 
 ---
 
 ## 15. Recommended first implementation slice
 
-**Stage A + Stage B.** Ship the shared-stream substrate (unified
-`ChromosomeStateRandStream`, serialized stream state, store API) and wire
-**TxReg as the sole consumer** with the `chromosome` port — stopping *before*
-footprint-authority removal (Stage C). Rationale: §11 points 1–4. The STOP gate
-is the dec-006 L2.1 single-seed replay staying bit-identical plus
-`INTEGRITY_OK 5/28` and L1b/baseline regressions green.
+**Stage A+B shipped as one slice** (substrate + its first real consumer),
+**not** Stage A alone. Ship the unified `ChromosomeStateRandStream`, the
+serialized stream state, and the store API **together with** wiring **TxReg as
+the sole consumer** via the `chromosome` port — stopping *before* footprint-
+authority removal (Stage C) and before the DC-9 owner (Stage E). Rationale: §11
+"first slice" points 1–5 — Stage A alone is consumer-less infrastructure
+(operator anti-pattern), while A+B is the smallest end-to-end-testable unit.
+**Two independent STOP gates** within the slice: Gate A = stream round-trip +
+shim-equivalence unit tests; Gate B = dec-006 L2.1 single-seed replay staying
+bit-identical plus `INTEGRITY_OK 5/28` and L1b/baseline regressions green.
 
 ---
 
@@ -549,20 +679,29 @@ is the dec-006 L2.1 single-seed replay staying bit-identical plus
    `chromosome` mapping vs a sibling top-level state key — resolve against the
    HDF5 trace loader (`from_state_mapping`/`from_trace_tick`,
    `chromosome_store.py:1034-1100`) so existing seed-0 traces still load.
-2. **Flow-DAG order vs Karr init order at t0.** The t0 sweep order for migrated
-   processes should match Karr `processesInInitOrder`; confirm the OC flow DAG
-   does not contradict it for the TxReg-only first slice (it cannot, single
-   consumer) and define the rule before Stage E.
+2. **Canonical commit order source.** The DC-9 owner's fixed order should derive
+   from Karr's static `processMetadata.evalOrder` (not `randperm`, not oracle);
+   confirm that ordering is available in OC metadata and define the frozen list
+   before Stage E. For t0, the sweep order for migrated processes should match
+   Karr `processesInInitOrder`.
 3. **dec-007 vs dec-006 boundary wording.** Exact phrasing that dec-006's
-   test-only oracle stays in force while dec-007 governs production — author at
-   implementation time; do not edit decision cards in this planner pass.
+   test-only oracle stays in force while dec-007 governs production + the DC-9
+   owner — author at implementation time; do not edit decision cards in this
+   planner pass.
 4. **`sample_accessible_regions` scope on the store.** How much of MATLAB's
    `isRegionAccessible`/`getReleasableProteins` accessibility logic
    (`Chromosome.m:651-752`) already lives in TxReg vs must move to the store to
    keep the draw count identical — verify draw-count parity under the ledger
    before Stage C.
-5. **Second-consumer selection** (Stage E): Transcription vs DNASupercoiling —
-   pick by which has an existing fixture/trace enabling a draw-order STOP test.
+5. **Second-consumer selection** (Stage E): **DNADamage** vs DNASupercoiling —
+   both have existing chromosome-stream ledger/replay infrastructure (dec-006
+   named DNADamage; `dnas_chromosome_release_ledger.py` exists for
+   DNASupercoiling). Pick by which has a ready multi-consumer draw-order fixture/
+   trace; DNADamage is favored because dec-006 already froze its source-hash
+   binding.
+6. **Intent-buffer cleanup semantics.** Confirm the owner can authoritatively
+   clear the per-tick `intents` leaf (set-updater to empty) and that no process
+   reads stale intents — a Vivarium updater-ordering check before Stage E.
 
 ---
 
@@ -574,16 +713,17 @@ is the dec-006 L2.1 single-seed replay staying bit-identical plus
 | A2 | Single serialized shared RNG stream | one `ChromosomeStateRandStream`; state in chromosome mapping; checkpoint round-trip bit-identical | A |
 | A3 | MIXED model exact | process decision draws unchanged; only accessibility/commit/release advance shared stream | B |
 | A4 | Participants enumerated | §5 table with MATLAB file:line; verified vs deferred distinguished | (doc) |
-| A5 | Deterministic order, no oracle | production draw order from flow DAG; AO-4 passes | B/E |
-| A6 | Unified t0 sweep | TxReg t0 pre-binding sweep; replay baseline bit-identical; no faked processes | D |
+| A5 | Deterministic order, no oracle | production draw order = DC-9 owner's fixed canonical order (Karr `evalOrder`-derived); AO-4 passes | B(single)/E(multi) |
+| A6 | Unified t0 sweep | TxReg t0 pre-binding sweep; replay baseline bit-identical; no faked processes (DNADamage empty-init not warmed) | D |
 | A7 | TxReg topology migrated | `chromosome` port present; writeback live; dual authority removed | B/C |
 | A8 | Two-column fold-change deferred | column-0 emission retained; prerequisites §9 listed | — |
-| A9 | Replay is test-only | AO-1/AO-2/AO-3 pass; no ledger in production path | B+ |
-| A10 | Small sequential slices | each stage has an independent STOP gate | all |
+| A9 | Replay is test-only | AO-1/AO-2/AO-3 (incl. `dnadamage_source_sha256`) pass; no ledger in production path | B+ |
+| A10 | Small sequential slices | each stage has an independent STOP gate (first slice = two gates) | all |
 | A11 | Falsifiable tests + mutations | §12 table; each planted mutation fails its test | per stage |
 | A12 | Evidence impact stated | L2.1 preserved; L2.2 blocked-on-data; L2.4 `INTEGRITY_OK 5/28` held | per stage |
 | A13 | Blast radius/schema/rollback | §13; back-compat absent-key default; no permanent flag | all |
-| A14 | CC reconciled | CC decision RNG local; shared-commit represented; CC Iter 2 independent | (doc) |
+| A14 | CC reconciled | CC decision RNG local; CC is a genuine shared-commit consumer (not zero-draw); CC Iter 2 independent | (doc) |
+| A15 | Multi-consumer correctness | DC-9 owner serializes shared draws (processes emit intents, do not self-draw past one consumer); P6-proven | E |
 
 ---
 
@@ -599,6 +739,41 @@ is the dec-006 L2.1 single-seed replay staying bit-identical plus
   DC-6 / AO-2.
 - **Probe P3 (source anchoring).** All §1 MATLAB/OC citations verified against
   files on disk under `E:\opencell\data\m1_sources\WholeCell` and the worktree.
+- **Probe P4 (CC/empty-weights draw semantics — Blocker 1).** Read
+  `ChromosomeProcessAspect.m:286-345` (`:294-303` zero-draw iff `maxBindings==0`;
+  `:308-310` empty weights→ones; `:342` `setSiteProteinBound`),
+  `Chromosome.m:493-494` (ones normalization), `:500-502` (`randsample` on
+  `this.randStream`), `:2043` (`setSiteProteinBound` always calls
+  `sampleAccessibleRegions`). Conclusion: a real CC bind advances the shared
+  stream; the "zero-draw" claim was false. Corrects DC-8/§5/§14.
+- **Probe P5 (DNADamage dual-stream — Blocker 2).** `DNADamage.m:537`
+  (`randStream.randperm` = process stream, reaction order), `:559`
+  (`chromosome.setSiteDamaged` → `Chromosome.m:2490+` draws on chromosome
+  `randStream` via `sampleAccessibleSites`/`stochasticRound`/
+  `randomlySelectNRows`), `:465` (empty `initializeState`). Adds DNADamage as a
+  verified participant with no t0 sweep.
+- **Probe P6 (Vivarium Engine update visibility — Blocker 3, runtime).** Two
+  ordinary `Process`es share a store leaf `x`; a `Writer` returns `{x:+1}`, a
+  `Reader` records what it sees. Result: `process_reader_saw=[('process_reader',
+  0)]` (Reader did **not** observe Writer's within-tick update), while a `Step`
+  saw the merged value `[('step_reader',0),('step_reader',1)]` and `final_x=1`.
+  Confirms ordinary Processes compute from tick-start state (`engine.py run_for`
+  buffers updates in `self.front`, applies via `_send_updates` after all compute)
+  and Steps see merged state — so a shared in-place RNG stream cannot serialize
+  draws across processes; the DC-9 commit owner is required. Drives the DC-5/DC-9
+  redesign.
+- **Self-audit:** see §20 for the blocker→correction map.
 - **Canonical replay baseline referenced:** trace `645a2e68…`, ledger
   `ac2426dc…`, draw digest `88c7c28c…`, 135 active ticks / 378 draws (plan
   operational-handoff, 2026-10-13).
+
+---
+
+## 20. Self-audit — review blockers → corrections
+
+| Blocker (review) | Finding (source/probe) | Corrected sections |
+|---|---|---|
+| **1. CC "zero-draw" commit claim wrong** | `bindProteinToChromosome` zero-draws **only if `maxBindings==0`** (`ChromosomeProcessAspect.m:294-303`); empty weights→ones (`:308-310`, `Chromosome.m:493-494`); `setSiteProteinBound:2043` always calls `sampleAccessibleRegions` whose `randStream.randsample` (`Chromosome.m:500-502`) advances the shared stream. CC draws from **both** streams. Probe P4. | §1.1 table (new rows); DC-8 (rewritten); §5 table (CC row); §6.5; §14; A14; P4 |
+| **2. DNADamage missing as participant** | `DNADamage.m:537` process-stream reaction order; `:559` `setSiteDamaged` → `Chromosome.m:2490+` chromosome-stream draws; `:465` empty `initializeState`. Ledger must bind `dnadamage_source_sha256` (dec-006 addendum) because DNADamage advances the shared stream. Probe P5. | §1.1 table (2 new rows); §5 table (DNADamage row) + posture; §6; §7 step 4; §10 AO-3; §11 Stage E; §12 (2 rows); §13; §17 Q5; P5 |
+| **3. Engine serializes process draws? NO** | Ordinary Processes compute from the same tick-start store view (`engine.py run_for` buffers `self.front`, applies via `_send_updates` after all compute); Steps see merged state. Probe P6. Shared in-place stream cannot serialize cross-process draws ⇒ single sequential commit **owner (Step)** receiving intents. | DC-5 (rewritten); DC-9 (new); §4.5 (rewritten); §6 (rewritten); §11 Stage E (implementable spec) + Stage B exception; §12 (owner rows); §13 (owner file/ports); A5/A15; P6 |
+| **First-slice reconsideration** | Stage A alone = consumer-less infrastructure (operator anti-pattern); A+B is the smallest end-to-end-testable unit with two independent STOP gates. | §11 "first slice" (rewritten); §15 (rewritten) |
