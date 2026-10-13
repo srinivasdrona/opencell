@@ -59,6 +59,36 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
+
+- Both auditors converged on **MIXED** RNG ownership from primary MATLAB:
+  every process has an independent `Process.randStream`, while the shared
+  Chromosome state has a separate `CellState.randStream`. ChromosomeCondensation
+  uses its process stream for region/position decisions, then advances the
+  shared chromosome stream when committing sites. TranscriptionalRegulation
+  has no process decision draw; its binding decision occurs on the shared
+  chromosome-state stream.
+- Consequence: ChromosomeCondensation can be repaired locally through L2.1/L2.2
+  before the shared stream exists. TranscriptionalRegulation cannot close RNG,
+  footprint ownership, topology, or initialization faithfully without a shared
+  chromosome-state subsystem. CC remains a contributor to the shared stream at
+  later composition rungs, not a consumer of TR's decision stream.
+- ChromosomeCondensation audit results: all five blockers real; flat substrate
+  projection is accepted-equivalent. Production currently binds zero SMC
+  because `enzymes`/`boundEnzymes` are unwired. First bounded iteration freezes
+  a real chassis binding canary, then repairs live enzyme/bound-state wiring and
+  allocator enrollment. Same-tick request consumption is a separate Iteration 2.
+- TranscriptionalRegulation audit results: all five blockers real. Before any
+  shared-state production migration, Iteration 0 must repair the fidelity
+  baseline: reconcile the stale MG_205 chassis expectation and make the
+  4000-tick event ledger pass its DNADamage provenance requirement. Only then
+  design the shared chromosome footprint/RNG/initialization subsystem.
+- Planned isolated worktrees:
+  - `E:\opencell-worktrees\fix-chromosome-condensation-iter1`
+  - `E:\opencell-worktrees\fix-transcriptional-regulation-iter0`
+  Both branch from `a5bba6c`; Gemini test writers run first. Production changes
+  remain sequential and cannot overlap on shared chromosome surfaces.
+
 **Current status (2026-10-13) — dual audits returned; RNG ownership contradiction under review:**
 
 - Both read-only Opus audits completed cleanly at branch tip `a4852f1`; no
