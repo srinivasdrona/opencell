@@ -59,6 +59,29 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-13) — dual audits returned; RNG ownership contradiction under review:**
+
+- Both read-only Opus audits completed cleanly at branch tip `a4852f1`; no
+  production/test/evidence/baseline edits were made.
+- ChromosomeCondensation: all five recorded blockers are real, but flat
+  substrate projection is behavior-neutral. The decisive new finding is that
+  production wiring leaves live SMC enzymes at zero, so the chassis process is
+  currently a binding no-op. Recommended first local iteration is enzyme/bound
+  state wiring, then same-tick allocation, then path consolidation.
+- TranscriptionalRegulation: all five blockers are real and current production
+  topology leaves chromosome/binding/writeback surfaces unwired. Its active
+  4000-tick replay currently fails closed because the RNG ledger lacks the now-
+  required DNADamage source hash; only seed 0 exists.
+- The reports conflict on the architectural prerequisite:
+  ChromosomeCondensation says Karr gives each process an independent stream;
+  TranscriptionalRegulation says chromosome-binding processes consume one
+  shared/interleaved Chromosome randStream. This determines whether CC can be
+  repaired locally or both require a shared chromosome-state/RNG migration.
+- Follow-up round reuses both auditors to resolve the exact MATLAB object
+  ownership/aliasing and seeding path with quoted source lines and a minimal
+  runtime identity probe. No tests or implementation are authorized until both
+  reports converge.
+
 **Current status (2026-10-13) — dual read-only audit round starting from honest 5/28:**
 
 - Worktree `E:\opencell-worktrees\pre-l25-honesty-rebaseline`, branch
