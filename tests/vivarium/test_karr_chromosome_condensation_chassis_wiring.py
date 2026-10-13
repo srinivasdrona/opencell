@@ -159,8 +159,9 @@ def derive_minimal_cc_atp_request_and_free_smc(
 ) -> tuple[int, float]:
     """Mechanically derive the minimal CC ATP request and free SMC input that receives >=1 grant.
 
-    Evaluates the actual competing tick-1 requests and current substrate pools using the
-    real KarrAllocationStep on candidate requests, adhering to proportional fair-share algebra:
+    Evaluates the actual competing tick-1 requests and post-tick substrate pools from the exact
+    same snapshot using the real KarrAllocationStep on candidate requests, adhering to proportional
+    fair-share algebra:
       floor(R * pool_ATP / (other_demand + R)) >= 1
     Then maps the required request to required free SMC via CC's request formula:
       request_need = free_SMC + free_SMC_ADP
@@ -168,13 +169,15 @@ def derive_minimal_cc_atp_request_and_free_smc(
     """
     cc = composite["processes"]["karr_chromosome_condensation"]
     alloc_step = composite["steps"]["karr_allocation_step"]
-    pool_atp = float(composite["state"]["substrates"][cc.atp_wid])
-    pool_h2o = float(composite["state"]["substrates"][cc.water_wid])
 
-    # Run 1 tick of a probe engine to capture actual competing tick-1 requests.
+    # Run 1 tick of a probe engine to capture actual competing tick-1 requests
+    # and the post-tick substrate pools from the exact same state snapshot.
     probe_engine = Engine(composite=deepcopy(composite), emit_step=1.0, display_info=False)
     probe_engine.update(1.0)
-    tick1_requests = probe_engine.state.get_value()["requests"]
+    tick1_state = probe_engine.state.get_value()
+    tick1_requests = tick1_state["requests"]
+    pool_atp = float(tick1_state["substrates"][cc.atp_wid])
+    pool_h2o = float(tick1_state["substrates"][cc.water_wid])
 
     other_demand = sum(
         float(req.get(cc.atp_wid, 0.0))
@@ -197,13 +200,46 @@ def derive_minimal_cc_atp_request_and_free_smc(
                 "requests": test_requests,
             },
         )
-        granted = alloc_res["substrates_allocated"][cc.name][cc.atp_wid]
-        if granted >= 1.0:
+        granted_atp = alloc_res["substrates_allocated"][cc.name][cc.atp_wid]
+        granted_h2o = alloc_res["substrates_allocated"][cc.name][cc.water_wid]
+        if granted_atp >= 1.0 and granted_h2o >= 1.0:
             min_request = candidate_r
             break
 
     if min_request is None:
         raise RuntimeError("Failed to derive minimal CC ATP request receiving >=1 grant")
+
+    # Assert returned candidate actually receives >=1 ATP and H2O under the captured post-tick snapshot.
+    test_requests_candidate = {p: dict(r) for p, r in tick1_requests.items()}
+    test_requests_candidate[cc.name] = {
+        cc.atp_wid: float(min_request),
+        cc.water_wid: float(min_request),
+    }
+    candidate_alloc = alloc_step.next_update(
+        1.0,
+        {
+            "substrates": {cc.atp_wid: pool_atp, cc.water_wid: pool_h2o},
+            "requests": test_requests_candidate,
+        },
+    )
+    assert candidate_alloc["substrates_allocated"][cc.name][cc.atp_wid] >= 1.0
+    assert candidate_alloc["substrates_allocated"][cc.name][cc.water_wid] >= 1.0
+
+    # Minimality proof: candidate - 1 must receive zero for at least ATP.
+    below_candidate = min_request - 1
+    test_requests_below = {p: dict(r) for p, r in tick1_requests.items()}
+    test_requests_below[cc.name] = {
+        cc.atp_wid: float(below_candidate),
+        cc.water_wid: float(below_candidate),
+    }
+    below_alloc = alloc_step.next_update(
+        1.0,
+        {
+            "substrates": {cc.atp_wid: pool_atp, cc.water_wid: pool_h2o},
+            "requests": test_requests_below,
+        },
+    )
+    assert below_alloc["substrates_allocated"][cc.name][cc.atp_wid] == 0.0
 
     fixture_smc_adp = float(cc._fixture_enzyme_smc_adp)
     required_free_smc = float(max(0, min_request - fixture_smc_adp))
