@@ -10,9 +10,10 @@ Freezes the following contracts for ChromosomeCondensation live chassis integrat
    free SMC complexes produces >0 new bound SMC on the chromosome, consumes
    ATP/H2O, produces ADP/PI/H, and conserves SMC complex stoichiometry across ticks.
 5. Verifier and planted canaries prove that removing enzyme topology, substituting
-   zero enzyme input, or deferring evolution by one tick fails closed, and that aggregate
-   condensation_level relaxation is never accepted as binding activity.
-6. Same-tick request -> allocator grant -> SMC binding contract (Iteration 2).
+   zero enzyme input, deferring evolution by one tick, or duplicating evolution fails
+   closed, and that aggregate condensation_level relaxation is never accepted as binding activity.
+6. Authoritative CC Process is request-only in orchestrated chassis mode (Iteration 2).
+7. Same-tick request -> allocator grant -> SMC binding contract (Iteration 2).
 """
 
 from __future__ import annotations
@@ -143,6 +144,15 @@ def verify_chassis_smc_binding(composite: Any, *, n_ticks: int = 2) -> dict[str,
         delta_h=delta_h,
     )
 
+    # Exact-once guard: per-tick bound SMC delta must not exceed the ATP allocated to fund that tick.
+    alloc_1 = float(s1.get("substrates_allocated", {}).get(cc.name, {}).get(cc.atp_wid, 0.0))
+    alloc_2 = float(s2.get("substrates_allocated", {}).get(cc.name, {}).get(cc.atp_wid, 0.0))
+    alloc_funded = max(alloc_1, alloc_2)
+    if delta_bound > alloc_funded:
+        raise AssertionError(
+            f"Duplicate evolution: bound delta {delta_bound} exceeds allocated ATP {alloc_funded}"
+        )
+
     return {
         "delta_bound": delta_bound,
         "delta_chrom": delta_chrom,
@@ -155,48 +165,79 @@ def verify_chassis_smc_binding(composite: Any, *, n_ticks: int = 2) -> dict[str,
     }
 
 
+def verify_process_is_request_only(cc: Any) -> None:
+    """Assert CC process is request-only: calling next_update emits requests but no evolution keys.
+
+    When supplied with nonzero allocatable resources, live enzymes, and bound state:
+    - Must emit 'requests' for CC with positive ATP/H2O need.
+    - Must NOT emit evolution keys ('boundEnzymes', 'chromosome', 'complex', 'enzymes', 'substrates').
+    """
+    probe_state = {
+        "substrates_allocated": {
+            cc.name: {
+                cc.atp_wid: 50.0,
+                cc.water_wid: 50.0,
+            }
+        },
+        "substrates": {
+            cc.atp_wid: 1000.0,
+            cc.water_wid: 1000.0,
+            cc.pi_wid: 100.0,
+            cc.hydrogen_wid: 100.0,
+        },
+        "enzymes": {
+            cc.smc_wid: 10.0,
+            cc.smc_adp_wid: 5.0,
+        },
+        "complex": {
+            "counts": {
+                cc.smc_wid: 10.0,
+                cc.smc_adp_wid: 5.0,
+            }
+        },
+        "boundEnzymes": {
+            cc.smc_adp_wid: float(cc.trace_anchor_bound),
+        },
+        "chromosome": {
+            "smc_bound_count": float(cc.trace_anchor_bound),
+            "condensation_level": float(cc.default_condensation_level),
+        },
+    }
+
+    update = cc.next_update(1.0, probe_state)
+    cc_requests = update.get("requests", {}).get(cc.name, {})
+    if float(cc_requests.get(cc.atp_wid, 0.0)) <= 0.0 or float(cc_requests.get(cc.water_wid, 0.0)) <= 0.0:
+        raise AssertionError(
+            f"CC process must emit positive ATP/H2O requests in next_update: got {cc_requests}"
+        )
+
+    forbidden_evolution_keys = {"boundEnzymes", "chromosome", "complex", "enzymes", "substrates"}
+    emitted_evolution_keys = forbidden_evolution_keys & set(update.keys())
+    if emitted_evolution_keys:
+        raise AssertionError(
+            f"CC process must be request-only in orchestrated mode, but emitted evolution keys: {emitted_evolution_keys}"
+        )
+
+
 def verify_same_tick_architecture(composite: Any) -> None:
     """Verify minimal architectural surface for same-tick CC request-allocation-consume.
 
     Requires:
-    1. A request step scheduled before allocation (or registered as an allocation dependency in flow).
-    2. An evolution step/process scheduled after allocation (registered with karr_allocation_step dependency).
-    3. Exactly one authoritative process instance/state semantics shared between them.
+    1. Authoritative 'karr_chromosome_condensation' Process in composite['processes'].
+    2. Exactly one evolution Step scheduled after karr_allocation_step (with ('karr_allocation_step',) dependency).
+    3. The evolution Step references the exact same authoritative CC process instance.
+    4. Authoritative CC Process is request-only: calling its next_update with nonzero
+       allocations/enzymes emits requests but NO evolution keys.
     Class names are intentionally not constrained.
     """
-    cc = composite["processes"].get("karr_chromosome_condensation")
+    cc = composite.get("processes", {}).get("karr_chromosome_condensation")
     if cc is None:
         raise AssertionError("Composite must contain authoritative 'karr_chromosome_condensation' process")
 
     steps = composite.get("steps", {})
     flow = composite.get("flow", {})
 
-    # 1. Check request step before allocation
-    alloc_deps = {dep[0] for dep in flow.get("karr_allocation_step", [])}
-    req_step = None
-    for step_name in alloc_deps:
-        cand = steps.get(step_name)
-        if cand is None:
-            continue
-        if (
-            ("condensation" in step_name.lower() or "chromcond" in step_name.lower())
-            or getattr(cand, "_condensation_process", None) is cc
-            or getattr(cand, "_proc", None) is cc
-            or getattr(cand, "process", None) is cc
-            or getattr(cand, "parameters", {}).get("condensation_process") is cc
-            or getattr(cand, "parameters", {}).get("process") is cc
-            or getattr(cand, "parameters", {}).get("chromosome_condensation_proc") is cc
-        ):
-            req_step = cand
-            break
-
-    if req_step is None:
-        raise AssertionError(
-            "Architectural surface violation: missing CC request step scheduled before karr_allocation_step. "
-            f"karr_allocation_step dependencies: {alloc_deps}"
-        )
-
-    # 2. Check evolution step/process after allocation
+    # Check evolution step after allocation
     evo_step = None
     for step_name, step_deps in flow.items():
         if ("karr_allocation_step",) in step_deps:
@@ -220,15 +261,7 @@ def verify_same_tick_architecture(composite: Any) -> None:
             "Architectural surface violation: missing CC evolution step scheduled after karr_allocation_step."
         )
 
-    # 3. One authoritative process instance/state semantics
-    req_proc = (
-        getattr(req_step, "_condensation_process", None)
-        or getattr(req_step, "_proc", None)
-        or getattr(req_step, "process", None)
-        or getattr(req_step, "parameters", {}).get("condensation_process")
-        or getattr(req_step, "parameters", {}).get("process")
-        or getattr(req_step, "parameters", {}).get("chromosome_condensation_proc")
-    )
+    # Evolution step must reference the authoritative CC process instance
     evo_proc = (
         getattr(evo_step, "_condensation_process", None)
         or getattr(evo_step, "_proc", None)
@@ -237,14 +270,12 @@ def verify_same_tick_architecture(composite: Any) -> None:
         or getattr(evo_step, "parameters", {}).get("process")
         or getattr(evo_step, "parameters", {}).get("chromosome_condensation_proc")
     )
-    if req_proc is not None and req_proc is not cc:
-        raise AssertionError(
-            "Architectural surface violation: request step must reference authoritative CC process instance"
-        )
-    if evo_proc is not None and evo_proc is not cc:
+    if evo_proc is not cc:
         raise AssertionError(
             "Architectural surface violation: evolution step must reference authoritative CC process instance"
         )
+
+    verify_process_is_request_only(cc)
 
 
 def verify_same_tick_smc_binding(composite: Any) -> dict[str, float]:
@@ -258,7 +289,8 @@ def verify_same_tick_smc_binding(composite: Any) -> dict[str, float]:
     - Asserts allocator grants ATP and H2O to CC in tick 1.
     - Asserts CC consumes that grant and binds >0 SMC in tick 1.
     - Asserts free/bound SMC and ATP/H2O/PI/H deltas are stoichiometrically consistent.
-    - Asserts minimal architectural surface (request step before allocation, evolution step
+    - Asserts exact-once execution: tick 1 bound delta does not exceed allocated ATP.
+    - Asserts minimal architectural surface (request-only Process, evolution step
       after allocation, single authoritative process instance).
     """
     cc = composite["processes"]["karr_chromosome_condensation"]
@@ -351,6 +383,12 @@ def verify_same_tick_smc_binding(composite: Any) -> dict[str, float]:
         delta_pi=delta_pi,
         delta_h=delta_h,
     )
+
+    # Exact-once guard: tick 1 bound delta must not exceed allocated ATP
+    if delta_bound > alloc_atp:
+        raise AssertionError(
+            f"Duplicate evolution: tick 1 bound delta {delta_bound} exceeds allocated ATP {alloc_atp}"
+        )
 
     verify_same_tick_architecture(composite)
 
@@ -784,13 +822,103 @@ def test_planted_canary_verifier_rejects_one_tick_lag_mutation() -> None:
     assert deltas["delta_free"] == -deltas["delta_bound"]
 
 
+class _DuplicateEvolutionWrapper(Process):
+    """Planted mutation wrapper: duplicate evolution updates (double binding)."""
+
+    def __init__(self, target: Any) -> None:
+        object.__setattr__(self, "_target", target)
+        super().__init__(parameters=dict(getattr(target, "parameters", {})))
+        self.name = getattr(target, "name", "duplicate_wrapper")
+
+    def __getattr__(self, name: str) -> Any:
+        if name == "_target":
+            raise AttributeError(name)
+        target = self.__dict__.get("_target")
+        if target is None:
+            raise AttributeError(name)
+        return getattr(target, name)
+
+    def ports_schema(self) -> dict[str, Any]:
+        return self._target.ports_schema()
+
+    def calculate_timestep(self, states: dict[str, Any]) -> float:
+        calc_fn = getattr(self._target, "calculate_timestep", None)
+        if callable(calc_fn):
+            return float(calc_fn(states))
+        return 1.0
+
+    def update_condition(self, timestep: float, states: dict[str, Any]) -> bool:
+        cond_fn = getattr(self._target, "update_condition", None)
+        if callable(cond_fn):
+            return bool(cond_fn(timestep, states))
+        return True
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        real_update = self._target.next_update(timestep, states)
+        doubled = dict(real_update)
+        for k in ("boundEnzymes", "chromosome", "complex", "enzymes", "substrates"):
+            if k in doubled and isinstance(doubled[k], dict):
+                doubled[k] = {
+                    sub_k: (sub_v * 2.0 if isinstance(sub_v, (int, float)) else sub_v)
+                    for sub_k, sub_v in doubled[k].items()
+                }
+        return doubled
+
+
+def _plant_duplicate_evolution_mutation_on_composite(composite: Any) -> Any:
+    """Plant a duplicate-evolution mutation on whichever composite component executes CC evolution."""
+    cc = composite["processes"]["karr_chromosome_condensation"]
+    evo_step_key = None
+    for key, step in composite.get("steps", {}).items():
+        if ("condensation" in key.lower() or "chromcond" in key.lower()) and "request" not in key.lower():
+            evo_step_key = key
+            break
+        if (
+            getattr(step, "_condensation_process", None) is cc
+            or getattr(step, "_proc", None) is cc
+            or getattr(step, "process", None) is cc
+            or getattr(step, "parameters", {}).get("condensation_process") is cc
+        ) and "request" not in key.lower():
+            evo_step_key = key
+            break
+
+    if evo_step_key is not None:
+        composite["steps"][evo_step_key] = _DuplicateEvolutionWrapper(composite["steps"][evo_step_key])
+    else:
+        composite["processes"]["karr_chromosome_condensation"] = _DuplicateEvolutionWrapper(cc)
+    return composite
+
+
+def test_planted_canary_verifier_rejects_duplicate_evolution_mutation() -> None:
+    """Canary (e): verifier must reject composite when CC evolution executes more than once per allocation."""
+    composite = _build_reference_wired_composite()
+    mutated = _plant_duplicate_evolution_mutation_on_composite(deepcopy(composite))
+    with pytest.raises(AssertionError, match="Duplicate evolution|exceeds allocated"):
+        verify_chassis_smc_binding(mutated, n_ticks=2)
+
+
 # ==============================================================================
-# Contract 7: Same-tick request -> allocation -> consume contract (Iteration 2).
+# Contract 7: Request-only Process and same-tick consume contracts (Iteration 2).
 # ==============================================================================
+
+
+def test_chassis_v6_chromosome_condensation_process_is_request_only_contract() -> None:
+    """Contract 7a: CC process must be request-only in orchestrated chassis mode.
+
+    Iteration 2 architectural contract (currently hard RED on unmodified production):
+    In the orchestrated chassis architecture, the Process phase is the request phase.
+    Calling CC process next_update with nonzero allocatable resources, live enzymes,
+    and bound state must emit requests for ATP and H2O, but must NOT emit any evolution
+    updates ('boundEnzymes', 'chromosome', 'complex', 'enzymes', 'substrates').
+    Evolution is the sole responsibility of the post-allocation evolution Step.
+    """
+    composite = build_karr_chassis_v6()
+    cc = composite["processes"]["karr_chromosome_condensation"]
+    verify_process_is_request_only(cc)
 
 
 def test_chassis_v6_chromosome_condensation_same_tick_request_allocation_consume_contract() -> None:
-    """Contract 7: CC request -> allocator grant -> SMC binding in the exact same tick.
+    """Contract 7b: CC request -> allocator grant -> SMC binding in the exact same tick.
 
     Iteration 2 positive contract (currently hard RED on unmodified production):
     1. Build real v6 composite with production topology.
@@ -798,7 +926,7 @@ def test_chassis_v6_chromosome_condensation_same_tick_request_allocation_consume
     3. Prove no prior substrates_allocated was seeded and no trace hint used.
     4. Execute exactly one Engine tick from fresh state.
     5. Assert same-tick request emission, allocator grant, SMC binding (>0), and delta consistency.
-    6. Verify architectural surface: request step before allocation, evolution step after
+    6. Verify architectural surface: authoritative process is request-only, evolution step after
        allocation, with one authoritative process instance.
     """
     composite = build_karr_chassis_v6()
