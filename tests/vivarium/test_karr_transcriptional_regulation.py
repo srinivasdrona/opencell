@@ -222,7 +222,7 @@ def test_fixture_loads() -> None:
     assert p.n_relationships > 0
 
 
-def test_v6_chassis_seed_path_drives_mg205_fold_change() -> None:
+def test_v6_chassis_seed_path_drives_mg428_fold_change_mg205_zero() -> None:
     composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
     tx_reg = composite["processes"]["karr_transcriptional_regulation"]
     tx_reg_topology = composite["topology"]["karr_transcriptional_regulation"]
