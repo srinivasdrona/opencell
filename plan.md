@@ -148,6 +148,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   comparison; candidate parity compares `TxRegMcgRandStream` to itself instead
   of the future state-owned stream; and the dec-007 gate checks only dec-006.
   Test author must correct all three before Stage A+B implementation.
+- Corrected Stage A+B tests landed at `89ef6fa` / `65ea553`; parent now
+  reproduces **10 guard GREEN / 10 hard RED**. Three-tick store continuity,
+  future-provider candidate parity, state round-trip continuation, and a real
+  dec-007 registry/file gate are frozen. Opus must author dec-007 on the Stage
+  A+B branch before Sonnet implementation; production remains frozen.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
