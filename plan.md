@@ -133,6 +133,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   root `boundEnzymes` updater ownership, v5/v6 seed duplication checks, and
   whether the derived stress canary proves real topology execution without
   laundering the default-starvation blocker.
+- Live CC reviewer: `49fcf57d-18e5-497b-baf0-155fd870c16c`.
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
