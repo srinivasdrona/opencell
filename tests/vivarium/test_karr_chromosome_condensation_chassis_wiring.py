@@ -27,6 +27,7 @@ from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
+import numpy as np
 import pytest
 from vivarium.core.engine import Engine
 from vivarium.core.process import Step
@@ -45,11 +46,35 @@ if "opencell" in sys.modules:
 from opencell.vivarium.karr_composite import build_karr_chassis_v6
 
 
+def assert_sparse_triplets_equal(actual: Any, expected: Any, msg: str = "complexBoundSites") -> None:
+    """Assert structural equality between SparseTriplet representations without array truth ambiguity."""
+    if actual is None and expected is None:
+        return
+    assert actual is not None and expected is not None, f"{msg}: mismatch None vs non-None"
+    if isinstance(actual, dict) and isinstance(expected, dict):
+        assert actual.get("shape") == expected.get("shape"), f"{msg}: shape mismatch"
+        for field in ("positions", "strands", "values"):
+            a_arr = actual.get(field)
+            e_arr = expected.get(field)
+            if a_arr is None and e_arr is None:
+                continue
+            assert a_arr is not None and e_arr is not None, f"{msg}: field {field} missing in one"
+            assert np.array_equal(a_arr, e_arr), f"{msg}: {field} arrays not equal"
+    elif hasattr(actual, "shape") and hasattr(expected, "shape"):
+        assert actual.shape == expected.shape, f"{msg}: shape mismatch"
+        assert np.array_equal(actual.positions, expected.positions), f"{msg}: positions not equal"
+        assert np.array_equal(actual.strands, expected.strands), f"{msg}: strands not equal"
+        assert np.array_equal(actual.values, expected.values), f"{msg}: values not equal"
+    else:
+        assert actual == expected, f"{msg}: value mismatch"
+
+
 def verify_binding_delta(
     *,
     delta_bound: float,
     delta_chrom: float,
     delta_free: float,
+    delta_free_adp: float = 0.0,
     delta_cond: float = 0.0,
     delta_atp: float | None = None,
     delta_h2o: float | None = None,
@@ -70,10 +95,15 @@ def verify_binding_delta(
         raise AssertionError(
             f"Bound SMC count mismatch: boundEnzymes delta={delta_bound} != chromosome delta={delta_chrom}"
         )
-    if delta_free != -delta_bound:
+
+    # Source identity per tick: delta(free_SMC) + delta(free_SMC_ADP) + delta(bound_SMC_ADP) == 0.
+    delta_total_smc = delta_free + delta_free_adp + delta_bound
+    if delta_total_smc != 0.0:
         raise AssertionError(
-            f"SMC complex count not conserved: free delta={delta_free} != -bound delta={-delta_bound}"
+            f"Total SMC complex count not conserved: delta_free({delta_free}) + "
+            f"delta_free_adp({delta_free_adp}) + delta_bound({delta_bound}) = {delta_total_smc} != 0"
         )
+
     if delta_atp is not None and delta_atp > -delta_bound:
         raise AssertionError(
             f"ATP not consumed with expected stoichiometry: delta_atp={delta_atp}, expected <= {-delta_bound}"
@@ -125,6 +155,10 @@ def verify_chassis_smc_binding(composite: Any, *, n_ticks: int = 2) -> dict[str,
     free_2 = float(s2.get("complex", {}).get("counts", {}).get(cc.smc_wid, 0.0))
     delta_free_total = free_2 - free_0
 
+    free_adp_0 = float(s0.get("complex", {}).get("counts", {}).get(cc.smc_adp_wid, 0.0))
+    free_adp_2 = float(s2.get("complex", {}).get("counts", {}).get(cc.smc_adp_wid, 0.0))
+    delta_free_adp_total = free_adp_2 - free_adp_0
+
     delta_cond_total = float(s2.get("chromosome", {}).get("condensation_level", 0.0)) - float(
         s0.get("chromosome", {}).get("condensation_level", 0.0)
     )
@@ -146,6 +180,7 @@ def verify_chassis_smc_binding(composite: Any, *, n_ticks: int = 2) -> dict[str,
         delta_bound=delta_bound_total,
         delta_chrom=delta_chrom_total,
         delta_free=delta_free_total,
+        delta_free_adp=delta_free_adp_total,
         delta_cond=delta_cond_total,
         delta_atp=delta_atp_total,
         delta_h2o=delta_h2o_total,
@@ -175,6 +210,7 @@ def verify_chassis_smc_binding(composite: Any, *, n_ticks: int = 2) -> dict[str,
         "delta_bound": delta_bound_total,
         "delta_chrom": delta_chrom_total,
         "delta_free": delta_free_total,
+        "delta_free_adp": delta_free_adp_total,
         "delta_cond": delta_cond_total,
         "delta_atp": delta_atp_total,
         "delta_h2o": delta_h2o_total,
@@ -374,6 +410,10 @@ def verify_same_tick_smc_binding(composite: Any) -> dict[str, float]:
     free_1 = float(s1.get("complex", {}).get("counts", {}).get(cc.smc_wid, 0.0))
     delta_free = free_1 - free_0
 
+    free_adp_0 = float(s0.get("complex", {}).get("counts", {}).get(cc.smc_adp_wid, 0.0))
+    free_adp_1 = float(s1.get("complex", {}).get("counts", {}).get(cc.smc_adp_wid, 0.0))
+    delta_free_adp = free_adp_1 - free_adp_0
+
     delta_cond = float(s1.get("chromosome", {}).get("condensation_level", 0.0)) - float(
         s0.get("chromosome", {}).get("condensation_level", 0.0)
     )
@@ -395,6 +435,7 @@ def verify_same_tick_smc_binding(composite: Any) -> dict[str, float]:
         delta_bound=delta_bound,
         delta_chrom=delta_chrom,
         delta_free=delta_free,
+        delta_free_adp=delta_free_adp,
         delta_cond=delta_cond,
         delta_atp=delta_atp,
         delta_h2o=delta_h2o,
@@ -414,6 +455,7 @@ def verify_same_tick_smc_binding(composite: Any) -> dict[str, float]:
         "delta_bound": delta_bound,
         "delta_chrom": delta_chrom,
         "delta_free": delta_free,
+        "delta_free_adp": delta_free_adp,
         "delta_cond": delta_cond,
         "delta_atp": delta_atp,
         "delta_h2o": delta_h2o,
@@ -662,7 +704,7 @@ def test_chassis_v6_chromosome_condensation_allocation_threshold_stress_executio
 
     deltas = verify_chassis_smc_binding(composite, n_ticks=2)
     assert deltas["delta_bound"] > 0.0
-    assert deltas["delta_free"] == -deltas["delta_bound"]
+    assert deltas["delta_free"] + deltas["delta_free_adp"] == -deltas["delta_bound"]
 
 
 # ==============================================================================
@@ -838,7 +880,7 @@ def test_planted_canary_verifier_rejects_one_tick_lag_mutation() -> None:
     mutated_2tick = _plant_one_tick_lag_mutation_on_composite(deepcopy(composite))
     deltas = verify_chassis_smc_binding(mutated_2tick, n_ticks=2)
     assert deltas["delta_bound"] > 0.0
-    assert deltas["delta_free"] == -deltas["delta_bound"]
+    assert deltas["delta_free"] + deltas["delta_free_adp"] == -deltas["delta_bound"]
 
 
 class _DuplicateEvolutionWrapper(Step):
@@ -1107,7 +1149,7 @@ def test_chassis_v6_chromosome_condensation_same_tick_request_allocation_consume
 
     deltas = verify_same_tick_smc_binding(composite)
     assert deltas["delta_bound"] > 0.0
-    assert deltas["delta_free"] == -deltas["delta_bound"]
+    assert deltas["delta_free"] + deltas["delta_free_adp"] == -deltas["delta_bound"]
 
 
 # ==============================================================================
@@ -1176,8 +1218,10 @@ def test_chassis_v6_chromosome_condensation_engine_init_preserves_biological_sta
         )
 
     if complex_bound_sites_before is not None:
-        assert s0["chromosome"].get("complexBoundSites") == complex_bound_sites_before, (
-            "Chromosome complexBoundSites mutated on Engine init"
+        assert_sparse_triplets_equal(
+            s0["chromosome"].get("complexBoundSites"),
+            complex_bound_sites_before,
+            msg="Chromosome complexBoundSites",
         )
 
     # Normalize request and allocation mappings: allow Engine-declared zero defaults as equivalent structural bookkeeping
