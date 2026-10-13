@@ -83,6 +83,15 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   2. TranscriptionalRegulation — Opus design of the shared chromosome-state
      subsystem (footprint arrays, shared state RNG commit stream, unified t0
      initialization), before any production test freeze.
+- Live next-round agents:
+  - CC Iteration-2 Gemini test writer:
+    `1b59a1ea-0685-4ea2-9232-dc9fced37137`
+  - Shared chromosome-state Opus designer:
+    `15b00770-2582-46cf-873a-c95cae04b628`
+- Isolated worktrees:
+  - `E:\opencell-worktrees\fix-chromosome-condensation-iter2`
+  - `E:\opencell-worktrees\design-shared-chromosome-state`
+  Both branch from integrated checkpoint `76fd1d8`.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
