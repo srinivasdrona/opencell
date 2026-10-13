@@ -142,6 +142,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   preserve standalone combined `next_update` for replay compatibility, use a
   request-only authoritative process instance in chassis v5/v6, and add one
   post-allocation evolution Step referencing that exact instance.
+- Live CC Iteration-2 implementer:
+  `8f4a1991-d56a-411b-a946-96261fd6aa82`.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
