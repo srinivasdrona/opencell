@@ -105,6 +105,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   real event replay, both failing only on missing DNADamage provenance. The
   coordinated trace+ledger migration is now authorized; production remains
   frozen.
+- TxReg Iteration-0 Sonnet migration agent:
+  `61e4076b-40cd-4fbe-9552-c11cf8cf2bc9`. It may add one fail-closed migration
+  script and modify only the canonical trace+ledger pair outside git; full
+  4000-tick replay is required before acceptance.
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
