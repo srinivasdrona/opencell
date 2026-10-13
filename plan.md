@@ -136,6 +136,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   RNG-only consumer; footprint authority removal remains Stage C. Non-blocking
   implementation details to pin later are the Stage-E generation/tick source
   and test-ledger adapter writeback facade.
+- Shared-state Stage A+B test worktree:
+  `E:\opencell-worktrees\fix-shared-chromosome-state-stage-ab`, base `a804eb7`.
+  Live Gemini test writer: `e6e8dbc6-ce88-428d-9b36-a32070b0afea`.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
