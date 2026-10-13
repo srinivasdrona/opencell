@@ -59,6 +59,27 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
+
+- ChromosomeCondensation Iteration 1 branch tip `849011b` has independent
+  **`VERDICT: MATCHED`**. It wires live SMC/SMC-ADP and bound state into v5/v6
+  using source-derived 5/3/78 seeds. Parent/reviewer acceptance: focused
+  **18 PASS / 2 strict XFAIL**, related **44 PASS / 1 audited skip**, L2.4
+  4x100 PASS. Remaining explicit blockers include default allocator starvation,
+  one-tick request lag, aggregate/fallback/hint paths, cold-start positions, and
+  unavailable genuine multi-seed evidence. No eligibility promotion.
+- TranscriptionalRegulation Iteration 0 branch tip `dfd005b` has independent
+  **`VERDICT: MATCHED`**. The canonical 4000-tick trace+ledger pair is
+  provenance-complete and bit-identical: trace `645a2e68...`, ledger
+  `ac2426dc...`, draw digest `88c7c28c...`, 4000 lists / 135 active ticks /
+  378 draws. Acceptance: **97/97** fast, **2/2** replay. Remaining five
+  production blockers still require shared chromosome-state design; no
+  eligibility promotion.
+- Integrate both isolated branches into
+  `audit/pre-l25-honesty-rebaseline-20260917`. Re-adjudicate the CC wiring claim
+  as resolved, record TxReg evidence baseline restored, refresh the fail-closed
+  source digest, and require `INTEGRITY_OK` to remain **5/28**.
+
 **Current status (2026-10-13) — first test freeze returned; CC correction pending:**
 
 - TxReg Iteration 0 tests landed on its isolated branch at `a681ab4` with
