@@ -86,7 +86,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Planned isolated worktrees:
   - `E:\opencell-worktrees\fix-chromosome-condensation-iter1`
   - `E:\opencell-worktrees\fix-transcriptional-regulation-iter0`
-  Both branch from `a5bba6c`; Gemini test writers run first. Production changes
+  Both branch from `cd0031a`; Gemini test writers run first. Production changes
   remain sequential and cannot overlap on shared chromosome surfaces.
 
 **Current status (2026-10-13) — dual audits returned; RNG ownership contradiction under review:**
