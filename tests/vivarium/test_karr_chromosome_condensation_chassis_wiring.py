@@ -26,7 +26,7 @@ from typing import Any
 
 import pytest
 from vivarium.core.engine import Engine
-from vivarium.core.process import Process
+from vivarium.core.process import Step
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -97,71 +97,86 @@ def verify_chassis_smc_binding(composite: Any, *, n_ticks: int = 2) -> dict[str,
     cc = composite["processes"]["karr_chromosome_condensation"]
     engine = Engine(composite=composite, emit_step=1.0, display_info=False)
 
+    s0 = deepcopy(engine.state.get_value())
+
     # Tick 1: process requests ATP/H2O based on live free SMC, allocator computes grant.
     engine.update(1.0)
     s1 = deepcopy(engine.state.get_value())
 
-    # Tick 2: process observes grant from tick 1, executes evolveState binding.
+    # Tick 2: execute second tick (evolution in tick 1 under same-tick or tick 2 under 1-tick lag).
     engine.update(1.0)
     s2 = deepcopy(engine.state.get_value())
 
+    bound_0 = float(s0.get("boundEnzymes", {}).get(cc.smc_adp_wid, 0.0))
     bound_1 = float(s1.get("boundEnzymes", {}).get(cc.smc_adp_wid, 0.0))
     bound_2 = float(s2.get("boundEnzymes", {}).get(cc.smc_adp_wid, 0.0))
-    delta_bound = bound_2 - bound_1
+    delta_bound_1 = bound_1 - bound_0
+    delta_bound_2 = bound_2 - bound_1
+    delta_bound_total = bound_2 - bound_0
 
-    chrom_1 = float(s1.get("chromosome", {}).get("smc_bound_count", 0.0))
+    chrom_0 = float(s0.get("chromosome", {}).get("smc_bound_count", 0.0))
     chrom_2 = float(s2.get("chromosome", {}).get("smc_bound_count", 0.0))
-    delta_chrom = chrom_2 - chrom_1
+    delta_chrom_total = chrom_2 - chrom_0
 
-    free_1 = float(s1.get("complex", {}).get("counts", {}).get(cc.smc_wid, 0.0))
+    free_0 = float(s0.get("complex", {}).get("counts", {}).get(cc.smc_wid, 0.0))
     free_2 = float(s2.get("complex", {}).get("counts", {}).get(cc.smc_wid, 0.0))
-    delta_free = free_2 - free_1
+    delta_free_total = free_2 - free_0
 
-    delta_cond = float(s2.get("chromosome", {}).get("condensation_level", 0.0)) - float(
-        s1.get("chromosome", {}).get("condensation_level", 0.0)
+    delta_cond_total = float(s2.get("chromosome", {}).get("condensation_level", 0.0)) - float(
+        s0.get("chromosome", {}).get("condensation_level", 0.0)
     )
-    delta_atp = float(s2.get("substrates", {}).get(cc.atp_wid, 0.0)) - float(
-        s1.get("substrates", {}).get(cc.atp_wid, 0.0)
+    delta_atp_total = float(s2.get("substrates", {}).get(cc.atp_wid, 0.0)) - float(
+        s0.get("substrates", {}).get(cc.atp_wid, 0.0)
     )
-    delta_h2o = float(s2.get("substrates", {}).get(cc.water_wid, 0.0)) - float(
-        s1.get("substrates", {}).get(cc.water_wid, 0.0)
+    delta_h2o_total = float(s2.get("substrates", {}).get(cc.water_wid, 0.0)) - float(
+        s0.get("substrates", {}).get(cc.water_wid, 0.0)
     )
-    delta_pi = float(s2.get("substrates", {}).get(cc.pi_wid, 0.0)) - float(
-        s1.get("substrates", {}).get(cc.pi_wid, 0.0)
+    delta_pi_total = float(s2.get("substrates", {}).get(cc.pi_wid, 0.0)) - float(
+        s0.get("substrates", {}).get(cc.pi_wid, 0.0)
     )
-    delta_h = float(s2.get("substrates", {}).get(cc.hydrogen_wid, 0.0)) - float(
-        s1.get("substrates", {}).get(cc.hydrogen_wid, 0.0)
+    delta_h_total = float(s2.get("substrates", {}).get(cc.hydrogen_wid, 0.0)) - float(
+        s0.get("substrates", {}).get(cc.hydrogen_wid, 0.0)
     )
 
+    # Verify total binding across the 2 ticks (accepts binding in either tick 1 or tick 2).
     verify_binding_delta(
-        delta_bound=delta_bound,
-        delta_chrom=delta_chrom,
-        delta_free=delta_free,
-        delta_cond=delta_cond,
-        delta_atp=delta_atp,
-        delta_h2o=delta_h2o,
-        delta_pi=delta_pi,
-        delta_h=delta_h,
+        delta_bound=delta_bound_total,
+        delta_chrom=delta_chrom_total,
+        delta_free=delta_free_total,
+        delta_cond=delta_cond_total,
+        delta_atp=delta_atp_total,
+        delta_h2o=delta_h2o_total,
+        delta_pi=delta_pi_total,
+        delta_h=delta_h_total,
     )
 
-    # Exact-once guard: per-tick bound SMC delta must not exceed the ATP allocated to fund that tick.
+    # Exact-once / allocation-bound guards: per-tick and total bound delta must not exceed allocation.
     alloc_1 = float(s1.get("substrates_allocated", {}).get(cc.name, {}).get(cc.atp_wid, 0.0))
     alloc_2 = float(s2.get("substrates_allocated", {}).get(cc.name, {}).get(cc.atp_wid, 0.0))
-    alloc_funded = max(alloc_1, alloc_2)
-    if delta_bound > alloc_funded:
+    alloc_total = alloc_1 + alloc_2
+
+    if delta_bound_1 > alloc_1:
         raise AssertionError(
-            f"Duplicate evolution: bound delta {delta_bound} exceeds allocated ATP {alloc_funded}"
+            f"Duplicate evolution: tick 1 bound delta {delta_bound_1} exceeds allocated ATP {alloc_1}"
+        )
+    if delta_bound_2 > max(alloc_1, alloc_2):
+        raise AssertionError(
+            f"Duplicate evolution: tick 2 bound delta {delta_bound_2} exceeds allocated ATP {max(alloc_1, alloc_2)}"
+        )
+    if delta_bound_total > alloc_total:
+        raise AssertionError(
+            f"Duplicate evolution: total bound delta {delta_bound_total} exceeds allocated ATP {alloc_total}"
         )
 
     return {
-        "delta_bound": delta_bound,
-        "delta_chrom": delta_chrom,
-        "delta_free": delta_free,
-        "delta_cond": delta_cond,
-        "delta_atp": delta_atp,
-        "delta_h2o": delta_h2o,
-        "delta_pi": delta_pi,
-        "delta_h": delta_h,
+        "delta_bound": delta_bound_total,
+        "delta_chrom": delta_chrom_total,
+        "delta_free": delta_free_total,
+        "delta_cond": delta_cond_total,
+        "delta_atp": delta_atp_total,
+        "delta_h2o": delta_h2o_total,
+        "delta_pi": delta_pi_total,
+        "delta_h": delta_h_total,
     }
 
 
@@ -716,12 +731,12 @@ def test_planted_canary_verifier_rejects_condensation_level_relaxation_without_b
         )
 
 
-class _OneTickLagEvolutionWrapper(Process):
-    """Planted mutation wrapper: intercept an object's next_update and defer evolution updates by 1 tick."""
+class _OneTickLagEvolutionWrapper(Step):
+    """Planted mutation wrapper: intercept an evolution step and defer evolution updates by 1 active tick."""
 
     def __init__(self, target: Any) -> None:
         object.__setattr__(self, "_target", target)
-        object.__setattr__(self, "_tick", 0)
+        object.__setattr__(self, "_active_tick", 0)
         object.__setattr__(self, "_deferred", {})
         super().__init__(parameters=dict(getattr(target, "parameters", {})))
         self.name = getattr(target, "name", "lag_wrapper")
@@ -750,31 +765,32 @@ class _OneTickLagEvolutionWrapper(Process):
         return True
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        self._tick += 1
         real_update = self._target.next_update(timestep, states)
-        if self._tick == 1:
-            # Tick 1: hold back evolution updates; pass requests if present.
-            self._deferred = {
-                k: v for k, v in real_update.items()
-                if k in ("boundEnzymes", "chromosome", "complex", "substrates")
-            }
-            return {
-                k: v for k, v in real_update.items()
-                if k not in ("boundEnzymes", "chromosome", "complex", "substrates")
-            }
-        elif self._tick == 2:
-            # Tick 2: release deferred evolution updates merged with tick 2.
-            combined = dict(real_update)
-            for k, v in self._deferred.items():
-                if k not in combined:
-                    combined[k] = v
-                elif isinstance(v, dict) and isinstance(combined[k], dict):
-                    merged_dict = dict(combined[k])
-                    for sub_k, sub_v in v.items():
-                        merged_dict[sub_k] = merged_dict.get(sub_k, 0.0) + sub_v
-                    combined[k] = merged_dict
-            return combined
-        return real_update
+        cc_proc = getattr(self._target, "_condensation_process", None)
+        cc_name = getattr(cc_proc, "name", "karr_chromosome_condensation")
+        alloc = states.get("substrates_allocated", {}).get(cc_name, {})
+        has_grant = any(float(v) > 0.0 for v in alloc.values())
+        has_binding = (
+            bool(real_update.get("boundEnzymes"))
+            or float(real_update.get("chromosome", {}).get("smc_bound_count", 0.0)) > 0.0
+            or float(real_update.get("substrates", {}).get("ATP", 0.0)) < 0.0
+        )
+
+        if not (has_grant or has_binding):
+            # Engine initialization or no-op call without allocation/evolution: do not consume mutation phase.
+            return real_update
+
+        # Pipeline delay: defer current active tick's evolution, emit previously deferred.
+        delayed_output = self._deferred
+        self._deferred = {
+            k: v for k, v in real_update.items()
+            if k in ("boundEnzymes", "chromosome", "complex", "enzymes", "substrates")
+        }
+        non_evolution = {
+            k: v for k, v in real_update.items()
+            if k not in ("boundEnzymes", "chromosome", "complex", "enzymes", "substrates")
+        }
+        return {**non_evolution, **delayed_output}
 
 
 def _plant_one_tick_lag_mutation_on_composite(composite: Any) -> Any:
@@ -822,11 +838,12 @@ def test_planted_canary_verifier_rejects_one_tick_lag_mutation() -> None:
     assert deltas["delta_free"] == -deltas["delta_bound"]
 
 
-class _DuplicateEvolutionWrapper(Process):
-    """Planted mutation wrapper: duplicate evolution updates (double binding)."""
+class _DuplicateEvolutionWrapper(Step):
+    """Planted mutation wrapper: duplicate evolution updates (double binding) on active ticks."""
 
     def __init__(self, target: Any) -> None:
         object.__setattr__(self, "_target", target)
+        object.__setattr__(self, "_active_tick", 0)
         super().__init__(parameters=dict(getattr(target, "parameters", {})))
         self.name = getattr(target, "name", "duplicate_wrapper")
 
@@ -855,6 +872,20 @@ class _DuplicateEvolutionWrapper(Process):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         real_update = self._target.next_update(timestep, states)
+        cc_proc = getattr(self._target, "_condensation_process", None)
+        cc_name = getattr(cc_proc, "name", "karr_chromosome_condensation")
+        alloc = states.get("substrates_allocated", {}).get(cc_name, {})
+        has_grant = any(float(v) > 0.0 for v in alloc.values())
+        has_binding = (
+            bool(real_update.get("boundEnzymes"))
+            or float(real_update.get("chromosome", {}).get("smc_bound_count", 0.0)) > 0.0
+            or float(real_update.get("substrates", {}).get("ATP", 0.0)) < 0.0
+        )
+
+        if not (has_grant or has_binding):
+            # Engine initialization or no-op call without allocation/evolution: do not consume mutation phase.
+            return real_update
+
         doubled = dict(real_update)
         for k in ("boundEnzymes", "chromosome", "complex", "enzymes", "substrates"):
             if k in doubled and isinstance(doubled[k], dict):
