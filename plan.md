@@ -59,6 +59,27 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-13) — dual read-only audit round starting from honest 5/28:**
+
+- Worktree `E:\opencell-worktrees\pre-l25-honesty-rebaseline`, branch
+  `audit/pre-l25-honesty-rebaseline-20260917`, HEAD `4d57006`; clean, nothing
+  pushed. No live agent or process at this checkpoint.
+- Round 1 will launch two detached Opus planner/auditors in parallel:
+  `ChromosomeCondensation` and `TranscriptionalRegulation`. They are read-only,
+  use local MATLAB/fixtures/traces as authority, and must independently
+  reproduce or reject every recorded blocker. No production, test, audit,
+  wiring, evidence, baseline, or plan edit is authorized.
+- Iteration rule after reports: parent validates both, then repairs one process
+  at a time through frozen tests -> Sonnet implementation -> GPT review ->
+  evidence/audit/baseline. Shared chromosome/RNG surfaces must not be edited by
+  two implementation agents concurrently.
+- Expected first implementation candidate is ChromosomeCondensation if its
+  blockers remain bounded. TranscriptionalRegulation follows unless the audits
+  prove a shared prerequisite should be extracted first.
+- Source selection is fixed: executable MATLAB classes under canonical
+  `E:\opencell\data\m1_sources\WholeCell`, per-process fixtures and traces,
+  current OC code/topology, and existing semantic audits. No network fetch.
+
 **Current status (2026-10-11) — honest 5/28 integrated into the audit branch:**
 
 - Worktree `E:\opencell-worktrees\pre-l25-honesty-rebaseline`, branch
