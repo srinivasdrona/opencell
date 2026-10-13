@@ -231,6 +231,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   fresh-Step lifecycle RED. Sonnet may implement a one-shot guard plus a narrow
   `reset_for_engine_initialization()` re-arm in v6 after the temporary v5 Engine
   has consumed the first call.
+- Lifecycle fix landed at `fc16545` / verified provenance `ef58a2d`. Parent
+  acceptance is **35 PASS / 1 strict XFAIL**, Engine construction leaves CC
+  biology unchanged, tick 1 requests/grants/binds once, L2.4 4x100 PASS, and
+  diff/L1b/Ruff are clean. The same GPT reviewer must re-adjudicate before
+  integration.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
