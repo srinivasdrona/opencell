@@ -113,6 +113,19 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `ChromosomeCommitStep` intent owner; the first single-consumer Stage A+B keeps
   TxReg self-draw on serialized shared state. Fresh GPT critique is now required.
 - Live shared-state reviewer: `13e73b63-d3c8-48cf-9449-cc6491fe7d45`.
+- GPT critique returned **`VERDICT: DID NOT MATCH`** with four design blockers:
+  1. Shared stream schema/checkpoint/writeback is underspecified and absent-key
+     fallback could silently reseed each tick.
+  2. Stage B routes TxReg through `ChromosomeStore.sample_accessible_regions`
+     before deciding whether Stage B is RNG-only or moves the full
+     accessibility algorithm.
+  3. One multi-writer `set`-updated intent leaf can overwrite/stale intents;
+     per-process leaves or a proven append contract are required.
+  4. The commit owner omits release-rate intents (DNASupercoiling and
+     Replication SSB release), so multi-consumer draw accounting is incomplete.
+- Opus must revise again before any Stage A+B test freeze. First slice should be
+  explicitly RNG-only for TxReg unless the complete accessibility algorithm is
+  moved and ledger-parity proven in the same slice.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
