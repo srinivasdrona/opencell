@@ -92,6 +92,20 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `E:\opencell-worktrees\fix-chromosome-condensation-iter2`
   - `E:\opencell-worktrees\design-shared-chromosome-state`
   Both branch from integrated checkpoint `76fd1d8`.
+- Shared chromosome-state design landed at `e3ab9da` / `bf6d3a0` but is not
+  reviewer-ready. Parent found three blocking design gaps:
+  1. DC-8 says CC explicit-position commits with empty weights consume zero
+     shared draws, contradicting both source audits (`weights=[]` is normalized
+     before `sampleAccessibleRegions` and successful commits advance the
+     chromosome stream).
+  2. DNADamage is omitted from the participant table despite being the
+     provenance-pinned shared-stream interleaver that motivated the ledger hash.
+  3. Multi-consumer ordering assumes Vivarium process flow serializes shared
+     RNG state; the design must prove actual Engine update visibility or choose
+     a single sequential chromosome-commit owner. Flow-DAG prose alone is
+     insufficient.
+- The same Opus planner must correct these source/engine contracts before GPT
+  critique or any shared-state test freeze.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
