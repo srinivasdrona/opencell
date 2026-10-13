@@ -195,6 +195,12 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   authoritative process and post-allocation evolution Step are ready for fresh
   GPT review; default allocator starvation remains the sole strict diagnostic.
 - Live CC Iteration-2 reviewer: `0522f35e-50f0-46ec-b662-e628d2352e63`.
+- CC reviewer returned **`VERDICT: DID NOT MATCH`**: Vivarium calls the
+  evolution Step at `timestep=0` during Engine construction, and the Step
+  currently dissociates free SMC-ADP/produces ADP before tick 1. Test author
+  must freeze initial-state immutability across Engine construction; then the
+  evolution Step must return `{}` for initialization/no-op calls before any
+  biological evolution.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
