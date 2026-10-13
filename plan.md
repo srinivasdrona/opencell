@@ -246,6 +246,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   boundary is **15 PASS / 1 hard RED / 1 strict XFAIL**. Vivarium
   `Process.get_schema()` runs during each Engine store construction, providing a
   per-Engine lifecycle hook to re-arm the existing one-shot guard.
+- Final re-arm fix landed at `3cc602b` / verified provenance `ca441b4`. Parent
+  acceptance is **36 PASS / 1 strict XFAIL**, two Engines from one Composite
+  preserve init state, tick 1 evolves exactly once, and L2.4 4x100 PASS. The
+  original reviewer must re-adjudicate before integration.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
