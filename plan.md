@@ -59,6 +59,26 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-13) — first test freeze returned; CC correction pending:**
+
+- TxReg Iteration 0 tests landed on its isolated branch at `a681ab4` with
+  provenance `4d8f064`. Parent reproduced **97/97** fast tests. The correct
+  source-derived chassis contract is `MG_428_DIMER=8`, `MG_205_DIMER=0`, with
+  TU_063/TU_318 responding. A ledger-only hash append is mechanically unsafe:
+  the 4000-tick trace itself lacks DNADamage source metadata, so a coordinated
+  dual-artifact migration or re-extraction is required.
+- ChromosomeCondensation Iteration 1 tests landed at `3d0f87f` with provenance
+  `94e8892`; parent reproduced **15 PASS / 4 intentional failures**. The topology
+  target is live `complex.counts` plus root `boundEnzymes`, and current production
+  is correctly exposed as a zero-SMC no-op.
+- CC tests require one test-author correction before freezing: use exact
+  source-derived seeds (free SMC=5, free SMC-ADP=3, bound=78 and existing ATP/H2O)
+  rather than invented 60/50M values; mark the explicitly out-of-scope same-tick
+  Iteration-2 diagnostic `xfail(strict=True)` so Iteration 1 can finish green
+  without weakening the future contract.
+- TxReg implementation remains evidence/harness-only. CC production repair may
+  start only after the corrected test boundary is parent-accepted.
+
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
 - Both auditors converged on **MIXED** RNG ownership from primary MATLAB:
