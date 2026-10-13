@@ -153,6 +153,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   future-provider candidate parity, state round-trip continuation, and a real
   dec-007 registry/file gate are frozen. Opus must author dec-007 on the Stage
   A+B branch before Sonnet implementation; production remains frozen.
+- dec-007 landed at `ad2a2a7` / `80064c6`; the gate now passes and parent
+  boundary is **11 GREEN / 9 RED**. One source-faithfulness gap remains before
+  implementation: no test proves the composite seeds the leaf once or that
+  L2.4/long-run chassis seeders set the shared chromosome stream from the
+  requested run seed. Without it, multi-seed runs could all reuse seed 0.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
