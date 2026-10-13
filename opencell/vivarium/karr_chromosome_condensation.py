@@ -2088,6 +2088,12 @@ class KarrChromosomeCondensationEvolutionStep(Step):
         """Re-arm the first-call no-op for the next Engine construction."""
         self._initialization_call_spent = False
 
+    def get_schema(self, override: dict[str, Any] | None = None) -> dict[str, Any]:
+        # Each Engine store build asks every Step for its schema once before the
+        # Step's initialization call, so this re-arms per Engine construction.
+        self.reset_for_engine_initialization()
+        return super().get_schema(override)
+
     def ports_schema(self) -> dict[str, Any]:
         return self._condensation_process.evolution_ports_schema()
 
