@@ -45,6 +45,7 @@ from opencell.m3 import translation_v2 as tl_v2
 from opencell.vivarium.karr_allocation_step import KarrAllocationStep
 from opencell.vivarium.karr_cell_cycle_coordinator import CellCycleCoordinator
 from opencell.vivarium.karr_chromosome_condensation import (
+    PHASE_STORE_KEY,
     KarrChromosomeCondensationEvolutionStep,
     KarrChromosomeCondensationProcess,
     KarrChromosomeCondensationRequestProcess,
@@ -2326,6 +2327,7 @@ def build_karr_chassis_v5(
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (PHASE_STORE_KEY,),
         },
         "karr_chromosome_condensation_evolution": {
             "chromosome": ("chromosome",),
@@ -2333,6 +2335,7 @@ def build_karr_chassis_v5(
             "boundEnzymes": ("boundEnzymes",),
             "substrates": ("substrates",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (PHASE_STORE_KEY,),
         },
         "karr_chromosome_segregation": {
             "chromosome": ("chromosome",),
@@ -2468,6 +2471,7 @@ def build_karr_chassis_v5(
         "stimuli": {},
         "tx_rate_fold_change": tx_rate_fold_init,
         "boundEnzymes": bound_enzymes_init,
+        PHASE_STORE_KEY: {"request_ready": False},
         "chromosome": {
             **supercoil_init["chromosome"],
             "fork_position_bp": {"left": 0.0, "right": 0.0},
@@ -2754,10 +2758,6 @@ def build_karr_chassis_v6(
     chromosome_state.setdefault("damage_events_cumulative", [])
     chromosome_state.setdefault("repair_events_cumulative", [])
     assert_chassis_runtime_identity(processes)
-
-    # The temporary v5 Engine already spent the evolution Step's initialization call;
-    # re-arm it so the final v6 Engine construction is a no-op for CC evolution.
-    steps["karr_chromosome_condensation_evolution"].reset_for_engine_initialization()
 
     return Composite(
         processes=processes,

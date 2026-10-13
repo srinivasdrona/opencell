@@ -2052,20 +2052,39 @@ class KarrChromosomeCondensationProcess(Process):
         return smc_before, smc_adp_before
 
 
+PHASE_STORE_KEY = "_internal_chromosome_condensation_phase"
+
+
+def _phase_ports_schema() -> dict[str, Any]:
+    return {
+        "request_ready": {"_default": False, "_updater": "set", "_emit": False},
+    }
+
+
 class KarrChromosomeCondensationRequestProcess(KarrChromosomeCondensationProcess):
     """Chassis request phase: emits requests only; evolution runs after allocation.
 
     The authoritative instance is shared with ``KarrChromosomeCondensationEvolutionStep``
     so all request/evolution hidden state (RNG, chromosome bookkeeping) has one owner.
+    Each request emission also arms ``phase.request_ready`` so the evolution Step
+    runs exactly once per request, never at Engine construction.
     """
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = super().ports_schema()
+        schema["phase"] = _phase_ports_schema()
+        return schema
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
-        return {"requests": {self.name: self.calculate_request(states)}}
+        return {
+            "requests": {self.name: self.calculate_request(states)},
+            "phase": {"request_ready": True},
+        }
 
 
 class KarrChromosomeCondensationEvolutionStep(Step):
-    """Execute Karr ChromosomeCondensation.evolveState once, after allocation."""
+    """Execute Karr ChromosomeCondensation.evolveState once per armed request, after allocation."""
 
     name = "karr_chromosome_condensation_evolution"
     defaults: dict[str, Any] = {"condensation_process": None}
@@ -2080,32 +2099,25 @@ class KarrChromosomeCondensationEvolutionStep(Step):
                 "(a combined process would evolve twice per tick)"
             )
         self._condensation_process = process
-        # Engine construction invokes every Step once before any tick, and Vivarium
-        # passes timestep 0.0 on real ticks too, so the timestep cannot tell them apart.
-        self._initialization_call_spent = False
-
-    def reset_for_engine_initialization(self) -> None:
-        """Re-arm the first-call no-op for the next Engine construction."""
-        self._initialization_call_spent = False
-
-    def get_schema(self, override: dict[str, Any] | None = None) -> dict[str, Any]:
-        # Each Engine store build asks every Step for its schema once before the
-        # Step's initialization call, so this re-arms per Engine construction.
-        self.reset_for_engine_initialization()
-        return super().get_schema(override)
 
     def ports_schema(self) -> dict[str, Any]:
+        # The request process's schema already carries the shared phase port.
         return self._condensation_process.evolution_ports_schema()
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        # Vivarium passes timestep 0.0 to Steps on every run, including Engine
+        # construction, so the request_ready store handshake gates evolution instead.
         del timestep
-        if not self._initialization_call_spent:
-            self._initialization_call_spent = True
+        phase = states.get("phase", {})
+        if not isinstance(phase, dict) or phase.get("request_ready") is not True:
             return {}
-        return self._condensation_process.evolve_state(states)
+        update = self._condensation_process.evolve_state(states)
+        update["phase"] = {"request_ready": False}
+        return update
 
 
 __all__ = [
+    "PHASE_STORE_KEY",
     "KarrChromosomeCondensationEvolutionStep",
     "KarrChromosomeCondensationProcess",
     "KarrChromosomeCondensationRequestProcess",
