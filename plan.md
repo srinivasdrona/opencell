@@ -126,6 +126,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Opus must revise again before any Stage A+B test freeze. First slice should be
   explicitly RNG-only for TxReg unless the complete accessibility algorithm is
   moved and ledger-parity proven in the same slice.
+- Second Opus revision landed at `d70f1d3` / `2b7b85e`: exact int64 stream-state
+  leaf/writeback/fail-closed absence semantics, RNG-only Stage B, static
+  per-process generation-tagged intent leaves, and bind/damage/release intent
+  families (including Replication SSB release) are now specified. The same GPT
+  reviewer must re-adjudicate before tests.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
