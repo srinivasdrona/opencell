@@ -112,6 +112,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   merged updates. Multi-consumer stages now use one sequential
   `ChromosomeCommitStep` intent owner; the first single-consumer Stage A+B keeps
   TxReg self-draw on serialized shared state. Fresh GPT critique is now required.
+- Live shared-state reviewer: `13e73b63-d3c8-48cf-9449-cc6491fe7d45`.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
