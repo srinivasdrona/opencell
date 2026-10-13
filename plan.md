@@ -257,6 +257,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   when ready, clears it after exactly one evolution; Engine initialization and
   repeated Composite construction see ready=false. Tests must freeze the port,
   topology, set/clear semantics, and stale/double-consumption canaries.
+- Explicit handshake tests landed at `6e672d3` / `7995935`; current focused
+  boundary is **13 PASS / 5 hard RED / 1 strict XFAIL** plus 20/20 existing CC
+  tests. Sonnet may now remove the one-shot/get_schema/reset machinery and wire
+  one boolean `request_ready` state leaf shared by the request process and
+  evolution Step.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
