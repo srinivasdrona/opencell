@@ -125,6 +125,14 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   post-tick `36229`). Request 28 therefore floors to zero; request 29 grants one.
   The helper must derive both requests and pools from the same post-tick Engine
   snapshot before CC implementation can commit.
+- CC Iteration 1 is now committed on its isolated branch at production
+  `aab74ed`, provenance `849011b`. Parent acceptance is **18 PASS / 2 strict
+  XFAIL**, L2.4 4x100 PASS, diff/Ruff clean. The strict diagnostics preserve
+  default allocator starvation and the one-tick request lag.
+- Fresh GPT review is required before integration, with special attention to
+  root `boundEnzymes` updater ownership, v5/v6 seed duplication checks, and
+  whether the derived stress canary proves real topology execution without
+  laundering the default-starvation blocker.
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
