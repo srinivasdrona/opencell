@@ -88,6 +88,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   - `E:\opencell-worktrees\fix-transcriptional-regulation-iter0`
   Both branch from `cd0031a`; Gemini test writers run first. Production changes
   remain sequential and cannot overlap on shared chromosome surfaces.
+- Live test-writer agents:
+  - ChromosomeCondensation Iteration 1: `d05be657-487c-4572-8dc3-59d412697e9e`
+  - TranscriptionalRegulation Iteration 0: `fb742eba-d38e-4931-bce6-4475098d855f`
 
 **Current status (2026-10-13) — dual audits returned; RNG ownership contradiction under review:**
 
