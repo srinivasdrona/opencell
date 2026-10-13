@@ -201,6 +201,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   must freeze initial-state immutability across Engine construction; then the
   evolution Step must return `{}` for initialization/no-op calls before any
   biological evolution.
+- Engine-init regressions landed at `d9cc80c` / `0672331`; current boundary is
+  **12 PASS / 2 hard RED / 1 strict XFAIL** in the focused file plus 20/20
+  existing CC tests. Sonnet may now add only the timestep<=0 no-op guard and
+  revalidate the unchanged phase-split behavior.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
