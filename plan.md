@@ -100,6 +100,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
     `671725c0-21eb-4b69-97a4-e3968fdd5960`
   - TxReg test author is correcting the checked-in ledger contract from
     bug-expected GREEN (`pytest.raises`) to repair-expected RED (positive load).
+- TxReg correction is now frozen at `b116d67`: parent reproduced
+  **96 PASS / 1 hard RED** in the fast set, and **1 PASS / 1 hard RED** in the
+  real event replay, both failing only on missing DNADamage provenance. The
+  coordinated trace+ledger migration is now authorized; production remains
+  frozen.
 
 **Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
 
