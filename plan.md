@@ -158,6 +158,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   implementation: no test proves the composite seeds the leaf once or that
   L2.4/long-run chassis seeders set the shared chromosome stream from the
   requested run seed. Without it, multi-seed runs could all reuse seed 0.
+- Run-seed contracts landed at `8a21d44` / `27fd135`; parent now reproduces
+  **12 GREEN / 13 hard RED**. Composite v4/v5/v6 initialization,
+  ConservationCollector/DiagnosticCollector propagation, deterministic distinct
+  seeds, three-tick continuity, future-provider parity, and dec-007 are frozen.
+- Stage A+B implementation is intentionally queued behind CC Iteration-2
+  integration because both edit `karr_composite.py`; production branches must
+  remain sequential to avoid conflicting shared chassis changes.
 - CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
   **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
   over-constrained: it requires a separate request Step, while the established
