@@ -236,6 +236,12 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   biology unchanged, tick 1 requests/grants/binds once, L2.4 4x100 PASS, and
   diff/L1b/Ruff are clean. The same GPT reviewer must re-adjudicate before
   integration.
+- Re-review still returned **`DID NOT MATCH`**: the one-shot flag lives on the
+  reusable Step instance, so constructing a second Engine from the same
+  Composite consumes biological evolution during the second initialization.
+  Tests must freeze per-Engine-lifecycle re-arming (two Engine constructions,
+  neither mutates CC state) before the implementation can bind reset to a real
+  Vivarium construction hook/schema lifecycle.
 
 **Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
 
