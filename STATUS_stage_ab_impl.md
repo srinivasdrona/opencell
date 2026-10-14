@@ -357,3 +357,164 @@ Following independent review DID NOT MATCH, froze 4 authoritative test contracts
 - TxReg 4-file fast selection (92 tests): **92/92 PASS** (146.6s)
 - Canonical TxReg replay (2 tests): **2/2 PASS** (292.6s)
 - `ruff check` / `git diff --check`: clean.
+
+## Reviewer Regression Repair (2026-10-14, HEAD `2ed6d7a` → this work)
+
+Implemented the smallest production/metadata fixes to turn the 4 frozen
+reviewer-regression tests green, per the DOER directive. All four frozen
+tests are read-only; **not edited**.
+
+### Fix 1 — Fail closed every production tick (`karr_transcriptional_regulation.py`)
+
+`_resolve_chromosome_rng_for_tick` previously had THREE tiers: (1) valid
+leaf wins, (2) an already-installed `self._chromosome_rng` is kept
+verbatim, (3) legacy `polymerizedRegions`/`monomerBoundSites`/
+`complexBoundSites` fields present (no RNG leaf) auto-bootstraps a fresh
+seed-derived stream. Tier 3 is **removed entirely** — no more
+legacy-field-triggered reseeding. Tier 2 is kept (required to preserve the
+dec-006 ledger-replay harness's explicit `process._chromosome_rng =
+ledger_stream` injection, which calls `next_update` directly and cannot be
+edited), but `next_update` now **unconditionally clears
+`self._chromosome_rng = None` immediately after every tick's writeback**
+(new line at the end of `next_update`, right before `return update`). This
+makes "an already-installed handle" **structurally** mean "a caller
+re-installed this attribute since the last tick ended" — a tier-1,
+leaf-derived handle from THIS tick can never survive to be misread as an
+override on the NEXT tick, because `next_update` itself wipes it every
+single time it returns. `_CHROMOSOME_LEGACY_FIELD_KEYS` and the now-unused
+`ChromosomeStateRandStream` import (only referenced by the removed
+bootstrap call) were deleted.
+
+### Fix 2 — Strict exact serialized form (`chromosome_store.py`)
+
+New module-level `_validate_exact_rand_state_array(value)`: requires
+`isinstance(value, np.ndarray)`, `dtype == np.int64`, `shape == (2,)` —
+rejecting `None`, python lists/tuples (even of clean integers), float64
+arrays, any 2D shape, and wrong element counts with `TypeError` (type/dtype)
+or `ValueError` (shape) — no coercion, no `.reshape(-1)` flattening.
+`set_rand_state` now calls this validator first. `from_state_mapping`
+previously used `payload.get(KEY)` + `is not None` to decide whether to
+validate, which silently treated a **present-but-`None`** value the same
+as an **absent key** (the reviewer's exact finding) — changed to `if KEY in
+payload:` (containment, not truthiness) so a present malformed value always
+raises, and only a **truly absent** key is treated as "not yet seeded".
+Sentinel-equality is checked only AFTER the strict representation check
+passes (the sentinel itself is a valid int64 `(2,)` array).
+
+### Fix 3 — Unified generator equivalence at adversarial weights (`chromosome_state_rand.py`)
+
+`ChromosomeStateRandStream._weighted_randsample_with_replacement` used the
+probability-normalized-edges/`histcounts`-style algorithm (copied from
+`TxRegMcgRandStream`). At seed 42 with weights
+`[7.54154303189388e19, 6.368244061252983e19]` this diverges from
+`ChromCondMcgRandStream`'s direct-cumsum/threshold algorithm by one index
+(floating-point rounding differs once weights span many orders of
+magnitude — dividing-then-summing vs. summing-then-multiplying accumulate
+error differently at that scale). Replaced the method body with
+`ChromCondMcgRandStream`'s exact algorithm (byte-for-byte copy:
+`cdf = np.cumsum(weights, dtype=np.float64)`, `threshold = rand() * total`,
+`searchsorted(cdf, threshold, side="right")`). `opencell/util/
+chromcond_mcg_rand.py` was **not touched** (DC-4 / accepted behavior
+preserved exactly). Re-verified the existing seed-{0,1,42,123456789}
+equivalence test (`test_stage_a_chromosome_state_rand_stream_equivalence_across_seeds`)
+still passes — those vectors already agreed between the two algorithms, so
+switching the unified class onto the authoritative one changes nothing for
+them while fixing the adversarial witness.
+
+### Fix 4 — Baseline truth metadata (`PRE_L25_HONESTY_BASELINE.yaml`)
+
+`TXREG-PRODUCTION-TOPOLOGY` and `TXREG-RNG-PROVENANCE` finding `summary`
+prose rewritten to acknowledge the Stage A+B state (chromosome port wired;
+state-owned serialized sole-consumer RNG stream) while keeping both
+findings **OPEN** for the TRUE remaining gaps: no authoritative chromosome
+footprint/bound-site writeback (Stage C) and no multi-consumer shared-
+stream interleaving (Stage E/DC-9). `disposition` unchanged (`OPEN`),
+`eligibility` unchanged (`BLOCKED_LOWER_GATE`), overall `summary.eligible
+== 5` / `summary.blocked == 23` unchanged. Evidence anchors refreshed to
+point at the current, real wiring (`karr_composite.py:2297-2303` — v5's
+now-wired `chromosome` port; `karr_transcriptional_regulation.py:916-964`
+— `_resolve_chromosome_rng_for_tick`) since the code moved; both spans
+remain within `_validate_evidence`'s mechanical in-file-bounds check (which
+does not pin exact symbols, only path existence + line-span validity).
+
+### Required bookkeeping refresh (mechanically required, line-shift only)
+
+- `data/karr_method_inventory/oc_method_map.yaml`: the 3
+  `TranscriptionalRegulation.next_update` anchors moved from `:1655` to
+  `:1659` (the new clearing line pushed `next_update`'s start down by 4
+  lines). Required for `l1b_method_completeness.py` (was 112/115, now
+  115/115).
+- `docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml` `source_tree.sha256`
+  refreshed from `3f26e716...` to `6bec7a9b60418e77e30651de874c341fa242d0703c37c80c8474668a225a7ed6`
+  (128 files, `scripts/pre_l25_honesty.py source-digest`) after ALL code +
+  metadata changes above landed.
+
+### Verification
+
+1. `tests/vivarium/test_shared_chromosome_state_stage_ab.py` → **29/29 PASS** (35.7s).
+2. TxReg fast 4-file selection (`test_karr_transcriptional_regulation.py`,
+   `_anticheat.py`, `_ledger_and_damage.py`, `test_chromosome_rand_stream_ledger.py`)
+   → **92/92 PASS** (133.9s).
+3. **TxReg replay — DOCUMENTED, EXPECTED FAILURE, not patched:**
+   `tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py` →
+   **1 passed, 1 failed** (not 2/2):
+   - `test_karr_transcriptional_regulation_l2_event_replay[event_seed_0]`
+     (4000-tick, dec-006-ledgered) → **PASS**, bit-identical. This is the
+     tier-2 "explicit injected provider" path and continues to work exactly
+     as before.
+   - `test_karr_transcriptional_regulation_l2_replay_identity_per_tick[rng_seed_0]`
+     (100-tick canonical, **un-ledgered**) → **FAILS**: `RuntimeError:
+     ...chromosome._shared_rand_stream_state leaf is absent or unseeded...`
+     at tick 0. This harness builds `state["chromosome"]` via
+     `build_state_template` (schema defaults → sentinel leaf) plus
+     `_overlay_chromosome_state` (which only ever wrote
+     `polymerizedRegions`/`monomerBoundSites`/`complexBoundSites`, never
+     the RNG leaf) and never installs an override for this specific
+     ledger-less test variant — it relied EXCLUSIVELY on the now-removed
+     tier-3 legacy-field fallback. Per the task's explicit instruction —
+     "if absent-leaf legacy harness fails, stop and report rather than
+     adding production reseed" — **no production fallback was re-added**.
+     `tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py` is
+     not in this task's authorized write surface (frozen/read-only test
+     file), so the fix is a test-harness/fixture correction for a future
+     iteration: `_overlay_chromosome_state` (or its caller) needs to also
+     set `chrom_state["_shared_rand_stream_state"]` to a validly-seeded
+     value (e.g. `TxRegMcgRandStream(rng_seed).get_state()` at tick 0,
+     continuity preserved across ticks via the same mechanism
+     `_apply_update` already uses for other ports) before calling
+     `next_update`, mirroring exactly what the ledgered variant already
+     does by injecting `TxRegChromosomeLedgerRandStream` — except with a
+     production-shaped stream instead of a ledger-replay stream, since this
+     non-event trace carries no chromosome-rand-stream ledger at all.
+4. Stream/CC compatibility — `tests/util/test_chromcond_mcg_rand.py` +
+   `tests/vivarium/test_karr_chromosome_condensation_chassis_wiring.py`
+   (includes the CC request-ready handshake suite) → **27 passed, 1
+   xfailed** (expected, pre-existing), unchanged from baseline.
+5. `scripts/l2_4_verify_conservation.py --ticks 100 --seeds 0,1,2,3 --fresh`
+   → `PASS seeds=0,1,2,3 ticks=100 exchange_wids_skipped=124`.
+6. `scripts/l1b_method_completeness.py` → **PASS (115/115)**.
+   `scripts/l1b_verify_wiring.py` → **PASS (28/28 rows)**.
+7. `scripts/pre_l25_honesty.py audit` → **INTEGRITY_OK; eligible=5/28;
+   blocked=23** (byte-identical blocker list to the pre-repair baseline;
+   only the source hash needed refreshing).
+8. Combined regression selection — `tests/scripts/test_pre_l25_honesty.py`
+   (8 tests) + `tests/vivarium/test_shared_chromosome_state_stage_ab.py`
+   (now 29 tests, up from 25 when the task's "33" figure was written) →
+   **37/37 PASS** (38.3s). The task prompt's acceptance criterion cites "33
+   baseline regressions"; that count was computed before the reviewer froze
+   the 4 new regression tests in this same file (25→29), so the current,
+   correct total is 37 — all passing.
+9. `ruff check` on every touched file → clean. `git diff --check` → clean.
+
+### Final verdict (repair)
+
+All 4 reviewer-regression tests are green (29/29 total in the frozen
+suite). Every other required gate is green **except** the canonical
+un-ledgered 100-tick TxReg replay, which now fails for the reason explained
+above — an EXPECTED, DOCUMENTED consequence of removing the legacy-field
+fallback per explicit task instruction, not a regression introduced by
+carelessness, and not patched with a new production reseed path. A
+follow-on test-authoring task should extend
+`test_karr_transcriptional_regulation_l2_replay.py`'s `_overlay_chromosome_state`
+(or equivalent) to seed the RNG leaf the way the ledgered variant already
+injects its override.
