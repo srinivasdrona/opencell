@@ -45,6 +45,7 @@ from l2_replay_common import (
 )
 
 from opencell.state.chromosome_store import ChromosomeStore
+from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
 from opencell.util.txreg_mcg_rand import TxRegChromosomeLedgerRandStream
 from opencell.vivarium.karr_transcriptional_regulation import KarrTranscriptionalRegulationProcess
 
@@ -290,6 +291,16 @@ def _run_replay(
     if bootstrap_tf_bound_promoters is not None:
         wids_by_observable["tfBoundPromoters"] = list(process.tf_bound_promoters_wids)
 
+    # Stage A+B (dec-007): for un-ledgered runs, initialize the shared chromosome
+    # RNG stream once from the test's requested RNG seed using the unified stream,
+    # then carry the post-tick emitted state across ticks via the harness.
+    current_shared_rand_state: np.ndarray | None = None
+    if chromosome_rand_stream_ledger is None:
+        init_stream = ChromosomeStateRandStream(int(rng_seed))
+        current_shared_rand_state = np.array(
+            [int(rng_seed), int(init_stream._mcg_state)], dtype=np.int64
+        )
+
     for tick in range(n_ticks):
         state = build_state_template(process)
         before_vectors = {
@@ -339,12 +350,27 @@ def _run_replay(
             # OWN, genuinely isolated, currently-unused stream) is left
             # untouched.
             process._chromosome_rng = ledger_stream  # noqa: SLF001
+        else:
+            assert current_shared_rand_state is not None
+            chrom_state = state.setdefault("chromosome", {})
+            if not isinstance(chrom_state, dict):
+                raise TypeError("state['chromosome'] must be a dict")
+            chrom_state["_shared_rand_stream_state"] = current_shared_rand_state.copy()
 
         update = process.next_update(1.0, state)
         _apply_update(state, update, process)
 
         if ledger_stream is not None:
             ledger_stream.assert_fully_consumed()
+        else:
+            chrom_update = update.get("chromosome", {})
+            assert "_shared_rand_stream_state" in chrom_update, (
+                f"tick={tick}: next_update must emit '_shared_rand_stream_state'"
+            )
+            next_state = np.asarray(chrom_update["_shared_rand_stream_state"])
+            assert next_state.shape == (2,) and next_state.dtype == np.int64
+            assert int(next_state[0]) == int(rng_seed)
+            current_shared_rand_state = next_state.copy()
 
         for observable in observables:
             karr_after = after_vectors[observable]

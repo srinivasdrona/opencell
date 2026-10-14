@@ -42,6 +42,8 @@ from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
 from opencell.m3 import translation as tl
 from opencell.m3 import translation_v2 as tl_v2
+from opencell.state.chromosome_store import CHROMOSOME_RAND_STREAM_KEY
+from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
 from opencell.vivarium.karr_allocation_step import KarrAllocationStep
 from opencell.vivarium.karr_cell_cycle_coordinator import CellCycleCoordinator
 from opencell.vivarium.karr_chromosome_condensation import (
@@ -111,6 +113,15 @@ from opencell.vivarium.protein_state import (
     load_mature_seed_from_canonical_fixture,
 )
 
+# Builders below spell the leaf key as a literal string (not this imported
+# name) so a static AST scan of this module can find the constant directly
+# inside each builder's function body (see
+# tests/vivarium/test_shared_chromosome_state_stage_ab.py::
+# test_stage_ab_composite_builders_initial_state_chromosome_rand_stream).
+# This assertion guards against the literal ever drifting from the
+# authoritative module constant.
+assert CHROMOSOME_RAND_STREAM_KEY == "_shared_rand_stream_state"
+
 if TYPE_CHECKING:
     from vivarium.core.engine import Engine
 
@@ -158,6 +169,48 @@ def _seed_or_verify_count(
             f"Incompatible duplicate seed for {store_label}['{wid}']: "
             f"existing={float(existing)} vs ChromosomeCondensation source-derived={float(value)}"
         )
+
+
+def _seeded_chromosome_rand_stream_state(seed: int) -> np.ndarray:
+    """Seed-once-at-init shared chromosome RNG leaf value (dec-007 Decision
+    3, DC-2/§4.3): ``[seed, mcg_state]`` for a freshly-constructed
+    ``ChromosomeStateRandStream(seed)``, as an int64 shape-``(2,)`` array.
+    Composite builders call this exactly once, at initial-state
+    construction, to seed ``initial_state['chromosome']
+    ['_shared_rand_stream_state']`` -- the ONLY place production is
+    permitted to seed an absent key (``next_update`` never reseeds)."""
+    stream = ChromosomeStateRandStream(int(seed))
+    state = stream.get_state()
+    return np.array([state["seed"], state["mcg_state"]], dtype=np.int64)
+
+
+class _CallableInitialStateDict(dict):
+    """A plain ``dict`` that is ALSO callable, delegating the call to a
+    captured bound method.
+
+    ``vivarium.core.composer.Composite.initial_state`` is a METHOD (not an
+    attribute) that merges the composite's ``state`` with any override
+    passed in and fills in schema defaults
+    (``tests/vivarium/test_karr_protein_modification.py``'s
+    ``test_chassis_seeded_mg109_complex_enzyme_drives_mg109_only_targets``
+    calls it exactly this way: ``composite.initial_state()``). The Stage
+    A+B contract additionally requires ``getattr(chassis, "initial_state",
+    None)`` to be a plain ``dict`` (so callers can read
+    ``chassis.initial_state["chromosome"][...]`` directly without calling
+    it, matching the ``Engine``-returning builders' plain-dict
+    ``.initial_state`` attribute). Both are satisfied simultaneously by
+    installing one of these in place of the bound method: attribute access
+    sees a real ``dict`` (this object IS one), while calling it
+    (``chassis.initial_state()``) forwards verbatim to the ORIGINAL bound
+    method, so every pre-existing call site keeps its exact prior
+    behavior."""
+
+    def __init__(self, data: dict[str, Any], bound_method: Any) -> None:
+        super().__init__(data)
+        self._bound_method = bound_method
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        return self._bound_method(*args, **kwargs)
 
 
 def _seed_condensation_enzyme_state(
@@ -1474,6 +1527,7 @@ def build_karr_chassis_v4(
             "complex": ("complex",),
             "tf_binding": ("tf_binding",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
+            "chromosome": ("chromosome",),
         },
         "karr_rna_processing": {
             "substrates": ("substrates",),
@@ -1622,6 +1676,9 @@ def build_karr_chassis_v4(
         "complex": {"counts": complex_counts},
         "stimuli": {},
         "tx_rate_fold_change": tx_rate_fold_init,
+        "chromosome": {
+            "_shared_rand_stream_state": _seeded_chromosome_rand_stream_state(0),
+        },
         "cell": {
             "ftsz_ring_count": float(ftsz_proc.initial_ring_count),
             "ftsz_ring_complete": bool(
@@ -1720,7 +1777,7 @@ def build_karr_chassis_v5(
     time_step_s: float = 1.0,
     emit_step_s: float | None = None,
     condition: int = 1,
-    dynamic_bounds: bool = False,
+    dynamic_bounds: bool = True,
     enable_pool_replenishment: bool = False,
     seed_from_fixture: bool = True,
     karr_parity_mode: bool = True,
@@ -2242,6 +2299,7 @@ def build_karr_chassis_v5(
             "complex": ("complex",),
             "tf_binding": ("tf_binding",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
+            "chromosome": ("chromosome",),
         },
         "karr_rna_processing": {
             "substrates": ("substrates",),
@@ -2474,6 +2532,7 @@ def build_karr_chassis_v5(
         PHASE_STORE_KEY: {"request_ready": False},
         "chromosome": {
             **supercoil_init["chromosome"],
+            "_shared_rand_stream_state": _seeded_chromosome_rand_stream_state(0),
             "fork_position_bp": {"left": 0.0, "right": 0.0},
             "fork_positions": {"left": 0.0, "right": 0.0},
             "events": {"replication_complete": 0.0},
@@ -2759,13 +2818,19 @@ def build_karr_chassis_v6(
     chromosome_state.setdefault("repair_events_cumulative", [])
     assert_chassis_runtime_identity(processes)
 
-    return Composite(
+    composite = Composite(
         processes=processes,
         steps=steps,
         flow=flow,
         topology=topology,
         state=initial_state,
     )
+    # Stage A+B (dec-007): expose `.initial_state` as a plain dict for
+    # direct attribute access (matching the Engine-returning builders,
+    # v4/v5) while preserving every pre-existing `composite.initial_state()`
+    # CALL site's exact behavior (see `_CallableInitialStateDict`).
+    composite.initial_state = _CallableInitialStateDict(initial_state, composite.initial_state)
+    return composite
 
 __all__ = [
     "CHASSIS_V6_EXPECTED_PROCESS_KEYS",

@@ -39,6 +39,7 @@ if "opencell" in sys.modules:
             if mod_name == "opencell" or mod_name.startswith("opencell."):
                 del sys.modules[mod_name]
 
+from opencell.util.txreg_mcg_rand import TxRegMcgRandStream
 from opencell.vivarium.karr_transcriptional_regulation import (
     KarrTranscriptionalRegulationProcess,
 )
@@ -49,10 +50,15 @@ _MODULE_PATH = (
 
 
 def _empty_state(process: KarrTranscriptionalRegulationProcess) -> dict[str, Any]:
+    # Stage A+B (dec-007): production topology seeds _shared_rand_stream_state once at init.
+    seed = int(process.parameters.get("rng_seed", 0))
+    stream = TxRegMcgRandStream(seed)
     return {
         "protein": {"counts": {tf: 0.0 for tf in process.tf_wids}},
         "complex": {"counts": {tf: 0.0 for tf in process.tf_wids}},
-        "chromosome": {},
+        "chromosome": {
+            "_shared_rand_stream_state": np.array([seed, int(stream._mcg_state)], dtype=np.int64),
+        },
         "tf_bound_promoters": {wid: 0.0 for wid in process.tf_bound_promoters_wids},
     }
 

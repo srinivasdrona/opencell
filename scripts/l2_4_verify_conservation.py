@@ -214,12 +214,35 @@ class ConservationCollector:
         self._entities.update(getattr(composite, "processes", {}))
         self._entities.update(getattr(composite, "steps", {}))
         self._seed_entities(seed=seed)
+        self._seed_shared_chromosome_rand_stream(seed=seed)
         self._patch_entities()
 
     def set_tick(self, tick: int) -> None:
         self._current_tick["tick"] = int(tick)
         self.per_tick_process_sums.clear()
         self.per_tick_process_wid_deltas.clear()
+
+    def _seed_shared_chromosome_rand_stream(self, *, seed: int) -> None:
+        """Set/reset the shared chromosome state RNG leaf
+        (``chromosome._shared_rand_stream_state``, dec-007/DC-2) to the
+        requested run seed, in place, on the composite's own
+        ``initial_state`` dict. Ordinary entity RNG seeding (above) is
+        unaffected -- this only touches the one state-owned chromosome
+        leaf so a requested run seed propagates to TxReg's sole-consumer
+        draw sequence (Stage B) exactly like every other entity's seed."""
+        from opencell.state.chromosome_store import CHROMOSOME_RAND_STREAM_KEY
+        from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+
+        initial_state = getattr(self._composite, "initial_state", None)
+        if not isinstance(initial_state, dict):
+            return
+        chrom_state = initial_state.get("chromosome")
+        if not isinstance(chrom_state, dict):
+            return
+        stream_state = ChromosomeStateRandStream(int(seed)).get_state()
+        chrom_state[CHROMOSOME_RAND_STREAM_KEY] = np.array(
+            [stream_state["seed"], stream_state["mcg_state"]], dtype=np.int64
+        )
 
     def _seed_entities(self, *, seed: int) -> None:
         from opencell.util.matlab_rng import MatlabRandStream

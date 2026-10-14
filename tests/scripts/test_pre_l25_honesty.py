@@ -259,3 +259,67 @@ def test_tracked_baseline_is_current_and_fail_closed() -> None:
     assert not any(item.startswith("ProteinTranslocation") for item in result.blockers)
     assert any("Metabolism/MET-CODE-DEVIATIONS" in item for item in result.blockers)
     assert any("Metabolism/MET-EVIDENCE-CONFIG" in item for item in result.blockers)
+
+
+def test_txreg_stage_a_production_files_included_in_provenance_and_dependencies() -> None:
+    """Stage A+B Reviewer Blocker Regression Contract:
+
+    TranscriptionalRegulation in Stage A+B relies on opencell/state/chromosome_store.py
+    and opencell/util/chromosome_state_rand.py for its production shared chromosome RNG.
+    Both files must be tracked in:
+    1. pre_l25_honesty.collect_source_dependencies()
+    2. data/karr_method_inventory/oc_method_map.yaml under TranscriptionalRegulation.oc_files
+    3. data/schemas/per_process_wiring/TranscriptionalRegulation.yaml under provenance.oc_files_referenced
+    With no eligibility or finding disposition changes (5/28 eligible; findings remain OPEN).
+    """
+    req_files = {
+        "opencell/state/chromosome_store.py",
+        "opencell/util/chromosome_state_rand.py",
+    }
+
+    # 1. collect_source_dependencies() includes both exact paths
+    deps = {p.relative_to(REPO_ROOT).as_posix() for p in honesty.collect_source_dependencies()}
+    for req in req_files:
+        assert req in deps, f"collect_source_dependencies() must include {req}"
+
+    # 2. TxReg method-map oc_files includes both
+    method_map_path = REPO_ROOT / "data" / "karr_method_inventory" / "oc_method_map.yaml"
+    with open(method_map_path, encoding="utf-8") as f:
+        method_map = yaml.safe_load(f)
+    txreg_method = method_map.get("processes", {}).get("TranscriptionalRegulation", {})
+    txreg_oc_files = set(txreg_method.get("oc_files", []))
+    for req in req_files:
+        assert (
+            req in txreg_oc_files
+        ), f"TranscriptionalRegulation.oc_files in oc_method_map.yaml must include {req}"
+
+    # 3. Wiring yaml provenance.oc_files_referenced includes both
+    wiring_path = (
+        REPO_ROOT
+        / "data"
+        / "schemas"
+        / "per_process_wiring"
+        / "TranscriptionalRegulation.yaml"
+    )
+    with open(wiring_path, encoding="utf-8") as f:
+        wiring = yaml.safe_load(f)
+    wiring_oc_files = set(wiring.get("provenance", {}).get("oc_files_referenced", []))
+    for req in req_files:
+        assert (
+            req in wiring_oc_files
+        ), f"TranscriptionalRegulation.yaml oc_files_referenced must include {req}"
+
+    # 4. No eligibility or finding disposition changes
+    baseline_path = (
+        REPO_ROOT / "docs" / "phase_f" / "pre_l25" / "PRE_L25_HONESTY_BASELINE.yaml"
+    )
+    with open(baseline_path, encoding="utf-8") as f:
+        baseline = yaml.safe_load(f)
+    assert baseline["summary"]["eligible"] == 5
+    assert baseline["summary"]["blocked"] == 23
+    txreg_proc = next(
+        p for p in baseline["processes"] if p["name"] == "TranscriptionalRegulation"
+    )
+    assert txreg_proc["eligibility"] == "BLOCKED_LOWER_GATE"
+    for finding in txreg_proc["findings"]:
+        assert finding["disposition"] == "OPEN"

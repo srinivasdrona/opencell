@@ -38,10 +38,15 @@ _FLOAT_TOL = 1e-12
 
 
 def _empty_tr_state(process: KarrTranscriptionalRegulationProcess) -> dict[str, Any]:
+    # Stage A+B (dec-007): production topology seeds _shared_rand_stream_state once at init.
+    seed = int(process.parameters.get("rng_seed", 0))
+    stream = TxRegMcgRandStream(seed)
     return {
         "protein": {"counts": {tf: 0.0 for tf in process.tf_wids}},
         "complex": {"counts": {tf: 0.0 for tf in process.tf_wids}},
-        "chromosome": {},
+        "chromosome": {
+            "_shared_rand_stream_state": np.array([seed, int(stream._mcg_state)], dtype=np.int64),
+        },
         "tf_bound_promoters": {wid: 0.0 for wid in process.tf_bound_promoters_wids},
     }
 
@@ -88,6 +93,8 @@ def _apply_full_update(
     for tf_wid, delta in update.get("enzymes", {}).items():
         store = _tf_store(process, tf_wid)
         state[store]["counts"][tf_wid] = float(state[store]["counts"].get(tf_wid, 0.0)) + float(delta)
+    if "chromosome" in update:
+        state.setdefault("chromosome", {}).update(update["chromosome"])
 
 
 def _bound_site_count(state: dict[str, Any]) -> int:

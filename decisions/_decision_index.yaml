@@ -84,3 +84,19 @@ decisions:
       - "The ledger sidecar format changes incompatibly with tests/vivarium/chromosome_rand_stream_ledger.py's loader (main) without a corresponding regeneration"
       - "A new process is found to consume the shared Chromosome.randStream and needs its own <Process>ChromosomeLedgerRandStream subclass registered"
     superseded_by: null
+
+  - id: dec-007
+    title: "Production state-owned shared ChromosomeStateRandStream (Stage A+B RNG-only TxReg migration); additive to and preserving dec-006"
+    file: decisions/dec-007-production-shared-chromosome-randstream.md
+    status: active
+    created: 2026-10-14
+    additive_to: dec-006
+    supersedes: null
+    invalidation_triggers:
+      - "The dec-006 shared-stream premise is refuted (a future audit shows chromosome.randStream is NOT actually a single instance shared across the chromosome-binding processes for a given Karr build), removing the basis for a production single-stream authority"
+      - "The serialized int64 [seed, mcg_state] encoding is found insufficient to reconstruct the mcg16807 stream bit-identically, requiring a wider leaf schema"
+      - "A production code path is found constructing/reading a dec-006 ledger stream, violating the no-oracle-in-production rule"
+      - "Cross-run checkpoint of chromosome state becomes required, so opencell/core/checkpoint.py must be extended and the deferral in Decision #6 revisited"
+      - "The reviewed multi-consumer sequential commit owner + per-process intent leaves mechanism (design DC-9/DC-10, Stage E) is implemented, requiring a follow-on decision gate that supersedes the out-of-scope boundary in Decision #7"
+      - "The Stage-C centralization/parity gate shows the store-owned sample_accessible_regions cannot match the in-TxReg selection index-for-index, reopening the RNG-only boundary in Decision #4"
+    superseded_by: null
