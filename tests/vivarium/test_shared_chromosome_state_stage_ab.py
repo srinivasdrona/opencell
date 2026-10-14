@@ -1187,3 +1187,216 @@ def test_canary_seeder_stuck_at_seed_zero_rejected() -> None:
 
     with pytest.raises(AssertionError, match="SEED_PROPAGATION_FAILURE"):
         validate_run_seed_chromosome_state(2, rogue_state_run2)
+
+
+# ---------------------------------------------------------------------------
+# Stage A+B: Reviewer Regressions & Repair Authority Contracts
+# ---------------------------------------------------------------------------
+
+
+def test_stage_ab_fail_closed_every_production_tick_rejects_stale_handle_and_legacy_fallback() -> None:
+    """Stage A+B Contract (Reviewer Regression Class 1).
+
+    Fail-closed every production tick:
+    1. After a valid tick/handle, replacing the serialized leaf with sentinel [-1, -1]
+       must raise RuntimeError in next_update. Stale cached-handle reuse from a prior tick
+       must be rejected.
+    2. A full legacy ChromosomeStore.to_state() mapping with ordinary chromosome fields
+       present (polymerizedRegions, monomerBoundSites, etc.) but the RNG leaf absent must
+       also raise RuntimeError. Legacy-field seed fallback / auto-bootstrapping must be rejected.
+    """
+    p = KarrTranscriptionalRegulationProcess({"rng_seed": 0})
+    seed = 0
+    stream = TxRegMcgRandStream(seed)
+    valid_leaf = np.array([seed, int(stream._mcg_state)], dtype=np.int64)
+
+    # Tick 1: Valid initial execution sets up state
+    state_valid = {
+        "protein": {"counts": {tf: 0.0 for tf in p.tf_wids}},
+        "complex": {"counts": {tf: 0.0 for tf in p.tf_wids}},
+        "chromosome": {
+            _EXPECTED_LEAF_KEY: valid_leaf.copy(),
+        },
+        "tf_bound_promoters": {wid: 0.0 for wid in p.tf_bound_promoters_wids},
+    }
+    update1 = p.next_update(1.0, state_valid)
+    assert isinstance(update1, dict)
+
+    # Sub-test 1: Next tick with sentinel leaf [-1, -1] MUST raise RuntimeError
+    # (rejecting stale cached handle reuse from tick 1)
+    state_sentinel = deepcopy(state_valid)
+    state_sentinel["chromosome"][_EXPECTED_LEAF_KEY] = _UNSEEDED_SENTINEL.copy()
+
+    with pytest.raises(
+        RuntimeError,
+        match="(?i)(absent|unseeded|missing|_shared_rand_stream_state)",
+    ):
+        p.next_update(1.0, state_sentinel)
+
+    # Sub-test 2: Full legacy ChromosomeStore mapping without RNG leaf MUST raise RuntimeError
+    # (rejecting legacy-field seed fallback / auto-bootstrapping)
+    legacy_store = ChromosomeStore(shape=p.chromosome_shape)
+    legacy_chrom_state = legacy_store.to_state()
+    assert _EXPECTED_LEAF_KEY not in legacy_chrom_state, "Unseeded store has no RNG leaf"
+    assert "polymerizedRegions" in legacy_chrom_state, "Legacy store has ordinary chromosome fields"
+
+    state_legacy = {
+        "protein": {"counts": {tf: 0.0 for tf in p.tf_wids}},
+        "complex": {"counts": {tf: 0.0 for tf in p.tf_wids}},
+        "chromosome": legacy_chrom_state,
+        "tf_bound_promoters": {wid: 0.0 for wid in p.tf_bound_promoters_wids},
+    }
+
+    p_fresh = KarrTranscriptionalRegulationProcess({"rng_seed": 0})
+    with pytest.raises(
+        RuntimeError,
+        match="(?i)(absent|unseeded|missing|_shared_rand_stream_state)",
+    ):
+        p_fresh.next_update(1.0, state_legacy)
+
+
+def test_stage_a_exact_serialized_representation_strict_validation() -> None:
+    """Stage A Contract §4.3 (Reviewer Regression Class 2).
+
+    Exact serialized representation:
+    ChromosomeStore.set_rand_state and ChromosomeStore.from_state_mapping must strictly require:
+    - exact np.ndarray
+    - exact dtype np.int64
+    - exact shape (2,)
+    Non-exact variants (present-but-None, float64, 2D shapes (1, 2) or (2, 1), fractional values,
+    wrong lengths) must be REJECTED with TypeError or ValueError rather than silently cast or flattened.
+    """
+    store = ChromosomeStore()
+
+    # Valid representation must succeed
+    valid_state = np.array([42, 1234567], dtype=np.int64)
+    store.set_rand_state(valid_state)
+    assert np.array_equal(store.rand_state(), valid_state)
+
+    # 1. present-but-None: in payload mapping, present key with None value must fail
+    with pytest.raises((TypeError, ValueError)):
+        ChromosomeStore.from_state_mapping({_EXPECTED_LEAF_KEY: None})
+
+    with pytest.raises((TypeError, ValueError)):
+        store.set_rand_state(None)
+
+    # 2. wrong dtype: float64 must raise, not silently cast
+    float_state = np.array([42.0, 1234567.0], dtype=np.float64)
+    with pytest.raises((TypeError, ValueError)):
+        store.set_rand_state(float_state)
+
+    with pytest.raises((TypeError, ValueError)):
+        ChromosomeStore.from_state_mapping({_EXPECTED_LEAF_KEY: float_state})
+
+    # 3. wrong shape: (1, 2) 2D array must raise, not silently flatten
+    shape_1_2 = np.array([[42, 1234567]], dtype=np.int64)
+    with pytest.raises((TypeError, ValueError)):
+        store.set_rand_state(shape_1_2)
+
+    with pytest.raises((TypeError, ValueError)):
+        ChromosomeStore.from_state_mapping({_EXPECTED_LEAF_KEY: shape_1_2})
+
+    # 4. wrong shape: (2, 1) 2D array must raise
+    shape_2_1 = np.array([[42], [1234567]], dtype=np.int64)
+    with pytest.raises((TypeError, ValueError)):
+        store.set_rand_state(shape_2_1)
+
+    with pytest.raises((TypeError, ValueError)):
+        ChromosomeStore.from_state_mapping({_EXPECTED_LEAF_KEY: shape_2_1})
+
+    # 5. fractional values: list or array with non-integers must raise
+    fractional = [42, 1234567.5]
+    with pytest.raises((TypeError, ValueError)):
+        store.set_rand_state(fractional)
+
+    # 6. malformed lengths: 1 element or 3 elements
+    with pytest.raises(ValueError):
+        store.set_rand_state(np.array([42], dtype=np.int64))
+
+    with pytest.raises(ValueError):
+        store.set_rand_state(np.array([42, 1234567, 99], dtype=np.int64))
+
+
+def test_stage_a_unified_stream_equivalence_adversarial_weights() -> None:
+    """Stage A Contract DC-4, §18 A2 (Reviewer Regression Class 3).
+
+    Unified stream equivalence at adversarial weighted-sampling boundaries:
+    Preserves the reviewer witness at seed 42 with weights
+    [7.54154303189388e19, 6.368244061252983e19].
+    ChromosomeStateRandStream and ChromCondMcgRandStream must return the exact same
+    selected index and advance to the exact same mcg_state.
+    """
+    from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+
+    reviewer_weights = [7.54154303189388e19, 6.368244061252983e19]
+    seed = 42
+
+    s_unified = ChromosomeStateRandStream(seed)
+    s_chromcond = ChromCondMcgRandStream(seed)
+
+    idx_u = s_unified.randsample(2, 1, False, reviewer_weights)
+    idx_c = s_chromcond.randsample(2, 1, False, reviewer_weights)
+
+    np.testing.assert_array_equal(
+        idx_u,
+        idx_c,
+        err_msg=(
+            f"Adversarial weighted sampling diverged at seed {seed}: "
+            f"ChromosomeStateRandStream returned {idx_u}, "
+            f"ChromCondMcgRandStream returned {idx_c}"
+        ),
+    )
+    assert s_unified._mcg_state == s_chromcond._mcg_state, (
+        f"Stream post-draw mcg_state diverged: {s_unified._mcg_state} vs {s_chromcond._mcg_state}"
+    )
+
+
+def test_stage_ab_pre_l25_baseline_truth_metadata() -> None:
+    """Stage A+B Contract (Reviewer Regression Class 4).
+
+    Baseline truth: PRE_L25_HONESTY_BASELINE.yaml finding prose for TranscriptionalRegulation:
+    1. TXREG-PRODUCTION-TOPOLOGY must no longer claim the chromosome port is omitted.
+       It must remain OPEN for the true unresolved pieces (authoritative bound-site writeback,
+       promoter occupancy projection, bound-TF state, enzyme writeback).
+    2. TXREG-RNG-PROVENANCE must no longer claim autonomous OC uses only a process-local stand-in.
+       It must remain OPEN for multi-consumer shared-stream interleaving (DC-9 / Stage E).
+    3. Overall eligibility must remain 5/28 (23 blocked / 5 eligible).
+    """
+    import yaml
+
+    baseline_path = _REPO_ROOT / "docs" / "phase_f" / "pre_l25" / "PRE_L25_HONESTY_BASELINE.yaml"
+    assert baseline_path.exists(), "PRE_L25_HONESTY_BASELINE.yaml must exist"
+
+    with open(baseline_path, encoding="utf-8") as f:
+        data = yaml.safe_load(f)
+
+    # 1. Overall baseline eligibility must remain 5/28
+    summary = data.get("summary", {})
+    assert summary.get("eligible") == 5, f"Expected 5 eligible processes, got {summary.get('eligible')}"
+    assert summary.get("blocked") == 23, f"Expected 23 blocked processes, got {summary.get('blocked')}"
+
+    # 2. Inspect TranscriptionalRegulation findings
+    processes = data.get("processes", [])
+    txreg_entry = next((p for p in processes if p.get("name") == "TranscriptionalRegulation"), None)
+    assert txreg_entry is not None, "TranscriptionalRegulation must be in baseline processes"
+    assert txreg_entry.get("eligibility") == "BLOCKED_LOWER_GATE"
+
+    findings = {f.get("id"): f for f in txreg_entry.get("findings", [])}
+
+    # Finding 1: TXREG-PRODUCTION-TOPOLOGY
+    topo_finding = findings.get("TXREG-PRODUCTION-TOPOLOGY")
+    assert topo_finding is not None, "TXREG-PRODUCTION-TOPOLOGY finding must exist"
+    assert topo_finding.get("disposition") == "OPEN", "Finding must remain OPEN"
+    topo_summary = str(topo_finding.get("summary", ""))
+    assert "omits chromosome" not in topo_summary.lower(), (
+        f"TXREG-PRODUCTION-TOPOLOGY summary must no longer claim chromosome port is omitted: {topo_summary}"
+    )
+
+    # Finding 2: TXREG-RNG-PROVENANCE
+    rng_finding = findings.get("TXREG-RNG-PROVENANCE")
+    assert rng_finding is not None, "TXREG-RNG-PROVENANCE finding must exist"
+    assert rng_finding.get("disposition") == "OPEN", "Finding must remain OPEN"
+    rng_summary = str(rng_finding.get("summary", ""))
+    assert "local continuously advancing stand-in" not in rng_summary.lower(), (
+        f"TXREG-RNG-PROVENANCE summary must no longer claim local stand-in: {rng_summary}"
+    )

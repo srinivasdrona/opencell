@@ -332,3 +332,28 @@ from `49230da8...` to current mechanically reported `3f26e716ef34693f7c958514012
 (128 files) after test helper alignment.
 - `scripts/pre_l25_honesty.py audit`: **INTEGRITY_OK; eligible=5/28; blocked=23**
 - Regression selection (33 tests: `test_pre_l25_honesty.py` 8 + `test_shared_chromosome_state_stage_ab.py` 25): **33/33 PASS** (38.5s)
+
+## Reviewer Regressions Freeze (2026-10-14)
+
+Following independent review DID NOT MATCH, froze 4 authoritative test contracts in
+`tests/vivarium/test_shared_chromosome_state_stage_ab.py` as repair authority:
+1. `test_stage_ab_fail_closed_every_production_tick_rejects_stale_handle_and_legacy_fallback`:
+   Replaces serialized leaf with sentinel `[-1, -1]` after valid tick and requires `RuntimeError`;
+   full legacy store mapping with RNG leaf absent must also raise `RuntimeError`.
+   Rejects stale cached-handle reuse and legacy-field fallback. (RED on current code)
+2. `test_stage_a_exact_serialized_representation_strict_validation`:
+   Present-but-None, float64, 2D shapes, fractional values, and wrong lengths must be rejected
+   by `set_rand_state` / `from_state_mapping` rather than silently cast or flattened. (RED on current code)
+3. `test_stage_a_unified_stream_equivalence_adversarial_weights`:
+   Reviewer witness at seed 42 with weights `[7.54154303189388e19, 6.368244061252983e19]`
+   requires `ChromosomeStateRandStream` and `ChromCondMcgRandStream` to return identical index/state. (RED on current code)
+4. `test_stage_ab_pre_l25_baseline_truth_metadata`:
+   Requires `PRE_L25_HONESTY_BASELINE.yaml` finding prose for `TranscriptionalRegulation` to no longer
+   claim chromosome port is omitted (`TXREG-PRODUCTION-TOPOLOGY`) or that autonomous OC uses only a
+   local stand-in (`TXREG-RNG-PROVENANCE`), while keeping both findings OPEN. Eligibility remains 5/28. (RED on current code)
+
+**Boundary on current code:**
+- `test_shared_chromosome_state_stage_ab.py`: **25 PASS / 4 intentional RED** (29 collected)
+- TxReg 4-file fast selection (92 tests): **92/92 PASS** (146.6s)
+- Canonical TxReg replay (2 tests): **2/2 PASS** (292.6s)
+- `ruff check` / `git diff --check`: clean.
