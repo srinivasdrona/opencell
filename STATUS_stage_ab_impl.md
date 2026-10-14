@@ -324,3 +324,11 @@ intended for unseeded production execution.
 - TxReg 4-file fast selection (`test_karr_transcriptional_regulation.py`, `test_karr_transcriptional_regulation_anticheat.py`, `test_karr_transcriptional_regulation_ledger_and_damage.py`, `test_chromosome_rand_stream_ledger.py`): **92/92 PASS** (132.7s)
 - Canonical TxReg replay (`test_karr_transcriptional_regulation_l2_replay.py`): **2/2 PASS** (241.8s)
 - `ruff check` / `git diff --check`: clean.
+
+## Baseline Digest Refresh (2026-10-14)
+
+Refreshed `source_tree.sha256` in `docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml`
+from `49230da8...` to current mechanically reported `3f26e716ef34693f7c9585140121c8a51f75bd6616d349f4e59e68527443488a`
+(128 files) after test helper alignment.
+- `scripts/pre_l25_honesty.py audit`: **INTEGRITY_OK; eligible=5/28; blocked=23**
+- Regression selection (33 tests: `test_pre_l25_honesty.py` 8 + `test_shared_chromosome_state_stage_ab.py` 25): **33/33 PASS** (38.5s)
