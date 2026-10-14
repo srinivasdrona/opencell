@@ -542,3 +542,28 @@ Applied smallest test-harness-only fix:
 - Honesty regression selection (`test_pre_l25_honesty.py`): **8/8 PASS** (3.1s)
 - Combined selection (`test_pre_l25_honesty.py` 8 + `test_shared_chromosome_state_stage_ab.py` 29): **37/37 PASS**
 - `ruff check` / `git diff --check`: clean.
+
+## Reviewer Blocker Freeze: Stage A Source Dependency Tracking (2026-10-14, this work)
+
+**Finding & Contract:**
+`TranscriptionalRegulation.oc_files` in `data/karr_method_inventory/oc_method_map.yaml` and
+`data/schemas/per_process_wiring/TranscriptionalRegulation.yaml` omitted both
+`opencell/state/chromosome_store.py` and `opencell/util/chromosome_state_rand.py`.
+`pre_l25_honesty.collect_source_dependencies()` therefore excluded the two core Stage A
+production files.
+
+Added test-only regression contract in `tests/scripts/test_pre_l25_honesty.py`:
+`test_txreg_stage_a_production_files_included_in_provenance_and_dependencies`
+requiring:
+1. `collect_source_dependencies()` includes both exact paths.
+2. TxReg method-map `oc_files` includes both.
+3. `TranscriptionalRegulation.yaml` `oc_files_referenced` includes both.
+4. No eligibility or finding disposition changes (5/28 eligible; findings remain OPEN).
+
+**Boundary on current code:**
+- `test_pre_l25_honesty.py`: **8 PASS / 1 intentional RED** (`test_txreg_stage_a_production_files_included_in_provenance_and_dependencies` fails as expected)
+- Stage A+B suite (`test_shared_chromosome_state_stage_ab.py`): **29/29 PASS** (36.0s)
+- Fast TxReg 4-file selection: **92/92 PASS** (132.7s)
+- Canonical TxReg replay: **2/2 PASS** (234.3s)
+- `scripts/pre_l25_honesty.py audit`: **INTEGRITY_OK (5/28 eligible, 23 blocked)**
+- `ruff check` / `git diff --check`: clean.
