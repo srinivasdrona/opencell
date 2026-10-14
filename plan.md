@@ -59,10 +59,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-14) — shared chromosome-state Stage A+B independently MATCHED; ready to integrate:**
+**Current status (2026-10-14) — shared chromosome-state Stage A+B integrated and independently MATCHED:**
 
-- Feature branch `fix/shared-chromosome-state-stage-ab-20261013` is clean at
-  `8c68243`; nothing is pushed and no agents/processes remain live.
+- Audit branch integration commit is `27fb7a8`; nothing is pushed and no
+  agents/processes remain live.
 - Stage A adds the exact state-owned int64 `[seed, mcg_state]` leaf at
   `chromosome._shared_rand_stream_state`, strict fail-closed restoration, and
   one unified `ChromosomeStateRandStream`.
@@ -80,10 +80,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Source digest now tracks 130 files, including `chromosome_store.py` and
   `chromosome_state_rand.py`:
   `ab4da2a9bd747c1bfd2e56348983a118f60501feb3ff3b4a6baeee3c402794e8`.
-- Next action: merge this branch into
-  `audit/pre-l25-honesty-rebaseline-20260917`, preserving provenance by unique
-  `event_id`. No TxReg eligibility promotion: L2.2 evidence and Stages C/D/E
-  remain open.
+- Integrated smoke: Stage A+B plus honesty contracts **38 PASS** and
+  `pre_l25_honesty.py audit` remains **INTEGRITY_OK 5/28** at the exact
+  130-file digest above.
+- Next bounded TxReg iteration is Stage C: freeze index-for-index footprint
+  authority/writeback parity before removing the private occupancy surface.
+  Stage D t0 initialization and Stage E multi-consumer ordering remain deferred.
+- No TxReg eligibility promotion: L2.2 evidence and Stages C/D/E remain open.
 
 **Current status (2026-10-14) — CC Iteration 2 integrated and re-adjudicated; baseline remains 5/28:**
 
