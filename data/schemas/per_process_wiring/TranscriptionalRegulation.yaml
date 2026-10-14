@@ -13,8 +13,12 @@ process:
     This process is stochastic, not deterministic. MATLAB performs
     affinity-weighted random TF-site binding on accessible chromosome sites;
     current OC implements the same stochastic family with explicit chromosome
-    RNG handling. Production topology, however, omits the chromosome and the
-    authoritative binding/writeback ports required by that implementation.
+    RNG handling. Stage A+B (dec-007, 2026-10-14) wires the `chromosome` port
+    into production topology and swaps the per-process RNG stand-in for the
+    `ChromosomeStore`-owned shared `ChromosomeStateRandStream`; the
+    authoritative bound-site writeback (`monomerBoundSites`/
+    `complexBoundSites`) and private `tf_bound_promoters` removal remain
+    deferred to Stage C.
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
@@ -28,7 +32,7 @@ integration_touchpoints:
       symbol: "KarrTranscriptionalRegulationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_transcriptional_regulation.py"
-        lines: "1570-1673"
+        lines: "1655-1765"
         note: "Current OC runtime reads TF abundance directly and emits TF binding / fold-change updates; there is no request-calculator path."
         symbol: "KarrTranscriptionalRegulationProcess.next_update"
     status: "not_implemented"
@@ -45,16 +49,16 @@ integration_touchpoints:
       symbol: "KarrTranscriptionalRegulationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_transcriptional_regulation.py"
-        lines: "1570-1570"
+        lines: "1655-1655"
         note: "Per-tick stochastic TF copy read, chromosome-gated affinity-weighted site binding, boundTFs derivation, and column-0 downstream fold-change projection."
         symbol: "KarrTranscriptionalRegulationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_transcriptional_regulation.py"
-          lines: "1570-1673"
+          lines: "1655-1765"
           note: "Column-0 fold-change product over bound sites and otherActivities TF-presence multiplier, projected into the per-TU `tx_rate_fold_change` output."
           symbol: KarrTranscriptionalRegulationProcess.next_update
     status: "implemented"
-    note: "OC implements the stochastic regulatory sweep in next_update, but production topology exposes only protein/complex/tf_binding/tx_rate_fold_change and omits chromosome, tf_bound_promoters, bound_tfs, enzymes, and boundEnzymes."
+    note: "OC implements the stochastic regulatory sweep in next_update. Stage A+B (dec-007) wires the `chromosome` port (RNG leaf only, DC-2) into production topology; tf_bound_promoters/bound_tfs/enzymes/boundEnzymes remain process-local outputs and the authoritative chromosome bound-site writeback is deferred to Stage C."
   calcFluxBounds:
     matlab:
       symbol: "TranscriptionalRegulation"
@@ -148,7 +152,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_transcriptional_regulation.py"
-        lines: "1570-1673"
+        lines: "1655-1765"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrTranscriptionalRegulationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -198,18 +202,18 @@ source_anchors:
       symbol: KarrTranscriptionalRegulationProcess._read_tf_counts
     fold_change_and_hints:
       path: "opencell/vivarium/karr_transcriptional_regulation.py"
-      lines: "1570-1673"
-      note: "Site-level binding sweep, boundTFs/tf_binding derivation, fold-change product, and update emission."
+      lines: "1655-1765"
+      note: "Site-level binding sweep, boundTFs/tf_binding derivation, fold-change product, chromosome RNG leaf resolution/writeback, and update emission."
       symbol: KarrTranscriptionalRegulationProcess.next_update
     composite_topology:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1658-2513"
-      note: "Production topology at lines 2071-2076 maps only protein, complex, tf_binding, and tx_rate_fold_change; it omits chromosome and authoritative binding/writeback ports."
+      lines: "1770-2659"
+      note: "Production topology (Stage A+B, dec-007) maps protein, complex, tf_binding, tx_rate_fold_change, AND chromosome (the `_shared_rand_stream_state` RNG leaf, DC-2); tf_bound_promoters/bound_tfs/enzymes/boundEnzymes authoritative writeback remain deferred to Stage C."
       symbol: build_karr_chassis_v5
     chassis_seeding:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1017-1653"
-      note: "Complex TF seeding for the chassis builder."
+      lines: "1119-1765"
+      note: "Complex TF seeding for the chassis builder; also seeds the shared chromosome RNG leaf once at construction (Stage A+B, dec-007)."
       symbol: build_karr_chassis_v4
 provenance:
   fixture_files:
@@ -242,9 +246,9 @@ deviations:
       symbol: KarrTranscriptionalRegulationProcess.ports_schema
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "Production topology maps only protein/complex/tf_binding/tx_rate_fold_change (`karr_composite.py:2071-2076`). It omits chromosome, authoritative tf_bound_promoters/bound_tfs state, and enzymes/boundEnzymes writeback, so the production chassis does not supply or persist the state surfaces used by the implemented stochastic binding algorithm."
-    - "MATLAB's random binding draws come from the shared chromosome randStream, interleaved with other chromosome-binding processes. OC production uses a continuously advancing process-local stand-in; L2.1 replay restores the real per-tick shared-stream position from a draw ledger, but autonomous chassis execution does not reproduce the same inter-process RNG provenance."
+    - "Production topology (Stage A+B, dec-007) now maps protein/complex/tf_binding/tx_rate_fold_change AND chromosome (the state-owned `_shared_rand_stream_state` RNG leaf, DC-2). It still omits authoritative tf_bound_promoters/bound_tfs state and enzymes/boundEnzymes chromosome writeback -- the production chassis does not yet persist those surfaces to the shared ChromosomeStore; this is deferred to Stage C (store-centralized accessibility + private-surface removal)."
+    - "MATLAB's random binding draws come from the shared chromosome randStream, interleaved with other chromosome-binding processes. OC production now draws from the state-owned, serialized `ChromosomeStateRandStream` (Stage A+B, dec-007) reconstructed fresh each tick from the chromosome leaf -- a single-consumer migration that preserves the prior draw sequence bit-for-bit (dec-006 L2.1 replay unchanged); autonomous chassis execution still does not reproduce Karr's real inter-process draw interleaving (deferred to the Stage E multi-consumer commit owner)."
     - "MATLAB stores tx_rate_fold_change with a strand axis (nTU x 2), while OC emits a single scalar fold-change per TU."
     - "MATLAB bindProteinToChromosome writes newly bound TF footprints into shared chromosome monomerBoundSites/complexBoundSites; OC records its own tf_bound_promoters but does not write those TF footprints back to the shared chromosome occupancy arrays."
     - "OC initializes tf_binding from the first tick rather than performing Karr's documented t=0 pre-binding sweep."
-  note: "Stochastic affinity-weighted binding and accessibility/occlusion logic exist in the process class. MATLAB's zero request hook versus OC's missing hook is resource-equivalent. Open fidelity reductions are missing production topology/state surfaces, autonomous RNG provenance, shared chromosome writeback, t=0 initialization timing, and projection of MATLAB's two fold-change columns to one downstream value."
+  note: "Stochastic affinity-weighted binding and accessibility/occlusion logic exist in the process class. MATLAB's zero request hook versus OC's missing hook is resource-equivalent. Stage A+B (dec-007) closed the production topology/RNG-provenance gaps for the chromosome RNG stream; open fidelity reductions are the authoritative chromosome bound-site writeback (Stage C), t=0 initialization timing (Stage D), and projection of MATLAB's two fold-change columns to one downstream value (deferred joint stage)."

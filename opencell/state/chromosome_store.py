@@ -10,6 +10,8 @@ from typing import Any
 import h5py
 import numpy as np
 
+from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+
 CHROMOSOME_FIELDS: tuple[str, ...] = (
     "polymerizedRegions",
     "linkingNumbers",
@@ -24,6 +26,13 @@ CHROMOSOME_FIELDS: tuple[str, ...] = (
     "hollidayJunctions",
 )
 CHROMOSOME_HIDDEN_STATE_KEY = "_hidden_chromosome_state"
+# Stage A (dec-007/DC-2): the single, state-owned, serialized shared
+# chromosome RNG stream leaf. See
+# docs/design/shared_chromosome_state_subsystem.md SLOT 2 Section 4.3 for
+# the exact contract: int64 shape-(2,) `[seed, mcg_state]`, `set` updater,
+# `_emit=True`, sentinel default `[-1, -1]` ("unseeded").
+CHROMOSOME_RAND_STREAM_KEY = "_shared_rand_stream_state"
+_UNSEEDED_RAND_STREAM_STATE = np.array([-1, -1], dtype=np.int64)
 CHROMOSOME_HIDDEN_SPARSE_FIELDS: tuple[str, ...] = (
     "damagedSites",
     "singleStrandedRegions",
@@ -621,14 +630,56 @@ class ChromosomeStore:
         if hidden_scalar_fields is not None:
             for name, value in hidden_scalar_fields.items():
                 self.set_hidden_scalar(name, value)
+        # Stage A (dec-007/DC-2): the shared chromosome-state RNG stream is a
+        # live handle, not a copied value -- `None` until seeded (never
+        # auto-seeded by construction/`from_state_mapping`; see
+        # `rand_stream`/`rand_state`/`set_rand_state` below).
+        self._rand_stream: ChromosomeStateRandStream | None = None
 
     def copy(self) -> ChromosomeStore:
-        return ChromosomeStore(
+        new_store = ChromosomeStore(
             shape=self.shape,
             fields=self._fields,
             hidden_sparse_fields=self._hidden_sparse_fields,
             hidden_scalar_fields=self._hidden_scalar_fields,
         )
+        if self._rand_stream is not None:
+            # Independent handle with identical [seed, mcg_state] -- never
+            # share the live object, else draws on one copy would silently
+            # advance the other.
+            new_store.set_rand_state(self.rand_state())
+        return new_store
+
+    def rand_stream(self) -> ChromosomeStateRandStream | None:
+        """Live handle over the serialized shared chromosome RNG stream, or
+        ``None`` if this store has never been seeded (DC-2/§4.2). Returns
+        the SAME object reference every call (not a copy) -- draws made on
+        the returned handle advance this store's own state in place, so a
+        later ``to_state()``/``rand_state()`` reflects them."""
+        return self._rand_stream
+
+    def rand_state(self) -> np.ndarray | None:
+        """The current serialized ``[seed, mcg_state]`` int64 scalar, or
+        ``None`` if unseeded."""
+        if self._rand_stream is None:
+            return None
+        state = self._rand_stream.get_state()
+        return np.array([state["seed"], state["mcg_state"]], dtype=np.int64)
+
+    def set_rand_state(self, value: np.ndarray | Any) -> None:
+        """Seed/restore the shared chromosome RNG stream from a
+        ``[seed, mcg_state]`` int64 pair (DC-2/§4.3). Raises ``ValueError``
+        if ``mcg_state`` is out of the valid mcg16807 range -- including the
+        ``[-1, -1]`` unseeded sentinel, which callers must treat as absent
+        (see ``from_state_mapping``), never pass here directly."""
+        arr = np.asarray(value, dtype=np.int64).reshape(-1)
+        if arr.shape[0] != 2:
+            raise ValueError(f"rand_state must have exactly 2 elements, got {arr.shape[0]}")
+        seed = int(arr[0])
+        mcg_state = int(arr[1])
+        stream = ChromosomeStateRandStream(seed)
+        stream.set_state({"generator": "mcg16807", "seed": seed, "mcg_state": mcg_state})
+        self._rand_stream = stream
 
     def calc_num_edges(self, field_name: str) -> int:
         return self.get_field(field_name).calc_num_edges()
@@ -1028,6 +1079,9 @@ class ChromosomeStore:
             hidden[name] = _copy_hidden_scalar(value)
         if hidden:
             state[CHROMOSOME_HIDDEN_STATE_KEY] = hidden
+        rand_state = self.rand_state()
+        if rand_state is not None:
+            state[CHROMOSOME_RAND_STREAM_KEY] = rand_state
         return state
 
     @classmethod
@@ -1058,6 +1112,16 @@ class ChromosomeStore:
                 node = payload.get(name)
             if node is not None:
                 store.set_hidden_scalar(name, node)
+        rand_state_node = payload.get(CHROMOSOME_RAND_STREAM_KEY)
+        if rand_state_node is not None:
+            rand_state_arr = np.asarray(rand_state_node, dtype=np.int64).reshape(-1)
+            # Absent-key semantics (dec-007 §4.3): the key is present but
+            # equal to the unseeded sentinel `[-1, -1]` means "not yet
+            # seeded" -- restore NOTHING (store stream stays `None`), never
+            # construct an invalid stream from it. A genuinely seeded value
+            # is restored via `set_rand_state`.
+            if not np.array_equal(rand_state_arr, _UNSEEDED_RAND_STREAM_STATE):
+                store.set_rand_state(rand_state_arr)
         return store
 
     @classmethod
@@ -1098,6 +1162,7 @@ __all__ = [
     "CHROMOSOME_HIDDEN_SCALAR_FIELDS",
     "CHROMOSOME_HIDDEN_SPARSE_FIELDS",
     "CHROMOSOME_HIDDEN_STATE_KEY",
+    "CHROMOSOME_RAND_STREAM_KEY",
     "AuxiliarySparseField",
     "ChromosomeBindingResult",
     "ChromosomeStore",

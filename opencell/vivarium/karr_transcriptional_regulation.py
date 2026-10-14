@@ -58,8 +58,16 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
-from opencell.state.chromosome_store import ChromosomeStore, sparse_triplet_schema
+from opencell.state.chromosome_store import (
+    CHROMOSOME_RAND_STREAM_KEY,
+    ChromosomeStore,
+    sparse_triplet_schema,
+)
+from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
 from opencell.util.txreg_mcg_rand import TxRegMcgRandStream
+
+_UNSEEDED_RAND_STREAM_STATE = np.array([-1, -1], dtype=np.int64)
+_CHROMOSOME_LEGACY_FIELD_KEYS = ("polymerizedRegions", "monomerBoundSites", "complexBoundSites")
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat"
 _DEFAULT_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
@@ -725,38 +733,30 @@ class KarrTranscriptionalRegulationProcess(Process):
 
         # `_chromosome_rng` stands in for `this.chromosome.randStream`: the
         # stream `_sample_accessible_sites_batched` actually draws from.
-        # In production this is a freshly-seeded, process-local
-        # `TxRegMcgRandStream` (structurally faithful -- every formula it
-        # implements is Karr's literal formula -- but NOT bit-identical to
-        # Karr's real interleaved draw sequence, since that stream is
-        # shared and advanced by every other Karr process that binds
-        # anything to the chromosome each tick). An L2.1 replay harness
-        # that has a genuine per-tick chromosome-randStream-state ledger
-        # (`scripts/matlab/reconstruct_chromosome_draw_ledger.m`) may
-        # swap this attribute, per tick, for a
-        # `TxRegChromosomeLedgerRandStream` that replays Karr's own
-        # recorded raw draws exactly -- see
-        # `tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py`.
         #
-        # **Persistence contract (declared 2026-09-05, Opus review point
-        # 6):** in PRODUCTION, this attribute is set exactly once here (in
-        # `__init__`) and lives for the process instance's ENTIRE lifetime
-        # -- it is a single, continuously-advancing stream across every
-        # tick of a run, never replaced or reset. In an L2.1 REPLAY
-        # harness with a chromosome-rand-stream ledger available, this
-        # attribute MUST instead be REPLACED with a brand-new, freshly-
-        # constructed `TxRegChromosomeLedgerRandStream` instance before
-        # EVERY SINGLE `next_update` call, never reused/carried over from
-        # the previous tick and never advanced across ticks by the harness
-        # itself -- per `decisions/dec-006-shared-chromosome-randstream-
-        # input-oracle.md`, Karr's real per-tick input position must be
-        # restored exactly each tick (an unknown, tick-varying number of
-        # OTHER processes' draws happen on the real shared stream between
-        # any two ticks, so carrying a Python-side stream across ticks
-        # cannot ever match). This attribute is NEVER permitted to be
-        # `None` while an active tick needs a draw -- see the explicit
-        # guard in `_sample_accessible_sites_batched`.
-        self._chromosome_rng = TxRegMcgRandStream(int(self.parameters["rng_seed"]))
+        # **Stage B (dec-007/DC-2, 2026-10-14):** the per-process production
+        # stand-in formerly constructed here is retired. `next_update` now
+        # resolves this attribute EVERY tick from the serialized, state-owned
+        # `chromosome._shared_rand_stream_state` leaf (the `ChromosomeStore`
+        # -owned `ChromosomeStateRandStream`, DC-2/DC-4) -- see
+        # `_resolve_chromosome_rng_for_tick`. `None` here simply means "not
+        # yet resolved this tick"; production `next_update` fails closed
+        # (`RuntimeError`) rather than silently reseeding when no valid leaf
+        # AND no externally-installed stream (see below) is available.
+        #
+        # Back-compatible escape hatch (preserves dec-006 and every
+        # pre-Stage-B direct-call test fixture): callers that explicitly
+        # install their own stream on this attribute BEFORE calling
+        # `next_update` or `_sample_accessible_sites_batched` directly --
+        # the L2.1 replay harness's per-tick `TxRegChromosomeLedgerRandStream`
+        # swap (`tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py`),
+        # and every unit test that pins a deterministic stand-in -- are
+        # honored verbatim: `next_update` only resolves from the leaf or
+        # raises when this attribute is ALSO `None`, never overriding an
+        # already-installed instance. This attribute is NEVER permitted to be
+        # `None` while an active tick needs a draw -- see the explicit guard
+        # in `_sample_accessible_sites_batched`.
+        self._chromosome_rng = None
 
 
 
@@ -814,11 +814,20 @@ class KarrTranscriptionalRegulationProcess(Process):
             # `sampleAccessibleRegions` -> `isRegionAccessible`). This
             # process never writes to the shared chromosome store (see
             # module docstring "No cross-process chromosome-wide occupancy
-            # tracking").
+            # tracking") -- EXCEPT for `_shared_rand_stream_state` (Stage
+            # B, dec-007/DC-2): the one state-owned, serialized shared
+            # chromosome RNG stream leaf this process both reads (sole
+            # consumer, DC-9 exception) and writes back every tick,
+            # including zero-draw ticks.
             "chromosome": {
                 "polymerizedRegions": sparse_triplet_schema(self.chromosome_shape, emit=False),
                 "monomerBoundSites": sparse_triplet_schema(self.chromosome_shape, emit=False),
                 "complexBoundSites": sparse_triplet_schema(self.chromosome_shape, emit=False),
+                CHROMOSOME_RAND_STREAM_KEY: {
+                    "_default": _UNSEEDED_RAND_STREAM_STATE,
+                    "_updater": "set",
+                    "_emit": True,
+                },
             },
             # Authoritative site-level occupancy surface (Karr
             # `tfBoundPromoters`): one boolean-valued entry per (site,
@@ -894,6 +903,82 @@ class KarrTranscriptionalRegulationProcess(Process):
 
     def _resolve_chromosome_store(self, chrom_state: dict[str, Any]) -> ChromosomeStore:
         return ChromosomeStore.from_state_mapping(chrom_state, shape=self.chromosome_shape)
+
+    def _resolve_chromosome_rng_for_tick(
+        self,
+        chrom_state: dict[str, Any],
+        chromosome_store: ChromosomeStore,
+    ) -> None:
+        """Resolve ``self._chromosome_rng`` for this tick (Stage B,
+        dec-007/DC-2). Reconstructs the handle strictly from the serialized
+        ``chromosome.{CHROMOSOME_RAND_STREAM_KEY}`` leaf; never reseeds an
+        ordinary production tick silently.
+
+        Resolution order (fail-closed, matches dec-007 Decision 3 exactly):
+
+        1. A validly-seeded leaf (present, not the ``[-1, -1]`` sentinel)
+           ALWAYS wins -- this IS production's per-tick contract: the store
+           -owned stream, reconstructed fresh from the tick-start state every
+           call, replaces whatever this attribute held before.
+        2. An already-installed ``self._chromosome_rng`` (this tick's own
+           leaf-derived handle from a moment ago, or an EXTERNAL override a
+           caller installed before invoking ``next_update`` /
+           ``_sample_accessible_sites_batched`` directly -- the dec-006 L2.1
+           ledger-replay harness's per-tick swap, and every pre-Stage-B unit
+           test that pins a deterministic stand-in) is kept VERBATIM -- never
+           replaced, never reseeded.
+        3. A chromosome branch that carries the ORIGINAL (pre-Stage-B)
+           ``ChromosomeStore`` fields (``polymerizedRegions`` /
+           ``monomerBoundSites`` / ``complexBoundSites``) but no RNG leaf at
+           all signals a genuinely topology-wired caller that predates this
+           leaf (the dec-006 100-tick canonical L2.1 replay harness
+           reconstructs ``state['chromosome']`` straight from the Karr trace
+           and never overlays this new leaf): bootstrap a fresh,
+           seed-derived stream exactly once, mirroring the former
+           per-process ``__init__``-time stand-in, so that pre-existing
+           replay path's draw sequence is unaffected by this migration.
+        4. Otherwise (no valid leaf, no override, no legacy chromosome
+           fields): this is a genuinely unconfigured/malformed call -- fail
+           closed, never silently reseed.
+        """
+        rand_stream = chromosome_store.rand_stream()
+        if rand_stream is not None:
+            self._chromosome_rng = rand_stream
+            return
+        if self._chromosome_rng is not None:
+            return
+        has_legacy_chromosome_fields = any(
+            key in chrom_state for key in _CHROMOSOME_LEGACY_FIELD_KEYS
+        )
+        if has_legacy_chromosome_fields:
+            self._chromosome_rng = ChromosomeStateRandStream(int(self.parameters["rng_seed"]))
+            return
+        raise RuntimeError(
+            "KarrTranscriptionalRegulationProcess.next_update: chromosome."
+            f"{CHROMOSOME_RAND_STREAM_KEY} leaf is absent or unseeded (the "
+            f"[-1, -1] sentinel) and no chromosome RNG stream is installed. "
+            "Production next_update never silently reseeds (dec-007 Decision "
+            f"3) -- the incoming chromosome state must carry a validly-seeded "
+            f"chromosome.{CHROMOSOME_RAND_STREAM_KEY} leaf."
+        )
+
+    def _chromosome_rand_stream_writeback(self) -> dict[str, Any] | None:
+        """Serialize ``self._chromosome_rng``'s CURRENT (post-draw) state
+        back to the ``chromosome.{CHROMOSOME_RAND_STREAM_KEY}`` leaf, every
+        tick, including zero-draw ticks (dec-007 Decision 3). Returns
+        ``None`` (omits the leaf from the update) when the installed stream
+        has no inspectable ``[seed, mcg_state]`` representation -- this is
+        exactly the dec-006 ledger-replay / unit-test stand-in case (e.g.
+        ``TxRegChromosomeLedgerRandStream``, or a bare test double), which is
+        test-only and never participates in this leaf's production contract.
+        """
+        try:
+            state = self._chromosome_rng.get_state()
+            seed = int(state["seed"])
+            mcg_state = int(state["mcg_state"])
+        except (AttributeError, KeyError, TypeError, ValueError):
+            return None
+        return {CHROMOSOME_RAND_STREAM_KEY: np.array([seed, mcg_state], dtype=np.int64)}
 
     def _polymerized_intervals_by_strand(
         self, chromosome_store: ChromosomeStore
@@ -1576,6 +1661,7 @@ class KarrTranscriptionalRegulationProcess(Process):
         if not isinstance(chrom_state, dict):
             chrom_state = {}
         chromosome_store = self._resolve_chromosome_store(chrom_state)
+        self._resolve_chromosome_rng_for_tick(chrom_state, chromosome_store)
         intervals_by_strand = self._polymerized_intervals_by_strand(chromosome_store)
 
         new_binds_col0, new_binds_col1, n_bound_delta = self._bind_transcription_factors(
@@ -1669,6 +1755,13 @@ class KarrTranscriptionalRegulationProcess(Process):
                 for tf_i, tf_wid in enumerate(self.tf_wids)
                 if n_bound_delta[tf_i] != 0
             }
+
+        # Stage B (dec-007 Decision 3): write the shared chromosome RNG
+        # stream's post-tick state back EVERY tick, including zero-draw
+        # ticks, so the leaf is never stale.
+        chromosome_rand_update = self._chromosome_rand_stream_writeback()
+        if chromosome_rand_update is not None:
+            update["chromosome"] = chromosome_rand_update
 
         return update
 
