@@ -297,7 +297,30 @@ this task's authorized write surface, so not attempted here).
 
 ## Final verdict
 
-Frozen Stage A+B contract: **25/25 PASS**. All seven required verification
-gates green except the documented, unavoidable 5-test regression above,
-which is a proven, structural test inconsistency — not a weakening and not
-an implementation gap.
+Frozen Stage A+B contract: **25/25 PASS**. All verification gates green.
+The documented 5-test synthetic helper inconsistency is fully resolved
+by the test-author follow-up below.
+
+## Test-Author Follow-Up (2026-10-14): Synthetic Helper Correction (Resolved)
+
+**Adjudication:** Under dec-007 Decision 3 and design §4.3, production topology
+seeds `_shared_rand_stream_state` once at init and `next_update` writes back the
+advanced state on every tick including zero-draw ticks. The 5 pre-existing
+synthetic tests in `test_karr_transcriptional_regulation.py` and
+`test_karr_transcriptional_regulation_anticheat.py` constructed bare states with
+`chromosome: {}` and no installed stream, triggering the fail-closed guard
+intended for unseeded production execution.
+
+**Correction applied (test-only):**
+1. `tests/vivarium/test_karr_transcriptional_regulation.py`:
+   - Updated `_empty_tr_state` to populate `chromosome: {"_shared_rand_stream_state": np.array([seed, int(stream._mcg_state)], dtype=np.int64)}` matching the seed-once topology contract.
+   - Updated `_apply_full_update` to propagate `update.get("chromosome")` onto `state["chromosome"]` so multi-tick tests (`test_steady_state_binding_fraction`) advance state faithfully across ticks.
+2. `tests/vivarium/test_karr_transcriptional_regulation_anticheat.py`:
+   - Updated `_empty_state` to populate `chromosome: {"_shared_rand_stream_state": ...}` with the process seed.
+3. Production remains untouched and frozen; explicit tests that missing/sentinel state fails closed and ledger-injection tests are fully preserved.
+
+**Results after correction:**
+- `test_shared_chromosome_state_stage_ab.py`: **25/25 PASS** (43.7s)
+- TxReg 4-file fast selection (`test_karr_transcriptional_regulation.py`, `test_karr_transcriptional_regulation_anticheat.py`, `test_karr_transcriptional_regulation_ledger_and_damage.py`, `test_chromosome_rand_stream_ledger.py`): **92/92 PASS** (132.7s)
+- Canonical TxReg replay (`test_karr_transcriptional_regulation_l2_replay.py`): **2/2 PASS** (241.8s)
+- `ruff check` / `git diff --check`: clean.
