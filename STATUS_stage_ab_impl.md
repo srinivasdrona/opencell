@@ -567,3 +567,76 @@ requiring:
 - Canonical TxReg replay: **2/2 PASS** (234.3s)
 - `scripts/pre_l25_honesty.py audit`: **INTEGRITY_OK (5/28 eligible, 23 blocked)**
 - `ruff check` / `git diff --check`: clean.
+
+## Final Metadata-Only Repair (2026-10-14, HEAD `ce2d258` → this work)
+
+Closed the Stage A production-file dependency tracking gap flagged by the
+frozen regression test above. **No production or test files touched** —
+metadata/provenance only, per the task's explicit scope.
+
+### Change 1 — `oc_method_map.yaml`
+
+`processes.TranscriptionalRegulation.oc_files` gains
+`opencell/state/chromosome_store.py` and
+`opencell/util/chromosome_state_rand.py` (alongside the existing
+`karr_composite.py`/`karr_request_calculators.py`/
+`karr_transcriptional_regulation.py`, list kept alphabetically sorted).
+`scripts/pre_l25_honesty.py::collect_source_dependencies()` reads this
+`oc_files` list directly, so both paths are now mechanically tracked
+dependencies with zero code changes.
+
+### Change 2 — `data/schemas/per_process_wiring/TranscriptionalRegulation.yaml`
+
+- `provenance.oc_files_referenced` gains both files.
+- Two new `source_anchors.oc_blocks` entries with real,
+  symbol-resolving anchors for the Stage A state store/RNG authority
+  (verified to resolve under `l1b_verify_wiring.py`'s AST-based
+  `check_oc_anchors_resolve`, which requires the named symbol's
+  definition to overlap the given line span ±5):
+  - `chromosome_rand_stream_authority` → `opencell/state/chromosome_store.py:678-711`,
+    symbol `ChromosomeStore.set_rand_state` (covers `rand_stream()`/
+    `rand_state()`/`set_rand_state()`, the narrow state-owned RNG handle
+    TxReg's `_resolve_chromosome_rng_for_tick` reads every tick).
+  - `chromosome_state_rand_stream_class` → `opencell/util/chromosome_state_rand.py:49-190`,
+    symbol `ChromosomeStateRandStream` (the unified mcg16807 class
+    `ChromosomeStore` constructs/restores; TxReg never constructs its own).
+- All existing anchors, deviations, and `known_deviations` prose preserved
+  unchanged.
+
+### Change 3 — `PRE_L25_HONESTY_BASELINE.yaml`
+
+`source_tree.sha256` refreshed from `ab4da2a9...`'s predecessor
+(`6bec7a9b60418e77e30651de874c341fa242d0703c37c80c8474668a225a7ed6`,
+128 files) to `ab4da2a9bd747c1bfd2e56348983a118f60501feb3ff3b4a6baeee3c402794e8`
+(130 files — `file_count` increased by exactly the 2 newly-tracked
+dependency files, via `scripts/pre_l25_honesty.py source-digest`).
+`summary.eligible`/`summary.blocked` (5/23) and every finding's
+`disposition` (`OPEN`)/the TranscriptionalRegulation row's `eligibility`
+(`BLOCKED_LOWER_GATE`) are **unchanged** — this is a pure provenance-closure
+refresh, not a re-adjudication.
+
+### Verification
+
+1. `tests/scripts/test_pre_l25_honesty.py::test_txreg_stage_a_production_files_included_in_provenance_and_dependencies`
+   → **PASS** (was the sole intentional RED).
+2. `tests/scripts/test_pre_l25_honesty.py` (full file) → **9/9 PASS** (3.4s).
+3. `scripts/l1b_method_completeness.py` → **PASS (115/115)**.
+4. `scripts/l1b_verify_wiring.py` → **PASS (28/28 rows)** — confirms both
+   new `oc_blocks` anchors resolve under the stricter AST symbol check.
+5. `scripts/pre_l25_honesty.py audit` → **INTEGRITY_OK; eligible=5/28;
+   blocked=23** (byte-identical blocker list; only the source hash/file
+   count changed, as expected from dependency closure).
+6. `tests/vivarium/test_shared_chromosome_state_stage_ab.py` (frozen) →
+   **29/29 PASS** (35.7s), unaffected by metadata-only changes.
+7. `git diff --check` → clean. `ruff check` → N/A (no Python files
+   touched; confirmed via `git status` that only the 3 YAML files above
+   changed). All 3 edited YAML files independently re-parsed with
+   `yaml.safe_load` to confirm syntactic validity.
+
+### Final verdict (metadata repair)
+
+All required gates green: the new dependency-tracking test, the full
+honesty test file, L1b method-completeness and wiring, the honesty audit,
+and the frozen Stage A+B contract. No production code, no test code, and
+no behavior changed — only the method map, the TxReg wiring provenance
+record, and the honesty baseline's source digest.
