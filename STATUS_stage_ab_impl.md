@@ -518,3 +518,27 @@ follow-on test-authoring task should extend
 `test_karr_transcriptional_regulation_l2_replay.py`'s `_overlay_chromosome_state`
 (or equivalent) to seed the RNG leaf the way the ledgered variant already
 injects its override.
+
+## Final Test-Harness Follow-Up (2026-10-14, this work)
+
+**Adjudication & Fix:**
+In `tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py`,
+`test_karr_transcriptional_regulation_l2_replay_identity_per_tick` was un-ledgered
+and previously relied on the removed production fallback because
+`_overlay_chromosome_state` did not populate the Stage A+B serialized RNG leaf.
+Applied smallest test-harness-only fix:
+1. Before the tick loop, initialized `current_shared_rand_state` once from `int(rng_seed)`
+   via `ChromosomeStateRandStream(int(rng_seed))`.
+2. On each tick, assigned `state["chromosome"]["_shared_rand_stream_state"] = current_shared_rand_state.copy()`.
+3. Validated per-tick emitted `update["chromosome"]["_shared_rand_stream_state"]`
+   (shape `(2,)`, dtype `int64`, matching seed) and carried it forward to next tick's state.
+4. Preserved dec-006 ledgered replay semantics untouched.
+
+**Final Verification:**
+- Replay: **2/2 PASS** (234.3s)
+- Frozen Stage A+B (`test_shared_chromosome_state_stage_ab.py`): **29/29 PASS** (52.9s)
+- Fast TxReg 4-file selection: **92/92 PASS** (132.7s)
+- Honesty baseline audit: **INTEGRITY_OK (5/28 eligible, 23 blocked)** with `source_tree_sha256=6bec7a9b...` (128 files)
+- Honesty regression selection (`test_pre_l25_honesty.py`): **8/8 PASS** (3.1s)
+- Combined selection (`test_pre_l25_honesty.py` 8 + `test_shared_chromosome_state_stage_ab.py` 29): **37/37 PASS**
+- `ruff check` / `git diff --check`: clean.
