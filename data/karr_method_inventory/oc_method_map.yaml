@@ -1147,20 +1147,20 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:evolveState:339
         status: inlined
-        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:1655
+        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:1659
         note: Karr `evolveState` at TranscriptionalRegulation.m:339-345 calls `bindTranscriptionFactors()`
           then `calcBindingProbabilityFoldChange()`. OC folds both into `next_update`, which reads TF
           counts, updates binding, and writes `tf_binding`/`tx_rate_fold_change`.
       bindTranscriptionFactors:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:bindTranscriptionFactors:349
         status: inlined
-        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:1655
+        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:1659
         note: 'Karr''s standalone binding helper (TranscriptionalRegulation.m:349-381) is inlined in OC
           `next_update`: `for tf_i, tf_wid in enumerate(self.tf_wids): ... row[chosen] = 1`.'
       calcBindingProbabilityFoldChange:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/TranscriptionalRegulation.m:calcBindingProbabilityFoldChange:383
         status: inlined
-        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:1655
+        oc: opencell/vivarium/karr_transcriptional_regulation.py:KarrTranscriptionalRegulationProcess.next_update:1659
         note: 'Karr''s fold-change helper (TranscriptionalRegulation.m:383-399) is inlined in OC `next_update`:
           `bound_effects = np.where(binding > 0, self.tf_tu_fold_change, 1.0)` and `fold_change_total
           = np.clip(np.prod(bound_effects, axis=0, dtype=np.float64), ...)`.'

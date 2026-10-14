@@ -63,11 +63,9 @@ from opencell.state.chromosome_store import (
     ChromosomeStore,
     sparse_triplet_schema,
 )
-from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
 from opencell.util.txreg_mcg_rand import TxRegMcgRandStream
 
 _UNSEEDED_RAND_STREAM_STATE = np.array([-1, -1], dtype=np.int64)
-_CHROMOSOME_LEGACY_FIELD_KEYS = ("polymerizedRegions", "monomerBoundSites", "complexBoundSites")
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat"
 _DEFAULT_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
@@ -744,6 +742,16 @@ class KarrTranscriptionalRegulationProcess(Process):
         # (`RuntimeError`) rather than silently reseeding when no valid leaf
         # AND no externally-installed stream (see below) is available.
         #
+        # **Fail-closed every tick (2026-10-14, reviewer regression class
+        # 1):** a validly-seeded leaf ALWAYS wins and replaces whatever this
+        # attribute held before. There is no legacy-chromosome-field
+        # fallback (the mere presence of `polymerizedRegions`/
+        # `monomerBoundSites`/`complexBoundSites` no longer auto-bootstraps a
+        # fresh stream). `next_update` ALSO clears this attribute back to
+        # `None` immediately after every tick's writeback (see the call
+        # site), so a tier-1, leaf-derived handle from a PRIOR tick can never
+        # be silently reused as if it were an externally-installed override.
+        #
         # Back-compatible escape hatch (preserves dec-006 and every
         # pre-Stage-B direct-call test fixture): callers that explicitly
         # install their own stream on this attribute BEFORE calling
@@ -751,11 +759,12 @@ class KarrTranscriptionalRegulationProcess(Process):
         # the L2.1 replay harness's per-tick `TxRegChromosomeLedgerRandStream`
         # swap (`tests/vivarium/test_karr_transcriptional_regulation_l2_replay.py`),
         # and every unit test that pins a deterministic stand-in -- are
-        # honored verbatim: `next_update` only resolves from the leaf or
-        # raises when this attribute is ALSO `None`, never overriding an
-        # already-installed instance. This attribute is NEVER permitted to be
-        # `None` while an active tick needs a draw -- see the explicit guard
-        # in `_sample_accessible_sites_batched`.
+        # honored verbatim for that one tick: `next_update` only resolves
+        # from the leaf or raises when this attribute is ALSO `None` at
+        # entry (which it always is unless a caller just (re)installed it),
+        # never overriding an already-installed instance. This attribute is
+        # NEVER permitted to be `None` while an active tick needs a draw --
+        # see the explicit guard in `_sample_accessible_sites_batched`.
         self._chromosome_rng = None
 
 
@@ -914,44 +923,39 @@ class KarrTranscriptionalRegulationProcess(Process):
         ``chromosome.{CHROMOSOME_RAND_STREAM_KEY}`` leaf; never reseeds an
         ordinary production tick silently.
 
-        Resolution order (fail-closed, matches dec-007 Decision 3 exactly):
+        Resolution order (fail-closed EVERY tick, matches dec-007 Decision 3
+        exactly -- reviewer regression class 1):
 
         1. A validly-seeded leaf (present, not the ``[-1, -1]`` sentinel)
            ALWAYS wins -- this IS production's per-tick contract: the store
            -owned stream, reconstructed fresh from the tick-start state every
            call, replaces whatever this attribute held before.
-        2. An already-installed ``self._chromosome_rng`` (this tick's own
-           leaf-derived handle from a moment ago, or an EXTERNAL override a
-           caller installed before invoking ``next_update`` /
-           ``_sample_accessible_sites_batched`` directly -- the dec-006 L2.1
-           ledger-replay harness's per-tick swap, and every pre-Stage-B unit
-           test that pins a deterministic stand-in) is kept VERBATIM -- never
-           replaced, never reseeded.
-        3. A chromosome branch that carries the ORIGINAL (pre-Stage-B)
-           ``ChromosomeStore`` fields (``polymerizedRegions`` /
-           ``monomerBoundSites`` / ``complexBoundSites``) but no RNG leaf at
-           all signals a genuinely topology-wired caller that predates this
-           leaf (the dec-006 100-tick canonical L2.1 replay harness
-           reconstructs ``state['chromosome']`` straight from the Karr trace
-           and never overlays this new leaf): bootstrap a fresh,
-           seed-derived stream exactly once, mirroring the former
-           per-process ``__init__``-time stand-in, so that pre-existing
-           replay path's draw sequence is unaffected by this migration.
-        4. Otherwise (no valid leaf, no override, no legacy chromosome
-           fields): this is a genuinely unconfigured/malformed call -- fail
-           closed, never silently reseed.
+        2. An EXTERNALLY installed ``self._chromosome_rng`` -- a caller that
+           invoked ``next_update`` directly with a pre-assigned attribute
+           (the dec-006 L2.1 ledger-replay harness's per-tick swap being the
+           only production-adjacent example) -- is honored verbatim. This is
+           NEVER this method's own prior resolution: ``next_update`` clears
+           this attribute back to ``None`` immediately after every tick's
+           writeback (see the call site), so a tier-1 handle from a PRIOR
+           tick can never survive to be misread as an override here. Only a
+           caller that re-installs the attribute between ticks (an explicit,
+           test-only injected provider) reaches this branch with a non-``None``
+           value.
+        3. Otherwise (no valid leaf, no freshly-installed override): this is
+           an ordinary production tick with no way to obtain a seeded stream
+           -- fail closed, never silently reseed. In particular, the mere
+           PRESENCE of the original (pre-Stage-B) ``ChromosomeStore`` fields
+           (``polymerizedRegions`` / ``monomerBoundSites`` /
+           ``complexBoundSites``) is NOT a basis for auto-bootstrapping a
+           fresh, seed-derived stream -- that legacy-field fallback has been
+           removed (reviewer regression class 1): a genuinely topology-wired
+           caller must supply the leaf.
         """
         rand_stream = chromosome_store.rand_stream()
         if rand_stream is not None:
             self._chromosome_rng = rand_stream
             return
         if self._chromosome_rng is not None:
-            return
-        has_legacy_chromosome_fields = any(
-            key in chrom_state for key in _CHROMOSOME_LEGACY_FIELD_KEYS
-        )
-        if has_legacy_chromosome_fields:
-            self._chromosome_rng = ChromosomeStateRandStream(int(self.parameters["rng_seed"]))
             return
         raise RuntimeError(
             "KarrTranscriptionalRegulationProcess.next_update: chromosome."
@@ -1762,6 +1766,14 @@ class KarrTranscriptionalRegulationProcess(Process):
         chromosome_rand_update = self._chromosome_rand_stream_writeback()
         if chromosome_rand_update is not None:
             update["chromosome"] = chromosome_rand_update
+
+        # Fail-closed every tick (reviewer regression class 1): never leave
+        # a state-derived (tier-1) handle installed for the NEXT tick to
+        # mistake for an externally-injected override. Clearing here is what
+        # makes `_resolve_chromosome_rng_for_tick`'s override branch strictly
+        # mean "a caller installed this since the last tick ended" rather
+        # than "this is a stale handle this method resolved itself".
+        self._chromosome_rng = None
 
         return update
 

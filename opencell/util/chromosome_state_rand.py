@@ -239,34 +239,31 @@ class ChromosomeStateRandStream:
         k: int,
         weights: np.ndarray,
     ) -> np.ndarray:
-        """Literal port of the genuine MathWorks Statistics Toolbox
-        ``randsample(s, n, k, true, w)`` weighted-with-replacement branch::
+        """Literal port of ``ChromCondMcgRandStream``'s weighted-with
+        -replacement branch (reviewer regression class 3, DC-4): a direct
+        cumulative-sum / threshold comparison in the UNNORMALIZED weight
+        domain, not a probability-normalized-edges/``histcounts`` variant.
 
-            p = w(:)' / sumw;
-            edges = min([0 cumsum(p)], 1);   % protect against round-off
-            edges(end) = 1;                  % exact upper edge
-            [~, ~, y] = histcounts(rand(s, k, 1), edges);
-
-        See ``TxRegMcgRandStream._weighted_randsample_with_replacement`` for
-        the full derivation/verification notes (identical algorithm, proven
-        numerically equivalent to ``ChromCondMcgRandStream``'s variant by
-        Probe P1).
+        ``TxRegMcgRandStream``'s own variant (probability-normalize-then-
+        cumsum, compare against a raw ``[0, 1)`` draw) is mathematically
+        equivalent in exact arithmetic but NOT bit-for-bit in floating point
+        once the weights span many orders of magnitude (division-then-
+        summation accumulates rounding error differently than summation-
+        then-multiplication) -- confirmed by an adversarial reviewer witness
+        at seed 42 with weights ``[7.54154303189388e19, 6.368244061252983e19]``,
+        where the two variants select a DIFFERENT index. ``ChromCondMcgRandStream``
+        is the authoritative, accepted, unmodified algorithm for this unified
+        class (DC-4); this method is kept byte-for-byte identical to it.
         """
-        p = np.asarray(weights, dtype=np.float64) / float(np.sum(weights))
-        edges = np.empty(n + 1, dtype=np.float64)
-        edges[0] = 0.0
-        np.cumsum(p, out=edges[1:])
-        np.minimum(edges, 1.0, out=edges)
-        edges[-1] = 1.0
+        cdf = np.cumsum(weights, dtype=np.float64)
+        total = float(cdf[-1])
         draws = np.empty(k, dtype=np.int64)
         for i in range(k):
-            x = float(self.rand())
-            idx0 = int(np.searchsorted(edges, x, side="right")) - 1
-            if idx0 >= n:
-                idx0 = n - 1
-            elif idx0 < 0:
-                idx0 = 0
-            draws[i] = idx0 + 1
+            threshold = float(self.rand()) * total
+            idx = int(np.searchsorted(cdf, threshold, side="right"))
+            if idx >= n:
+                idx = n - 1
+            draws[i] = idx + 1
         return draws
 
     @staticmethod

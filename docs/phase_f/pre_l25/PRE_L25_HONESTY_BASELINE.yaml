@@ -8,7 +8,7 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "3f26e716ef34693f7c9585140121c8a51f75bd6616d349f4e59e68527443488a"
+  sha256: "6bec7a9b60418e77e30651de874c341fa242d0703c37c80c8474668a225a7ed6"
   file_count: 128
 authorities:
   l1b_method_completeness: "PASS 115/115"
@@ -575,12 +575,18 @@ processes:
         kind: CODE_DEVIATION
         disposition: OPEN
         summary: >-
-          Production connects only protein, complex, and legacy derived
-          outputs; it omits chromosome accessibility, authoritative promoter
-          occupancy, bound-TF state, and enzyme/bound-enzyme writeback.
+          Production now wires the chromosome port (Stage A+B, dec-007):
+          TxReg reads/writes the state-owned, serialized
+          `_shared_rand_stream_state` RNG leaf via `ChromosomeStore`. It
+          still omits authoritative chromosome footprint/bound-state
+          writeback -- TF-binding commits remain in TxReg's private
+          `tf_bound_promoters`/`bound_tfs` surface rather than the shared
+          `monomerBoundSites`/`complexBoundSites` store, and enzyme/
+          bound-enzyme deltas are not written back to the shared chromosome
+          occupancy arrays (deferred to Stage C).
         evidence:
           - path: opencell/vivarium/karr_composite.py
-            lines: "2071-2076"
+            lines: "2297-2303"
       - id: TXREG-SHARED-CHROMOSOME-WRITEBACK
         kind: CODE_DEVIATION
         disposition: OPEN
@@ -596,12 +602,18 @@ processes:
         kind: CODE_DEVIATION
         disposition: OPEN
         summary: >-
-          Autonomous OpenCell uses a local continuously advancing stand-in
-          rather than Karr's chromosome RNG stream interleaved with other
-          chromosome-binding processes.
+          Autonomous OpenCell now draws from a single, state-owned,
+          serialized `ChromosomeStateRandStream` reconstructed from the
+          chromosome leaf every tick (Stage A+B, dec-007, sole TxReg
+          consumer), preserving the prior draw sequence bit-for-bit under
+          the dec-006 L2.1 replay. It does not yet reproduce Karr's
+          multi-consumer inter-process shared-stream interleaving with
+          other chromosome-binding processes (DNADamage, DNASupercoiling,
+          Replication, ChromosomeCondensation), which requires the Stage E
+          sequential commit owner (DC-9).
         evidence:
           - path: opencell/vivarium/karr_transcriptional_regulation.py
-            lines: "704-759"
+            lines: "916-964"
       - id: TXREG-COPY-REDUCTION
         kind: CODE_DEVIATION
         disposition: OPEN

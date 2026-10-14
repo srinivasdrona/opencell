@@ -33,6 +33,31 @@ CHROMOSOME_HIDDEN_STATE_KEY = "_hidden_chromosome_state"
 # `_emit=True`, sentinel default `[-1, -1]` ("unseeded").
 CHROMOSOME_RAND_STREAM_KEY = "_shared_rand_stream_state"
 _UNSEEDED_RAND_STREAM_STATE = np.array([-1, -1], dtype=np.int64)
+
+
+def _validate_exact_rand_state_array(value: Any) -> np.ndarray:
+    """Strict representation validation for the serialized chromosome RNG
+    leaf (reviewer regression class 2, dec-007 §4.3). The value MUST be
+    precisely an ``np.ndarray`` of dtype ``np.int64`` and shape ``(2,)`` --
+    no coercion, no flattening, no casting. Anything else (``None``, a
+    python list/tuple even of clean integers, a float64 array, a 2D shape
+    such as ``(1, 2)``/``(2, 1)``, or the wrong element count) is rejected
+    loudly with ``TypeError``/``ValueError`` rather than silently cast or
+    reshaped. Sentinel handling (``[-1, -1]``) is a VALUE check performed
+    only after this representation check passes -- the sentinel is itself a
+    validly-shaped int64 ``(2,)`` array."""
+    if not isinstance(value, np.ndarray):
+        raise TypeError(
+            "rand_state must be an exact np.ndarray (int64, shape (2,)); "
+            f"got {type(value).__name__}"
+        )
+    if value.dtype != np.int64:
+        raise TypeError(f"rand_state must have dtype int64, got {value.dtype}")
+    if value.shape != (2,):
+        raise ValueError(f"rand_state must have shape (2,), got {value.shape}")
+    return value
+
+
 CHROMOSOME_HIDDEN_SPARSE_FIELDS: tuple[str, ...] = (
     "damagedSites",
     "singleStrandedRegions",
@@ -668,13 +693,17 @@ class ChromosomeStore:
 
     def set_rand_state(self, value: np.ndarray | Any) -> None:
         """Seed/restore the shared chromosome RNG stream from a
-        ``[seed, mcg_state]`` int64 pair (DC-2/§4.3). Raises ``ValueError``
-        if ``mcg_state`` is out of the valid mcg16807 range -- including the
-        ``[-1, -1]`` unseeded sentinel, which callers must treat as absent
-        (see ``from_state_mapping``), never pass here directly."""
-        arr = np.asarray(value, dtype=np.int64).reshape(-1)
-        if arr.shape[0] != 2:
-            raise ValueError(f"rand_state must have exactly 2 elements, got {arr.shape[0]}")
+        ``[seed, mcg_state]`` int64 pair (DC-2/§4.3). Validates the EXACT
+        serialized representation first (``_validate_exact_rand_state_array``
+        -- reviewer regression class 2): an exact ``np.ndarray``, dtype
+        ``np.int64``, shape ``(2,)``; rejects ``None``, lists, float64
+        arrays, 2D shapes, and wrong lengths with ``TypeError``/
+        ``ValueError`` rather than silently casting/flattening. Only after
+        that representation check passes does this raise ``ValueError`` for
+        an out-of-bounds ``mcg_state`` -- including the ``[-1, -1]``
+        unseeded sentinel, which callers must treat as absent (see
+        ``from_state_mapping``), never pass here directly."""
+        arr = _validate_exact_rand_state_array(value)
         seed = int(arr[0])
         mcg_state = int(arr[1])
         stream = ChromosomeStateRandStream(seed)
@@ -1112,9 +1141,13 @@ class ChromosomeStore:
                 node = payload.get(name)
             if node is not None:
                 store.set_hidden_scalar(name, node)
-        rand_state_node = payload.get(CHROMOSOME_RAND_STREAM_KEY)
-        if rand_state_node is not None:
-            rand_state_arr = np.asarray(rand_state_node, dtype=np.int64).reshape(-1)
+        if CHROMOSOME_RAND_STREAM_KEY in payload:
+            # Reviewer regression class 2: validate the EXACT serialized
+            # representation BEFORE any sentinel check -- a present-but-
+            # malformed value (None, wrong dtype/shape/length) must raise,
+            # never be silently treated as "absent" just because `.get(...)`
+            # would have returned the same falsy-looking value.
+            rand_state_arr = _validate_exact_rand_state_array(payload[CHROMOSOME_RAND_STREAM_KEY])
             # Absent-key semantics (dec-007 §4.3): the key is present but
             # equal to the unseeded sentinel `[-1, -1]` means "not yet
             # seeded" -- restore NOTHING (store stream stays `None`), never
