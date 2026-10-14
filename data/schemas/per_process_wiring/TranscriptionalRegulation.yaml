@@ -215,6 +215,16 @@ source_anchors:
       lines: "1119-1765"
       note: "Complex TF seeding for the chassis builder; also seeds the shared chromosome RNG leaf once at construction (Stage A+B, dec-007)."
       symbol: build_karr_chassis_v4
+    chromosome_rand_stream_authority:
+      path: "opencell/state/chromosome_store.py"
+      lines: "678-711"
+      note: "Stage A (dec-007/DC-2): ChromosomeStore's narrow state-owned RNG handle -- rand_stream()/rand_state()/set_rand_state() -- that TxReg's _resolve_chromosome_rng_for_tick reads every tick via chromosome_store.rand_stream()."
+      symbol: ChromosomeStore.set_rand_state
+    chromosome_state_rand_stream_class:
+      path: "opencell/util/chromosome_state_rand.py"
+      lines: "49-190"
+      note: "Stage A (dec-007/DC-4): the unified mcg16807 ChromosomeStateRandStream class ChromosomeStore constructs/restores via set_rand_state; TxReg draws from the instance ChromosomeStore.rand_stream() returns, never constructing its own."
+      symbol: ChromosomeStateRandStream
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/TranscriptionalRegulation_flat.mat"
@@ -230,6 +240,8 @@ provenance:
   oc_files_referenced:
     - opencell/vivarium/karr_transcriptional_regulation.py
     - opencell/vivarium/karr_composite.py
+    - opencell/state/chromosome_store.py
+    - opencell/util/chromosome_state_rand.py
 deviations:
   lp_bounds_source:
     karr: "unknown"

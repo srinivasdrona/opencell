@@ -1131,6 +1131,8 @@ processes:
           via `return n * inputs.elongation_rate_nt_per_s * pb / denom`.
   TranscriptionalRegulation:
     oc_files:
+    - opencell/state/chromosome_store.py
+    - opencell/util/chromosome_state_rand.py
     - opencell/vivarium/karr_composite.py
     - opencell/vivarium/karr_request_calculators.py
     - opencell/vivarium/karr_transcriptional_regulation.py
