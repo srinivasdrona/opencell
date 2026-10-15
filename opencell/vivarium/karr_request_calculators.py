@@ -434,7 +434,7 @@ class RequestCalculatorProteinPathway(Step):
         )
 
     def ports_schema(self) -> dict[str, Any]:
-        from opencell.vivarium.protein_state import MIGRATED_WIDS
+        from opencell.vivarium.protein_state import MIGRATED_WIDS, compartment_counts_schema
 
         all_substrate_wids = sorted(
             set(self._pp1_proc.substrate_wids)
@@ -464,7 +464,7 @@ class RequestCalculatorProteinPathway(Step):
                     for wid in sorted(
                         set(self._pp1_proc.enzyme_wids)
                         | set(self._pp2_proc.enzyme_wids)
-                        | set(self._pm_proc.enzyme_wids)
+                        | set(self._pm_proc.monomer_enzyme_wids)
                         | set(self._pf_proc.enzyme_wids)
                         | set(self._pt_proc.protein_count_wids)
                     )
@@ -509,6 +509,15 @@ class RequestCalculatorProteinPathway(Step):
                     for wid in self._pm_proc.unmodified_monomer_wids
                     if wid not in MIGRATED_WIDS
                 },
+                "compartment_counts": {
+                    "folded": compartment_counts_schema(MIGRATED_WIDS)["folded"],
+                },
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self._pm_proc.complex_enzyme_wids
+                },
             },
             "requests": {
                 self._pp1_proc.name: {
@@ -541,7 +550,6 @@ class RequestCalculatorProteinPathway(Step):
         unprocessed_state = protein_state.get("unprocessed_counts", {})
         processed_state = protein_state.get("processed_counts", {})
         unfolded_state = protein_state.get("unfolded_counts", {})
-        unmodified_state = protein_state.get("unmodified_counts", {})
 
         pp1_active = any(
             float(unprocessed_state.get(wid, 0.0)) > 0.0
@@ -549,10 +557,6 @@ class RequestCalculatorProteinPathway(Step):
         )
         pp2_active = any(
             float(processed_state.get(wid, 0.0)) > 0.0 for wid in self._pp2_proc.lipoprotein_wids
-        )
-        pm_active = any(
-            float(unmodified_state.get(wid, 0.0)) > 0.0
-            for wid in self._pm_proc.unmodified_monomer_wids
         )
         pf_active = any(
             float(unfolded_state.get(wid, 0.0)) > 0.0 for wid in self._pf_proc.unfolded_monomer_wids
@@ -577,8 +581,7 @@ class RequestCalculatorProteinPathway(Step):
             _request_from_available(substrate_state, self._pp2_consumed, active=pp2_active)
         )
 
-        pm_req = {wid: 0.0 for wid in self._pm_proc.substrate_wids}
-        pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))
+        pm_req = self._pm_proc.calculate_request(states)
 
         pf_req = {
             wid: (
