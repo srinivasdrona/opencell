@@ -70,9 +70,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   have PM/RNA implement competing provenance frameworks; port the reviewed
   common repair and bind each lane's real helper/fixture dependencies.
 - PM bounded production AND adapter delta are independently MATCHED. Shell
-  `pmod-fresh-design-a` is still running after initial600s; wait for its
-  completion notification, do not poll/relaunch. Read raw verdict, not exit
-  status alone. Its attestation must also meet the repaired common contract.
+  `pmod-fresh-design-a` has now completed from `5c57210`: computed PASS,
+  N50/M100,5000 observations,B1000,zero warnings. Primary W1=
+  0.00010414937759336126; substrate W1=0.03502666666666667. This is still a
+  candidate: the old3-input attestation must meet the repaired common contract.
+  No model/gate shell remains live.
 - RNA test correction/harness is now `94d3e9f` / `7a7b611`: reported84 unit
   PASS +11 input/adapter PASS, source-only replay mismatches/missing intergenic
   oracle explicitly retained. Parent is isolating its trace cache and restoring
