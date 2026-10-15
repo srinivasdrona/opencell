@@ -589,6 +589,7 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     },
     "ProteinModification": {
         "protein_state_module": PROTEIN_STATE_MODULE,
+        "protein_folding_module": REPO_ROOT / "opencell" / "vivarium" / "karr_protein_folding.py",
     },
     "ProteinFolding": {
         "protein_state_module": PROTEIN_STATE_MODULE,
@@ -745,8 +746,26 @@ def process_dependency_hashes(process: str) -> dict[str, str | None]:
 # dependency, not a per-process one -- keyed the same way
 # `SWEEP_PROVENANCE_SOURCE_FILES` is, just scoped narrower than "always".
 HARNESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
-    "design_a_per_tick": {"l2_replay_common": L2_REPLAY_COMMON_MODULE},
+    "design_a_per_tick": {
+        "l2_replay_common": L2_REPLAY_COMMON_MODULE,
+        "evidence_schema_module": Path(__file__).resolve(),
+    },
 }
+
+# Extra parameter/membership fixtures beyond the process's own flat fixture.
+# Paths are repo-relative so a worktree's actual data, not a sibling's copy,
+# is bound before constructing the sample process.
+PROCESS_PARAMETER_FIXTURES: dict[str, tuple[str, ...]] = {
+    "ProteinModification": ("MacromolecularComplexation", "ProteinFolding", "RibosomeAssembly"),
+    "ProteinFolding": ("MacromolecularComplexation", "RibosomeAssembly"),
+    "ProteinProcessingI": ("MacromolecularComplexation", "RibosomeAssembly"),
+    "ProteinDecay": ("MacromolecularComplexation",),
+    "ProteinTranslocation": ("MacromolecularComplexation", "RibosomeAssembly"),
+    "RNAProcessing": ("Rna", "MacromolecularComplexation", "RibosomeAssembly"),
+    "RNAModification": ("MacromolecularComplexation",),
+    "tRNAAminoacylation": ("MacromolecularComplexation", "RibosomeAssembly"),
+}
+PROTEIN_AUTHORITY_FIXTURES = ("ProteinTranslocation", "TerminalOrganelleAssembly")
 
 
 def harness_dependency_hashes(harness_type: str | None) -> dict[str, str | None]:

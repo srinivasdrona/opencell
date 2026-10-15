@@ -895,14 +895,24 @@ def run_design_a(
     primary_projection = _process_primary_projection(process)
     use_projection_distance = primary_distance != "per_tick_vector_w1_mean"
     thresholds_output = thresholds_path or (out_dir / "thresholds.json")
+    runtime_inputs = runner_helpers.capture_runtime_inputs(process)
     oracle = runner_helpers.load_karr_oracle(process)
+    if not oracle.get("input_sources"):
+        raise ValueError("Oracle inputs lack load-time source hashes; cannot attest consumed bytes")
+    consumed_inputs = runner_helpers.merge_input_sources(runtime_inputs, oracle["input_sources"])
+    seed_ids = oracle.get("seed_ids")
+    seed_indices = list(seeds)
+    if seed_ids is not None:
+        if len(set(seed_ids)) != len(seed_ids) or any(seed not in seed_ids for seed in seeds):
+            raise ValueError(f"Requested input seed identities {seeds} are not present uniquely in {seed_ids}")
+        seed_indices = [seed_ids.index(seed) for seed in seeds]
     before_vectors = {
-        channel: _normalize_seed_axis(oracle[_ORACLE_BEFORE_KEY[channel]], seeds, m_ticks)
+        channel: _normalize_seed_axis(oracle[_ORACLE_BEFORE_KEY[channel]], seed_indices, m_ticks)
         for channel in ("substrates", "enzymes", "boundEnzymes", "monomers", "complexs", "mRNAs", "RNAs")
         if _ORACLE_BEFORE_KEY.get(channel) in oracle
     }
     after_vectors = {
-        channel: _normalize_seed_axis(oracle[_ORACLE_AFTER_KEY[channel]], seeds, m_ticks)
+        channel: _normalize_seed_axis(oracle[_ORACLE_AFTER_KEY[channel]], seed_indices, m_ticks)
         for channel in output_channels
         if _ORACLE_AFTER_KEY.get(channel) in oracle
     }
@@ -933,12 +943,12 @@ def run_design_a(
             )
         metabolism_before_cube = _normalize_seed_axis(
             np.asarray(before_cube_raw, dtype=np.float64),
-            seeds,
+            seed_indices,
             m_ticks,
         )
         metabolism_after_cube = _normalize_seed_axis(
             np.asarray(after_cube_raw, dtype=np.float64),
-            seeds,
+            seed_indices,
             m_ticks,
         )
         expected_shape_prefix = (len(seeds), int(m_ticks))
@@ -1472,23 +1482,13 @@ def run_design_a(
         "bucket": bucket,
         "channels": thresholds_channels,
     }
-    oracle_path = Path(oracle["oracle_path"])
+    runner_helpers.verify_input_sources(consumed_inputs)
     input_manifest = {
         "generated_at": timestamp,
-        "inputs": [
-            {"path": str(oracle_path), "sha256": _sha256_file(oracle_path)},
-            {"path": str(Path(__file__).resolve()), "sha256": _sha256_file(Path(__file__).resolve())},
-            {
-                "path": str((_HELPER_DIR / "_l2_2_design_a_runner_helpers.py").resolve()),
-                "sha256": _sha256_file((_HELPER_DIR / "_l2_2_design_a_runner_helpers.py").resolve()),
-            },
-        ],
+        "inputs": consumed_inputs,
         "resolved_seeds": [int(seed) for seed in seeds],
         "m_ticks": int(m_ticks),
     }
-    oracle_sidecar = oracle_path.with_suffix(".json")
-    if oracle_sidecar.exists():
-        input_manifest["inputs"].insert(1, {"path": str(oracle_sidecar), "sha256": _sha256_file(oracle_sidecar)})
     null_payload = {
         "generated_at": timestamp,
         "process": process,

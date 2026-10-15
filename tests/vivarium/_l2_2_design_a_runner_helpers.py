@@ -1,9 +1,11 @@
 from __future__ import annotations
 
 import filecmp
+import hashlib
 import json
+import re
 import sys
-from functools import cache, lru_cache
+from functools import cache, lru_cache, wraps
 from pathlib import Path
 from typing import Any
 
@@ -204,6 +206,92 @@ _EXTERNAL_V2_PROCESS_ROOT_FALLBACK = frozenset(
         "RibosomeAssembly",
     }
 )
+
+
+def capture_input_source(path: Path, **identity: Any) -> dict[str, Any]:
+    """Capture bytes before consumption; never substitute a finalization hash."""
+    resolved = Path(path).resolve()
+    digest = hashlib.sha256()
+    with resolved.open("rb") as handle:
+        for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+            digest.update(chunk)
+    return {"path": str(resolved), "sha256": digest.hexdigest(), **identity}
+
+
+def verify_input_sources(sources: list[dict[str, Any]]) -> None:
+    for source in sources:
+        current = capture_input_source(Path(source["path"]))
+        if current["sha256"] != source["sha256"]:
+            raise ValueError(f"Consumed input source hash drift: {source['path']}")
+
+
+def merge_input_sources(*groups: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    by_path: dict[str, dict[str, Any]] = {}
+    for group in groups:
+        for source in group:
+            path = str(Path(source["path"]).resolve())
+            previous = by_path.get(path)
+            if previous is not None and (
+                previous["sha256"] != source["sha256"]
+                or ("seed" in previous and "seed" in source and previous["seed"] != source["seed"])
+            ):
+                raise ValueError(f"Conflicting consumed input source identities: {path}")
+            by_path[path] = {**(previous or {}), **source, "path": path}
+    return list(by_path.values())
+
+
+def capture_runtime_inputs(process_name: str) -> list[dict[str, Any]]:
+    """Bind required code and fixture bytes before oracle/model consumption."""
+    from scripts.l22_evidence import catalog, schema
+
+    entry = catalog.in_scope_processes()[process_name]
+    paths = [
+        *schema.shared_source_files_for_harness(entry.harness_type).values(),
+        *schema.HARNESS_DEPENDENCY_FILES.get(entry.harness_type, {}).values(),
+        *schema.PROCESS_DEPENDENCY_FILES.get(process_name, {}).values(),
+        _REPO_ROOT / entry.oc_module,
+    ]
+    fixture_names = [process_name, *schema.PROCESS_PARAMETER_FIXTURES.get(process_name, ())]
+    if "protein_state_module" in schema.PROCESS_DEPENDENCY_FILES.get(process_name, {}):
+        fixture_names.extend(schema.PROTEIN_AUTHORITY_FIXTURES)
+    paths.extend(
+        _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / f"{name}_flat.mat"
+        for name in dict.fromkeys(fixture_names)
+    )
+    sources = merge_input_sources([capture_input_source(path) for path in paths])
+    if "protein_state_module" in schema.PROCESS_DEPENDENCY_FILES.get(process_name, {}):
+        from opencell.vivarium import protein_state
+
+        # MIGRATED_WIDS is computed at import time, before this run's snapshots.
+        # Re-read its two authorities rather than attest newer, never-used bytes
+        # through the membership loaders' process-global caches.
+        migrated = (
+            protein_state._load_toa_fixture_substrate_wids.__wrapped__()
+            | protein_state._load_pt_fixture_translocating_wids.__wrapped__()
+        )
+        if migrated != frozenset(protein_state.MIGRATED_WIDS):
+            raise ValueError("Consumed protein authority inputs differ from cached MIGRATED_WIDS")
+    verify_input_sources(sources)
+    return sources
+
+
+class _LoadedChannels(dict[str, np.ndarray]):
+    def __init__(self, channels: dict[str, np.ndarray], input_sources: list[dict[str, Any]]) -> None:
+        super().__init__(channels)
+        self.input_sources = input_sources
+
+
+def _bind_legacy_oracle(path_name: str):
+    def decorate(loader):
+        @wraps(loader)
+        def load_bound():
+            source = capture_input_source(globals()[path_name])
+            oracle = loader()
+            verify_input_sources([source])
+            oracle["input_sources"] = merge_input_sources(oracle.get("input_sources", []), [source])
+            return oracle
+        return load_bound
+    return decorate
 
 
 def _karr_native_root() -> Path:
@@ -434,6 +522,7 @@ def _seed_schema_preflight(seed_paths: list[Path], *, process_name: str | None =
 def _load_seeded_mat_channels(
     seed_paths: list[Path], *, process_name: str | None = None
 ) -> tuple[dict[str, np.ndarray], dict[str, np.ndarray], int]:
+    input_sources = [capture_input_source(path) for path in seed_paths]
     _seed_schema_preflight(seed_paths, process_name=process_name)
     before_by_channel: dict[str, list[np.ndarray]] = {}
     after_by_channel: dict[str, list[np.ndarray]] = {}
@@ -441,8 +530,18 @@ def _load_seeded_mat_channels(
     after_keys_expected: tuple[str, ...] | None = None
     n_ticks_expected: int | None = None
 
-    for seed_path in seed_paths:
+    for source, seed_path in zip(input_sources, seed_paths, strict=True):
         with h5py.File(seed_path, "r") as handle:
+            parent = seed_path.parent.name
+            match = re.fullmatch(r"(?:per_process_traces_v2_s|seed_)(\d+)", parent)
+            seed = int(match.group(1)) if match else 0 if parent == "per_process_traces_v2" else None
+            if "metadata/rng_seed" in handle:
+                embedded_seed = int(np.asarray(handle["metadata/rng_seed"][()]).reshape(-1)[0])
+                if seed is not None and embedded_seed != seed:
+                    raise ValueError(f"Input seed identity mismatch in {seed_path}: {embedded_seed} != {seed}")
+                seed = embedded_seed
+            if seed is not None:
+                source["seed"] = seed
             if "states_before" not in handle or "states_after" not in handle:
                 raise ValueError(f"Missing states_before/states_after groups in {seed_path}")
 
@@ -497,7 +596,8 @@ def _load_seeded_mat_channels(
         channel: np.asarray(np.stack(matrices, axis=0), dtype=np.float64)
         for channel, matrices in after_by_channel.items()
     }
-    return before_stacked, after_stacked, int(n_ticks_expected or 0)
+    verify_input_sources(input_sources)
+    return _LoadedChannels(before_stacked, input_sources), after_stacked, int(n_ticks_expected or 0)
 
 
 def _required_ensemble_keys(process_name: str) -> tuple[tuple[str, ...], tuple[str, ...]]:
@@ -617,6 +717,27 @@ def _format_ensemble_oracle(
     before_channels: dict[str, np.ndarray],
     after_channels: dict[str, np.ndarray],
 ) -> dict[str, Any]:
+    sources = getattr(before_channels, "input_sources", None)
+    if not sources:
+        raise ValueError("Ensemble inputs lack load-time source hashes")
+    oracle = _format_ensemble_channels(
+        process_name=process_name, oracle_path=oracle_path, seed_paths=seed_paths,
+        before_channels=before_channels, after_channels=after_channels,
+    )
+    oracle["input_sources"] = merge_input_sources(sources)
+    if all("seed" in source for source in sources[:len(seed_paths)]):
+        oracle["seed_ids"] = [source["seed"] for source in sources[:len(seed_paths)]]
+    return oracle
+
+
+def _format_ensemble_channels(
+    *,
+    process_name: str,
+    oracle_path: Path,
+    seed_paths: list[Path],
+    before_channels: dict[str, np.ndarray],
+    after_channels: dict[str, np.ndarray],
+) -> dict[str, Any]:
     canonical_seed_count = int(len(seed_paths))
     n_ticks_available = int(next(iter(before_channels.values())).shape[1]) if before_channels else 0
     required_before, required_after = _required_ensemble_keys(process_name)
@@ -628,6 +749,7 @@ def _format_ensemble_oracle(
             return np.asarray(before_channels[channel], dtype=np.float64)
         if legacy_oracle is None:
             legacy_oracle = _oracle_dispatch()[process_name]()
+            before_channels.input_sources.extend(legacy_oracle["input_sources"])
         return _legacy_seed_slice(legacy_oracle, legacy_key, canonical_seed_count)
 
     def after_channel(channel: str, legacy_key: str) -> np.ndarray:
@@ -636,6 +758,7 @@ def _format_ensemble_oracle(
             return np.asarray(after_channels[channel], dtype=np.float64)
         if legacy_oracle is None:
             legacy_oracle = _oracle_dispatch()[process_name]()
+            before_channels.input_sources.extend(legacy_oracle["input_sources"])
         return _legacy_seed_slice(legacy_oracle, legacy_key, canonical_seed_count)
 
     missing_before = [channel for channel in required_before if channel not in before_channels]
@@ -1147,6 +1270,7 @@ def _load_ensembles_layout(process_name: str, max_seeds: int = 50) -> dict[str, 
     )
     manifest_path = _ensembles_manifest_path(process_name)
     if manifest_path.exists():
+        manifest_source = capture_input_source(manifest_path)
         manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
         manifest_seed_count = manifest.get("present_seed_count", manifest.get("expected_seed_count"))
         if manifest_seed_count is not None and int(manifest_seed_count) != len(seed_paths):
@@ -1163,6 +1287,8 @@ def _load_ensembles_layout(process_name: str, max_seeds: int = 50) -> dict[str, 
                     f"Manifest observable mismatch for {process_name}: "
                     f"manifest={expected_schema} actual={observed_schema}"
                 )
+        verify_input_sources([manifest_source])
+        before_channels.input_sources.append(manifest_source)
 
     return _format_ensemble_oracle(
         process_name=process_name,
@@ -1196,10 +1322,16 @@ def load_karr_oracle(process: str) -> dict[str, Any]:
     v2_oracle = _load_v2_ensemble(process)
     specialized_ensemble_oracle = _load_ensembles_layout(process)
     if v2_oracle is not None and specialized_ensemble_oracle is not None:
+        sources = merge_input_sources(
+            v2_oracle.get("input_sources", []),
+            specialized_ensemble_oracle.get("input_sources", []),
+        )
         if int(v2_oracle.get("canonical_seed_count", 0)) >= int(
             specialized_ensemble_oracle.get("canonical_seed_count", 0)
         ):
+            v2_oracle["input_sources"] = sources
             return v2_oracle
+        specialized_ensemble_oracle["input_sources"] = sources
         return specialized_ensemble_oracle
     if v2_oracle is not None:
         return v2_oracle
@@ -1224,6 +1356,7 @@ def load_karr_oracle(process: str) -> dict[str, Any]:
     return legacy_oracle
 
 
+@_bind_legacy_oracle("_METABOLISM_ORACLE_PATH")
 def _load_metabolism_oracle() -> dict[str, Any]:
     if not _METABOLISM_ORACLE_PATH.exists():
         raise FileNotFoundError(f"Missing Metabolism oracle fixture: {_METABOLISM_ORACLE_PATH}")
@@ -1246,6 +1379,7 @@ def _load_metabolism_oracle() -> dict[str, Any]:
     }
 
 
+@_bind_legacy_oracle("_TRANSCRIPTION_ORACLE_PATH")
 def _load_transcription_oracle() -> dict[str, Any]:
     if not _TRANSCRIPTION_ORACLE_PATH.exists():
         raise FileNotFoundError(f"Missing Transcription oracle fixture: {_TRANSCRIPTION_ORACLE_PATH}")
@@ -1279,6 +1413,7 @@ def _load_transcription_oracle() -> dict[str, Any]:
     }
 
 
+@_bind_legacy_oracle("_TRANSLATION_ORACLE_PATH")
 def _load_translation_oracle() -> dict[str, Any]:
     if not _TRANSLATION_ORACLE_PATH.exists():
         raise FileNotFoundError(f"Missing Translation oracle fixture: {_TRANSLATION_ORACLE_PATH}")
@@ -1311,6 +1446,7 @@ def _load_translation_oracle() -> dict[str, Any]:
     }
 
 
+@_bind_legacy_oracle("_RNA_DECAY_ORACLE_PATH")
 def _load_rna_decay_oracle() -> dict[str, Any]:
     if not _RNA_DECAY_ORACLE_PATH.exists():
         raise FileNotFoundError(f"Missing RNADecay oracle fixture: {_RNA_DECAY_ORACLE_PATH}")
@@ -1337,6 +1473,7 @@ def _load_rna_decay_oracle() -> dict[str, Any]:
     }
 
 
+@_bind_legacy_oracle("_PROTEIN_DECAY_ORACLE_PATH")
 def _load_protein_decay_oracle() -> dict[str, Any]:
     if not _PROTEIN_DECAY_ORACLE_PATH.exists():
         raise FileNotFoundError(f"Missing ProteinDecay oracle fixture: {_PROTEIN_DECAY_ORACLE_PATH}")
@@ -1405,6 +1542,7 @@ def _load_macromol_oracle() -> dict[str, Any]:
     )
 
 
+@_bind_legacy_oracle("_CYTOKINESIS_ORACLE_PATH")
 def _load_cytokinesis_oracle() -> dict[str, Any]:
     if not _CYTOKINESIS_ORACLE_PATH.exists():
         raise FileNotFoundError(f"Missing Cytokinesis oracle fixture: {_CYTOKINESIS_ORACLE_PATH}")

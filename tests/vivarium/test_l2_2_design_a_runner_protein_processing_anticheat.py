@@ -22,6 +22,7 @@ if str(_HELPER_DIR) not in sys.path:
 
 import _l2_2_design_a_runner_helpers as runner_helpers
 import l2_2_design_a_runner as runner
+from _design_a_synthetic_oracle import bind_synthetic_oracle
 
 
 def _fake_protein_processing_oracle(
@@ -115,7 +116,7 @@ def test_protein_processing_ii_tick_does_not_replay_monomer_after_hint() -> None
 
 
 def test_protein_processing_i_primary_monomer_distance_fails(monkeypatch, tmp_path: Path) -> None:
-    oracle = _fake_protein_processing_oracle(process_name="ProteinProcessingI")
+    oracle = bind_synthetic_oracle(_fake_protein_processing_oracle(process_name="ProteinProcessingI"), tmp_path)
     monkeypatch.setattr(runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(
         runner_helpers,
@@ -145,7 +146,7 @@ def test_protein_processing_i_primary_monomer_distance_fails(monkeypatch, tmp_pa
 
 
 def test_protein_processing_ii_primary_monomer_distance_fails(monkeypatch, tmp_path: Path) -> None:
-    oracle = _fake_protein_processing_oracle(process_name="ProteinProcessingII", substrate_dim=5)
+    oracle = bind_synthetic_oracle(_fake_protein_processing_oracle(process_name="ProteinProcessingII", substrate_dim=5), tmp_path)
     monkeypatch.setattr(runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(
         runner_helpers,

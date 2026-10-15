@@ -21,6 +21,7 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 import l2_2_design_a_runner as runner
+from _design_a_synthetic_oracle import bind_synthetic_oracle
 
 
 def _synthetic_metabolism_vectors(
@@ -61,7 +62,7 @@ def _run_synthetic_metabolism_case(
     oc_vectors: np.ndarray,
     karr_vectors: np.ndarray,
 ) -> dict[str, object]:
-    oracle = _synthetic_metabolism_oracle(karr_vectors)
+    oracle = bind_synthetic_oracle(_synthetic_metabolism_oracle(karr_vectors), tmp_path)
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(
         runner.runner_helpers,

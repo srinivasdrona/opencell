@@ -21,6 +21,7 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 import l2_2_design_a_runner as runner  # noqa: E402
+from _design_a_synthetic_oracle import bind_synthetic_oracle  # noqa: E402
 
 
 def _fake_metabolism_oracle(*, seed_count: int = 3, tick_count: int = 4, dim: int = 8) -> dict[str, object]:
@@ -45,7 +46,7 @@ def _fake_metabolism_process(dim: int = 8, enzyme_dim: int = 3) -> SimpleNamespa
 
 
 def test_metabolism_oracle_replay_cheat_fails_primary_channel(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: _fake_metabolism_oracle())
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: bind_synthetic_oracle(_fake_metabolism_oracle(), tmp_path))
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_metabolism_process())
     monkeypatch.setattr(
         runner.runner_helpers,
@@ -75,7 +76,7 @@ def test_metabolism_oracle_replay_cheat_fails_primary_channel(monkeypatch, tmp_p
 
 
 def test_metabolism_zero_substrates_cheat_fails_primary_channel(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: _fake_metabolism_oracle())
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: bind_synthetic_oracle(_fake_metabolism_oracle(), tmp_path))
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_metabolism_process())
     monkeypatch.setattr(
         runner.runner_helpers,
