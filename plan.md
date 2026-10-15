@@ -85,6 +85,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   algorithm changed. Canonical honesty rebaseline is verified9/9 and
   INTEGRITY_OK4/28, source digest unchanged. Independent doer fixes RNA sample
   ownership next; common binding author continues independently in PP2.
+- RNA freeze is `a202f24`; original doer
+  `47e288fe-a412-4728-96da-65e194efbff3` is live on the helper-only fresh-owner
+  fix. Tests are frozen; expected combined source/input/isolation count101.
 
 **Earlier parallel-lane record (superseded by the current handoff above):**
 
