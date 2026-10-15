@@ -2076,8 +2076,8 @@ def _run_rna_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str
 
 
 def _run_rna_processing_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
-    """Run RNAProcessing from captured-before source forms and live enzymes."""
-    process = _rna_processing_process(_sample_seed(seed, tick))
+    """Run a fresh RNAProcessing sample from captured-before source inputs."""
+    process = _rna_processing_process.__wrapped__(_sample_seed(seed, tick))
     metadata = _rna_processing_channel_metadata()
     assert list(state["substrate_wids"]) == list(process.substrate_wids)
     assert list(state["enzyme_wids"]) == list(process.enzyme_wids)
@@ -2110,8 +2110,8 @@ def _run_rna_processing_tick(seed: int, tick: int, state: dict[str, Any]) -> dic
 
 
 def _run_rna_modification_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
-    """Run all 347 RM source forms, not an active-only/pass-through surrogate."""
-    process = _rna_modification_process(_sample_seed(seed, tick))
+    """Run a fresh sample of all 347 RM source forms, without cached execution."""
+    process = _rna_modification_process.__wrapped__(_sample_seed(seed, tick))
     metadata = _rna_modification_channel_metadata()
     assert list(state["substrate_wids"]) == list(process.substrate_wids)
     assert list(state["enzyme_wids"]) == list(process.enzyme_wids)
