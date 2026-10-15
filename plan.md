@@ -80,6 +80,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   Parent now reproduced95/95 and completed isolated restoration: both exact50
   cohorts/100ticks/full family sets verified; main hashes unchanged. Independent
   two-process review is next; statistical gates wait for the shared binding fix.
+  Reviewer `d1e8bfef-5471-431a-8eb4-943b86b0663d` is now live on `b2e7778`.
+  Restored replay is7 PASS/1 RM event exact mismatch/1 audited canonical RM
+  no-op N/A; RP full-family replay passes. Source binding remains the shared
+  prerequisite for statistical acceptance, not a reason to tune random draws.
 
 - Run independent process repairs concurrently in isolated worktrees. Preserve
   test-author -> implementer -> independent-reviewer ordering within each lane,
