@@ -72,6 +72,14 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `artifacts/l2_2_gates/ProteinProcessingII/latest`.
 - Fresh independent reviewer dispatch is next. Do not promote from old
   statistical evidence or turn source-only adapter checks into a sweep claim.
+- Fresh registered sweep completed from `fa0ac62`: N50/M20, B1000,
+  canonical_seed_count50,1000 observations/channel, computed PASS; primary
+  monomer W1=0 and substrate W1=0. It has the catalog-authorized
+  PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE warning (not zero warnings).
+  Source-bound sweep provenance reports COMPLETE and inputs_verified.
+- Reviewer `2b6b081d-9fa9-4e18-8801-90cf58d63695` is live on `fa0ac62`.
+  Shell `ppii-fresh-design-a` finished exit0; no sweep is still live.
+  Publishing, semantic re-adjudication and eligibility remain pending review.
 
 - Narrow queue repair is committed at `aae8d93` / `e8930e7`. Implementer is
   idle; reported 79 PASS plus the one explicit missing signal-oracle FAIL,
