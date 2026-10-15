@@ -69,7 +69,11 @@ PROTEIN_PROCESS_MANIFEST = (
     ("opencell.vivarium.karr_protein_processing_i", "KarrProteinProcessingIProcess", ("unprocessed_counts", "processed_counts", "counts"), "MIGRATABLE-W/AUTH-W"),
     ("opencell.vivarium.karr_protein_processing_ii", "KarrProteinProcessingIIProcess", ("processed_counts", "unfolded_counts", "signal_sequence_counts"), "MIGRATABLE-W"),
     ("opencell.vivarium.karr_protein_folding", "KarrProteinFoldingProcess", ("unfolded_counts", "counts"), "MIGRATABLE-W/AUTH-W"),
-    ("opencell.vivarium.karr_protein_modification", "KarrProteinModificationProcess", ("unmodified_counts", "modified_counts"), "MIGRATABLE-W"),
+    ("opencell.vivarium.karr_protein_modification", "KarrProteinModificationProcess", ("unmodified_counts", "modified_counts"), "MIGRATABLE-W/AUTH-W"),
+    # RequestProcess inherits the real schema and evolves when request_ready is armed;
+    # EvolutionStep delegates that write through the same owned RequestProcess.
+    ("opencell.vivarium.karr_protein_modification", "KarrProteinModificationRequestProcess", ("unmodified_counts", "modified_counts"), "MIGRATABLE-W/AUTH-W"),
+    ("opencell.vivarium.karr_protein_modification", "KarrProteinModificationEvolutionStep", ("unmodified_counts", "modified_counts"), "MIGRATABLE-W/AUTH-W"),
     ("opencell.vivarium.karr_protein_translocation", "KarrProteinTranslocationProcess", ("unprocessed_counts", "location"), "MIGRATABLE-W"),
     ("opencell.vivarium.karr_protein_decay_light", "ProteinDecayLightProcess", ("counts",), "AUTH-W"),
     ("opencell.vivarium.karr_terminal_organelle_assembly", "KarrTerminalOrganelleAssemblyProcess", (), "AUTH-W"),
@@ -99,6 +103,12 @@ PROTEIN_PROCESS_MANIFEST = (
 def _instantiate_process_with_dependencies(cls: type) -> Any:
     """Instantiate Process/Step classes with explicit dependencies where required."""
     name = cls.__name__
+    if name == "KarrProteinModificationEvolutionStep":
+        from opencell.vivarium.karr_protein_modification import (
+            KarrProteinModificationRequestProcess,
+        )
+
+        return cls({"modification_process": KarrProteinModificationRequestProcess({})})
     if name == "RequestCalculatorPTransloc":
         from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
 
@@ -397,12 +407,19 @@ def _activate_protein_folding() -> tuple[Any, dict[str, Any]]:
     return proc, proc.next_update(1.0, state)
 
 
-def _activate_protein_modification() -> tuple[Any, dict[str, Any]]:
+def _activate_protein_modification(wrapper: str | None = None) -> tuple[Any, dict[str, Any]]:
     from opencell.vivarium.karr_protein_modification import (
+        KarrProteinModificationEvolutionStep,
         KarrProteinModificationProcess,
+        KarrProteinModificationRequestProcess,
     )
 
-    proc = KarrProteinModificationProcess({})
+    owner = (
+        KarrProteinModificationRequestProcess({})
+        if wrapper
+        else KarrProteinModificationProcess({})
+    )
+    proc = owner
     state = {
         "substrates": {wid: 10000.0 for wid in proc.substrate_wids},
         "substrates_allocated": {proc.name: {wid: 10000.0 for wid in proc.substrate_wids}},
@@ -432,7 +449,21 @@ def _activate_protein_modification() -> tuple[Any, dict[str, Any]]:
             },
         },
     }
+    if wrapper:
+        state["phase"] = {"request_ready": True}
+    if wrapper == "evolution":
+        proc = KarrProteinModificationEvolutionStep({"modification_process": owner})
+        assert proc._modification_process is owner
+        assert proc.ports_schema()["protein"] == owner.ports_schema()["protein"]
     return proc, proc.next_update(1.0, state)
+
+
+def _activate_protein_modification_request() -> tuple[Any, dict[str, Any]]:
+    return _activate_protein_modification("request")
+
+
+def _activate_protein_modification_evolution() -> tuple[Any, dict[str, Any]]:
+    return _activate_protein_modification("evolution")
 
 
 def _activate_protein_translocation() -> tuple[Any, dict[str, Any]]:
@@ -529,6 +560,8 @@ def test_c5_declared_writes_only() -> None:
         _activate_protein_processing_ii,
         _activate_protein_folding,
         _activate_protein_modification,
+        _activate_protein_modification_request,
+        _activate_protein_modification_evolution,
         _activate_protein_translocation,
         _activate_protein_decay_light,
         _activate_terminal_organelle_assembly,
