@@ -65,13 +65,19 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   idle; reported 79 PASS plus the one explicit missing signal-oracle FAIL,
   five-family replay100 ticks, L2.4 four seeds x100 PASS, L1b115/115 +28/28,
   and integrity5/28. Independent acceptance/review remain pending.
-- Next parent operation: isolate this worktree's seed-zero trace directory
-  from its direct canonical junction, preserving all other canonical files,
-  then populate PP2's manifest-verified accepted complete50 cohort with the
-  existing population tool. The main checkout's stale trace must remain
-  untouched; remove only the explicitly verified junction itself, never its
-  canonical target. Source link: E:\opencell\data\m1_sources\karr_native\
-  per_process_traces_v2. No MATLAB regeneration is needed.
+- Parent isolated this worktree's seed-zero trace directory from its canonical
+  junction (nonrecursive unlink canary PASS), preserving 28 other trace files
+  as local copies. Existing population tool copied the 22 missing PP2 files.
+  All 50 now match the accepted population manifest hashes, distinct embedded
+  seeds0-49, 100 ticks and all six families. Main canonical stale seed0 remains
+  byte-identical and untouched. No MATLAB regeneration was needed.
+- The population tool's whole-directory destination check rejected 77 unrelated
+  existing trace files when scoped to PP2 alone. They were preserved; independent
+  PP2-only exact path/hash/seed/schema census passed. Restoration manifest is
+  `tmp/ppii-oracle-restoration/manifest.json`.
+- Next: independent author extends the input-only PP2 replay/evidence projection
+  to verify all six real output families, then parent runs fresh source-bound
+  distributional evidence and independent review. Eligibility remains5/28.
 
 - Local form-route freeze `196efe0` / `b279774` is parent-reproduced:
   **67 PASS / 13 FAIL**, comprising 12 wrong-form failures and one explicit
@@ -127,9 +133,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   No production changes before the tests are frozen; no eligibility change
   until actual source, integration, and evidence gaps are independently closed.
 - Data trap: this worktree has a direct `WholeCell` junction to
-  `E:\opencell-mirrors\WholeCell` and a seed-0 trace junction directly to the
-  canonical `E:\opencell\data\m1_sources\karr_native\per_process_traces_v2`.
-  Never recursively remove these junction-bearing directories. The tracked
+  `E:\opencell-mirrors\WholeCell`. Its seed-0 trace directory is now isolated
+  local data, not the original canonical junction. Never recursively remove
+  junction-bearing directories. The tracked
   fixture is available locally; Python execution remains WSL-only.
 
 **Current status (2026-10-14) — shared chromosome-state Stage A+B integrated and independently MATCHED:**
