@@ -82,6 +82,12 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `bd296ce`. Tests are frozen/read-only; permitted production work is confined
   to PP2 input/request/evolution/signal writeback and directly coupled
   topology/accounting/metadata. No evidence promotion or push is authorized.
+- Parent evidence preflight found nine historical roots with all 50 embedded
+  PP2 seeds and 100 ticks. Two complete sets (`integrate-l22-dnas-current` and
+  `l22-final-sweep`) have 50 distinct file hashes and match each other for all
+  50 seeds; both include `signalSequenceMonomers`. Their seed-0 bytes differ
+  from the current canonical seed-0 trace. Do not mix cohorts or regenerate
+  before reconciling source/schema provenance; no evidence was copied/promoted.
 - Primary authority is local MATLAB `ProteinProcessingII.m:325-345`:
   H2O demand is the minimum of ceil(peptidase * rate * step) and the
   lipoprotein-plus-secreted processed-I pool; PG160 uses transferase capacity
