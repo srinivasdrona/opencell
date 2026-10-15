@@ -94,6 +94,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   parent reproduced90/90, including100-tick six-family identity and real signal
   mutations. PP2-only registered N50/M20 sweep and fresh independent review
   are next; planned shell `ppii-fresh-design-a`, isolated feature worktree.
+  Sweep has now completed from `fa0ac62`, computedPASS with W1=0 on both
+  channels and the authorized deterministic-convergence warning. Reviewer
+  `2b6b081d-9fa9-4e18-8801-90cf58d63695` is live; promotion awaits that verdict.
 - Protein lane B: ProteinModification, isolated worktree
   `E:\opencell-worktrees\fix-protein-modification-fidelity`; freeze
   `caaa189` / `2e902fb` is parent-accepted: new tests 43 PASS / 45 RED.
@@ -111,6 +114,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   projections. Existing accepted PM50 cohort is fully present in
   `l22-final-sweep` and matches the population manifest; local cache has seed0
   only, matching the same manifest.
+  Bounded production review returned MATCHED; sampling-law support is confirmed
+  without exact paired RNG identity. PM adapter `5dd07ea` / `be2ccb4` is
+  parent-accepted36/36 and undergoing delta review. Local PM cohort now has
+  all50 accepted hashes; N50/M100 sweep is next, shell `pmod-fresh-design-a`.
   It overlaps PP2's protein request-calculator
   class, so reconcile its shared-file edits against PP2 before integration.
 - RNA lane C: RNAModification plus RNAProcessing, isolated worktree
