@@ -3206,53 +3206,42 @@ def _run_protein_processing_ii_tick(seed: int, tick: int, state: dict[str, Any])
     substrate_wids = list(state["substrate_wids"])
     enzyme_wids = list(state["enzyme_wids"])
     monomer_wids = list(state["monomer_wids"])
+    before_substrates = np.asarray(state["oracle_before_substrates"], dtype=np.float64)
+    before_enzymes = np.asarray(state["oracle_before_enzymes"], dtype=np.float64)
+    before_monomers = np.asarray(state["oracle_before_monomers"], dtype=np.float64)
+    for label, wids, expected, values in (
+        ("substrates", substrate_wids, process.substrate_wids, before_substrates),
+        ("enzymes", enzyme_wids, process.enzyme_wids, before_enzymes),
+        ("monomers", monomer_wids, process.unprocessed_monomer_wids, before_monomers),
+    ):
+        if wids != list(expected) or values.shape != (len(wids),):
+            raise ValueError(f"PP2 {label} fixture WID-order/length mismatch")
 
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="enzymes",
-        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
-        wids=enzyme_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="monomers",
-        vector=np.asarray(state["oracle_before_monomers"], dtype=np.float64),
-        wids=monomer_wids,
-    )
+    # ProteinProcessingII.m:199-217 and Process.m:611-670: local processed-I
+    # and mature enzyme rows, not compatibility enzyme/mature-count shadows.
+    runtime_state["substrates"].update(zip(substrate_wids, before_substrates, strict=True))
+    protein = runtime_state["protein"]
+    authority = protein["compartment_counts"]
+    for wid, count in zip(monomer_wids, before_monomers, strict=True):
+        if wid in process.migrated_compartment_by_wid:
+            authority["processed_i"][wid][process.migrated_compartment_by_wid[wid]] = float(count)
+        else:
+            protein["processed_counts"][wid] = float(count)
+    for wid, count in zip(enzyme_wids, before_enzymes, strict=True):
+        authority["mature"][wid][process.enzyme_compartment_by_wid[wid]] = float(count)
     refresh_allocator_views(process, runtime_state)
     with forbid_sut_oracle_file_io():
         update = process.next_update(1.0, runtime_state)
     apply_count_update(runtime_state, update)
+    # Catalog monomers are this local processed-I vector, not the full
+    # six-compartment authority cube used by ProteinTranslocation.
+    monomers_after, _ = process.read_processing_inputs(runtime_state)
     return {
         "substrates": np.asarray(
-            project_observable_from_state(
-                process=process,
-                state=runtime_state,
-                observable="substrates",
-                wids=substrate_wids,
-                bound_enzymes_before=None,
-            ),
+            [runtime_state["substrates"][wid] for wid in substrate_wids],
             dtype=np.float64,
         ),
-        "monomers": np.asarray(
-            project_observable_from_state(
-                process=process,
-                state=runtime_state,
-                observable="monomers",
-                wids=monomer_wids,
-                bound_enzymes_before=None,
-            ),
-            dtype=np.float64,
-        ),
+        "monomers": monomers_after,
         "sample_seed": _sample_seed(seed, tick),
     }
 
