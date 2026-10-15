@@ -61,6 +61,18 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — ProteinProcessingII fidelity iteration starting; eligibility is still 5/28:**
 
+- Narrow queue repair is committed at `aae8d93` / `e8930e7`. Implementer is
+  idle; reported 79 PASS plus the one explicit missing signal-oracle FAIL,
+  five-family replay100 ticks, L2.4 four seeds x100 PASS, L1b115/115 +28/28,
+  and integrity5/28. Independent acceptance/review remain pending.
+- Next parent operation: isolate this worktree's seed-zero trace directory
+  from its direct canonical junction, preserving all other canonical files,
+  then populate PP2's manifest-verified accepted complete50 cohort with the
+  existing population tool. The main checkout's stale trace must remain
+  untouched; remove only the explicitly verified junction itself, never its
+  canonical target. Source link: E:\opencell\data\m1_sources\karr_native\
+  per_process_traces_v2. No MATLAB regeneration is needed.
+
 - Local form-route freeze `196efe0` / `b279774` is parent-reproduced:
   **67 PASS / 13 FAIL**, comprising 12 wrong-form failures and one explicit
   missing signal-oracle failure. No global protein migration is needed:
