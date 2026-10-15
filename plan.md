@@ -63,7 +63,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 `E:\opencell-worktrees\integrate-fidelity-batch`, branch
 `integrate/pre-l25-fidelity-batch-20261015`, base `95059f1`. Frozen PP2
 `be36287` is reconciled; source/current/request tests: 66 PASS. PM `89ac0f3`
-and RNA `666fbb1` remain next, in that order. No push, no eligibility
+is reconciled; combined PP2/PM/protected tests: 180 PASS. RNA `666fbb1`
+remains next. Both owners retain postallocation execution and a union of
+processed-I/mature/folded calculator schemas. No push, no eligibility
 promotion, no agents. Canonical status below remains authoritative.
 Detailed merge/test checkpoints live in the session artifact
 `STATUS_fidelity_batch_integration.md`. No long-lived command is active.

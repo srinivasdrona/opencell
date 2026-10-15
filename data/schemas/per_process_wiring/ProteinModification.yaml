@@ -11,9 +11,8 @@ process:
   state_shape_role: "protein lifecycle wiring row; allocator, stoichiometry, and maturation semantics"
   notes: >-
     20 active modified/unmodified protein pairs, 3 enzymes, and 63 reactions.
-    The canonical MATLAB .m blob is not present in this checkout; the MATLAB
-    anchors below come from repo audit notes and design docs that quote the
-    relevant line ranges.
+    All 462 nonreacting proteins transfer fully from folded/unmodified to mature/modified.
+    The local canonical MATLAB source and fixture are the authority; no shared migration expansion.
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
@@ -25,12 +24,12 @@ integration_touchpoints:
         symbol: "calcResourceRequirements_Current"
       note: "Allocator-facing feasibility block; requests are driven by the active unmodified-protein pool and the consumed substrate rows."
     oc:
-      symbol: "RequestCalculatorProteinPathway.next_update"
+      symbol: "KarrProteinModificationProcess.calculate_request"
       source:
-        path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "537-613"
-        note: "Shared protein-pathway request step, including the ProteinModification branch."
-        symbol: "RequestCalculatorProteinPathway.next_update"
+        path: "opencell/vivarium/karr_protein_modification.py"
+        lines: "338-346"
+        note: "Exact fixture-backed request delegated by the shared pathway calculator."
+        symbol: "KarrProteinModificationProcess.calculate_request"
       supporting:
         - path: "opencell/vivarium/karr_allocation_step.py"
           lines: "210-280"
@@ -38,7 +37,7 @@ integration_touchpoints:
           symbol: KarrAllocationStep.next_update
       note: "Current OC allocates only the consumed substrate rows and uses the substrate_allocated path."
     status: "implemented"
-    note: "OC current request handling is shared with the protein pathway step rather than living on the process class itself."
+    note: "The shared protein pathway calculator is the sole request writer and calls the process request helper."
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -64,9 +63,9 @@ integration_touchpoints:
           lines: "289-420"
           note: "Strict-zero allocator read path and substrate writeback."
           symbol: KarrProteinModificationProcess.next_update
-      note: "OC follows the same stochastic structure, but it also has replay-only hint short-circuiting."
+      note: "Unbounded feasibility and weighted completion sampling; no output-hint input."
     status: "implemented"
-    note: "The biology sampler is present, but the OC port has a replay-only trace_hint gate and strict-zero allocator plumbing that are not part of the MATLAB process body."
+    note: "Standalone public next_update owns biology. Chassis arms an explicit phase and invokes it once from the post-allocation evolution Step."
   calcFluxBounds:
     matlab:
       symbol: "ProteinModification"
@@ -93,7 +92,7 @@ allocator:
     note: "Karr declares resource requirements and the current OC port reads from substrates_allocated[self.name] rather than the global substrates pool."
   request_formula:
     matlab: "max(0, -reactionStoichiometryMatrix) * min(ceil(reactionCatalysisMatrix * enzymes * stepSizeSec), reactionModificationMatrix * unmodifiedMonomers)"
-    oc: "pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))"
+    oc: "pm_req = self._pm_proc.calculate_request(states)"
     note: "Only the consumed metabolite rows are requested: ATP, GLU, and LIPOYLAMP."
   requests:
     - wid: "ATP"
@@ -277,15 +276,15 @@ unit_conversion_chain:
   steps:
     - from_units: "available counts"
       to_units: "requested counts"
-      operation: "identity on nonnegative availability for the consumed rows; zero when inactive"
+      operation: "max(0,-S) @ min(ceil(C @ E * configured_dt), R @ U); no availability cap"
       anchor:
-        path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "21-545"
-        note: "Request helper and ProteinModification branch. (normalized from invalid lines='21-29, 468-545' for schema validation)"
-        symbol: _request_from_available
+        path: "opencell/vivarium/karr_protein_modification.py"
+        lines: "338-346"
+        note: "Shared live input routing and exact MATLAB 324-327 request algebra."
+        symbol: KarrProteinModificationProcess.calculate_request
     - from_units: "requested counts"
       to_units: "allocated counts"
-      operation: "floor(requested * min(1, available / demand)) under proportional fair-share allocation"
+      operation: "floor(requested * available / max(1, sum(requested))) under uncapped proportional allocation"
       anchor:
         path: "opencell/vivarium/karr_allocation_step.py"
         lines: "210-280"
@@ -316,7 +315,7 @@ ordering_constraints:
     - "ProteinActivation"
     - "ProteinDecay"
     - "ProteinTranslocation"
-  note: "Pipeline evidence in the repo shows Translation -> ProteinProcessingI -> ProteinFolding -> ProteinModification -> ProteinActivation; no ProteinModification-specific hard order is documented."
+  note: "Within v5/v6: PM Process arms phase, shared calculator requests, allocator grants, PM evolution Step consumes same-tick grant, then protected flat projection."
 source_anchors:
   matlab_blocks:
     class_and_scope:
@@ -407,8 +406,8 @@ deviations:
       symbol: KarrProteinModificationProcess
   shared_pool_projection_merges_compartments: false
   known_deviations:
-    - "OC has a replay-only trace_hint.unmodifiedMonomers_next short-circuit that bypasses the biology sampler when present."
-    - "OC reads substrates from substrates_allocated[self.name] rather than the global substrates store; this is equivalent under scheduler control but different plumbing."
-    - "OC retains a legacy _n_completed scratch vector and a max_stochastic_iterations cap for replay/test compatibility; MATLAB does not expose those implementation details."
+    - "Legacy hinted replay is not recertified: tick53 substrate mismatch remains after deleting production output hints; no bit-identical MATLAB RNG claim."
+    - "New PM request/evolution wrapper classes require independent addition to the frozen test-owned protected-process manifest."
+    - "OC retains a legacy _n_completed diagnostic scratch vector; it never supplies biology or requests."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
-  note: "The known differences are plumbing and replay controls rather than the chemistry itself."
+  note: "Bounded repair measured by frozen source tests; independent review and genuine replay evidence remain OPEN. No eligibility promotion."

@@ -193,7 +193,7 @@ def test_rna_primary_sample_processes_expose_combined_rna_wids() -> None:
 
 def test_batch_c_monomer_sample_processes_expose_monomer_wids() -> None:
     expected_lengths = {
-        "ProteinModification": 40,
+        "ProteinModification": 964,  # unchanged full folded+mature channel, not just active WIDs
         "ProteinFolding": 964,
         "ProteinTranslocation": 482,
     }

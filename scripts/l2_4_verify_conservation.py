@@ -206,11 +206,12 @@ class ConservationCollector:
     def __init__(self, *, composite: Any, seed: int):
         self._composite = composite
         self._current_tick = {"tick": 0}
+        self._call_depth = 0
+        self.per_tick_step_allocations: dict[str, dict[str, float]] = {}
         self.per_tick_process_sums: dict[str, float] = defaultdict(float)
         self.per_tick_process_wid_deltas: dict[str, dict[str, float]] = defaultdict(
             lambda: defaultdict(float)
         )
-        self.per_tick_allocations_used: dict[str, dict[str, float]] = {}
         self._entities: dict[str, Any] = {}
         self._entities.update(getattr(composite, "processes", {}))
         self._entities.update(getattr(composite, "steps", {}))
@@ -222,7 +223,7 @@ class ConservationCollector:
         self._current_tick["tick"] = int(tick)
         self.per_tick_process_sums.clear()
         self.per_tick_process_wid_deltas.clear()
-        self.per_tick_allocations_used.clear()
+        self.per_tick_step_allocations.clear()
 
     def _seed_shared_chromosome_rand_stream(self, *, seed: int) -> None:
         """Set/reset the shared chromosome state RNG leaf
@@ -270,15 +271,7 @@ class ConservationCollector:
                     entity._rng = np.random.default_rng(entity_seed)
 
     def _patch_entities(self) -> None:
-        from opencell.vivarium.karr_protein_processing_ii import (
-            KarrProteinProcessingIIEvolutionStep,
-        )
-
         for entity_name, entity_obj in self._entities.items():
-            allocation_consumer = (
-                entity_obj.processing_process.name
-                if isinstance(entity_obj, KarrProteinProcessingIIEvolutionStep) else None
-            )
             topology_entry = self._composite.topology.get(entity_name, {})
             shared_ports: dict[str, tuple[str, ...]] = {}
             if isinstance(topology_entry, dict):
@@ -296,28 +289,37 @@ class ConservationCollector:
             except Exception:
                 port_updaters = {}
             original_next_update = entity_obj.next_update
+            accounting_name = entity_name
+            if entity_name.endswith("_evolution"):
+                owner_name = entity_name.removesuffix("_evolution")
+                if owner_name in getattr(self._composite, "processes", {}):
+                    accounting_name = owner_name
+            is_step = entity_name in getattr(self._composite, "steps", {})
 
             def wrapped_next_update(
                 timestep: float,
                 states: dict[str, Any],
                 *,
                 _entity_name: str = entity_name,
+                _accounting_name: str = accounting_name,
+                _is_step: bool = is_step,
                 _original: Any = original_next_update,
                 _shared_ports: dict[str, tuple[str, ...]] = shared_ports,
                 _port_updaters: dict[str, dict[str, str]] = port_updaters,
-                _allocation_consumer: str | None = allocation_consumer,
             ) -> dict[str, Any]:
-                if (
-                    _allocation_consumer is not None
-                    and states.get("phase", {}).get("request_ready") is True
-                ):
-                    # PP2 now consumes the post-calculator grant, unlike ordinary
-                    # Processes. Bind Part B to the grant its real Step received.
-                    grant = states.get("substrates_allocated", {}).get(_allocation_consumer, {})
-                    self.per_tick_allocations_used[_entity_name] = {
-                        str(wid): _to_float(value, default=0.0) for wid, value in grant.items()
+                outermost = self._call_depth == 0
+                self._call_depth += 1
+                try:
+                    update = _original(timestep, states)
+                finally:
+                    self._call_depth -= 1
+                if not outermost:
+                    return update
+                if _is_step and _accounting_name in states.get("substrates_allocated", {}):
+                    self.per_tick_step_allocations[_accounting_name] = {
+                        str(wid): _to_float(value)
+                        for wid, value in states["substrates_allocated"][_accounting_name].items()
                     }
-                update = _original(timestep, states)
                 if update is None:
                     update = {}
                 if not (isinstance(update, dict) and _shared_ports):
@@ -351,7 +353,7 @@ class ConservationCollector:
                             continue
                         if store_path and store_path[0] == "substrates":
                             self.per_tick_process_sums[wid_str] += float(delta)
-                            self.per_tick_process_wid_deltas[_entity_name][wid_str] += float(delta)
+                            self.per_tick_process_wid_deltas[_accounting_name][wid_str] += float(delta)
                 return update
 
             entity_obj.next_update = wrapped_next_update
@@ -684,13 +686,13 @@ def run_seed_horizon(
         except Exception as exc:
             raise SeedStabilityError(seed=seed, tick=tick, exc=exc) from exc
         after = _snapshot_substrates(engine)
+        # Ordinary Processes consumed the pre-update grant. Post-allocation Steps
+        # consumed their actual invocation-time grant, not that stale snapshot.
+        substrates_allocated.update(collector.per_tick_step_allocations)
         per_process_wid_deltas = {
             process_name: dict(wid_deltas)
             for process_name, wid_deltas in collector.per_tick_process_wid_deltas.items()
         }
-        # PP2's phase-split Step uses this tick's new grant. Keep its actual
-        # phase attribution and validate against the captured at-use allocation.
-        substrates_allocated.update(collector.per_tick_allocations_used)
         outcome = evaluate_tick_part_a(
             seed=seed,
             tick=tick,

@@ -533,7 +533,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m:calcResourceRequirements_Current:507
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:537
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:543
         note: 'Karr line 507 maps to the shared RequestCalculatorProteinPathway.next_update; the ProteinFolding
           slice is the pf_req = { ... } branch and is emitted as self._pf_proc.name: pf_req.'
       evolveState:
@@ -545,26 +545,27 @@ processes:
   ProteinModification:
     oc_files:
     - opencell/vivarium/karr_allocation_step.py
+    - opencell/vivarium/karr_composite.py
     - opencell/vivarium/karr_protein_modification.py
     - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/protein_state.py
+    - scripts/l2_4_verify_conservation.py
+    - scripts/run_chassis_v6_32400t.py
     runtime_methods:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m:calcResourceRequirements_Current:324
-        status: inlined
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:537
-        note: 'MATLAB ProteinModification.m:324-327 computes `max(0,-reactionStoichiometryMatrix) * min(ceil(reactionCatalysisMatrix
-          * enzymes * stepSizeSec), reactionModificationMatrix * unmodifiedMonomers)`. OC has no ProteinModification
-          token in karr_request_calculators.py; PM request logic is folded into RequestCalculatorProteinPathway.next_update,
-          where line 519 runs `pm_req.update(_request_from_available(substrate_state, self._pm_consumed,
-          active=pm_active))` and line 545 returns `self._pm_proc.name: pm_req`.'
+        status: confirmed
+        oc: opencell/vivarium/karr_protein_modification.py:KarrProteinModificationProcess.calculate_request:338
+        note: 'Exact MATLAB 324-327 matrix request from shared live_inputs and configured time_step,
+          called by RequestCalculatorProteinPathway. No availability cap, kcat term, or RNG draw.'
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinModification.m:evolveState:331
         status: confirmed
-        oc: opencell/vivarium/karr_protein_modification.py:KarrProteinModificationProcess.next_update:289
-        note: MATLAB ProteinModification.m:331-335 begins `evolveState` by updating `modifiedMonomers(this.monomerIndexs_notmodified)`
-          from `unmodifiedMonomers(this.monomerIndexs_notmodified)`. OC next_update at KarrProteinModificationProcess.next_update:196
-          reads allocated substrate state with `allocated_state = states.get("substrates_allocated", {}).get(self.name,
-          {})` and later returns `update["substrates"]` and `update["protein"]` at lines 271-296.
+        oc: opencell/vivarium/karr_protein_modification.py:KarrProteinModificationProcess.next_update:348
+        note: 'Transfers all nonreacting precursors, then samples whole active-protein completions
+          until infeasible and emits S @ R @ flux. Existing migrated forms retain compartment authority.
+          Chassis request-ready handshake routes public next_update through one post-allocation Step;
+          standalone combined public execution remains available. No target-output hint path.'
   ProteinProcessingI:
     oc_files:
     - opencell/vivarium/karr_composite.py
@@ -574,7 +575,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m:calcResourceRequirements_Current:218
         status: inlined
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:537
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:543
         note: inlined into RequestCalculatorProteinPathway.next_update; "pp1_req[self._pp1_proc.substrate_wids[self._pp1_proc.substrate_idx_water]]
           = (...) if pp1_active else 0.0" and the return maps it under self._pp1_proc.name; karr_composite.py:1144-1150
           wires protein_processing_i_proc into this shared calculator.

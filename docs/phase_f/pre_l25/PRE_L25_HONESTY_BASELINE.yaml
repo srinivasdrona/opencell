@@ -339,11 +339,14 @@ processes:
         kind: CODE_DEVIATION
         disposition: OPEN
         summary: >-
-          One implementation deviation remains open and three wiring-row
-          claims are wrong.
+          Bounded source repair has frozen 88/88 PASS and four-seed L2.4 PASS,
+          but independent adjudication remains OPEN. Historical hinted replay
+          fails tick53 after shortcut removal; the frozen protected-process
+          manifest requires classification of the new PM wrappers. Historical
+          behavior PASS is not recertified genuine fidelity.
         evidence:
           - path: docs/phase_f/audits/ProteinModification_semantic_audit.md
-            lines: "56-59"
+            lines: "3-43"
 
   - name: ProteinProcessingI
     behavior_gate: L2.2

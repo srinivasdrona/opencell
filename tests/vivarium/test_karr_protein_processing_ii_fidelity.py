@@ -104,6 +104,11 @@ def _state(supply: float = 1000.0) -> dict[str, Any]:
         "requests": {},
         "substrates_allocated": {},
     }
+    # The shared calculator also reads PM's required live enzyme ports.
+    pm = KarrProteinModificationProcess({})
+    for wid in pm.monomer_enzyme_wids:
+        state["protein"]["counts"].setdefault(wid, 0.0)
+    state["complex"] = {"counts": dict.fromkeys(pm.complex_enzyme_wids, 0.0)}
     for wid, comp, count in zip(
         enzyme_wids, fx.enzymeMonomerCompartmentIndexs, fx.enzymes, strict=True
     ):

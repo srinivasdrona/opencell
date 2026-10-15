@@ -94,10 +94,6 @@ _CYTOKINESIS_ORACLE_PATH = (
 _MACROMOL_MONOMER_STORE_PATH_OVERRIDE = {"monomers": ("substrates",)}
 _TRANSLATION_MRNA_STORE_PATH_OVERRIDE = {"mRNAs": ("rna", "counts")}
 _RNA_STORE_PATH_OVERRIDE = {"RNAs": ("rna", "counts")}
-_PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE = {
-    "modifiedMonomers": ("protein", "modified_counts"),
-    "unmodifiedMonomers": ("protein", "unmodified_counts"),
-}
 # `_run_*_tick` helpers construct their per-tick process instance keyed on
 # `_sample_seed(seed, tick)` (a fresh SeedSequence-derived value, effectively
 # unique per (seed, tick) pair -- see `_sample_seed`). An `lru_cache` keyed on
@@ -163,9 +159,7 @@ _PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE = {
 #     reusable static/singleton caches, not part of this leak shape.
 #   - `_protein_processing_i_process` / `_protein_processing_ii_process`
 #     (called from `_run_protein_processing_i_tick` /
-#     `_run_protein_processing_ii_tick`) and the ad hoc
-#     `KarrProteinFoldingProcess(...)` instantiation inside
-#     `_run_protein_modification_tick`: none of these carry an `lru_cache`
+#     `_run_protein_processing_ii_tick`): neither carries an `lru_cache`
 #     decorator at all, so nothing is retained across ticks -- a repeated
 #     per-tick construction cost (performance), not a memory leak.
 #
@@ -1603,7 +1597,9 @@ def _protein_decay_process(seed: int) -> ProteinDecayLightProcess:
 def _protein_modification_process(seed: int) -> KarrProteinModificationProcess:
     with forbid_sut_oracle_file_io():
         process = KarrProteinModificationProcess({"rng_seed": int(seed)})
-    process.monomer_wids = list(process.unmodified_monomer_wids) + list(process.modified_monomer_wids)
+    process.monomer_wids = (
+        list(process.all_unmodified_monomer_wids) + list(process.all_modified_monomer_wids)
+    )
     return process
 
 
@@ -2330,104 +2326,83 @@ def _run_trna_aminoacylation_tick(seed: int, tick: int, state: dict[str, Any]) -
 
 
 def _run_protein_modification_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
-    """Run one OpenCell ProteinModification tick from a prepared state snapshot."""
-    process = _protein_modification_process(_sample_seed(seed, tick))
-    runtime_state = build_state_template(process)
+    """Sample the source-only PM transition on its full registered 482+482 surface."""
+    from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS
+
+    sample_seed = _sample_seed(seed, tick)
+    # A repeated validation sample must not reuse an already-advanced cached RNG.
+    # Retain the bounded factory for metadata, but construct a fresh owner per sample.
+    process = _protein_modification_process.__wrapped__(sample_seed)
     substrate_wids = list(state["substrate_wids"])
     enzyme_wids = list(state["enzyme_wids"])
+    assert substrate_wids == list(process.substrate_wids)
+    assert enzyme_wids == list(process.enzyme_wids)
+    unmodified_wids = list(process.all_unmodified_monomer_wids)
+    modified_wids = list(process.all_modified_monomer_wids)
+    full_n = len(unmodified_wids)
+    raw = np.asarray(state["oracle_before_monomers"], dtype=np.float64).reshape(-1)
+    assert raw.size == len(unmodified_wids) + len(modified_wids)
+    assert list(state.get("monomer_wids", unmodified_wids + modified_wids)) == (
+        unmodified_wids + modified_wids
+    )
+    substrates_before = np.asarray(state["oracle_before_substrates"], dtype=np.float64)
+    enzymes_before = np.asarray(state["oracle_before_enzymes"], dtype=np.float64)
+    assert substrates_before.shape == (len(substrate_wids),)
+    assert enzymes_before.shape == (len(enzyme_wids),)
     bound_enzymes_before = np.asarray(
         state.get("oracle_before_bound_enzymes", np.zeros(len(enzyme_wids), dtype=np.float64)),
         dtype=np.float64,
     )
-    # Oracle's before_monomers is 964 = 482 unmodified + 482 modified (full proteome).
-    # PMod's unmodified_monomer_wids + modified_monomer_wids = 40 (20+20 active subset).
-    # Project: get the full 482-wid order from ProteinFoldingProcess (shared proteome),
-    # then index the 20 active wids into each half of the 964-vector.
-    from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
-    with forbid_sut_oracle_file_io():
-        full_proc = KarrProteinFoldingProcess({"rng_seed": int(_sample_seed(seed, tick))})
-    full_wids = list(full_proc.unfolded_monomer_wids)
-    full_n = len(full_wids)
-    pmod_unmod = list(process.unmodified_monomer_wids)
-    pmod_mod = list(process.modified_monomer_wids)
-    unmod_idx = np.asarray([full_wids.index(w) for w in pmod_unmod], dtype=np.int64)
-    mod_idx = np.asarray([full_wids.index(w) for w in pmod_mod], dtype=np.int64)
-    raw = np.asarray(state["oracle_before_monomers"], dtype=np.float64).reshape(-1)
-    assert raw.size == 2 * full_n, f"PMod oracle expected 2*{full_n}={2*full_n}, got {raw.size}"
-    unmodified_before = raw[:full_n][unmod_idx]
-    modified_before = raw[full_n:][mod_idx]
-
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="enzymes",
-        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
-        wids=enzyme_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="unmodifiedMonomers",
-        vector=unmodified_before,
-        wids=pmod_unmod,
-        store_path_override=_PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="modifiedMonomers",
-        vector=modified_before,
-        wids=pmod_mod,
-        store_path_override=_PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE,
-    )
-    refresh_allocator_views(process, runtime_state)
+    runtime_state: dict[str, Any] = {
+        "substrates": dict(zip(substrate_wids, map(float, substrates_before), strict=True)),
+        "substrates_allocated": {
+            process.name: dict(zip(substrate_wids, map(float, substrates_before), strict=True))
+        },
+        "protein": {
+            "counts": {},
+            "unmodified_counts": {},
+            "modified_counts": {},
+            "compartment_counts": {
+                form: {wid: dict.fromkeys(COMPARTMENTS, 0.0) for wid in MIGRATED_WIDS}
+                for form in ("folded", "mature")
+            },
+        },
+        "complex": {"counts": {}},
+        "boundEnzymes": dict(zip(enzyme_wids, map(float, bound_enzymes_before), strict=True)),
+    }
+    for i, wid in enumerate(enzyme_wids):
+        port = "complex" if wid in process.complex_enzyme_wids else "protein"
+        runtime_state[port]["counts"][wid] = float(enzymes_before[i])
+    for form, branch, wids, values in (
+        ("folded", "unmodified_counts", unmodified_wids, raw[:full_n]),
+        ("mature", "modified_counts", modified_wids, raw[full_n:]),
+    ):
+        for wid, value in zip(wids, values, strict=True):
+            if wid in MIGRATED_WIDS:
+                compartment = process.migrated_compartment_by_wid[wid]
+                runtime_state["protein"]["compartment_counts"][form][wid][compartment] = float(value)
+            else:
+                runtime_state["protein"][branch][wid] = float(value)
     with forbid_sut_oracle_file_io():
         update = process.next_update(1.0, runtime_state)
     apply_count_update(runtime_state, update)
 
-    unmodified_after = project_observable_from_state(
-        process=process,
-        state=runtime_state,
-        observable="unmodifiedMonomers",
-        wids=list(process.unmodified_monomer_wids),
-        bound_enzymes_before=bound_enzymes_before,
-        store_path_override=_PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE,
-    )
-    modified_after = project_observable_from_state(
-        process=process,
-        state=runtime_state,
-        observable="modifiedMonomers",
-        wids=list(process.modified_monomer_wids),
-        bound_enzymes_before=bound_enzymes_before,
-        store_path_override=_PROTEIN_MODIFICATION_MONOMER_STORE_PATH_OVERRIDE,
-    )
-    # Scatter OC's 20+20 active output back to the 482+482=964 oracle surface
-    # by writing into the oracle's pre-tick values at the active indices. This
-    # keeps the W1 comparison apples-to-apples with the oracle's full proteome.
-    oc_unmod_full = raw[:full_n].copy()
-    oc_unmod_full[unmod_idx] = unmodified_after
-    oc_mod_full = raw[full_n:].copy()
-    oc_mod_full[mod_idx] = modified_after
+    def monomer_after(form: str, branch: str, wids: list[str]) -> np.ndarray:
+        return np.asarray([
+            runtime_state["protein"]["compartment_counts"][form][wid][process.migrated_compartment_by_wid[wid]]
+            if wid in MIGRATED_WIDS else runtime_state["protein"][branch][wid]
+            for wid in wids
+        ], dtype=np.float64)
+
     return {
         "substrates": np.asarray(
-            project_observable_from_state(
-                process=process,
-                state=runtime_state,
-                observable="substrates",
-                wids=substrate_wids,
-                bound_enzymes_before=bound_enzymes_before,
-            ),
-            dtype=np.float64,
+            [runtime_state["substrates"][wid] for wid in substrate_wids], dtype=np.float64
         ),
-        "monomers": np.asarray(np.concatenate([oc_unmod_full, oc_mod_full]), dtype=np.float64),
-        "sample_seed": _sample_seed(seed, tick),
+        "monomers": np.concatenate([
+            monomer_after("folded", "unmodified_counts", unmodified_wids),
+            monomer_after("mature", "modified_counts", modified_wids),
+        ]),
+        "sample_seed": sample_seed,
     }
 
 

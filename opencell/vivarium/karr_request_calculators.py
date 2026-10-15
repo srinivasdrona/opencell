@@ -426,12 +426,8 @@ class RequestCalculatorProteinPathway(Step):
         self._pf_proc = self.parameters["protein_folding_proc"]
         self._pt_proc = self.parameters["protein_translocation_proc"]
 
-        self._pm_consumed = _consumed_wids_from_stoich(
-            self._pm_proc.substrate_wids, self._pm_proc.reaction_stoich
-        )
-
     def ports_schema(self) -> dict[str, Any]:
-        from opencell.vivarium.protein_state import MIGRATED_WIDS
+        from opencell.vivarium.protein_state import MIGRATED_WIDS, compartment_counts_schema
 
         pp2_inputs = self._pp2_proc.input_protein_schema()
         all_substrate_wids = sorted(
@@ -452,13 +448,16 @@ class RequestCalculatorProteinPathway(Step):
                     for wid in sorted(
                         set(self._pp1_proc.enzyme_wids)
                         | set(self._pp2_proc.enzyme_wids)
-                        | set(self._pm_proc.enzyme_wids)
+                        | set(self._pm_proc.monomer_enzyme_wids)
                         | set(self._pf_proc.enzyme_wids)
                         | set(self._pt_proc.protein_count_wids)
                     )
                     if wid not in MIGRATED_WIDS
                 },
-                "compartment_counts": pp2_inputs["compartment_counts"],
+                "compartment_counts": {
+                    **pp2_inputs["compartment_counts"],
+                    "folded": compartment_counts_schema(MIGRATED_WIDS)["folded"],
+                },
                 # Design D4: the PT-specific `location` declaration (the
                 # Stage-1 leak frozen-manifest C3 checks for) is deleted
                 # outright -- `protein.location` has no Karr analogue and no
@@ -499,6 +498,12 @@ class RequestCalculatorProteinPathway(Step):
                     if wid not in MIGRATED_WIDS
                 },
             },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self._pm_proc.complex_enzyme_wids
+                },
+            },
             "requests": {
                 self._pp1_proc.name: {
                     wid: {"_default": 0.0, "_updater": "set", "_emit": False}
@@ -529,15 +534,10 @@ class RequestCalculatorProteinPathway(Step):
         protein_state = states.get("protein", {})
         unprocessed_state = protein_state.get("unprocessed_counts", {})
         unfolded_state = protein_state.get("unfolded_counts", {})
-        unmodified_state = protein_state.get("unmodified_counts", {})
 
         pp1_active = any(
             float(unprocessed_state.get(wid, 0.0)) > 0.0
             for wid in self._pp1_proc.unprocessed_monomer_wids
-        )
-        pm_active = any(
-            float(unmodified_state.get(wid, 0.0)) > 0.0
-            for wid in self._pm_proc.unmodified_monomer_wids
         )
         pf_active = any(
             float(unfolded_state.get(wid, 0.0)) > 0.0 for wid in self._pf_proc.unfolded_monomer_wids
@@ -559,8 +559,7 @@ class RequestCalculatorProteinPathway(Step):
 
         pp2_req = self._pp2_proc.calculate_request(states)
 
-        pm_req = {wid: 0.0 for wid in self._pm_proc.substrate_wids}
-        pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))
+        pm_req = self._pm_proc.calculate_request(states)
 
         pf_req = {
             wid: (
