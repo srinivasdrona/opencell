@@ -21,6 +21,13 @@
   ownership, and retains pre-update grants for ordinary Processes.
 - Frozen modification fidelity: 24/24; existing + strict-zero: 12/12.
   No L2 statistical eligibility is asserted; baseline remains 5/28.
+- Coordinated L2.4: four seeds (0,1,2,3), 100 ticks each, PASS with current
+  at-use grants. Both RNA processes' active-phase overspend canaries and an
+  unknown-consumer phase are detected by the budget observer.
+- Legacy canonical modification replay is explicitly N/A (no mutations);
+  the event replay still injects output hints and now fails at tick zero
+  (substrates index 0: OC 2 versus Karr 1). It is not valid evidence for this
+  implementation and no hint-based compatibility is restored.
 
 The original claim table is historical, not a current fidelity certification.
 

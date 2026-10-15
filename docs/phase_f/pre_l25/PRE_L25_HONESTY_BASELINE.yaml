@@ -8,8 +8,8 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "ab4da2a9bd747c1bfd2e56348983a118f60501feb3ff3b4a6baeee3c402794e8"
-  file_count: 130
+  sha256: "a372510c62155639840c8dd402b796f89c2b6e498fe58d68c22b30a03b6c55ae"
+  file_count: 135
 authorities:
   l1b_method_completeness: "PASS 115/115"
   l1b_wiring_conformance: "PASS 28/28"
@@ -424,10 +424,14 @@ processes:
       - id: RMOD-DEVIATIONS
         kind: CODE_DEVIATION
         disposition: OPEN
-        summary: "Three MATLAB-to-OpenCell implementation deviations remain open."
+        summary: >-
+          Source mechanics, all RNA forms, and same-tick allocation repaired in
+          the bounded 2026-10-15 lane. Independent semantic adjudication and
+          fresh source-bound statistical evidence remain OPEN; historical
+          no-op/hinted replays do not certify the changed implementation.
         evidence:
           - path: docs/phase_f/audits/RNAModification_semantic_audit.md
-            lines: "61-64"
+            lines: "3-25"
 
   - name: RNAProcessing
     behavior_gate: L2.2
@@ -438,11 +442,14 @@ processes:
         kind: CODE_DEVIATION
         disposition: OPEN
         summary: >-
-          Three implementation deviations remain open and one required claim
-          is missing.
+          Source requests/evolution/intergenic production and same-tick
+          allocation repaired in the bounded 2026-10-15 lane. Independent
+          adjudication/statistical evidence remain OPEN. One frozen ordering
+          test contradicts the MATLAB whole-class water bound; RNADecay fragment
+          consumption and WID-only RNA-mass observability are not repaired.
         evidence:
           - path: docs/phase_f/audits/RNAProcessing_semantic_audit.md
-            lines: "58-61"
+            lines: "3-37"
 
   - name: Replication
     behavior_gate: L2.2

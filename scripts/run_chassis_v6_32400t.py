@@ -327,7 +327,7 @@ class DiagnosticCollector:
             except Exception:
                 port_updaters = {}
             original_next_update = entity_obj.next_update
-            is_step = entity_obj.is_step()
+            is_step = getattr(entity_obj, "is_step", lambda: False)()
             owner = getattr(entity_obj, "allocation_owner", entity_name)
             trace_heartbeat_on_noop = bool(
                 getattr(entity_obj, "parameters", {}).get("emit_trace_heartbeat_on_noop", False)

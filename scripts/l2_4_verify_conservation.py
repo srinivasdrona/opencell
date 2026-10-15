@@ -283,7 +283,7 @@ class ConservationCollector:
             except Exception:
                 port_updaters = {}
             original_next_update = entity_obj.next_update
-            is_step = entity_obj.is_step()
+            is_step = getattr(entity_obj, "is_step", lambda: False)()
             owner = getattr(entity_obj, "allocation_owner", entity_name)
 
             def wrapped_next_update(

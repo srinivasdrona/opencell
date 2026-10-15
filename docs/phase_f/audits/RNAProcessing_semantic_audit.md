@@ -1,5 +1,47 @@
 # RNAProcessing Semantic Audit (L1b)
 
+## 2026-10-15 bounded implementation checkpoint
+
+This section supersedes the historical implementation descriptions below; it
+is not an independent fidelity verdict or an eligibility promotion.
+
+- `KarrRNAProcessingProcess.calculate_request` implements MATLAB 406-409,
+  sharing the live nascent-RNA/enzyme reader with evolution. Fixture-local
+  monomer/complex indices define ownership. Default-zero or positive legacy
+  `enzymes` shadows cannot override live inputs.
+- Evolution retains the source random permutation of four classes, worst
+  reactant demand across the entire class (including absent species),
+  stochastic enzyme caps and without-replacement `randCounts`. Artificial
+  first-maturation lag and rRNA-triggered tRNA suppression are removed.
+- Full source outputs include the eleven intergenic rows from
+  `Rna.intergenicRNAMatrix`. They are cytosolic numeric leaves named
+  `rna.counts["intergenic::<1-based Rna.intergenicIndexs row>"]`; biological
+  WIDs repeat and are not identities. No second RNA store is introduced.
+- v4/v5/v6 use a request-ready state handshake and real post-allocation
+  evolution Step under the established process lookup key. Direct public
+  calls without a phase port retain standalone evolution behavior.
+- Generic emitted RNA counts and `run_chassis_v6_32400t._safe_sum_counts`
+  preserve every fragment leaf. RNADecay consumption is **not repaired**;
+  WID-only RNA-mass observability also omits fragments/processed-alias mass.
+  The specific future adapter surface is `KarrObservabilityStep.ports_schema`
+  plus its molecular-weight mapping; no adapter is invented in this lane.
+- Frozen processing/shared cases measure **37 PASS / 1 FAIL**, combined
+  current/new/strict-zero **82 PASS / 1 FAIL**, with no skips. The sole RED is
+  a test/source disagreement, retained for the independent test author:
+  `test_source_random_type_order_controls_competition_not_hidden_trna_suppression[order0-tRNA]`
+  grants seven waters and expects TU_007 processing. MATLAB 441 uses the
+  entire tRNA class's worst water demand, which is twelve in the fixture,
+  not TU_007's two. Thus floor(7/12)=0 and subsequent TU_088 rRNA processing
+  consumes seven waters. Production keeps the source bound; tests are untouched.
+- Source-bound statistical evidence, independent adjudication, and the above
+  representation/consumer limitations remain OPEN. Baseline stays 5/28.
+- Coordinated L2.4: seeds 0,1,2,3 x100 PASS; active RNA overspend and
+  unknown-consumer canaries are detected. Legacy processing replay remains RED
+  at tick 63, processedRNA index 328 (OC 1, Karr 0); the old canonical trace
+  also lacks intergenic capture. No output hints or trace edits are introduced.
+
+The original claim table below is historical, not a current certification.
+
 ## Header
 - Process name: `RNAProcessing` (`rna_processing`)
 - Audited files:

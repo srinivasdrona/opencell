@@ -319,9 +319,6 @@ class RequestCalculatorRNAPathway(Step):
             raise ValueError(
                 "RequestCalculatorRNAPathway requires rna_processing_proc and rna_modification_proc"
             )
-        self._rp_consumed = _consumed_wids_from_stoich(
-            self._rp_proc.substrate_wids, self._rp_proc.reaction_stoich
-        )
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -371,15 +368,7 @@ class RequestCalculatorRNAPathway(Step):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
-        substrate_state = states.get("substrates", {})
-        rna_counts = states.get("rna", {}).get("counts", {})
-        rp_active = any(
-            float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rp_proc.unprocessed_rna_wids
-        )
-        rp_request = {wid: 0.0 for wid in self._rp_proc.substrate_wids}
-        rp_request.update(
-            _request_from_available(substrate_state, self._rp_consumed, active=rp_active)
-        )
+        rp_request = self._rp_proc.calculate_request(states)
         rm_request = self._rm_proc.calculate_request(states)
         return {
             "requests": {

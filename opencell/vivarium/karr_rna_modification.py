@@ -218,9 +218,10 @@ class KarrRNAModificationProcess(Process):
                 states.get("unmodifiedRNAs"),
                 self.unmodified_rna_wids,
             )
+        legacy_projection = set(unmodified_store) == set(self.unmodified_rna_wids)
         unmodified_rna = np.asarray(
             [
-                float(unmodified_store.get(wid, unmodified_store.get(raw, 0.0)))
+                float(unmodified_store.get(raw if legacy_projection else wid, 0.0))
                 for wid, raw in zip(
                     self.processed_rna_wids, self._raw_processed_rna_wids, strict=True
                 )
@@ -286,7 +287,6 @@ class KarrRNAModificationProcess(Process):
         reaction_fluxes = self.all_reaction_modification @ rna_fluxes
         substrate_delta = self.reaction_stoich @ reaction_fluxes
         self._n_completed[:] = 0
-
         update: dict[str, Any] = {}
         sub_updates = {
             wid: float(substrate_delta[i])
@@ -299,8 +299,9 @@ class KarrRNAModificationProcess(Process):
         unmodified_delta = -rna_fluxes
         modified_delta = rna_fluxes
         rna_counts = states.get("rna", {}).get("counts", {})
+        legacy_projection = not rna_counts or set(rna_counts) == set(self.unmodified_rna_wids)
         unmodified_updates = {
-            (wid if wid in rna_counts else self._raw_processed_rna_wids[i]): float(unmodified_delta[i])
+            (self._raw_processed_rna_wids[i] if legacy_projection else wid): float(unmodified_delta[i])
             for i, wid in enumerate(self.processed_rna_wids)
             if unmodified_delta[i] != 0
         }
@@ -546,6 +547,8 @@ class KarrRNAModificationEvolutionStep(KarrRNAModificationProcess, Step):
         return schema
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        if "phase" not in states:
+            return super().next_update(timestep, states)
         if states.get("phase", {}).get("request_ready") is not True:
             return {}
         update = super().next_update(timestep, states)

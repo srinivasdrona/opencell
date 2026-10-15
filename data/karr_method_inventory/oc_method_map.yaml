@@ -678,60 +678,52 @@ processes:
     - opencell/vivarium/karr_composite.py
     - opencell/vivarium/karr_request_calculators.py
     - opencell/vivarium/karr_rna_modification.py
+    - data/karr_fixtures/per_process/RNAModification_flat.mat
+    - data/karr_fixtures/per_process/RNAProcessing_flat.mat
+    - scripts/l2_4_verify_conservation.py
+    - scripts/run_chassis_v6_32400t.py
     runtime_methods:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m:calcResourceRequirements_Current:289
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorRNAPathway.next_update:357
-        note: 'Shared RNAProcessing + RNAModification request step; `RequestCalculatorRNAPathway.next_update`
-
-          builds `rm_request` via `_request_from_available(substrate_state, self._rm_consumed, active=rm_active)`,
-
-          and `karr_composite.py:1138-1141` wires it into the chassis.'
+        oc: opencell/vivarium/karr_rna_modification.py:KarrRNAModificationProcess.calculate_request:251
+        note: 'Source max(0,-S) @ min(ceil(C @ enzymes * configured_dt), M @ processed_RNA).
+          The shared RNA calculator delegates to this input/RNG-free request method.
+          oc_files includes the fixture and observer dependencies that bind this implementation.'
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAModification.m:evolveState:297
         status: confirmed
-        oc: opencell/vivarium/karr_rna_modification.py:KarrRNAModificationProcess.next_update:192
-        note: 'Direct process runtime method. `KarrRNAModificationProcess.next_update` reads allocated
-          substrates,
-
-          calls `_compute_reaction_fluxes(...)`, then writes `update["rna"] = {"counts": unmodified_updates,
-
-          "modified_counts": modified_updates}`.'
+        oc: opencell/vivarium/karr_rna_modification.py:KarrRNAModificationProcess.next_update:260
+        note: 'Matures all processed RNA rows, with a source weighted stochastic loop for
+          active targets and exact substrate stoichiometry. The chassis evolution Step
+          invokes this public method after the current allocation; no trace hints.'
   RNAProcessing:
     oc_files:
     - opencell/vivarium/karr_composite.py
     - opencell/vivarium/karr_request_calculators.py
     - opencell/vivarium/karr_rna_processing.py
+    - data/karr_fixtures/per_process/RNAProcessing_flat.mat
+    - data/karr_fixtures/per_process/Rna_flat.mat
+    - opencell/vivarium/karr_trna_aminoacylation.py
+    - scripts/l2_4_verify_conservation.py
+    - scripts/run_chassis_v6_32400t.py
     runtime_methods:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m:calcResourceRequirements_Current:406
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorRNAPathway.next_update:357
-        note: 'Shared request calculator for RNAProcessing + RNAModification.
-
-          `karr_composite.py:1138-1142` instantiates `RequestCalculatorRNAPathway`
-
-          with `rna_processing_proc` + `rna_modification_proc`, and
-
-          `karr_composite.py:1348-1354` routes RNAProcessing requests to
-
-          `_internal_requests_rna_proc`. The OC method `next_update` builds
-
-          `rp_request`/`rm_request` from the active RNA counts and consumed
-
-          substrate subset.'
+        oc: opencell/vivarium/karr_rna_processing.py:KarrRNAProcessingProcess.calculate_request:240
+        note: 'Source max(0,-S) @ min(ceil(min(enzymes / catalysis * configured_dt)),
+          nascent_RNA); shares the live RNA/enzyme input reader with evolution.
+          No request RNG draw or availability cap.'
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m:evolveState:413
         status: confirmed
-        oc: opencell/vivarium/karr_rna_processing.py:KarrRNAProcessingProcess.next_update:236
+        oc: opencell/vivarium/karr_rna_processing.py:KarrRNAProcessingProcess.next_update:255
         note: 'Direct process runtime method. `next_update` reads `rna.counts`,
 
           `substrates_allocated`, and enzyme stores, then calls
 
-          `_compute_processing_events(...)` and
-
-          `_apply_identity_activation_lag(...)` before emitting substrate/RNA
+          `_compute_processing_events(...)` before emitting substrate/RNA
 
           deltas. This is the OC process-level analog of
 
@@ -739,7 +731,7 @@ processes:
       evolveState_Helper:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/RNAProcessing.m:evolveState_Helper:422
         status: inlined
-        oc: opencell/vivarium/karr_rna_processing.py:KarrRNAProcessingProcess.next_update:236
+        oc: opencell/vivarium/karr_rna_processing.py:KarrRNAProcessingProcess.next_update:255
         note: 'Helper logic is folded into `next_update`: the class docstring says
 
           `evolveState/evolveState_Helper parity`, and the core loop is delegated
