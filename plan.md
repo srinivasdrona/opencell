@@ -61,6 +61,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — ProteinProcessingII fidelity iteration starting; eligibility is still 5/28:**
 
+- Local form-route freeze `196efe0` / `b279774` is parent-reproduced:
+  **67 PASS / 13 FAIL**, comprising 12 wrong-form failures and one explicit
+  missing signal-oracle failure. No global protein migration is needed:
+  nonmigrated processed-I is `protein.processed_counts`, processed-II is
+  `protein.unfolded_counts`, and mature `protein.counts` must remain unchanged.
+- Original test author is idle; original implementer is next for this narrow
+  route/schema correction. Keep all migrated/live-enzyme/signal/timing
+  contracts and protected enrollment intact. Restore the accepted signal-
+  complete 50-seed oracle cohort only after production is frozen again.
+
 - User selected ProteinProcessingII before continuing TxReg Stage C. This work
   targets pre-L2.5 process eligibility, not an L2.5 PASS or whole-cell completion.
 - Active worktree: `E:\opencell-worktrees\fix-protein-processing-ii-fidelity`;
