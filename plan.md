@@ -70,7 +70,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   Parent reconciles shared protein calculator/composite/accounting and final
   evidence/digest. Existing MIGRATED_WIDS membership is unchanged.
 - Independent test author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is idle.
-  Doer dispatch is pending; no commands remain live. Nothing pushed; 5/28.
+- Live implementer `d44e1601-82f2-4d3e-9c27-cbfefcaa290b` dispatched from
+  `de4a408`; tests and plan are read-only for that role. Nothing pushed; 5/28.
 
 **Current status (2026-10-15) — parallel pre-L2.5 fidelity lanes; baseline remains 5/28:**
 
