@@ -70,7 +70,21 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   reports 57/57 and four-seed conservation PASS, not overall eligibility.
   Test author `9bfbbe1e-4fc6-4a28-a21f-52bdb3bd93f4` is correcting verified
   stale no-dual-writer/replay input projections; production is frozen.
-  Nonmigrated processed-I production ownership remains a genuine blocker.
+  Input repair landed at `864ecd2` / `8701f1a`: reported 69 PASS and one
+  explicit missing signal-sequence oracle FAIL; five observed replay families
+  match all 100 ticks with source-owned inputs, not full-source coverage.
+  The same author is now source-adjudicating a narrow nonmigrated form-route
+  correction (`PP1.processed_counts -> PP2 -> Folding.unfolded_counts`) rather
+  than assuming a global 482-WID authority migration is necessary.
+- PP2 oracle selection is reconciled: all 50 files in
+  `l22-stale5-regen`, `l22-final-sweep`, and `integrate-l22-dnas-current`
+  match the tracked `oracle_population_manifest.json` PP2 records exactly.
+  Accepted seed-0 SHA is
+  `0d86b69b6896c76c36056a20d19e6c530b781b4413f70550d74cb95aeeda2387`;
+  current canonical seed-0 SHA `1cbcb450...` is explicitly archived as stale
+  in `L22_STALE5_REGEN_REPORT.md`. Restore the accepted complete cohort only
+  after the active input/form test freeze, then rerun full six-family replay
+  and fresh distributional evidence. No raw data was changed during preflight.
 - Protein lane B: ProteinModification, isolated worktree
   `E:\opencell-worktrees\fix-protein-modification-fidelity`; independent test
   author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is live from `d97b761`.
