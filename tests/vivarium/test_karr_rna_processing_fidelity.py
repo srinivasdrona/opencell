@@ -160,28 +160,44 @@ def test_every_fixture_species_in_each_class_full_output_contract(kind):
 def test_source_random_type_order_controls_competition_not_hidden_trna_suppression(order, winner):
     rp, _, _, state = pathway()
     r_index = int(processing_indices("rRNA")[0])
-    t_index = int(processing_indices("tRNA")[0])
+    stoich = np.asarray(fixture("RNAProcessing")["reactantByproductMatrix"], dtype=float)
+    water_index = rp.substrate_wids.index("H2O")
+    trna_indices = processing_indices("tRNA")
+    # RNAProcessing.m:441 bounds against the WHOLE class, not selected precursors.
+    # Choose a precursor that actually spends that bound: either order then leaves
+    # too little water for the other class, rather than allowing both to mature.
+    t_index = int(trna_indices[np.argmin(stoich[water_index, trna_indices])])
+    shared_water = -stoich[water_index, t_index]
+    assert shared_water == np.max(-stoich[water_index, trna_indices])
+    assert 0 < -stoich[water_index, r_index] < shared_water
     inputs = np.zeros(len(rp.unprocessed_rna_wids))
     inputs[[r_index, t_index]] = 1
     seed_processing(state, rp, inputs)
-    stoich = np.asarray(fixture("RNAProcessing")["reactantByproductMatrix"], dtype=float)
-    water_index = rp.substrate_wids.index("H2O")
-    shared_water = -stoich[water_index, r_index]
-    assert 0 < -stoich[water_index, t_index] < shared_water
     state["substrates_allocated"][rp.name]["H2O"] = shared_water
     stream = UniformInputs(order=order)
     rp._rng = stream
     expected = np.zeros_like(inputs)
     expected[t_index if winner == "tRNA" else r_index] = 1
     update = rp.next_update(1.0, state)
-    # Isolate ordering from the separately frozen missing intergenic writeback.
-    exact_counts(
-        vector(update.get("rna", {}).get("counts", {}), rp.unprocessed_rna_wids), -expected
-    )
-    sub, processed, _ = processing_output_vectors(expected)
-    exact_counts(vector(update.get("substrates", {}), rp.substrate_wids), sub)
-    exact_counts(vector(update.get("rna", {}).get("counts", {}), processed_keys()), processed)
+    assert_processing_output(update, expected)
     assert stream.calls[0] == ("permutation", 4)
+
+
+def test_selected_trna_below_whole_class_water_bound_cannot_process():
+    rp, _, _, state = pathway()
+    stoich = np.asarray(fixture("RNAProcessing")["reactantByproductMatrix"], dtype=float)
+    water_index = rp.substrate_wids.index("H2O")
+    trna_indices = processing_indices("tRNA")
+    selected = int(trna_indices[0])
+    scarce_water = -stoich[water_index, processing_indices("rRNA")[0]]
+    class_bound = np.max(-stoich[water_index, trna_indices])
+    assert 0 < -stoich[water_index, selected] < scarce_water < class_bound
+    inputs = np.zeros(len(rp.unprocessed_rna_wids))
+    inputs[selected] = 1
+    seed_processing(state, rp, inputs)
+    state["substrates_allocated"][rp.name]["H2O"] = scarce_water
+    rp._rng = UniformInputs(order=(3, 1, 0, 2))
+    assert_processing_output(rp.next_update(1.0, state), np.zeros_like(inputs))
 
 
 def test_mixed_rrna_trna_with_sufficient_resources_processes_both():
