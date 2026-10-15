@@ -7,7 +7,7 @@ from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
-from vivarium.core.process import Process
+from vivarium.core.process import Process, Step
 
 from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS, compartment_counts_schema
 
@@ -90,6 +90,13 @@ class KarrProteinProcessingIIProcess(Process):
             for i, wid in enumerate(self.unprocessed_monomer_wids)
             if wid in MIGRATED_WIDS
         }
+        enzyme_compartments = np.asarray(
+            fx["enzymeMonomerCompartmentIndexs"][0, 0], dtype=np.int64
+        ).reshape(-1)
+        self.enzyme_compartment_by_wid = {
+            wid: COMPARTMENTS[int(enzyme_compartments[i]) - 1]
+            for i, wid in enumerate(self.enzyme_wids)
+        }
 
         self.substrate_index_water = _parse_index_1based(fx["substrateIndexs_water"])
         self.substrate_index_pg160 = _parse_index_1based(fx["substrateIndexs_PG160"])
@@ -138,8 +145,58 @@ class KarrProteinProcessingIIProcess(Process):
             np.asarray(fx["lipoproteinDiacylglycerylTransferaseSpecificRate"][0, 0]).reshape(-1)[0]
         )
 
+    def input_protein_schema(self) -> dict[str, Any]:
+        """Source-owned processed-I and mature enzyme inputs (copyFromState)."""
+        authority_schema = compartment_counts_schema(MIGRATED_WIDS)
+        return {
+            "compartment_counts": {
+                "processed_i": authority_schema["processed_i"],
+                "mature": {
+                    wid: authority_schema["mature"][wid] for wid in self.enzyme_wids
+                },
+            },
+        }
+
+    def read_processing_inputs(
+        self, states: dict[str, Any]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """ProteinProcessingII.m:205-217 and Process.m:611-670 live inputs."""
+        protein = states.get("protein", {})
+        authority = protein.get("compartment_counts", {})
+        processed_i = authority.get("processed_i", {})
+        legacy_counts = protein.get("counts", {})
+        precursors = np.asarray([
+            float(processed_i.get(wid, {}).get(self.migrated_compartment_by_wid[wid], 0.0))
+            if wid in MIGRATED_WIDS else float(legacy_counts.get(wid, 0.0))
+            for wid in self.unprocessed_monomer_wids
+        ], dtype=np.float64)
+        mature = authority.get("mature", {})
+        enzymes = np.asarray([
+            float(mature.get(wid, {}).get(self.enzyme_compartment_by_wid[wid], 0.0))
+            for wid in self.enzyme_wids
+        ], dtype=np.float64)
+        return precursors, enzymes
+
+    def calculate_request(self, states: dict[str, Any]) -> dict[str, float]:
+        """ProteinProcessingII.m:325-345; no substrate availability or RNG."""
+        precursors, enzymes = self.read_processing_inputs(states)
+        dt = float(self.parameters["time_step"])
+        request = np.zeros(len(self.substrate_wids), dtype=np.float64)
+        request[self.substrate_index_water] = min(
+            np.ceil(enzymes[self.enzyme_index_signal_peptidase]
+                    * self.lipoprotein_signal_peptidase_specific_rate * dt),
+            np.sum(precursors[self.peptidase_indices]),
+        )
+        request[self.substrate_index_pg160] = min(
+            np.ceil(enzymes[self.enzyme_index_dag_transferase]
+                    * self.lipoprotein_diacylglyceryl_transferase_specific_rate * dt),
+            np.sum(precursors[self.lipoprotein_indices]),
+        )
+        return {wid: float(request[i]) for i, wid in enumerate(self.substrate_wids)}
+
     def ports_schema(self) -> dict[str, Any]:
         authority_schema = compartment_counts_schema(MIGRATED_WIDS)
+        input_schema = self.input_protein_schema()
         return {
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
@@ -181,33 +238,14 @@ class KarrProteinProcessingIIProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.enzyme_wids
                 },
-                # Design 9.3/M05-M08: the legacy `protein.counts` write
-                # (`_build_update`'s `protein_update["counts"] =
-                # unprocessed_update`, below) is deliberately left
-                # undeclared here, exactly matching this process's
-                # pre-Stage-1 baseline. Declaring it -- even as an empty
-                # placeholder -- would either (a) newly create store nodes
-                # for WIDs no other process's schema had ever declared,
-                # exposing the unconditional processedI->processedII
-                # pass-through's full-pool drain to WIDs it never
-                # legitimately touched (verified: crashed `protein.counts`
-                # from ~16.4k to ~275 copies in one tick), or (b) be a fake
-                # empty declaration whose only purpose is to satisfy an AST
-                # key-presence scan while the dynamic write stays
-                # unchanged underneath -- exactly the test-gaming
-                # `test_c2b_no_fake_empty_counts_declaration_in_pp2` (frozen)
-                # forbids. Non-migrated `counts` behavior is out of scope
-                # for Stage 1 (only the 8 migrated WIDs are authorized) and
-                # is left completely alone: not declared, not rerouted, not
-                # deleted.
-                #
-                # Design 9.3/M05-M07: migrated WIDs' processedI->processedII
-                # transition (ProteinProcessingII.m's unconditional pass-
-                # through for non-lipoprotein/non-secreted proteins,
-                # evolveState L370-374) routes through the authority.
+                # Keep the nonmigrated standalone legacy route undeclared:
+                # chassis counts are mature, not processed-I. Exposing them
+                # here would newly drain that mature pool via pass-through.
+                # The bounded migrated inputs below are the live authority.
                 "compartment_counts": {
-                    "processed_i": authority_schema["processed_i"],
+                    **input_schema["compartment_counts"],
                     "processed_ii": authority_schema["processed_ii"],
+                    "signal_sequence": authority_schema["signal_sequence"],
                 },
             },
             "requests": {
@@ -237,32 +275,7 @@ class KarrProteinProcessingIIProcess(Process):
         )
         dt = float(self.parameters["time_step"])
         output_wids = self.processed_monomer_wids
-        protein_state = states.get("protein", {})
-        legacy_counts_state = protein_state.get("counts", {})
-        processed_i_authority_state = protein_state.get("compartment_counts", {}).get(
-            "processed_i", {}
-        )
-        # Design 9.3/M05-M08: migrated WIDs' processedI pool lives at the
-        # compartment authority (their own biological compartment, m or c),
-        # not the legacy `protein.counts` (which is now the derived flat
-        # aggregate and must not be read as if it were the processedI pool).
-        unprocessed_all = np.asarray(
-            [
-                float(
-                    processed_i_authority_state.get(wid, {}).get(
-                        self.migrated_compartment_by_wid[wid], 0.0
-                    )
-                )
-                if wid in MIGRATED_WIDS
-                else float(legacy_counts_state.get(wid, 0.0))
-                for wid in self.unprocessed_monomer_wids
-            ],
-            dtype=np.float64,
-        )
-        enzymes = np.asarray(
-            [float(protein_state.get("enzyme_counts", {}).get(wid, 0.0)) for wid in self.enzyme_wids],
-            dtype=np.float64,
-        )
+        unprocessed_all, enzymes = self.read_processing_inputs(states)
         unprocessed_pool = np.floor(np.clip(unprocessed_all, a_min=0.0, a_max=None)).astype(np.int64)
         substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
 
@@ -403,6 +416,11 @@ class KarrProteinProcessingIIProcess(Process):
         # the 5 cytosol-destined WIDs -- design 4.2/4.4).
         processed_i_authority_update: dict[str, dict[str, float]] = {}
         processed_ii_authority_update: dict[str, dict[str, float]] = {}
+        signal_authority_update = {
+            wid: {"c": float(signal_delta[i])}
+            for i, wid in enumerate(self.signal_sequence_monomer_wids)
+            if wid in MIGRATED_WIDS and signal_delta[i] != 0
+        }
         for i, wid in enumerate(self.unprocessed_monomer_wids):
             if wid not in MIGRATED_WIDS:
                 continue
@@ -419,10 +437,11 @@ class KarrProteinProcessingIIProcess(Process):
             protein_update["counts"] = unprocessed_update
         if signal_update:
             protein_update["signal_sequence_counts"] = signal_update
-        if processed_i_authority_update or processed_ii_authority_update:
+        if processed_i_authority_update or processed_ii_authority_update or signal_authority_update:
             protein_update["compartment_counts"] = {
                 "processed_i": processed_i_authority_update,
                 "processed_ii": processed_ii_authority_update,
+                "signal_sequence": signal_authority_update,
             }
         if protein_update:
             update["protein"] = protein_update
@@ -517,4 +536,56 @@ class KarrProteinProcessingIIProcess(Process):
             substrate_pool[self.substrate_index_pg160] -= transferase_events
 
 
-__all__ = ["KarrProteinProcessingIIProcess"]
+PP2_PHASE_STORE_KEY = "_internal_protein_processing_ii_phase"
+
+
+def _phase_ports_schema() -> dict[str, Any]:
+    return {"request_ready": {"_default": False, "_updater": "set", "_emit": False}}
+
+
+class KarrProteinProcessingIIRequestProcess(Process):
+    """Arm this tick's calculator/allocation/evolution without evolving at t0."""
+
+    name = "karr_protein_processing_ii"
+    defaults: dict[str, Any] = {"time_step": 1.0}
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {"phase": _phase_ports_schema()}
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep, states
+        return {"phase": {"request_ready": True}}
+
+
+class KarrProteinProcessingIIEvolutionStep(Step):
+    """Consume the new grant once per armed request via public next_update."""
+
+    name = "karr_protein_processing_ii_evolution"
+    defaults: dict[str, Any] = {"processing_process": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        process = self.parameters["processing_process"]
+        if not isinstance(process, KarrProteinProcessingIIProcess):
+            raise ValueError("PP2 evolution requires an explicit KarrProteinProcessingIIProcess")
+        self.processing_process = process
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = self.processing_process.ports_schema()
+        schema["phase"] = _phase_ports_schema()
+        return schema
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        if states.get("phase", {}).get("request_ready") is not True:
+            return {}
+        update = self.processing_process.next_update(timestep, states)
+        update["phase"] = {"request_ready": False}
+        return update
+
+
+__all__ = [
+    "KarrProteinProcessingIIProcess",
+    "KarrProteinProcessingIIRequestProcess",
+    "KarrProteinProcessingIIEvolutionStep",
+    "PP2_PHASE_STORE_KEY",
+]

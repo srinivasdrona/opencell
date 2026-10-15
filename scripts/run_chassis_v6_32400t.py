@@ -290,11 +290,16 @@ class DiagnosticCollector:
 
     def _seed_entities(self, *, seed: int) -> None:
         from opencell.util.matlab_rng import MatlabRandStream
+        from opencell.vivarium.karr_protein_processing_ii import (
+            KarrProteinProcessingIIEvolutionStep,
+        )
 
         names = sorted(self._entities.keys())
         children = np.random.SeedSequence(int(seed)).spawn(len(names))
         for idx, name in enumerate(names):
             entity = self._entities[name]
+            if isinstance(entity, KarrProteinProcessingIIEvolutionStep):
+                entity = entity.processing_process
             child = children[idx]
             entity_seed = int(child.generate_state(1, dtype=np.uint32)[0])
             params = getattr(entity, "parameters", None)

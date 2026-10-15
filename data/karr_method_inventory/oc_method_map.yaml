@@ -590,22 +590,33 @@ processes:
     - opencell/vivarium/karr_composite.py
     - opencell/vivarium/karr_protein_processing_ii.py
     - opencell/vivarium/karr_request_calculators.py
+    - opencell/vivarium/karr_allocation_step.py
+    - opencell/vivarium/protein_state.py
+    - opencell/vivarium/protein_flat_projection_step.py
+    - scripts/l2_4_verify_conservation.py
+    - scripts/run_chassis_v6_32400t.py
+    - data/karr_fixtures/per_process/ProteinProcessingII_flat.mat
+    - data/karr_fixtures/per_process/ProteinTranslocation_flat.mat
+    - data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat
     runtime_methods:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m:calcResourceRequirements_Current:325
-        status: inlined
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorProteinPathway.next_update:537
-        note: 'Parent RequestCalculatorProteinPathway.next_update; OC line 513 starts `pp2_req = {wid:
-          0.0 for wid in self._pp2_proc.substrate_wids}` and line 514-515 updates from `_request_from_available(...)`.
-          karr_composite.py:1144-1151 wires pp2_proc into this shared calculator, and Karr ProteinProcessingII.m:325-344
-          only requests water + PG160.'
+        status: confirmed
+        oc: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.calculate_request:180
+        note: Source ceil/min water and PG160 demand, independent of substrate availability and RNG.
+          RequestCalculatorProteinPathway.next_update calls this method on the same instance used by
+          KarrProteinProcessingIIEvolutionStep; read_processing_inputs owns both precursor and live
+          mature enzyme reads. Dependency list includes authority/projection, observer seeding, and
+          fixture parameters/migration membership so the honesty digest covers this bounded integration.
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m:evolveState:348
         status: confirmed
-        oc: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.next_update:227
-        note: Dedicated PP2 port. OC line 211 says `MATLAB evolveState first transitions non-lipoprotein/non-secreted
-          monomers directly`, and lines 211-295 mirror ProteinProcessingII.m:348-415 (pass-through, peptidase/transferase
-          limits, stochastic clipping, substrate updates).
+        oc: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.next_update:265
+        note: Public two-phase PP2 evolution, grant-backed and called once per explicit request-ready
+          handshake after allocation in chassis v4/v5/v6. Migrated processed-I and mature enzymes are
+          source-compartment inputs; migrated signal peptides write cytosolic authority. Standalone
+          legacy nonmigrated routing is preserved, not globally migrated. Replay and independent
+          semantic re-adjudication remain open; method presence is not eligibility.
   ProteinTranslocation:
     oc_files:
     - opencell/vivarium/karr_composite.py

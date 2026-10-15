@@ -426,9 +426,6 @@ class RequestCalculatorProteinPathway(Step):
         self._pf_proc = self.parameters["protein_folding_proc"]
         self._pt_proc = self.parameters["protein_translocation_proc"]
 
-        self._pp2_consumed = _consumed_wids_from_stoich(
-            self._pp2_proc.substrate_wids, self._pp2_proc.reaction_stoich
-        )
         self._pm_consumed = _consumed_wids_from_stoich(
             self._pm_proc.substrate_wids, self._pm_proc.reaction_stoich
         )
@@ -436,6 +433,7 @@ class RequestCalculatorProteinPathway(Step):
     def ports_schema(self) -> dict[str, Any]:
         from opencell.vivarium.protein_state import MIGRATED_WIDS
 
+        pp2_inputs = self._pp2_proc.input_protein_schema()
         all_substrate_wids = sorted(
             set(self._pp1_proc.substrate_wids)
             | set(self._pp2_proc.substrate_wids)
@@ -449,16 +447,6 @@ class RequestCalculatorProteinPathway(Step):
                 for wid in all_substrate_wids
             },
             "protein": {
-                # Filtered by MIGRATED_WIDS: two of PP2's enzyme WIDs
-                # (signal peptidase / DAG transferase inputs) happen to also
-                # be migrated translocatable monomers; declaring an
-                # "accumulate" updater for them here would conflict with
-                # the authority's rejecting updater on the same leaf (a
-                # genuine schema-merge warning, not cosmetic -- it would let
-                # a future writer attach the wrong updater and silently
-                # corrupt the derived flat projection). This class's own
-                # `next_update` never reads `protein.counts` for enzyme
-                # values, so the filter changes no computed value.
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in sorted(
@@ -470,6 +458,7 @@ class RequestCalculatorProteinPathway(Step):
                     )
                     if wid not in MIGRATED_WIDS
                 },
+                "compartment_counts": pp2_inputs["compartment_counts"],
                 # Design D4: the PT-specific `location` declaration (the
                 # Stage-1 leak frozen-manifest C3 checks for) is deleted
                 # outright -- `protein.location` has no Karr analogue and no
@@ -539,16 +528,12 @@ class RequestCalculatorProteinPathway(Step):
         substrate_state = states.get("substrates", {})
         protein_state = states.get("protein", {})
         unprocessed_state = protein_state.get("unprocessed_counts", {})
-        processed_state = protein_state.get("processed_counts", {})
         unfolded_state = protein_state.get("unfolded_counts", {})
         unmodified_state = protein_state.get("unmodified_counts", {})
 
         pp1_active = any(
             float(unprocessed_state.get(wid, 0.0)) > 0.0
             for wid in self._pp1_proc.unprocessed_monomer_wids
-        )
-        pp2_active = any(
-            float(processed_state.get(wid, 0.0)) > 0.0 for wid in self._pp2_proc.lipoprotein_wids
         )
         pm_active = any(
             float(unmodified_state.get(wid, 0.0)) > 0.0
@@ -572,10 +557,7 @@ class RequestCalculatorProteinPathway(Step):
             else 0.0
         )
 
-        pp2_req = {wid: 0.0 for wid in self._pp2_proc.substrate_wids}
-        pp2_req.update(
-            _request_from_available(substrate_state, self._pp2_consumed, active=pp2_active)
-        )
+        pp2_req = self._pp2_proc.calculate_request(states)
 
         pm_req = {wid: 0.0 for wid in self._pm_proc.substrate_wids}
         pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))
