@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import sys
+from math import ceil
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,7 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 import pytest
+from scipy.io import loadmat
 
 from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
 from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess
@@ -65,7 +67,7 @@ def _base_state(calc: RequestCalculatorProteinPathway) -> dict[str, Any]:
     }
 
 
-def test_pp2_request_uses_processed_lipoproteins() -> None:
+def test_pp2_request_uses_source_processed_i_lipoproteins() -> None:
     calc = _build_calc()
     state = _base_state(calc)
     pp2_name = calc._pp2_proc.name
@@ -77,16 +79,39 @@ def test_pp2_request_uses_processed_lipoproteins() -> None:
         float(v) == 0.0 for v in update_without_processed["requests"][pp2_name].values()
     )
 
-    state["protein"]["processed_counts"][lipo_wid] = 8.0
+    fx = loadmat(
+        _REPO_ROOT / "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+    idx = int(fx.lipoproteinMonomerIndexs[0]) - 1
+    comp = ("c", "d", "e", "m", "tc", "tm")[int(fx.monomerCompartments[idx]) - 1]
+    state["protein"]["compartment_counts"] = {"processed_i": {lipo_wid: {comp: 8.0}}}
+    state["protein"]["enzyme_counts"] = dict(
+        zip(calc._pp2_proc.enzyme_wids, fx.enzymes, strict=True)
+    )
+    state["protein"]["counts"].update(state["protein"]["enzyme_counts"])
+    state["protein"]["compartment_counts"]["mature"] = {
+        wid: {("c", "d", "e", "m", "tc", "tm")[int(c) - 1]: float(n)}
+        for wid, c, n in zip(
+            calc._pp2_proc.enzyme_wids, fx.enzymeMonomerCompartmentIndexs, fx.enzymes, strict=True
+        )
+    }
     update_with_processed = calc.next_update(1.0, state)
-    for wid in calc._pp2_proc.substrate_wids:
-        if wid in calc._pp2_consumed:
-            assert float(update_with_processed["requests"][pp2_name][wid]) == 13.0
-        else:
-            assert float(update_with_processed["requests"][pp2_name][wid]) == 0.0
+    expected = {wid: 0.0 for wid in calc._pp2_proc.substrate_wids}
+    expected[str(fx.substrateWholeCellModelIDs[int(fx.substrateIndexs_water) - 1])] = min(
+        8, ceil(float(fx.enzymes[int(fx.enzymeIndexs_signalPeptidase) - 1])
+                * float(fx.lipoproteinSignalPeptidaseSpecificRate) * float(fx.stepSizeSec))
+    )
+    expected[str(fx.substrateWholeCellModelIDs[int(fx.substrateIndexs_PG160) - 1])] = min(
+        8, ceil(float(fx.enzymes[int(fx.enzymeIndexs_diacylglycerylTransferase) - 1])
+                * float(fx.lipoproteinDiacylglycerylTransferaseSpecificRate)
+                * float(fx.stepSizeSec))
+    )
+    assert update_with_processed["requests"][pp2_name] == expected
 
 
-def test_pp2_request_ignores_non_lipo_processed_pool() -> None:
+def test_pp2_request_ignores_non_lipo_non_secreted_processed_pool() -> None:
     calc = _build_calc()
     state = _base_state(calc)
     pp2_name = calc._pp2_proc.name
