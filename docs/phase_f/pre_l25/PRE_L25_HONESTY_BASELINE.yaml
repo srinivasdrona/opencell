@@ -8,8 +8,8 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "ab4da2a9bd747c1bfd2e56348983a118f60501feb3ff3b4a6baeee3c402794e8"
-  file_count: 130
+  sha256: "727475bb5347bfa79863e65374a95259f82d1b5d04a4a23e5977ec99b958ce5c"
+  file_count: 133
 authorities:
   l1b_method_completeness: "PASS 115/115"
   l1b_wiring_conformance: "PASS 28/28"
@@ -339,11 +339,14 @@ processes:
         kind: CODE_DEVIATION
         disposition: OPEN
         summary: >-
-          One implementation deviation remains open and three wiring-row
-          claims are wrong.
+          Bounded source repair has frozen 88/88 PASS and four-seed L2.4 PASS,
+          but independent adjudication remains OPEN. Historical hinted replay
+          fails tick53 after shortcut removal; the frozen protected-process
+          manifest requires classification of the new PM wrappers. Historical
+          behavior PASS is not recertified genuine fidelity.
         evidence:
           - path: docs/phase_f/audits/ProteinModification_semantic_audit.md
-            lines: "56-59"
+            lines: "3-43"
 
   - name: ProteinProcessingI
     behavior_gate: L2.2

@@ -28,7 +28,7 @@ integration_touchpoints:
         symbol: "KarrHostInteractionProcess"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "2517-2671"
+          lines: "2696-2870"
           note: "Composite wiring connects HostInteraction to cell, protein, and complex stores and initializes the cascade from canonical fitted counts."
           symbol: build_karr_chassis_v6
       note: OC does not implement this Karr method.
@@ -55,7 +55,7 @@ integration_touchpoints:
           note: "Port schema exposes cell, protein, and complex stores used by next_update."
           symbol: KarrHostInteractionProcess.ports_schema
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "2517-2671"
+          lines: "2696-2870"
           note: "Topology wiring exposes cell, protein, and complex stores and computes initial booleans from the same cascade helper."
           symbol: build_karr_chassis_v6
     status: "implemented"
@@ -187,7 +187,7 @@ source_anchors:
       symbol: KarrHostInteractionProcess.next_update
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "2517-2671"
+      lines: "2696-2870"
       note: "HostInteraction topology wiring in the chassis."
       symbol: build_karr_chassis_v6
 provenance:

@@ -1,5 +1,49 @@
 # ProteinModification Semantic Audit
 
+## Implementation update — 2026-10-15 (independent adjudication OPEN)
+
+The historical audit below is retained as the pre-repair finding record, not
+as a description of today's implementation. This update is implementer evidence,
+not independent resolution, distributional recertification, or L2.5 eligibility.
+
+- Source: local `ProteinModification.m` 198-205/227-287 for folded/mature
+  mapping, 210-222 for species networks, 324-327 for requests, 331-393 for
+  evolution. Every matrix, WID, compartment and enzyme rate comes from the fixture.
+- `calculate_request` now evaluates `max(0,-S) @ min(ceil(C @ E * configured_dt),
+  R @ U)`. The shared calculator delegates only its PM contribution, declares
+  folded authority and complex counts, and draws no RNG or metabolite cap.
+- `live_inputs` is shared by requests and evolution. Mature monomer enzymes
+  read `protein.counts`; complex enzymes read `complex.counts`. Existing migrated
+  precursor WIDs read only the correct `compartment_counts.folded` leaf.
+  Legacy observable inputs, bound-enzyme shadows and wrong compartments cannot
+  supply a missing live precursor/enzyme.
+- All 462 nonreacting proteins transfer fully without enzyme/grant dependence:
+  122 through existing protected authority, 340 through local unmodified/modified
+  stores. The two migrated active proteins retain existing compartment authority.
+  No global enrollment or 482-protein migration was added.
+- Deleted production trace-target helper and dependency. Source whole-protein
+  feasibility/weighted iteration is unbounded; legacy iteration parameters no
+  longer truncate progress. Writeback remains `S @ R @ protein_fluxes`.
+- v5/v6 use explicit state-owned request-ready handshake, sole shared-calculator
+  requests, real allocator and one post-allocation evolution Step calling the
+  owner's public `next_update`. Initialization performs no biology. Collectors
+  attribute real Step deltas once to the canonical owner and compare with the
+  invocation-time grant; ordinary Process pre-update grant snapshots remain.
+- Measured: frozen new **88/88 PASS**; L2.4 **seeds 0,1,2,3 x100 PASS** with
+  zero Part A/B failures; accounting integration **6 PASS**. Protected/PTransloc/
+  CC/StageAB selection **68 PASS / 1 strict XFAIL / 1 FAIL**: the frozen test-owned
+  class manifest lacks the two newly required PM wrappers and was not edited.
+- Legacy PM/strict-zero/replay/anticheat selection: **10 PASS / 2 FAIL**.
+  Strict-zero metabolite budgets pass. One old test demands the now-forbidden
+  compatibility precursor fallback. Old hinted replay fails at tick53,
+  substrates index0 (ADP), OC0 versus Karr3. A fresh source-input tick53 process
+  completes MG_407 and emits ADP3; the persistent-stream replay does not, so
+  the RNG-path/oracle harness mismatch is unresolved, not certified upstream
+  input pollution. Its active-only legacy routes also omit protected authority
+  and inject `states_after` hints. No test/oracle shortcut is restored.
+
+## Historical pre-repair audit (not current implementation truth)
+
 ## Header
 - Process name: `protein_modification` (`ProteinModification`)
 - Header note: `FULL`

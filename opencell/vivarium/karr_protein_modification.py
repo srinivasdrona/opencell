@@ -130,17 +130,7 @@ class KarrProteinModificationProcess(Process):
         self.modified_monomer_wids = [all_modified_wids[idx] for idx in self.active_protein_indices]
         self.reaction_modification = full_reaction_modification[:, self.active_protein_indices]
 
-        # Design 9.3/M11-M12: per-migrated-WID biological compartment
-        # (design 4.2 -- ProteinModification "modifies proteins in the
-        # membrane and cytosol rather than in the terminal organelle
-        # membrane or cytosol", copyFromState/copyToState remapped
-        # `mComps`). Decoded from the fixture, never hardcoded. Covers all
-        # 8 migrated WIDs: the 2 that undergo real modification chemistry
-        # (folded->mature via reaction_modification, same as any of the
-        # other ~18 actively-modified proteins) and the 6 that require the
-        # unconditional folded->mature pass-through
-        # (`monomerIndexs_notmodified`, evolveState L332-335) that this OC
-        # port did not previously implement for any WID.
+        # Modification precedes terminal-organelle incorporation (MATLAB 198-205).
         monomer_compartments_kb = np.asarray(
             fx["monomerCompartments"][0, 0], dtype=np.int64
         ).reshape(-1)
@@ -211,7 +201,7 @@ class KarrProteinModificationProcess(Process):
                     for wid in self.all_modified_monomer_wids
                     if wid not in MIGRATED_WIDS
                 },
-                # Design 9.3/M11-M12: all 8 migrated WIDs' folded->mature
+                # Existing migrated WIDs' folded->mature
                 # transition (real modification chemistry for
                 # `migrated_active_wids`; unconditional pass-through for
                 # `migrated_pass_through_wids`, ProteinModification.m
@@ -242,14 +232,7 @@ class KarrProteinModificationProcess(Process):
         }
 
     def _pass_through_folded_to_mature(self, protein_state: dict[str, Any]) -> dict[str, Any]:
-        """Design 9.3/M11-M12: Karr's unconditional folded->mature transition
-
-        for proteins requiring no modification (ProteinModification.m
-        evolveState L332-335, `monomerIndexs_notmodified`), applied to the 6
-        of 8 migrated WIDs outside the ~20-protein actively-modified subset.
-        Full-count transfer every tick, independent of enzyme/substrate
-        availability (Karr has no such dependency for this transition).
-        """
+        """Unconditional nonreacting-protein transfer (MATLAB 332-335)."""
         folded_state = protein_state.get("compartment_counts", {}).get("folded", {})
         folded_deltas: dict[str, dict[str, float]] = {}
         mature_deltas: dict[str, dict[str, float]] = {}

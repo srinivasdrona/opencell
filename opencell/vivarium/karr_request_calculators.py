@@ -429,9 +429,6 @@ class RequestCalculatorProteinPathway(Step):
         self._pp2_consumed = _consumed_wids_from_stoich(
             self._pp2_proc.substrate_wids, self._pp2_proc.reaction_stoich
         )
-        self._pm_consumed = _consumed_wids_from_stoich(
-            self._pm_proc.substrate_wids, self._pm_proc.reaction_stoich
-        )
 
     def ports_schema(self) -> dict[str, Any]:
         from opencell.vivarium.protein_state import MIGRATED_WIDS, compartment_counts_schema
@@ -457,8 +454,8 @@ class RequestCalculatorProteinPathway(Step):
                 # genuine schema-merge warning, not cosmetic -- it would let
                 # a future writer attach the wrong updater and silently
                 # corrupt the derived flat projection). This class's own
-                # `next_update` never reads `protein.counts` for enzyme
-                # values, so the filter changes no computed value.
+                # PM reads its free monomer enzymes here; none of its
+                # enzyme WIDs belongs to the protected migration set.
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in sorted(
