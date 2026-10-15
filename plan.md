@@ -61,6 +61,19 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — PM bounded production repair verified; independent harness follow-up next:**
 
+- Harness corrections are committed at `45e1dc8` / `68c154c`: wrapper
+  classification and source-owned input assumptions corrected; all100 before
+  U/E vectors round-trip through production. Reported137 PASS /1 exact replay
+  FAIL at tick53 ADP0 versus3; frozen88 unchanged. Author is now idle.
+- The mismatch reaches a genuine fractional stochastic decision, not a missing
+  input. Design-A spec sections2.2/4.1 compare transition distributions, not
+  paired random draws. Independent reviewer must distinguish a sampling-law
+  defect from expected PRNG-realisation difference; do not tune draw burns,
+  reset RNG, switch cohorts or waive a code gap to force a replay green.
+- Next concurrent work: fixed-snapshot independent production/RNG review and
+  source-before-only PM Design-A adapter verification, then fresh registered
+  N50/M100 evidence. No eligibility promotion before these are adjudicated.
+
 - Production commits `ce68925`, `6d5d9d9`, `2df7a99`, metadata `d3c242c`.
   Parent independently reproduced the frozen 88/88; no eligibility promotion.
 - Implementer is idle. Test author `e723c978-1b4e-479b-ab76-d4c4b8a34033`
