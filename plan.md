@@ -59,6 +59,22 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-15) — coordinated RNA test freeze accepted; implementation next:**
+
+- Active branch `fix/rna-pathway-fidelity-20261015`, freezes `55d9c3b` /
+  `de67be1`. Parent reproduced 46 PASS / 37 RED across both new and legacy
+  suites, with no skips. No production/evidence promotion yet.
+- Implement RNAModification then RNAProcessing in separate committed chunks;
+  keep shared request/input ownership and same-tick scheduling consistent.
+- Preserve duplicate intergenic fragment identities as source global RNA rows
+  within existing rna.counts (`intergenic::<1-based global row>`), not WID-only
+  keys. Do not claim RNADecay consumption is repaired or expand into another
+  shared state authority.
+- Independent test author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is idle.
+  Doer dispatch pending; no commands remain live. Nothing pushed; baseline 5/28.
+- PP2 and ProteinModification run in separate worktrees. Parent serializes
+  shared-file integration and source-bound evidence refresh, not local work.
+
 **Current status (2026-10-15) — parallel pre-L2.5 fidelity lanes; baseline remains 5/28:**
 
 - Run independent process repairs concurrently in isolated worktrees. Preserve
