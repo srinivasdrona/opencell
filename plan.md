@@ -59,7 +59,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-15) — ProteinModification test freeze accepted; implementation next:**
+**Current status (2026-10-15) — PM bounded production repair verified; independent harness follow-up next:**
+
+- Production commits `ce68925`, `6d5d9d9`, `2df7a99`, metadata `d3c242c`.
+  Parent independently reproduced the frozen 88/88; no eligibility promotion.
+- Implementer is idle. Test author `e723c978-1b4e-479b-ab76-d4c4b8a34033`
+  is live on wrapper manifest completeness, source-owned compatibility inputs,
+  and input-only persistent replay. Old hinted replay's tick53 ADP -3 mismatch
+  is not certified fidelity; no RNG reset, relaxed comparison or answer hint
+  may be used to restore green. Production remains frozen.
+
+**Earlier PM test-freeze record (superseded by the handoff above):**
 
 - Active branch `fix/protein-modification-fidelity-20261015`, freeze
   `caaa189` / `2e902fb`. Parent reproduced the new 43 PASS / 45 RED boundary;
@@ -70,8 +80,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   Parent reconciles shared protein calculator/composite/accounting and final
   evidence/digest. Existing MIGRATED_WIDS membership is unchanged.
 - Independent test author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is idle.
-- Live implementer `d44e1601-82f2-4d3e-9c27-cbfefcaa290b` dispatched from
-  `de4a408`; tests and plan are read-only for that role. Nothing pushed; 5/28.
+- Implementer `d44e1601-82f2-4d3e-9c27-cbfefcaa290b` is idle after the
+  bounded repair; nothing pushed; baseline5/28.
 
 **Current status (2026-10-15) — parallel pre-L2.5 fidelity lanes; baseline remains 5/28:**
 
