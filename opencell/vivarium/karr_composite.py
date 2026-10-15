@@ -71,7 +71,11 @@ from opencell.vivarium.karr_observability_step import KarrObservabilityStep
 from opencell.vivarium.karr_protein_activation import KarrProteinActivationProcess
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess
 from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
-from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess
+from opencell.vivarium.karr_protein_modification import (
+    PM_PHASE_STORE_KEY,
+    KarrProteinModificationEvolutionStep,
+    KarrProteinModificationRequestProcess,
+)
 from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
 from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
 from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
@@ -1213,7 +1217,8 @@ def build_karr_chassis_v4(
     rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
     pp2_proc = KarrProteinProcessingIIProcess({"time_step": time_step_s})
-    p_mod_proc = KarrProteinModificationProcess({"time_step": time_step_s})
+    p_mod_proc = KarrProteinModificationRequestProcess({"time_step": time_step_s})
+    p_mod_evolution = KarrProteinModificationEvolutionStep({"modification_process": p_mod_proc})
     p_fold_proc = KarrProteinFoldingProcess({"time_step": time_step_s})
     p_trans_proc = KarrProteinTranslocationProcess({"time_step": time_step_s})
     p_activation_proc = KarrProteinActivationProcess({"time_step": time_step_s})
@@ -1564,6 +1569,14 @@ def build_karr_chassis_v4(
             "complex": ("complex",),
             "requests": ("_internal_requests_pmod",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (PM_PHASE_STORE_KEY,),
+        },
+        "karr_protein_modification_evolution": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "complex": ("complex",),
+            "substrates_allocated": ("substrates_allocated",),
+            "phase": (PM_PHASE_STORE_KEY,),
         },
         "karr_protein_folding": {
             "substrates": ("substrates",),
@@ -1618,6 +1631,7 @@ def build_karr_chassis_v4(
         "request_calculator_protein_pathway": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_metabolism": {
@@ -1729,6 +1743,7 @@ def build_karr_chassis_v4(
             "request_calculator_translation": req_translation,
             "request_calculator_protein_translocation": req_protein_translocation,
             "karr_allocation_step": allocation_step,
+            "karr_protein_modification_evolution": p_mod_evolution,
             "protein_flat_projection_pre": protein_flat_projection_pre,
             "protein_flat_projection_post": protein_flat_projection_post,
         },
@@ -1756,7 +1771,8 @@ def build_karr_chassis_v4(
                 ("request_calculator_protein_translocation",),
             ],
             "protein_flat_projection_pre": [],
-            "protein_flat_projection_post": [("karr_allocation_step",)],
+            "karr_protein_modification_evolution": [("karr_allocation_step",)],
+            "protein_flat_projection_post": [("karr_protein_modification_evolution",)],
         },
         topology=topology,
         initial_state=initial_state,
@@ -1867,7 +1883,8 @@ def build_karr_chassis_v5(
     rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
     pp2_proc = KarrProteinProcessingIIProcess({"time_step": time_step_s})
-    p_mod_proc = KarrProteinModificationProcess({"time_step": time_step_s})
+    p_mod_proc = KarrProteinModificationRequestProcess({"time_step": time_step_s})
+    p_mod_evolution = KarrProteinModificationEvolutionStep({"modification_process": p_mod_proc})
     p_fold_proc = KarrProteinFoldingProcess({"time_step": time_step_s})
     p_trans_proc = KarrProteinTranslocationProcess({"time_step": time_step_s})
     p_activation_proc = KarrProteinActivationProcess({"time_step": time_step_s})
@@ -2336,6 +2353,14 @@ def build_karr_chassis_v5(
             "complex": ("complex",),
             "requests": ("_internal_requests_pmod",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (PM_PHASE_STORE_KEY,),
+        },
+        "karr_protein_modification_evolution": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "complex": ("complex",),
+            "substrates_allocated": ("substrates_allocated",),
+            "phase": (PM_PHASE_STORE_KEY,),
         },
         "karr_protein_folding": {
             "substrates": ("substrates",),
@@ -2466,6 +2491,7 @@ def build_karr_chassis_v5(
         "request_calculator_protein_pathway": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_protein_translocation": {
@@ -2617,6 +2643,7 @@ def build_karr_chassis_v5(
             "request_calculator_transcription": req_transcription,
             "request_calculator_translation": req_translation,
             "karr_allocation_step": allocation_step,
+            "karr_protein_modification_evolution": p_mod_evolution,
             "karr_chromosome_condensation_evolution": condensation_evolution_step,
             "karr_chromosome_segregation_evolution": segregation_evolution_step,
             "cell_cycle_coordinator": coordinator_step,
@@ -2647,11 +2674,13 @@ def build_karr_chassis_v5(
                 ("request_calculator_translation",),
             ],
             "karr_chromosome_condensation_evolution": [("karr_allocation_step",)],
+            "karr_protein_modification_evolution": [("karr_allocation_step",)],
             "karr_chromosome_segregation_evolution": [("karr_allocation_step",)],
             "cell_cycle_coordinator": [("karr_chromosome_segregation_evolution",)],
             "protein_flat_projection_pre": [],
             "protein_flat_projection_post": [
                 ("karr_allocation_step",),
+                ("karr_protein_modification_evolution",),
                 ("karr_chromosome_condensation_evolution",),
                 ("karr_chromosome_segregation_evolution",),
             ],

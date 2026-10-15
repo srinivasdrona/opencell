@@ -8,7 +8,7 @@ from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
-from vivarium.core.process import Process
+from vivarium.core.process import Process, Step
 
 from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS, compartment_counts_schema
 
@@ -651,20 +651,59 @@ class KarrProteinModificationProcess(Process):
         per_rxn_enzyme_counts = self.reaction_catalysis @ catalytic_enzymes
         return per_rxn_enzyme_counts * self.enzyme_bounds[:, 1] * float(dt)
 
-    @staticmethod
-    def _legacy_vector_to_wid_counts(
-        values: Any,
-        wids: list[str],
-    ) -> dict[str, float]:
-        if values is None:
-            return {}
-        try:
-            flat = np.asarray(values, dtype=np.float64).reshape(-1)
-        except (TypeError, ValueError):
-            return {}
-        if flat.size != len(wids):
-            return {}
-        return {wid: float(flat[idx]) for idx, wid in enumerate(wids)}
+PM_PHASE_STORE_KEY = "_internal_protein_modification_phase"
 
 
-__all__ = ["KarrProteinModificationProcess"]
+class KarrProteinModificationRequestProcess(KarrProteinModificationProcess):
+    """Arm one post-allocation evolution; the shared calculator owns requests."""
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = super().ports_schema()
+        schema["phase"] = {
+            "request_ready": {"_default": False, "_updater": "set", "_emit": False},
+        }
+        return schema
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        if states.get("phase", {}).get("request_ready") is True:
+            update = super().next_update(timestep, states)
+            update["phase"] = {"request_ready": False}
+            return update
+        return {"phase": {"request_ready": True}}
+
+
+class KarrProteinModificationEvolutionStep(Step):
+    """Consume the same-tick grant through the owner's public next_update."""
+
+    name = "karr_protein_modification_evolution"
+    defaults: dict[str, Any] = {"modification_process": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        process = self.parameters["modification_process"]
+        if not isinstance(process, KarrProteinModificationRequestProcess):
+            raise ValueError("modification_process must be a request-phase PM process")
+        self._modification_process = process
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = self._modification_process.ports_schema()
+        return {
+            port: schema[port]
+            for port in ("substrates", "protein", "complex", "substrates_allocated", "phase")
+        }
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep
+        if states.get("phase", {}).get("request_ready") is not True:
+            return {}
+        return self._modification_process.next_update(
+            float(self._modification_process.parameters["time_step"]), states
+        )
+
+
+__all__ = [
+    "PM_PHASE_STORE_KEY",
+    "KarrProteinModificationProcess",
+    "KarrProteinModificationRequestProcess",
+    "KarrProteinModificationEvolutionStep",
+]
