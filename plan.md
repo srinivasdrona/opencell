@@ -71,7 +71,8 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   keys. Do not claim RNADecay consumption is repaired or expand into another
   shared state authority.
 - Independent test author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is idle.
-  Doer dispatch pending; no commands remain live. Nothing pushed; baseline 5/28.
+- Live implementer `47e288fe-a412-4728-96da-65e194efbff3` dispatched from
+  `dcd3e5c`; tests and plan read-only for that role. Nothing pushed; baseline 5/28.
 - PP2 and ProteinModification run in separate worktrees. Parent serializes
   shared-file integration and source-bound evidence refresh, not local work.
 
