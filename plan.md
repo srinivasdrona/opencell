@@ -97,7 +97,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   Implementer `d44e1601-82f2-4d3e-9c27-cbfefcaa290b` is idle; original test
   author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is live for wrapper-manifest,
   source-owned compatibility inputs and old hinted replay correction/diagnosis.
-  Persistent replay tick53 mismatch is not yet source-certified or waived.
+  That follow-up landed at `45e1dc8` / `68c154c`:137 PASS/1 exact replay RED,
+  with all100 source inputs verified. Author is idle; next are independent
+  sampling-law/production review and source-only Design-A adapter validation.
+  Persistent replay tick53 mismatch is not yet source-certified or waived;
+  Design-A distributions, not tuned identical draws, remain the registered gate.
   It overlaps PP2's protein request-calculator
   class, so reconcile its shared-file edits against PP2 before integration.
 - RNA lane C: RNAModification plus RNAProcessing, isolated worktree
