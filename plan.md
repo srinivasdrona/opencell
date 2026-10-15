@@ -61,6 +61,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — coordinated RNA test freeze accepted; implementation next:**
 
+- Both production chunks landed (`6ab80b6`, `183ff18`, provenance `80a0855`);
+  implementer is idle. Reported82/83 source contracts pass; one frozen
+  tRNA-first resource-competition case must be independently re-adjudicated
+  against MATLAB's whole-class worst-water bound12 versus supplied7.
+- Original test author is next for that fixture case and source-before-only
+  legacy replay projection. Do not lower the class bound, hide missing outputs,
+  reset persistent RNG, or use output hints to restore green. No-op traces
+  remain explicitly non-coverage. Production and evidence caches are frozen.
+
+**Earlier RNA freeze/implementation dispatch (superseded above):**
+
 - Active branch `fix/rna-pathway-fidelity-20261015`, freezes `55d9c3b` /
   `de67be1`. Parent reproduced 46 PASS / 37 RED across both new and legacy
   suites, with no skips. No production/evidence promotion yet.
