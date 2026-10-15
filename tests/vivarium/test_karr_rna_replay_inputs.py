@@ -1,5 +1,7 @@
 """Bounded RNA-only input/projection and anti-output-laundering regressions."""
 
+from copy import deepcopy
+
 import _l2_2_design_a_runner_helpers as adapters
 import numpy as np
 import pytest
@@ -64,10 +66,10 @@ def test_design_a_actual_source_inputs_and_full_output_projection(name, live, mo
         indices = np.atleast_1d(fx[field]).astype(int) - 1
         assert list(getattr(process, attribute)) == [enzyme_ids[index] for index in indices]
     captured = []
-    original = process.next_update
+    original = type(process).next_update
 
-    def observe(timestep, actual_state):
-        rnas, enzymes = process._input_vectors(actual_state)
+    def observe(owner, timestep, actual_state):
+        rnas, enzymes = owner._input_vectors(actual_state)
         np.testing.assert_array_equal(rnas, state["oracle_before_rnas"][: sizes[0]])
         np.testing.assert_array_equal(enzymes, state["oracle_before_enzymes"])
         np.testing.assert_array_equal(
@@ -80,11 +82,10 @@ def test_design_a_actual_source_inputs_and_full_output_projection(name, live, mo
         assert "trace_hint" not in actual_state
         assert "enzymes" not in actual_state
         captured.append(actual_state)  # inspect the actual post-update state, not expected outputs
-        return original(timestep, actual_state)
+        return original(owner, timestep, actual_state)
 
-    process.next_update = observe
+    monkeypatch.setattr(type(process), "next_update", observe)
     stem = "rna_modification" if name == "RNAModification" else "rna_processing"
-    monkeypatch.setattr(adapters, f"_{stem}_process", lambda seed: process)
     result = getattr(adapters, f"_run_{stem}_tick")(0, 0, state)
     assert len(captured) == 1
     actual = captured[0]
@@ -119,7 +120,7 @@ def test_design_a_actual_source_inputs_and_full_output_projection(name, live, mo
     )
 
 
-def test_design_a_rp_intergenic_global_rows_are_actual_outputs_not_cached_before(monkeypatch):
+def test_design_a_rp_intergenic_global_rows_are_actual_outputs_not_cached_before():
     process, state, sizes = adapter_input("RNAProcessing", True)
     fx = fixture("RNAProcessing")
     target = int(np.atleast_1d(fx["unprocessedRNAIndexs_rRNA"])[0]) - 1
@@ -132,7 +133,6 @@ def test_design_a_rp_intergenic_global_rows_are_actual_outputs_not_cached_before
     state["oracle_before_rnas"][-sizes[-1] :] = np.arange(sizes[-1]) + 1
     state["oracle_before_enzymes"] = np.ceil(catalysis[:, target]) + 1
     state["oracle_before_substrates"] = np.maximum(0, -stoich[:, target])
-    monkeypatch.setattr(adapters, "_rna_processing_process", lambda seed: process)
     result = adapters._run_rna_processing_tick(0, 0, state)
     expected_fragments = state["oracle_before_rnas"][-sizes[-1] :] + fragments[:, target]
     assert np.count_nonzero(fragments[:, target]) > 1
@@ -141,6 +141,56 @@ def test_design_a_rp_intergenic_global_rows_are_actual_outputs_not_cached_before
     np.testing.assert_array_equal(
         result["substrates"], state["oracle_before_substrates"] + stoich[:, target]
     )
+
+
+def _rng_state(owner):
+    rng = owner._rng
+    if isinstance(rng, np.random.Generator):
+        return deepcopy(rng.bit_generator.state)
+    return deepcopy(rng.get_state())
+
+
+@pytest.mark.parametrize("name", ["RNAModification", "RNAProcessing"])
+@pytest.mark.parametrize("history", ["repeat", "interleave", "advanced_metadata_owner"])
+def test_design_a_rna_sample_is_independent_of_cached_execution_history(
+    name, history, monkeypatch
+):
+    """Design-A seeds belong to samples; cached metadata must not own execution."""
+    process, state, _ = adapter_input(name, True)
+    process_class = type(process)
+    stem = "rna_modification" if name == "RNAModification" else "rna_processing"
+    run = getattr(adapters, f"_run_{stem}_tick")
+    factory = getattr(adapters, f"_{stem}_process")
+    key = (0, 0)
+    sample_seed = adapters._sample_seed(*key)
+    expected_state = _rng_state(process_class({"rng_seed": sample_seed}))
+    poisoned_owner = None
+    if history == "advanced_metadata_owner":
+        poisoned_owner = factory(sample_seed)
+        poisoned_owner._rng.random(13)
+
+    seen = []
+    original = process_class.next_update
+
+    def observe(owner, timestep, actual_state):
+        seen.append((owner, _rng_state(owner)))
+        return original(owner, timestep, actual_state)
+
+    monkeypatch.setattr(process_class, "next_update", observe)
+    keys = [key, (1, 1), key] if history == "interleave" else [key, key]
+    outputs = [run(seed, tick, state) for seed, tick in keys]
+    assert len(seen) == len(keys), "observe the actual public evolution owner"
+    first, last = outputs[0], outputs[-1]
+    assert np.any(first["RNAs"] != state["oracle_before_rnas"]), "nonzero source transition"
+    for channel in ("substrates", "RNAs"):
+        np.testing.assert_array_equal(first[channel], last[channel])
+        assert np.array_equal(first[channel], np.rint(first[channel]))
+    assert first["sample_seed"] == last["sample_seed"] == sample_seed
+    np.testing.assert_equal(seen[0][1], expected_state)
+    np.testing.assert_equal(seen[-1][1], expected_state)
+    assert seen[0][0] is not seen[-1][0], "each sample must have a fresh execution owner"
+    if poisoned_owner is not None:
+        assert all(owner is not poisoned_owner for owner, _ in seen)
 
 
 def test_full_rm_replay_cannot_silently_reduce_to_active_38_api():

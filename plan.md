@@ -61,6 +61,26 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — RNA production committed; independent source-bound harness adjudication active:**
 
+- Reviewer `d1e8bfef-5471-431a-8eb4-943b86b0663d` returned DID NOT MATCH on
+  per-sample mutable cache reuse in both Design-A adapters. All95 bounded tests,
+  production sampling/phase checks and restored raw cohorts were independently
+  verified; no additional high-confidence biological/phase blocker was found.
+- Original author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is live on repeat/
+  interleave/advanced-cache execution regressions. Production stays frozen;
+  fix must construct fresh sample owners, not reset persistent replay streams.
+- That author session failed before producing a new isolation artifact or file
+  changes (model request-body timeout after retries). Prior committed work is
+  preserved. Parent is freezing the small isolation regressions directly;
+  original doer will implement the helper-only fix, then same reviewer checks it.
+- Parent freeze now measures11 PASS /6 intended cache-isolation FAIL across
+  repeated/interleaved/advanced-metadata-owner cases for both RNA processes.
+  Existing input spies now observe the actual public execution class rather
+  than requiring a cached metadata factory to own execution. Production and
+  helper implementations remain unchanged; original doer is next.
+- Canonical audit baseline is temporarily4/28 after the same attestation defect
+  reopened existing PT eligibility. This branch's old5/28 pin is historical;
+  the common reviewed repair must restore complete evidence before promotion.
+
 - Parent reproduced95/95 source units + input/adapter regressions after
   `94d3e9f` / `7a7b611`; no skips/xfails. Test author is idle.
 - This worktree's trace folder is now isolated local data, not the old canonical
