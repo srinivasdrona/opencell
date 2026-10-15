@@ -76,6 +76,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   The same author is now source-adjudicating a narrow nonmigrated form-route
   correction (`PP1.processed_counts -> PP2 -> Folding.unfolded_counts`) rather
   than assuming a global 482-WID authority migration is necessary.
+  That freeze is now committed at `196efe0` / `b279774`: parent reproduced
+  67 PASS / 13 FAIL (12 local route defects plus missing signal-oracle family).
+  Author is idle; original doer is next for the narrow local correction.
 - PP2 oracle selection is reconciled: all 50 files in
   `l22-stale5-regen`, `l22-final-sweep`, and `integrate-l22-dnas-current`
   match the tracked `oracle_population_manifest.json` PP2 records exactly.
