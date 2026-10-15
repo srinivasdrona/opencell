@@ -59,6 +59,35 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-15) — ProteinProcessingII fidelity iteration starting; eligibility is still 5/28:**
+
+- User selected ProteinProcessingII before continuing TxReg Stage C. This work
+  targets pre-L2.5 process eligibility, not an L2.5 PASS or whole-cell completion.
+- Active worktree: `E:\opencell-worktrees\fix-protein-processing-ii-fidelity`;
+  branch `fix/protein-processing-ii-fidelity-20261015`, based on audit
+  `0182039`. Nothing pushed; test-author dispatch is next.
+- Primary authority is local MATLAB `ProteinProcessingII.m:325-345`:
+  H2O demand is the minimum of ceil(peptidase * rate * step) and the
+  lipoprotein-plus-secreted processed-I pool; PG160 uses transferase capacity
+  and only the lipoprotein processed-I pool. Demand is independent of the
+  current substrate pool.
+- The old one-deviation audit is not a promotion guarantee. Parent inspection
+  found that the calculator reads legacy `processed_counts`, whereas evolution
+  uses migrated `compartment_counts.processed_i`/legacy `counts`. Freeze real
+  input ownership and same-tick request/grant/evolution checks as well.
+- Baseline targeted tests are **11 PASS / 5 FAIL**; the five failures in
+  `test_karr_protein_processing_ii.py` expect removed private reaction helpers
+  and obsolete partial-progress semantics. Correct these against MATLAB,
+  without weakening executed-output/conservation assertions.
+- Use planner -> independent test author -> implementer -> reviewer roles.
+  No production changes before the tests are frozen; no eligibility change
+  until actual source, integration, and evidence gaps are independently closed.
+- Data trap: this worktree has a direct `WholeCell` junction to
+  `E:\opencell-mirrors\WholeCell` and a seed-0 trace junction directly to the
+  canonical `E:\opencell\data\m1_sources\karr_native\per_process_traces_v2`.
+  Never recursively remove these junction-bearing directories. The tracked
+  fixture is available locally; Python execution remains WSL-only.
+
 **Current status (2026-10-14) — shared chromosome-state Stage A+B integrated and independently MATCHED:**
 
 - Audit branch integration commit is `27fb7a8`; nothing is pushed and no
