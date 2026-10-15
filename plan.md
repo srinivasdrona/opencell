@@ -59,6 +59,23 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Bounded binding continuation (2026-10-15):** fresh integrator, verified
+tracked-clean start `48e0a8410fbd0d4c1da8d7a918a2e77b856f0810` on
+`integrate/pre-l25-fidelity-batch-20261015`, local/unpushed. Port sequence:
+`b4a3c69`, `cbc4eaf`, `92cce53`, `ad07c52`, `0a8634f`; omit plan-only
+`966f45b`. Preserve this handoff and both append-only journals. Complete actual
+RNA helper/fixture/parser byte-binding closure, not partial-tree PM/Folding
+dependencies. Reviewed producers, requests, observers, catalog and protected
+124-WID membership remain frozen. Canonical readiness4/28 and all blockers
+(including both PT findings) remain OPEN; parent owns independent review,
+publication and fresh gates. No nested agents, pushes, ensembles or evidence
+refresh. No live shell/agent at start; native Windows Git only, Python/scripts
+in WSL cwd `/mnt/e/opencell-worktrees/integrate-fidelity-batch` using
+`/mnt/e/opencell/.venv-wsl`. Use relative/WSL arguments, never Windows paths.
+Preserve persistent legacy replay RNG; Design-A owns fresh samples. Prior
+421PASS/1 inherited CC starvation XFAIL and L1b/wiring/L2.4 are historical
+unchanged-production evidence, not this follow-up's results.
+
 **Isolated integration lane (2026-10-15):** worktree
 `E:\opencell-worktrees\integrate-fidelity-batch`, branch
 `integrate/pre-l25-fidelity-batch-20261015`, base `95059f1`. Frozen merges:
