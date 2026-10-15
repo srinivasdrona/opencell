@@ -1162,11 +1162,21 @@ def test_process_dependency_registry_matches_real_current_import_graph():
         "m3_init_module",
     }
     assert set(schema.PROCESS_DEPENDENCY_FILES["Transcription"]) == {"m2_transcription_module", "m2_init_module"}
-    for name in ("ProteinProcessingI", "RNAProcessing"):
-        assert schema.PROCESS_DEPENDENCY_FILES[name] == {
-            "karr_trna_aminoacylation_module": schema.KARR_TRNA_AMINOACYLATION_MODULE
-        }, name
-    assert set(schema.PROCESS_DEPENDENCY_FILES["ProteinTranslocation"]) == {"util_module", "util_matlab_rng_module"}
+    assert schema.PROCESS_DEPENDENCY_FILES["RNAProcessing"] == {
+        "karr_trna_aminoacylation_module": schema.KARR_TRNA_AMINOACYLATION_MODULE
+    }
+    assert schema.PROCESS_DEPENDENCY_FILES["ProteinProcessingI"] == {
+        "karr_trna_aminoacylation_module": schema.KARR_TRNA_AMINOACYLATION_MODULE,
+        "protein_state_module": schema.PROTEIN_STATE_MODULE,
+    }
+    for name in (
+        "ProteinProcessingI", "ProteinProcessingII", "ProteinModification",
+        "ProteinFolding", "ProteinDecay", "ProteinTranslocation",
+    ):
+        assert schema.PROCESS_DEPENDENCY_FILES[name]["protein_state_module"] == schema.PROTEIN_STATE_MODULE
+    assert set(schema.PROCESS_DEPENDENCY_FILES["ProteinTranslocation"]) == {
+        "util_module", "util_matlab_rng_module", "protein_state_module",
+    }
     # R7: DNASupercoiling additionally registers its own extracted
     # tick-runner sibling module (`_l2_2_dnas_runner_helpers.py`) as a
     # process-specific dependency -- see that module's and
