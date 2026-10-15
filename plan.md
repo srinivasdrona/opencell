@@ -90,6 +90,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   worktree cache: all hashes/seeds/100ticks/six families verified, main cache
   unchanged. Full six-family replay/evidence projection is next; no new
   statistical verdict or eligibility increase has been claimed.
+  That replay/projection work is now `6ad3130` / `c49fa41` / `f7869ee`;
+  parent reproduced90/90, including100-tick six-family identity and real signal
+  mutations. PP2-only registered N50/M20 sweep and fresh independent review
+  are next; planned shell `ppii-fresh-design-a`, isolated feature worktree.
 - Protein lane B: ProteinModification, isolated worktree
   `E:\opencell-worktrees\fix-protein-modification-fidelity`; freeze
   `caaa189` / `2e902fb` is parent-accepted: new tests 43 PASS / 45 RED.
