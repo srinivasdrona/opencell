@@ -65,22 +65,28 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   test-author -> implementer -> independent-reviewer ordering within each lane,
   but serialize shared-surface reconciliation and eligibility integration only.
 - Protein lane A: ProteinProcessingII in
-  `E:\opencell-worktrees\fix-protein-processing-ii-fidelity`; implementer
-  `3c96c6ae-682d-4090-b1b8-fef846e8adf8`. Latest observed tip `c7cd1cc`;
-  completion report and parent acceptance are pending, not assumed from commits.
+  `E:\opencell-worktrees\fix-protein-processing-ii-fidelity`, tip `c7cd1cc`.
+  Implementer `3c96c6ae-682d-4090-b1b8-fef846e8adf8` is idle; bounded repair
+  reports 57/57 and four-seed conservation PASS, not overall eligibility.
+  Test author `9bfbbe1e-4fc6-4a28-a21f-52bdb3bd93f4` is correcting verified
+  stale no-dual-writer/replay input projections; production is frozen.
+  Nonmigrated processed-I production ownership remains a genuine blocker.
 - Protein lane B: ProteinModification, isolated worktree
-  `E:\opencell-worktrees\fix-protein-modification-fidelity`; independent
-  source/test freeze is next. It overlaps PP2's protein request-calculator
+  `E:\opencell-worktrees\fix-protein-modification-fidelity`; independent test
+  author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is live from `d97b761`.
+  It overlaps PP2's protein request-calculator
   class, so reconcile its shared-file edits against PP2 before integration.
 - RNA lane C: RNAModification plus RNAProcessing, isolated worktree
-  `E:\opencell-worktrees\fix-rna-pathway-fidelity`; coordinate the pair in one
-  lane because they share `RequestCalculatorRNAPathway` and RNA form routing.
+  `E:\opencell-worktrees\fix-rna-pathway-fidelity`; independent test author
+  `eac71b90-e24c-489f-94f1-99fdd1b751f9` is live from `d97b761`. Coordinate
+  the pair because they share `RequestCalculatorRNAPathway` and RNA form routing.
 - No lane may broaden the shared protein/chromosome authority migration,
   modify another lane's files/worktree, or self-certify L2.5 eligibility.
   Parent owns shared topology/accounting, dependency-closed source digests,
   source-bound evidence reruns, and final eligibility adjudication.
-- New test-author launches are pending; no new implementation or evidence
-  sweep is implied by a test-freeze dispatch. Do not start L2.5 itself.
+- PM and RNA lanes remain test-only until freeze acceptance; no new
+  implementation or evidence sweep is implied by these dispatches.
+  Do not start L2.5 itself.
 - Operational trap: worktree `WholeCell` and canonical trace junctions must
   point directly to canonical targets, never through another worktree; never
   recursively delete junction-bearing directories. All Python stays in WSL.
