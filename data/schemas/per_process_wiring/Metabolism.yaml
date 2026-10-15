@@ -24,7 +24,7 @@ integration_touchpoints:
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
         symbol: "RequestCalculatorMetabolism.next_update"
-        lines: "898-914"
+        lines: "876-892"
         note: "Current OC request calculator."
       supporting:
         - path: "opencell/vivarium/karr_allocation_step.py"
@@ -500,7 +500,7 @@ source_anchors:
       note: "Current per-tick update path."
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "898-914"
+      lines: "876-892"
       symbol: "RequestCalculatorMetabolism.next_update"
       note: "Allocator request emission for Metabolism."
     allocator_step:

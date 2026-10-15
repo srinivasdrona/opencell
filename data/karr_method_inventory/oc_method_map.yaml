@@ -335,7 +335,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Metabolism.m:calcResourceRequirements_Current:1188
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorMetabolism.next_update:898
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorMetabolism.next_update:876
         note: 'Karr has a dedicated current-demand method (`function result = calcResourceRequirements_Current(this)`
           at Metabolism.m:1188). OC has a dedicated request-step counterpart: `RequestCalculatorMetabolism`
           says "Emit allocator requests for dynamic-bounds metabolism substrate demand", then `requests
@@ -1118,7 +1118,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Transcription.m:calcResourceRequirements_Current:609
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTranscription.next_update:650
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTranscription.next_update:628
         note: Karr 609-615 requests ATP/CTP/GTP/UTP + water; OC's dedicated RequestCalculatorTranscription.next_update
           emits the NTP quartet from RNA_POLYMERASE counts via `per_ntp_need = max(0.0, total_nt / 4.0
           * self._safe_dt(timestep))`, so this is the allocator counterpart even though water is omitted.
@@ -1186,7 +1186,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/Translation.m:calcResourceRequirements_Current:570
         status: confirmed
-        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTranslation.next_update:703
+        oc: opencell/vivarium/karr_request_calculators.py:RequestCalculatorTranslation.next_update:681
         note: OC implements the per-tick request surface as a dedicated Translation request calculator
           (AA budget, not Karr's GTP/H2O bookkeeping); karr_composite.py:788 wires RequestCalculatorTranslation
           for m3_proc, and the core line is need_by_aa = self._tl_proc._predict_substrate_need(rates,

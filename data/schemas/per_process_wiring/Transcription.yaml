@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorTranscription.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "650-666"
+        lines: "628-644"
         note: "Current OC allocator request calculator for mechanism-driven transcription."
         symbol: "RequestCalculatorTranscription.next_update"
       supporting:

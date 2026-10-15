@@ -1360,7 +1360,8 @@ def test_stage_ab_pre_l25_baseline_truth_metadata() -> None:
        promoter occupancy projection, bound-TF state, enzyme writeback).
     2. TXREG-RNG-PROVENANCE must no longer claim autonomous OC uses only a process-local stand-in.
        It must remain OPEN for multi-consumer shared-stream interleaving (DC-9 / Stage E).
-    3. Overall eligibility must remain 5/28 (23 blocked / 5 eligible).
+    3. Overall eligibility remains canonical 4/28 (24 blocked), with both
+       ProteinTranslocation attestation and sample-isolation blockers OPEN.
     """
     import yaml
 
@@ -1370,10 +1371,14 @@ def test_stage_ab_pre_l25_baseline_truth_metadata() -> None:
     with open(baseline_path, encoding="utf-8") as f:
         data = yaml.safe_load(f)
 
-    # 1. Overall baseline eligibility must remain 5/28
+    # 1. Stage A+B cannot override the current cross-process honesty baseline.
     summary = data.get("summary", {})
-    assert summary.get("eligible") == 5, f"Expected 5 eligible processes, got {summary.get('eligible')}"
-    assert summary.get("blocked") == 23, f"Expected 23 blocked processes, got {summary.get('blocked')}"
+    assert summary.get("eligible") == 4, f"Expected 4 eligible processes, got {summary.get('eligible')}"
+    assert summary.get("blocked") == 24, f"Expected 24 blocked processes, got {summary.get('blocked')}"
+    ptrans = next(p for p in data["processes"] if p["name"] == "ProteinTranslocation")
+    pt_findings = {finding["id"]: finding for finding in ptrans["findings"]}
+    for blocker in ("PTRANS-COMPLETE-ATTESTATION", "PTRANS-SAMPLE-ISOLATION"):
+        assert pt_findings[blocker]["disposition"] == "OPEN"
 
     # 2. Inspect TranscriptionalRegulation findings
     processes = data.get("processes", [])

@@ -68,6 +68,7 @@ PROTEIN_PROCESS_MANIFEST = (
     ("opencell.vivarium.karr_translation_v3", "KarrTranslationV3Process", ("unprocessed_counts",), "MIGRATABLE-W"),
     ("opencell.vivarium.karr_protein_processing_i", "KarrProteinProcessingIProcess", ("unprocessed_counts", "processed_counts", "counts"), "MIGRATABLE-W/AUTH-W"),
     ("opencell.vivarium.karr_protein_processing_ii", "KarrProteinProcessingIIProcess", ("processed_counts", "unfolded_counts", "signal_sequence_counts"), "MIGRATABLE-W"),
+    ("opencell.vivarium.karr_protein_processing_ii", "KarrProteinProcessingIIEvolutionStep", ("processed_counts", "unfolded_counts", "signal_sequence_counts"), "MIGRATABLE-W"),
     ("opencell.vivarium.karr_protein_folding", "KarrProteinFoldingProcess", ("unfolded_counts", "counts"), "MIGRATABLE-W/AUTH-W"),
     ("opencell.vivarium.karr_protein_modification", "KarrProteinModificationProcess", ("unmodified_counts", "modified_counts"), "MIGRATABLE-W/AUTH-W"),
     # RequestProcess inherits the real schema and evolves when request_ready is armed;
@@ -89,9 +90,12 @@ PROTEIN_PROCESS_MANIFEST = (
     ("opencell.vivarium.karr_protein_activation", "KarrProteinActivationProcess", (), "DERIVED-R/STAGE-4"),
     ("opencell.vivarium.karr_request_calculators", "RequestCalculatorPTransloc", ("unprocessed_counts", "location"), "DERIVED-R"),
     ("opencell.vivarium.karr_request_calculators", "RequestCalculatorProteinPathway", ("unprocessed_counts", "location"), "DERIVED-R"),
+    ("opencell.vivarium.karr_request_calculators", "RequestCalculatorRNAPathway", (), "DERIVED-R"),
     ("opencell.vivarium.karr_request_calculators", "RequestCalculatorRibAsm", (), "DERIVED-R"),
     ("opencell.vivarium.karr_rna_modification", "KarrRNAModificationProcess", (), "DERIVED-R"),
+    ("opencell.vivarium.karr_rna_modification", "KarrRNAModificationEvolutionStep", (), "DERIVED-R"),
     ("opencell.vivarium.karr_rna_processing", "KarrRNAProcessingProcess", (), "DERIVED-R"),
+    ("opencell.vivarium.karr_rna_processing", "KarrRNAProcessingEvolutionStep", (), "DERIVED-R"),
     ("opencell.vivarium.karr_transcriptional_regulation", "KarrTranscriptionalRegulationProcess", (), "DERIVED-R"),
     ("opencell.vivarium.karr_trna_aminoacylation", "KarrTRNAAminoacylationProcess", (), "DERIVED-R"),
     # Legacy non-runtime modules
@@ -103,6 +107,18 @@ PROTEIN_PROCESS_MANIFEST = (
 def _instantiate_process_with_dependencies(cls: type) -> Any:
     """Instantiate Process/Step classes with explicit dependencies where required."""
     name = cls.__name__
+    if name == "KarrProteinProcessingIIEvolutionStep":
+        from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
+
+        return cls({"processing_process": KarrProteinProcessingIIProcess({})})
+    if name == "RequestCalculatorRNAPathway":
+        from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
+        from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
+
+        return cls({
+            "rna_processing_proc": KarrRNAProcessingProcess({}),
+            "rna_modification_proc": KarrRNAModificationProcess({}),
+        })
     if name == "KarrProteinModificationEvolutionStep":
         from opencell.vivarium.karr_protein_modification import (
             KarrProteinModificationRequestProcess,
@@ -335,8 +351,13 @@ def _activate_protein_processing_i() -> tuple[Any, dict[str, Any]]:
     return proc, proc.next_update(1.0, state)
 
 
-def _activate_protein_processing_ii(*, live_enzymes: bool = True) -> tuple[Any, dict[str, Any]]:
-    from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
+def _activate_protein_processing_ii(
+    *, live_enzymes: bool = True, evolution: bool = False
+) -> tuple[Any, dict[str, Any]]:
+    from opencell.vivarium.karr_protein_processing_ii import (
+        KarrProteinProcessingIIEvolutionStep,
+        KarrProteinProcessingIIProcess,
+    )
 
     proc = KarrProteinProcessingIIProcess({})
     fixture = loadmat(
@@ -407,7 +428,14 @@ def _activate_protein_processing_ii(*, live_enzymes: bool = True) -> tuple[Any, 
     for wid in MIGRATED_WIDS:
         home = proc.migrated_compartment_by_wid[wid]
         state["protein"]["compartment_counts"]["processed_i"][wid][home] = count_per_wid
+    if evolution:
+        state["phase"] = {"request_ready": True}
+        proc = KarrProteinProcessingIIEvolutionStep({"processing_process": proc})
     return proc, proc.next_update(1.0, state)
+
+
+def _activate_protein_processing_ii_evolution() -> tuple[Any, dict[str, Any]]:
+    return _activate_protein_processing_ii(evolution=True)
 
 
 def _activate_protein_folding() -> tuple[Any, dict[str, Any]]:
@@ -594,6 +622,7 @@ def test_c5_declared_writes_only() -> None:
         _activate_translation_v3,
         _activate_protein_processing_i,
         _activate_protein_processing_ii,
+        _activate_protein_processing_ii_evolution,
         _activate_protein_folding,
         _activate_protein_modification,
         _activate_protein_modification_request,

@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorTranslation.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "703-719"
+        lines: "681-697"
         note: "Current OC request calculator for translation AA demand."
         symbol: "RequestCalculatorTranslation.next_update"
       supporting:
@@ -162,7 +162,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "703-719"
+      lines: "681-697"
       note: "AA demand request computed from predicted synthesis per second."
       symbol: RequestCalculatorTranslation.next_update
     note: "OC allocator-side amino-acid surrogate for the charged-tRNA demand."
@@ -177,7 +177,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "703-719"
+      lines: "681-697"
       note: "AA demand request computed from predicted synthesis per second."
       symbol: RequestCalculatorTranslation.next_update
     note: "Current OC uses MET as the initiator-residue surrogate; MATLAB's substrate vocabulary also includes FMET."
@@ -192,7 +192,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "703-719"
+      lines: "681-697"
       note: "AA demand request computed from predicted synthesis per second."
       symbol: RequestCalculatorTranslation.next_update
     note: "Representative amino-acid drain in the current OC allocator path."

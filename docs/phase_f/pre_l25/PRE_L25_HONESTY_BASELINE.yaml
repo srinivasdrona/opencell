@@ -8,8 +8,8 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "555571f7e20ae579079ed1c9063f6d3ff499235092410bab2349e08f8a8427ef"
-  file_count: 137
+  sha256: "be95a0b307b08590de24a760183a631d37b96e490526016e17666de72e46809e"
+  file_count: 140
 authorities:
   l1b_method_completeness: "PASS 115/115"
   l1b_wiring_conformance: "PASS 28/28"

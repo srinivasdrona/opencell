@@ -57,13 +57,14 @@ def _base_state(calc: RequestCalculatorProteinPathway) -> dict[str, Any]:
     return {
         "substrates": {wid: 13.0 for wid in calc.ports_schema()["substrates"]},
         "protein": {
-            "counts": {},
+            "counts": dict.fromkeys(calc._pm_proc.monomer_enzyme_wids, 0.0),
             "unprocessed_counts": {wid: 0.0 for wid in calc._pp1_proc.unprocessed_monomer_wids},
             "processed_counts": {lipo_wid: 0.0, non_lipo_wid: 0.0},
             "unfolded_counts": {},
             "unmodified_counts": {},
             "location": {},
         },
+        "complex": {"counts": dict.fromkeys(calc._pm_proc.complex_enzyme_wids, 0.0)},
     }
 
 
