@@ -149,6 +149,11 @@ class KarrProteinProcessingIIProcess(Process):
         """Source-owned processed-I and mature enzyme inputs (copyFromState)."""
         authority_schema = compartment_counts_schema(MIGRATED_WIDS)
         return {
+            "processed_counts": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                for wid in self.unprocessed_monomer_wids
+                if wid not in MIGRATED_WIDS
+            },
             "compartment_counts": {
                 "processed_i": authority_schema["processed_i"],
                 "mature": {
@@ -164,10 +169,10 @@ class KarrProteinProcessingIIProcess(Process):
         protein = states.get("protein", {})
         authority = protein.get("compartment_counts", {})
         processed_i = authority.get("processed_i", {})
-        legacy_counts = protein.get("counts", {})
+        processed_i_queue = protein.get("processed_counts", {})
         precursors = np.asarray([
             float(processed_i.get(wid, {}).get(self.migrated_compartment_by_wid[wid], 0.0))
-            if wid in MIGRATED_WIDS else float(legacy_counts.get(wid, 0.0))
+            if wid in MIGRATED_WIDS else float(processed_i_queue.get(wid, 0.0))
             for wid in self.unprocessed_monomer_wids
         ], dtype=np.float64)
         mature = authority.get("mature", {})
@@ -219,11 +224,7 @@ class KarrProteinProcessingIIProcess(Process):
                 for wid in self.unprocessed_monomer_wids
             },
             "protein": {
-                "processed_counts": {
-                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in self.processed_monomer_wids
-                    if wid not in MIGRATED_WIDS
-                },
+                "processed_counts": input_schema["processed_counts"],
                 "unfolded_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.processed_monomer_wids
@@ -238,10 +239,8 @@ class KarrProteinProcessingIIProcess(Process):
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.enzyme_wids
                 },
-                # Keep the nonmigrated standalone legacy route undeclared:
-                # chassis counts are mature, not processed-I. Exposing them
-                # here would newly drain that mature pool via pass-through.
-                # The bounded migrated inputs below are the live authority.
+                # Nonmigrated form queues above connect PP1's processed-I
+                # to Folding's processed-II; mature counts are never PP2 inputs.
                 "compartment_counts": {
                     **input_schema["compartment_counts"],
                     "processed_ii": authority_schema["processed_ii"],
@@ -432,9 +431,9 @@ class KarrProteinProcessingIIProcess(Process):
 
         protein_update: dict[str, Any] = {}
         if processed_update:
-            protein_update["processed_counts"] = processed_update
+            protein_update["unfolded_counts"] = processed_update
         if unprocessed_update:
-            protein_update["counts"] = unprocessed_update
+            protein_update["processed_counts"] = unprocessed_update
         if signal_update:
             protein_update["signal_sequence_counts"] = signal_update
         if processed_i_authority_update or processed_ii_authority_update or signal_authority_update:

@@ -23,7 +23,7 @@ integration_touchpoints:
       symbol: "KarrProteinProcessingIIProcess.calculate_request"
       source:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "180-195"
+        lines: "185-200"
         note: "Source ceil/min request algebra from the shared live input reader."
         symbol: "KarrProteinProcessingIIProcess.calculate_request"
       supporting:
@@ -32,8 +32,8 @@ integration_touchpoints:
           note: "Sole PP2 public request writer delegates to the source-backed calculation."
           symbol: RequestCalculatorProteinPathway.next_update
         - path: "opencell/vivarium/karr_protein_processing_ii.py"
-          lines: "160-178"
-          note: "Shared processed-I and live mature enzyme compartment reads."
+          lines: "165-183"
+          note: "Shared processed-I queue/compartment and live mature enzyme reads; never mature flat counts."
           symbol: KarrProteinProcessingIIProcess.read_processing_inputs
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1783-2686"
@@ -53,24 +53,24 @@ integration_touchpoints:
       symbol: "KarrProteinProcessingIIProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "265-378"
+        lines: "264-377"
         note: "Reads allocated substrates, applies the same two-phase maturation, and returns sparse deltas."
         symbol: "KarrProteinProcessingIIProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_protein_processing_ii.py"
-          lines: "265-378"
+          lines: "264-377"
           note: "Strict-zero allocator read path."
           symbol: KarrProteinProcessingIIProcess.next_update
         - path: "opencell/vivarium/karr_protein_processing_ii.py"
-          lines: "380-449"
-          note: "Sparse update builder used for writeback."
+          lines: "379-448"
+          note: "Sparse writeback: nonmigrated processed_counts decrement and unfolded_counts increment; migrated forms stay compartmental."
           symbol: KarrProteinProcessingIIProcess._build_update
         - path: "opencell/vivarium/karr_composite.py"
           lines: "1783-2686"
           note: "Current chassis wiring for karr_protein_processing_ii."
           symbol: build_karr_chassis_v5
         - path: "opencell/vivarium/karr_protein_processing_ii.py"
-          lines: "578-583"
+          lines: "577-582"
           note: "Actual post-allocation Step calls public next_update and clears request_ready."
           symbol: KarrProteinProcessingIIEvolutionStep.next_update
     status: "implemented"
@@ -88,7 +88,7 @@ integration_touchpoints:
       symbol: "KarrProteinProcessingIIProcess"
       source:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "51-536"
+        lines: "51-535"
         note: "No flux-bound builder or equivalent helper exists in the current OC port. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrProteinProcessingIIProcess"
       note: OC does not implement this Karr method.
@@ -146,7 +146,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "508-536"
+      lines: "507-535"
       note: "Water decrement in the strict-zero OC update."
       symbol: KarrProteinProcessingIIProcess._apply_transformations
     kind: expression
@@ -160,7 +160,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "508-536"
+      lines: "507-535"
       note: "PG160 decrement in the strict-zero OC update."
       symbol: KarrProteinProcessingIIProcess._apply_transformations
     kind: expression
@@ -175,7 +175,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "508-536"
+      lines: "507-535"
       note: "sn-glycerol-1-phosphate byproduct in the OC update."
       symbol: KarrProteinProcessingIIProcess._apply_transformations
     kind: expression
@@ -189,7 +189,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "508-536"
+      lines: "507-535"
       note: "Hydrogen byproduct in the OC update."
       symbol: KarrProteinProcessingIIProcess._apply_transformations
     kind: expression
@@ -234,7 +234,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_protein_processing_ii.py"
-        lines: "265-378"
+        lines: "264-377"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrProteinProcessingIIProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -295,23 +295,23 @@ source_anchors:
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "51-536"
+      lines: "51-535"
       note: "OC process class and fixture loader."
       symbol: KarrProteinProcessingIIProcess
     ports_schema:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "197-263"
+      lines: "202-262"
       note: "Shared substrate/protein/request store declarations."
       symbol: KarrProteinProcessingIIProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "265-378"
+      lines: "264-377"
       note: "Count-space maturation update path."
       symbol: KarrProteinProcessingIIProcess.next_update
     build_update:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "380-449"
-      note: "Sparse delta emission."
+      lines: "379-448"
+      note: "Sparse source-form delta emission; mature flat counts never written."
       symbol: KarrProteinProcessingIIProcess._build_update
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
@@ -325,18 +325,18 @@ source_anchors:
       symbol: build_karr_chassis_v5
     request_phase:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "555-557"
+      lines: "554-556"
       note: "Request-ready Process arms each ordinary tick; no initialization-time biology."
       symbol: KarrProteinProcessingIIRequestProcess.next_update
     evolution_phase:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "578-583"
+      lines: "577-582"
       note: "Step executes public evolution once after the new allocator grant."
       symbol: KarrProteinProcessingIIEvolutionStep.next_update
     input_schema:
       path: "opencell/vivarium/karr_protein_processing_ii.py"
-      lines: "148-158"
-      note: "Migrated processed-I and mature enzyme inputs visible to Engine views."
+      lines: "148-163"
+      note: "Nonmigrated processed-I queue plus migrated processed-I and mature enzyme inputs visible to Engine views."
       symbol: KarrProteinProcessingIIProcess.input_protein_schema
 provenance:
   fixture_files:
@@ -360,8 +360,12 @@ provenance:
   matlab_files_referenced:
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m
     - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/Process.m
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingI.m
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinFolding.m
   oc_files_referenced:
     - opencell/vivarium/karr_protein_processing_ii.py
+    - opencell/vivarium/karr_protein_processing_i.py
+    - opencell/vivarium/karr_protein_folding.py
     - opencell/vivarium/karr_request_calculators.py
     - opencell/vivarium/karr_composite.py
     - opencell/vivarium/karr_allocation_step.py
@@ -387,8 +391,8 @@ deviations:
   known_deviations:
     - "OC reads from substrates_allocated[self.name] with a strict-zero guard instead of falling back to the global substrates pool."
     - "Bounded request/live enzyme/same-tick/signal writeback changes await independent review and evidence refresh; no eligibility promotion."
-    - "Nonmigrated standalone legacy counts routing is preserved. Its production processed-I ownership is not migrated; exposing chassis mature counts would cause a full-pool pass-through drain."
-    - "Unchanged canonical seed-0 replay remains RED at tick 3, H2O +1; no stochastic/harness workaround is applied."
+    - "Nonmigrated local routing now joins PP1 processed_counts to Folding unfolded_counts; mature counts are never inputs or outputs. Independent re-adjudication remains pending, not a global form migration."
+    - "Source-corrected five-family canonical seed-0 replay passes all 100 ticks. SignalSequenceMonomers is absent from the current canonical oracle; six-family evidence remains missing pending independent cohort restoration/verification."
     - "The nominal diacylglycerolCys chemistry product named in the MATLAB comment is not materialized by either implementation."
     - "ProteinProcessingII has no calcFluxBounds analogue in the current OC port."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.

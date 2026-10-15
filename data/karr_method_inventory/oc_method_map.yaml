@@ -589,6 +589,8 @@ processes:
     oc_files:
     - opencell/vivarium/karr_composite.py
     - opencell/vivarium/karr_protein_processing_ii.py
+    - opencell/vivarium/karr_protein_processing_i.py
+    - opencell/vivarium/karr_protein_folding.py
     - opencell/vivarium/karr_request_calculators.py
     - opencell/vivarium/karr_allocation_step.py
     - opencell/vivarium/protein_state.py
@@ -602,7 +604,7 @@ processes:
       calcResourceRequirements_Current:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m:calcResourceRequirements_Current:325
         status: confirmed
-        oc: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.calculate_request:180
+        oc: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.calculate_request:185
         note: Source ceil/min water and PG160 demand, independent of substrate availability and RNG.
           RequestCalculatorProteinPathway.next_update calls this method on the same instance used by
           KarrProteinProcessingIIEvolutionStep; read_processing_inputs owns both precursor and live
@@ -611,12 +613,14 @@ processes:
       evolveState:
         matlab: data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinProcessingII.m:evolveState:348
         status: confirmed
-        oc: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.next_update:265
+        oc: opencell/vivarium/karr_protein_processing_ii.py:KarrProteinProcessingIIProcess.next_update:264
         note: Public two-phase PP2 evolution, grant-backed and called once per explicit request-ready
           handshake after allocation in chassis v4/v5/v6. Migrated processed-I and mature enzymes are
-          source-compartment inputs; migrated signal peptides write cytosolic authority. Standalone
-          legacy nonmigrated routing is preserved, not globally migrated. Replay and independent
-          semantic re-adjudication remain open; method presence is not eligibility.
+          source-compartment inputs; migrated signal peptides write cytosolic authority. Nonmigrated
+          processed-I reads/decrements PP1's processed_counts queue and processed-II writes Folding's
+          unfolded_counts queue; mature counts are never read or written. No global migration.
+          Five-observed-family replay passes; missing signal oracle and independent semantic
+          re-adjudication remain open. Method presence is not eligibility.
   ProteinTranslocation:
     oc_files:
     - opencell/vivarium/karr_composite.py
