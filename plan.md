@@ -59,7 +59,19 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-15) — PP2 source-owned production repaired; complete-oracle verification next; baseline 5/28:**
+**Current status (2026-10-15) — PP2 full replay/adapter accepted; fresh ensemble and independent review next; baseline 5/28:**
+
+- Complete-oracle author commits `6ad3130`, `c49fa41`, `f7869ee`; parent
+  independently reproduced90/90 with no skips. Six-family replay matches all
+  100 ticks, including4 actual signal-emission ticks; Design-A local monomer
+  vector is482, not an erroneous2892-compartment cube.
+- Original author is idle; production and harness are now frozen. Run existing
+  registered sweep for PP2 only, N50/M20, max-workers1. Planned shell
+  `ppii-fresh-design-a`; logs `tmp/ppii_fresh_design_a_logs`, report
+  `tmp/ppii_fresh_design_a_report.json`, live evidence under
+  `artifacts/l2_2_gates/ProteinProcessingII/latest`.
+- Fresh independent reviewer dispatch is next. Do not promote from old
+  statistical evidence or turn source-only adapter checks into a sweep claim.
 
 - Narrow queue repair is committed at `aae8d93` / `e8930e7`. Implementer is
   idle; reported 79 PASS plus the one explicit missing signal-oracle FAIL,
