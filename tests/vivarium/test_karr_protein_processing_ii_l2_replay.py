@@ -49,7 +49,10 @@ from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingII
 from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS
 
 _TRACE_PROCESS_NAME = "ProteinProcessingII"
-_OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes', 'processedMonomers', 'unprocessedMonomers')
+_OBSERVABLES = (
+    "substrates", "enzymes", "boundEnzymes", "processedMonomers",
+    "unprocessedMonomers", "signalSequenceMonomers",
+)
 _SOURCE_MUTATED_OBSERVABLES = frozenset({
     "substrates", "processedMonomers", "unprocessedMonomers", "signalSequenceMonomers",
 })
@@ -64,7 +67,14 @@ _SCRATCH_RESET = {"_rng": "karr-persistent"}
 
 # Optional explicit observable->WID attribute mapping. Any missing or unknown
 # attr falls back to heuristic inference from process attrs / state schema.
-_OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids', 'processedMonomers': 'processed_monomer_wids', 'unprocessedMonomers': 'unprocessed_monomer_wids'}
+_OBSERVABLE_TO_WIDS_ATTR = {
+    "substrates": "substrate_wids",
+    "enzymes": "enzyme_wids",
+    "boundEnzymes": "enzyme_wids",
+    "processedMonomers": "processed_monomer_wids",
+    "unprocessedMonomers": "unprocessed_monomer_wids",
+    "signalSequenceMonomers": "signal_sequence_monomer_wids",
+}
 
 
 @cache
@@ -221,17 +231,40 @@ def test_ppii_projection_preserves_absent_and_nonmigrated_input_contracts() -> N
     assert wid not in state["protein"]["compartment_counts"]["processed_i"]
 
 
-def test_ppii_canonical_oracle_covers_all_source_output_families() -> None:
-    """Missing signal evidence blocks full replay coverage, not the observed-channel run."""
-    with h5py.File(resolve_trace_path(_TRACE_PROCESS_NAME), "r") as trace:
-        missing_before = _SOURCE_MUTATED_OBSERVABLES - set(trace["states_before"])
-        missing_after = _SOURCE_MUTATED_OBSERVABLES - set(trace["states_after"])
+def _assert_ppii_coverage(trace: h5py.File, observables: tuple[str, ...]) -> None:
+    observed = set(observables)
+    before = set(trace["states_before"])
+    after = set(trace["states_after"])
+    missing_before = _SOURCE_MUTATED_OBSERVABLES - before
+    missing_after = _SOURCE_MUTATED_OBSERVABLES - after
     assert not missing_before and not missing_after, (
         "MISSING_EVIDENCE: canonical PP2 oracle lacks source output families; "
         f"states_before missing={sorted(missing_before)}, states_after missing={sorted(missing_after)}. "
         "Signal conservation unit tests are not captured signal-sequence replay evidence. "
         "No alternate cohort selected or expected signal counts fabricated."
     )
+    assert len(observables) == len(observed)
+    assert observed == before == after, (
+        "PP2 replay observation set must equal captured before/after families; "
+        f"observed={sorted(observed)}, before={sorted(before)}, after={sorted(after)}"
+    )
+    assert observed >= _SOURCE_MUTATED_OBSERVABLES
+    assert observed >= _PASS_THROUGH
+
+
+def test_ppii_canonical_oracle_covers_all_source_output_families() -> None:
+    with h5py.File(resolve_trace_path(_TRACE_PROCESS_NAME), "r") as trace:
+        _assert_ppii_coverage(trace, _OBSERVABLES)
+
+
+@pytest.mark.parametrize("omitted", ["signalSequenceMonomers", "boundEnzymes"])
+def test_ppii_coverage_rejects_six_channel_file_with_five_channel_loop(omitted: str) -> None:
+    observed = tuple(obs for obs in _OBSERVABLES if obs != omitted)
+    with (
+        h5py.File(resolve_trace_path(_TRACE_PROCESS_NAME), "r") as trace,
+        pytest.raises(AssertionError, match="observation set"),
+    ):
+        _assert_ppii_coverage(trace, observed)
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -264,20 +297,28 @@ def _assert_identity_or_tolerance(
     oc_after: np.ndarray,
     karr_after: np.ndarray,
 ) -> None:
+    for label, values in (("oracle", karr_after), ("oc", oc_after)):
+        if not np.array_equal(values, np.rint(values)):
+            index = int(np.flatnonzero(values != np.rint(values))[0])
+            pytest.fail(
+                f"L2a {label} non-integral: tick={tick}, observable={observable}, "
+                f"index={index}, value={values[index]}"
+            )
     _assert_identity_or_tolerance_shared(
         tick=tick,
         observable=observable,
         oc_after=oc_after,
         karr_after=karr_after,
     )
+    # The shared helper's optional calibrated mode cannot relax this exact replay.
+    np.testing.assert_array_equal(oc_after, karr_after)
 
 
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
 def test_karr_protein_processing_ii_l2_replay_identity_per_tick(rng_seed: int) -> None:
     trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
     with h5py.File(trace_path, "r") as trace:
-        assert set(trace["states_before"]) == set(_OBSERVABLES)
-        assert set(trace["states_after"]) == set(_OBSERVABLES)
+        _assert_ppii_coverage(trace, _OBSERVABLES)
         n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
         assert n_ticks == 100
 
@@ -297,6 +338,8 @@ def test_karr_protein_processing_ii_l2_replay_identity_per_tick(rng_seed: int) -
 
         process = KarrProteinProcessingIIProcess({"rng_seed": int(rng_seed)})
         state_template = build_state_template(process)
+        emitted_tick_counts = {obs: 0 for obs in mutated_obs}
+        signal_emissions = 0.0
 
         wids_by_observable: dict[str, list[str]] = {}
         for observable in _OBSERVABLES:
@@ -340,3 +383,11 @@ def test_karr_protein_processing_ii_l2_replay_identity_per_tick(rng_seed: int) -
                     oc_after=oc_after,
                     karr_after=karr_after,
                 )
+                if observable in emitted_tick_counts:
+                    delta = oc_after - before_vectors[observable]
+                    emitted_tick_counts[observable] += bool(np.any(delta != 0))
+                    if observable == "signalSequenceMonomers":
+                        signal_emissions += float(delta.sum())
+        assert all(count > 0 for count in emitted_tick_counts.values()), emitted_tick_counts
+        assert signal_emissions > 0, "replay must exercise actual nonzero signal emission"
+        print(f"PP2 executed mutation ticks={emitted_tick_counts}; signal emissions={signal_emissions}")
