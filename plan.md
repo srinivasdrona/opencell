@@ -75,6 +75,23 @@ in WSL cwd `/mnt/e/opencell-worktrees/integrate-fidelity-batch` using
 Preserve persistent legacy replay RNG; Design-A owns fresh samples. Prior
 421PASS/1 inherited CC starvation XFAIL and L1b/wiring/L2.4 are historical
 unchanged-production evidence, not this follow-up's results.
+Five ports now committed: `b4a3c69`→`058893a`, `cbc4eaf`→`bd5ea3d`,
+`92cce53`→`3bc852b`, `ad07c52`→`5a94d0f`, `0a8634f`→`c25ef05`.
+PT isolation2PASS; shared binding/capture/registry check next in shell
+`combined-binding-first`, logs/XML under `artifacts/fidelity_binding_combined`.
+Journal conflicts resolved current order then unique incoming IDs with
+zero ID/content collisions; incoming partial-tree plan discarded.
+Logger wrapper lost spaced argument quoting; no event was written. Use a
+WSL Python argv invocation for subsequent real-SHA provenance, not fabricated IDs.
+First frozen binding/capture/registry union53PASS (zero skips), plus PT2PASS.
+Combined RNA/PM closure and AST/import/exact-registry39PASS (zero skips).
+Added actual RNA helper and RM nascent fixture binding, retained tRNA parser
+dependency and PT/TOA membership, removed verified obsolete PM/Folding-only
+entries. Added source-read/AST/cache-drift controls without producer changes.
+Next joint union shell `combined-binding-joint` reuses the prior25 selectors
+plus accepted PP2 replay/adapter/strict-zero and binding/capture controls.
+Logs, XML and local RNA activity report: `artifacts\fidelity_binding_combined`.
+No ensemble, publication, blocker or eligibility action is authorized.
 
 **Isolated integration lane (2026-10-15):** worktree
 `E:\opencell-worktrees\integrate-fidelity-batch`, branch

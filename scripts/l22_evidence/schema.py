@@ -507,6 +507,8 @@ L2_EVENT_RIBOSOME_SMOKE_ADAPTER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "a
 L2_EVENT_RIBOSOME_N50_GATE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ribosome_assembly_n50_gate.py"
 L2_EVENT_RIBOSOME_SEED_AUDIT_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ribosome_assembly_seed_audit.py"
 L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.py"
+# Both source-before RNA adapters execute this helper, not the fidelity test utilities.
+RNA_REPLAY_INPUTS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_rna_replay_inputs.py"
 
 # --- Explicit per-process runtime dependency registry (F1, corrected F5) ----
 #
@@ -589,7 +591,6 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     },
     "ProteinModification": {
         "protein_state_module": PROTEIN_STATE_MODULE,
-        "protein_folding_module": REPO_ROOT / "opencell" / "vivarium" / "karr_protein_folding.py",
     },
     "ProteinFolding": {
         "protein_state_module": PROTEIN_STATE_MODULE,
@@ -599,6 +600,10 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     },
     "RNAProcessing": {
         "karr_trna_aminoacylation_module": KARR_TRNA_AMINOACYLATION_MODULE,
+        "rna_replay_inputs_module": RNA_REPLAY_INPUTS_MODULE,
+    },
+    "RNAModification": {
+        "rna_replay_inputs_module": RNA_REPLAY_INPUTS_MODULE,
     },
     "ProteinTranslocation": {
         "util_module": UTIL_MODULE,
@@ -756,13 +761,15 @@ HARNESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
 # Paths are repo-relative so a worktree's actual data, not a sibling's copy,
 # is bound before constructing the sample process.
 PROCESS_PARAMETER_FIXTURES: dict[str, tuple[str, ...]] = {
-    "ProteinModification": ("MacromolecularComplexation", "ProteinFolding", "RibosomeAssembly"),
+    # The combined PM adapter constructs only PM; Folding's fixtures are not consumed.
+    "ProteinModification": ("MacromolecularComplexation",),
     "ProteinFolding": ("MacromolecularComplexation", "RibosomeAssembly"),
     "ProteinProcessingI": ("MacromolecularComplexation", "RibosomeAssembly"),
     "ProteinDecay": ("MacromolecularComplexation",),
     "ProteinTranslocation": ("MacromolecularComplexation", "RibosomeAssembly"),
     "RNAProcessing": ("Rna", "MacromolecularComplexation", "RibosomeAssembly"),
-    "RNAModification": ("MacromolecularComplexation",),
+    # RM derives processed:: disambiguation from RNAProcessing's nascent WIDs.
+    "RNAModification": ("RNAProcessing", "MacromolecularComplexation"),
     "tRNAAminoacylation": ("MacromolecularComplexation", "RibosomeAssembly"),
 }
 PROTEIN_AUTHORITY_FIXTURES = ("ProteinTranslocation", "TerminalOrganelleAssembly")

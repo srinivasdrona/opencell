@@ -1163,7 +1163,8 @@ def test_process_dependency_registry_matches_real_current_import_graph():
     }
     assert set(schema.PROCESS_DEPENDENCY_FILES["Transcription"]) == {"m2_transcription_module", "m2_init_module"}
     assert schema.PROCESS_DEPENDENCY_FILES["RNAProcessing"] == {
-        "karr_trna_aminoacylation_module": schema.KARR_TRNA_AMINOACYLATION_MODULE
+        "karr_trna_aminoacylation_module": schema.KARR_TRNA_AMINOACYLATION_MODULE,
+        "rna_replay_inputs_module": schema.RNA_REPLAY_INPUTS_MODULE,
     }
     assert schema.PROCESS_DEPENDENCY_FILES["ProteinProcessingI"] == {
         "karr_trna_aminoacylation_module": schema.KARR_TRNA_AMINOACYLATION_MODULE,

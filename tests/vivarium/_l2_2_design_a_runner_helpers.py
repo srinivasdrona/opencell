@@ -271,6 +271,21 @@ def capture_runtime_inputs(process_name: str) -> list[dict[str, Any]]:
         )
         if migrated != frozenset(protein_state.MIGRATED_WIDS):
             raise ValueError("Consumed protein authority inputs differ from cached MIGRATED_WIDS")
+    if process_name in {"RNAProcessing", "RNAModification"}:
+        channels = (
+            ("unprocessedRNAs", "processedRNAs", "intergenicRNAs")
+            if process_name == "RNAProcessing" else ("unmodifiedRNAs", "modifiedRNAs")
+        )
+        for channel in channels:
+            if load_fixture_channel_wids(process_name, channel) != (
+                load_fixture_channel_wids.__wrapped__(process_name, channel)
+            ):
+                raise ValueError(f"Consumed RNA fixture inputs differ from cached {channel}")
+        if process_name == "RNAModification":
+            from opencell.vivarium.karr_rna_modification import _nascent_rna_wids
+
+            if _nascent_rna_wids() != _nascent_rna_wids.__wrapped__():
+                raise ValueError("Consumed RNA fixture inputs differ from cached nascent WIDs")
     verify_input_sources(sources)
     return sources
 
