@@ -112,17 +112,21 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - RNA lane C: RNAModification plus RNAProcessing, isolated worktree
   `E:\opencell-worktrees\fix-rna-pathway-fidelity`; freezes `55d9c3b` /
   `de67be1` are parent-reproduced: 46 PASS / 37 RED including legacy tests.
-  Test author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is idle; implementer
-  `47e288fe-a412-4728-96da-65e194efbff3` is live from `dcd3e5c`, tests frozen.
+  Implementer `47e288fe-a412-4728-96da-65e194efbff3` is now idle; original
+  test author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is live on the narrow
+  source-conflicting competition scenario and source-only replay/Design-A inputs.
   Coordinate
   the pair because they share `RequestCalculatorRNAPathway` and RNA form routing.
 - RNA implementation now landed at `6ab80b6` / `183ff18`, provenance
-  `80a0855`; doer is idle. Reported82 PASS/1 source-conflicting test remains:
+  `80a0855`; doer is idle. Parent reproduced82 PASS/1 conflicting test:
   tRNA-first competition grants7 water but source uses whole-class bound12.
   Independent author must adjudicate a genuine order-sensitive fixture case,
   not weaken the source bound or merely increase water until both pass.
   Legacy input-only replay/evidence projections also require correction before
   a fresh statistical verdict; no no-op replay may count as positive coverage.
+  Accepted50 cohorts for both RNA processes in `l22-final-sweep` match tracked
+  population hashes exactly. Local RM seed0 matches; RP seed0 is archived-stale;
+  both lack49 local seeds. Isolated restoration is pending the active freeze.
 - No lane may broaden the shared protein/chromosome authority migration,
   modify another lane's files/worktree, or self-certify L2.5 eligibility.
   Parent owns shared topology/accounting, dependency-closed source digests,
