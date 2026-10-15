@@ -37,6 +37,12 @@ from l2_replay_common import (  # noqa: E402
     project_vector_onto_wids,
     refresh_allocator_views,
 )
+from _rna_replay_inputs import (  # noqa: E402
+    assert_source_inputs as _assert_rna_source_inputs,
+    execute_rna_update,
+    project_source_state as _project_rna_source_state,
+    source_before_state as _rna_source_before_state,
+)
 
 from opencell.m1 import karr_metabolism as m1_karr_metabolism  # noqa: E402
 from opencell.m3 import translation as m3_karr_translation  # noqa: E402
@@ -749,6 +755,11 @@ def _format_ensemble_oracle(
         }
 
     if process_name == "RNAProcessing":
+        if missing_before or missing_after:
+            raise ValueError(
+                f"{process_name} missing RNA source families: before={missing_before}, "
+                f"after={missing_after}; legacy backfill is not source evidence"
+            )
         return {
             "process": process_name,
             "oracle_path": oracle_path,
@@ -773,6 +784,11 @@ def _format_ensemble_oracle(
         }
 
     if process_name == "RNAModification":
+        if missing_before or missing_after:
+            raise ValueError(
+                f"{process_name} missing RNA source families: before={missing_before}, "
+                f"after={missing_after}; legacy backfill is not source evidence"
+            )
         return {
             "process": process_name,
             "oracle_path": oracle_path,
@@ -2060,13 +2076,11 @@ def _run_rna_decay_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str
 
 
 def _run_rna_processing_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
-    """Run one OpenCell RNAProcessing tick from a prepared state snapshot."""
+    """Run RNAProcessing from captured-before source forms and live enzymes."""
     process = _rna_processing_process(_sample_seed(seed, tick))
     metadata = _rna_processing_channel_metadata()
-    runtime_state = build_state_template(process)
-    substrate_wids = list(state["substrate_wids"])
-    enzyme_wids = list(state["enzyme_wids"])
-    bound_enzymes_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
+    assert list(state["substrate_wids"]) == list(process.substrate_wids)
+    assert list(state["enzyme_wids"]) == list(process.enzyme_wids)
     unprocessed_before, processed_before, intergenic_before = _split_rna_vector(
         np.asarray(state["oracle_before_rnas"], dtype=np.float64),
         (
@@ -2076,81 +2090,31 @@ def _run_rna_processing_tick(seed: int, tick: int, state: dict[str, Any]) -> dic
         ),
     )
 
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="enzymes",
-        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
-        wids=enzyme_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="unprocessedRNAs",
-        vector=unprocessed_before,
-        wids=list(process.unprocessed_rna_wids),
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="processedRNAs",
-        vector=processed_before,
-        wids=list(process.processed_rna_wids),
-    )
-    refresh_allocator_views(process, runtime_state)
-    with forbid_sut_oracle_file_io():
-        update = process.next_update(1.0, runtime_state)
-    apply_count_update(runtime_state, update)
-
-    unprocessed_after = project_observable_from_state(
-        process=process,
-        state=runtime_state,
-        observable="unprocessedRNAs",
-        wids=list(process.unprocessed_rna_wids),
-        bound_enzymes_before=bound_enzymes_before,
-    )
-    processed_after = project_observable_from_state(
-        process=process,
-        state=runtime_state,
-        observable="processedRNAs",
-        wids=list(process.processed_rna_wids),
-        bound_enzymes_before=bound_enzymes_before,
-    )
-    rna_after = np.asarray(
-        np.concatenate([unprocessed_after, processed_after, intergenic_before]),
-        dtype=np.float64,
-    )
+    before = {
+        "substrates": state["oracle_before_substrates"],
+        "enzymes": state["oracle_before_enzymes"],
+        "boundEnzymes": state["oracle_before_bound_enzymes"],
+        "unprocessedRNAs": unprocessed_before, "processedRNAs": processed_before,
+        "intergenicRNAs": intergenic_before,
+    }
+    runtime_state = _rna_source_before_state(process, before)
+    _assert_rna_source_inputs(process, runtime_state, before)
+    execute_rna_update(process, runtime_state)
+    after = _project_rna_source_state(process, runtime_state)
     return {
-        "substrates": np.asarray(
-            project_observable_from_state(
-                process=process,
-                state=runtime_state,
-                observable="substrates",
-                wids=substrate_wids,
-                bound_enzymes_before=bound_enzymes_before,
-            ),
-            dtype=np.float64,
-        ),
-        "RNAs": rna_after,
+        "substrates": after["substrates"],
+        "RNAs": np.concatenate([after["unprocessedRNAs"], after["processedRNAs"],
+                                after["intergenicRNAs"]]),
         "sample_seed": _sample_seed(seed, tick),
     }
 
 
 def _run_rna_modification_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
-    """Run one OpenCell RNAModification tick from a prepared state snapshot."""
+    """Run all 347 RM source forms, not an active-only/pass-through surrogate."""
     process = _rna_modification_process(_sample_seed(seed, tick))
     metadata = _rna_modification_channel_metadata()
-    runtime_state = build_state_template(process)
-    substrate_wids = list(state["substrate_wids"])
-    enzyme_wids = list(state["enzyme_wids"])
-    bound_enzymes_before = np.asarray(state["oracle_before_bound_enzymes"], dtype=np.float64)
+    assert list(state["substrate_wids"]) == list(process.substrate_wids)
+    assert list(state["enzyme_wids"]) == list(process.enzyme_wids)
     full_unmodified_before, full_modified_before = _split_rna_vector(
         np.asarray(state["oracle_before_rnas"], dtype=np.float64),
         (
@@ -2158,89 +2122,20 @@ def _run_rna_modification_tick(seed: int, tick: int, state: dict[str, Any]) -> d
             len(metadata["modified_wids"]),
         ),
     )
-    active_unmodified_before = project_vector_onto_wids(
-        karr_vector=full_unmodified_before,
-        karr_wids=metadata["unmodified_wids"],
-        oc_wids=list(process.unmodified_rna_wids),
-    )
-    active_modified_before = project_vector_onto_wids(
-        karr_vector=full_modified_before,
-        karr_wids=metadata["modified_wids"],
-        oc_wids=list(process.modified_rna_wids),
-    )
-
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="substrates",
-        vector=np.asarray(state["oracle_before_substrates"], dtype=np.float64),
-        wids=substrate_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="enzymes",
-        vector=np.asarray(state["oracle_before_enzymes"], dtype=np.float64),
-        wids=enzyme_wids,
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="unmodifiedRNAs",
-        vector=active_unmodified_before,
-        wids=list(process.unmodified_rna_wids),
-    )
-    overlay_observable_into_state(
-        process=process,
-        state=runtime_state,
-        observable="modifiedRNAs",
-        vector=active_modified_before,
-        wids=list(process.modified_rna_wids),
-    )
-    refresh_allocator_views(process, runtime_state)
-    with forbid_sut_oracle_file_io():
-        update = process.next_update(1.0, runtime_state)
-    apply_count_update(runtime_state, update)
-
-    active_unmodified_after = project_observable_from_state(
-        process=process,
-        state=runtime_state,
-        observable="unmodifiedRNAs",
-        wids=list(process.unmodified_rna_wids),
-        bound_enzymes_before=bound_enzymes_before,
-    )
-    active_modified_after = project_observable_from_state(
-        process=process,
-        state=runtime_state,
-        observable="modifiedRNAs",
-        wids=list(process.modified_rna_wids),
-        bound_enzymes_before=bound_enzymes_before,
-    )
-    full_unmodified_after = _replace_active_rna_wids(
-        full_before=full_unmodified_before,
-        full_wids=metadata["unmodified_wids"],
-        active_after=active_unmodified_after,
-        active_wids=list(process.unmodified_rna_wids),
-    )
-    full_modified_after = _replace_active_rna_wids(
-        full_before=full_modified_before,
-        full_wids=metadata["modified_wids"],
-        active_after=active_modified_after,
-        active_wids=list(process.modified_rna_wids),
-    )
+    before = {
+        "substrates": state["oracle_before_substrates"],
+        "enzymes": state["oracle_before_enzymes"],
+        "boundEnzymes": state["oracle_before_bound_enzymes"],
+        "unmodifiedRNAs": full_unmodified_before, "modifiedRNAs": full_modified_before,
+    }
+    runtime_state = _rna_source_before_state(process, before)
+    _assert_rna_source_inputs(process, runtime_state, before)
+    execute_rna_update(process, runtime_state)
+    after = _project_rna_source_state(process, runtime_state)
     return {
-        "substrates": np.asarray(
-            project_observable_from_state(
-                process=process,
-                state=runtime_state,
-                observable="substrates",
-                wids=substrate_wids,
-                bound_enzymes_before=bound_enzymes_before,
-            ),
-            dtype=np.float64,
-        ),
+        "substrates": after["substrates"],
         "RNAs": np.asarray(
-            np.concatenate([full_unmodified_after, full_modified_after]),
+            np.concatenate([after["unmodifiedRNAs"], after["modifiedRNAs"]]),
             dtype=np.float64,
         ),
         "sample_seed": _sample_seed(seed, tick),
