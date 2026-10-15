@@ -86,21 +86,30 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   after the active input/form test freeze, then rerun full six-family replay
   and fresh distributional evidence. No raw data was changed during preflight.
 - Protein lane B: ProteinModification, isolated worktree
-  `E:\opencell-worktrees\fix-protein-modification-fidelity`; independent test
-  author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is live from `d97b761`.
+  `E:\opencell-worktrees\fix-protein-modification-fidelity`; freeze
+  `caaa189` / `2e902fb` is parent-accepted: new tests 43 PASS / 45 RED.
+  Test author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is idle; doer launch
+  is next, with tests frozen.
   It overlaps PP2's protein request-calculator
   class, so reconcile its shared-file edits against PP2 before integration.
 - RNA lane C: RNAModification plus RNAProcessing, isolated worktree
-  `E:\opencell-worktrees\fix-rna-pathway-fidelity`; independent test author
-  `eac71b90-e24c-489f-94f1-99fdd1b751f9` is live from `d97b761`. Coordinate
+  `E:\opencell-worktrees\fix-rna-pathway-fidelity`; freezes `55d9c3b` /
+  `de67be1` are parent-reproduced: 46 PASS / 37 RED including legacy tests.
+  Test author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is idle; doer is next.
+  Coordinate
   the pair because they share `RequestCalculatorRNAPathway` and RNA form routing.
 - No lane may broaden the shared protein/chromosome authority migration,
   modify another lane's files/worktree, or self-certify L2.5 eligibility.
   Parent owns shared topology/accounting, dependency-closed source digests,
   source-bound evidence reruns, and final eligibility adjudication.
-- PM and RNA lanes remain test-only until freeze acceptance; no new
-  implementation or evidence sweep is implied by these dispatches.
-  Do not start L2.5 itself.
+- PM and RNA implementation can now proceed concurrently against their
+  independent freezes; do not launch broad evidence sweeps or L2.5 itself.
+- RNA intergenic output identity is fixture global-row based within existing
+  `rna.counts` (`intergenic::<1-based Rna.intergenicIndexs row>`), not repeated
+  biological WID. This preserves all 11 fragments without a second authority.
+  RNADecay consumption is not claimed repaired by this producer-side slice.
+- Runtime `MIGRATED_WIDS` currently has 124 members (PT's 119 plus TOA union);
+  derive membership from the code, never conflate the PT subset with the union.
 - Operational trap: worktree `WholeCell` and canonical trace junctions must
   point directly to canonical targets, never through another worktree; never
   recursively delete junction-bearing directories. All Python stays in WSL.
