@@ -76,6 +76,16 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Reviewer `afe79323-decc-4c9e-9576-dc9099fa43fd` is live on snapshot
   `99ee89a`; original test author is live on PM-only evidence projection.
   Production remains frozen; no random-draw tuning is authorized.
+- Reviewer returned MATCHED for bounded production and independently verified
+  the tick53 result is a permitted fractional-rounding outcome, not by itself
+  a transition-law defect. Exact paired reconstruction remains unproven.
+- PM-only Design-A delta `5dd07ea` / `be2ccb4` is parent-reproduced36/36;
+  same reviewer is now checking this delta only. Production/frozen88 unchanged.
+- All50 accepted PM files now match population hashes in this worktree;
+  49 missing suffix files were copied, accepted canonical seed0 unchanged.
+  Next: registered PM N50/M100 sweep, max-workers1, planned shell
+  `pmod-fresh-design-a`, logs `tmp/pmod_fresh_design_a_logs`, report
+  `tmp/pmod_fresh_design_a_report.json`. No fresh statistical PASS yet.
 
 - Production commits `ce68925`, `6d5d9d9`, `2df7a99`, metadata `d3c242c`.
   Parent independently reproduced the frozen 88/88; no eligibility promotion.
