@@ -61,6 +61,23 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — parallel pre-L2.5 fidelity lanes; baseline remains 5/28:**
 
+- PP2 independent reviewer `2b6b081d-9fa9-4e18-8801-90cf58d63695` returned
+  DID NOT MATCH solely on two evidence-binding defects: missing protein-authority
+  code dependency, and N50 input manifest binding seed0 only/no parameter
+  fixtures. Reviewer closed all biological/runtime/replay categories and
+  independently re-derived fresh PASS. PP2 author is freezing binding canaries.
+- Shared evidence schema/runner repair has ONE owner in the PP2 lane. Do not
+  have PM/RNA implement competing provenance frameworks; port the reviewed
+  common repair and bind each lane's real helper/fixture dependencies.
+- PM bounded production AND adapter delta are independently MATCHED. Shell
+  `pmod-fresh-design-a` is still running after initial600s; wait for its
+  completion notification, do not poll/relaunch. Read raw verdict, not exit
+  status alone. Its attestation must also meet the repaired common contract.
+- RNA test correction/harness is now `94d3e9f` / `7a7b611`: reported84 unit
+  PASS +11 input/adapter PASS, source-only replay mismatches/missing intergenic
+  oracle explicitly retained. Parent is isolating its trace cache and restoring
+  both accepted50 cohorts before fresh review/gates; main data must stay intact.
+
 - Run independent process repairs concurrently in isolated worktrees. Preserve
   test-author -> implementer -> independent-reviewer ordering within each lane,
   but serialize shared-surface reconciliation and eligibility integration only.
