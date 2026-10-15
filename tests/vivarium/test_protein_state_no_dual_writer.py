@@ -325,10 +325,37 @@ def _activate_protein_processing_i() -> tuple[Any, dict[str, Any]]:
     return proc, proc.next_update(1.0, state)
 
 
-def _activate_protein_processing_ii() -> tuple[Any, dict[str, Any]]:
+def _activate_protein_processing_ii(*, live_enzymes: bool = True) -> tuple[Any, dict[str, Any]]:
     from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
 
     proc = KarrProteinProcessingIIProcess({})
+    fixture = loadmat(
+        _REPO_ROOT / "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+    compartments = ("c", "d", "e", "m", "tc", "tm")
+    enzyme_wids = _parse_wid_array(fixture.enzymeWholeCellModelIDs)
+    enzyme_counts = np.asarray(fixture.enzymes, dtype=float).reshape(-1)
+    enzyme_compartments = np.asarray(fixture.enzymeMonomerCompartmentIndexs, dtype=int).reshape(-1)
+    count_per_wid = 2.0  # Synthetic activation, unchanged from the original guard.
+    capacities = (
+        enzyme_counts[int(fixture.enzymeIndexs_signalPeptidase) - 1]
+        * float(fixture.lipoproteinSignalPeptidaseSpecificRate),
+        enzyme_counts[int(fixture.enzymeIndexs_diacylglycerylTransferase) - 1]
+        * float(fixture.lipoproteinDiacylglycerylTransferaseSpecificRate),
+    )
+    required_duration = max(
+        count_per_wid * (
+            np.atleast_1d(fixture.lipoproteinMonomerIndexs).size
+            + np.atleast_1d(fixture.secretedMonomerIndexs).size
+        ) / capacities[0],
+        count_per_wid * np.atleast_1d(fixture.lipoproteinMonomerIndexs).size / capacities[1],
+    )
+    # Keep the every-WID assertions with the actual fixture enzyme vector:
+    # a synthetic saturating duration, not inflated biology or default-chassis evidence.
+    fixture_step = float(fixture.stepSizeSec)
+    proc.parameters["time_step"] = float(np.ceil(required_duration / fixture_step)) * fixture_step
     state = {
         "protein": {
             "counts": {},
@@ -351,6 +378,15 @@ def _activate_protein_processing_ii() -> tuple[Any, dict[str, Any]]:
                     wid: {c: 0.0 for c in ("c", "d", "e", "m", "tc", "tm")}
                     for wid in MIGRATED_WIDS
                 },
+                "mature": {
+                    wid: {
+                        c: float(count) if live_enzymes and c == compartments[int(comp) - 1] else 0.0
+                        for c in compartments
+                    }
+                    for wid, comp, count in zip(
+                        enzyme_wids, enzyme_compartments, enzyme_counts, strict=True
+                    )
+                },
             },
         },
         "processedMonomers": {wid: 0.0 for wid in proc.processed_monomer_wids},
@@ -360,7 +396,7 @@ def _activate_protein_processing_ii() -> tuple[Any, dict[str, Any]]:
     }
     for wid in MIGRATED_WIDS:
         home = proc.migrated_compartment_by_wid[wid]
-        state["protein"]["compartment_counts"]["processed_i"][wid][home] = 2.0
+        state["protein"]["compartment_counts"]["processed_i"][wid][home] = count_per_wid
     return proc, proc.next_update(1.0, state)
 
 
@@ -612,33 +648,7 @@ def test_c2b_migrated_wids_never_emitted_to_legacy_branches() -> None:
     migrated PP2 deltas route strictly through compartment_counts.processed_i and processed_ii
     at biological compartments.
     """
-    from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
-
-    proc = KarrProteinProcessingIIProcess({})
-    state: dict[str, Any] = {
-        "protein": {
-            "counts": {},
-            "processed_counts": {wid: 0.0 for wid in proc.processed_monomer_wids if wid not in MIGRATED_WIDS},
-            "unfolded_counts": {wid: 0.0 for wid in proc.processed_monomer_wids if wid not in MIGRATED_WIDS},
-            "signal_sequence_counts": {wid: 0.0 for wid in proc.signal_sequence_monomer_wids if wid not in MIGRATED_WIDS},
-            "enzyme_counts": {wid: 100000.0 for wid in proc.enzyme_wids},
-            "compartment_counts": {
-                "processed_i": {wid: {c: 0.0 for c in ("c", "d", "e", "m", "tc", "tm")} for wid in MIGRATED_WIDS},
-                "processed_ii": {wid: {c: 0.0 for c in ("c", "d", "e", "m", "tc", "tm")} for wid in MIGRATED_WIDS},
-            },
-        },
-        "processedMonomers": {wid: 0.0 for wid in proc.processed_monomer_wids},
-        "unprocessedMonomers": {wid: 0.0 for wid in proc.unprocessed_monomer_wids},
-        "requests": {proc.name: {wid: 0.0 for wid in proc.substrate_wids}},
-        "substrates_allocated": {proc.name: {wid: 100000.0 for wid in proc.substrate_wids}},
-    }
-
-    # Plant migrated counts in processed_i ONLY at each WID's exact mapped home compartment
-    for wid in MIGRATED_WIDS:
-        home = proc.migrated_compartment_by_wid[wid]
-        state["protein"]["compartment_counts"]["processed_i"][wid][home] = 2.0
-
-    update = proc.next_update(1.0, state)
+    proc, update = _activate_protein_processing_ii()
     prot_update = update.get("protein", {})
 
     # 1. No migrated WID may appear in any legacy flat/queue branch
@@ -660,6 +670,19 @@ def test_c2b_migrated_wids_never_emitted_to_legacy_branches() -> None:
         has_pi = wid in comp_update["processed_i"]
         has_pii = wid in comp_update["processed_ii"]
         assert has_pi and has_pii, f"Expected compartment_counts delta for {wid} in PP2"
+
+
+def test_pp2_shadow_enzymes_do_not_activate_migrated_peptides() -> None:
+    """A large compatibility shadow must not replace absent live mature enzymes."""
+    proc, update = _activate_protein_processing_ii(live_enzymes=False)
+    protein = update.get("protein", {})
+    assert update.get("substrates", {}) == {}
+    for index in proc.peptidase_indices:
+        wid = proc.unprocessed_monomer_wids[int(index)]
+        for form in ("processed_i", "processed_ii", "signal_sequence"):
+            assert wid not in protein.get("compartment_counts", {}).get(form, {})
+    for branch in ("counts", "processed_counts", "unfolded_counts", "signal_sequence_counts"):
+        assert not set(protein.get(branch, {})) & MIGRATED_WIDS
 
 
 def test_qo2_dna_supercoiling_does_not_intersect_migrated_wids() -> None:
