@@ -2381,7 +2381,7 @@ def _run_protein_folding_tick(seed: int, tick: int, state: dict[str, Any]) -> di
 
 def _run_protein_translocation_tick(seed: int, tick: int, state: dict[str, Any]) -> dict[str, Any]:
     """Run one OpenCell ProteinTranslocation tick from a prepared state snapshot."""
-    process = _protein_translocation_process(_sample_seed(seed, tick))
+    process = _protein_translocation_process.__wrapped__(_sample_seed(seed, tick))
     runtime_state = build_state_template(process)
     substrate_wids = list(state["substrate_wids"])
     enzyme_wids = list(state["enzyme_wids"])
