@@ -77,6 +77,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   PASS +11 input/adapter PASS, source-only replay mismatches/missing intergenic
   oracle explicitly retained. Parent is isolating its trace cache and restoring
   both accepted50 cohorts before fresh review/gates; main data must stay intact.
+  Parent now reproduced95/95 and completed isolated restoration: both exact50
+  cohorts/100ticks/full family sets verified; main hashes unchanged. Independent
+  two-process review is next; statistical gates wait for the shared binding fix.
 
 - Run independent process repairs concurrently in isolated worktrees. Preserve
   test-author -> implementer -> independent-reviewer ordering within each lane,
