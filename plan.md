@@ -59,61 +59,61 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Bounded binding continuation (2026-10-15):** fresh integrator, verified
-tracked-clean start `48e0a8410fbd0d4c1da8d7a918a2e77b856f0810` on
-`integrate/pre-l25-fidelity-batch-20261015`, local/unpushed. Port sequence:
-`b4a3c69`, `cbc4eaf`, `92cce53`, `ad07c52`, `0a8634f`; omit plan-only
-`966f45b`. Preserve this handoff and both append-only journals. Complete actual
-RNA helper/fixture/parser byte-binding closure, not partial-tree PM/Folding
-dependencies. Reviewed producers, requests, observers, catalog and protected
-124-WID membership remain frozen. Canonical readiness4/28 and all blockers
-(including both PT findings) remain OPEN; parent owns independent review,
-publication and fresh gates. No nested agents, pushes, ensembles or evidence
-refresh. No live shell/agent at start; native Windows Git only, Python/scripts
-in WSL cwd `/mnt/e/opencell-worktrees/integrate-fidelity-batch` using
-`/mnt/e/opencell/.venv-wsl`. Use relative/WSL arguments, never Windows paths.
-Preserve persistent legacy replay RNG; Design-A owns fresh samples. Prior
-421PASS/1 inherited CC starvation XFAIL and L1b/wiring/L2.4 are historical
-unchanged-production evidence, not this follow-up's results.
-Five ports now committed: `b4a3c69`→`058893a`, `cbc4eaf`→`bd5ea3d`,
-`92cce53`→`3bc852b`, `ad07c52`→`5a94d0f`, `0a8634f`→`c25ef05`.
-PT isolation2PASS; shared binding/capture/registry check next in shell
-`combined-binding-first`, logs/XML under `artifacts/fidelity_binding_combined`.
-Journal conflicts resolved current order then unique incoming IDs with
-zero ID/content collisions; incoming partial-tree plan discarded.
-Logger wrapper lost spaced argument quoting; no event was written. Use a
-WSL Python argv invocation for subsequent real-SHA provenance, not fabricated IDs.
-First frozen binding/capture/registry union53PASS (zero skips), plus PT2PASS.
-Combined RNA/PM closure and AST/import/exact-registry39PASS (zero skips).
-Added actual RNA helper and RM nascent fixture binding, retained tRNA parser
-dependency and PT/TOA membership, removed verified obsolete PM/Folding-only
-entries. Added source-read/AST/cache-drift controls without producer changes.
-Next joint union shell `combined-binding-joint` reuses the prior25 selectors
-plus accepted PP2 replay/adapter/strict-zero and binding/capture controls.
-Logs, XML and local RNA activity report: `artifacts\fidelity_binding_combined`.
-No ensemble, publication, blocker or eligibility action is authorized.
-Committed closure `956fea2`, real-SHA logger provenance `1283506`, all local
-and unpushed. Launching joint shell `combined-binding-joint` while doing only
-independent RNA activity inventory/preflight, source/journal preservation,
-honesty recomputation and focused lint. No nested agents.
-Joint shell Windows PID4012 is running (last checked >300s). Real accepted
-RNA preflight completed: RP seeds0/1 tick5 active; RM seeds1/2 tick6 active,
-repeat-identical actual adapters; RM canonical seed0 N/A. All100 RNA files
-match accepted hashes/full families. Honesty freshly recomputed140 files,
-same scoped digest, INTEGRITY_OK4/28; actual five-lane runtime closure25 files
-`3c34924f039c088a3c2a2efa205413a06091b5837939931a44a7f546c56c7cd2`.
-PT publication remains1PASS/3FAIL; no old bytes refreshed. Expanded changed-
-mock compatibility26PASS/5FAIL/2 obsolete catalog assertions deselected:
-old Metabolism cube fixture assumption, tRNA laundering verdict assumption,
-and three missing legacy overlay-hook assumptions. Classifying those exact
-five against frozen48e0a84, not repairing unrelated producers or assertions.
-Joint finished461PASS/2FAIL/1 inherited XFAIL (613.94s), no skips. Exact
-two failures: frozen RNA missing-family diagnostics were masked by the new
-unbound-input metadata guard. Correcting only that validation order; complete
-unbound RNA still rejects descriptors. Frozen assertions unchanged. Expanded
-five compatibility failures reproduced exactly against48e0a84, left alone.
+**Bounded binding continuation COMPLETE (2026-10-15):** branch
+`integrate/pre-l25-fidelity-batch-20261015`, verified clean start
+`48e0a8410fbd0d4c1da8d7a918a2e77b856f0810`, all local/unpushed. Exact ports:
+`b4a3c69`→`058893a`, `cbc4eaf`→`bd5ea3d`, `92cce53`→`3bc852b`,
+`ad07c52`→`5a94d0f`, `0a8634f`→`c25ef05`; plan-only966f45b omitted.
+Actual RNA/PM closure956fea2, strict RNA diagnostic-order correction83b0afc,
+real-SHA provenance1283506/e7c8472; attribution-only correction3328f55.
+Final documentary/provenance tip is recorded in the mirrored STATUS file.
 
-**Isolated integration lane (2026-10-15):** worktree
+Exact final command:
+`& .\artifacts\fidelity_binding_combined\joint.ps1 -RunName joint-final`
+(32 selectors), **465PASS/1 inherited CC-starvation XFAIL in613.31s**, zero
+ordinary skips. Includes exact accepted PP2/replay/projected90, RNA101,
+PM source/adapter/strict-zero120, binding16, PT isolation2, capture7, new
+closure11, real allocation canaries32 and changed-surface conservation6.
+Registry/import30PASS (covered separately, not redundantly rerun). Ruff14
+changed Python filesPASS; frozen12 exact blobs and protected production/
+catalog/protected124-WID/evidence/index bytes unchanged. Both append-only
+journals retain all incoming/current events' exact content and order.
+
+All200 accepted files match frozen manifest hashes. RNA full-family activity:
+RP1070 primary-active ticks, actual seeds0/1 tick5; RM2244 primary-active
+ticks, actual seeds1/2 tick6, repeat-identical fresh owners. Canonical RM
+seed0 remains no-op N/A, not active proof. No statistical gate was run.
+Honesty freshly recomputed scoped140 files:
+`be95a0b307b08590de24a760183a631d37b96e490526016e17666de72e46809e`;
+unchanged scope, INTEGRITY_OK4/28,24 blocked. Separate actual five-lane
+runtime/parameter closure25 files:
+`cea9c319404d7a43dc7473f93a972a88202d7f1e1283608abe026164fae4d906`.
+No old evidence/source hash was refreshed or fabricated.
+
+Required closure MATCHED is NOT independent approval/readiness. PT publication
+remains1PASS/3FAIL (1/50 trace bindings, no parameter binding, stale sources).
+Expanded compatibility26PASS/5FAIL/2 old catalog assertions deselected; all
+five failures reproduce exactly on48e0a84 (old Metabolism cube assumption,
+tRNA laundering verdict assumption, three missing legacy overlay hooks).
+Read-only population reports all fourRESOLVED50/50; its broad destination
+check flags49 unrelated pre-existing MacromolecularComplexation files, retained.
+Do not repair these by changing frozen assertions, catalog, or published bytes.
+
+No live shell/PID/agent, MERGE_HEAD or CHERRY_PICK_HEAD remains. Logs/XML,
+reproducers, manifests and input snapshots: `artifacts\fidelity_binding_combined`;
+full report mirrored to parent session `files\STATUS_fidelity_binding_combined_port.md`.
+Parent owns independent review, same-reviewer acceptance, publication/fresh
+gates and eligibility; both PT blockers and canonical4/28 remain unchanged.
+No nested agents, push/main/canonical merge, source fetch/extraction, fixture/
+raw edits, evidence migration/publication, ensemble or L2.5 occurred.
+Native Windows Git only; Python/scripts use WSL cwd
+`/mnt/e/opencell-worktrees/integrate-fidelity-batch`, venv
+`/mnt/e/opencell/.venv-wsl`. Use relative/WSL arguments; wrapper splits spaced
+`-k`/logger text, so use Python argv. Fresh Design-A owners must not reset
+persistent legacy replay RNG. Never recursively clean unrelated scratch/raw
+paths or junctions. Incoming partial-tree plan never replaced this handoff.
+
+**Earlier isolated integration lane (before binding continuation; historical):** worktree
 `E:\opencell-worktrees\integrate-fidelity-batch`, branch
 `integrate/pre-l25-fidelity-batch-20261015`, base `95059f1`. Frozen merges:
 PP2 `be36287` → `768fc7e`, PM `89ac0f3` → `9a15bf3`, RNA `666fbb1` →
