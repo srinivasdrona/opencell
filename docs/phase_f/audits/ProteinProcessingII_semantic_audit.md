@@ -84,3 +84,62 @@ Priority-1 fixes: none
 - `PP2-S4-01` (`judgment=required`)
 - `PP2-S5-01` (`judgment=required`)
 - `PP2-S6-02` (`judgment=required`)
+
+## Bounded implementation checkpoint — 2026-10-15 (not independent adjudication)
+
+The claim table and aggregate counts above are the historical audit, not a new
+MATCHED verdict. Implementation commits `1ad8204` and `770bada` repair the
+source ceil/min demand, migrated processed-I/live mature enzyme ownership,
+same-tick grant consumption, and cytosolic signal-peptide writeback. Independent
+semantic review and refreshed applicable distributional evidence remain required.
+No claim is reclassified RESOLVED and eligibility remains blocked.
+
+Executed production boundary: **57/57 PASS** across the frozen PP2 fidelity,
+request-calculator, standalone, and strict-zero selection. Real v5/v6 Engines
+consume the new grant through the original public `p.next_update` exactly once;
+construction does not evolve biology. Both request and evolution share
+`read_processing_inputs` and fixture enzyme compartment indices. Migrated signal
+peptides write only `compartment_counts.signal_sequence[wid]["c"]`.
+
+Executed conservation: **four seeds x 100 ticks PASS**, zero Part A/Part B
+failures, zero unattributed delta. A real Engine accounting canary measured prior
+PG160 grant=0, actual evolution-Step grant=3, consumption=3. Correct at-use
+accounting passes; stale-grant and planted consumption=4 controls both fail with
+over_allocation. Accounting preserves actual phase attribution and ordinary
+Processes' pre-update allocation snapshots. Shared chromosome Stage A+B plus CC
+request-ready compatibility: **47 PASS / 1 existing strict XFAIL**.
+
+### Open blockers / precise follow-up
+
+- **Nonmigrated production ownership:** legacy standalone `protein.counts`
+  routing is preserved, not globally migrated. Chassis flat counts are mature,
+  not a nonmigrated processed-I authority. A rejected schema-expansion canary
+  exposed 16,177 mature molecules to pass-through (flat total 20,572 -> 4,395 in
+  one tick); that draft was removed. The bounded fix declares migrated inputs,
+  does not newly expose/drain the nonmigrated mature pool, and does not claim
+  full 482-WID production form fidelity.
+- **Older projection guard contradicts source ownership:**
+  `test_protein_state_no_dual_writer.py:615-662` supplies only seeded
+  `enzyme_counts`, omits live mature enzyme authority, then requires cleavage.
+  Actual guard selection: **27 PASS / 1 FAIL / 1 strict XFAIL**. Primary
+  `Process.m:611-670` and fixture enzymeMonomerCompartmentIndexs require mature
+  enzyme reads; frozen PP2 live-off/shadow-on tests explicitly reject the old
+  fallback. Return the guard's setup to the independent test author; tests and
+  production assertions were not weakened.
+- **Replay input/evidence coverage:** unchanged seed-0 replay still fails at
+  tick 3, substrates[0], OC H2O=140259, Karr=140258, diff=+1, exactly the measured
+  pre-implementation failure. Four output-oracle anticheat tests pass. At tick 3
+  the unchanged replay overlay places [58, 372] into enzyme_counts while live
+  mature enzymes remain [0, 0]; trace target processed-I sum=1 while the source
+  reader sees 0. The frozen generic overlay at
+  `l2_replay_common.py:530-602` does not populate the authoritative inputs.
+  Fix/verify that harness boundary independently before interpreting stochastic
+  parity. No RNG reset, output-oracle read, tolerance change, or replay shortcut
+  was added.
+- **Evidence invalidation:** previous catalog/evidence-index PASS records are
+  not a fresh validation of this changed production path. Re-inventory and rerun
+  applicable PP2 evidence after source-owned input projection is independently
+  frozen: accepted catalog remains TRIVIAL_RNG, M_ticks=20, N_seeds=50,
+  primary_channel=monomers, input=[substrates,enzymes,monomers],
+  output=[substrates,monomers], artifact=per_process_traces_v2. No ensemble,
+  evidence-index edit, threshold change, or eligibility promotion was performed.

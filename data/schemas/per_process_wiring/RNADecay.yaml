@@ -32,7 +32,7 @@ integration_touchpoints:
         symbol: "RnaDecayLightProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "2517-2671"
+          lines: "2690-2856"
           note: "RNADecay topology wiring includes requests and substrates_allocated."
           symbol: build_karr_chassis_v6
         - path: "opencell/vivarium/karr_allocation_step.py"
@@ -329,7 +329,7 @@ source_anchors:
       symbol: RnaDecayLightProcess._available_water
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "2517-2671"
+      lines: "2690-2856"
       note: "RNADecay process registration and topology wiring."
       symbol: build_karr_chassis_v6
     allocation_step:

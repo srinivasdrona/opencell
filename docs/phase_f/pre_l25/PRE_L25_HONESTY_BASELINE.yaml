@@ -8,8 +8,8 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "ab4da2a9bd747c1bfd2e56348983a118f60501feb3ff3b4a6baeee3c402794e8"
-  file_count: 130
+  sha256: "0ff36ad3541379e9cf76c495b4a7086998bd1ec96e4317ae5ea7aa7629c245a4"
+  file_count: 137
 authorities:
   l1b_method_completeness: "PASS 115/115"
   l1b_wiring_conformance: "PASS 28/28"
@@ -367,10 +367,51 @@ processes:
       - id: PPII-DEVIATIONS
         kind: CODE_DEVIATION
         disposition: OPEN
-        summary: "One MATLAB-to-OpenCell implementation deviation remains open."
+        summary: >-
+          Bounded source demand, migrated input ownership, same-tick evolution,
+          and signal-peptide writeback repairs pass the frozen production
+          boundary; independent semantic re-adjudication remains open.
+          The historical one-deviation audit is not a promotion verdict.
         evidence:
           - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
-            lines: "71-74"
+            lines: "88-100"
+      - id: PPII-LEGACY-OWNERSHIP
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Nonmigrated standalone legacy counts routing is preserved, not
+          globally migrated. Chassis mature flat counts do not represent
+          nonmigrated processed-I authority; exposing them would create a
+          full-pool pass-through drain. No full 482-WID form fidelity claimed.
+        evidence:
+          - path: opencell/vivarium/karr_protein_processing_ii.py
+            lines: "160-178"
+          - path: opencell/vivarium/karr_protein_processing_ii.py
+            lines: "237-243"
+      - id: PPII-REPLAY-INPUT-EVIDENCE
+        kind: EVIDENCE_CONFIG_MISMATCH
+        disposition: NEEDS_EXECUTION
+        summary: >-
+          Unchanged canonical replay is RED at tick 3, H2O +1. Its input
+          overlay does not populate migrated processed-I or live mature
+          enzyme authority. Existing distributional PASS records do not
+          validate the changed production path. Independent source-owned
+          harness projection and applicable catalog evidence reruns are
+          required; catalog and evidence index are unchanged.
+        evidence:
+          - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+            lines: "112-145"
+      - id: PPII-PROJECTION-GUARD-INPUTS
+        kind: EVIDENCE_CONFIG_MISMATCH
+        disposition: OPEN
+        summary: >-
+          Older no-dual-writer guard supplies only enzyme_counts and expects
+          cleavage despite absent live mature enzymes. Independent test-author
+          source alignment is required; the production legacy fallback is
+          not restored and no assertion is weakened.
+        evidence:
+          - path: tests/vivarium/test_protein_state_no_dual_writer.py
+            lines: "615-662"
 
   - name: ProteinTranslocation
     behavior_gate: L2.2
