@@ -93,8 +93,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Protein lane B: ProteinModification, isolated worktree
   `E:\opencell-worktrees\fix-protein-modification-fidelity`; freeze
   `caaa189` / `2e902fb` is parent-accepted: new tests 43 PASS / 45 RED.
-  Test author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is idle; implementer
-  `d44e1601-82f2-4d3e-9c27-cbfefcaa290b` is live from `de4a408`, tests frozen.
+  Bounded production repair is now `d3c242c`; parent reproduced frozen88/88.
+  Implementer `d44e1601-82f2-4d3e-9c27-cbfefcaa290b` is idle; original test
+  author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is live for wrapper-manifest,
+  source-owned compatibility inputs and old hinted replay correction/diagnosis.
+  Persistent replay tick53 mismatch is not yet source-certified or waived.
   It overlaps PP2's protein request-calculator
   class, so reconcile its shared-file edits against PP2 before integration.
 - RNA lane C: RNAModification plus RNAProcessing, isolated worktree
