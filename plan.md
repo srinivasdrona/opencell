@@ -77,6 +77,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   Existing input spies now observe the actual public execution class rather
   than requiring a cached metadata factory to own execution. Production and
   helper implementations remain unchanged; original doer is next.
+- Freeze commit `a202f24`; doer `47e288fe-a412-4728-96da-65e194efbff3` is
+  now live on that helper-only fix. Tests/production/plan read-only for it;
+  preserve old persistent replay policy and all sample/channel definitions.
 - Canonical audit baseline is temporarily4/28 after the same attestation defect
   reopened existing PT eligibility. This branch's old5/28 pin is historical;
   the common reviewed repair must restore complete evidence before promotion.
