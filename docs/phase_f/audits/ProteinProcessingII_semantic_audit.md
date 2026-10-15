@@ -143,3 +143,37 @@ request-ready compatibility: **47 PASS / 1 existing strict XFAIL**.
   primary_channel=monomers, input=[substrates,enzymes,monomers],
   output=[substrates,monomers], artifact=per_process_traces_v2. No ensemble,
   evidence-index edit, threshold change, or eligibility promotion was performed.
+
+## Narrow local form-route follow-up — 2026-10-15
+
+This supersedes the previous checkpoint's open local ownership and input-overlay
+descriptions, not the historical independent claim table. Parent/test-author
+source adjudication established that no global 482-WID migration is prerequisite:
+PP1 writes processed-I to nonmigrated `protein.processed_counts`; Folding reads
+processed-II from `protein.unfolded_counts`. MATLAB's form identities are
+ProteinProcessingI.m:146-165, ProteinProcessingII.m:180-217,234-252,348-356,
+and ProteinFolding.m:331-340,380-450. Queue names come from the existing Python
+producer/consumer, not from MATLAB.
+
+Production commit `aae8d93` reads/decrements processed_counts and increments
+unfolded_counts; mature counts are never read or written. Actual queue schema
+leaves are declared. Dynamic MIGRATED_WIDS membership, migrated authority,
+fixture-compartment live enzymes, cytosolic signals, explicit request-ready
+handshake, public next_update, and RNG algorithm are unchanged.
+
+The independently corrected frozen six-file selection is **79 PASS /1 FAIL**,
+zero skips/xfails: full 100-tick replay over the five observed families passes.
+The sole failure is `test_ppii_canonical_oracle_covers_all_source_output_families`:
+both canonical before/after omit signalSequenceMonomers. No alternate oracle,
+manufactured expected signal counts, or tolerance change was used.
+
+All local route/once-only controls pass, including MG_001's actual PP1 -> PP2 ->
+Folding handoff, mature-only 1,000,000 no-transition poison, and real v5/v6 Engine
+queue consumption. Nine no-dual-writer tests pass. Static/anticheat checks pass
+6/6; fresh L2.4 four seeds x100 ticks passes with zero Part A/Part B failures and
+zero unattributed delta. L1b remains 115/115 methods and 28/28 wiring.
+
+Signal-complete accepted-cohort restoration/verification belongs to the parent
+after production freeze. No raw caches, cohort manifests, catalog, evidence index,
+tests, or plan were edited. Missing six-family signal evidence and independent
+semantic review remain open; no eligibility promotion or overall MATCHED verdict.
