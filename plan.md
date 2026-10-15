@@ -88,14 +88,15 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Protein lane B: ProteinModification, isolated worktree
   `E:\opencell-worktrees\fix-protein-modification-fidelity`; freeze
   `caaa189` / `2e902fb` is parent-accepted: new tests 43 PASS / 45 RED.
-  Test author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is idle; doer launch
-  is next, with tests frozen.
+  Test author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is idle; implementer
+  `d44e1601-82f2-4d3e-9c27-cbfefcaa290b` is live from `de4a408`, tests frozen.
   It overlaps PP2's protein request-calculator
   class, so reconcile its shared-file edits against PP2 before integration.
 - RNA lane C: RNAModification plus RNAProcessing, isolated worktree
   `E:\opencell-worktrees\fix-rna-pathway-fidelity`; freezes `55d9c3b` /
   `de67be1` are parent-reproduced: 46 PASS / 37 RED including legacy tests.
-  Test author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is idle; doer is next.
+  Test author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is idle; implementer
+  `47e288fe-a412-4728-96da-65e194efbff3` is live from `dcd3e5c`, tests frozen.
   Coordinate
   the pair because they share `RequestCalculatorRNAPathway` and RNA form routing.
 - No lane may broaden the shared protein/chromosome authority migration,
