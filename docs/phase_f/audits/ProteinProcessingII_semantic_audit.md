@@ -84,3 +84,96 @@ Priority-1 fixes: none
 - `PP2-S4-01` (`judgment=required`)
 - `PP2-S5-01` (`judgment=required`)
 - `PP2-S6-02` (`judgment=required`)
+
+## Bounded implementation checkpoint — 2026-10-15 (not independent adjudication)
+
+The claim table and aggregate counts above are the historical audit, not a new
+MATCHED verdict. Implementation commits `1ad8204` and `770bada` repair the
+source ceil/min demand, migrated processed-I/live mature enzyme ownership,
+same-tick grant consumption, and cytosolic signal-peptide writeback. Independent
+semantic review and refreshed applicable distributional evidence remain required.
+No claim is reclassified RESOLVED and eligibility remains blocked.
+
+Executed production boundary: **57/57 PASS** across the frozen PP2 fidelity,
+request-calculator, standalone, and strict-zero selection. Real v5/v6 Engines
+consume the new grant through the original public `p.next_update` exactly once;
+construction does not evolve biology. Both request and evolution share
+`read_processing_inputs` and fixture enzyme compartment indices. Migrated signal
+peptides write only `compartment_counts.signal_sequence[wid]["c"]`.
+
+Executed conservation: **four seeds x 100 ticks PASS**, zero Part A/Part B
+failures, zero unattributed delta. A real Engine accounting canary measured prior
+PG160 grant=0, actual evolution-Step grant=3, consumption=3. Correct at-use
+accounting passes; stale-grant and planted consumption=4 controls both fail with
+over_allocation. Accounting preserves actual phase attribution and ordinary
+Processes' pre-update allocation snapshots. Shared chromosome Stage A+B plus CC
+request-ready compatibility: **47 PASS / 1 existing strict XFAIL**.
+
+### Open blockers / precise follow-up
+
+- **Nonmigrated production ownership:** legacy standalone `protein.counts`
+  routing is preserved, not globally migrated. Chassis flat counts are mature,
+  not a nonmigrated processed-I authority. A rejected schema-expansion canary
+  exposed 16,177 mature molecules to pass-through (flat total 20,572 -> 4,395 in
+  one tick); that draft was removed. The bounded fix declares migrated inputs,
+  does not newly expose/drain the nonmigrated mature pool, and does not claim
+  full 482-WID production form fidelity.
+- **Older projection guard contradicts source ownership:**
+  `test_protein_state_no_dual_writer.py:615-662` supplies only seeded
+  `enzyme_counts`, omits live mature enzyme authority, then requires cleavage.
+  Actual guard selection: **27 PASS / 1 FAIL / 1 strict XFAIL**. Primary
+  `Process.m:611-670` and fixture enzymeMonomerCompartmentIndexs require mature
+  enzyme reads; frozen PP2 live-off/shadow-on tests explicitly reject the old
+  fallback. Return the guard's setup to the independent test author; tests and
+  production assertions were not weakened.
+- **Replay input/evidence coverage:** unchanged seed-0 replay still fails at
+  tick 3, substrates[0], OC H2O=140259, Karr=140258, diff=+1, exactly the measured
+  pre-implementation failure. Four output-oracle anticheat tests pass. At tick 3
+  the unchanged replay overlay places [58, 372] into enzyme_counts while live
+  mature enzymes remain [0, 0]; trace target processed-I sum=1 while the source
+  reader sees 0. The frozen generic overlay at
+  `l2_replay_common.py:530-602` does not populate the authoritative inputs.
+  Fix/verify that harness boundary independently before interpreting stochastic
+  parity. No RNG reset, output-oracle read, tolerance change, or replay shortcut
+  was added.
+- **Evidence invalidation:** previous catalog/evidence-index PASS records are
+  not a fresh validation of this changed production path. Re-inventory and rerun
+  applicable PP2 evidence after source-owned input projection is independently
+  frozen: accepted catalog remains TRIVIAL_RNG, M_ticks=20, N_seeds=50,
+  primary_channel=monomers, input=[substrates,enzymes,monomers],
+  output=[substrates,monomers], artifact=per_process_traces_v2. No ensemble,
+  evidence-index edit, threshold change, or eligibility promotion was performed.
+
+## Narrow local form-route follow-up — 2026-10-15
+
+This supersedes the previous checkpoint's open local ownership and input-overlay
+descriptions, not the historical independent claim table. Parent/test-author
+source adjudication established that no global 482-WID migration is prerequisite:
+PP1 writes processed-I to nonmigrated `protein.processed_counts`; Folding reads
+processed-II from `protein.unfolded_counts`. MATLAB's form identities are
+ProteinProcessingI.m:146-165, ProteinProcessingII.m:180-217,234-252,348-356,
+and ProteinFolding.m:331-340,380-450. Queue names come from the existing Python
+producer/consumer, not from MATLAB.
+
+Production commit `aae8d93` reads/decrements processed_counts and increments
+unfolded_counts; mature counts are never read or written. Actual queue schema
+leaves are declared. Dynamic MIGRATED_WIDS membership, migrated authority,
+fixture-compartment live enzymes, cytosolic signals, explicit request-ready
+handshake, public next_update, and RNG algorithm are unchanged.
+
+The independently corrected frozen six-file selection is **79 PASS /1 FAIL**,
+zero skips/xfails: full 100-tick replay over the five observed families passes.
+The sole failure is `test_ppii_canonical_oracle_covers_all_source_output_families`:
+both canonical before/after omit signalSequenceMonomers. No alternate oracle,
+manufactured expected signal counts, or tolerance change was used.
+
+All local route/once-only controls pass, including MG_001's actual PP1 -> PP2 ->
+Folding handoff, mature-only 1,000,000 no-transition poison, and real v5/v6 Engine
+queue consumption. Nine no-dual-writer tests pass. Static/anticheat checks pass
+6/6; fresh L2.4 four seeds x100 ticks passes with zero Part A/Part B failures and
+zero unattributed delta. L1b remains 115/115 methods and 28/28 wiring.
+
+Signal-complete accepted-cohort restoration/verification belongs to the parent
+after production freeze. No raw caches, cohort manifests, catalog, evidence index,
+tests, or plan were edited. Missing six-family signal evidence and independent
+semantic review remain open; no eligibility promotion or overall MATCHED verdict.

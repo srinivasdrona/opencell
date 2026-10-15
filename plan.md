@@ -59,6 +59,15 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Isolated integration lane (2026-10-15):** worktree
+`E:\opencell-worktrees\integrate-fidelity-batch`, branch
+`integrate/pre-l25-fidelity-batch-20261015`, base `95059f1`. Frozen PP2
+`be36287` is reconciled; source/current/request tests: 66 PASS. PM `89ac0f3`
+and RNA `666fbb1` remain next, in that order. No push, no eligibility
+promotion, no agents. Canonical status below remains authoritative.
+Detailed merge/test checkpoints live in the session artifact
+`STATUS_fidelity_batch_integration.md`. No long-lived command is active.
+
 **Current status (2026-10-15) — shared attestation gap reopens PT; canonical readiness baseline 4/28:**
 
 - Parent verified the same representative-seed-only defect in the previously

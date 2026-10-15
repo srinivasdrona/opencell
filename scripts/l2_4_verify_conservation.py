@@ -210,6 +210,7 @@ class ConservationCollector:
         self.per_tick_process_wid_deltas: dict[str, dict[str, float]] = defaultdict(
             lambda: defaultdict(float)
         )
+        self.per_tick_allocations_used: dict[str, dict[str, float]] = {}
         self._entities: dict[str, Any] = {}
         self._entities.update(getattr(composite, "processes", {}))
         self._entities.update(getattr(composite, "steps", {}))
@@ -221,6 +222,7 @@ class ConservationCollector:
         self._current_tick["tick"] = int(tick)
         self.per_tick_process_sums.clear()
         self.per_tick_process_wid_deltas.clear()
+        self.per_tick_allocations_used.clear()
 
     def _seed_shared_chromosome_rand_stream(self, *, seed: int) -> None:
         """Set/reset the shared chromosome state RNG leaf
@@ -246,11 +248,16 @@ class ConservationCollector:
 
     def _seed_entities(self, *, seed: int) -> None:
         from opencell.util.matlab_rng import MatlabRandStream
+        from opencell.vivarium.karr_protein_processing_ii import (
+            KarrProteinProcessingIIEvolutionStep,
+        )
 
         names = sorted(self._entities.keys())
         children = np.random.SeedSequence(int(seed)).spawn(len(names))
         for idx, name in enumerate(names):
             entity = self._entities[name]
+            if isinstance(entity, KarrProteinProcessingIIEvolutionStep):
+                entity = entity.processing_process
             child = children[idx]
             entity_seed = int(child.generate_state(1, dtype=np.uint32)[0])
             params = getattr(entity, "parameters", None)
@@ -263,7 +270,15 @@ class ConservationCollector:
                     entity._rng = np.random.default_rng(entity_seed)
 
     def _patch_entities(self) -> None:
+        from opencell.vivarium.karr_protein_processing_ii import (
+            KarrProteinProcessingIIEvolutionStep,
+        )
+
         for entity_name, entity_obj in self._entities.items():
+            allocation_consumer = (
+                entity_obj.processing_process.name
+                if isinstance(entity_obj, KarrProteinProcessingIIEvolutionStep) else None
+            )
             topology_entry = self._composite.topology.get(entity_name, {})
             shared_ports: dict[str, tuple[str, ...]] = {}
             if isinstance(topology_entry, dict):
@@ -290,7 +305,18 @@ class ConservationCollector:
                 _original: Any = original_next_update,
                 _shared_ports: dict[str, tuple[str, ...]] = shared_ports,
                 _port_updaters: dict[str, dict[str, str]] = port_updaters,
+                _allocation_consumer: str | None = allocation_consumer,
             ) -> dict[str, Any]:
+                if (
+                    _allocation_consumer is not None
+                    and states.get("phase", {}).get("request_ready") is True
+                ):
+                    # PP2 now consumes the post-calculator grant, unlike ordinary
+                    # Processes. Bind Part B to the grant its real Step received.
+                    grant = states.get("substrates_allocated", {}).get(_allocation_consumer, {})
+                    self.per_tick_allocations_used[_entity_name] = {
+                        str(wid): _to_float(value, default=0.0) for wid, value in grant.items()
+                    }
                 update = _original(timestep, states)
                 if update is None:
                     update = {}
@@ -648,8 +674,7 @@ def run_seed_horizon(
     for tick in range(1, ticks + 1):
         collector.set_tick(tick)
         before = _snapshot_substrates(engine)
-        # Allocation of record for THIS tick is the value present BEFORE the
-        # update — processes read substrates_allocated during their next_update.
+        # Ordinary Processes consume the allocation present BEFORE the update.
         # Snapshotting it AFTER engine.update() captures the allocator's freshly
         # computed allocation for the NEXT tick (off-by-one) and spuriously
         # reports over_allocation once the pool depletes.
@@ -663,6 +688,9 @@ def run_seed_horizon(
             process_name: dict(wid_deltas)
             for process_name, wid_deltas in collector.per_tick_process_wid_deltas.items()
         }
+        # PP2's phase-split Step uses this tick's new grant. Keep its actual
+        # phase attribution and validate against the captured at-use allocation.
+        substrates_allocated.update(collector.per_tick_allocations_used)
         outcome = evaluate_tick_part_a(
             seed=seed,
             tick=tick,

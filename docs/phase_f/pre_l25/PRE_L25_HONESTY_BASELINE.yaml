@@ -8,8 +8,8 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "ab4da2a9bd747c1bfd2e56348983a118f60501feb3ff3b4a6baeee3c402794e8"
-  file_count: 130
+  sha256: "555571f7e20ae579079ed1c9063f6d3ff499235092410bab2349e08f8a8427ef"
+  file_count: 137
 authorities:
   l1b_method_completeness: "PASS 115/115"
   l1b_wiring_conformance: "PASS 28/28"
@@ -367,10 +367,54 @@ processes:
       - id: PPII-DEVIATIONS
         kind: CODE_DEVIATION
         disposition: OPEN
-        summary: "One MATLAB-to-OpenCell implementation deviation remains open."
+        summary: >-
+          Bounded source demand, migrated input ownership, same-tick evolution,
+          signal-peptide writeback, and local nonmigrated form-route repairs
+          pass the frozen production boundary; independent semantic
+          re-adjudication remains open.
+          The historical one-deviation audit is not a promotion verdict.
         evidence:
           - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
-            lines: "71-74"
+            lines: "147-179"
+      - id: PPII-LEGACY-OWNERSHIP
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Local nonmigrated ownership is now repaired through existing PP1
+          processed_counts and Folding unfolded_counts queues, with no mature
+          counts read/write or global migration. Source-adjudicated queue,
+          mature-poison, once-only and Engine tests pass; final independent
+          review of this historical code-deviation finding remains open.
+        evidence:
+          - path: opencell/vivarium/karr_protein_processing_ii.py
+            lines: "165-183"
+          - path: opencell/vivarium/karr_protein_processing_ii.py
+            lines: "379-448"
+      - id: PPII-REPLAY-INPUT-EVIDENCE
+        kind: EVIDENCE_CONFIG_MISMATCH
+        disposition: NEEDS_EXECUTION
+        summary: >-
+          Independently corrected source-owned projection and the canonical
+          five-observed-family replay now pass all 100 ticks. The canonical
+          before/after oracle lacks signalSequenceMonomers, and the explicit
+          coverage guard remains FAIL. Parent-owned accepted signal-complete
+          cohort restoration and six-family verification are still required;
+          existing distributional PASS is not fresh changed-path validation.
+          Catalog and evidence index are unchanged.
+        evidence:
+          - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+            lines: "164-179"
+      - id: PPII-PROJECTION-GUARD-INPUTS
+        kind: STALE_OR_MISSING_AUDIT
+        disposition: OPEN
+        summary: >-
+          Independent test-author source alignment is frozen and all nine
+          no-dual-writer guards now pass without any production mature-enzyme
+          fallback or weakened assertions. Final independent semantic
+          re-adjudication remains open.
+        evidence:
+          - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+            lines: "170-179"
 
   - name: ProteinTranslocation
     behavior_gate: L2.2

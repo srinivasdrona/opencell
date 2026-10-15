@@ -1,11 +1,15 @@
 from __future__ import annotations
 
 import sys
+from copy import deepcopy
+from functools import cache
 from pathlib import Path
+from typing import Any
 
 import h5py
 import numpy as np
 import pytest
+from scipy.io import loadmat
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -28,8 +32,6 @@ from l2_replay_common import (
     cell_vector,
     collect_count_delta_dicts,
     infer_wids_for_observable,
-    overlay_observable_into_state,
-    project_observable_from_state,
     refresh_allocator_views,
     resolve_trace_path,
 )
@@ -44,9 +46,16 @@ from l2_replay_common import (
 )
 
 from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
+from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS
 
 _TRACE_PROCESS_NAME = "ProteinProcessingII"
-_OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes', 'processedMonomers', 'unprocessedMonomers')
+_OBSERVABLES = (
+    "substrates", "enzymes", "boundEnzymes", "processedMonomers",
+    "unprocessedMonomers", "signalSequenceMonomers",
+)
+_SOURCE_MUTATED_OBSERVABLES = frozenset({
+    "substrates", "processedMonomers", "unprocessedMonomers", "signalSequenceMonomers",
+})
 
 # Observables Karr records but `next_update` does not write into. Their
 # `oc_after` MUST be rebuilt from `states_before` (Rule 7 pass-through
@@ -54,11 +63,208 @@ _OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes', 'processedMonomers', 'u
 _PASS_THROUGH = frozenset({'boundEnzymes', 'enzymes'})
 
 # Rule 4b manifest (declared for mechanical lint coverage).
-_SCRATCH_RESET = {}
+_SCRATCH_RESET = {"_rng": "karr-persistent"}
 
 # Optional explicit observable->WID attribute mapping. Any missing or unknown
 # attr falls back to heuristic inference from process attrs / state schema.
-_OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids', 'processedMonomers': 'processed_monomer_wids', 'unprocessedMonomers': 'unprocessed_monomer_wids'}
+_OBSERVABLE_TO_WIDS_ATTR = {
+    "substrates": "substrate_wids",
+    "enzymes": "enzyme_wids",
+    "boundEnzymes": "enzyme_wids",
+    "processedMonomers": "processed_monomer_wids",
+    "unprocessedMonomers": "unprocessed_monomer_wids",
+    "signalSequenceMonomers": "signal_sequence_monomer_wids",
+}
+
+
+@cache
+def _ppii_fixture() -> Any:
+    return loadmat(
+        _REPO_ROOT / "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+
+
+def _ppii_locations(observable: str) -> list[tuple[str, tuple[str, ...]]]:
+    """PP2-only copyFromState/copyToState projection, never an evolution helper.
+
+    ProteinProcessingII.m:199-268 owns processed-I/II at monomerCompartments
+    and signal sequences in cytosol. Process.m:611-670 owns mature/bound
+    enzymes at enzymeMonomerCompartmentIndexs. For nonmigrated WIDs, PP1's
+    processed_counts is processed-I; Folding's unfolded_counts is processed-II.
+    Neither aliases the mature counts pool or migrates chassis state.
+    """
+    fixture = _ppii_fixture()
+    if observable == "substrates":
+        return [
+            (str(wid), ("substrates", str(wid)))
+            for wid in fixture.substrateWholeCellModelIDs
+        ]
+    if observable in {"enzymes", "boundEnzymes"}:
+        form = "mature" if observable == "enzymes" else "bound"
+        return [
+            (str(wid), ("protein", "compartment_counts", form, str(wid),
+                        COMPARTMENTS[int(comp) - 1]))
+            for wid, comp in zip(
+                fixture.enzymeWholeCellModelIDs, fixture.enzymeMonomerCompartmentIndexs,
+                strict=True,
+            )
+        ]
+    form, legacy, field = {
+        "unprocessedMonomers": ("processed_i", "processed_counts", "unprocessedMonomerWholeCellModelIDs"),
+        "processedMonomers": ("processed_ii", "unfolded_counts", "processedMonomerWholeCellModelIDs"),
+        "signalSequenceMonomers": (
+            "signal_sequence", "signal_sequence_counts", "signalSequenceMonomerWholeCellModelIDs",
+        ),
+    }[observable]
+    locations = []
+    for index, raw_wid in enumerate(getattr(fixture, field)):
+        wid = str(raw_wid)
+        if wid in MIGRATED_WIDS:
+            compartment = "c" if form == "signal_sequence" else (
+                COMPARTMENTS[int(fixture.monomerCompartments[index]) - 1]
+            )
+            path = ("protein", "compartment_counts", form, wid, compartment)
+        else:
+            path = ("protein", legacy, wid)
+        locations.append((wid, path))
+    return locations
+
+
+def _ppii_state_from_before(
+    process: KarrProteinProcessingIIProcess,
+    before_vectors: dict[str, np.ndarray],
+    wids_by_observable: dict[str, list[str]],
+) -> dict[str, Any]:
+    """Overlay only captured inputs, without filling migrated compatibility shadows."""
+    state = build_state_template(process)
+    for observable, vector in before_vectors.items():
+        locations = _ppii_locations(observable)
+        assert wids_by_observable[observable] == [wid for wid, _ in locations], (
+            f"PP2 fixture WID-order mismatch: {observable}"
+        )
+        assert np.asarray(vector).shape == (len(locations),), (
+            f"PP2 captured input length mismatch: {observable}"
+        )
+        for (_, path), value in zip(locations, vector, strict=True):
+            node = state
+            for key in path[:-1]:
+                node = node.setdefault(key, {})
+            node[path[-1]] = float(value)
+    refresh_allocator_views(process, state)
+    return state
+
+
+def _project_ppii_observable(
+    process: KarrProteinProcessingIIProcess, state: dict[str, Any], observable: str,
+) -> np.ndarray:
+    if observable in {"unprocessedMonomers", "enzymes"}:
+        precursors, enzymes = process.read_processing_inputs(state)
+        return precursors if observable == "unprocessedMonomers" else enzymes
+    values = []
+    for _, path in _ppii_locations(observable):
+        node: Any = state
+        for key in path:
+            node = node.get(key, 0.0) if isinstance(node, dict) else 0.0
+        values.append(float(node))
+    return np.asarray(values, dtype=np.float64)
+
+
+def test_ppii_captured_before_projection_matches_production_source_reader() -> None:
+    process = KarrProteinProcessingIIProcess({"rng_seed": 0})
+    rng_before = deepcopy(process._rng.bit_generator.state)
+    wids = {obs: [wid for wid, _ in _ppii_locations(obs)] for obs in _OBSERVABLES}
+    migrated_indices = [
+        i for i, wid in enumerate(process.unprocessed_monomer_wids) if wid in MIGRATED_WIDS
+    ]
+    active_migrated_ticks = 0
+    with h5py.File(resolve_trace_path(_TRACE_PROCESS_NAME), "r") as trace:
+        n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
+        for tick in range(n_ticks):
+            before = {obs: cell_vector(trace, "states_before", obs, tick) for obs in _OBSERVABLES}
+            state = _ppii_state_from_before(process, before, wids)
+            # This is the actual reader called by both calculate_request and next_update.
+            precursors, enzymes = process.read_processing_inputs(state)
+            np.testing.assert_array_equal(
+                precursors, before["unprocessedMonomers"], err_msg=f"PP2 precursor input tick={tick}"
+            )
+            np.testing.assert_array_equal(
+                enzymes, before["enzymes"], err_msg=f"PP2 live enzyme input tick={tick}"
+            )
+            for obs in _OBSERVABLES:
+                np.testing.assert_array_equal(
+                    _project_ppii_observable(process, state, obs), before[obs],
+                    err_msg=f"PP2 source input tick={tick}, observable={obs}",
+                )
+            for branch in ("counts", "processed_counts", "unprocessed_counts"):
+                assert not set(state["protein"].get(branch, {})) & set(MIGRATED_WIDS)
+            assert all(value == 0 for value in state["protein"]["enzyme_counts"].values())
+            active_migrated_ticks += bool(np.any(precursors[migrated_indices] > 0))
+    assert active_migrated_ticks > 0, "input regression must exercise migrated precursors"
+    assert process._rng.bit_generator.state == rng_before, "input projection must not consume RNG"
+
+
+def test_ppii_projection_preserves_absent_and_nonmigrated_input_contracts() -> None:
+    process = KarrProteinProcessingIIProcess({"rng_seed": 0})
+    state = _ppii_state_from_before(process, {}, {})
+    state["protein"]["enzyme_counts"] = dict(
+        zip(process.enzyme_wids, np.asarray(_ppii_fixture().enzymes).reshape(-1), strict=True)
+    )
+    precursors, enzymes = process.read_processing_inputs(state)
+    np.testing.assert_array_equal(precursors, np.zeros(len(process.unprocessed_monomer_wids)))
+    np.testing.assert_array_equal(enzymes, np.zeros(len(process.enzyme_wids)))
+
+    # Synthetic precursor at the existing PP1-owned processed-I queue, not mature counts.
+    before = np.zeros(len(process.unprocessed_monomer_wids))
+    index = next(i for i, wid in enumerate(process.unprocessed_monomer_wids) if wid not in MIGRATED_WIDS)
+    before[index] = 1
+    state = _ppii_state_from_before(
+        process, {"unprocessedMonomers": before},
+        {"unprocessedMonomers": process.unprocessed_monomer_wids},
+    )
+    actual, _ = process.read_processing_inputs(state)
+    np.testing.assert_array_equal(actual, before)
+    wid = process.unprocessed_monomer_wids[index]
+    assert state["protein"]["processed_counts"][wid] == 1
+    assert wid not in state["protein"].get("counts", {})
+    assert wid not in state["protein"]["compartment_counts"]["processed_i"]
+
+
+def _assert_ppii_coverage(trace: h5py.File, observables: tuple[str, ...]) -> None:
+    observed = set(observables)
+    before = set(trace["states_before"])
+    after = set(trace["states_after"])
+    missing_before = _SOURCE_MUTATED_OBSERVABLES - before
+    missing_after = _SOURCE_MUTATED_OBSERVABLES - after
+    assert not missing_before and not missing_after, (
+        "MISSING_EVIDENCE: canonical PP2 oracle lacks source output families; "
+        f"states_before missing={sorted(missing_before)}, states_after missing={sorted(missing_after)}. "
+        "Signal conservation unit tests are not captured signal-sequence replay evidence. "
+        "No alternate cohort selected or expected signal counts fabricated."
+    )
+    assert len(observables) == len(observed)
+    assert observed == before == after, (
+        "PP2 replay observation set must equal captured before/after families; "
+        f"observed={sorted(observed)}, before={sorted(before)}, after={sorted(after)}"
+    )
+    assert observed >= _SOURCE_MUTATED_OBSERVABLES
+    assert observed >= _PASS_THROUGH
+
+
+def test_ppii_canonical_oracle_covers_all_source_output_families() -> None:
+    with h5py.File(resolve_trace_path(_TRACE_PROCESS_NAME), "r") as trace:
+        _assert_ppii_coverage(trace, _OBSERVABLES)
+
+
+@pytest.mark.parametrize("omitted", ["signalSequenceMonomers", "boundEnzymes"])
+def test_ppii_coverage_rejects_six_channel_file_with_five_channel_loop(omitted: str) -> None:
+    observed = tuple(obs for obs in _OBSERVABLES if obs != omitted)
+    with (
+        h5py.File(resolve_trace_path(_TRACE_PROCESS_NAME), "r") as trace,
+        pytest.raises(AssertionError, match="observation set"),
+    ):
+        _assert_ppii_coverage(trace, observed)
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -91,18 +297,28 @@ def _assert_identity_or_tolerance(
     oc_after: np.ndarray,
     karr_after: np.ndarray,
 ) -> None:
+    for label, values in (("oracle", karr_after), ("oc", oc_after)):
+        if not np.array_equal(values, np.rint(values)):
+            index = int(np.flatnonzero(values != np.rint(values))[0])
+            pytest.fail(
+                f"L2a {label} non-integral: tick={tick}, observable={observable}, "
+                f"index={index}, value={values[index]}"
+            )
     _assert_identity_or_tolerance_shared(
         tick=tick,
         observable=observable,
         oc_after=oc_after,
         karr_after=karr_after,
     )
+    # The shared helper's optional calibrated mode cannot relax this exact replay.
+    np.testing.assert_array_equal(oc_after, karr_after)
 
 
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
 def test_karr_protein_processing_ii_l2_replay_identity_per_tick(rng_seed: int) -> None:
     trace_path = resolve_trace_path(_TRACE_PROCESS_NAME)
     with h5py.File(trace_path, "r") as trace:
+        _assert_ppii_coverage(trace, _OBSERVABLES)
         n_ticks = int(np.asarray(trace["metadata/n_ticks"][()]).reshape(-1)[0])
         assert n_ticks == 100
 
@@ -122,6 +338,8 @@ def test_karr_protein_processing_ii_l2_replay_identity_per_tick(rng_seed: int) -
 
         process = KarrProteinProcessingIIProcess({"rng_seed": int(rng_seed)})
         state_template = build_state_template(process)
+        emitted_tick_counts = {obs: 0 for obs in mutated_obs}
+        signal_emissions = 0.0
 
         wids_by_observable: dict[str, list[str]] = {}
         for observable in _OBSERVABLES:
@@ -136,21 +354,12 @@ def test_karr_protein_processing_ii_l2_replay_identity_per_tick(rng_seed: int) -
             )
 
         for tick in range(n_ticks):
-            state = build_state_template(process)
             before_vectors = {
                 observable: cell_vector(trace, "states_before", observable, tick)
                 for observable in _OBSERVABLES
             }
 
-            for observable in _OBSERVABLES:
-                overlay_observable_into_state(
-                    process=process,
-                    state=state,
-                    observable=observable,
-                    vector=before_vectors[observable],
-                    wids=wids_by_observable[observable],
-                )
-            refresh_allocator_views(process, state)
+            state = _ppii_state_from_before(process, before_vectors, wids_by_observable)
 
             update = process.next_update(1.0, state)
             _apply_update(state, update, process)
@@ -167,23 +376,18 @@ def test_karr_protein_processing_ii_l2_replay_identity_per_tick(rng_seed: int) -
                         f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
                     )
 
-                if observable in _PASS_THROUGH:
-                    # Rule 7: Karr records this observable but OC's next_update
-                    # does not write into it. oc_after == karr_before by
-                    # construction; if Karr mutates the observable within the
-                    # tick the assertion will surface the discrepancy.
-                    oc_after = before_vectors[observable].astype(np.float64).reshape(-1)
-                else:
-                    oc_after = project_observable_from_state(
-                        process=process,
-                        state=state,
-                        observable=observable,
-                        wids=wids_by_observable[observable],
-                        bound_enzymes_before=before_vectors.get("boundEnzymes"),
-                    )
+                oc_after = _project_ppii_observable(process, state, observable)
                 _assert_identity_or_tolerance(
                     tick=tick,
                     observable=observable,
                     oc_after=oc_after,
                     karr_after=karr_after,
                 )
+                if observable in emitted_tick_counts:
+                    delta = oc_after - before_vectors[observable]
+                    emitted_tick_counts[observable] += bool(np.any(delta != 0))
+                    if observable == "signalSequenceMonomers":
+                        signal_emissions += float(delta.sum())
+        assert all(count > 0 for count in emitted_tick_counts.values()), emitted_tick_counts
+        assert signal_emissions > 0, "replay must exercise actual nonzero signal emission"
+        print(f"PP2 executed mutation ticks={emitted_tick_counts}; signal emissions={signal_emissions}")
