@@ -78,6 +78,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Next: implement this coupled PP2 slice against frozen tests, then rerun the
   actual integration/evidence gates and obtain an independent review. Runtime
   compatibility or evidence failures must not be hidden to force 6/28.
+- Live implementer: `3c96c6ae-682d-4090-b1b8-fef846e8adf8`, dispatched from
+  `bd296ce`. Tests are frozen/read-only; permitted production work is confined
+  to PP2 input/request/evolution/signal writeback and directly coupled
+  topology/accounting/metadata. No evidence promotion or push is authorized.
 - Primary authority is local MATLAB `ProteinProcessingII.m:325-345`:
   H2O demand is the minimum of ceil(peptidase * rate * step) and the
   lipoprotein-plus-secreted processed-I pool; PG160 uses transferase capacity
