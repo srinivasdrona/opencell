@@ -732,6 +732,15 @@ def _format_ensemble_oracle(
     before_channels: dict[str, np.ndarray],
     after_channels: dict[str, np.ndarray],
 ) -> dict[str, Any]:
+    if process_name in {"RNAProcessing", "RNAModification"}:
+        required_before, required_after = _required_ensemble_keys(process_name)
+        missing_before = [channel for channel in required_before if channel not in before_channels]
+        missing_after = [channel for channel in required_after if channel not in after_channels]
+        if missing_before or missing_after:
+            raise ValueError(
+                f"{process_name} missing RNA source families: before={missing_before}, "
+                f"after={missing_after}; legacy backfill is not source evidence"
+            )
     sources = getattr(before_channels, "input_sources", None)
     if not sources:
         raise ValueError("Ensemble inputs lack load-time source hashes")

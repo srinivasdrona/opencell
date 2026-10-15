@@ -7,6 +7,7 @@ import hashlib
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -121,3 +122,15 @@ def test_capture_rejects_stale_rm_nascent_membership(monkeypatch):
     monkeypatch.setattr(karr_rna_modification, "_nascent_rna_wids", stale)
     with pytest.raises(ValueError, match="cached nascent WIDs"):
         helpers.capture_runtime_inputs("RNAModification")
+
+
+@pytest.mark.parametrize("name", ["RNAProcessing", "RNAModification"])
+def test_complete_rna_arrays_still_require_load_time_sources(tmp_path, name):
+    before, after = helpers._required_ensemble_keys(name)
+    path = tmp_path / "never_loaded.mat"
+    with pytest.raises(ValueError, match="lack load-time source hashes"):
+        helpers._format_ensemble_oracle(
+            process_name=name, oracle_path=path, seed_paths=[path],
+            before_channels={family: np.ones((1, 1, 1)) for family in before},
+            after_channels={family: np.ones((1, 1, 1)) for family in after},
+        )

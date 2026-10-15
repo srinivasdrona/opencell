@@ -92,6 +92,26 @@ Next joint union shell `combined-binding-joint` reuses the prior25 selectors
 plus accepted PP2 replay/adapter/strict-zero and binding/capture controls.
 Logs, XML and local RNA activity report: `artifacts\fidelity_binding_combined`.
 No ensemble, publication, blocker or eligibility action is authorized.
+Committed closure `956fea2`, real-SHA logger provenance `1283506`, all local
+and unpushed. Launching joint shell `combined-binding-joint` while doing only
+independent RNA activity inventory/preflight, source/journal preservation,
+honesty recomputation and focused lint. No nested agents.
+Joint shell Windows PID4012 is running (last checked >300s). Real accepted
+RNA preflight completed: RP seeds0/1 tick5 active; RM seeds1/2 tick6 active,
+repeat-identical actual adapters; RM canonical seed0 N/A. All100 RNA files
+match accepted hashes/full families. Honesty freshly recomputed140 files,
+same scoped digest, INTEGRITY_OK4/28; actual five-lane runtime closure25 files
+`3c34924f039c088a3c2a2efa205413a06091b5837939931a44a7f546c56c7cd2`.
+PT publication remains1PASS/3FAIL; no old bytes refreshed. Expanded changed-
+mock compatibility26PASS/5FAIL/2 obsolete catalog assertions deselected:
+old Metabolism cube fixture assumption, tRNA laundering verdict assumption,
+and three missing legacy overlay-hook assumptions. Classifying those exact
+five against frozen48e0a84, not repairing unrelated producers or assertions.
+Joint finished461PASS/2FAIL/1 inherited XFAIL (613.94s), no skips. Exact
+two failures: frozen RNA missing-family diagnostics were masked by the new
+unbound-input metadata guard. Correcting only that validation order; complete
+unbound RNA still rejects descriptors. Frozen assertions unchanged. Expanded
+five compatibility failures reproduced exactly against48e0a84, left alone.
 
 **Isolated integration lane (2026-10-15):** worktree
 `E:\opencell-worktrees\integrate-fidelity-batch`, branch
