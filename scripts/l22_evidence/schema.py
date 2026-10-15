@@ -552,11 +552,8 @@ L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.p
 # called by any evidence-generation path today -- this entry has ZERO
 # effect on the Design-A tally.
 #
-# `ChromosomeCondensation` (out of scope: not in `catalog.in_scope_processes()`)
-# is deliberately NOT registered here -- it is never looked up by any
-# in-scope evidence row regardless, so omitting it has no staling impact
-# either way; see EVIDENCE_INDEX_SPEC.md Section 13.11 for why it is
-# excluded from the audit too (out-of-scope processes are never iterated).
+PROTEIN_STATE_MODULE = REPO_ROOT / "opencell" / "vivarium" / "protein_state.py"
+
 PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     "FtsZPolymerization": {
         "ftsz_windowed_n20_gate_module": FTSZ_WINDOWED_N20_GATE_MODULE,
@@ -585,6 +582,19 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     },
     "ProteinProcessingI": {
         "karr_trna_aminoacylation_module": KARR_TRNA_AMINOACYLATION_MODULE,
+        "protein_state_module": PROTEIN_STATE_MODULE,
+    },
+    "ProteinProcessingII": {
+        "protein_state_module": PROTEIN_STATE_MODULE,
+    },
+    "ProteinModification": {
+        "protein_state_module": PROTEIN_STATE_MODULE,
+    },
+    "ProteinFolding": {
+        "protein_state_module": PROTEIN_STATE_MODULE,
+    },
+    "ProteinDecay": {
+        "protein_state_module": PROTEIN_STATE_MODULE,
     },
     "RNAProcessing": {
         "karr_trna_aminoacylation_module": KARR_TRNA_AMINOACYLATION_MODULE,
@@ -592,6 +602,16 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     "ProteinTranslocation": {
         "util_module": UTIL_MODULE,
         "util_matlab_rng_module": UTIL_MATLAB_RNG_MODULE,
+        "protein_state_module": PROTEIN_STATE_MODULE,
+    },
+    "ChromosomeCondensation": {
+        "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+        "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
+        "chromcond_mcg_rand_module": REPO_ROOT / "opencell" / "util" / "chromcond_mcg_rand.py",
+    },
+    "TranscriptionalRegulation": {
+        "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+        "txreg_mcg_rand_module": REPO_ROOT / "opencell" / "util" / "txreg_mcg_rand.py",
     },
     "DNARepair": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
