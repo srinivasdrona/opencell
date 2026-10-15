@@ -59,16 +59,24 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-15) — coordinated RNA test freeze accepted; implementation next:**
+**Current status (2026-10-15) — RNA production committed; independent source-bound harness adjudication active:**
 
 - Both production chunks landed (`6ab80b6`, `183ff18`, provenance `80a0855`);
   implementer is idle. Reported82/83 source contracts pass; one frozen
   tRNA-first resource-competition case must be independently re-adjudicated
   against MATLAB's whole-class worst-water bound12 versus supplied7.
-- Original test author is next for that fixture case and source-before-only
-  legacy replay projection. Do not lower the class bound, hide missing outputs,
+- Original test author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is live from
+  `b226acc` for that fixture case and source-before-only legacy replay and
+  RNA-specific Design-A projections. Parent independently reproduced82/83.
+  Do not lower the class bound, hide missing outputs,
   reset persistent RNG, or use output hints to restore green. No-op traces
   remain explicitly non-coverage. Production and evidence caches are frozen.
+- Parent fixture probe confirms whole tRNA water bound12, selected tRNA cost2
+  and selected rRNA cost7. Repair must preserve a truly order-sensitive scenario,
+  not simply increase water until both process.
+- Accepted full50 cohorts for both RNA processes are hash-verified in
+  `l22-final-sweep`; RM local seed0 matches, RP local seed0 is stale. Parent
+  will isolate/restore caches only after the active harness freeze.
 
 **Earlier RNA freeze/implementation dispatch (superseded above):**
 
