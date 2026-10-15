@@ -61,6 +61,18 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — RNA production committed; independent source-bound harness adjudication active:**
 
+- Test/harness follow-up `94d3e9f` / `7a7b611` is committed; original author is
+  idle. Reported84/84 source unit contracts and11 input/projection regressions;
+  genuine legacy replay differences and missing canonical intergenic oracle
+  remain visible. No production changes in that follow-up.
+- Next parent cache operation: verify and unlink ONLY this worktree's canonical
+  seed0 junction (nonrecursive deletion, already canary-tested), preserve other
+  canonical files locally except stale RP0, then populate manifest-accepted
+  N50 cohorts for both RNA processes. Main canonical directory/bytes unchanged.
+- New `_rna_replay_inputs.py` and actual parameter dependencies must join the
+  common evidence closure; PP2 lane owns that shared registry/manifest repair.
+  Fresh statistical promotion waits for complete binding, not just score PASS.
+
 - Both production chunks landed (`6ab80b6`, `183ff18`, provenance `80a0855`);
   implementer is idle. Reported82/83 source contracts pass; one frozen
   tRNA-first resource-competition case must be independently re-adjudicated
