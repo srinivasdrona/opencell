@@ -327,3 +327,80 @@ def test_ppii_strict_inputs_reject_one_change_after_valid_pass(
             f"--verify-input-files re-derived PASS after one {mutation} {target}"
         )
         assert not verified, f"inputs_verified still true after {mutation} {target}: {reason}"
+
+
+def test_ppii_attestation_rejects_source_replacement_after_load(
+    binding_bundle: BindingBundle, monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A final hash must not certify replacement bytes absent from evaluated arrays."""
+    bundle = binding_bundle
+    _assert_valid_baseline(bundle)
+    source = bundle.seed_paths[0]  # Already bound even before the all-source fix.
+    original_bytes = source.read_bytes()
+    loaded_digest = _sha(source)
+    with h5py.File(source, "r") as trace:
+        reference = trace["states_before"]["unprocessedMonomers"][0, 0]
+        loaded_vector = np.asarray(trace[reference][()]).reshape(-1).copy()
+    arithmetic_tick = helpers.run_oc_tick
+    replacement: dict[str, Any] = {}
+
+    def replace_after_load(
+        process_name: str, seed: int, tick: int, state: dict[str, Any],
+    ) -> dict[str, Any]:
+        if not replacement:
+            assert seed == 0 and tick == 0
+            np.testing.assert_array_equal(state["oracle_before_monomers"], loaded_vector)
+            assert _sha(source) == loaded_digest
+            # The real loader has materialized these arrays already. Replace
+            # actual source values, not metadata or a malformed-file sentinel.
+            with h5py.File(source, "r+") as trace:
+                reference = trace["states_before"]["unprocessedMonomers"][0, 0]
+                dataset = trace[reference]
+                dataset[...] = np.asarray(dataset[()]) + 777  # Synthetic replacement.
+            replacement["sha256"] = _sha(source)
+            assert replacement["sha256"] != loaded_digest
+        if seed == 0:
+            np.testing.assert_array_equal(state["oracle_before_monomers"], loaded_vector)
+        return arithmetic_tick(process_name, seed, tick, state)
+
+    monkeypatch.setattr(helpers, "run_oc_tick", replace_after_load)
+    output = bundle.root / "during_evaluation" / ENTRY.name / schema.DESIGN_A_SUBDIR
+    try:
+        try:
+            runner.run_design_a(
+                process=ENTRY.name, seeds=list(range(ENTRY.n_seeds)), m_ticks=ENTRY.m_ticks,
+                out_dir=output, thresholds_path=output / "thresholds.json", bootstrap_B=8,
+            )
+        except (ValueError, RuntimeError, OSError) as exc:
+            assert replacement, "run failed before the one-file replacement"
+            message = str(exc).lower()
+            assert any(word in message for word in ("input", "source", "hash", "sha", "drift", "changed")), message
+        else:
+            assert replacement, "mutation witness never ran"
+            manifest = json.loads((output / "input_manifest.json").read_text())
+            records = {
+                (Path(record["path"]) if Path(record["path"]).is_absolute() else bundle.root / record["path"]).resolve(): record
+                for record in manifest["inputs"]
+            }
+            assert source in records, "omitting the changed input is not drift rejection"
+            verified, reason = sweep._verify_input_manifest(manifest, repo_root=bundle.root)
+            original_result = json.loads(bundle.result_bytes)
+            current_result = json.loads((output / "result.json").read_text())
+            for channel, original in original_result["channels"].items():
+                for metric in (
+                    "w1_oc_vs_karr", "threshold", "q95_null", "n_nonzero_oc", "n_nonzero_karr",
+                ):
+                    assert current_result["channels"][channel][metric] == original[metric]
+            assert not verified, (
+                "final verification accepted bytes never loaded: "
+                f"loaded={loaded_digest}, recorded={records[source]['sha256']}, "
+                f"replacement={replacement['sha256']}"
+            )
+            assert records[source]["sha256"] == loaded_digest, (
+                "manifest must preserve loaded-byte identity, not a late replacement hash"
+            )
+            assert reason is not None
+        _assert_evidence_unchanged(bundle)
+    finally:
+        source.write_bytes(original_bytes)
+        _assert_valid_baseline(bundle)
