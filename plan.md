@@ -61,6 +61,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — PM bounded production repair verified; independent harness follow-up next:**
 
+- Registered N50/M100 sweep has completed from `5c57210`: computed PASS,
+  5000 observations/channel, B1000, canonical_seed_count50, zero warnings.
+  Primary monomer W1=0.00010414937759336126; substrate W1=
+  0.03502666666666667 versus threshold25.793109333333327.
+- Shell `pmod-fresh-design-a` finished exit0; no PM run remains live.
+  Production and adapter delta are both independently MATCHED.
+- This is a numerical candidate, NOT final bound evidence: its manifest still
+  lists3 inputs under the old runner contract. The single-owner common binding
+  repair in PP2 must bind all consumed files/fixtures/code dependencies before
+  independent acceptance/publication/promotion. Do not hand-pin eligibility.
+
 - Harness corrections are committed at `45e1dc8` / `68c154c`: wrapper
   classification and source-owned input assumptions corrected; all100 before
   U/E vectors round-trip through production. Reported137 PASS /1 exact replay
