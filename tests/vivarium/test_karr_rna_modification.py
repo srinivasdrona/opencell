@@ -273,7 +273,9 @@ def test_partial_modification_no_transition() -> None:
     update = p.next_update(1.0, state)
     assert update.get("rna", {}).get("counts", {}).get(target_wid, 0.0) == 0.0
     assert update.get("rna", {}).get("modified_counts", {}).get(target_wid, 0.0) == 0.0
-    assert 0 < p._n_completed[target_idx] < p.required_reactions_per_rna[target_idx]
+    # RNAModification.m:297-362 represents only complete RNA modifications;
+    # it does not retain partial-reaction completion counters between ticks.
+    assert all(delta == 0 for delta in update.get("substrates", {}).values())
 
 
 def test_deterministic_with_seed() -> None:
@@ -315,13 +317,15 @@ def test_complex_enzyme_is_read_from_complex_store() -> None:
     base_state["rna"]["counts"][target_wid] = 1.0
     base_state["rna"]["modified_counts"][target_wid] = 0.0
 
-    for sidx, coeff in enumerate(p.reaction_stoich[:, reaction_idx]):
-        if coeff < 0:
+    target_reactions = np.flatnonzero(p.reaction_modification[:, target_idx] > 0)
+    full_requirements = np.maximum(0, -p.reaction_stoich[:, target_reactions]).sum(axis=1)
+    for sidx, coeff in enumerate(full_requirements):
+        if coeff > 0:
             substrate_wid = p.substrate_wids[sidx]
-            base_state["substrates"][substrate_wid] = float(-coeff)
-            base_state["substrates_allocated"][p.name][substrate_wid] = float(-coeff)
+            base_state["substrates"][substrate_wid] = float(coeff)
+            base_state["substrates_allocated"][p.name][substrate_wid] = float(coeff)
 
-    for eidx, flag in enumerate(p.reaction_catalysis[reaction_idx]):
+    for eidx, flag in enumerate(np.any(p.reaction_catalysis[target_reactions] > 0, axis=0)):
         if flag > 0:
             _set_enzyme_count(base_state, p, p.enzyme_wids[eidx], 1_000_000.0)
 
@@ -331,7 +335,8 @@ def test_complex_enzyme_is_read_from_complex_store() -> None:
     update_active = p.next_update(1.0, base_state)
     update_blocked = p.next_update(1.0, blocked_state)
 
-    assert update_active != {}
+    assert update_active["rna"]["counts"][target_wid] == -1.0
+    assert update_active["rna"]["modified_counts"][target_wid] == 1.0
     assert update_blocked == {}
 
 

@@ -106,19 +106,20 @@ def test_mass_conservation() -> None:
     ridx = int(np.flatnonzero(np.any(p.reaction_catalysis > 0.0, axis=1))[0])
     _seed_reaction_inputs(p, state, ridx)
 
-    unprocessed = np.array([state["rna"]["counts"][w] for w in p.unprocessed_rna_wids], dtype=float)
-    substrates = np.array([state["substrates"][w] for w in p.substrate_wids], dtype=float)
-    enzymes = _enzyme_vector_from_state(p, state)
-    flux = p._compute_reaction_fluxes(
-        unprocessed=unprocessed, substrates=substrates, enzymes=enzymes, dt=1.0
-    )
-
     update = p.next_update(1.0, state)
+    flux = -np.array(
+        [update.get("rna", {}).get("counts", {}).get(w, 0.0) for w in p.unprocessed_rna_wids]
+    )
+    assert np.any(flux > 0)
     observed_sub = np.array(
-        [int(update["substrates"].get(w, 0.0)) for w in p.substrate_wids], dtype=np.int64
+        [update.get("substrates", {}).get(w, 0.0) for w in p.substrate_wids]
     )
     expected_sub = p.reaction_stoich @ flux
     np.testing.assert_array_equal(observed_sub, expected_sub)
+    np.testing.assert_array_equal(
+        [update.get("rna", {}).get("counts", {}).get(w, 0.0) for w in p.processed_rna_wids],
+        p.processed_output_matrix @ flux,
+    )
 
 
 def test_enzyme_kinetics_limit() -> None:
@@ -140,7 +141,10 @@ def test_enzyme_kinetics_limit() -> None:
     update = p.next_update(1.0, state)
     consumed = -int(update["rna"]["counts"].get(p.unprocessed_rna_wids[ridx], 0.0))
     enz = _enzyme_vector_from_state(p, state)
-    max_from_enz = int(p._enzyme_limit(enz, dt=1.0)[ridx])
+    # RNAProcessing.m:448-450: stochastic-round enzyme capacities, then minimum.
+    # The ceiling is the largest possible stochastic outcome, not a private API.
+    capacities = np.divide(enz, req, out=np.full(req.shape, np.inf), where=req > 0)
+    max_from_enz = int(np.ceil(np.min(capacities)))
 
     assert consumed > 0
     assert consumed <= max_from_enz
@@ -206,32 +210,20 @@ def test_chassis_seeded_complex_enzyme_controls_reaction_flux() -> None:
         np.flatnonzero(single_enzyme_mask & (process.reaction_catalysis[:, enzyme_idx] > 0.0))[0]
     )
 
-    unprocessed = np.zeros(len(process.unprocessed_rna_wids), dtype=np.float64)
-    unprocessed[ridx] = 1.0
-    substrates = np.zeros(len(process.substrate_wids), dtype=np.float64)
+    active_state = _blank_state(process)
+    active_state["rna"]["counts"][process.unprocessed_rna_wids[ridx]] = 1.0
     for sidx, coeff in enumerate(process.reaction_stoich[:, ridx]):
         if coeff < 0:
-            substrates[sidx] = float(abs(coeff))
-
-    enzymes = process._enzyme_counts_from_stores(
-        protein_count_store=state["protein"]["counts"],
-        complex_count_store=state["complex"]["counts"],
-    )
-    flux_with_complex = process._compute_reaction_fluxes(
-        unprocessed=unprocessed,
-        substrates=substrates,
-        enzymes=enzymes,
-        dt=1.0,
-    )
-
-    enzymes_without_complex = enzymes.copy()
-    enzymes_without_complex[enzyme_idx] = 0.0
-    flux_without_complex = process._compute_reaction_fluxes(
-        unprocessed=unprocessed,
-        substrates=substrates,
-        enzymes=enzymes_without_complex,
-        dt=1.0,
-    )
-
-    assert int(flux_with_complex[ridx]) == 1
-    assert int(flux_without_complex[ridx]) == 0
+            active_state["substrates_allocated"][process.name][process.substrate_wids[sidx]] = -float(coeff)
+    for wid in process.enzyme_wids:
+        source_store = "complex" if wid in process.complex_enzyme_wids else "protein"
+        _set_enzyme_count(process, active_state, wid, state[source_store]["counts"][wid])
+    blocked_state = deepcopy(active_state)
+    _set_enzyme_count(process, blocked_state, complex_wid, 0.0)
+    active_update = process.next_update(1.0, active_state)
+    blocked_update = process.next_update(1.0, blocked_state)
+    precursor = process.unprocessed_rna_wids[ridx]
+    assert active_update["rna"]["counts"][precursor] == -1.0
+    assert blocked_update.get("rna", {}).get("counts", {}).get(precursor, 0.0) == 0.0
+    assert any(active_update["rna"]["counts"].get(wid, 0.0) > 0
+               for wid in process.processed_rna_wids)

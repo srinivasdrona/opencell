@@ -11,9 +11,9 @@ process:
   state_shape_role: "reaction process with allocator-mediated substrate share and local RNA completion counts"
   notes: >-
     MATLAB defines 91 RNA-modification reactions over 29 substrate WIDs, 347
-    RNA targets in the flat fixture, and 13 enzymes; the current OC port trims
-    to the 38 active RNA targets and splits enzyme inputs across protein.counts
-    and complex.counts.
+    RNA targets in the flat fixture, and 13 enzymes. OC exposes all processed
+    and mature forms, preserves the 38-active-vector standalone interface, and
+    splits enzyme inputs using the fixture's monomer/complex ownership indices.
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
@@ -25,25 +25,23 @@ integration_touchpoints:
         symbol: "calcResourceRequirements_Current"
       note: "This is the Karr allocator-facing request surface for RNAModification."
     oc:
-      symbol: "RequestCalculatorRNAPathway.next_update"
+      symbol: "KarrRNAModificationProcess.calculate_request"
       source:
-        path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "357-381"
-        note: "Shared RNAProcessing + RNAModification request step."
-        symbol: "RequestCalculatorRNAPathway.next_update"
+        path: "opencell/vivarium/karr_rna_modification.py"
+        lines: "251-258"
+        note: "Exact source request helper, dispatched by the shared RNA calculator."
+        symbol: "KarrRNAModificationProcess.calculate_request"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "1017-1653"
+          lines: "1127-1787"
           note: "Current chassis wiring that instantiates the shared RNA-pathway request calculator."
           symbol: build_karr_chassis_v4
       note: >-
-        Current OC request logic is shared across the RNA pathway and requests
-        the currently available consumed substrates when RNAs are active; it is
-        not a process-local LP or request calculator.
+        Shared dispatch delegates to KarrRNAModificationProcess.calculate_request,
+        using the same processed-RNA and live-enzyme input reader as evolution.
     status: "implemented"
     note: >-
-      The OC request path is implemented, but the surface is shared and
-      simplified relative to the MATLAB expression.
+      Source matrix formula; configured process dt is independent of Step elapsed time.
   evolveState:
     matlab:
       symbol: "evolveState"
@@ -57,22 +55,22 @@ integration_touchpoints:
       symbol: "KarrRNAModificationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_rna_modification.py"
-        lines: "192-192"
+        lines: "260-318"
         note: "Per-tick update path that reads allocated substrates and writes substrate/RNA deltas."
         symbol: "KarrRNAModificationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_rna_modification.py"
-          lines: "516-537"
+          lines: "454-475"
           note: "Declared-enzyme input guard."
           symbol: KarrRNAModificationProcess._require_declared_enzyme_inputs
         - path: "opencell/vivarium/karr_rna_modification.py"
-          lines: "440-453"
-          note: "Deterministic plus stochastic residual reaction sampler."
-          symbol: KarrRNAModificationProcess._compute_reaction_fluxes
+          lines: "320-376"
+          note: "Source stochastic feasibility and weighted one-RNA selection."
+          symbol: KarrRNAModificationProcess._compute_rna_fluxes
       note: >-
         OC reproduces the reaction-stoichiometry update through
-        substrates_allocated, split enzyme stores, and an explicit stochastic
-        residual loop.
+        substrates_allocated, fixture-indexed split enzyme stores, and the
+        source stochastic loop. No-reaction RNAs pass through to mature state.
     status: "implemented"
     note: >-
       Behavior is implemented, but the OC port is not line-for-line identical
@@ -90,7 +88,7 @@ integration_touchpoints:
       symbol: "KarrRNAModificationProcess"
       source:
         path: "opencell/vivarium/karr_rna_modification.py"
-        lines: "56-504"
+        lines: "56-516"
         note: "No OC flux-bound routine exists for RNAModification. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrRNAModificationProcess"
       note: "No current OC analogue. OC does not implement this Karr method."
@@ -105,7 +103,7 @@ allocator:
       current OC consumes the allocated surface at states["substrates_allocated"][self.name].
   request_formula:
     matlab: "max(0, -this.reactionStoichiometryMatrix) * min(ceil(this.reactionCatalysisMatrix * this.enzymes * this.stepSizeSec), (this.reactionModificationMatrix * this.unmodifiedRNAs))"
-    oc: "if any(unmodified RNA > 0), rm_request[wid] = max(0, substrate_state[wid]) for each consumed wid; else zero requests (shared RNA-pathway calculator)"
+    oc: "max(0, -reaction_stoich) @ min(ceil(reaction_catalysis @ enzymes * configured_dt), all_reaction_modification @ processed_RNA)"
     note: "Formula is symbolic and grep-friendly, not executable."
   requests:
     - wid: "AMET"
@@ -160,7 +158,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Net substrate delta is assembled from reaction stoichiometry and completed reaction events."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative per-reaction coefficient; the total delta is the stoichiometric row dot product."
@@ -175,7 +173,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; several reaction families consume ATP."
@@ -190,7 +188,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; sulfur-transfer reactions consume cysteine."
@@ -205,7 +203,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; one-carbon reactions consume FTHF5 with glycine."
@@ -220,7 +218,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; lysidine synthesis consumes lysine."
@@ -236,7 +234,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; many methyl-transfer reactions produce AHCYS."
@@ -251,7 +249,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; ATP-driven families produce AMP."
@@ -266,7 +264,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; some families produce H as a byproduct."
@@ -281,7 +279,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; ATP-coupled families produce pyrophosphate."
@@ -296,7 +294,7 @@ produce_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "192-313"
+      lines: "260-318"
       note: "Same substrate-delta writeback path."
       symbol: KarrRNAModificationProcess.next_update
     note: "Representative coefficient; one-carbon reactions produce THF."
@@ -347,7 +345,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_rna_modification.py"
-        lines: "173-303"
+        lines: "260-318"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrRNAModificationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -411,43 +409,43 @@ source_anchors:
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "56-113"
+      lines: "56-516"
       note: "Class definition, fixture loading, and enzyme splitting."
       symbol: KarrRNAModificationProcess
     ports_schema:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "115-171"
+      lines: "143-199"
       note: "Substrate, enzyme, RNA, request, and allocator port wiring."
       symbol: KarrRNAModificationProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "173-303"
+      lines: "260-318"
       note: "Allocator-fed per-tick update and RNA writeback."
       symbol: KarrRNAModificationProcess.next_update
     enzyme_guard:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "516-537"
+      lines: "454-475"
       note: "Declared protein.counts / complex.counts inputs."
       symbol: KarrRNAModificationProcess._require_declared_enzyme_inputs
     flux_sampler:
       path: "opencell/vivarium/karr_rna_modification.py"
-      lines: "440-453"
-      note: "Deterministic plus stochastic residual reaction sampler."
-      symbol: KarrRNAModificationProcess._compute_reaction_fluxes
+      lines: "320-376"
+      note: "Source stochastic feasibility and weighted one-RNA selection."
+      symbol: KarrRNAModificationProcess._compute_rna_fluxes
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "286-359"
+      lines: "308-378"
       note: "Shared RNAProcessing + RNAModification request calculator."
       symbol: RequestCalculatorRNAPathway
     chassis_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "1017-1653"
+      lines: "1127-1787"
       note: "Current chassis builder wires RNAModification and the RNA-pathway request step."
       symbol: build_karr_chassis_v4
 provenance:
   fixture_files:
     - "data/karr_fixtures/per_process/RNAModification_flat.mat"
-    - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+    - "data/karr_fixtures/per_process/RNAProcessing_flat.mat"
   kb_version: "karr_native_m1__v2"
   extraction_date_utc:
   notes: >-
@@ -479,13 +477,16 @@ deviations:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "286-359"
+      lines: "308-378"
       note: "Shared RNA-pathway request calculator is the closest OC analogue."
       symbol: RequestCalculatorRNAPathway
   shared_pool_projection_merges_compartments: false
   known_deviations:
     - "OC splits enzyme inputs into protein.counts and complex.counts; MATLAB uses one enzyme vector."
-    - "OC request emission is handled by shared RequestCalculatorRNAPathway instead of a process-local request method."
-    - "OC next_update uses an explicit max_stochastic_iterations cap and zero-fallback guards; MATLAB uses an unbounded while true loop."
+    - "Shared RequestCalculatorRNAPathway delegates to the process-local exact source request method without RNG."
+    - "The max_stochastic_iterations compatibility parameter does not cap the source weighted loop."
+    - "All 347 RNA forms use processed:: aliases and mature-count leaves within the existing RNA authority; standalone active-vector compatibility remains."
+    - "The real chassis evolution Step runs after allocation, armed once by an explicit request-ready store; construction does not mutate biology."
+    - "Statistical fidelity evidence remains OPEN pending independent rerun; this bounded implementation does not promote eligibility."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.
   note: "The OC port is allocator-equivalent, but the wiring surfaces are adapted to the current chassis."

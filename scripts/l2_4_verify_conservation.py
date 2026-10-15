@@ -207,11 +207,11 @@ class ConservationCollector:
         self._composite = composite
         self._current_tick = {"tick": 0}
         self._call_depth = 0
-        self.per_tick_step_allocations: dict[str, dict[str, float]] = {}
         self.per_tick_process_sums: dict[str, float] = defaultdict(float)
         self.per_tick_process_wid_deltas: dict[str, dict[str, float]] = defaultdict(
             lambda: defaultdict(float)
         )
+        self.per_tick_allocations_at_use: dict[str, dict[str, float]] = {}
         self._entities: dict[str, Any] = {}
         self._entities.update(getattr(composite, "processes", {}))
         self._entities.update(getattr(composite, "steps", {}))
@@ -223,7 +223,7 @@ class ConservationCollector:
         self._current_tick["tick"] = int(tick)
         self.per_tick_process_sums.clear()
         self.per_tick_process_wid_deltas.clear()
-        self.per_tick_step_allocations.clear()
+        self.per_tick_allocations_at_use.clear()
 
     def _seed_shared_chromosome_rand_stream(self, *, seed: int) -> None:
         """Set/reset the shared chromosome state RNG leaf
@@ -289,25 +289,28 @@ class ConservationCollector:
             except Exception:
                 port_updaters = {}
             original_next_update = entity_obj.next_update
-            accounting_name = entity_name
-            if entity_name.endswith("_evolution"):
-                owner_name = entity_name.removesuffix("_evolution")
-                if owner_name in getattr(self._composite, "processes", {}):
-                    accounting_name = owner_name
-            is_step = entity_name in getattr(self._composite, "steps", {})
+            is_step = (
+                entity_name in getattr(self._composite, "steps", {})
+                or getattr(entity_obj, "is_step", lambda: False)()
+            )
+            owner = getattr(entity_obj, "allocation_owner", entity_name.removesuffix("_evolution"))
 
             def wrapped_next_update(
                 timestep: float,
                 states: dict[str, Any],
                 *,
                 _entity_name: str = entity_name,
-                _accounting_name: str = accounting_name,
-                _is_step: bool = is_step,
                 _original: Any = original_next_update,
                 _shared_ports: dict[str, tuple[str, ...]] = shared_ports,
                 _port_updaters: dict[str, dict[str, str]] = port_updaters,
+                _is_step: bool = is_step,
+                _owner: str = owner,
             ) -> dict[str, Any]:
                 outermost = self._call_depth == 0
+                if outermost and _is_step:
+                    allocations = states.get("substrates_allocated", {})
+                    if isinstance(allocations, dict) and _owner in allocations:
+                        self.per_tick_allocations_at_use[_owner] = dict(allocations[_owner])
                 self._call_depth += 1
                 try:
                     update = _original(timestep, states)
@@ -315,11 +318,6 @@ class ConservationCollector:
                     self._call_depth -= 1
                 if not outermost:
                     return update
-                if _is_step and _accounting_name in states.get("substrates_allocated", {}):
-                    self.per_tick_step_allocations[_accounting_name] = {
-                        str(wid): _to_float(value)
-                        for wid, value in states["substrates_allocated"][_accounting_name].items()
-                    }
                 if update is None:
                     update = {}
                 if not (isinstance(update, dict) and _shared_ports):
@@ -353,7 +351,13 @@ class ConservationCollector:
                             continue
                         if store_path and store_path[0] == "substrates":
                             self.per_tick_process_sums[wid_str] += float(delta)
-                            self.per_tick_process_wid_deltas[_accounting_name][wid_str] += float(delta)
+                            self.per_tick_process_wid_deltas[_owner][wid_str] += float(delta)
+                            if _is_step and delta < 0:
+                                # A missing owner/leaf is a zero grant, not an
+                                # excuse to omit a consumer from Part B.
+                                self.per_tick_allocations_at_use.setdefault(_owner, {}).setdefault(
+                                    wid_str, 0.0
+                                )
                 return update
 
             entity_obj.next_update = wrapped_next_update
@@ -686,9 +690,9 @@ def run_seed_horizon(
         except Exception as exc:
             raise SeedStabilityError(seed=seed, tick=tick, exc=exc) from exc
         after = _snapshot_substrates(engine)
-        # Ordinary Processes consumed the pre-update grant. Post-allocation Steps
-        # consumed their actual invocation-time grant, not that stale snapshot.
-        substrates_allocated.update(collector.per_tick_step_allocations)
+        # Ordinary Processes use the pre-update snapshot; evolution Steps read
+        # freshly allocated grants, captured at their actual invocation.
+        substrates_allocated.update(collector.per_tick_allocations_at_use)
         per_process_wid_deltas = {
             process_name: dict(wid_deltas)
             for process_name, wid_deltas in collector.per_tick_process_wid_deltas.items()

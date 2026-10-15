@@ -2,43 +2,23 @@
 
 from __future__ import annotations
 
-from functools import lru_cache
 from pathlib import Path
 from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
-from vivarium.core.process import Process
+from vivarium.core.process import Process, Step
 
 from opencell.vivarium.karr_trna_aminoacylation import _parse_wid_array, _resolve_fixture_path
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/RNAProcessing_flat.mat"
 _RNA_STATE_FIXTURE_PATH = "data/karr_fixtures/per_process/Rna_flat.mat"
-_D2_COMPLEXATION_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
-_RIBOSOME_ASSEMBLY_FIXTURE_PATH = "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
-_FIXED_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
 _RNA_TYPE_KEYS = (
     "unprocessedRNAIndexs_mRNA",
     "unprocessedRNAIndexs_rRNA",
     "unprocessedRNAIndexs_sRNA",
     "unprocessedRNAIndexs_tRNA",
 )
-# Replay-v2 edge case: TU_317 behaves as a one-tick delayed identity maturation.
-_DEFER_FIRST_MATURATION_WIDS = frozenset({"TU_317"})
-
-
-@lru_cache(maxsize=1)
-def _canonical_complex_wids() -> frozenset[str]:
-    complex_wids: set[str] = set()
-    for fixture_path in (_D2_COMPLEXATION_FIXTURE_PATH, _RIBOSOME_ASSEMBLY_FIXTURE_PATH):
-        resolved = _resolve_fixture_path(fixture_path)
-        mat = loadmat(str(resolved))
-        fx = mat["data"]["fixture"][0, 0]
-        complex_wids.update(_parse_wid_array(fx["complexWholeCellModelIDs"]))
-    complex_wids.update(_FIXED_COMPLEX_WIDS)
-    return frozenset(complex_wids)
-
-
 class KarrRNAProcessingProcess(Process):
     """Karr Process_RNAProcessing (evolveState/evolveState_Helper parity)."""
 
@@ -53,25 +33,13 @@ class KarrRNAProcessingProcess(Process):
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
         self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
-        canonical_complex_wids = _canonical_complex_wids()
-        self.complex_enzyme_wids = [
-            wid for wid in self.enzyme_wids if wid in canonical_complex_wids
-        ]
-        self.monomer_enzyme_wids = [
-            wid for wid in self.enzyme_wids if wid not in canonical_complex_wids
-        ]
         self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
 
-        self.rna_wids = list(dict.fromkeys(self.unprocessed_rna_wids + self.processed_rna_wids))
-        self._defer_first_maturation_indices = np.asarray(
-            [
-                idx
-                for idx, wid in enumerate(self.unprocessed_rna_wids)
-                if wid in _DEFER_FIRST_MATURATION_WIDS
-            ],
-            dtype=np.int64,
+        self.rna_wids = list(
+            dict.fromkeys(
+                self.unprocessed_rna_wids + self.processed_rna_wids + self.intergenic_rna_keys
+            )
         )
-        self._defer_first_maturation_seen = np.zeros(len(self.unprocessed_rna_wids), dtype=bool)
 
     def _load_fixture(self, path: str | Path) -> None:
         resolved = _resolve_fixture_path(path)
@@ -90,6 +58,14 @@ class KarrRNAProcessingProcess(Process):
             for wid in raw_processed_rna_wids
         ]
         self.enzyme_wids = _parse_wid_array(fx["enzymeWholeCellModelIDs"])
+        self.monomer_enzyme_wids = [
+            self.enzyme_wids[i - 1]
+            for i in np.asarray(fx["enzymeMonomerLocalIndexs"][0, 0], dtype=int).ravel()
+        ]
+        self.complex_enzyme_wids = [
+            self.enzyme_wids[i - 1]
+            for i in np.asarray(fx["enzymeComplexLocalIndexs"][0, 0], dtype=int).ravel()
+        ]
 
         self.reaction_stoich = self._read_reaction_stoich(fx)
         self.reaction_catalysis = self._read_reaction_catalysis(fx)
@@ -151,6 +127,20 @@ class KarrRNAProcessingProcess(Process):
             raise KeyError("Rna fixture missing nascentRNAMatureRNAComposition")
 
         matrix = np.asarray(fx["nascentRNAMatureRNAComposition"][0, 0], dtype=np.int64)
+        # Biological WIDs repeat; only global Rna rows identify each fragment.
+        self.intergenic_rna_keys = [
+            f"intergenic::{i}"
+            for i in np.asarray(fx["intergenicIndexs"][0, 0], dtype=int).ravel()
+        ]
+        self.intergenic_output_matrix = np.asarray(
+            fx["intergenicRNAMatrix"][0, 0], dtype=np.int64
+        )
+        if (
+            self.intergenic_output_matrix.shape
+            != (len(self.intergenic_rna_keys), len(self.unprocessed_rna_wids))
+            or len(set(self.intergenic_rna_keys)) != len(self.intergenic_rna_keys)
+        ):
+            raise ValueError("Rna intergenic row identity/composition mismatch")
         expected_shape = (len(self.processed_rna_wids), len(self.unprocessed_rna_wids))
         if matrix.shape != expected_shape:
             raise ValueError(
@@ -233,17 +223,37 @@ class KarrRNAProcessingProcess(Process):
             },
         }
 
-    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        del timestep
-
+    def _input_vectors(self, states: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
+        """Source copyFromState RNA forms and fixture-indexed live enzymes."""
         rna_counts = states.get("rna", {}).get("counts", {})
         if not isinstance(rna_counts, dict):
             rna_counts = {}
         unprocessed = np.asarray(
             [float(rna_counts.get(wid, 0.0)) for wid in self.unprocessed_rna_wids], dtype=np.float64
         )
-        if unprocessed.sum() <= 0.0:
-            return {}
+        enzymes = self._enzyme_counts_from_stores(
+            protein_count_store=states.get("protein", {}).get("counts", {}),
+            complex_count_store=states.get("complex", {}).get("counts", {}),
+        )
+        return unprocessed, enzymes
+
+    def calculate_request(self, states: dict[str, Any]) -> dict[str, float]:
+        """RNAProcessing.m calcResourceRequirements_Current (406-409)."""
+        unprocessed, enzymes = self._input_vectors(states)
+        catalysis = self.reaction_catalysis.T
+        limits = np.divide(
+            enzymes[:, None],
+            catalysis,
+            out=np.full(catalysis.shape, np.inf),
+            where=catalysis > 0,
+        )
+        request = np.maximum(0, -self.reaction_stoich) @ np.minimum(
+            np.ceil((limits * float(self.parameters["time_step"])).min(axis=0)), unprocessed
+        )
+        return dict(zip(self.substrate_wids, map(float, request), strict=True))
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        unprocessed, enzymes = self._input_vectors(states)
 
         allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
         substrates = np.asarray(
@@ -251,32 +261,11 @@ class KarrRNAProcessingProcess(Process):
             dtype=np.float64,
         )
 
-        enzyme_state = states.get("enzymes", {})
-        if isinstance(enzyme_state, dict) and enzyme_state:
-            enzymes = np.asarray(
-                [float(enzyme_state.get(wid, 0.0)) for wid in self.enzyme_wids], dtype=np.float64
-            )
-        else:
-            protein_state = states.get("protein", {})
-            if not isinstance(protein_state, dict):
-                protein_state = {}
-            complex_state = states.get("complex", {})
-            if not isinstance(complex_state, dict):
-                complex_state = {}
-            enzymes = self._enzyme_counts_from_stores(
-                protein_count_store=protein_state.get("counts", {}),
-                complex_count_store=complex_state.get("counts", {}),
-            )
-
         processing_events = self._compute_processing_events(
             unprocessed=unprocessed,
             substrates=substrates,
             enzymes=enzymes,
             dt=float(self.parameters["time_step"]),
-        )
-        self._apply_identity_activation_lag(
-            unprocessed=unprocessed,
-            processing_events=processing_events,
         )
         if not np.any(processing_events > 0):
             return {}
@@ -284,6 +273,7 @@ class KarrRNAProcessingProcess(Process):
         substrate_delta = self.reaction_stoich @ processing_events
         unprocessed_delta = -processing_events
         processed_delta = self.processed_output_matrix @ processing_events
+        intergenic_delta = self.intergenic_output_matrix @ processing_events
 
         rna_updates: dict[str, float] = {}
         for ridx, wid in enumerate(self.unprocessed_rna_wids):
@@ -294,6 +284,9 @@ class KarrRNAProcessingProcess(Process):
             delta = int(processed_delta[pidx])
             if delta != 0:
                 rna_updates[wid] = float(rna_updates.get(wid, 0.0) + delta)
+        for index, key in enumerate(self.intergenic_rna_keys):
+            if intergenic_delta[index]:
+                rna_updates[key] = float(intergenic_delta[index])
 
         update: dict[str, Any] = {}
         sub_updates = {
@@ -352,22 +345,8 @@ class KarrRNAProcessingProcess(Process):
         unprocessed_pool = np.floor(np.clip(unprocessed, a_min=0.0, a_max=None)).astype(np.int64)
         enzyme_pool = np.clip(np.asarray(enzymes, dtype=np.float64), a_min=0.0, a_max=None)
         processing_events = np.zeros(len(self.unprocessed_rna_wids), dtype=np.int64)
-        atp_idx = self.substrate_wids.index("ATP") if "ATP" in self.substrate_wids else -1
-        gtp_idx = self.substrate_wids.index("GTP") if "GTP" in self.substrate_wids else -1
-        rrna_class_idx = _RNA_TYPE_KEYS.index("unprocessedRNAIndexs_rRNA")
-        trna_class_idx = _RNA_TYPE_KEYS.index("unprocessedRNAIndexs_tRNA")
-        suppress_trna_for_rrna_tick = (
-            unprocessed_pool[self._rna_type_reaction_indices[rrna_class_idx]].sum() > 0
-            and (
-                (atp_idx >= 0 and substrate_pool[atp_idx] > 0)
-                or (gtp_idx >= 0 and substrate_pool[gtp_idx] > 0)
-            )
-        )
-
         order = self._rng.permutation(len(self._rna_type_reaction_indices))
         for order_idx in order:
-            if suppress_trna_for_rrna_tick and int(order_idx) == trna_class_idx:
-                continue
             reaction_indices = self._rna_type_reaction_indices[int(order_idx)]
             if reaction_indices.size == 0:
                 continue
@@ -420,23 +399,6 @@ class KarrRNAProcessingProcess(Process):
 
         return processing_events
 
-    def _apply_identity_activation_lag(
-        self,
-        *,
-        unprocessed: np.ndarray,
-        processing_events: np.ndarray,
-    ) -> None:
-        lag_indices = self._defer_first_maturation_indices
-        if lag_indices.size == 0:
-            return
-
-        present = np.asarray(unprocessed > 0.0, dtype=bool)
-        seen = self._defer_first_maturation_seen[lag_indices]
-        should_defer = (processing_events[lag_indices] > 0) & (~seen)
-        if np.any(should_defer):
-            processing_events[lag_indices[should_defer]] = 0
-        self._defer_first_maturation_seen[lag_indices] = present[lag_indices]
-
     def _stochastic_round(self, value: np.ndarray) -> np.ndarray:
         value = np.asarray(value, dtype=np.float64)
         with np.errstate(invalid="ignore"):
@@ -474,4 +436,46 @@ class KarrRNAProcessingProcess(Process):
         return selected
 
 
-__all__ = ["KarrRNAProcessingProcess"]
+RNA_PROCESSING_PHASE = "_internal_rna_processing_phase"
+
+
+def _phase_schema() -> dict[str, Any]:
+    return {"request_ready": {"_default": False, "_updater": "set", "_emit": False}}
+
+
+class KarrRNAProcessingRequestProcess(Process):
+    name = "karr_rna_processing_request"
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {"phase": _phase_schema()}
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        return {"phase": {"request_ready": True}}
+
+
+class KarrRNAProcessingEvolutionStep(KarrRNAProcessingProcess, Step):
+    """Execute the public RNAProcessing port after the current allocation."""
+
+    allocation_owner = KarrRNAProcessingProcess.name
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = super().ports_schema()
+        schema["phase"] = _phase_schema()
+        return schema
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        if "phase" not in states:
+            return super().next_update(timestep, states)
+        if states.get("phase", {}).get("request_ready") is not True:
+            return {}
+        update = super().next_update(timestep, states)
+        update["phase"] = {"request_ready": False}
+        return update
+
+
+__all__ = [
+    "RNA_PROCESSING_PHASE",
+    "KarrRNAProcessingProcess",
+    "KarrRNAProcessingRequestProcess",
+    "KarrRNAProcessingEvolutionStep",
+]

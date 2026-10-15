@@ -100,8 +100,16 @@ from opencell.vivarium.karr_request_calculators import (
 )
 from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
 from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess
-from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
-from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
+from opencell.vivarium.karr_rna_modification import (
+    RNA_MODIFICATION_PHASE,
+    KarrRNAModificationEvolutionStep,
+    KarrRNAModificationRequestProcess,
+)
+from opencell.vivarium.karr_rna_processing import (
+    RNA_PROCESSING_PHASE,
+    KarrRNAProcessingEvolutionStep,
+    KarrRNAProcessingRequestProcess,
+)
 from opencell.vivarium.karr_terminal_organelle_assembly import (
     KarrTerminalOrganelleAssemblyProcess,
 )
@@ -1218,8 +1226,10 @@ def build_karr_chassis_v4(
         for wid in tx_reg_proc.tf_wids
         if getattr(tx_reg_proc, "_tf_wid_source", {}).get(wid) == "complex"
     )
-    rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
-    rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
+    rna_proc = KarrRNAProcessingEvolutionStep({"time_step": time_step_s})
+    rna_request = KarrRNAProcessingRequestProcess({"time_step": time_step_s})
+    rna_mod_proc = KarrRNAModificationEvolutionStep({"time_step": time_step_s})
+    rna_mod_request = KarrRNAModificationRequestProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
     pp2_proc = KarrProteinProcessingIIProcess({"time_step": time_step_s})
     pp2_request_proc = KarrProteinProcessingIIRequestProcess({"time_step": time_step_s})
@@ -1548,7 +1558,9 @@ def build_karr_chassis_v4(
             "complex": ("complex",),
             "requests": ("_internal_requests_rna_proc",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (RNA_PROCESSING_PHASE,),
         },
+        "karr_rna_processing_request": {"phase": (RNA_PROCESSING_PHASE,)},
         "karr_rna_modification": {
             "substrates": ("substrates",),
             "rna": ("rna",),
@@ -1556,7 +1568,9 @@ def build_karr_chassis_v4(
             "complex": ("complex",),
             "requests": ("_internal_requests_rna_mod",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (RNA_MODIFICATION_PHASE,),
         },
+        "karr_rna_modification_request": {"phase": (RNA_MODIFICATION_PHASE,)},
         "karr_protein_processing_i": {
             "substrates": ("substrates",),
             "protein": ("protein",),
@@ -1637,6 +1651,8 @@ def build_karr_chassis_v4(
         "request_calculator_rna_pathway": {
             "substrates": ("substrates",),
             "rna": ("rna",),
+            "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_protein_pathway": {
@@ -1733,7 +1749,9 @@ def build_karr_chassis_v4(
             "karr_ribosome_assembly": ribasm_proc,
             "karr_transcriptional_regulation": tx_reg_proc,
             "karr_rna_processing": rna_proc,
+            "karr_rna_processing_request": rna_request,
             "karr_rna_modification": rna_mod_proc,
+            "karr_rna_modification_request": rna_mod_request,
             "karr_protein_processing_i": pp1_proc,
             "karr_protein_processing_ii": pp2_request_proc,
             "karr_protein_modification": p_mod_proc,
@@ -1765,6 +1783,10 @@ def build_karr_chassis_v4(
             "request_calculator_ribasm": [("protein_flat_projection_pre",)],
             "request_calculator_trna": [],
             "request_calculator_rna_pathway": [],
+            "karr_rna_modification": [("karr_allocation_step",)],
+            "karr_rna_modification_request": [],
+            "karr_rna_processing": [("karr_allocation_step",)],
+            "karr_rna_processing_request": [],
             "request_calculator_protein_pathway": [("protein_flat_projection_pre",)],
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
@@ -1895,8 +1917,10 @@ def build_karr_chassis_v5(
         for wid in tx_reg_proc.tf_wids
         if getattr(tx_reg_proc, "_tf_wid_source", {}).get(wid) == "complex"
     )
-    rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
-    rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
+    rna_proc = KarrRNAProcessingEvolutionStep({"time_step": time_step_s})
+    rna_request = KarrRNAProcessingRequestProcess({"time_step": time_step_s})
+    rna_mod_proc = KarrRNAModificationEvolutionStep({"time_step": time_step_s})
+    rna_mod_request = KarrRNAModificationRequestProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
     pp2_proc = KarrProteinProcessingIIProcess({"time_step": time_step_s})
     pp2_request_proc = KarrProteinProcessingIIRequestProcess({"time_step": time_step_s})
@@ -2343,7 +2367,9 @@ def build_karr_chassis_v5(
             "complex": ("complex",),
             "requests": ("_internal_requests_rna_proc",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (RNA_PROCESSING_PHASE,),
         },
+        "karr_rna_processing_request": {"phase": (RNA_PROCESSING_PHASE,)},
         "karr_rna_modification": {
             "substrates": ("substrates",),
             "rna": ("rna",),
@@ -2351,7 +2377,9 @@ def build_karr_chassis_v5(
             "complex": ("complex",),
             "requests": ("_internal_requests_rna_mod",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (RNA_MODIFICATION_PHASE,),
         },
+        "karr_rna_modification_request": {"phase": (RNA_MODIFICATION_PHASE,)},
         "karr_protein_processing_i": {
             "substrates": ("substrates",),
             "protein": ("protein",),
@@ -2508,6 +2536,8 @@ def build_karr_chassis_v5(
         "request_calculator_rna_pathway": {
             "substrates": ("substrates",),
             "rna": ("rna",),
+            "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_protein_pathway": {
@@ -2636,7 +2666,9 @@ def build_karr_chassis_v5(
             "karr_ribosome_assembly": ribasm_proc,
             "karr_transcriptional_regulation": tx_reg_proc,
             "karr_rna_processing": rna_proc,
+            "karr_rna_processing_request": rna_request,
             "karr_rna_modification": rna_mod_proc,
+            "karr_rna_modification_request": rna_mod_request,
             "karr_protein_processing_i": pp1_proc,
             "karr_protein_processing_ii": pp2_request_proc,
             "karr_protein_modification": p_mod_proc,
@@ -2680,6 +2712,10 @@ def build_karr_chassis_v5(
             "request_calculator_ribasm": [("protein_flat_projection_pre",)],
             "request_calculator_trna": [],
             "request_calculator_rna_pathway": [],
+            "karr_rna_modification": [("karr_allocation_step",)],
+            "karr_rna_modification_request": [],
+            "karr_rna_processing": [("karr_allocation_step",)],
+            "karr_rna_processing_request": [],
             "request_calculator_protein_pathway": [("protein_flat_projection_pre",)],
             "request_calculator_protein_translocation": [("protein_flat_projection_pre",)],
             "request_calculator_metabolism": [],
