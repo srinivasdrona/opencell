@@ -61,6 +61,20 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — RNA production committed; independent source-bound harness adjudication active:**
 
+- Parent reproduced95/95 source units + input/adapter regressions after
+  `94d3e9f` / `7a7b611`; no skips/xfails. Test author is idle.
+- This worktree's trace folder is now isolated local data, not the old canonical
+  junction. Preserved28 files, copied99 missing accepted RNA cohort files using
+  existing population tool; independently verified both exact50-file hash/seed/
+  100-tick/family matrices. RM has5 families, RP6 including intergenicRNAs.
+  Both main canonical hashes remain unchanged.
+- Next: independent bounded two-process review on `7a7b611` and full-family
+  replay after restoration. Fresh N50 statistical evidence waits for the
+  single-owner common binding fix in PP2, including `_rna_replay_inputs.py`
+  and actual fixture inputs. Do not duplicate that repair in this lane.
+- Restoration record: `tmp/rna-oracle-restoration/manifest.json`.
+  No RNA statistical sweep is live; PM's separate shell may still be running.
+
 - Test/harness follow-up `94d3e9f` / `7a7b611` is committed; original author is
   idle. Reported84/84 source unit contracts and11 input/projection regressions;
   genuine legacy replay differences and missing canonical intergenic oracle
