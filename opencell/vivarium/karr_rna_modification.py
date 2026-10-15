@@ -8,10 +8,10 @@ from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
-from vivarium.core.process import Process
+from vivarium.core.process import Process, Step
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/RNAModification_flat.mat"
-_D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+_PROCESSING_FIXTURE_PATH = "data/karr_fixtures/per_process/RNAProcessing_flat.mat"
 _MAX_STOCHASTIC_ITERATIONS = 10_000
 
 
@@ -46,11 +46,11 @@ def _parse_wid_array(cell_array: np.ndarray) -> list[str]:
 
 
 @lru_cache(maxsize=1)
-def _load_d2_complex_wids(path: str = _D2_COMPLEX_FIXTURE_PATH) -> frozenset[str]:
-    resolved = _resolve_fixture_path(path)
+def _nascent_rna_wids() -> frozenset[str]:
+    resolved = _resolve_fixture_path(_PROCESSING_FIXTURE_PATH)
     mat = loadmat(str(resolved))
     fx = mat["data"]["fixture"][0, 0]
-    return frozenset(_parse_wid_array(fx["complexWholeCellModelIDs"]))
+    return frozenset(_parse_wid_array(fx["unprocessedRNAWholeCellModelIDs"]))
 
 
 class KarrRNAModificationProcess(Process):
@@ -67,15 +67,8 @@ class KarrRNAModificationProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
-        self._d2_complex_wids = _load_d2_complex_wids()
-        self.complex_enzyme_wids = [
-            wid for wid in self.enzyme_wids if wid in self._d2_complex_wids
-        ]
-        self.monomer_enzyme_wids = [
-            wid for wid in self.enzyme_wids if wid not in self._d2_complex_wids
-        ]
         self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
-        self._rng = np.random.RandomState(int(self.parameters["rng_seed"]))
+        self._rng = np.random.default_rng(int(self.parameters["rng_seed"]))
 
         row_sums = np.sum(self.reaction_modification, axis=1)
         if not np.all(row_sums == 1):
@@ -93,7 +86,7 @@ class KarrRNAModificationProcess(Process):
             self._n_substrates + self._n_enzymes,
             dtype=np.int64,
         )
-        n_species = self._n_substrates + self._n_enzymes + len(self.unmodified_rna_wids)
+        n_species = self._n_substrates + self._n_enzymes + len(self._active_rna_indices)
         non_enzyme_mask = np.ones(n_species, dtype=bool)
         non_enzyme_mask[self._enzyme_species_idx] = False
         self._non_enzyme_species_idx = np.flatnonzero(non_enzyme_mask).astype(np.int64)
@@ -122,12 +115,28 @@ class KarrRNAModificationProcess(Process):
             raise ValueError("No active RNA modification targets found in fixture")
 
         self.substrate_wids = _parse_wid_array(fx["substrateWholeCellModelIDs"])
+        nascent = _nascent_rna_wids()
+        self.processed_rna_wids = [
+            f"processed::{wid}" if wid in nascent else wid for wid in all_unmodified
+        ]
+        self.mature_rna_wids = all_modified
+        # Retain the established active-vector projection for standalone callers.
         self.unmodified_rna_wids = [all_unmodified[i] for i in self._active_rna_indices]
         self.modified_rna_wids = [all_modified[i] for i in self._active_rna_indices]
+        self._raw_processed_rna_wids = all_unmodified
         self.enzyme_wids = _parse_wid_array(fx["enzymeWholeCellModelIDs"])
+        self.monomer_enzyme_wids = [
+            self.enzyme_wids[i - 1]
+            for i in np.asarray(fx["enzymeMonomerLocalIndexs"][0, 0], dtype=int).ravel()
+        ]
+        self.complex_enzyme_wids = [
+            self.enzyme_wids[i - 1]
+            for i in np.asarray(fx["enzymeComplexLocalIndexs"][0, 0], dtype=int).ravel()
+        ]
 
         self.reaction_stoich = np.asarray(fx["reactionStoichiometryMatrix"][0, 0], dtype=np.int64)
         self.reaction_catalysis = np.asarray(fx["reactionCatalysisMatrix"][0, 0], dtype=np.uint8)
+        self.all_reaction_modification = raw_reaction_modification
         self.reaction_modification = raw_reaction_modification[:, self._active_rna_indices]
         self.enzyme_bounds = np.asarray(fx["enzymeBounds"][0, 0], dtype=np.float64)
 
@@ -156,11 +165,11 @@ class KarrRNAModificationProcess(Process):
             "rna": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in self.unmodified_rna_wids
+                    for wid in self.processed_rna_wids
                 },
                 "modified_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in self.modified_rna_wids
+                    for wid in self.mature_rna_wids
                 },
             },
             "protein": {
@@ -189,8 +198,8 @@ class KarrRNAModificationProcess(Process):
             },
         }
 
-    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
+    def _input_vectors(self, states: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
+        """MATLAB copyFromState: processed cytosolic RNA and live split enzymes."""
         rna_state = states.get("rna", {})
         if not isinstance(rna_state, dict):
             rna_state = {}
@@ -201,15 +210,6 @@ class KarrRNAModificationProcess(Process):
         if not isinstance(complex_state, dict):
             complex_state = {}
 
-        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        # Strict-zero allocator contract: do not fallback to global substrate pools.
-        substrates = np.asarray(
-            [
-                max(0.0, float(allocated_state.get(wid, 0.0)))
-                for wid in self.substrate_wids
-            ],
-            dtype=np.float64,
-        )
         unmodified_store = rna_state.get("counts", {})
         if not isinstance(unmodified_store, dict):
             unmodified_store = {}
@@ -219,21 +219,11 @@ class KarrRNAModificationProcess(Process):
                 self.unmodified_rna_wids,
             )
         unmodified_rna = np.asarray(
-            [float(unmodified_store.get(wid, 0.0)) for wid in self.unmodified_rna_wids],
-            dtype=np.float64,
-        )
-        modified_store = rna_state.get("modified_counts", {})
-        if not isinstance(modified_store, dict):
-            modified_store = {}
-        if not modified_store:
-            modified_store = self._legacy_vector_to_wid_counts(
-                states.get("modifiedRNAs"),
-                self.modified_rna_wids,
-            )
-        modified_rna = np.asarray(
             [
-                float(modified_store.get(wid, 0.0))
-                for wid in self.modified_rna_wids
+                float(unmodified_store.get(wid, unmodified_store.get(raw, 0.0)))
+                for wid, raw in zip(
+                    self.processed_rna_wids, self._raw_processed_rna_wids, strict=True
+                )
             ],
             dtype=np.float64,
         )
@@ -256,19 +246,35 @@ class KarrRNAModificationProcess(Process):
             ],
             dtype=np.float64,
         )
+        return unmodified_rna, enzymes
+
+    def calculate_request(self, states: dict[str, Any]) -> dict[str, float]:
+        """RNAModification.m calcResourceRequirements_Current (289-294)."""
+        unmodified_rna, enzymes = self._input_vectors(states)
+        request = np.maximum(0, -self.reaction_stoich) @ np.minimum(
+            np.ceil(self.reaction_catalysis @ enzymes * float(self.parameters["time_step"])),
+            self.all_reaction_modification @ unmodified_rna,
+        )
+        return dict(zip(self.substrate_wids, map(float, request), strict=True))
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
+        unmodified_rna, enzymes = self._input_vectors(states)
+        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+        substrates = np.asarray(
+            [float(allocated_state.get(wid, 0.0)) for wid in self.substrate_wids],
+            dtype=np.float64,
+        )
 
         if unmodified_rna.sum() <= 0.0:
             self._n_completed[:] = 0
             return {}
 
-        rna_fluxes = self._rna_fluxes_from_trace_hint(
-            states=states,
-            unmodified_rna=unmodified_rna,
-            modified_rna=modified_rna,
-        )
-        if rna_fluxes is None:
-            rna_fluxes = self._compute_rna_fluxes(
-                unmodified_rna=unmodified_rna,
+        # Source evolveState first matures every RNA with no required reactions.
+        rna_fluxes = unmodified_rna.astype(np.int64, copy=True)
+        if np.any(unmodified_rna[self._active_rna_indices]):
+            rna_fluxes[self._active_rna_indices] = self._compute_rna_fluxes(
+                unmodified_rna=unmodified_rna[self._active_rna_indices],
                 substrates=substrates,
                 enzymes=enzymes,
                 dt=dt,
@@ -277,7 +283,7 @@ class KarrRNAModificationProcess(Process):
             self._n_completed[:] = 0
             return {}
 
-        reaction_fluxes = self.reaction_modification @ rna_fluxes
+        reaction_fluxes = self.all_reaction_modification @ rna_fluxes
         substrate_delta = self.reaction_stoich @ reaction_fluxes
         self._n_completed[:] = 0
 
@@ -292,14 +298,15 @@ class KarrRNAModificationProcess(Process):
 
         unmodified_delta = -rna_fluxes
         modified_delta = rna_fluxes
+        rna_counts = states.get("rna", {}).get("counts", {})
         unmodified_updates = {
-            wid: float(unmodified_delta[i])
-            for i, wid in enumerate(self.unmodified_rna_wids)
+            (wid if wid in rna_counts else self._raw_processed_rna_wids[i]): float(unmodified_delta[i])
+            for i, wid in enumerate(self.processed_rna_wids)
             if unmodified_delta[i] != 0
         }
         modified_updates = {
             wid: float(modified_delta[i])
-            for i, wid in enumerate(self.modified_rna_wids)
+            for i, wid in enumerate(self.mature_rna_wids)
             if modified_delta[i] != 0
         }
         if unmodified_updates or modified_updates:
@@ -308,76 +315,7 @@ class KarrRNAModificationProcess(Process):
                 "modified_counts": modified_updates,
             }
 
-        # Keep explicit read-path for modified store in tests and engines.
-        _ = modified_rna
         return update
-
-    def _rna_fluxes_from_trace_hint(
-        self,
-        *,
-        states: dict[str, Any],
-        unmodified_rna: np.ndarray,
-        modified_rna: np.ndarray,
-    ) -> np.ndarray | None:
-        hint_root = states.get("trace_hint", {})
-        if not isinstance(hint_root, dict):
-            return None
-
-        hinted_unmodified = hint_root.get("unmodifiedRNAs_next", {})
-        hinted_modified = hint_root.get("modifiedRNAs_next", {})
-        has_unmodified_hint = isinstance(hinted_unmodified, dict) and bool(hinted_unmodified)
-        has_modified_hint = isinstance(hinted_modified, dict) and bool(hinted_modified)
-        if not has_unmodified_hint and not has_modified_hint:
-            return None
-
-        current_unmodified = np.rint(
-            np.clip(unmodified_rna, a_min=0.0, a_max=None)
-        ).astype(np.int64)
-        current_modified = np.rint(
-            np.clip(modified_rna, a_min=0.0, a_max=None)
-        ).astype(np.int64)
-
-        hinted_fluxes: list[np.ndarray] = []
-        if has_unmodified_hint:
-            next_unmodified = np.asarray(
-                [
-                    float(hinted_unmodified.get(wid, current_unmodified[idx]))
-                    for idx, wid in enumerate(self.unmodified_rna_wids)
-                ],
-                dtype=np.float64,
-            )
-            if np.any(~np.isfinite(next_unmodified)):
-                return None
-            hinted_fluxes.append(
-                current_unmodified
-                - np.rint(np.clip(next_unmodified, a_min=0.0, a_max=None)).astype(np.int64)
-            )
-
-        if has_modified_hint:
-            next_modified = np.asarray(
-                [
-                    float(hinted_modified.get(wid, current_modified[idx]))
-                    for idx, wid in enumerate(self.modified_rna_wids)
-                ],
-                dtype=np.float64,
-            )
-            if np.any(~np.isfinite(next_modified)):
-                return None
-            hinted_fluxes.append(
-                np.rint(np.clip(next_modified, a_min=0.0, a_max=None)).astype(np.int64)
-                - current_modified
-            )
-
-        rna_fluxes = hinted_fluxes[0]
-        for candidate in hinted_fluxes[1:]:
-            if not np.array_equal(candidate, rna_fluxes):
-                return None
-
-        if np.any(rna_fluxes < 0):
-            return None
-        if np.any(rna_fluxes > current_unmodified):
-            return None
-        return rna_fluxes.astype(np.int64, copy=False)
 
     def _compute_rna_fluxes(
         self,
@@ -387,14 +325,14 @@ class KarrRNAModificationProcess(Process):
         enzymes: np.ndarray,
         dt: float,
     ) -> np.ndarray:
-        n_rnas = len(self.unmodified_rna_wids)
+        n_rnas = len(self._active_rna_indices)
         reaction_fluxes = np.zeros(n_rnas, dtype=np.int64)
 
         species = np.concatenate(
             [
-                np.floor(np.clip(substrates, a_min=0.0, a_max=None)),
-                np.floor(np.clip(enzymes, a_min=0.0, a_max=None)),
-                np.floor(np.clip(unmodified_rna, a_min=0.0, a_max=None)),
+                substrates,
+                enzymes,
+                unmodified_rna,
             ]
         ).astype(np.float64, copy=False)
         species_reactant_byproduct, species_reactant = self._build_species_matrices(dt=dt)
@@ -461,7 +399,7 @@ class KarrRNAModificationProcess(Process):
             [-self.reaction_stoich.T.astype(np.float64, copy=False), enzyme_req]
         )
 
-        n_rnas = len(self.unmodified_rna_wids)
+        n_rnas = len(self._active_rna_indices)
         species_reactant_byproduct = self._reaction_rna_map @ reaction_terms
         species_reactant = self._reaction_rna_map @ np.maximum(0.0, reaction_terms)
         eye = np.eye(n_rnas, dtype=np.float64)
@@ -578,4 +516,46 @@ class KarrRNAModificationProcess(Process):
         return {wid: float(flat[idx]) for idx, wid in enumerate(wids)}
 
 
-__all__ = ["KarrRNAModificationProcess"]
+RNA_MODIFICATION_PHASE = "_internal_rna_modification_phase"
+
+
+def _phase_schema() -> dict[str, Any]:
+    return {"request_ready": {"_default": False, "_updater": "set", "_emit": False}}
+
+
+class KarrRNAModificationRequestProcess(Process):
+    """Arm this tick; the shared calculator emits demand before allocation."""
+
+    name = "karr_rna_modification_request"
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {"phase": _phase_schema()}
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        return {"phase": {"request_ready": True}}
+
+
+class KarrRNAModificationEvolutionStep(KarrRNAModificationProcess, Step):
+    """The real RNA process, run only after this tick's allocation."""
+
+    allocation_owner = KarrRNAModificationProcess.name
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = super().ports_schema()
+        schema["phase"] = _phase_schema()
+        return schema
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        if states.get("phase", {}).get("request_ready") is not True:
+            return {}
+        update = super().next_update(timestep, states)
+        update["phase"] = {"request_ready": False}
+        return update
+
+
+__all__ = [
+    "RNA_MODIFICATION_PHASE",
+    "KarrRNAModificationProcess",
+    "KarrRNAModificationRequestProcess",
+    "KarrRNAModificationEvolutionStep",
+]

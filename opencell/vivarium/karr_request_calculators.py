@@ -322,9 +322,6 @@ class RequestCalculatorRNAPathway(Step):
         self._rp_consumed = _consumed_wids_from_stoich(
             self._rp_proc.substrate_wids, self._rp_proc.reaction_stoich
         )
-        self._rm_consumed = _consumed_wids_from_stoich(
-            self._rm_proc.substrate_wids, self._rm_proc.reaction_stoich
-        )
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -338,7 +335,25 @@ class RequestCalculatorRNAPathway(Step):
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in sorted(
-                        set(self._rp_proc.rna_wids) | set(self._rm_proc.unmodified_rna_wids)
+                        set(self._rp_proc.rna_wids) | set(self._rm_proc.processed_rna_wids)
+                    )
+                }
+            },
+            "protein": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in sorted(
+                        set(self._rp_proc.monomer_enzyme_wids)
+                        | set(self._rm_proc.monomer_enzyme_wids)
+                    )
+                }
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in sorted(
+                        set(self._rp_proc.complex_enzyme_wids)
+                        | set(self._rm_proc.complex_enzyme_wids)
                     )
                 }
             },
@@ -361,18 +376,11 @@ class RequestCalculatorRNAPathway(Step):
         rp_active = any(
             float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rp_proc.unprocessed_rna_wids
         )
-        rm_active = any(
-            float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rm_proc.unmodified_rna_wids
-        )
-
         rp_request = {wid: 0.0 for wid in self._rp_proc.substrate_wids}
         rp_request.update(
             _request_from_available(substrate_state, self._rp_consumed, active=rp_active)
         )
-        rm_request = {wid: 0.0 for wid in self._rm_proc.substrate_wids}
-        rm_request.update(
-            _request_from_available(substrate_state, self._rm_consumed, active=rm_active)
-        )
+        rm_request = self._rm_proc.calculate_request(states)
         return {
             "requests": {
                 self._rp_proc.name: rp_request,

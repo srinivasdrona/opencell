@@ -233,6 +233,7 @@ class DiagnosticCollector:
         self._process_trace_stride = max(1, int(process_trace_stride))
         self._current_tick = {"tick": 0}
         self.per_tick_process_sums: dict[str, float] = defaultdict(float)
+        self.per_tick_allocations_at_use: dict[str, dict[str, float]] = {}
         self.exception_counts: dict[str, int] = defaultdict(int)
         self._entities: dict[str, Any] = {}
         self._entities.update(getattr(composite, "processes", {}))
@@ -254,6 +255,7 @@ class DiagnosticCollector:
     def set_tick(self, tick: int) -> None:
         self._current_tick["tick"] = int(tick)
         self.per_tick_process_sums.clear()
+        self.per_tick_allocations_at_use.clear()
 
     def close(self) -> None:
         for f in self.process_trace_files.values():
@@ -325,6 +327,8 @@ class DiagnosticCollector:
             except Exception:
                 port_updaters = {}
             original_next_update = entity_obj.next_update
+            is_step = entity_obj.is_step()
+            owner = getattr(entity_obj, "allocation_owner", entity_name)
             trace_heartbeat_on_noop = bool(
                 getattr(entity_obj, "parameters", {}).get("emit_trace_heartbeat_on_noop", False)
             )
@@ -338,8 +342,16 @@ class DiagnosticCollector:
                 _shared_ports: dict[str, tuple[str, ...]] = shared_ports,
                 _port_updaters: dict[str, dict[str, str]] = port_updaters,
                 _trace_heartbeat_on_noop: bool = trace_heartbeat_on_noop,
+                _is_step: bool = is_step,
+                _owner: str = owner,
             ) -> dict[str, Any]:
                 tick = int(self._current_tick["tick"])
+                allocations = states.get("substrates_allocated", {})
+                owner = _owner
+                if owner not in allocations and owner.endswith("_evolution"):
+                    owner = owner.removesuffix("_evolution")
+                if _is_step and isinstance(allocations, dict) and owner in allocations:
+                    self.per_tick_allocations_at_use[owner] = dict(allocations[owner])
                 try:
                     update = _original(timestep, states)
                 except Exception:
@@ -380,7 +392,7 @@ class DiagnosticCollector:
                         if store_path and store_path[0] == "substrates":
                             self.per_tick_process_sums[wid_str] += float(delta)
                         if tick % self._process_trace_stride == 0:
-                            writer.writerow([tick, _entity_name, wid_str, f"{delta:.12g}"])
+                            writer.writerow([tick, owner, wid_str, f"{delta:.12g}"])
                             wrote_trace_row = True
                 if (
                     (tick % self._process_trace_stride == 0)

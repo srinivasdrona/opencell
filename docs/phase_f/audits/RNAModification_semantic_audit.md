@@ -1,5 +1,29 @@
 # RNAModification Semantic Audit
 
+## 2026-10-15 implementation checkpoint (supersedes historical code descriptions below)
+
+- Source request (MATLAB 289-294) now lives in
+  `KarrRNAModificationProcess.calculate_request`, sharing the evolution input
+  reader. It uses configured dt, live fixture-indexed monomer/complex ownership,
+  and processed RNA, without availability caps or RNG draws.
+- All 347 processed/mature rows are exposed in the existing RNA authority;
+  overlapping nascent WIDs use RNAProcessing's `processed::` aliases. The
+  established 38-row active-vector attributes remain for standalone callers.
+  The 309 no-modification-required forms mature without substrate/enzyme use.
+- Evolution follows source stochastic rounding and weighted one-RNA selection;
+  water/H are excluded only from feasibility, not stoichiometric writeback.
+  Production `trace_hint` handling has been removed.
+- v4/v5/v6 register the real process as an evolution Step (retained under its
+  established `processes` lookup key, using Vivarium's supported Step dispatch).
+  A request Process arms a store-owned handshake; calculator -> allocator ->
+  public evolution runs once per tick and never at construction.
+- Conservation accounting records Step grants at actual use, normalizes phase
+  ownership, and retains pre-update grants for ordinary Processes.
+- Frozen modification fidelity: 24/24; existing + strict-zero: 12/12.
+  No L2 statistical eligibility is asserted; baseline remains 5/28.
+
+The original claim table is historical, not a current fidelity certification.
+
 ## Header
 - Process: `RNAModification` (`rna_modification`)
 - Audited files:
