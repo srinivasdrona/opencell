@@ -78,8 +78,9 @@ def _fixture_wids(value: np.ndarray) -> list[str]:
     return np.asarray(value, dtype=object).ravel().astype(str).tolist()
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=0)  # Keep cache-management hooks without retaining fixture authority.
 def _canonical_complex_wids() -> set[str]:
+    """Read the current two-fixture union for each constructor's enzyme routes."""
     d2_fixture = loadmat(
         str(_resolve_fixture_path(_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH)),
         squeeze_me=True,

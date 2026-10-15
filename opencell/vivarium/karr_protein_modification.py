@@ -50,9 +50,9 @@ def _parse_wid_array(cell_array: np.ndarray) -> list[str]:
     return out
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=0)  # Keep cache-management hooks without retaining fixture authority.
 def _canonical_complex_wids() -> frozenset[str]:
-    """Canonical complex WIDs used to classify enzyme read paths."""
+    """Read current canonical membership for each constructor's enzyme routes."""
     fixture = loadmat(str(_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH))
     fx = fixture["data"]["fixture"][0, 0]
     d2_complex_wids = _parse_wid_array(fx["complexWholeCellModelIDs"])
