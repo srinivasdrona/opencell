@@ -65,7 +65,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   targets pre-L2.5 process eligibility, not an L2.5 PASS or whole-cell completion.
 - Active worktree: `E:\opencell-worktrees\fix-protein-processing-ii-fidelity`;
   branch `fix/protein-processing-ii-fidelity-20261015`, based on audit
-  `0182039`. Nothing pushed; test-author dispatch is next.
+  `0182039`. Nothing pushed; test-author handoff commit is `73dfc29`.
+- Live independent test author: `9bfbbe1e-4fc6-4a28-a21f-52bdb3bd93f4`.
+  Its bounded objective is test-only source-algebra/input/timing contracts and
+  correction of the five obsolete standalone tests; production is frozen.
 - Primary authority is local MATLAB `ProteinProcessingII.m:325-345`:
   H2O demand is the minimum of ceil(peptidase * rate * step) and the
   lipoprotein-plus-secreted processed-I pool; PG160 uses transferase capacity
