@@ -59,6 +59,19 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
+**Current status (2026-10-15) — ProteinModification test freeze accepted; implementation next:**
+
+- Active branch `fix/protein-modification-fidelity-20261015`, freeze
+  `caaa189` / `2e902fb`. Parent reproduced the new 43 PASS / 45 RED boundary;
+  unchanged legacy tests pass. No implementation or promotion yet.
+- Repair requests/live ports, trace-hint bypass, nonreacting pass-through,
+  iteration truncation, and same-tick scheduling against frozen tests.
+- PP2 and RNA continue in separate worktrees; do not merge their WIP.
+  Parent reconciles shared protein calculator/composite/accounting and final
+  evidence/digest. Existing MIGRATED_WIDS membership is unchanged.
+- Independent test author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is idle.
+  Doer dispatch is pending; no commands remain live. Nothing pushed; 5/28.
+
 **Current status (2026-10-15) — parallel pre-L2.5 fidelity lanes; baseline remains 5/28:**
 
 - Run independent process repairs concurrently in isolated worktrees. Preserve
