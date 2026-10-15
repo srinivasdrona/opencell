@@ -59,7 +59,34 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-15) — parallel pre-L2.5 fidelity lanes; baseline remains 5/28:**
+**Current status (2026-10-15) — shared attestation gap reopens PT; canonical readiness baseline 4/28:**
+
+- Parent verified the same representative-seed-only defect in the previously
+  eligible ProteinTranslocation published manifest: 50 resolved seeds, only
+  one oracle file hash and no parameter fixtures. The actual genuine ensemble
+  execution/score is not revoked, but readiness is temporarily blocked by
+  `PTRANS-COMPLETE-ATTESTATION`. Canonical audit count is now4/28,24 blocked.
+  Isolated feature-branch5/28 pins are historical, not new certifications.
+- The shared binding repair must restore this existing PT evidence as well as
+  bind the four repaired-process candidates. Do not retain5 by waiving a known
+  contract gap, drop unrelated evidence rows, or ignore new source staleness.
+  Use independently reviewed verified-byte re-attestation/migration or rerun;
+  never edit scores, thresholds or verdict strings to manufacture acceptance.
+- RNA reviewer found no additional high-confidence producer algorithm/phase
+  bug, but rejected mutable cached process reuse in both Design-A adapters.
+  Repeated identical samples changed output. Original RNA author is now
+  freezing repeated/interleaved/cache-poison regressions; original doer next.
+  Fixed per-sample execution must not reset persistent legacy replay RNG.
+- RNA author subsequently failed on a request-body timeout before new isolation
+  work; committed artifacts are intact. Parent is adding the narrow execution-
+  isolation regressions directly instead of restarting the large context, then
+  returning implementation to the original doer and independent reviewer.
+- Those regressions are now frozen at11 PASS /6 intended FAIL; no producer
+  algorithm changed. Canonical honesty rebaseline is verified9/9 and
+  INTEGRITY_OK4/28, source digest unchanged. Independent doer fixes RNA sample
+  ownership next; common binding author continues independently in PP2.
+
+**Earlier parallel-lane record (superseded by the current handoff above):**
 
 - PP2 independent reviewer `2b6b081d-9fa9-4e18-8801-90cf58d63695` returned
   DID NOT MATCH solely on two evidence-binding defects: missing protein-authority

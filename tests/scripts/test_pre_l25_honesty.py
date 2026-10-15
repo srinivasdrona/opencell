@@ -253,10 +253,13 @@ def test_tracked_baseline_is_current_and_fail_closed() -> None:
     result = honesty.audit_baseline()
     assert result.integrity_ok
     assert result.process_count == 28
-    assert result.eligible_count == 5
-    assert result.blocked_count == 23
+    assert result.eligible_count == 4
+    assert result.blocked_count == 24
     assert not result.all_eligible
-    assert not any(item.startswith("ProteinTranslocation") for item in result.blockers)
+    assert any(
+        "ProteinTranslocation/PTRANS-COMPLETE-ATTESTATION" in item
+        for item in result.blockers
+    )
     assert any("Metabolism/MET-CODE-DEVIATIONS" in item for item in result.blockers)
     assert any("Metabolism/MET-EVIDENCE-CONFIG" in item for item in result.blockers)
 
@@ -270,7 +273,8 @@ def test_txreg_stage_a_production_files_included_in_provenance_and_dependencies(
     1. pre_l25_honesty.collect_source_dependencies()
     2. data/karr_method_inventory/oc_method_map.yaml under TranscriptionalRegulation.oc_files
     3. data/schemas/per_process_wiring/TranscriptionalRegulation.yaml under provenance.oc_files_referenced
-    With no eligibility or finding disposition changes (5/28 eligible; findings remain OPEN).
+    TxReg remains blocked; the aggregate also includes the separate translocation
+    attestation gap. Existing TxReg findings remain OPEN.
     """
     req_files = {
         "opencell/state/chromosome_store.py",
@@ -315,8 +319,8 @@ def test_txreg_stage_a_production_files_included_in_provenance_and_dependencies(
     )
     with open(baseline_path, encoding="utf-8") as f:
         baseline = yaml.safe_load(f)
-    assert baseline["summary"]["eligible"] == 5
-    assert baseline["summary"]["blocked"] == 23
+    assert baseline["summary"]["eligible"] == 4
+    assert baseline["summary"]["blocked"] == 24
     txreg_proc = next(
         p for p in baseline["processes"] if p["name"] == "TranscriptionalRegulation"
     )

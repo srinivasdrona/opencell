@@ -375,7 +375,7 @@ processes:
   - name: ProteinTranslocation
     behavior_gate: L2.2
     behavior_verdict: PASS
-    eligibility: ELIGIBLE
+    eligibility: BLOCKED_EVIDENCE_CONFIG_MISMATCH
     findings:
       - id: PTRANS-STAGE2-ALGORITHM
         kind: CODE_DEVIATION
@@ -400,6 +400,20 @@ processes:
             lines: "1-152"
           - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json
             lines: "1-34"
+      - id: PTRANS-COMPLETE-ATTESTATION
+        kind: EVIDENCE_CONFIG_MISMATCH
+        disposition: OPEN
+        summary: >-
+          The genuine N50 execution and computed PASS remain valid recorded
+          results, but its published input manifest binds only seed zero and
+          two Python files, with no parameter fixtures. The shared evidence
+          attestation must bind every consumed seed file and parameter input
+          before this process is eligible under the no-known-gap policy.
+        evidence:
+          - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/input_manifest.json
+            lines: "1-19"
+          - path: tests/vivarium/l2_2_design_a_runner.py
+            lines: "1476-1493"
 
   - name: RNADecay
     behavior_gate: L2.2
@@ -666,5 +680,5 @@ processes:
             lines: "40-43"
 
 summary:
-  eligible: 5
-  blocked: 23
+  eligible: 4
+  blocked: 24
