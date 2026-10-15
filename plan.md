@@ -102,6 +102,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   sampling-law/production review and source-only Design-A adapter validation.
   Persistent replay tick53 mismatch is not yet source-certified or waived;
   Design-A distributions, not tuned identical draws, remain the registered gate.
+  Fixed-snapshot reviewer `afe79323-decc-4c9e-9576-dc9099fa43fd` is live on
+  `99ee89a`; test author is concurrently verifying PM-only Design-A source
+  projections. Existing accepted PM50 cohort is fully present in
+  `l22-final-sweep` and matches the population manifest; local cache has seed0
+  only, matching the same manifest.
   It overlaps PP2's protein request-calculator
   class, so reconcile its shared-file edits against PP2 before integration.
 - RNA lane C: RNAModification plus RNAProcessing, isolated worktree
@@ -111,6 +116,13 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   `47e288fe-a412-4728-96da-65e194efbff3` is live from `dcd3e5c`, tests frozen.
   Coordinate
   the pair because they share `RequestCalculatorRNAPathway` and RNA form routing.
+- RNA implementation now landed at `6ab80b6` / `183ff18`, provenance
+  `80a0855`; doer is idle. Reported82 PASS/1 source-conflicting test remains:
+  tRNA-first competition grants7 water but source uses whole-class bound12.
+  Independent author must adjudicate a genuine order-sensitive fixture case,
+  not weaken the source bound or merely increase water until both pass.
+  Legacy input-only replay/evidence projections also require correction before
+  a fresh statistical verdict; no no-op replay may count as positive coverage.
 - No lane may broaden the shared protein/chromosome authority migration,
   modify another lane's files/worktree, or self-certify L2.5 eligibility.
   Parent owns shared topology/accounting, dependency-closed source digests,
