@@ -61,38 +61,34 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Isolated integration lane (2026-10-15):** worktree
 `E:\opencell-worktrees\integrate-fidelity-batch`, branch
-`integrate/pre-l25-fidelity-batch-20261015`, base `95059f1`. Frozen PP2
-`be36287` is reconciled; source/current/request tests: 66 PASS. PM `89ac0f3`
-is reconciled; combined PP2/PM/protected tests: 180 PASS. RNA `666fbb1`
-is now reconciled; RNA source/current/replay-input/strictzero tests: 101 PASS.
-All four owners retain postallocation execution and a union of
-processed-I/mature/folded calculator schemas. Joint checks and final
-source-digest/anchor refresh remain pending. Merge SHAs: PP2 `768fc7e`,
-PM `9a15bf3`, RNA `c041968`; local tip `c4bbc93`, unpushed. Joint focused
-pytest is launching in WSL with output `.integration_checks/joint.log`;
-all test scratch paths are worktree-local. Allocation-canary additions and
-mechanical metadata repair proceed independently of that command. No push, no eligibility
-promotion, no agents. Canonical status below remains authoritative.
-Detailed merge/test checkpoints live in the session artifact
-`STATUS_fidelity_batch_integration.md`. No agents or external writers.
-Both initial shells have completed. `fidelity-l24` measured PASS400/400
-ticks, zero PartA/PartB failures. Initial joint suite:376 PASS,1 existing
-XFAIL,4 integration-test reconciliation failures; required sibling PM input
-ports, exhaustive RNA/PP2 wrapper classification, and historical5-to-current4
-StageAB metadata pin are repaired, with targeted checks passing. Final joint
-runner is next. Output `.integration_checks/l24/summary.json`, log
-`.integration_checks/l24.log`.
-Four-owner allocation observer canaries: 32 PASS (positive/overspend/
-missing-leaf/unknown-owner, both observers). Structural anchor repair measured
-L1b115/115 and wiring28/28. At-use Step grants must not replace ordinary
-Process pre-update snapshots; nested PM owner calls count only once.
-Source digest refreshed to140 files:
+`integrate/pre-l25-fidelity-batch-20261015`, base `95059f1`. Frozen merges:
+PP2 `be36287` → `768fc7e`, PM `89ac0f3` → `9a15bf3`, RNA `666fbb1` →
+`c041968`. Guard/anchor fix `2f36964`, pre-handoff provenance tip `48001b3`;
+all local/unpushed. All four real phase owners, authority-schema unions,
+fresh sample owners, PT sole request writer and CC/StageAB contracts survive.
+
+Final exact joint command: `& .\artifacts\fidelity_batch_integration\joint.ps1`
+(complete25-file selector list), **421 PASS /1 existing CC starvation XFAIL**
+in561.00s, no skips. Combined L2.4 seeds0–3 ×100:400/400 ticks, zero
+PartA/PartB/stability failures. Both observers' real-owner positive,
+overspend, missing-leaf and unknown-owner canaries:32/32 PASS; no nested PM
+double accounting. Ordinary Processes retain pre-update allocation snapshots.
+L1b115/115, wiring28/28, honesty INTEGRITY_OK4/28,24 blocked.
+Source digest140 files:
 `be95a0b307b08590de24a760183a631d37b96e490526016e17666de72e46809e`;
-honesty audit INTEGRITY_OK4/28,24 blocked. Frozen binding canaries retain
-4 PASS/16 intended FAIL. Replay measurements retain PM tick53 random-
-realisation mismatch and RM event tick0 draw mismatch, canonical RM no-op
-N/A; PP2 six-family and RP full-family replay PASS. No reseeding or
-threshold/channel/dimension change.
+focused Ruff33 files:20 inherited diagnostics, zero new; diffcheck clean.
+Both journals preserve every frozen event's bytes/order; all200 accepted
+raw files match tracked paths/hashes/embedded seeds0–49/100ticks/full families.
+
+Frozen binding remains4 PASS/16 intended FAIL. PP2 six-family and RP
+full-family replay PASS; PM tick53 and RM event tick0 exact stochastic
+diagnostics and canonical RM no-op N/A remain explicit. No RNA N50 sweeps,
+binding implementation, semantic promotion or evidence-index publication.
+Next: common binding against this complete tree, plus PT sample isolation;
+both PT blockers remain OPEN. Canonical status below is preserved.
+No agents, pushes, live shells or MERGE_HEAD. Logs/reproducer/32-case XML
+are local under `artifacts\fidelity_batch_integration`; detailed checkpoints
+are in the session artifact `STATUS_fidelity_batch_integration.md`.
 
 **Current status (2026-10-15) — shared attestation gap reopens PT; canonical readiness baseline 4/28:**
 

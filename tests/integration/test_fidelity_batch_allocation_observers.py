@@ -16,6 +16,7 @@ sys.path.insert(0, str(ROOT / "tests" / "vivarium"))
 import _rna_fidelity_helpers as rna
 import test_karr_protein_modification_fidelity as pm
 import test_karr_protein_processing_ii_fidelity as pp2
+
 from opencell.vivarium.karr_protein_modification import (
     KarrProteinModificationEvolutionStep,
     KarrProteinModificationRequestProcess,
