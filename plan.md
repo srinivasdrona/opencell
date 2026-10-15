@@ -74,6 +74,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   and actual fixture inputs. Do not duplicate that repair in this lane.
 - Restoration record: `tmp/rna-oracle-restoration/manifest.json`.
   No RNA statistical sweep is live; PM's separate shell may still be running.
+- Reviewer `d1e8bfef-5471-431a-8eb4-943b86b0663d` is live on `b2e7778`.
+  Parent restored replay run is7 PASS /1 RM event exact-draw FAIL /1 audited
+  canonical RM no-op N/A; RP now passes full captured-family replay.
+  Do not claim paired RNG equivalence or no-op coverage from that result.
 
 - Test/harness follow-up `94d3e9f` / `7a7b611` is committed; original author is
   idle. Reported84/84 source unit contracts and11 input/projection regressions;
