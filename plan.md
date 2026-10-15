@@ -85,9 +85,11 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
   Accepted seed-0 SHA is
   `0d86b69b6896c76c36056a20d19e6c530b781b4413f70550d74cb95aeeda2387`;
   current canonical seed-0 SHA `1cbcb450...` is explicitly archived as stale
-  in `L22_STALE5_REGEN_REPORT.md`. Restore the accepted complete cohort only
-  after the active input/form test freeze, then rerun full six-family replay
-  and fresh distributional evidence. No raw data was changed during preflight.
+  in `L22_STALE5_REGEN_REPORT.md`. After narrow production repair `aae8d93` /
+  `e8930e7`, parent restored the exact accepted50 cohort into an isolated PP2
+  worktree cache: all hashes/seeds/100ticks/six families verified, main cache
+  unchanged. Full six-family replay/evidence projection is next; no new
+  statistical verdict or eligibility increase has been claimed.
 - Protein lane B: ProteinModification, isolated worktree
   `E:\opencell-worktrees\fix-protein-modification-fidelity`; freeze
   `caaa189` / `2e902fb` is parent-accepted: new tests 43 PASS / 45 RED.
