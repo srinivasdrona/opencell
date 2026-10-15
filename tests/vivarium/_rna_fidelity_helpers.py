@@ -8,17 +8,30 @@ inputs, not claims about the default chassis. RNAProcessing's existing
 
 from __future__ import annotations
 
+import sys
 from copy import deepcopy
 from functools import lru_cache
+from pathlib import Path
 
 import numpy as np
 from scipy.io import loadmat
 from vivarium.core.engine import Engine
 
-from opencell.vivarium.karr_composite import build_karr_chassis_v5, build_karr_chassis_v6
-from opencell.vivarium.karr_request_calculators import RequestCalculatorRNAPathway
-from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
-from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
+_REPO_ROOT = Path(__file__).resolve().parents[2]
+sys.path.insert(0, str(_REPO_ROOT))
+
+from opencell.vivarium.karr_composite import (  # noqa: E402
+    build_karr_chassis_v5,
+    build_karr_chassis_v6,
+)
+from opencell.vivarium.karr_request_calculators import RequestCalculatorRNAPathway  # noqa: E402
+from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess  # noqa: E402
+from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess  # noqa: E402
+
+for _class in (RequestCalculatorRNAPathway, KarrRNAModificationProcess, KarrRNAProcessingProcess):
+    assert Path(sys.modules[_class.__module__].__file__).resolve().is_relative_to(_REPO_ROOT), (
+        "fidelity test imported a different worktree through the shared editable venv"
+    )
 
 
 @lru_cache
@@ -193,7 +206,11 @@ def production_slice(composite, process_name, state):
         old = set(keep)
         for key, deps in flow.items():
             if key in keep:
-                keep.update(dep[0] for dep in deps)
+                keep.update(
+                    dep[0]
+                    for dep in deps
+                    if not dep[0].startswith("request_calculator_") or dep[0] == request_name
+                )
             # Preserve source-registered evolution steps for this process, if added.
             if process_name in key:
                 keep.add(key)
@@ -223,3 +240,72 @@ def production_slice(composite, process_name, state):
         display_info=False,
         emit_step=1.0,
     )
+
+
+def intergenic_keys():
+    """Lossless cytosolic leaves in the existing RNA authority.
+
+    Intergenic WIDs repeat in MATLAB. Preserve the Rna fixture's global 1-based
+    row, not a dict keyed only by WID (which merges distinct fragments). This
+    minimal row-identity contract needs parent-owned schema reconciliation;
+    this helper declares no production schema or second authority.
+    """
+    return [
+        f"intergenic::{index}"
+        for index in np.atleast_1d(fixture("Rna")["intergenicIndexs"]).astype(int)
+    ]
+
+
+def processing_indices(kind):
+    return np.atleast_1d(fixture("RNAProcessing")[f"unprocessedRNAIndexs_{kind}"]).astype(int) - 1
+
+
+def seed_processing(state, proc, counts, dt=1.0):
+    fx = fixture("RNAProcessing")
+    stoich = np.asarray(fx["reactantByproductMatrix"], dtype=float)
+    catalysis = np.asarray(fx["catalysisMatrix"], dtype=float)
+    keys = wids(fx, "unprocessedRNAWholeCellModelIDs")
+    state["rna"]["counts"].update(zip(keys, map(float, counts), strict=True))
+    state["rna"]["counts"].update(dict.fromkeys(intergenic_keys(), 0.0))
+    # MATLAB caps using the worst reactant column of each whole RNA class.
+    # Supply that bound for each active class, not only net consumed molecules.
+    substrates = np.zeros(stoich.shape[0])
+    for kind in ("mRNA", "rRNA", "sRNA", "tRNA"):
+        indices = processing_indices(kind)
+        substrates += np.maximum(0, -stoich[:, indices].min(axis=1)) * counts[indices].sum()
+    enzymes = np.ceil(catalysis @ counts / dt) + 1
+    live_enzymes(state, fx, enzymes)
+    state["substrates"].update(zip(proc.substrate_wids, map(float, substrates), strict=True))
+    state["substrates_allocated"][proc.name].update(
+        zip(proc.substrate_wids, map(float, substrates), strict=True)
+    )
+    return substrates, enzymes
+
+
+def processing_output_vectors(events):
+    fx = fixture("RNAProcessing")
+    rna_fx = fixture("Rna")
+    return (
+        np.asarray(fx["reactantByproductMatrix"], dtype=float) @ events,
+        np.asarray(rna_fx["nascentRNAMatureRNAComposition"], dtype=float) @ events,
+        np.asarray(rna_fx["intergenicRNAMatrix"], dtype=float) @ events,
+    )
+
+
+def assert_processing_output(update, events):
+    fx = fixture("RNAProcessing")
+    sub, processed, intergenic = processing_output_vectors(events)
+    counts = update.get("rna", {}).get("counts", {})
+    exact_counts(vector(update.get("substrates", {}), wids(fx, "substrateWholeCellModelIDs")), sub)
+    exact_counts(vector(counts, wids(fx, "unprocessedRNAWholeCellModelIDs")), -events)
+    exact_counts(vector(counts, processed_keys()), processed)
+    exact_counts(vector(counts, intergenic_keys()), intergenic)
+    allowed = set(
+        wids(fx, "unprocessedRNAWholeCellModelIDs") + processed_keys() + intergenic_keys()
+    )
+    assert set(counts) <= allowed, "unknown form/compartment write"
+    assert set(update) <= {"substrates", "rna"}
+    assert set(update.get("rna", {})) <= {"counts"}, (
+        "RNAProcessing cannot write mature/modified RNA"
+    )
+    assert set(update.get("substrates", {})) <= set(wids(fx, "substrateWholeCellModelIDs"))
