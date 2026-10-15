@@ -260,6 +260,10 @@ def test_tracked_baseline_is_current_and_fail_closed() -> None:
         "ProteinTranslocation/PTRANS-COMPLETE-ATTESTATION" in item
         for item in result.blockers
     )
+    assert any(
+        "ProteinTranslocation/PTRANS-SAMPLE-ISOLATION" in item
+        for item in result.blockers
+    )
     assert any("Metabolism/MET-CODE-DEVIATIONS" in item for item in result.blockers)
     assert any("Metabolism/MET-EVIDENCE-CONFIG" in item for item in result.blockers)
 

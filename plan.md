@@ -88,6 +88,28 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - RNA freeze is `a202f24`; original doer
   `47e288fe-a412-4728-96da-65e194efbff3` is live on the helper-only fresh-owner
   fix. Tests are frozen; expected combined source/input/isolation count101.
+- RNA isolation fix `666fbb1` is parent101/101 and independently MATCHED on
+  re-review; doer/reviewer are now idle. All four bounded candidate producer
+  repairs and adapters have cleared review; empirical RNA gates and complete
+  evidence binding are still pending.
+- Parent found the same cached-owner execution in PT's adapter and verified
+  an advanced metadata RNG reaches actual public execution (zero-input sampler
+  initialization probe, not a biological fidelity claim). Added separate
+  `PTRANS-SAMPLE-ISOLATION` blocker; canonical count remains4/28. Restore PT
+  only after both attestation and sample isolation are closed.
+- Next parent stage: draft shared-file integration of the three frozen feature
+  snapshots before applying the common binding repair. Preserve all root4/28
+  blockers; do not integrate a moving PP2 test-author branch or publish scores
+  as readiness. Source models/thresholds stay frozen.
+- Common evidence-binding freeze has now completed: `cc8f802`, `249f519`,
+  `0d68732`, provenance through `be36287`, measured4 GREEN/16 intended RED.
+  All author sessions are idle; no long command remains live.
+- Integration is next in isolated
+  `E:\opencell-worktrees\integrate-fidelity-batch`, not directly in canonical
+  audit. Frozen merge targets: PP2 `be36287`, PM `89ac0f3`, RNA `666fbb1`.
+  Reconcile shared calculator/composite/observers/helpers and protected tests
+  once; retain canonical4/28 and all genuine evidence blockers. Only after that
+  should the single common binding doer operate against the complete code tree.
 
 **Earlier parallel-lane record (superseded by the current handoff above):**
 
