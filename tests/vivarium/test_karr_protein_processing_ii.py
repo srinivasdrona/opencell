@@ -63,7 +63,7 @@ def _build_state(
             comp = process.migrated_compartment_by_wid[wid]
             authority["processed_i"][wid] = {comp: float(count)}
         else:
-            counts[wid] = float(count)
+            processed[wid] = float(count)
 
     enzymes[process.enzyme_wids[process.enzyme_index_dag_transferase]] = float(dag_enzyme)
     enzymes[process.enzyme_wids[process.enzyme_index_signal_peptidase]] = float(cleavage_enzyme)
@@ -114,7 +114,7 @@ def _pool(state: dict[str, Any], p: KarrProteinProcessingIIProcess, form: str, w
                 p.migrated_compartment_by_wid[wid], 0.0
             )
         )
-    legacy = "counts" if form == "processed_i" else "processed_counts"
+    legacy = "processed_counts" if form == "processed_i" else "unfolded_counts"
     return float(state["protein"][legacy].get(wid, 0.0))
 
 

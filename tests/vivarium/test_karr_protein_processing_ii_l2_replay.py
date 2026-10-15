@@ -81,8 +81,9 @@ def _ppii_locations(observable: str) -> list[tuple[str, tuple[str, ...]]]:
 
     ProteinProcessingII.m:199-268 owns processed-I/II at monomerCompartments
     and signal sequences in cytosol. Process.m:611-670 owns mature/bound
-    enzymes at enzymeMonomerCompartmentIndexs. Nonmigrated standalone queues
-    retain their existing legacy routes; this does not migrate chassis state.
+    enzymes at enzymeMonomerCompartmentIndexs. For nonmigrated WIDs, PP1's
+    processed_counts is processed-I; Folding's unfolded_counts is processed-II.
+    Neither aliases the mature counts pool or migrates chassis state.
     """
     fixture = _ppii_fixture()
     if observable == "substrates":
@@ -101,8 +102,8 @@ def _ppii_locations(observable: str) -> list[tuple[str, tuple[str, ...]]]:
             )
         ]
     form, legacy, field = {
-        "unprocessedMonomers": ("processed_i", "counts", "unprocessedMonomerWholeCellModelIDs"),
-        "processedMonomers": ("processed_ii", "processed_counts", "processedMonomerWholeCellModelIDs"),
+        "unprocessedMonomers": ("processed_i", "processed_counts", "unprocessedMonomerWholeCellModelIDs"),
+        "processedMonomers": ("processed_ii", "unfolded_counts", "processedMonomerWholeCellModelIDs"),
         "signalSequenceMonomers": (
             "signal_sequence", "signal_sequence_counts", "signalSequenceMonomerWholeCellModelIDs",
         ),
@@ -204,7 +205,7 @@ def test_ppii_projection_preserves_absent_and_nonmigrated_input_contracts() -> N
     np.testing.assert_array_equal(precursors, np.zeros(len(process.unprocessed_monomer_wids)))
     np.testing.assert_array_equal(enzymes, np.zeros(len(process.enzyme_wids)))
 
-    # Explicitly synthetic standalone precursor, not a new nonmigrated chassis authority.
+    # Synthetic precursor at the existing PP1-owned processed-I queue, not mature counts.
     before = np.zeros(len(process.unprocessed_monomer_wids))
     index = next(i for i, wid in enumerate(process.unprocessed_monomer_wids) if wid not in MIGRATED_WIDS)
     before[index] = 1
@@ -215,7 +216,8 @@ def test_ppii_projection_preserves_absent_and_nonmigrated_input_contracts() -> N
     actual, _ = process.read_processing_inputs(state)
     np.testing.assert_array_equal(actual, before)
     wid = process.unprocessed_monomer_wids[index]
-    assert state["protein"]["counts"][wid] == 1
+    assert state["protein"]["processed_counts"][wid] == 1
+    assert wid not in state["protein"].get("counts", {})
     assert wid not in state["protein"]["compartment_counts"]["processed_i"]
 
 

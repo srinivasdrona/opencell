@@ -21,6 +21,7 @@ import numpy as np
 import pytest
 from scipy.io import loadmat
 from vivarium.core.engine import Engine
+from vivarium.core.process import Step
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -117,7 +118,7 @@ def _precursor(state: dict[str, Any], index: int, count: float, *, mirror: bool 
     if wid in MIGRATED_WIDS:
         state["protein"]["compartment_counts"]["processed_i"][wid][_comp(index)] = count
     else:
-        state["protein"]["counts"][wid] = count
+        state["protein"]["processed_counts"][wid] = count
     if mirror:
         # Test-only legacy shadow, to isolate algebra from the separate authority defect.
         state["protein"]["processed_counts"][wid] = count
@@ -140,7 +141,7 @@ def _expected_requests(state: dict[str, Any], dt: float) -> dict[str, float]:
     protein = state["protein"]
     pools = np.asarray([
         protein["compartment_counts"]["processed_i"][str(wid)][_comp(i)]
-        if str(wid) in MIGRATED_WIDS else protein["counts"].get(str(wid), 0)
+        if str(wid) in MIGRATED_WIDS else protein["processed_counts"].get(str(wid), 0)
         for i, wid in enumerate(fx.unprocessedMonomerWholeCellModelIDs)
     ])
     enzymes = _enzyme_values(state)
@@ -319,8 +320,11 @@ def test_non_target_processed_i_transitions_without_substrate_demand() -> None:
     assert _requests(calc, state, p) == {str(w): 0 for w in _source().substrateWholeCellModelIDs}
     update = p.next_update(1.0, state)
     assert update.get("substrates", {}) == {}
-    assert update["protein"]["counts"][_wid(index)] == -3
-    assert update["protein"]["processed_counts"][_wid(index)] == 3
+    protein = update.get("protein", {})
+    assert protein.get("processed_counts", {}).get(_wid(index), 0) == -3
+    assert protein.get("unfolded_counts", {}).get(_wid(index), 0) == 3
+    assert protein.get("counts", {}).get(_wid(index), 0) == 0
+    assert protein.get("signal_sequence_counts", {}) == {}
 
 
 @pytest.mark.parametrize("field", ["lipoproteinMonomerIndexs", "secretedMonomerIndexs"])
@@ -555,3 +559,233 @@ def test_measured_transition_canary_rejects_stale_or_duplicated_evolution(mutati
         double_leaves(wrong)
     with pytest.raises(AssertionError):
         _transition(wrong, index, 1)
+
+
+@cache
+def _route_fixture(name: str) -> Any:
+    return loadmat(
+        _REPO_ROOT / f"data/karr_fixtures/per_process/{name}_flat.mat",
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+
+
+@cache
+def _nonmigrated_route_wid() -> str:
+    pp1 = _route_fixture("ProteinProcessingI")
+    folding = _route_fixture("ProteinFolding")
+    pp1_wids = set(map(str, pp1.processedMonomerWholeCellModelIDs))
+    folding_wids = list(map(str, folding.unfoldedMonomerWholeCellModelIDs))
+    enzymes = set(map(str, pp1.enzymeWholeCellModelIDs)) | set(
+        map(str, folding.enzymeWholeCellModelIDs)
+    )
+    prosthetic = folding.proteinProstheticGroupMatrix
+    prosthetic = prosthetic.toarray() if hasattr(prosthetic, "toarray") else np.asarray(prosthetic)
+    chaperones = folding.proteinChaperoneMatrix
+    chaperones = chaperones.toarray() if hasattr(chaperones, "toarray") else np.asarray(chaperones)
+    trigger = int(folding.enzymeIndexs_triggerFactor) - 1
+    for index in _indices("unprocessedMonomerIndexs"):
+        wid = _wid(int(index))
+        if wid in MIGRATED_WIDS or wid in enzymes or wid not in pp1_wids or wid not in folding_wids:
+            continue
+        fold_index = folding_wids.index(wid)
+        other_chaperones = np.delete(chaperones[fold_index], trigger)
+        if _comp(int(index)) == "c" and not np.any(prosthetic[fold_index]) and not np.any(other_chaperones):
+            return wid
+    raise AssertionError("fixture must supply a shared nonmigrated, non-signal, trigger-only witness")
+
+
+def _route_state(pp1: Any, folding: Any) -> dict[str, Any]:
+    """Synthetic one-nascent handoff; sibling enzymes come from their fixtures."""
+    state = _state(0)
+    state["complex"] = {"counts": {}}
+    for process, name in ((pp1, "ProteinProcessingI"), (folding, "ProteinFolding")):
+        fixture = _route_fixture(name)
+        for raw_wid, count in zip(fixture.enzymeWholeCellModelIDs, fixture.enzymes, strict=True):
+            wid = str(raw_wid)
+            if wid in process.complex_enzyme_wids:
+                state["complex"]["counts"][wid] = float(count)
+            else:
+                state["protein"]["enzyme_counts"][wid] = float(count)
+    wid = _nonmigrated_route_wid()
+    state["protein"]["counts"][wid] = 17  # Distinct synthetic mature pool, never a PP2 precursor.
+    state["protein"]["unprocessed_counts"][wid] = 1
+    state["protein"]["processed_counts"][wid] = 0
+    state["protein"]["unfolded_counts"][wid] = 0
+    source_index = list(map(str, _route_fixture("ProteinProcessingI").unprocessedMonomerWholeCellModelIDs)).index(wid)
+    cleavage = np.asarray(
+        _route_fixture("ProteinProcessingI").nascentMonomerNTerminalMethionineCleavages
+    ).reshape(-1)[source_index]
+    water = pp1.substrate_wids[pp1.substrate_idx_water]
+    state["substrates"][water] = 1 + int(cleavage)
+    state["substrates_allocated"][pp1.name] = {w: 0 for w in pp1.substrate_wids}
+    state["substrates_allocated"][pp1.name][water] = 1 + int(cleavage)
+    state["substrates_allocated"][folding.name] = {w: 0 for w in folding.substrate_wids}
+    return state
+
+
+def _apply_route_update(state: dict[str, Any], update: dict[str, Any]) -> None:
+    for key, value in update.items():
+        if isinstance(value, dict):
+            _apply_route_update(state.setdefault(key, {}), value)
+        else:
+            state[key] = state.get(key, 0) + value
+
+
+def _assert_nonmigrated_pass_through(update: dict[str, Any], wid: str, count: int) -> None:
+    protein = update.get("protein", {})
+    assert protein.get("processed_counts", {}).get(wid, 0) == -count
+    assert protein.get("unfolded_counts", {}).get(wid, 0) == count
+    assert protein.get("counts", {}).get(wid, 0) == 0, "PP2 must not write the mature pool"
+    assert update.get("substrates", {}) == {}
+    assert protein.get("signal_sequence_counts", {}) == {}
+    assert protein.get("compartment_counts", {}) == {}, "no nonmigrated authority enrollment"
+
+
+def test_nonmigrated_sibling_producer_and_consumer_form_witnesses() -> None:
+    """PP1.m:153-165 writes processed-I; Folding.m:331-340,380-427 reads processed-II."""
+    _, calc = _pair()
+    pp1 = calc.parameters["protein_processing_i_proc"]
+    folding = calc.parameters["protein_folding_proc"]
+    wid = _nonmigrated_route_wid()
+    state = _route_state(pp1, folding)
+    produced = pp1.next_update(1.0, state)
+    assert produced["protein"]["unprocessed_counts"][wid] == -1
+    assert produced["protein"]["processed_counts"][wid] == 1
+    assert produced["protein"].get("counts", {}).get(wid, 0) == 0
+
+    # Separate positive consumer witness, not an injected output in the handoff below.
+    state["protein"]["unprocessed_counts"][wid] = 0
+    state["protein"]["unfolded_counts"][wid] = 1
+    consumed = folding.next_update(1.0, state)
+    assert consumed["protein"]["unfolded_counts"][wid] == -1
+    assert consumed["protein"]["counts"][wid] == 1  # Folding's existing folded-output view.
+
+
+def test_nonmigrated_reader_selects_pp1_processed_i_queue_not_mature_pool() -> None:
+    p, _ = _pair()
+    state = _state(0)
+    wid = _nonmigrated_route_wid()
+    state["protein"]["processed_counts"][wid] = 3
+    state["protein"]["counts"][wid] = 1000
+    before = deepcopy(state)
+    actual, _ = p.read_processing_inputs(state)
+    index = p.unprocessed_monomer_wids.index(wid)
+    assert actual[index] == 3, "PP1 processed-I queue, not 1000 mature molecules"
+    assert state == before
+
+
+@pytest.mark.parametrize("mature", [0, 1000], ids=["empty_mature", "large_mature"])
+def test_nonmigrated_processed_i_moves_once_to_folding_queue_without_mature_drain(mature: int) -> None:
+    p, _ = _pair()
+    state = _state(0)
+    wid = _nonmigrated_route_wid()
+    state["protein"]["counts"][wid] = mature
+    state["protein"]["processed_counts"][wid] = 3
+    state["protein"]["unfolded_counts"][wid] = 2
+    authority_before = deepcopy(state["protein"]["compartment_counts"])
+    update = p.next_update(1.0, state)
+    _assert_nonmigrated_pass_through(update, wid, 3)
+    _apply_route_update(state, update)
+    assert state["protein"]["processed_counts"][wid] == 0
+    assert state["protein"]["unfolded_counts"][wid] == 5
+    assert state["protein"]["counts"][wid] == mature
+    assert state["protein"]["compartment_counts"] == authority_before
+    assert p.next_update(1.0, state) == {}, "empty processed-I queue must not evolve twice"
+
+
+def test_nonmigrated_mature_only_pool_never_creates_processing() -> None:
+    p, _ = _pair()
+    state = _state(0)
+    wid = _nonmigrated_route_wid()
+    state["protein"]["counts"][wid] = 1_000_000  # Synthetic poison, not source seed evidence.
+    state["protein"]["processed_counts"][wid] = 0
+    assert p.next_update(1.0, state) == {}, "mature-only molecules cannot enter processed-II"
+
+
+def test_nonmigrated_real_pp1_pp2_folding_handoff_uses_distinct_forms() -> None:
+    p, calc = _pair()
+    pp1 = calc.parameters["protein_processing_i_proc"]
+    folding = calc.parameters["protein_folding_proc"]
+    wid = _nonmigrated_route_wid()
+    state = _route_state(pp1, folding)
+    # Only emitted public deltas are applied; no precursor/output injection between stages.
+    _apply_route_update(state, pp1.next_update(1.0, state))
+    assert state["protein"]["processed_counts"][wid] == 1
+    assert state["protein"]["unprocessed_counts"][wid] == 0
+    mature_before = state["protein"]["counts"][wid]
+    update = p.next_update(1.0, state)
+    _assert_nonmigrated_pass_through(update, wid, 1)
+    _apply_route_update(state, update)
+    assert state["protein"]["counts"][wid] == mature_before
+    assert state["protein"]["processed_counts"][wid] == 0
+    assert state["protein"]["unfolded_counts"][wid] == 1
+    _apply_route_update(state, folding.next_update(1.0, state))
+    assert state["protein"]["unfolded_counts"][wid] == 0
+    assert state["protein"]["counts"][wid] == mature_before + 1
+
+
+@pytest.mark.parametrize("precursors", [0, 3], ids=["mature_only", "processed_i"])
+def test_engine_nonmigrated_form_queues_visible_and_consumed_once(
+    chassis: Any, monkeypatch: Any, precursors: int,
+) -> None:
+    p = chassis.steps["request_calculator_protein_pathway"].parameters["protein_processing_ii_proc"]
+    wid = _nonmigrated_route_wid()
+    schema = p.ports_schema()["protein"]
+    assert wid in schema["processed_counts"] and wid in schema["unfolded_counts"]
+    assert "counts" not in schema or schema["counts"], "never add a fake empty counts schema"
+    assert wid not in schema.get("counts", {}), "mature target is not a PP2 input/output"
+    state = _state(0)
+    state["protein"]["counts"][wid] = 1000
+    state["protein"]["processed_counts"][wid] = 0
+    state["protein"]["unfolded_counts"][wid] = 0
+    calls: list[dict[str, Any]] = []
+    original = p.next_update
+
+    def observed(timestep: float, inputs: dict[str, Any]) -> dict[str, Any]:
+        calls.append(deepcopy(inputs))
+        return original(timestep, inputs)
+
+    monkeypatch.setattr(p, "next_update", observed)
+    base = _production_slice(chassis, state)
+
+    class MaturePoolWitness(Step):
+        """Read-only synthetic bystander, not a PP2 port or a biology writer."""
+
+        def ports_schema(self) -> dict[str, Any]:
+            return {"protein": {"counts": {
+                wid: {"_default": 0.0, "_updater": "accumulate"},
+            }}}
+
+        def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+            return {}
+
+    # Vivarium omits undeclared initial leaves. Keep the mature bystander
+    # realized without exposing it to PP2 or executing a sibling biology process.
+    witness = "ppii_test_mature_pool_witness"
+    engine = Engine(
+        processes=base.processes,
+        steps={**base.steps, witness: MaturePoolWitness({})},
+        topology={**base.topology, witness: {"protein": ("protein",)}},
+        flow={**base.flow, witness: []},
+        initial_state=deepcopy(state),
+        display_info=False,
+        progress_bar=False,
+    )
+    assert engine.state.get_value()["protein"]["counts"][wid] == 1000
+    assert not calls, "construction must not evolve nonmigrated biology"
+    engine.state.apply_update({"protein": {"processed_counts": {wid: precursors}}})
+    engine.update(float(_source().stepSizeSec))
+    actual = engine.state.get_value()
+    assert len(calls) == 1
+    assert calls[0]["protein"]["processed_counts"][wid] == precursors
+    assert calls[0]["protein"]["unfolded_counts"][wid] == 0
+    assert actual["protein"]["processed_counts"][wid] == 0
+    assert actual["protein"]["unfolded_counts"][wid] == precursors
+    assert actual["protein"]["counts"][wid] == 1000
+    assert not any(actual["substrates"].values())
+    engine.update(float(_source().stepSizeSec))
+    after = engine.state.get_value()
+    assert len(calls) == 2
+    assert after["protein"]["unfolded_counts"][wid] == precursors
+    assert after["protein"]["counts"][wid] == 1000
