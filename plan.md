@@ -61,6 +61,17 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 **Current status (2026-10-15) — PP2 full replay/adapter accepted; fresh ensemble and independent review next; baseline 5/28:**
 
+- Latest independent review: DID NOT MATCH on evidence binding ONLY. Model,
+  live-state routing, phases, six-family replay and local adapter all matched;
+  fresh N50/M20 PASS was independently re-derived. No promotion yet.
+- Findings: register protein_state.py in evidence source dependencies; input
+  attestation must bind all50 consumed traces plus actual PP2/migration
+  fixtures, not representative seed0 only. Author
+  `9bfbbe1e-4fc6-4a28-a21f-52bdb3bd93f4` is live on regression freeze.
+- This lane owns the common evidence-registry/manifest fix for later PM/RNA
+  integration. Production/catalog/scores/thresholds stay frozen; no evidence
+  re-attestation without verified bytes and the same reviewer's acceptance.
+
 - Complete-oracle author commits `6ad3130`, `c49fa41`, `f7869ee`; parent
   independently reproduced90/90 with no skips. Six-family replay matches all
   100 ticks, including4 actual signal-emission ticks; Design-A local monomer
