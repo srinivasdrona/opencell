@@ -73,6 +73,9 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Next concurrent work: fixed-snapshot independent production/RNG review and
   source-before-only PM Design-A adapter verification, then fresh registered
   N50/M100 evidence. No eligibility promotion before these are adjudicated.
+- Reviewer `afe79323-decc-4c9e-9576-dc9099fa43fd` is live on snapshot
+  `99ee89a`; original test author is live on PM-only evidence projection.
+  Production remains frozen; no random-draw tuning is authorized.
 
 - Production commits `ce68925`, `6d5d9d9`, `2df7a99`, metadata `d3c242c`.
   Parent independently reproduced the frozen 88/88; no eligibility promotion.
