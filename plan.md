@@ -59,7 +59,7 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
 
-**Current status (2026-10-15) — ProteinProcessingII fidelity iteration starting; eligibility is still 5/28:**
+**Current status (2026-10-15) — PP2 source-owned production repaired; complete-oracle verification next; baseline 5/28:**
 
 - Narrow queue repair is committed at `aae8d93` / `e8930e7`. Implementer is
   idle; reported 79 PASS plus the one explicit missing signal-oracle FAIL,
@@ -78,6 +78,10 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 - Next: independent author extends the input-only PP2 replay/evidence projection
   to verify all six real output families, then parent runs fresh source-bound
   distributional evidence and independent review. Eligibility remains5/28.
+- Live test/evidence author: `9bfbbe1e-4fc6-4a28-a21f-52bdb3bd93f4`,
+  dispatched from restoration checkpoint `b57f988`; production/raw data frozen.
+
+**Earlier PP2 iteration record (superseded by the handoff above):**
 
 - Local form-route freeze `196efe0` / `b279774` is parent-reproduced:
   **67 PASS / 13 FAIL**, comprising 12 wrong-form failures and one explicit
