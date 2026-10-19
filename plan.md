@@ -31,8 +31,11 @@
   integrity OK (4 PASS / 18 stale FAIL / 2 MISSING), and honesty INTEGRITY_OK
   at six eligible / 22 blocked, actual 140-file digest
   `a4694f00ef286d47283aa90605a3120030c1d700e79cf9560132bcfe50d41525`.
-  Commit and independent committed-copy check follow; RP/RM mass repair and
-  PM source-faithful RNG repair remain separate, unpromoted work.
+  Publication is committed at `e372a5b158b27b42ad94f2c1065a1867d4fb58da`.
+  Native Git archive verification matches all 69 original PT review files and
+  all eight compact evidence files, both committed and current bytes.
+  Independent committed-copy check follows; RP/RM mass repair and PM
+  source-faithful RNG repair remain separate, unpromoted work.
 - Global index regeneration truthfully keeps unrelated stale publications
   non-green: 3 PASS, 19 source-provenance FAIL, 2 MISSING. No old hash is
   refreshed, no unrelated open finding is waived, and no historical raw
@@ -45,9 +48,10 @@
   acceptance; its committed-copy verification follows publication.
   RNA verdict owner `9e80679b-8eb2-4a96-b12f-235ad39c70b9` is reviewing the
   observer-only `406256b` repair after frozen mass regressions.
-  PM test author `866ce338-0ad8-4328-84b0-7f82a8f79eed` is strengthening
-  source RNG vectors from already-recorded MATLAB authority; the local MATLAB
-  license is expired. Original PM doer `694b1228` is idle until that freeze.
+  PM test author `866ce338-0ad8-4328-84b0-7f82a8f79eed` froze stronger source
+  vectors at `2ed9e79` using already-recorded MATLAB authority, plus the
+  one-uniform weighted-sampler counterexample. Original separate doer
+  `694b1228` has resumed the repair; no fresh licensed MATLAB run is claimed.
   PP2 doer and both independent acceptance stages have completed; reviewer
   `a353318a-b485-44c2-83d5-ab5929a6044e` is idle, with no live helper.
 - All execution uses canonical WSL `/mnt/e/opencell/.venv-wsl`. Native Windows
