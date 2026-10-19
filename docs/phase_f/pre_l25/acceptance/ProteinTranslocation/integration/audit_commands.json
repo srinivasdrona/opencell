@@ -1,0 +1,36 @@
+[
+  {
+    "name": "full_portable_index_audit",
+    "command": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "audit",
+      "--index",
+      "docs/phase_f/l2_2_design_a/evidence_index.json",
+      "--evidence-root",
+      "docs/phase_f/l2_2_design_a/evidence_bundle"
+    ],
+    "child_pid": 387,
+    "started_at": "2026-10-19T12:38:49.335684+00:00",
+    "finished_at": "2026-10-19T12:39:12.022701+00:00",
+    "exit_code": 0,
+    "log": "full_portable_index_audit.log",
+    "log_sha256": "37d4b671f4e836a22eb45be9d47bab14a6a6f306377d57e77b932bc1c80554f7"
+  },
+  {
+    "name": "honesty_baseline_audit",
+    "command": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/pre_l25_honesty.py",
+      "audit",
+      "--baseline",
+      "docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml"
+    ],
+    "child_pid": 476,
+    "started_at": "2026-10-19T12:39:12.043190+00:00",
+    "finished_at": "2026-10-19T12:39:13.788815+00:00",
+    "exit_code": 0,
+    "log": "honesty_baseline_audit.log",
+    "log_sha256": "1119db48c4486409643fbde1a31f4baff779d52cd2d4fb8bcb0e41a40e5da5bd"
+  }
+]

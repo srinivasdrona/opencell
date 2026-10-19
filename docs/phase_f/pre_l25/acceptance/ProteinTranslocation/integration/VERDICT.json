@@ -1,0 +1,1089 @@
+{
+  "schema": "independent-pt-sealed-integration-v1",
+  "completed_at": "2026-10-19T12:44:00.871252+00:00",
+  "verdict": "ACCEPTED",
+  "candidate": {
+    "worktree": "E:\\opencell-worktrees\\m1-accepted-20261019",
+    "branch": "integrate/m1-accepted-20261019",
+    "sealed_tip": "f87ebf1939a0a172a13f3d15c2ede0af0a3bca95",
+    "publication_commit": "e372a5b158b27b42ad94f2c1065a1867d4fb58da",
+    "pre_PT_comparison_commit": "058fa1b5e5519a5312635a396701ea4d5c8740d9",
+    "original_approved_runtime": "65df71c26553f42dd95759b948de42647987bf68"
+  },
+  "scope": "Final committed copy/publication/finding integration only; earned producer/F1/mechanics and original full evidence acceptance reused, not reopened.",
+  "findings": {
+    "PTRANS-COMPLETE-ATTESTATION": {
+      "verdict": "ACCEPTED",
+      "committed_baseline_disposition": "RESOLVED",
+      "proof": "Exact native Git cat-file/archive/current/original equality for69receipt+8compact payloads;18manifest hashes;64current consumed input hashes and embedded50seed/M100 identities;12current source hashes,7sidecar hashes and COMPLETE sentinel; four original tests pass on actual tracked publication.",
+      "evidence": [
+        "actual_native_blob_proof.json",
+        "committed_byte_proof.json",
+        "current_PT_source_input_closure.json",
+        "publication.xml",
+        "finding_and_unrelated_preservation.json"
+      ]
+    },
+    "PTRANS-SAMPLE-ISOLATION": {
+      "verdict": "ACCEPTED",
+      "committed_baseline_disposition": "RESOLVED",
+      "proof": "Original independently accepted owner-isolation/persistent-replay receipts are committed byte-identically, current source/control hashes match frozen65, and baseline's matching committed resolving proof is correct. No owner or biological test rerun needed or performed.",
+      "evidence": [
+        "actual_native_blob_proof.json",
+        "committed_byte_proof.json",
+        "current_PT_source_input_closure.json",
+        "finding_and_unrelated_preservation.json"
+      ]
+    }
+  },
+  "byte_proof": {
+    "native_blob_archive_current_original_matches": 77,
+    "receipt_files": 69,
+    "compact_files": 8,
+    "delivery_manifest_matches": 18,
+    "native_git_cat_file_binary_stream_verified": true,
+    "native_git_cat_file_command": {
+      "started_at": "2026-10-19T18:12:27.1611881+05:30",
+      "finished_at": "2026-10-19T18:12:27.2637626+05:30",
+      "native_powershell_pid": 5868,
+      "git_pid": 11760,
+      "command": "native git --no-pager cat-file --batch; exact77object IDs from committed_byte_proof.json via StandardInput; binary BaseStream copy to native_blob_batch.bin",
+      "objects": 77,
+      "exit_code": 0,
+      "stderr": ""
+    },
+    "sealed_archive_sha256": "3ff38581667ad7aa5782514cc86a1a8927cba63542fc72a987556c58cbe4dea4",
+    "pre_PT_archive_sha256": "92de42642c9a51b64f46c64eb72447a810f290546a0e4466a9a301e4040a5901",
+    "original_evidence_acceptance_verdict_sha256": "2e868c3bf04831ba241cb3da4bf42ce8a5706ab2c5fb2151a8d9fef8acd481bf",
+    "published_result_sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+    "published_manifest_sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+    "published_sentinel_sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605"
+  },
+  "source_and_input_closure": {
+    "source_head": "f87ebf1939a0a172a13f3d15c2ede0af0a3bca95",
+    "original_producer_source": "65df71c26553f42dd95759b948de42647987bf68",
+    "source_hashes": {
+      "catalog_entry": "6674d9aa70b639fb96908b539924cbed52c20c52a19a205e999f5520b430f223",
+      "evidence_schema_module": "7bf13a083465ade3ee93d2421b112dfc3b23c0d78bec3f5c17fb177f4fbec93f",
+      "helpers": "ed9bde575ed9a171442de51dd6e94886dba9f6445a3b883f5d71015bcc56c50d",
+      "l2_replay_common": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852",
+      "oc_module": "5494ea378d4169ae1b5b8042395277d922053201b02d115814a7a6b2b1cd5231",
+      "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+      "protein_state_module": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b",
+      "runner": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+      "tick_runner": "073a452e57bb7f4641ba9f219623cc3296de3ddda518cab35f39c1794b45924e",
+      "util_matlab_rng_module": "5c2a982aa874c6ff2d62ae1fff85b58436eab4b47caa7b9a36d1f087b19b72fa",
+      "util_module": "dbdea5b4ad6dba7019f05cbb59ae20d8db0065804327daa4c74fc6ef3e63264e",
+      "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+    },
+    "source_hash_count": 12,
+    "consumed_count": 64,
+    "runtime_count": 14,
+    "oracle_count": 50,
+    "inputs": [
+      {
+        "path": "tests/vivarium/l2_2_design_a_runner.py",
+        "sha256": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+        "current_sha256": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+        "bytes": 68897
+      },
+      {
+        "path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
+        "sha256": "090dd4354b8df4c50dc1d9459c7df2466b8a17554f9679cdc4a6826e5570a3a0",
+        "current_sha256": "090dd4354b8df4c50dc1d9459c7df2466b8a17554f9679cdc4a6826e5570a3a0",
+        "bytes": 165588
+      },
+      {
+        "path": "tests/vivarium/_l2_2_design_a_projections.py",
+        "sha256": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+        "current_sha256": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+        "bytes": 12557
+      },
+      {
+        "path": "opencell/vivarium/__init__.py",
+        "sha256": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17",
+        "current_sha256": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17",
+        "bytes": 2501
+      },
+      {
+        "path": "tests/vivarium/l2_replay_common.py",
+        "sha256": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852",
+        "current_sha256": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852",
+        "bytes": 67735
+      },
+      {
+        "path": "scripts/l22_evidence/schema.py",
+        "sha256": "7bf13a083465ade3ee93d2421b112dfc3b23c0d78bec3f5c17fb177f4fbec93f",
+        "current_sha256": "7bf13a083465ade3ee93d2421b112dfc3b23c0d78bec3f5c17fb177f4fbec93f",
+        "bytes": 90098
+      },
+      {
+        "path": "opencell/util/__init__.py",
+        "sha256": "dbdea5b4ad6dba7019f05cbb59ae20d8db0065804327daa4c74fc6ef3e63264e",
+        "current_sha256": "dbdea5b4ad6dba7019f05cbb59ae20d8db0065804327daa4c74fc6ef3e63264e",
+        "bytes": 110
+      },
+      {
+        "path": "opencell/util/matlab_rng.py",
+        "sha256": "5c2a982aa874c6ff2d62ae1fff85b58436eab4b47caa7b9a36d1f087b19b72fa",
+        "current_sha256": "5c2a982aa874c6ff2d62ae1fff85b58436eab4b47caa7b9a36d1f087b19b72fa",
+        "bytes": 17009
+      },
+      {
+        "path": "opencell/vivarium/protein_state.py",
+        "sha256": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b",
+        "current_sha256": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b",
+        "bytes": 18667
+      },
+      {
+        "path": "opencell/vivarium/karr_protein_translocation.py",
+        "sha256": "5494ea378d4169ae1b5b8042395277d922053201b02d115814a7a6b2b1cd5231",
+        "current_sha256": "5494ea378d4169ae1b5b8042395277d922053201b02d115814a7a6b2b1cd5231",
+        "bytes": 23276
+      },
+      {
+        "path": "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+        "sha256": "1c02cba3d4422d7384a3d0c369b4bb02585705b9bed37d72c9c7b87515b0b41d",
+        "current_sha256": "1c02cba3d4422d7384a3d0c369b4bb02585705b9bed37d72c9c7b87515b0b41d",
+        "bytes": 343018
+      },
+      {
+        "path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+        "sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+        "current_sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01",
+        "bytes": 350378
+      },
+      {
+        "path": "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat",
+        "sha256": "d1b17ea39a9b90fe1dd3ae400e4c976e507aa22802d65f8c2544daeda76020ec",
+        "current_sha256": "d1b17ea39a9b90fe1dd3ae400e4c976e507aa22802d65f8c2544daeda76020ec",
+        "bytes": 340519
+      },
+      {
+        "path": "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+        "sha256": "cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe",
+        "current_sha256": "cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe",
+        "bytes": 341091
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2/ProteinTranslocation_100ticks.mat",
+        "seed": 0,
+        "sha256": "22d0a215a9a7c4d835b1f7398d3c667ed2e68d93ae82a8724f199df92adf0ec4",
+        "current_sha256": "22d0a215a9a7c4d835b1f7398d3c667ed2e68d93ae82a8724f199df92adf0ec4",
+        "bytes": 899264,
+        "embedded_seed": 0,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s001/ProteinTranslocation_100ticks.mat",
+        "seed": 1,
+        "sha256": "c47e1948fd920102c991511f7f8cf811fe8cdcad13cd0a4899a423364d1f4783",
+        "current_sha256": "c47e1948fd920102c991511f7f8cf811fe8cdcad13cd0a4899a423364d1f4783",
+        "bytes": 899688,
+        "embedded_seed": 1,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s002/ProteinTranslocation_100ticks.mat",
+        "seed": 2,
+        "sha256": "e4a3317e6ef71301c00f462c97cf765c56608521022b0e26c525f1bffe4c66a6",
+        "current_sha256": "e4a3317e6ef71301c00f462c97cf765c56608521022b0e26c525f1bffe4c66a6",
+        "bytes": 899688,
+        "embedded_seed": 2,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s003/ProteinTranslocation_100ticks.mat",
+        "seed": 3,
+        "sha256": "6f286d82df10c41e89011e877cf112e6edf4523dbcc0d04600b2a4c7811a3d5b",
+        "current_sha256": "6f286d82df10c41e89011e877cf112e6edf4523dbcc0d04600b2a4c7811a3d5b",
+        "bytes": 899688,
+        "embedded_seed": 3,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s004/ProteinTranslocation_100ticks.mat",
+        "seed": 4,
+        "sha256": "045f9f484a16fec16a930936e376412651231b5feda542dd2a175839f35e3db0",
+        "current_sha256": "045f9f484a16fec16a930936e376412651231b5feda542dd2a175839f35e3db0",
+        "bytes": 897640,
+        "embedded_seed": 4,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s005/ProteinTranslocation_100ticks.mat",
+        "seed": 5,
+        "sha256": "2ce54ee8f3b2d51387926ff1960ba20ae395a77f1e1b463a3d7dce21ae413e18",
+        "current_sha256": "2ce54ee8f3b2d51387926ff1960ba20ae395a77f1e1b463a3d7dce21ae413e18",
+        "bytes": 899688,
+        "embedded_seed": 5,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s006/ProteinTranslocation_100ticks.mat",
+        "seed": 6,
+        "sha256": "19cfd41a283ef82d68aca3006f089b0ff74a0807d94f00f257fc2f37fcff7fa5",
+        "current_sha256": "19cfd41a283ef82d68aca3006f089b0ff74a0807d94f00f257fc2f37fcff7fa5",
+        "bytes": 899688,
+        "embedded_seed": 6,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s007/ProteinTranslocation_100ticks.mat",
+        "seed": 7,
+        "sha256": "96381dd401be941172b2c8152adbfcefa811a8040fdf3a5ab96c18145e6c3889",
+        "current_sha256": "96381dd401be941172b2c8152adbfcefa811a8040fdf3a5ab96c18145e6c3889",
+        "bytes": 899688,
+        "embedded_seed": 7,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s008/ProteinTranslocation_100ticks.mat",
+        "seed": 8,
+        "sha256": "ec21c5215166e9127f6d5eb3514964045b9d279694c87ebed37ded286c83fcbe",
+        "current_sha256": "ec21c5215166e9127f6d5eb3514964045b9d279694c87ebed37ded286c83fcbe",
+        "bytes": 899688,
+        "embedded_seed": 8,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s009/ProteinTranslocation_100ticks.mat",
+        "seed": 9,
+        "sha256": "9883161559fe5b784ab6cd118de23ede041aa462eb23807afe4a5938cb696501",
+        "current_sha256": "9883161559fe5b784ab6cd118de23ede041aa462eb23807afe4a5938cb696501",
+        "bytes": 899688,
+        "embedded_seed": 9,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s010/ProteinTranslocation_100ticks.mat",
+        "seed": 10,
+        "sha256": "51221611b99c575882f2030b97e87d2bfa8ac89f6ebb79b1b2e93c703094ee56",
+        "current_sha256": "51221611b99c575882f2030b97e87d2bfa8ac89f6ebb79b1b2e93c703094ee56",
+        "bytes": 899688,
+        "embedded_seed": 10,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s011/ProteinTranslocation_100ticks.mat",
+        "seed": 11,
+        "sha256": "06797fa898233de4f7da0eb8951d2803ca8324fe55f9eae45452703a9a4d2f17",
+        "current_sha256": "06797fa898233de4f7da0eb8951d2803ca8324fe55f9eae45452703a9a4d2f17",
+        "bytes": 899688,
+        "embedded_seed": 11,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s012/ProteinTranslocation_100ticks.mat",
+        "seed": 12,
+        "sha256": "14a4416bec23a027bab285ddfffbf55c90f7ab168541dd18af145f23f8927627",
+        "current_sha256": "14a4416bec23a027bab285ddfffbf55c90f7ab168541dd18af145f23f8927627",
+        "bytes": 899688,
+        "embedded_seed": 12,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s013/ProteinTranslocation_100ticks.mat",
+        "seed": 13,
+        "sha256": "c27a155f899b52ea48515975acea5e31d40ed972453adfeb85f96e2dabb63018",
+        "current_sha256": "c27a155f899b52ea48515975acea5e31d40ed972453adfeb85f96e2dabb63018",
+        "bytes": 899688,
+        "embedded_seed": 13,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s014/ProteinTranslocation_100ticks.mat",
+        "seed": 14,
+        "sha256": "703895dfb71b1795b48c1d3517a29689d83d0650f9a0de2a57def448642d7081",
+        "current_sha256": "703895dfb71b1795b48c1d3517a29689d83d0650f9a0de2a57def448642d7081",
+        "bytes": 899688,
+        "embedded_seed": 14,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s015/ProteinTranslocation_100ticks.mat",
+        "seed": 15,
+        "sha256": "18665379b78de7e14e2ccc81d6ab10a8c902791deabd2917a0d117de6bf83271",
+        "current_sha256": "18665379b78de7e14e2ccc81d6ab10a8c902791deabd2917a0d117de6bf83271",
+        "bytes": 899688,
+        "embedded_seed": 15,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s016/ProteinTranslocation_100ticks.mat",
+        "seed": 16,
+        "sha256": "444abcd3d82787eebc9aad8afb445d5be5d61130a742442288062698204c657a",
+        "current_sha256": "444abcd3d82787eebc9aad8afb445d5be5d61130a742442288062698204c657a",
+        "bytes": 899688,
+        "embedded_seed": 16,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s017/ProteinTranslocation_100ticks.mat",
+        "seed": 17,
+        "sha256": "96dbbb77e0e0e89777c20a14cf3cd0257d7fed9a8aa2f95c0ebf090df443bdf2",
+        "current_sha256": "96dbbb77e0e0e89777c20a14cf3cd0257d7fed9a8aa2f95c0ebf090df443bdf2",
+        "bytes": 899688,
+        "embedded_seed": 17,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s018/ProteinTranslocation_100ticks.mat",
+        "seed": 18,
+        "sha256": "c437acba938933a48a242b1d83b334bd2b86d227ba0cd89c41367f5539f6133b",
+        "current_sha256": "c437acba938933a48a242b1d83b334bd2b86d227ba0cd89c41367f5539f6133b",
+        "bytes": 899688,
+        "embedded_seed": 18,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s019/ProteinTranslocation_100ticks.mat",
+        "seed": 19,
+        "sha256": "9b88f0362e862897424ed65d445cd1bf36835fe5f5719a1aab1b92622cdf388c",
+        "current_sha256": "9b88f0362e862897424ed65d445cd1bf36835fe5f5719a1aab1b92622cdf388c",
+        "bytes": 899688,
+        "embedded_seed": 19,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s020/ProteinTranslocation_100ticks.mat",
+        "seed": 20,
+        "sha256": "cfbc1e171545236983504d6bf8716aa79d668a9ff013301a3c8f92585ffe42bb",
+        "current_sha256": "cfbc1e171545236983504d6bf8716aa79d668a9ff013301a3c8f92585ffe42bb",
+        "bytes": 899688,
+        "embedded_seed": 20,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s021/ProteinTranslocation_100ticks.mat",
+        "seed": 21,
+        "sha256": "59a661c70409dc9e825a6b21afe161f75e18f7a89b7f3f018714d18d7e45d241",
+        "current_sha256": "59a661c70409dc9e825a6b21afe161f75e18f7a89b7f3f018714d18d7e45d241",
+        "bytes": 899688,
+        "embedded_seed": 21,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s022/ProteinTranslocation_100ticks.mat",
+        "seed": 22,
+        "sha256": "8e466ee57a65ddc0c5d5e26bceb8e535470f129424198bf8811d4e62ba77a27e",
+        "current_sha256": "8e466ee57a65ddc0c5d5e26bceb8e535470f129424198bf8811d4e62ba77a27e",
+        "bytes": 899688,
+        "embedded_seed": 22,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s023/ProteinTranslocation_100ticks.mat",
+        "seed": 23,
+        "sha256": "8be8bdb4242a66b15cd639cdf3aed7173118dc0bede3966a47e1182e93c2b7b9",
+        "current_sha256": "8be8bdb4242a66b15cd639cdf3aed7173118dc0bede3966a47e1182e93c2b7b9",
+        "bytes": 899688,
+        "embedded_seed": 23,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s024/ProteinTranslocation_100ticks.mat",
+        "seed": 24,
+        "sha256": "e304c081b6afd79f934ae58588be15b4d7bfc8d301f7cf12beaa72e8a59bf072",
+        "current_sha256": "e304c081b6afd79f934ae58588be15b4d7bfc8d301f7cf12beaa72e8a59bf072",
+        "bytes": 899688,
+        "embedded_seed": 24,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s025/ProteinTranslocation_100ticks.mat",
+        "seed": 25,
+        "sha256": "5ceefd6d161d2dd8be80df421792db3fd301ad91ee0cfd5a45e8445612d11840",
+        "current_sha256": "5ceefd6d161d2dd8be80df421792db3fd301ad91ee0cfd5a45e8445612d11840",
+        "bytes": 899688,
+        "embedded_seed": 25,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s026/ProteinTranslocation_100ticks.mat",
+        "seed": 26,
+        "sha256": "3fc5d53faa4dc4e5c2d56bcf51ca0f92a53dc01a7c34f1b59f173693724f2888",
+        "current_sha256": "3fc5d53faa4dc4e5c2d56bcf51ca0f92a53dc01a7c34f1b59f173693724f2888",
+        "bytes": 899688,
+        "embedded_seed": 26,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s027/ProteinTranslocation_100ticks.mat",
+        "seed": 27,
+        "sha256": "79ee086d5290606e3995380e794e37ed125c14617171a9d8512c4701660b23ad",
+        "current_sha256": "79ee086d5290606e3995380e794e37ed125c14617171a9d8512c4701660b23ad",
+        "bytes": 899688,
+        "embedded_seed": 27,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s028/ProteinTranslocation_100ticks.mat",
+        "seed": 28,
+        "sha256": "80cb9b5e38966e84cbd67319d6fa5a4c66f1b163b15e6c291f45a231eb5ea838",
+        "current_sha256": "80cb9b5e38966e84cbd67319d6fa5a4c66f1b163b15e6c291f45a231eb5ea838",
+        "bytes": 899688,
+        "embedded_seed": 28,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s029/ProteinTranslocation_100ticks.mat",
+        "seed": 29,
+        "sha256": "b3f6cda78a4b5a5cbb827fc71211369c0671d4a81c2cd40707d912e63513e9c7",
+        "current_sha256": "b3f6cda78a4b5a5cbb827fc71211369c0671d4a81c2cd40707d912e63513e9c7",
+        "bytes": 899688,
+        "embedded_seed": 29,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s030/ProteinTranslocation_100ticks.mat",
+        "seed": 30,
+        "sha256": "78324933fe11d53bcc9bc61f683db8801478c541d946fe54decb040635dbe144",
+        "current_sha256": "78324933fe11d53bcc9bc61f683db8801478c541d946fe54decb040635dbe144",
+        "bytes": 899688,
+        "embedded_seed": 30,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s031/ProteinTranslocation_100ticks.mat",
+        "seed": 31,
+        "sha256": "1b715b592ddff046da7a2fdfb934052a98f31b1d8966997ab3bb1e41f81c1bdf",
+        "current_sha256": "1b715b592ddff046da7a2fdfb934052a98f31b1d8966997ab3bb1e41f81c1bdf",
+        "bytes": 899688,
+        "embedded_seed": 31,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s032/ProteinTranslocation_100ticks.mat",
+        "seed": 32,
+        "sha256": "2828ab02ce5eb03b02419f82f5af20010ba82213d4cff87d48c405ee655a1db9",
+        "current_sha256": "2828ab02ce5eb03b02419f82f5af20010ba82213d4cff87d48c405ee655a1db9",
+        "bytes": 899688,
+        "embedded_seed": 32,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s033/ProteinTranslocation_100ticks.mat",
+        "seed": 33,
+        "sha256": "a936b04746f6e5c9a08d7dab3443a9c8046386b66abae75900e5b87649bef475",
+        "current_sha256": "a936b04746f6e5c9a08d7dab3443a9c8046386b66abae75900e5b87649bef475",
+        "bytes": 899688,
+        "embedded_seed": 33,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s034/ProteinTranslocation_100ticks.mat",
+        "seed": 34,
+        "sha256": "a02369469eb135f28d7fb8ae399d32186333fbc059b197d908a279a797e4306c",
+        "current_sha256": "a02369469eb135f28d7fb8ae399d32186333fbc059b197d908a279a797e4306c",
+        "bytes": 899688,
+        "embedded_seed": 34,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s035/ProteinTranslocation_100ticks.mat",
+        "seed": 35,
+        "sha256": "4f22db458a41d24731f85dffdfb2751053743924c4001271478bb2470478e8bc",
+        "current_sha256": "4f22db458a41d24731f85dffdfb2751053743924c4001271478bb2470478e8bc",
+        "bytes": 899688,
+        "embedded_seed": 35,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s036/ProteinTranslocation_100ticks.mat",
+        "seed": 36,
+        "sha256": "414e1d852d19c41d7208ce0731eba1ffc59285d5f9a961f4a151041ade509154",
+        "current_sha256": "414e1d852d19c41d7208ce0731eba1ffc59285d5f9a961f4a151041ade509154",
+        "bytes": 899688,
+        "embedded_seed": 36,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s037/ProteinTranslocation_100ticks.mat",
+        "seed": 37,
+        "sha256": "035fc0cd3e2a4310fcd46a60d0dd13ac3ed54bfb6cbcf17a5dbab91a03188b71",
+        "current_sha256": "035fc0cd3e2a4310fcd46a60d0dd13ac3ed54bfb6cbcf17a5dbab91a03188b71",
+        "bytes": 899688,
+        "embedded_seed": 37,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s038/ProteinTranslocation_100ticks.mat",
+        "seed": 38,
+        "sha256": "ec9866eae8e9d489b29ed0d6226f5649b0a9ee3e6e44639e5a97834560699c47",
+        "current_sha256": "ec9866eae8e9d489b29ed0d6226f5649b0a9ee3e6e44639e5a97834560699c47",
+        "bytes": 899688,
+        "embedded_seed": 38,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s039/ProteinTranslocation_100ticks.mat",
+        "seed": 39,
+        "sha256": "b1eba9d3ad900ef19d88e0f49f6aae64b366d4da685422bf4c37238785239570",
+        "current_sha256": "b1eba9d3ad900ef19d88e0f49f6aae64b366d4da685422bf4c37238785239570",
+        "bytes": 899688,
+        "embedded_seed": 39,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s040/ProteinTranslocation_100ticks.mat",
+        "seed": 40,
+        "sha256": "18de1eb8912985293d2dc5e513d6675284fd627a01b9c7cebec982c1cb9028c1",
+        "current_sha256": "18de1eb8912985293d2dc5e513d6675284fd627a01b9c7cebec982c1cb9028c1",
+        "bytes": 899688,
+        "embedded_seed": 40,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s041/ProteinTranslocation_100ticks.mat",
+        "seed": 41,
+        "sha256": "d34eb8b37e7f289fc11daed323a3c3f93b62f499c266c626c809cbc33fdb5263",
+        "current_sha256": "d34eb8b37e7f289fc11daed323a3c3f93b62f499c266c626c809cbc33fdb5263",
+        "bytes": 899688,
+        "embedded_seed": 41,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s042/ProteinTranslocation_100ticks.mat",
+        "seed": 42,
+        "sha256": "b957a1a830b7d04941ceee66e6b5bb143f8a728e4d9b3c5a06b5198a125ca757",
+        "current_sha256": "b957a1a830b7d04941ceee66e6b5bb143f8a728e4d9b3c5a06b5198a125ca757",
+        "bytes": 899688,
+        "embedded_seed": 42,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s043/ProteinTranslocation_100ticks.mat",
+        "seed": 43,
+        "sha256": "3004f9ef38b0d1e4c91ed5cdde731a850d57c96f5b097495f54a7d52cf4cf6a0",
+        "current_sha256": "3004f9ef38b0d1e4c91ed5cdde731a850d57c96f5b097495f54a7d52cf4cf6a0",
+        "bytes": 899688,
+        "embedded_seed": 43,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s044/ProteinTranslocation_100ticks.mat",
+        "seed": 44,
+        "sha256": "da274b31501b3e3c50e8b49a81bda583049b7dc8b33c2ae38181d9671948bd2f",
+        "current_sha256": "da274b31501b3e3c50e8b49a81bda583049b7dc8b33c2ae38181d9671948bd2f",
+        "bytes": 899688,
+        "embedded_seed": 44,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s045/ProteinTranslocation_100ticks.mat",
+        "seed": 45,
+        "sha256": "0014b2b8254d510fc32ae4ba2f3b8f52998196269357755c97c2dd3825eb6e37",
+        "current_sha256": "0014b2b8254d510fc32ae4ba2f3b8f52998196269357755c97c2dd3825eb6e37",
+        "bytes": 899688,
+        "embedded_seed": 45,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s046/ProteinTranslocation_100ticks.mat",
+        "seed": 46,
+        "sha256": "a5e4caae72aa678165d91a6e4960be804589aa9dcfa77fbed236f39ca37f3914",
+        "current_sha256": "a5e4caae72aa678165d91a6e4960be804589aa9dcfa77fbed236f39ca37f3914",
+        "bytes": 899688,
+        "embedded_seed": 46,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s047/ProteinTranslocation_100ticks.mat",
+        "seed": 47,
+        "sha256": "93508cbdaea5b00b6c0ef9c3f3ef5c1e1d8cead94994bdb716270280a5a42e0f",
+        "current_sha256": "93508cbdaea5b00b6c0ef9c3f3ef5c1e1d8cead94994bdb716270280a5a42e0f",
+        "bytes": 899688,
+        "embedded_seed": 47,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s048/ProteinTranslocation_100ticks.mat",
+        "seed": 48,
+        "sha256": "b4d96961f4a3791b4aaedc067d2de10f9d53be47efab824d10c5e812c9e97038",
+        "current_sha256": "b4d96961f4a3791b4aaedc067d2de10f9d53be47efab824d10c5e812c9e97038",
+        "bytes": 899688,
+        "embedded_seed": 48,
+        "embedded_ticks": 100
+      },
+      {
+        "path": "data/m1_sources/karr_native/per_process_traces_v2_s049/ProteinTranslocation_100ticks.mat",
+        "seed": 49,
+        "sha256": "54d92b11ce9d0222fe2f20fde2785cb6dbc813a8cf5c0b4c00d690de769000eb",
+        "current_sha256": "54d92b11ce9d0222fe2f20fde2785cb6dbc813a8cf5c0b4c00d690de769000eb",
+        "bytes": 899688,
+        "embedded_seed": 49,
+        "embedded_ticks": 100
+      }
+    ],
+    "sentinel": {
+      "completion_status": "COMPLETE",
+      "evaluator_schema_version": 5,
+      "git_dirty": null,
+      "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
+      "inputs_verified": true,
+      "m_ticks": 100,
+      "n_seeds": 50,
+      "process": "ProteinTranslocation",
+      "result_schema_version": 1,
+      "schema_version": 2,
+      "sidecar_hashes": {
+        "SUMMARY.json": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+        "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+        "input_manifest.json": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+        "null_calibration.json": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+        "provenance.json": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+        "result.json": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+        "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+      },
+      "source_hashes": {
+        "catalog_entry": "6674d9aa70b639fb96908b539924cbed52c20c52a19a205e999f5520b430f223",
+        "evidence_schema_module": "7bf13a083465ade3ee93d2421b112dfc3b23c0d78bec3f5c17fb177f4fbec93f",
+        "helpers": "ed9bde575ed9a171442de51dd6e94886dba9f6445a3b883f5d71015bcc56c50d",
+        "l2_replay_common": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852",
+        "oc_module": "5494ea378d4169ae1b5b8042395277d922053201b02d115814a7a6b2b1cd5231",
+        "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+        "protein_state_module": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b",
+        "runner": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+        "tick_runner": "073a452e57bb7f4641ba9f219623cc3296de3ddda518cab35f39c1794b45924e",
+        "util_matlab_rng_module": "5c2a982aa874c6ff2d62ae1fff85b58436eab4b47caa7b9a36d1f087b19b72fa",
+        "util_module": "dbdea5b4ad6dba7019f05cbb59ae20d8db0065804327daa4c74fc6ef3e63264e",
+        "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+      },
+      "written_at": "2026-10-19T11:37:42.065907+00:00"
+    },
+    "compact_files": [
+      {
+        "name": "result.json",
+        "raw_sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+        "candidate_sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a"
+      },
+      {
+        "name": "input_manifest.json",
+        "raw_sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+        "candidate_sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94"
+      },
+      {
+        "name": "provenance.json",
+        "raw_sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+        "candidate_sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c"
+      },
+      {
+        "name": "thresholds.json",
+        "raw_sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954",
+        "candidate_sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+      },
+      {
+        "name": "null_calibration.json",
+        "raw_sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+        "candidate_sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260"
+      },
+      {
+        "name": "SUMMARY.json",
+        "raw_sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+        "candidate_sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f"
+      },
+      {
+        "name": "analytical_check.json",
+        "raw_sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+        "candidate_sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183"
+      },
+      {
+        "name": "sweep_provenance.json",
+        "raw_sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
+        "candidate_sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605"
+      }
+    ],
+    "strict_current_rows": {
+      "ProteinTranslocation": {
+        "process": "ProteinTranslocation",
+        "bucket": "ALGORITHMIC_SHALLOW",
+        "harness_type": "design_a_per_tick",
+        "catalog_soft_flags": {
+          "harness_type": "design_a_per_tick",
+          "N_seeds": 50,
+          "M_ticks": 100,
+          "primary_channel": "monomers",
+          "closed_form_dominant": "confirmed_biology_validated",
+          "primary_distance": "per_tick_vector_w1_mean",
+          "in_scope_L2_2": true
+        },
+        "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
+        "reasons": [],
+        "artifact_hashes": {
+          "result.json": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+          "provenance.json": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+          "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954",
+          "null_calibration.json": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+          "SUMMARY.json": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+          "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+          "sweep_provenance.json": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605"
+        },
+        "channel_verdicts": {
+          "monomers": "SEED_NOISE",
+          "substrates": "SEED_NOISE"
+        },
+        "warnings": [],
+        "mechanical_verdict": "PASS",
+        "green": true,
+        "provenance_git_sha": "unknown",
+        "sweep_provenance": {
+          "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
+          "git_dirty": null,
+          "evaluator_schema_version": 5,
+          "result_schema_version": 1,
+          "completion_status": "COMPLETE",
+          "inputs_verified": true
+        }
+      },
+      "ProteinProcessingII": {
+        "process": "ProteinProcessingII",
+        "bucket": "TRIVIAL_RNG",
+        "harness_type": "design_a_per_tick",
+        "catalog_soft_flags": {
+          "harness_type": "design_a_per_tick",
+          "N_seeds": 50,
+          "M_ticks": 20,
+          "primary_channel": "monomers",
+          "closed_form_dominant": "confirmed_biology_validated",
+          "primary_distance": "per_tick_vector_w1_mean",
+          "in_scope_L2_2": true
+        },
+        "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest",
+        "reasons": [],
+        "artifact_hashes": {
+          "result.json": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+          "provenance.json": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+          "thresholds.json": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+          "null_calibration.json": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+          "SUMMARY.json": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+          "analytical_check.json": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+          "sweep_provenance.json": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19"
+        },
+        "channel_verdicts": {
+          "monomers": "SEED_NOISE",
+          "substrates": "SEED_NOISE"
+        },
+        "warnings": [
+          "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+        ],
+        "mechanical_verdict": "PASS",
+        "green": true,
+        "provenance_git_sha": "unknown",
+        "sweep_provenance": {
+          "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
+          "git_dirty": null,
+          "evaluator_schema_version": 5,
+          "result_schema_version": 1,
+          "completion_status": "COMPLETE",
+          "inputs_verified": true
+        }
+      }
+    },
+    "actual_baseline_source_digest": "a4694f00ef286d47283aa90605a3120030c1d700e79cf9560132bcfe50d41525",
+    "baseline_dependency_count": 140,
+    "new_biological_execution_or_calibration": false,
+    "publication_test_original_sha256": "3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d"
+  },
+  "original_publication_tests": {
+    "exit_code": 0,
+    "xml": "publication.xml",
+    "xml_sha256": "4fe54bf363f534e928647a2d0a0cde12b0c2a32f3c0744492bc94a248f2581c6",
+    "tests": 4,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "testcases": [
+      {
+        "classname": "tests.scripts.test_ptrans_published_attestation",
+        "name": "test_ptrans_published_scores_and_thresholds_remain_byte_bound",
+        "duration_s": "0.028",
+        "children": []
+      },
+      {
+        "classname": "tests.scripts.test_ptrans_published_attestation",
+        "name": "test_ptrans_published_attestation_binds_all_resolved_sources",
+        "duration_s": "0.007",
+        "children": []
+      },
+      {
+        "classname": "tests.scripts.test_ptrans_published_attestation",
+        "name": "test_ptrans_published_attestation_binds_its_parameter_fixture",
+        "duration_s": "0.012",
+        "children": []
+      },
+      {
+        "classname": "tests.scripts.test_ptrans_published_attestation",
+        "name": "test_ptrans_published_attestation_is_current_under_strict_verification",
+        "duration_s": "1.166",
+        "children": []
+      }
+    ],
+    "actual_EVIDENCE_ROOT": "/mnt/e/opencell-worktrees/m1-accepted-20261019/docs/phase_f/l2_2_design_a/evidence_bundle",
+    "actual_BUNDLE": "/mnt/e/opencell-worktrees/m1-accepted-20261019/docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
+    "original_source_sha256": "3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d",
+    "input_constants_modified": false,
+    "custom_plugins_supplied": [],
+    "pytest_args": [
+      "tests/scripts/test_ptrans_published_attestation.py",
+      "-q",
+      "-s",
+      "-rsxX",
+      "-p",
+      "no:cacheprovider",
+      "--basetemp=artifacts/m1_integration/independent_pt/scratch/pytest/publication",
+      "--junitxml=artifacts/m1_integration/independent_pt/publication.xml"
+    ]
+  },
+  "audit_results": {
+    "portable_full_index": {
+      "ok": true,
+      "aggregate_verdict": "NON_GREEN",
+      "tally": {
+        "MISSING_EVIDENCE": 2,
+        "PASS": 4,
+        "FAIL": 18
+      },
+      "problems": []
+    },
+    "honesty_baseline": {
+      "integrity_ok": true,
+      "all_eligible": false,
+      "process_count": 28,
+      "eligible_count": 6,
+      "blocked_count": 22,
+      "problems": [],
+      "blockers": [
+        "ChromosomeCondensation: L2.2 verdict is MISSING_EVIDENCE",
+        "ChromosomeCondensation/CC-NONKARR-PATHS: The module retains aggregate compatibility state, a non-literal fallback, and a trace-hint outcome override outside the literal chromosome-binding path.",
+        "ChromosomeCondensation/CC-INITIALIZATION: Karr initializes with twenty stochastic warm-up calls under infinite ATP/H2O; OpenCell seeds fixture/trace-derived state instead.",
+        "Cytokinesis/CYT-DEVIATIONS: Request formulas, lifecycle resource behavior, and the retained zero-GTP compatibility surface differ from MATLAB.",
+        "DNADamage: L2.2 verdict is FAIL",
+        "DNADamage/DNA-DMG-DEVIATIONS: Small-molecule stoichiometry, rate semantics, and allocator/writeback behavior retain unresolved MATLAB-to-OpenCell differences.",
+        "DNARepair: L2.2 verdict is FAIL",
+        "DNARepair/DNA-REP-DEVIATIONS: Consumed/produced species, random subfunction ordering, and allocator mediation remain non-equivalent to MATLAB.",
+        "DNASupercoiling: L2.2 verdict is FAIL",
+        "DNASupercoiling/DNA-SUP-DEVIATIONS: The request formula differs and request-allocation-evolve ordering is not represented equivalently.",
+        "DNASupercoiling/DNA-SUP-UPDATER-CONFLICT: DNASupercoiling declares shared enzyme leaves with set semantics while ChromosomeSegregation declares the same leaves accumulate, producing an order-sensitive Vivarium schema conflict.",
+        "FtsZPolymerization: L2.2 verdict is FAIL",
+        "FtsZPolymerization/FTSZ-DEVIATIONS: Non-GTP species bypass allocation and the exact MATLAB request semantics remain unavailable for direct re-adjudication.",
+        "MacromolecularComplexation: L2.2 verdict is FAIL",
+        "MacromolecularComplexation/MCX-DEVIATIONS: The cluster-1 fallback guard is behaviorally different and complete substrate coverage is not yet established.",
+        "Metabolism: L2.2 verdict is FAIL",
+        "Metabolism/MET-CODE-DEVIATIONS: Request/allocation integration, execution order, LP-bound input source, and compartment projection remain behaviorally different.",
+        "Metabolism/MET-EVIDENCE-CONFIG: L2.2 uses dynamic bounds, Karr writeback, and GLPK, while the v6 chassis enables allocator budgeting but retains the default solver and writeback behavior.",
+        "ProteinDecay: L2.2 verdict is FAIL",
+        "ProteinDecay/PDEC-DEVIATIONS: Substrate stoichiometry and process formulas retain unresolved differences, with additional required claims missing.",
+        "ProteinFolding: L2.2 verdict is FAIL",
+        "ProteinFolding/PFOLD-DEVIATIONS: The recorded prosthetic-group versus ATP consumption difference is unresolved and direct source completeness remains unverified.",
+        "ProteinModification: L2.2 verdict is FAIL",
+        "ProteinModification/PMOD-DEVIATIONS: Bounded source repair has frozen 88/88 PASS and four-seed L2.4 PASS, but independent adjudication remains OPEN. Historical hinted replay fails tick53 after shortcut removal; the frozen protected-process manifest requires classification of the new PM wrappers. Historical behavior PASS is not recertified genuine fidelity.",
+        "ProteinProcessingI: L2.2 verdict is FAIL",
+        "ProteinProcessingI/PPI-DEVIATIONS: Formula and writeback behavior retain two unresolved deviations.",
+        "RNADecay: L2.2 verdict is FAIL",
+        "RNADecay/RDECAY-DEVIATIONS: One implementation deviation remains open and two required semantic claims are missing.",
+        "RNAModification: L2.2 verdict is FAIL",
+        "RNAModification/RMOD-DEVIATIONS: Source mechanics, all RNA forms, and same-tick allocation repaired in the bounded 2026-10-15 lane. Independent semantic adjudication and fresh source-bound statistical evidence remain OPEN; historical no-op/hinted replays do not certify the changed implementation.",
+        "RNAProcessing: L2.2 verdict is FAIL",
+        "RNAProcessing/RPROC-DEVIATIONS: Source requests/evolution/intergenic production and same-tick allocation repaired in the bounded 2026-10-15 lane. Independent adjudication/statistical evidence remain OPEN. One frozen ordering test contradicts the MATLAB whole-class water bound; RNADecay fragment consumption and WID-only RNA-mass observability are not repaired.",
+        "Replication: L2.2 verdict is FAIL",
+        "Replication/REPL-DEVIATIONS: Two implementation deviations, four missing claims, and five wrong row claims remain unresolved.",
+        "ReplicationInitiation: L2.2 verdict is FAIL",
+        "ReplicationInitiation/REPLINIT-DEVIATIONS: Two implementation deviations remain, with one missing and two wrong row claims.",
+        "RibosomeAssembly/RIBO-DEVIATIONS: Two implementation deviations and one missing semantic claim remain.",
+        "Transcription: L2.2 verdict is FAIL",
+        "Transcription/TX-DEVIATIONS: Four implementation deviations remain open and two row claims are wrong.",
+        "TranscriptionalRegulation: L2.2 verdict is MISSING_EVIDENCE",
+        "TranscriptionalRegulation/TXREG-PRODUCTION-TOPOLOGY: Production now wires the chromosome port (Stage A+B, dec-007): TxReg reads/writes the state-owned, serialized `_shared_rand_stream_state` RNG leaf via `ChromosomeStore`. It still omits authoritative chromosome footprint/bound-state writeback -- TF-binding commits remain in TxReg's private `tf_bound_promoters`/`bound_tfs` surface rather than the shared `monomerBoundSites`/`complexBoundSites` store, and enzyme/ bound-enzyme deltas are not written back to the shared chromosome occupancy arrays (deferred to Stage C).",
+        "TranscriptionalRegulation/TXREG-SHARED-CHROMOSOME-WRITEBACK: Karr writes bound TF footprints into shared chromosome occupancy; OpenCell updates only process-local promoter occupancy.",
+        "TranscriptionalRegulation/TXREG-RNG-PROVENANCE: Autonomous OpenCell now draws from a single, state-owned, serialized `ChromosomeStateRandStream` reconstructed from the chromosome leaf every tick (Stage A+B, dec-007, sole TxReg consumer), preserving the prior draw sequence bit-for-bit under the dec-006 L2.1 replay. It does not yet reproduce Karr's multi-consumer inter-process shared-stream interleaving with other chromosome-binding processes (DNADamage, DNASupercoiling, Replication, ChromosomeCondensation), which requires the Stage E sequential commit owner (DC-9).",
+        "TranscriptionalRegulation/TXREG-COPY-REDUCTION: Karr produces a fold-change value for both chromosome copies; OpenCell sends only the primary-copy column to Transcription.",
+        "TranscriptionalRegulation/TXREG-INITIALIZATION: Karr pre-binds transcription factors during initializeState; OpenCell starts unbound and first binds during tick one.",
+        "Translation: L2.2 verdict is FAIL",
+        "Translation/TL-DEVIATIONS: Five implementation deviations remain open and four wiring-row claims are wrong.",
+        "tRNAAminoacylation: L2.2 verdict is FAIL",
+        "tRNAAminoacylation/TRNA-DEVIATIONS: Two implementation deviations and three missing semantic claims remain."
+      ],
+      "source_digest": "a4694f00ef286d47283aa90605a3120030c1d700e79cf9560132bcfe50d41525",
+      "source_file_count": 140
+    },
+    "commands": [
+      {
+        "name": "full_portable_index_audit",
+        "command": [
+          "/mnt/e/opencell/.venv-wsl/bin/python",
+          "scripts/l22_evidence/generator.py",
+          "audit",
+          "--index",
+          "docs/phase_f/l2_2_design_a/evidence_index.json",
+          "--evidence-root",
+          "docs/phase_f/l2_2_design_a/evidence_bundle"
+        ],
+        "child_pid": 387,
+        "started_at": "2026-10-19T12:38:49.335684+00:00",
+        "finished_at": "2026-10-19T12:39:12.022701+00:00",
+        "exit_code": 0,
+        "log": "full_portable_index_audit.log",
+        "log_sha256": "37d4b671f4e836a22eb45be9d47bab14a6a6f306377d57e77b932bc1c80554f7"
+      },
+      {
+        "name": "honesty_baseline_audit",
+        "command": [
+          "/mnt/e/opencell/.venv-wsl/bin/python",
+          "scripts/pre_l25_honesty.py",
+          "audit",
+          "--baseline",
+          "docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml"
+        ],
+        "child_pid": 476,
+        "started_at": "2026-10-19T12:39:12.043190+00:00",
+        "finished_at": "2026-10-19T12:39:13.788815+00:00",
+        "exit_code": 0,
+        "log": "honesty_baseline_audit.log",
+        "log_sha256": "1119db48c4486409643fbde1a31f4baff779d52cd2d4fb8bcb0e41a40e5da5bd"
+      }
+    ],
+    "scope": "Existing portable full-index and honesty integration audits only; no biological gate or calibration rerun"
+  },
+  "prior_preservation_and_eligibility": {
+    "comparison_base": "058fa1b5e5519a5312635a396701ea4d5c8740d9",
+    "runtime_diff_from65": [
+      "data/provenance/llm_interactions.jsonl",
+      "opencell/provenance/llm_interactions.jsonl"
+    ],
+    "runtime_changes_except_allowed_journals": [],
+    "unrelated_compact_blobs_unchanged": 198,
+    "PP2_receipt_blobs_unchanged": 58,
+    "PP2_semantic_blob_unchanged": true,
+    "PP2_baseline_and_index_row_unchanged": true,
+    "unrelated_baseline_process_payloads_unchanged": 27,
+    "prior_resolved_PT_findings_identical": [
+      "PTRANS-GENUINE-EVIDENCE",
+      "PTRANS-STAGE2-ALGORITHM"
+    ],
+    "only_changed_PT_findings": [
+      "PTRANS-COMPLETE-ATTESTATION",
+      "PTRANS-SAMPLE-ISOLATION"
+    ],
+    "resolved_finding_evidence": [
+      {
+        "finding": "PTRANS-COMPLETE-ATTESTATION",
+        "status": "RESOLVED",
+        "resolving_verdict_span": {
+          "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/VERDICT.json",
+          "lines": "1-70"
+        },
+        "excerpt": "{\n  \"schema\": \"independent-ptrans-candidate-acceptance-v1\",\n  \"completed_at\": \"2026-10-19T12:03:46.839718+00:00\",\n  \"role\": \"NEW independent evidence/publication verdict owner\",\n  \"result\": \"ACCEPTED\",\n  \"source_head\": \"65df71c26553f42dd95759b948de42647987bf68\",\n  \"worktree\": \"E:\\\\opencell-worktrees\\\\m1-pt-20261017\",\n  \"findings\": {\n    \"PTRANS-COMPLETE-ATTESTATION\": {\n      \"verdict_scope\": \"Independent acceptance of this fresh candidate packet at frozen65; committed/publication eligibility remains parent-owned.\",\n      \"source\": \"65df71c26553f42dd95759b948de42647987bf68\",\n      \"command_ledger\": \"artifacts/m1_cohort/m1_pt/independent_acceptance/commands.jsonl\",\n      \"native_command_ledger\": \"artifacts/m1_cohort/m1_pt/independent_acceptance/native_commands.log\",\n      \"XML\": {\n        \"path\": \"artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml\",\n        \"sha256\": \"77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87\",\n        \"tests\": 27,\n        \"passed\": 27,\n        \"errors\": 0,\n        \"failures\": 0,\n        \"skipped\": 0,\n        \"xfails\": 0\n      },\n      \"verdict\": \"ACCEPTED\",\n      \"proof\": \"All64 consumed records independently rehashed and equal fresh capture plus original preflight descriptors; all50 unique accepted-population/copy/embeddedseed identities verified; four fixture authorities and constructor actual reads covered;12 current source hashes,7 sentinel sidecars and8 compact bytes verified; N50/M100/B1000 and every5000 allocator row verified.\",\n      \"controls\": [\n        {\n          \"classname\": \"tests.scripts.test_ptrans_published_attestation\",\n          \"name\": \"test_ptrans_published_scores_and_thresholds_remain_byte_bound\",\n          \"time_s\": \"0.026\",\n          \"outcome\": \"PASS\"\n        },\n        {\n          \"classname\": \"tests.scripts.test_ptrans_published_attestation\",\n          \"name\": \"test_ptrans_published_attestation_binds_all_resolved_sources\",\n          \"time_s\": \"0.006\",\n          \"outcome\": \"PASS\"\n        },\n        {\n          \"classname\": \"tests.scripts.test_ptrans_published_attestation\",\n          \"name\": \"test_ptrans_published_attestation_binds_its_parameter_fixture\",\n          \"time_s\": \"0.012\",\n          \"outcome\": \"PASS\"\n        },\n        {\n          \"classname\": \"tests.scripts.test_ptrans_published_attestation\",\n          \"name\": \"test_ptrans_published_attestation_is_current_under_strict_verification\",\n          \"time_s\": \"1.016\",\n          \"outcome\": \"PASS\"\n        }\n      ],\n      \"control_source_sha256\": \"3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d\",\n      \"evidence\": [\n        \"all_consumed_rehashes.json\",\n        \"complete_50_seed_inventory.json\",\n        \"accepted_population_verification.json\",\n        \"constructor_authority.json\",\n        \"shape_activity_allocator.json\",\n        \"all_descriptor_drift_rejections.json\",\n        \"source_and_compact_bindings.json\",\n        \"sweep_time_and_command.json\",\n        \"independent_numeric_proof.json\",\n        \"publication_proof.json\",\n        \"publication_commands.json\",\n        \"publication_candidate_input_configuration.json\"\n      ]\n    },\n    \"PTRANS-SAMPLE-ISOLATION\": {\n      \"verdict_scope\": \"Independent acceptance of this fresh candidate packet at frozen65; committed/publication eligibility remains parent-owned.\",\n      \"source\": \"65df71c26553f42dd95759b948de42647987bf68\","
+      },
+      {
+        "finding": "PTRANS-SAMPLE-ISOLATION",
+        "status": "RESOLVED",
+        "resolving_verdict_span": {
+          "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/VERDICT.json",
+          "lines": "71-120"
+        },
+        "excerpt": "      \"command_ledger\": \"artifacts/m1_cohort/m1_pt/independent_acceptance/commands.jsonl\",\n      \"native_command_ledger\": \"artifacts/m1_cohort/m1_pt/independent_acceptance/native_commands.log\",\n      \"XML\": {\n        \"path\": \"artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml\",\n        \"sha256\": \"77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87\",\n        \"tests\": 27,\n        \"passed\": 27,\n        \"errors\": 0,\n        \"failures\": 0,\n        \"skipped\": 0,\n        \"xfails\": 0\n      },\n      \"verdict\": \"ACCEPTED\",\n      \"proof\": \"Frozen2/2 controls pass. Actual active A=(seed0,tick2)/B=(seed1,tick2), sequence A,A,B,A,B,A:6 distinct real next_update owners begin at derived initial RNG, advance, emit nonempty changes at2 monomer coordinates each, retain full2892 output; repeated/interleaved outputs remain exact with advanced metadata and poison after/hint fields. No execution RNG reset/cache clearing. Original contiguous100tick replay observed1 owner,100 contiguous RNG transitions,20 advancingticks and13 nonempty updates; original assertions pass.\",\n      \"controls\": [\n        {\n          \"classname\": \"tests.vivarium.test_protein_translocation_sample_isolation\",\n          \"name\": \"test_translocation_execution_owns_fresh_sample_rng[repeat]\",\n          \"time_s\": \"1.847\",\n          \"outcome\": \"PASS\"\n        },\n        {\n          \"classname\": \"tests.vivarium.test_protein_translocation_sample_isolation\",\n          \"name\": \"test_translocation_execution_owns_fresh_sample_rng[advanced_metadata]\",\n          \"time_s\": \"1.389\",\n          \"outcome\": \"PASS\"\n        },\n        {\n          \"classname\": \"tests.vivarium.test_karr_protein_translocation_l2_replay\",\n          \"name\": \"test_karr_protein_translocation_l2_replay_identity_per_tick[rng_seed_0]\",\n          \"time_s\": \"20.549\",\n          \"outcome\": \"PASS\"\n        }\n      ],\n      \"control_source_sha256\": {\n        \"tests/vivarium/test_protein_translocation_sample_isolation.py\": \"b3e2076c77b45fb036e86704f3af7560016fd5f503fea9eba43b006aeb22eea0\",\n        \"tests/vivarium/test_karr_protein_translocation_l2_replay.py\": \"c69f01d5e21e058984d68cf6ac98aafee498eebf05c54e2c68e5d544c6836b5b\"\n      },\n      \"evidence\": [\n        \"actual_owner_controls.json\",\n        \"actual_owner_outputs.npz\",\n        \"legacy_contiguous_actual_owner.json\",\n        \"pytest_reports.json\"\n      ]\n    }\n  },\n  \"preserved_resolved_findings\": [\n    \"PTRANS-STAGE2-ALGORITHM\",\n    \"PTRANS-GENUINE-EVIDENCE\"\n  ],"
+      }
+    ],
+    "new_source_mapping": {
+      "fresh_sample_owner": "tests/vivarium/_l2_2_design_a_runner_helpers.py:2544-2546",
+      "actual_next_update": "tests/vivarium/_l2_2_design_a_runner_helpers.py:2578-2580",
+      "final_consumed_input_verification": "tests/vivarium/l2_2_design_a_runner.py:1485-1491"
+    },
+    "inherited_citation_note": "Old bug-location references remain in the newly resolved finding evidence lists; resolving new committed VERDICT spans directly contain the matching finding's ACCEPTED proof and current source/control hash mapping. Those preserved historical ranges are not used as the current fresh-owner source proof.",
+    "semantic_original_bytes_are_unmodified_prefix": true,
+    "stage2_citation_lines_not_shifted": true,
+    "original_four_eligible": [
+      "ChromosomeSegregation",
+      "HostInteraction",
+      "ProteinActivation",
+      "TerminalOrganelleAssembly"
+    ],
+    "pre_PT_eligible_including_PP2": [
+      "ChromosomeSegregation",
+      "HostInteraction",
+      "ProteinActivation",
+      "ProteinProcessingII",
+      "TerminalOrganelleAssembly"
+    ],
+    "current_eligible": [
+      "ChromosomeSegregation",
+      "HostInteraction",
+      "ProteinActivation",
+      "ProteinProcessingII",
+      "ProteinTranslocation",
+      "TerminalOrganelleAssembly"
+    ],
+    "current_tally": {
+      "FAIL": 18,
+      "MISSING_EVIDENCE": 2,
+      "PASS": 4
+    },
+    "aggregate": "NON_GREEN"
+  },
+  "native_postflight": {
+    "at": "2026-10-19T18:10:55.8226004+05:30",
+    "native_pid": 8500,
+    "candidate_head": "f87ebf1939a0a172a13f3d15c2ede0af0a3bca95",
+    "candidate_status": [],
+    "candidate_diff": [],
+    "original_head": "65df71c26553f42dd95759b948de42647987bf68",
+    "original_status": []
+  },
+  "filesystem_preservation": {
+    "files": 3803,
+    "changes": [],
+    "finished_at": "2026-10-19T12:41:30.138337+00:00"
+  },
+  "commands": {
+    "ledger": "commands.jsonl",
+    "native_wrapper_ledger": "native_commands.log",
+    "audits": [
+      {
+        "name": "full_portable_index_audit",
+        "command": [
+          "/mnt/e/opencell/.venv-wsl/bin/python",
+          "scripts/l22_evidence/generator.py",
+          "audit",
+          "--index",
+          "docs/phase_f/l2_2_design_a/evidence_index.json",
+          "--evidence-root",
+          "docs/phase_f/l2_2_design_a/evidence_bundle"
+        ],
+        "child_pid": 387,
+        "started_at": "2026-10-19T12:38:49.335684+00:00",
+        "finished_at": "2026-10-19T12:39:12.022701+00:00",
+        "exit_code": 0,
+        "log": "full_portable_index_audit.log",
+        "log_sha256": "37d4b671f4e836a22eb45be9d47bab14a6a6f306377d57e77b932bc1c80554f7"
+      },
+      {
+        "name": "honesty_baseline_audit",
+        "command": [
+          "/mnt/e/opencell/.venv-wsl/bin/python",
+          "scripts/pre_l25_honesty.py",
+          "audit",
+          "--baseline",
+          "docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml"
+        ],
+        "child_pid": 476,
+        "started_at": "2026-10-19T12:39:12.043190+00:00",
+        "finished_at": "2026-10-19T12:39:13.788815+00:00",
+        "exit_code": 0,
+        "log": "honesty_baseline_audit.log",
+        "log_sha256": "1119db48c4486409643fbde1a31f4baff779d52cd2d4fb8bcb0e41a40e5da5bd"
+      }
+    ]
+  },
+  "narrow_real_integration_defects": [],
+  "limitations_and_observations": [
+    "No fresh N50 biological gate,27-test producer loop, isolation/replay rerun, calibration, H12 campaign, generic F1 review, or new numerical waiver.",
+    "Original producer sentinel keeps its truthful65df71c execution SHA, not the docs-only sealed integration SHA; source/content closure is unchanged and independently matches.",
+    "The full index remains expected NON_GREEN:4PASS18inheritedstale-sourceFAIL2MISSING; honesty6eligible22blocked. These are not new biological failures.",
+    "Historical bug-location citations remain in the newly resolved finding lists; the matching new committed ACCEPTED proof spans and current source/control hashes supply closure. Older resolved finding payloads and semantic original prefix are unchanged.",
+    "The first artifact proof-driver attempt over-required a finding heading inside a partial JSON citation. Corrected only that new verifier to check the matching proof payload and ACCEPTED state; original code/tests/receipts were never altered. Initial failure log retained.",
+    "69 original root receipts are published. Original review's8nested regenerated_bundle duplicates are not part of that69; the same8compact evidence bytes are separately published and fully checked.",
+    "All new writes are confined to artifacts/m1_integration/independent_pt. Both worktrees remain native-Git clean. No commit/merge/push/nested agent."
+  ],
+  "parent_next_action": "Persist this final verdict against the exact sealed candidate, then mark PT committed integration DONE. No further PT producer/evidence rerun or generic review is requested. Main merge/push is not authorized by this verdict."
+}

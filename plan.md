@@ -34,8 +34,12 @@
   Publication is committed at `e372a5b158b27b42ad94f2c1065a1867d4fb58da`.
   Native Git archive verification matches all 69 original PT review files and
   all eight compact evidence files, both committed and current bytes.
-  Independent committed-copy check follows; RP/RM mass repair and PM
-  source-faithful RNG repair remain separate, unpromoted work.
+  Independent committed-copy check ACCEPTED `f87ebf1`: all 77 exact copies,
+  all 18 delivery hashes, four original actual-publication assertions PASS,
+  strict PT/PP2 PASS, index integrity OK and honesty INTEGRITY_OK 6/28.
+  Its final receipt is preserved under the PT acceptance `integration/` root.
+  PT and PP2 are persistently complete on this source snapshot (2/5 M1).
+  RP/RM mass repair and PM source-faithful RNG repair remain unpromoted work.
 - Global index regeneration truthfully keeps unrelated stale publications
   non-green: 3 PASS, 19 source-provenance FAIL, 2 MISSING. No old hash is
   refreshed, no unrelated open finding is waived, and no historical raw
