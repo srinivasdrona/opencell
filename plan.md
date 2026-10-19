@@ -11,8 +11,14 @@
   audit now reports INTEGRITY_OK, five eligible and 23 blocked, using actual
   140-file digest `debfe45f9fbc1b3dd23ab5cfc352b340b1bf662762c338574466e3bea679c808`.
   The integrated PP2 row passes strict current-input verification with no
-  reasons; full generated-index integrity is OK. Publication commit and its
-  independent copy/integration verification are next.
+  reasons; full generated-index integrity is OK. Publication is committed at
+  `6cdf887e7c1b89b5c13f29a415b04210a98f7152`; exact reviewer-byte preservation
+  is committed at `922ef9696e0ac00c18f3d01533cfaf3a48e3bb40`.
+  Native Git archive verification matched all 32 original independent review
+  files and all eight accepted compact bundle files byte-for-byte, including
+  CRLF receipts. Acceptance-root Git attributes preserve those hashed bytes.
+  Independent copy/integration verification is next; source and all unrelated
+  evidence bundles remain unchanged.
 - Global index regeneration truthfully keeps unrelated stale publications
   non-green: 3 PASS, 19 source-provenance FAIL, 2 MISSING. No old hash is
   refreshed, no unrelated open finding is waived, and no historical raw
@@ -25,7 +31,10 @@
   PM `694b1228-e957-4d47-9ff1-b1e152cefa33`;
   RP `1c26bcfc-0159-4072-9c30-120ef0ed11d2`;
   RM `caf6caf0-9351-4559-b40c-345d8f160897`.
-  PP2 doer/reviewer have completed; no parent validation is currently live.
+  PP2 doer and initial review have completed. The same independent verdict
+  owner `a353318a-b485-44c2-83d5-ab5929a6044e` will verify only the committed
+  publication/integration delta next, not repeat its approved producer review.
+  No parent validation is currently live.
 - All execution uses canonical WSL `/mnt/e/opencell/.venv-wsl`. Native Windows
   Git manages linked worktrees. Python wrapper arguments must be relative or
   WSL-native, never unconverted Windows paths. Private PP2 input copies were
