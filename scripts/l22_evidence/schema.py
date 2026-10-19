@@ -591,6 +591,7 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     },
     "ProteinModification": {
         "protein_state_module": PROTEIN_STATE_MODULE,
+        "mcg16807_state_codec_module": MCG16807_STATE_CODEC_MODULE,
     },
     "ProteinFolding": {
         "protein_state_module": PROTEIN_STATE_MODULE,

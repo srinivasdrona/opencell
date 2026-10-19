@@ -10,13 +10,34 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process, Step
 
+from opencell.util.mcg16807_state_codec import draw_and_advance, seed_state
 from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS, compartment_counts_schema
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinModification_flat.mat"
 _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
 _MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
 _SPECIAL_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
-_RANDSAMPLE_STREAM_BURN = 3
+
+
+class _ProteinModificationRandomStream:
+    """Process.m's private mcg16807 owner, using MATLAB-exposed encoded state."""
+
+    def __init__(self, seed: int) -> None:
+        self._seed = int(seed)
+        self._state = seed_state(self._seed)
+
+    def random(self, size: int | tuple[int, ...] | None = None) -> float | np.ndarray:
+        if size is None:
+            value, self._state = draw_and_advance(self._state)
+            return value
+        values = np.empty(size, dtype=np.float64, order="F")
+        linear = values.ravel(order="F")
+        for i in range(linear.size):
+            linear[i], self._state = draw_and_advance(self._state)
+        return values
+
+    def get_state(self) -> tuple[str, int, int]:
+        return "mcg16807", self._seed, self._state
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -72,7 +93,7 @@ class KarrProteinModificationProcess(Process):
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
-        self._rng = np.random.RandomState(int(self.parameters["rng_seed"]))
+        self._rng = _ProteinModificationRandomStream(int(self.parameters["rng_seed"]))
 
         row_sums = np.sum(self.reaction_modification, axis=1)
         if not np.all(row_sums == 1):
@@ -585,13 +606,13 @@ class KarrProteinModificationProcess(Process):
     def _weighted_index_sample(self, weights: np.ndarray, total_weight: float) -> int:
         if total_weight <= 0.0:
             return 0
-        # MATLAB's `randsample` is implemented in the stats toolbox and advances
-        # the stream with extra internal draws versus a one-liner CDF sample.
-        for _ in range(_RANDSAMPLE_STREAM_BURN):
-            self._rng.random()
-        threshold = float(self._rng.random()) * float(total_weight)
-        cumulative = np.cumsum(weights, dtype=np.float64)
-        return int(np.searchsorted(cumulative, threshold, side="right"))
+        # randsample's weighted-replacement branch uses normalized histogram edges.
+        edges = np.minimum(
+            np.concatenate(([0.0], np.cumsum(weights / total_weight, dtype=np.float64))),
+            1.0,
+        )
+        edges[-1] = 1.0
+        return int(np.searchsorted(edges, float(self._rng.random()), side="right") - 1)
 
     def _stochastic_round_vector(self, values: np.ndarray) -> np.ndarray:
         vals = np.asarray(values, dtype=np.float64)
