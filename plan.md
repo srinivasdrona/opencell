@@ -19,6 +19,11 @@
   RNA observer fix is accepted, while the separately frozen production
   `compute_cell_mass` consumer repair is active in the RP worktree. No main
   or canonical production-code merge/push; no gate run before final freeze.
+- Accepted RNA observer/frozen-test lineage through `0817ac9` is now imported
+  as `a05c789` through `2ee7414`, with exact source/test matches and all old
+  journal records preserved. The remaining source-correct total-consumer
+  patch `8829930` / `bf46bfe` has 41 doer PASS and is in independent review;
+  it has not been imported or treated as approved yet.
 
 ## Operational handoff
 
