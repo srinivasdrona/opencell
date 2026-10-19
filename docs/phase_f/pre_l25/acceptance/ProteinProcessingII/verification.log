@@ -1,0 +1,7 @@
+{"started_utc": "2026-10-19T10:40:04.022153+00:00", "pid": 4447, "ppid": 4446, "argv": ["artifacts/m1_cohort/m1_pp2/independent_acceptance/review.py", "verify"], "cwd": "/mnt/e/opencell-worktrees/m1-pp2-20261017", "executable": "/mnt/e/opencell/.venv-wsl/bin/python", "opencell_file": "/mnt/e/opencell-worktrees/m1-pp2-20261017/opencell/__init__.py"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/monomers_calibration_recomputed.json", "sha256": "b663debf953e1b70cecd4fa447ad1a1d2e55536a9375e24bae782cbf85777af7"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/substrates_calibration_recomputed.json", "sha256": "1eb9e8179cb8df76d7134bf92d6576d688da673ccbab56d3afd49ad93b2868d9"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/current_h12_applicability.json", "sha256": "12eb7cc4b3e4f1bcf127ef2c257db6cbe708c2ca992b1a7916910279045d991d"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/linked_h12_active_window_recomputation.json", "sha256": "f8180051b56b40bc5bc9c5d1c6051505699869533553769f0cf826a8aed0bed7"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/independent_measurements.json", "sha256": "6b2284dc56cecf6fd517ddd13ec2a34f5d65529970be22d987be04cbfe75c1d5"}
+{"finished_utc": "2026-10-19T10:41:21.582255+00:00", "pid": 4447}

@@ -1,0 +1,61 @@
+{
+  "role": "independent_evidence_semantic_closure_verdict_owner",
+  "process": "ProteinProcessingII",
+  "source_head": "65df71c26553f42dd95759b948de42647987bf68",
+  "source_module_sha256": "13b8fea04446f6b9452441f8dccf296ab92ebbf92b7b46f7a100f3bdd0fe1668",
+  "verdict": "ACCEPTED",
+  "eligibility": "NOT_SET_PARENT_INTEGRATION_REQUIRED",
+  "scope": "Fresh executed gate and four explicit current PP2 findings only; existing mechanics/shared input binding review credited, not reopened",
+  "findings": [
+    {"id": "PPII-DEVIATIONS", "verdict": "ACCEPTED", "parent_disposition": "RESOLVED", "remaining_named_gap": null},
+    {"id": "PPII-LEGACY-OWNERSHIP", "verdict": "ACCEPTED", "parent_disposition": "RESOLVED", "remaining_named_gap": null},
+    {"id": "PPII-REPLAY-INPUT-EVIDENCE", "verdict": "ACCEPTED", "parent_disposition": "RESOLVED", "remaining_named_gap": null},
+    {"id": "PPII-PROJECTION-GUARD-INPUTS", "verdict": "ACCEPTED", "parent_disposition": "RESOLVED", "remaining_named_gap": null}
+  ],
+  "independent_controls": {
+    "passed": 56, "skipped": 0, "xfail": 0, "xpass": 0, "failures": 0, "errors": 0,
+    "xml": "controls.xml",
+    "xml_sha256": "46cc7d226917f39782ba28de945e2233525c8e92c2dc99466759a7160d86e24e"
+  },
+  "gate": {
+    "N": 50, "seeds": "0..49", "M": 20, "B": 1000, "primary": "monomers", "primary_width": 482,
+    "mechanical_verdict": "PASS", "channel_verdicts": {"monomers": "SEED_NOISE", "substrates": "SEED_NOISE"},
+    "consumed_records_verified": 61, "registered_sources_verified": 10, "allocator_rows_verified": 1000,
+    "all_current_seeds_have_six_families": true, "signal_active_seed_ticks_M20": 51,
+    "full_OC_tensor_saved": false, "full_biological_campaign_rerun_by_reviewer": false
+  },
+  "h12": {
+    "warning_retained": true,
+    "birth_first_M20": "H12_OBSERVED_REGIME: 560/560 nontrivial exact, 407 trivial exact, 33 regime-invalid, no transferase branch",
+    "registered_support": "Actual full50 mixed active-window domain independently rehashed and numerically regenerated: H12_CONFIRMED, 581/581 nontrivial exact, 332 trivial exact, all three branches",
+    "raw_prediction_hash_reproduced": "b9ed983ed1f48c1255e3309235002c0dcf485d9fc7cefce80c542b9c659501a4",
+    "registered_support_is_not_birth_window_evidence": true
+  },
+  "candidate": {
+    "explicit_root": "artifacts/m1_cohort/m1_pp2/evidence_bundle",
+    "strict_audit": "integrity OK; exit 0",
+    "portable_audit": "integrity OK; exit 0",
+    "owned_row": "PASS/green/no reasons",
+    "aggregate": "NON_GREEN",
+    "tally": {"PASS": 1, "MISSING_EVIDENCE": 23},
+    "content_hash_reproduced": "d7b5b0193dd95af7a5886014fe21432f9e1e740c05c872786693e353d912592b",
+    "compact_files_verified": 8
+  },
+  "preservation": {"prior_outputs_unchanged": 45, "prior_outputs_checked": 45, "native_git_clean": true, "source_changed": false},
+  "evidence": {
+    "human_status": "STATUS.md",
+    "commands_and_controls": ["controls_argv.json", "controls_outcomes.json", "controls_execution.json", "controls.xml"],
+    "input_numeric_proof": "independent_measurements.json",
+    "input_numeric_proof_sha256": "6b2284dc56cecf6fd517ddd13ec2a34f5d65529970be22d987be04cbfe75c1d5",
+    "h12": ["current_h12_applicability.json", "linked_h12_active_window_recomputation.json"],
+    "candidate": ["candidate_commands.json", "independent_candidate_verification.json"],
+    "snapshots": ["before_snapshot.json", "after_snapshot.json"],
+    "file_hashes": "report_hashes.json"
+  },
+  "parent_requirements": [
+    "Publish dated semantic audit acceptance, preserving historical checkpoint meanings and replacing obsolete current missing-signal/local-ownership claims",
+    "Resolve only the four PP2 baseline findings using this source/command/XML evidence; parent owns eligibility adjudication",
+    "Refresh known inherited stale baseline source-tree digest after final integration; not a new PP2 biological rejection",
+    "Publish accepted evidence without changing measured hashes; rerun final integrated explicit-root audits; do not promote unrelated missing rows"
+  ]
+}

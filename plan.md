@@ -1,3 +1,39 @@
+# M1 accepted-process candidate - 2026-10-19
+
+## Operational handoff
+
+- Candidate worktree: `E:\opencell-worktrees\m1-accepted-20261019`, branch
+  `integrate/m1-accepted-20261019`, from independently reviewed source
+  `65df71c26553f42dd95759b948de42647987bf68`. No production code changed.
+- PP2 full N50/M20/B1000 gate and all four current PP2 findings independently
+  ACCEPTED. Unchanged candidate bundle and complete independent receipts are
+  staged in their existing evidence/acceptance roots. The candidate honesty
+  audit now reports INTEGRITY_OK, five eligible and 23 blocked, using actual
+  140-file digest `debfe45f9fbc1b3dd23ab5cfc352b340b1bf662762c338574466e3bea679c808`.
+  The integrated PP2 row passes strict current-input verification with no
+  reasons; full generated-index integrity is OK. Publication commit and its
+  independent copy/integration verification are next.
+- Global index regeneration truthfully keeps unrelated stale publications
+  non-green: 3 PASS, 19 source-provenance FAIL, 2 MISSING. No old hash is
+  refreshed, no unrelated open finding is waived, and no historical raw
+  publication is deleted. This is not a newly measured biological regression.
+- Canonical all-24 campaign queue remains in
+  `E:\opencell-worktrees\pre-l25-honesty-rebaseline\plan.md`. Its production
+  tree/baseline remains separate at four eligible until explicit integration.
+  No main or canonical production-code merge/push is performed here.
+- Other M1 execution agents: PT `6524c537-d310-4b4e-9e87-b61c5b65aae1`;
+  PM `694b1228-e957-4d47-9ff1-b1e152cefa33`;
+  RP `1c26bcfc-0159-4072-9c30-120ef0ed11d2`;
+  RM `caf6caf0-9351-4559-b40c-345d8f160897`.
+  PP2 doer/reviewer have completed; no parent validation is currently live.
+- All execution uses canonical WSL `/mnt/e/opencell/.venv-wsl`. Native Windows
+  Git manages linked worktrees. Python wrapper arguments must be relative or
+  WSL-native, never unconverted Windows paths. Private PP2 input copies were
+  rehashed against the accepted manifest; the only source junction targets
+  the direct existing WholeCell mirror. Preserve all original live evidence.
+
+The inherited ladder/history below is retained, not a current progress claim.
+
 ## L-ladder (canonical, reconciled 2026-07-02 with L2.4 relocation)
 
 The L-ladder went through a terminology drift around L2.2 vs L2.2.k (composition harness) vs L3 (direct coupling), then again on 2026-07-01 when the original L1 was split into L1a/L1b/L1c ("aliveness family"), then again on 2026-07-02 when the "L1c" gate was found to be structurally more complex than several L2 rungs (28 processes × ≤100 ticks × autonomous). L1c was renamed to L2.4 and relocated to sit BEFORE L2.5 in the ladder. Rationale: diagnostic dependency (L2.5 needs allocator + shared pool proven correct; L2.4 proves those; therefore L2.4 must precede L2.5). See `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` entry `2026-07-02 | opencell | ladder-rename-l1c-to-l2_4`.

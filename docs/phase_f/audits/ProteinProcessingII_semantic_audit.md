@@ -1,5 +1,47 @@
 # ProteinProcessingII Semantic Wiring Audit
 
+## Current independent acceptance - 2026-10-19
+
+All four current PP2 findings are independently ACCEPTED at reviewed source
+`65df71c26553f42dd95759b948de42647987bf68`. The acceptance receipt and complete
+independent command, numeric, coverage and preservation records are committed
+under `docs/phase_f/pre_l25/acceptance/ProteinProcessingII/`. `VERDICT.json`
+records the verdict; `STATUS.md` gives the source anchors and exact commands;
+`controls.xml` records 56 PASS with zero failures, errors, skips or xfails.
+The earlier claim table, counts and implementation checkpoints below are
+historical. Their open-finding prose does not supersede this current receipt.
+
+- `PPII-DEVIATIONS`: source ceil/min demand and the common source-owned input
+  reader, live mature enzyme/precursor inputs, grant-backed same-tick evolution,
+  signal output and once-only public execution are accepted. Current source:
+  `karr_protein_processing_ii.py:148-200,264-448,509-582`;
+  request/composite anchors and the frozen Engine controls are in the receipt.
+  The historical `PP2-S4-02` availability-based request deviation is resolved.
+- `PPII-LEGACY-OWNERSHIP`: the existing nonmigrated PP1 `processed_counts` to
+  Folding `unfolded_counts` route is accepted without mature-pool drain or
+  global WID migration. Actual PP1/PP2/Folding handoff, mature-poison and
+  v5/v6 Engine queue controls pass.
+- `PPII-REPLAY-INPUT-EVIDENCE`: all 50 current accepted source files contain
+  all six before/after families, including `signalSequenceMonomers`. The
+  canonical persistent-owner 100-tick six-family replay and anti-omission
+  controls pass, with four emitted signals. The fresh registered N50/M20/B1000
+  gate covers all 482 primary coordinates and passes both measured channels.
+  The historical missing-signal description is obsolete for these exact bytes.
+- `PPII-PROJECTION-GUARD-INPUTS`: all seven source-projection controls and
+  the specifically selected no-dual-writer/live-enzyme controls pass without
+  compatibility fallback, production edits or weakened assertions.
+
+Independent verification rehashed 61 consumed records (50 distinct seeds plus
+11 runtime/fixture inputs), 10 registered sources, the authority/sidecar hashes
+and all 1,000 seed/tick allocator records. Both strict and portable candidate
+audits have integrity OK. W1 is zero on both measured channels; numeric
+rederivation is distinguished from rerunning the biological campaign.
+The retained convergence warning has independently reproduced full-branch
+registered active-window H12 support, not a fabricated birth-window claim.
+All 45 pre-review outputs remained unchanged. Only PP2 is accepted here;
+global eligibility and publication integrity are reconciled by the candidate
+baseline/index, not by treating a scoped candidate audit as an all-process PASS.
+
 ## Deliberate Action Prefix v2
 ### Beat 1 - Contract
 - Required behavior: validate whether `data/schemas/per_process_wiring/ProteinProcessingII.yaml` is semantically true against MATLAB and OC runtime behavior for S1-S6, not just anchor presence.

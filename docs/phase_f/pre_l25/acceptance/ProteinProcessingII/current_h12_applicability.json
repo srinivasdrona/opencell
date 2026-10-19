@@ -1,0 +1,996 @@
+{
+  "branches_confirmed": [
+    "passthrough_fires",
+    "peptidase_fires"
+  ],
+  "current_counts": {
+    "exact_match_count": 560,
+    "nontrivial_sample_count": 560,
+    "total_sample_count": 1000,
+    "trivial_checked_count": 407,
+    "trivial_mismatch_count": 0
+  },
+  "current_reason": "100% exact match on 560 nontrivial samples but required branch coverage incomplete: missing=['transferase_fires'] (this process may not be used to clear H12_CONFIRMED-gated sentinels until every required regime is independently confirmed)",
+  "current_verdict": "H12_OBSERVED_REGIME",
+  "exact_match_rate": 1.0,
+  "existing_ref": "docs/phase_f/l2_2_design_a/h12/ProteinProcessingII_h12.json",
+  "existing_sha256": "df3c99cc93829eac834f3c7df34a7c6e2558ddf93d7e207e832afd52359b8abd",
+  "existing_support_validator_reason": null,
+  "old_vs_current_seed_hash_differences": [
+    0,
+    1,
+    4,
+    7,
+    8,
+    9,
+    11,
+    12,
+    14,
+    16,
+    17,
+    18,
+    20,
+    25,
+    28,
+    30,
+    31,
+    32,
+    33,
+    36,
+    41,
+    49
+  ],
+  "per_seed": [
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 12,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 12,
+      "seed": 0,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 1,
+      "total_sample_count": 20,
+      "trivial_checked_count": 10,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 9,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 9,
+      "seed": 2,
+      "total_sample_count": 20,
+      "trivial_checked_count": 10,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 3,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 4,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 12,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 12,
+      "seed": 5,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 6,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 7,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 13,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 13,
+      "seed": 8,
+      "total_sample_count": 20,
+      "trivial_checked_count": 7,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 9,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 9,
+      "seed": 9,
+      "total_sample_count": 20,
+      "trivial_checked_count": 10,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 12,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 12,
+      "seed": 10,
+      "total_sample_count": 20,
+      "trivial_checked_count": 7,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 11,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 12,
+      "total_sample_count": 20,
+      "trivial_checked_count": 10,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 15,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 15,
+      "seed": 13,
+      "total_sample_count": 20,
+      "trivial_checked_count": 4,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 13,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 13,
+      "seed": 14,
+      "total_sample_count": 20,
+      "trivial_checked_count": 7,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 15,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 13,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 13,
+      "seed": 16,
+      "total_sample_count": 20,
+      "trivial_checked_count": 6,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 17,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 18,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 12,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 12,
+      "seed": 19,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 20,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 21,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 22,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 12,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 12,
+      "seed": 23,
+      "total_sample_count": 20,
+      "trivial_checked_count": 7,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 13,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 13,
+      "seed": 24,
+      "total_sample_count": 20,
+      "trivial_checked_count": 7,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 25,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 26,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 27,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 28,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 12,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 12,
+      "seed": 29,
+      "total_sample_count": 20,
+      "trivial_checked_count": 7,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 30,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 31,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 12,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 12,
+      "seed": 32,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 13,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 13,
+      "seed": 33,
+      "total_sample_count": 20,
+      "trivial_checked_count": 7,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 12,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 12,
+      "seed": 34,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 35,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 36,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 15,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 15,
+      "seed": 37,
+      "total_sample_count": 20,
+      "trivial_checked_count": 4,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 13,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 13,
+      "seed": 38,
+      "total_sample_count": 20,
+      "trivial_checked_count": 7,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 39,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 40,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 13,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 13,
+      "seed": 41,
+      "total_sample_count": 20,
+      "trivial_checked_count": 6,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 10,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 10,
+      "seed": 42,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 43,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 8,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 8,
+      "seed": 44,
+      "total_sample_count": 20,
+      "trivial_checked_count": 12,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 13,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 13,
+      "seed": 45,
+      "total_sample_count": 20,
+      "trivial_checked_count": 5,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 46,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 7,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 7,
+      "seed": 47,
+      "total_sample_count": 20,
+      "trivial_checked_count": 12,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 12,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 12,
+      "seed": 48,
+      "total_sample_count": 20,
+      "trivial_checked_count": 8,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    },
+    {
+      "branches_confirmed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "branches_observed": [
+        "passthrough_fires",
+        "peptidase_fires"
+      ],
+      "exact_match_count": 11,
+      "exact_match_rate": 1.0,
+      "mismatch_examples": [],
+      "nontrivial_sample_count": 11,
+      "seed": 49,
+      "total_sample_count": 20,
+      "trivial_checked_count": 9,
+      "trivial_mismatch_count": 0,
+      "trivial_mismatch_examples": []
+    }
+  ],
+  "purpose": "Current-byte predictor recomputation, not new biological/SUT execution or replacement of tracked H12"
+}

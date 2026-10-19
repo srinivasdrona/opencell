@@ -1,0 +1,14 @@
+{
+  "finished_utc": "2026-10-19T10:44:57.4483822Z",
+  "powershell_pid": 4756,
+  "head": "65df71c26553f42dd95759b948de42647987bf68",
+  "native_status": [],
+  "prior_outputs_checked": 45,
+  "prior_outputs_changed": 0,
+  "verdict_json_parse": "OK",
+  "findings": 4,
+  "verdict": "ACCEPTED",
+  "status_sha256": "11346d1e950d57f60e286883e8fb7101115469a122a2b64088381cbb59a5bb6a",
+  "verdict_sha256": "9480b2eb6510962261aa189da7063e912564c026e076afa524f02c431c82c7e7",
+  "owned_command_shells": "completed; no detached helpers launched"
+}

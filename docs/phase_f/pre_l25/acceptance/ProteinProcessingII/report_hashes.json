@@ -1,0 +1,57 @@
+[
+  {
+    "file": "controls.xml",
+    "sha256": "46cc7d226917f39782ba28de945e2233525c8e92c2dc99466759a7160d86e24e",
+    "size": 9944
+  },
+  {
+    "file": "controls_outcomes.json",
+    "sha256": "a6a721ffa7f1e9164c9dcb6fa7ddef25d9c7708aa6ff3610a68bc448aa1f0ee0",
+    "size": 14137
+  },
+  {
+    "file": "independent_measurements.json",
+    "sha256": "6b2284dc56cecf6fd517ddd13ec2a34f5d65529970be22d987be04cbfe75c1d5",
+    "size": 70585
+  },
+  {
+    "file": "current_h12_applicability.json",
+    "sha256": "12eb7cc4b3e4f1bcf127ef2c257db6cbe708c2ca992b1a7916910279045d991d",
+    "size": 25513
+  },
+  {
+    "file": "linked_h12_active_window_recomputation.json",
+    "sha256": "f8180051b56b40bc5bc9c5d1c6051505699869533553769f0cf826a8aed0bed7",
+    "size": 74254
+  },
+  {
+    "file": "independent_candidate_verification.json",
+    "sha256": "8930ce1c77a9d97ac4135a41c1aab3814d7684a87988b03ca458939636025105",
+    "size": 4539
+  },
+  {
+    "file": "before_snapshot.json",
+    "sha256": "cbb7e81e7ac668c7eef020c836819fb349010911b713a3cc33426e3febae7280",
+    "size": 11938
+  },
+  {
+    "file": "after_snapshot.json",
+    "sha256": "4914977c86812d569d1aa0f2b8106a3d2ccb19ea58c28d35a2268f3ab029e733",
+    "size": 16794
+  },
+  {
+    "file": "review.py",
+    "sha256": "6b7db82ebe9ee1a1b231a2ccc332f5d3f92a2bf60fa4ca89f4f3e3968dce7c98",
+    "size": 25837
+  },
+  {
+    "file": "STATUS.md",
+    "sha256": "11346d1e950d57f60e286883e8fb7101115469a122a2b64088381cbb59a5bb6a",
+    "size": 24905
+  },
+  {
+    "file": "VERDICT.json",
+    "sha256": "9480b2eb6510962261aa189da7063e912564c026e076afa524f02c431c82c7e7",
+    "size": 4126
+  }
+]

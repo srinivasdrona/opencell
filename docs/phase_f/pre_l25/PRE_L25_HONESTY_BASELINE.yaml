@@ -8,16 +8,19 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "be95a0b307b08590de24a760183a631d37b96e490526016e17666de72e46809e"
+  sha256: "debfe45f9fbc1b3dd23ab5cfc352b340b1bf662762c338574466e3bea679c808"
   file_count: 140
 authorities:
   l1b_method_completeness: "PASS 115/115"
   l1b_wiring_conformance: "PASS 28/28"
-  l2_2_distributional_fidelity: "NON_GREEN: 22 PASS / 2 MISSING_EVIDENCE / 24 required"
+  l2_2_distributional_fidelity: "NON_GREEN: 3 PASS / 19 FAIL (stale source provenance) / 2 MISSING_EVIDENCE / 24 required"
   l2_4_chassis_conservation: "PASS 4 seeds x 100 ticks"
   qualification: >-
     These authorities retain their existing meanings. This baseline adds the
     no-known-gap eligibility property that none of them independently proves.
+    The current generated index rejects stale inherited source attestations;
+    those FAIL rows are not newly executed biological failures. Historical
+    raw bundles and unresolved findings are retained without hash replacement.
 
 processes:
   - name: ChromosomeCondensation
@@ -134,8 +137,8 @@ processes:
 
   - name: DNADamage
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: DNA-DMG-DEVIATIONS
         kind: CODE_DEVIATION
@@ -149,8 +152,8 @@ processes:
 
   - name: DNARepair
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: DNA-REP-DEVIATIONS
         kind: CODE_DEVIATION
@@ -164,8 +167,8 @@ processes:
 
   - name: DNASupercoiling
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: DNA-SUP-DEVIATIONS
         kind: CODE_DEVIATION
@@ -191,8 +194,8 @@ processes:
 
   - name: FtsZPolymerization
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: FTSZ-DEVIATIONS
         kind: CODE_DEVIATION
@@ -223,8 +226,8 @@ processes:
 
   - name: MacromolecularComplexation
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: MCX-DEVIATIONS
         kind: CODE_DEVIATION
@@ -238,8 +241,8 @@ processes:
 
   - name: Metabolism
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: MET-CODE-DEVIATIONS
         kind: CODE_DEVIATION
@@ -302,8 +305,8 @@ processes:
 
   - name: ProteinDecay
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: PDEC-DEVIATIONS
         kind: CODE_DEVIATION
@@ -317,8 +320,8 @@ processes:
 
   - name: ProteinFolding
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: PFOLD-DEVIATIONS
         kind: CODE_DEVIATION
@@ -332,8 +335,8 @@ processes:
 
   - name: ProteinModification
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: PMOD-DEVIATIONS
         kind: CODE_DEVIATION
@@ -350,8 +353,8 @@ processes:
 
   - name: ProteinProcessingI
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: PPI-DEVIATIONS
         kind: CODE_DEVIATION
@@ -365,64 +368,70 @@ processes:
   - name: ProteinProcessingII
     behavior_gate: L2.2
     behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    eligibility: ELIGIBLE
     findings:
       - id: PPII-DEVIATIONS
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          Bounded source demand, migrated input ownership, same-tick evolution,
-          signal-peptide writeback, and local nonmigrated form-route repairs
-          pass the frozen production boundary; independent semantic
-          re-adjudication remains open.
-          The historical one-deviation audit is not a promotion verdict.
+          Independently accepted source demand, live precursor/enzyme
+          authority, same-tick grant-backed once-only evolution and signal
+          writeback at reviewed source 65df71c. Fresh full N50/M20/B1000
+          evidence and the independent frozen control run are accepted.
         evidence:
           - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
-            lines: "147-179"
+            lines: "3-42"
+          - path: docs/phase_f/pre_l25/acceptance/ProteinProcessingII/VERDICT.json
+            lines: "1-26"
       - id: PPII-LEGACY-OWNERSHIP
         kind: CODE_DEVIATION
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          Local nonmigrated ownership is now repaired through existing PP1
-          processed_counts and Folding unfolded_counts queues, with no mature
-          counts read/write or global migration. Source-adjudicated queue,
-          mature-poison, once-only and Engine tests pass; final independent
-          review of this historical code-deviation finding remains open.
+          Independently accepted existing PP1 processed_counts to Folding
+          unfolded_counts ownership without mature-pool drain or global
+          migration. Actual source-owned handoff, mature-poison, once-only
+          and v5/v6 Engine controls pass.
         evidence:
           - path: opencell/vivarium/karr_protein_processing_ii.py
             lines: "165-183"
           - path: opencell/vivarium/karr_protein_processing_ii.py
             lines: "379-448"
+          - path: docs/phase_f/pre_l25/acceptance/ProteinProcessingII/VERDICT.json
+            lines: "1-26"
       - id: PPII-REPLAY-INPUT-EVIDENCE
         kind: EVIDENCE_CONFIG_MISMATCH
-        disposition: NEEDS_EXECUTION
+        disposition: RESOLVED
         summary: >-
-          Independently corrected source-owned projection and the canonical
-          five-observed-family replay now pass all 100 ticks. The canonical
-          before/after oracle lacks signalSequenceMonomers, and the explicit
-          coverage guard remains FAIL. Parent-owned accepted signal-complete
-          cohort restoration and six-family verification are still required;
-          existing distributional PASS is not fresh changed-path validation.
-          Catalog and evidence index are unchanged.
+          All 50 current accepted traces have all six before/after families,
+          including signalSequenceMonomers. Independent persistent-owner
+          100-tick replay and anti-omission controls pass. The fresh complete
+          N50/M20/B1000 gate, 61 consumed inputs and portable publication
+          are independently verified; no historical hashes were refreshed.
         evidence:
           - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
-            lines: "164-179"
+            lines: "3-42"
+          - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/input_manifest.json
+            lines: "1-25"
+          - path: docs/phase_f/pre_l25/acceptance/ProteinProcessingII/VERDICT.json
+            lines: "1-42"
       - id: PPII-PROJECTION-GUARD-INPUTS
         kind: STALE_OR_MISSING_AUDIT
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          Independent test-author source alignment is frozen and all nine
-          no-dual-writer guards now pass without any production mature-enzyme
-          fallback or weakened assertions. Final independent semantic
-          re-adjudication remains open.
+          Independent acceptance confirms the source-owned Design-A
+          projection, live mature-enzyme inputs, exact local WID order,
+          nonmigrated queues and selected no-dual-writer controls without
+          compatibility fallback or weakened assertions.
         evidence:
           - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
-            lines: "170-179"
+            lines: "3-42"
+          - path: docs/phase_f/pre_l25/acceptance/ProteinProcessingII/controls.xml
+            lines: "1-1"
 
   - name: ProteinTranslocation
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_EVIDENCE_CONFIG_MISMATCH
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: PTRANS-STAGE2-ALGORITHM
         kind: CODE_DEVIATION
@@ -479,8 +488,8 @@ processes:
 
   - name: RNADecay
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: RDECAY-DEVIATIONS
         kind: CODE_DEVIATION
@@ -494,8 +503,8 @@ processes:
 
   - name: RNAModification
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: RMOD-DEVIATIONS
         kind: CODE_DEVIATION
@@ -511,8 +520,8 @@ processes:
 
   - name: RNAProcessing
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: RPROC-DEVIATIONS
         kind: CODE_DEVIATION
@@ -529,8 +538,8 @@ processes:
 
   - name: Replication
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: REPL-DEVIATIONS
         kind: CODE_DEVIATION
@@ -544,8 +553,8 @@ processes:
 
   - name: ReplicationInitiation
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: REPLINIT-DEVIATIONS
         kind: CODE_DEVIATION
@@ -636,8 +645,8 @@ processes:
 
   - name: Transcription
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: TX-DEVIATIONS
         kind: CODE_DEVIATION
@@ -720,8 +729,8 @@ processes:
 
   - name: Translation
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: TL-DEVIATIONS
         kind: CODE_DEVIATION
@@ -735,8 +744,8 @@ processes:
 
   - name: tRNAAminoacylation
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: TRNA-DEVIATIONS
         kind: CODE_DEVIATION
@@ -749,5 +758,5 @@ processes:
             lines: "40-43"
 
 summary:
-  eligible: 4
-  blocked: 24
+  eligible: 5
+  blocked: 23

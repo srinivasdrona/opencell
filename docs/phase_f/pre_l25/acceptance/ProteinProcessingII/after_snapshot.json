@@ -1,0 +1,373 @@
+{
+  "utc": "2026-10-19T10:42:03.3456929Z",
+  "powershell_pid": 16888,
+  "head": "65df71c26553f42dd95759b948de42647987bf68",
+  "status": [],
+  "checked_prior_outputs": 45,
+  "unchanged_prior_outputs": 45,
+  "all_prior_outputs_unchanged": true,
+  "tracked_diff": [],
+  "cached_diff": [],
+  "checks": [
+    {
+      "path": "artifacts\\l2_2_gates\\_sweep_logs\\ProteinProcessingII.log",
+      "expected_sha256": "4f976f3ec8c8c8940ba67602660e5f679bcffc397f1dcc0a672f337e0af5bcee",
+      "actual_sha256": "4f976f3ec8c8c8940ba67602660e5f679bcffc397f1dcc0a672f337e0af5bcee",
+      "expected_size": 480,
+      "actual_size": 480,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\allocator_inputs.json",
+      "expected_sha256": "4114ea3d98240e1cf06641bae5e3756d6993e8b3f63a032ef6b36a155c13ff40",
+      "actual_sha256": "4114ea3d98240e1cf06641bae5e3756d6993e8b3f63a032ef6b36a155c13ff40",
+      "expected_size": 300574,
+      "actual_size": 300574,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\analytical_check.json",
+      "expected_sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "actual_sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "expected_size": 94,
+      "actual_size": 94,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\input_manifest.json",
+      "expected_sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "actual_sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "expected_size": 13184,
+      "actual_size": 13184,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\null_calibration.json",
+      "expected_sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "actual_sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "expected_size": 1139,
+      "actual_size": 1139,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\provenance.json",
+      "expected_sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "actual_sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "expected_size": 375,
+      "actual_size": 375,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\result.json",
+      "expected_sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "actual_sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "expected_size": 3415,
+      "actual_size": 3415,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\SUMMARY.json",
+      "expected_sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "actual_sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "expected_size": 1028,
+      "actual_size": 1028,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\sweep_provenance.json",
+      "expected_sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "actual_sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "expected_size": 1936,
+      "actual_size": 1936,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\thresholds.json",
+      "expected_sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "actual_sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "expected_size": 440,
+      "actual_size": 440,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\.progress.md",
+      "expected_sha256": "614401fc30a706e9542c02fa3c23599a1dc286c11b2d154a190bfd2f643cd6ae",
+      "actual_sha256": "614401fc30a706e9542c02fa3c23599a1dc286c11b2d154a190bfd2f643cd6ae",
+      "expected_size": 5315,
+      "actual_size": 5315,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\accepted-input-copy.json",
+      "expected_sha256": "4eef0da1c18c270829214f91dd4c9ca1a0f8d514a087507d51e9bec8a023dcb4",
+      "actual_sha256": "4eef0da1c18c270829214f91dd4c9ca1a0f8d514a087507d51e9bec8a023dcb4",
+      "expected_size": 24690,
+      "actual_size": 24690,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\bundle_execution.json",
+      "expected_sha256": "2ee765a7e2b436e79f0eee9597f58b849fe420e44f03422acb92a2e2c188be81",
+      "actual_sha256": "2ee765a7e2b436e79f0eee9597f58b849fe420e44f03422acb92a2e2c188be81",
+      "expected_size": 316,
+      "actual_size": 316,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\bundle.log",
+      "expected_sha256": "5fbc710dad870b11c3352442c1ff81a39e7d1347591a0ef72879556aa13f813b",
+      "actual_sha256": "5fbc710dad870b11c3352442c1ff81a39e7d1347591a0ef72879556aa13f813b",
+      "expected_size": 277,
+      "actual_size": 277,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_audit_portable_execution.json",
+      "expected_sha256": "72611f3e1a6b15378986f8745ced18505f0cb19715f55d038d9d970308d9fd07",
+      "actual_sha256": "72611f3e1a6b15378986f8745ced18505f0cb19715f55d038d9d970308d9fd07",
+      "expected_size": 386,
+      "actual_size": 386,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_audit_portable.log",
+      "expected_sha256": "ff1397247d78a85fbca5ea0043ca910c2d93d99412ba914be60cd35284db102c",
+      "actual_sha256": "ff1397247d78a85fbca5ea0043ca910c2d93d99412ba914be60cd35284db102c",
+      "expected_size": 7415,
+      "actual_size": 7415,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_audit_strict_execution.json",
+      "expected_sha256": "00f87125626cebce718674f7963107d9389e8d17fef2d216e4ff4c54b99210c5",
+      "actual_sha256": "00f87125626cebce718674f7963107d9389e8d17fef2d216e4ff4c54b99210c5",
+      "expected_size": 405,
+      "actual_size": 405,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_audit_strict.log",
+      "expected_sha256": "ff1397247d78a85fbca5ea0043ca910c2d93d99412ba914be60cd35284db102c",
+      "actual_sha256": "ff1397247d78a85fbca5ea0043ca910c2d93d99412ba914be60cd35284db102c",
+      "expected_size": 7415,
+      "actual_size": 7415,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_evidence_index.json",
+      "expected_sha256": "af5e00ce75b049343c29577d068894b8a977268730a6f14e9e2414bed60a8823",
+      "actual_sha256": "af5e00ce75b049343c29577d068894b8a977268730a6f14e9e2414bed60a8823",
+      "expected_size": 23484,
+      "actual_size": 23484,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_generate_execution.json",
+      "expected_sha256": "c743e4b70c8519cbf183b4f9c12a83d4e38e270adab037ae2970ef2cc81cb115",
+      "actual_sha256": "c743e4b70c8519cbf183b4f9c12a83d4e38e270adab037ae2970ef2cc81cb115",
+      "expected_size": 381,
+      "actual_size": 381,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_generate.log",
+      "expected_sha256": "bb096d345124c9094cc9397f3a0d1b5d6c346f4b2b7b876bbf9e55a4ad4921db",
+      "actual_sha256": "bb096d345124c9094cc9397f3a0d1b5d6c346f4b2b7b876bbf9e55a4ad4921db",
+      "expected_size": 191,
+      "actual_size": 191,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_portability_validation.json",
+      "expected_sha256": "0f6a90f7f2aaef679aa08fbede7567dbaa8dfc58d97ce8d8da16c60eab7ff84e",
+      "actual_sha256": "0f6a90f7f2aaef679aa08fbede7567dbaa8dfc58d97ce8d8da16c60eab7ff84e",
+      "expected_size": 12232,
+      "actual_size": 12232,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_portability_validation.log",
+      "expected_sha256": "a68e5dcdf6866cac4a2ece9ba548ca08b18db22350fae55ae7efe91dba0295d0",
+      "actual_sha256": "a68e5dcdf6866cac4a2ece9ba548ca08b18db22350fae55ae7efe91dba0295d0",
+      "expected_size": 1349,
+      "actual_size": 1349,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_validation_execution.json",
+      "expected_sha256": "3c7804c72b7cbf663dce3c964ae118282db505df4857d07fed598f7106846dbe",
+      "actual_sha256": "3c7804c72b7cbf663dce3c964ae118282db505df4857d07fed598f7106846dbe",
+      "expected_size": 239,
+      "actual_size": 239,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\analytical_check.json",
+      "expected_sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "actual_sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "expected_size": 94,
+      "actual_size": 94,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\input_manifest.json",
+      "expected_sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "actual_sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "expected_size": 13184,
+      "actual_size": 13184,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\null_calibration.json",
+      "expected_sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "actual_sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "expected_size": 1139,
+      "actual_size": 1139,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\provenance.json",
+      "expected_sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "actual_sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "expected_size": 375,
+      "actual_size": 375,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\result.json",
+      "expected_sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "actual_sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "expected_size": 3415,
+      "actual_size": 3415,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\SUMMARY.json",
+      "expected_sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "actual_sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "expected_size": 1028,
+      "actual_size": 1028,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\sweep_provenance.json",
+      "expected_sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "actual_sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "expected_size": 1936,
+      "actual_size": 1936,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\thresholds.json",
+      "expected_sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "actual_sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "expected_size": 440,
+      "actual_size": 440,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\execution_probe.py",
+      "expected_sha256": "573236f38cb7d308d056527b6a663b14d6a234f9da14f26b436534b1ac729572",
+      "actual_sha256": "573236f38cb7d308d056527b6a663b14d6a234f9da14f26b436534b1ac729572",
+      "expected_size": 10113,
+      "actual_size": 10113,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\preflight_reuse_validation.json",
+      "expected_sha256": "a2f5dcbf0fa35074a90e698542197ae990f569a806ddd69a009fa23154ad61af",
+      "actual_sha256": "a2f5dcbf0fa35074a90e698542197ae990f569a806ddd69a009fa23154ad61af",
+      "expected_size": 22445,
+      "actual_size": 22445,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\preflight_reuse_validation.log",
+      "expected_sha256": "f83b51d6aecae72c403fbe8f7accfc8116973890682442f87d275dcf5ef98d6f",
+      "actual_sha256": "f83b51d6aecae72c403fbe8f7accfc8116973890682442f87d275dcf5ef98d6f",
+      "expected_size": 1843,
+      "actual_size": 1843,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\preflight.json",
+      "expected_sha256": "3e8833e19e0e84d6463babe39769645d7e3c37e16c07cc8dad8d92fc9d70ef0b",
+      "actual_sha256": "3e8833e19e0e84d6463babe39769645d7e3c37e16c07cc8dad8d92fc9d70ef0b",
+      "expected_size": 84389,
+      "actual_size": 84389,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\preflight.log",
+      "expected_sha256": "8cd4ef568de059d0fcc2cfb1dd1815955e80e1922ebeceb936a236a44e76c126",
+      "actual_sha256": "8cd4ef568de059d0fcc2cfb1dd1815955e80e1922ebeceb936a236a44e76c126",
+      "expected_size": 1032,
+      "actual_size": 1032,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\resume_evidence.py",
+      "expected_sha256": "76a5f131870f2f194c5c9afb0daaaa6ee4f9b138cfb3a365a806959541951aac",
+      "actual_sha256": "76a5f131870f2f194c5c9afb0daaaa6ee4f9b138cfb3a365a806959541951aac",
+      "expected_size": 15517,
+      "actual_size": 15517,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\source_closure_execution.json",
+      "expected_sha256": "a40262bd70d6f092ee55bff24062562633ad884bc1f674065dd08f1a629771e2",
+      "actual_sha256": "a40262bd70d6f092ee55bff24062562633ad884bc1f674065dd08f1a629771e2",
+      "expected_size": 237,
+      "actual_size": 237,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\source_closure.json",
+      "expected_sha256": "07334feb61b2430187d529aa40c179b483d01dd82f9d9ef27ac5dd09c3e7449c",
+      "actual_sha256": "07334feb61b2430187d529aa40c179b483d01dd82f9d9ef27ac5dd09c3e7449c",
+      "expected_size": 31000,
+      "actual_size": 31000,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\source_closure.log",
+      "expected_sha256": "9f1aa05969816f9b77297d9860b95783c04da3091690d7c1b65a3a34884a6dfc",
+      "actual_sha256": "9f1aa05969816f9b77297d9860b95783c04da3091690d7c1b65a3a34884a6dfc",
+      "expected_size": 3775,
+      "actual_size": 3775,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\sweep_execution.json",
+      "expected_sha256": "491d5c4e91c1d5a4efc9758c23f00c70ff5146ed5e86642cf8a4a436482d46f6",
+      "actual_sha256": "491d5c4e91c1d5a4efc9758c23f00c70ff5146ed5e86642cf8a4a436482d46f6",
+      "expected_size": 366,
+      "actual_size": 366,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\sweep_execution.log",
+      "expected_sha256": "f2dbc159481a04fc595dc480e4dc14dc6178f2b4ce791ab0d5022f81bb07f3bc",
+      "actual_sha256": "f2dbc159481a04fc595dc480e4dc14dc6178f2b4ce791ab0d5022f81bb07f3bc",
+      "expected_size": 78,
+      "actual_size": 78,
+      "unchanged": true
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\sweep_report.json",
+      "expected_sha256": "e9f23bff75bb3b6633ee2ed7fccb919fde5cee2e075f54d44f98189f237b99d8",
+      "actual_sha256": "e9f23bff75bb3b6633ee2ed7fccb919fde5cee2e075f54d44f98189f237b99d8",
+      "expected_size": 549,
+      "actual_size": 549,
+      "unchanged": true
+    },
+    {
+      "path": "STATUS_m1_pp2.md",
+      "expected_sha256": "22a59f4e6ea5d20eb8500eca5f6c3c2f4dff96d00f478c0e0f928bc489cdb0ed",
+      "actual_sha256": "22a59f4e6ea5d20eb8500eca5f6c3c2f4dff96d00f478c0e0f928bc489cdb0ed",
+      "expected_size": 17350,
+      "actual_size": 17350,
+      "unchanged": true
+    }
+  ]
+}

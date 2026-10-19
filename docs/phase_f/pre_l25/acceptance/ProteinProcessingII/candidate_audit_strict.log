@@ -1,0 +1,51 @@
+{"entrypoint": "scripts/l22_evidence/generator.py", "argv": ["audit", "--index", "artifacts/m1_cohort/m1_pp2/independent_acceptance/candidate_evidence_index.json", "--evidence-root", "artifacts/m1_cohort/m1_pp2/evidence_bundle", "--verify-input-files"], "started_utc": "2026-10-19T10:37:53.432556+00:00", "pid": 4364}
+integrity: OK
+aggregate_verdict (mechanically re-derived): NON_GREEN
+  MISSING_EVIDENCE: 23
+  PASS: 1
+NON_GREEN_ROW: ChromosomeCondensation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ChromosomeCondensation
+NON_GREEN_ROW: Cytokinesis verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process Cytokinesis
+NON_GREEN_ROW: DNADamage verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process DNADamage
+NON_GREEN_ROW: DNARepair verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process DNARepair
+NON_GREEN_ROW: DNASupercoiling verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process DNASupercoiling
+NON_GREEN_ROW: FtsZPolymerization verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process FtsZPolymerization
+NON_GREEN_ROW: MacromolecularComplexation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process MacromolecularComplexation
+NON_GREEN_ROW: Metabolism verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process Metabolism
+NON_GREEN_ROW: ProteinDecay verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ProteinDecay
+NON_GREEN_ROW: ProteinFolding verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ProteinFolding
+NON_GREEN_ROW: ProteinModification verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ProteinModification
+NON_GREEN_ROW: ProteinProcessingI verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ProteinProcessingI
+NON_GREEN_ROW: ProteinTranslocation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ProteinTranslocation
+NON_GREEN_ROW: RNADecay verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process RNADecay
+NON_GREEN_ROW: RNAModification verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process RNAModification
+NON_GREEN_ROW: RNAProcessing verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process RNAProcessing
+NON_GREEN_ROW: Replication verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process Replication
+NON_GREEN_ROW: ReplicationInitiation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ReplicationInitiation
+NON_GREEN_ROW: RibosomeAssembly verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process RibosomeAssembly
+NON_GREEN_ROW: Transcription verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process Transcription
+NON_GREEN_ROW: TranscriptionalRegulation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process TranscriptionalRegulation
+NON_GREEN_ROW: Translation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process Translation
+NON_GREEN_ROW: tRNAAminoacylation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process tRNAAminoacylation

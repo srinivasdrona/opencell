@@ -1,0 +1,280 @@
+{
+  "utc": "2026-10-19T10:32:29.9531289Z",
+  "powershell_pid": 12084,
+  "cwd": "E:\\opencell-worktrees\\m1-pp2-20261017",
+  "head": "65df71c26553f42dd95759b948de42647987bf68",
+  "branch": "exec/m1-pp2-20261017",
+  "status": [],
+  "prior_output_files": [
+    {
+      "path": "artifacts\\l2_2_gates\\_sweep_logs\\ProteinProcessingII.log",
+      "size": 480,
+      "sha256": "4f976f3ec8c8c8940ba67602660e5f679bcffc397f1dcc0a672f337e0af5bcee",
+      "last_write_utc": "2026-10-19T10:24:31.4931337Z"
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\allocator_inputs.json",
+      "size": 300574,
+      "sha256": "4114ea3d98240e1cf06641bae5e3756d6993e8b3f63a032ef6b36a155c13ff40",
+      "last_write_utc": "2026-10-19T10:24:31.4628698Z"
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\analytical_check.json",
+      "size": 94,
+      "sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "last_write_utc": "2026-10-19T10:24:31.4860564Z"
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\input_manifest.json",
+      "size": 13184,
+      "sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "last_write_utc": "2026-10-19T10:24:33.7972487Z"
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\null_calibration.json",
+      "size": 1139,
+      "sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "last_write_utc": "2026-10-19T10:24:31.4797567Z"
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\provenance.json",
+      "size": 375,
+      "sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "last_write_utc": "2026-10-19T10:24:33.8348171Z"
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\result.json",
+      "size": 3415,
+      "sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "last_write_utc": "2026-10-19T10:24:33.8162939Z"
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\SUMMARY.json",
+      "size": 1028,
+      "sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "last_write_utc": "2026-10-19T10:24:31.4487391Z"
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\sweep_provenance.json",
+      "size": 1936,
+      "sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "last_write_utc": "2026-10-19T10:24:44.1726965Z"
+    },
+    {
+      "path": "artifacts\\l2_2_gates\\ProteinProcessingII\\latest\\thresholds.json",
+      "size": 440,
+      "sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "last_write_utc": "2026-10-19T10:24:31.4648785Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\.progress.md",
+      "size": 5315,
+      "sha256": "614401fc30a706e9542c02fa3c23599a1dc286c11b2d154a190bfd2f643cd6ae",
+      "last_write_utc": "2026-10-19T10:29:00.1447688Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\accepted-input-copy.json",
+      "size": 24690,
+      "sha256": "4eef0da1c18c270829214f91dd4c9ca1a0f8d514a087507d51e9bec8a023dcb4",
+      "last_write_utc": "2026-10-16T19:55:43.7374987Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\bundle_execution.json",
+      "size": 316,
+      "sha256": "2ee765a7e2b436e79f0eee9597f58b849fe420e44f03422acb92a2e2c188be81",
+      "last_write_utc": "2026-10-19T10:25:50.7710095Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\bundle.log",
+      "size": 277,
+      "sha256": "5fbc710dad870b11c3352442c1ff81a39e7d1347591a0ef72879556aa13f813b",
+      "last_write_utc": "2026-10-19T10:25:50.7377930Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_audit_portable_execution.json",
+      "size": 386,
+      "sha256": "72611f3e1a6b15378986f8745ced18505f0cb19715f55d038d9d970308d9fd07",
+      "last_write_utc": "2026-10-19T10:26:26.7832059Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_audit_portable.log",
+      "size": 7415,
+      "sha256": "ff1397247d78a85fbca5ea0043ca910c2d93d99412ba914be60cd35284db102c",
+      "last_write_utc": "2026-10-19T10:26:26.7042713Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_audit_strict_execution.json",
+      "size": 405,
+      "sha256": "00f87125626cebce718674f7963107d9389e8d17fef2d216e4ff4c54b99210c5",
+      "last_write_utc": "2026-10-19T10:26:21.8933750Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_audit_strict.log",
+      "size": 7415,
+      "sha256": "ff1397247d78a85fbca5ea0043ca910c2d93d99412ba914be60cd35284db102c",
+      "last_write_utc": "2026-10-19T10:26:21.8343705Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_evidence_index.json",
+      "size": 23484,
+      "sha256": "af5e00ce75b049343c29577d068894b8a977268730a6f14e9e2414bed60a8823",
+      "last_write_utc": "2026-10-19T10:26:14.3435585Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_generate_execution.json",
+      "size": 381,
+      "sha256": "c743e4b70c8519cbf183b4f9c12a83d4e38e270adab037ae2970ef2cc81cb115",
+      "last_write_utc": "2026-10-19T10:26:14.4244782Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_generate.log",
+      "size": 191,
+      "sha256": "bb096d345124c9094cc9397f3a0d1b5d6c346f4b2b7b876bbf9e55a4ad4921db",
+      "last_write_utc": "2026-10-19T10:26:14.3527955Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_portability_validation.json",
+      "size": 12232,
+      "sha256": "0f6a90f7f2aaef679aa08fbede7567dbaa8dfc58d97ce8d8da16c60eab7ff84e",
+      "last_write_utc": "2026-10-19T10:26:49.7966499Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_portability_validation.log",
+      "size": 1349,
+      "sha256": "a68e5dcdf6866cac4a2ece9ba548ca08b18db22350fae55ae7efe91dba0295d0",
+      "last_write_utc": "2026-10-19T10:26:49.8085722Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\candidate_validation_execution.json",
+      "size": 239,
+      "sha256": "3c7804c72b7cbf663dce3c964ae118282db505df4857d07fed598f7106846dbe",
+      "last_write_utc": "2026-10-19T10:26:49.8490247Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\analytical_check.json",
+      "size": 94,
+      "sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "last_write_utc": "2026-10-19T10:25:50.7090871Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\input_manifest.json",
+      "size": 13184,
+      "sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "last_write_utc": "2026-10-19T10:25:50.6550077Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\null_calibration.json",
+      "size": 1139,
+      "sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "last_write_utc": "2026-10-19T10:25:50.6869875Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\provenance.json",
+      "size": 375,
+      "sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "last_write_utc": "2026-10-19T10:25:50.6635796Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\result.json",
+      "size": 3415,
+      "sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "last_write_utc": "2026-10-19T10:25:50.6368798Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\SUMMARY.json",
+      "size": 1028,
+      "sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "last_write_utc": "2026-10-19T10:25:50.6995120Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\sweep_provenance.json",
+      "size": 1936,
+      "sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "last_write_utc": "2026-10-19T10:25:50.7212159Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\evidence_bundle\\ProteinProcessingII\\latest\\thresholds.json",
+      "size": 440,
+      "sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "last_write_utc": "2026-10-19T10:25:50.6743931Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\execution_probe.py",
+      "size": 10113,
+      "sha256": "573236f38cb7d308d056527b6a663b14d6a234f9da14f26b436534b1ac729572",
+      "last_write_utc": "2026-10-16T21:47:00.8091179Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\preflight_reuse_validation.json",
+      "size": 22445,
+      "sha256": "a2f5dcbf0fa35074a90e698542197ae990f569a806ddd69a009fa23154ad61af",
+      "last_write_utc": "2026-10-19T10:18:29.8281933Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\preflight_reuse_validation.log",
+      "size": 1843,
+      "sha256": "f83b51d6aecae72c403fbe8f7accfc8116973890682442f87d275dcf5ef98d6f",
+      "last_write_utc": "2026-10-19T10:18:29.8454170Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\preflight.json",
+      "size": 84389,
+      "sha256": "3e8833e19e0e84d6463babe39769645d7e3c37e16c07cc8dad8d92fc9d70ef0b",
+      "last_write_utc": "2026-10-16T21:49:48.1944652Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\preflight.log",
+      "size": 1032,
+      "sha256": "8cd4ef568de059d0fcc2cfb1dd1815955e80e1922ebeceb936a236a44e76c126",
+      "last_write_utc": "2026-10-16T21:49:48.2079071Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\resume_evidence.py",
+      "size": 15517,
+      "sha256": "76a5f131870f2f194c5c9afb0daaaa6ee4f9b138cfb3a365a806959541951aac",
+      "last_write_utc": "2026-10-19T10:23:51.0257179Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\source_closure_execution.json",
+      "size": 237,
+      "sha256": "a40262bd70d6f092ee55bff24062562633ad884bc1f674065dd08f1a629771e2",
+      "last_write_utc": "2026-10-19T10:25:21.5952130Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\source_closure.json",
+      "size": 31000,
+      "sha256": "07334feb61b2430187d529aa40c179b483d01dd82f9d9ef27ac5dd09c3e7449c",
+      "last_write_utc": "2026-10-19T10:25:21.5007542Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\source_closure.log",
+      "size": 3775,
+      "sha256": "9f1aa05969816f9b77297d9860b95783c04da3091690d7c1b65a3a34884a6dfc",
+      "last_write_utc": "2026-10-19T10:25:21.5319151Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\sweep_execution.json",
+      "size": 366,
+      "sha256": "491d5c4e91c1d5a4efc9758c23f00c70ff5146ed5e86642cf8a4a436482d46f6",
+      "last_write_utc": "2026-10-19T10:24:44.2465354Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\sweep_execution.log",
+      "size": 78,
+      "sha256": "f2dbc159481a04fc595dc480e4dc14dc6178f2b4ce791ab0d5022f81bb07f3bc",
+      "last_write_utc": "2026-10-19T10:24:44.2012473Z"
+    },
+    {
+      "path": "artifacts\\m1_cohort\\m1_pp2\\sweep_report.json",
+      "size": 549,
+      "sha256": "e9f23bff75bb3b6633ee2ed7fccb919fde5cee2e075f54d44f98189f237b99d8",
+      "last_write_utc": "2026-10-19T10:24:44.1912365Z"
+    },
+    {
+      "path": "STATUS_m1_pp2.md",
+      "size": 17350,
+      "sha256": "22a59f4e6ea5d20eb8500eca5f6c3c2f4dff96d00f478c0e0f928bc489cdb0ed",
+      "last_write_utc": "2026-10-19T10:28:36.8062938Z"
+    }
+  ]
+}
