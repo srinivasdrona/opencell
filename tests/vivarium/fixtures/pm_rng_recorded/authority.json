@@ -1,0 +1,61 @@
+{
+  "authority": "RECORDED_MATLAB_PRIMARY_BYTES_NOT_CURRENT_EXECUTION",
+  "sources": [
+    {
+      "filename": "chromosome_randstream_state_probe.json",
+      "origin": "E:\\opencell-worktrees\\fix-l21-txreg-active\\artifacts\\l21_chromosome_rng\\chromosome_randstream_state_probe.json",
+      "sha256": "663131d3370487b286efea3da0f51cdc8bcd269bce4af35353c27a6d94ffd679",
+      "generator": {
+        "origin": "E:\\opencell-worktrees\\fix-l21-txreg-active\\scripts\\matlab\\probe_l21_chromosome_randstream_state.m",
+        "relative": "scripts/matlab/probe_l21_chromosome_randstream_state.m",
+        "sha256": "61934cd0ea0c902c4984992e18b8d481e10b59513693a3585616c9fa8002bc86",
+        "current_pm_copy_sha256": "b71d5eec4bfabd58ffc380209c2bedf1ddc22daf2e5132b5b4171bd0abc96519"
+      }
+    },
+    {
+      "filename": "probe_txreg_mcg_randsample_result.json",
+      "origin": "E:\\opencell-worktrees\\fix-l21-txreg-active\\tmp\\probe_txreg_mcg_randsample_result.json",
+      "sha256": "54569a07ab3fadbcbe2224cfcbe504eafea581a8060c9bf4a63ecf6b2809d063",
+      "generator": {
+        "origin": "E:\\opencell-worktrees\\fix-l21-txreg-active\\scripts\\matlab\\probe_txreg_mcg_randsample.m",
+        "relative": "scripts/matlab/probe_txreg_mcg_randsample.m",
+        "sha256": "3c03ce1e6014b8a309e36c1e6babbece2994372adb6557990348adb60de6f450",
+        "current_pm_copy_sha256": "68de0fe9e181e8eb2c439e39117d1bfc3c430e82bed791dc422d28767d88375b"
+      }
+    }
+  ],
+  "recorded_release": "2026a",
+  "state_probe_recorded_generation_time": "2026-09-05 00:48:47",
+  "txreg_raw_generation_time_and_release_fields": "not present in raw JSON",
+  "anchors": {
+    "v1_v2": "first two raw uniforms after builtin reset(seed)",
+    "v3": "raw uniform after first two uniforms then randperm(5); matched recurrence position8",
+    "seed_zero_rand8": "case_c_seed0_rand8 is a separate direct rand(8,1) recording"
+  },
+  "independently_verified_recurrence": {
+    "multiplier": 16807,
+    "modulus": 2147483647,
+    "positive_seed_initial_kernel_state": "(seed * 65536) % modulus for the four recorded positive seeds only; general seeding uses the neutral codec",
+    "seed_zero_initial_kernel_state": 1144108930,
+    "seed_zero_derivation": "round(raw_u1 * modulus) * modular_inverse(multiplier) % modulus",
+    "seed_zero_holdouts": "remaining7 direct uniforms plus separate reset/v1/v2/post-randperm-v3",
+    "displayed_reset_state_is_not_kernel_state": true
+  },
+  "sampler_source": {
+    "origin": "E:\\MATLAB\\toolbox\\stats\\stats\\randsample.m",
+    "sha256": "476dd1cf2f4eba77a90c90b4328f39d23724b1217ce4d42c68ee403d53c15be9",
+    "branch_lines": "53-57,75-88: weighted replacement; k uniforms, not k+3",
+    "pm_call": "ProteinModification.m:374 uses k=1, replacement=true",
+    "wrapper": "util/RandStream.m:198-201 delegates k=1 with replacement=true",
+    "version_limit": "as-inspected installed source; raw historical reports do not attest its source hash"
+  },
+  "limits": [
+    "No observation of PM private seed, initialization, public tick0..53 history or current flags.",
+    "Generic reset(seed) uniforms are independent of PM oracle outputs.",
+    "Displayed MATLAB .State is not the helper internal kernel state.",
+    "Historic generator bytes differ from current PM-worktree script bytes.",
+    "Historic TxReg script could resolve its own WholeCell tree or main fallback; raw does not attest which.",
+    "Weighted-without-replacement outputs are preserved as raw authority, not used as PM weighted-replacement expectations.",
+    "No MATLAB execution, license workaround, raw change or production repair performed."
+  ]
+}
