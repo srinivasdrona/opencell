@@ -1,0 +1,13 @@
+{"started_utc": "2026-10-19T11:00:10.292101+00:00", "pid": 5173, "ppid": 5172, "argv": ["artifacts/m1_integration/independent_pp2/check.py"], "executable": "/mnt/e/opencell/.venv-wsl/bin/python", "opencell_file": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/__init__.py", "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019"}
+{"report": "committed_and_filesystem_preservation.json", "sha256": "75f27fc32cf8122d810f3d89dfe61d1efb574c3eea504f45c213b93abf5e5f25"}
+{"report": "strict_current_pp2_row.json", "sha256": "a0bdcb2471b306e0a1aa9b62e9c306567a62ba372679b2964a6610c6d50d2174"}
+{"report": "candidate_current_input_bytes.json", "sha256": "a4264e62eda159b19548fb9c84e61e4b8591392fb7394a6e04c0eaadfaf04477"}
+{"report": "audit_commands.json", "sha256": "2cb80eee2844cfc99c7edd1f2c6f972900fdb53353ad0a496df80d60526973d3"}
+{"report": "audit_commands.json", "sha256": "71eb42d4210ec3bb988243022f4545f3f91770a7eb8922f7fe81301c0da6441d"}
+Traceback (most recent call last):
+  File "/mnt/e/opencell-worktrees/m1-accepted-20261019/artifacts/m1_integration/independent_pp2/check.py", line 230, in <module>
+    main()
+  File "/mnt/e/opencell-worktrees/m1-accepted-20261019/artifacts/m1_integration/independent_pp2/check.py", line 189, in main
+    assert process["eligibility"] == old_by_name[process["name"]]["eligibility"], process["name"]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError: DNADamage

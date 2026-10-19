@@ -1,0 +1,22 @@
+[
+  {
+    "committed_and_current_sha256": "ba8b1423b09c3c49ebbca752cae6e1abb2e431bf6bb26643fd87a7fcfccac90b",
+    "git_blob_oid": "901b7cd1fceb0297377fd027f6a3e01db7527c81",
+    "path": "docs/phase_f/audits/ProteinProcessingII_semantic_audit.md"
+  },
+  {
+    "committed_and_current_sha256": "5c567b8919259313bd1b35f317abfcaf6b9b69a1b270d9e35227086490739ddc",
+    "git_blob_oid": "c6940eb6a0fde1e37f3f0738f5d840c72e5f6bd6",
+    "path": "docs/phase_f/l2_2_design_a/evidence_index.json"
+  },
+  {
+    "committed_and_current_sha256": "6e10d433cb6851bbdcc9f5ae291d710b260a57a9585a2cde1bfcb53c77688bb4",
+    "git_blob_oid": "8336c51519894dc514b94282772fcaa6f8598443",
+    "path": "docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml"
+  },
+  {
+    "committed_and_current_sha256": "30f3f2e708bd50de61b810200528749a98fc6b96377edeed46e9b1cfc7e89287",
+    "git_blob_oid": "90e5ae6d3194365752d73872cb120dab0452d71a",
+    "path": "docs/phase_f/pre_l25/acceptance/.gitattributes"
+  }
+]

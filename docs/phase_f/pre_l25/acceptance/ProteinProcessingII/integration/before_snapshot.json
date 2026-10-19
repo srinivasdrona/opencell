@@ -1,0 +1,35 @@
+{
+  "utc": "2026-10-19T10:58:26.9696253Z",
+  "powershell_pid": 23500,
+  "head": "c3ec943df61e485c0f50a3f770f85fdb5eae2cd1",
+  "branch": "integrate/m1-accepted-20261019",
+  "status": [],
+  "broad_diff_names": [
+    "data/provenance/llm_interactions.jsonl",
+    "opencell/provenance/llm_interactions.jsonl"
+  ],
+  "runtime_diff_names": [],
+  "publication_journals_excluded": [
+    "data/provenance/llm_interactions.jsonl",
+    "opencell/provenance/llm_interactions.jsonl"
+  ],
+  "archive_sha256": "79a1992419020f164154b8ec0a4f8a4c4bcdb5eab688f4876476bcd6b6295aac",
+  "authority_before": [
+    {
+      "path": "docs\\phase_f\\audits\\ProteinProcessingII_semantic_audit.md",
+      "sha256": "ba8b1423b09c3c49ebbca752cae6e1abb2e431bf6bb26643fd87a7fcfccac90b"
+    },
+    {
+      "path": "docs\\phase_f\\pre_l25\\PRE_L25_HONESTY_BASELINE.yaml",
+      "sha256": "6e10d433cb6851bbdcc9f5ae291d710b260a57a9585a2cde1bfcb53c77688bb4"
+    },
+    {
+      "path": "docs\\phase_f\\l2_2_design_a\\evidence_index.json",
+      "sha256": "5c567b8919259313bd1b35f317abfcaf6b9b69a1b270d9e35227086490739ddc"
+    },
+    {
+      "path": "docs\\phase_f\\pre_l25\\acceptance\\.gitattributes",
+      "sha256": "30f3f2e708bd50de61b810200528749a98fc6b96377edeed46e9b1cfc7e89287"
+    }
+  ]
+}

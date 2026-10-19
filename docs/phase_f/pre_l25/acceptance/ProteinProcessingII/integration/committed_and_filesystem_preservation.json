@@ -1,0 +1,418 @@
+{
+  "candidate_head": "c3ec943df61e485c0f50a3f770f85fdb5eae2cd1",
+  "counts": {
+    "bundle": 8,
+    "receipts": 32
+  },
+  "files_byte_equal": 40,
+  "known_original_hashes_verified": {
+    "STATUS.md": "11346d1e950d57f60e286883e8fb7101115469a122a2b64088381cbb59a5bb6a",
+    "VERDICT.json": "9480b2eb6510962261aa189da7063e912564c026e076afa524f02c431c82c7e7",
+    "controls.xml": "46cc7d226917f39782ba28de945e2233525c8e92c2dc99466759a7160d86e24e",
+    "independent_measurements.json": "6b2284dc56cecf6fd517ddd13ec2a34f5d65529970be22d987be04cbfe75c1d5"
+  },
+  "native_git_archive_object_ids_verified": true,
+  "recorded_receipt_hashes_verified": 11,
+  "records": [
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "git_archive_sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "git_blob_oid": "6462eb88da76ec458018832ab2f1436a7305f231",
+      "original_accepted_sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/SUMMARY.json",
+      "size_bytes": 1028
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "git_archive_sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "git_blob_oid": "b1e47b76f38dd066e25314ca52ec27219023afea",
+      "original_accepted_sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/analytical_check.json",
+      "size_bytes": 94
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "git_archive_sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "git_blob_oid": "5f816fc16a7df015bda2cda918316e2a40d42904",
+      "original_accepted_sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/input_manifest.json",
+      "size_bytes": 13184
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "git_archive_sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "git_blob_oid": "9282e068b4422ac898bd5dbf8294b29bdf0b3b66",
+      "original_accepted_sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/null_calibration.json",
+      "size_bytes": 1139
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "git_archive_sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "git_blob_oid": "9a18ab36cc5c1c48953b10a2719cb9a3575e9e99",
+      "original_accepted_sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/provenance.json",
+      "size_bytes": 375
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "git_archive_sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "git_blob_oid": "bd8d03b7687ecc1adca4c710532fe0c462711673",
+      "original_accepted_sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/result.json",
+      "size_bytes": 3415
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "git_archive_sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "git_blob_oid": "fe46532c41f487587c14c41aa01c7bd3d8b11b2a",
+      "original_accepted_sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/sweep_provenance.json",
+      "size_bytes": 1936
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "git_archive_sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "git_blob_oid": "f8b3415c942f53bb89835ae52358177723a5046e",
+      "original_accepted_sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/thresholds.json",
+      "size_bytes": 440
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 156,
+      "current_filesystem_sha256": "11346d1e950d57f60e286883e8fb7101115469a122a2b64088381cbb59a5bb6a",
+      "git_archive_sha256": "11346d1e950d57f60e286883e8fb7101115469a122a2b64088381cbb59a5bb6a",
+      "git_blob_oid": "b0104ec5e75d60281db1338b9f18f3b56b08f978",
+      "original_accepted_sha256": "11346d1e950d57f60e286883e8fb7101115469a122a2b64088381cbb59a5bb6a",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/STATUS.md",
+      "size_bytes": 24905
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 61,
+      "current_filesystem_sha256": "9480b2eb6510962261aa189da7063e912564c026e076afa524f02c431c82c7e7",
+      "git_archive_sha256": "9480b2eb6510962261aa189da7063e912564c026e076afa524f02c431c82c7e7",
+      "git_blob_oid": "0a1e3bad50599c8e5822e9268027eeec3fa57d14",
+      "original_accepted_sha256": "9480b2eb6510962261aa189da7063e912564c026e076afa524f02c431c82c7e7",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/VERDICT.json",
+      "size_bytes": 4126
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 373,
+      "current_filesystem_sha256": "4914977c86812d569d1aa0f2b8106a3d2ccb19ea58c28d35a2268f3ab029e733",
+      "git_archive_sha256": "4914977c86812d569d1aa0f2b8106a3d2ccb19ea58c28d35a2268f3ab029e733",
+      "git_blob_oid": "3967fe55cee08825c5f671f541a6cda69c28b590",
+      "original_accepted_sha256": "4914977c86812d569d1aa0f2b8106a3d2ccb19ea58c28d35a2268f3ab029e733",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/after_snapshot.json",
+      "size_bytes": 16794
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 280,
+      "current_filesystem_sha256": "cbb7e81e7ac668c7eef020c836819fb349010911b713a3cc33426e3febae7280",
+      "git_archive_sha256": "cbb7e81e7ac668c7eef020c836819fb349010911b713a3cc33426e3febae7280",
+      "git_blob_oid": "40ba94d2dace0bcbeababd2ca0189fe6e3bfb066",
+      "original_accepted_sha256": "cbb7e81e7ac668c7eef020c836819fb349010911b713a3cc33426e3febae7280",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/before_snapshot.json",
+      "size_bytes": 11938
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "1c2510aa04c63adc651dc52fcb2dfc39b9b5870959691644ffa2f862064bf48c",
+      "git_archive_sha256": "1c2510aa04c63adc651dc52fcb2dfc39b9b5870959691644ffa2f862064bf48c",
+      "git_blob_oid": "5c05984f20045d174020ec2be1d8e0de5a1f6e12",
+      "original_accepted_sha256": "1c2510aa04c63adc651dc52fcb2dfc39b9b5870959691644ffa2f862064bf48c",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/candidate_audit_portable.log",
+      "size_bytes": 7659
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "e982915e549597981659cdb7f2a053fc48e00fb27afbe7125eea8beca23c188f",
+      "git_archive_sha256": "e982915e549597981659cdb7f2a053fc48e00fb27afbe7125eea8beca23c188f",
+      "git_blob_oid": "351ac27ddddc1cac9d6d688478e875f0c3a407c0",
+      "original_accepted_sha256": "e982915e549597981659cdb7f2a053fc48e00fb27afbe7125eea8beca23c188f",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/candidate_audit_strict.log",
+      "size_bytes": 7683
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "2c0d82933428c4ccf3d187ac4dc6e7425f0f55ec0bc95caab4daeb8ee61ddfcc",
+      "git_archive_sha256": "2c0d82933428c4ccf3d187ac4dc6e7425f0f55ec0bc95caab4daeb8ee61ddfcc",
+      "git_blob_oid": "09f3911b9fa501c7fdb87e167b56168ed8bf77a2",
+      "original_accepted_sha256": "2c0d82933428c4ccf3d187ac4dc6e7425f0f55ec0bc95caab4daeb8ee61ddfcc",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/candidate_commands.json",
+      "size_bytes": 1321
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "7f807da774ab99df20492a2a691720268f0f35be39d14ba68a165c1b0f67d453",
+      "git_archive_sha256": "7f807da774ab99df20492a2a691720268f0f35be39d14ba68a165c1b0f67d453",
+      "git_blob_oid": "ff7796942b62281574fb16155a9a5245d837a078",
+      "original_accepted_sha256": "7f807da774ab99df20492a2a691720268f0f35be39d14ba68a165c1b0f67d453",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/candidate_evidence_index.json",
+      "size_bytes": 23484
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 7,
+      "current_filesystem_sha256": "e46bdc548a9bee5c289009a1e3e647a475b12cf9897f2c3dfe0f09d0bd2cdea2",
+      "git_archive_sha256": "e46bdc548a9bee5c289009a1e3e647a475b12cf9897f2c3dfe0f09d0bd2cdea2",
+      "git_blob_oid": "4f837cddf1af415ffcd905ad4246b68ffff7465f",
+      "original_accepted_sha256": "e46bdc548a9bee5c289009a1e3e647a475b12cf9897f2c3dfe0f09d0bd2cdea2",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/candidate_execution.json",
+      "size_bytes": 260
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 6,
+      "current_filesystem_sha256": "609ce7da34853f70ea18208ffdc6a040509ed24a3789a40bbee0e0c285dbc076",
+      "git_archive_sha256": "609ce7da34853f70ea18208ffdc6a040509ed24a3789a40bbee0e0c285dbc076",
+      "git_blob_oid": "8e60bbf88a6bdbd78f7a358355193b12c96241cd",
+      "original_accepted_sha256": "609ce7da34853f70ea18208ffdc6a040509ed24a3789a40bbee0e0c285dbc076",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/candidate_execution.log",
+      "size_bytes": 1106
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "a4d43dac370bda14cc1399b4031def3734acd308d737eef162cf9dd7a9e796d3",
+      "git_archive_sha256": "a4d43dac370bda14cc1399b4031def3734acd308d737eef162cf9dd7a9e796d3",
+      "git_blob_oid": "3faea1fa548d0bcde80e86f615ff32195a6cbbc5",
+      "original_accepted_sha256": "a4d43dac370bda14cc1399b4031def3734acd308d737eef162cf9dd7a9e796d3",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/candidate_generate.log",
+      "size_bytes": 505
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 14,
+      "current_filesystem_sha256": "c12fe6356ef359398a4957a0c95ea44c7ced82b8f5f9894823a9a08d6811a5bf",
+      "git_archive_sha256": "c12fe6356ef359398a4957a0c95ea44c7ced82b8f5f9894823a9a08d6811a5bf",
+      "git_blob_oid": "c43eb88384ff880f144f6052c828b90541a39859",
+      "original_accepted_sha256": "c12fe6356ef359398a4957a0c95ea44c7ced82b8f5f9894823a9a08d6811a5bf",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/completion_verification.json",
+      "size_bytes": 547
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 13,
+      "current_filesystem_sha256": "7f1ea0984c539af5e2a7baeaa3fe58e842d53e11e586f6a8d4aa5f68d453ab7f",
+      "git_archive_sha256": "7f1ea0984c539af5e2a7baeaa3fe58e842d53e11e586f6a8d4aa5f68d453ab7f",
+      "git_blob_oid": "388f21380651dbca51b1677657b8fa4893f08ab0",
+      "original_accepted_sha256": "7f1ea0984c539af5e2a7baeaa3fe58e842d53e11e586f6a8d4aa5f68d453ab7f",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/controls.log",
+      "size_bytes": 1165
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "46cc7d226917f39782ba28de945e2233525c8e92c2dc99466759a7160d86e24e",
+      "git_archive_sha256": "46cc7d226917f39782ba28de945e2233525c8e92c2dc99466759a7160d86e24e",
+      "git_blob_oid": "8b4870a3640f948e5f1872e97880edd91badcd94",
+      "original_accepted_sha256": "46cc7d226917f39782ba28de945e2233525c8e92c2dc99466759a7160d86e24e",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/controls.xml",
+      "size_bytes": 9944
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "180cdd17b25161784973050130edc29b87e06a3e13275799fd292188a5d6aaf4",
+      "git_archive_sha256": "180cdd17b25161784973050130edc29b87e06a3e13275799fd292188a5d6aaf4",
+      "git_blob_oid": "d1ece267f709173d9a850312dd47115329e2a5c1",
+      "original_accepted_sha256": "180cdd17b25161784973050130edc29b87e06a3e13275799fd292188a5d6aaf4",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/controls_argv.json",
+      "size_bytes": 2966
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 7,
+      "current_filesystem_sha256": "6d2ce6e40506c396027a87be3cf0c3431cdbadbdb591da12623c0ac3fe29ee79",
+      "git_archive_sha256": "6d2ce6e40506c396027a87be3cf0c3431cdbadbdb591da12623c0ac3fe29ee79",
+      "git_blob_oid": "35eef235609fd0adfb89acc8f0b2efa7dfb7c489",
+      "original_accepted_sha256": "6d2ce6e40506c396027a87be3cf0c3431cdbadbdb591da12623c0ac3fe29ee79",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/controls_execution.json",
+      "size_bytes": 259
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "a6a721ffa7f1e9164c9dcb6fa7ddef25d9c7708aa6ff3610a68bc448aa1f0ee0",
+      "git_archive_sha256": "a6a721ffa7f1e9164c9dcb6fa7ddef25d9c7708aa6ff3610a68bc448aa1f0ee0",
+      "git_blob_oid": "17dc33b5018d11080395edc2791d56eaeb78c88e",
+      "original_accepted_sha256": "a6a721ffa7f1e9164c9dcb6fa7ddef25d9c7708aa6ff3610a68bc448aa1f0ee0",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/controls_outcomes.json",
+      "size_bytes": 14137
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "12eb7cc4b3e4f1bcf127ef2c257db6cbe708c2ca992b1a7916910279045d991d",
+      "git_archive_sha256": "12eb7cc4b3e4f1bcf127ef2c257db6cbe708c2ca992b1a7916910279045d991d",
+      "git_blob_oid": "5eb93c03687fbd2b99db06b62f05fc5cd2dec791",
+      "original_accepted_sha256": "12eb7cc4b3e4f1bcf127ef2c257db6cbe708c2ca992b1a7916910279045d991d",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/current_h12_applicability.json",
+      "size_bytes": 25513
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "8930ce1c77a9d97ac4135a41c1aab3814d7684a87988b03ca458939636025105",
+      "git_archive_sha256": "8930ce1c77a9d97ac4135a41c1aab3814d7684a87988b03ca458939636025105",
+      "git_blob_oid": "c51d49514c3eefeb7911989033d1417931291da9",
+      "original_accepted_sha256": "8930ce1c77a9d97ac4135a41c1aab3814d7684a87988b03ca458939636025105",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/independent_candidate_verification.json",
+      "size_bytes": 4539
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "6b2284dc56cecf6fd517ddd13ec2a34f5d65529970be22d987be04cbfe75c1d5",
+      "git_archive_sha256": "6b2284dc56cecf6fd517ddd13ec2a34f5d65529970be22d987be04cbfe75c1d5",
+      "git_blob_oid": "5836cf304a6a8ccf76c0399f94cca82ff13f1a4b",
+      "original_accepted_sha256": "6b2284dc56cecf6fd517ddd13ec2a34f5d65529970be22d987be04cbfe75c1d5",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/independent_measurements.json",
+      "size_bytes": 70585
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "e4909ed5167559f4ce969922818c753486fca2ef57b69fcfe139164dc9033656",
+      "git_archive_sha256": "e4909ed5167559f4ce969922818c753486fca2ef57b69fcfe139164dc9033656",
+      "git_blob_oid": "4a5e64c373ab24b5c098ce45682b0ebe5aeb996c",
+      "original_accepted_sha256": "e4909ed5167559f4ce969922818c753486fca2ef57b69fcfe139164dc9033656",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/independent_structure.json",
+      "size_bytes": 12272
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 422,
+      "current_filesystem_sha256": "54ba35e793b7c97987961e8ce94b8009e4e9d671e4499ed1d639f4699634ea58",
+      "git_archive_sha256": "54ba35e793b7c97987961e8ce94b8009e4e9d671e4499ed1d639f4699634ea58",
+      "git_blob_oid": "6d25a9d561c4b251d17077e14c428fc95d7ab82a",
+      "original_accepted_sha256": "54ba35e793b7c97987961e8ce94b8009e4e9d671e4499ed1d639f4699634ea58",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/inspect.log",
+      "size_bytes": 13281
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 8,
+      "current_filesystem_sha256": "3b9598c5036ff0ed8075ec278124828215dac22c7cf7ae31bd2fe0c417aa18dc",
+      "git_archive_sha256": "3b9598c5036ff0ed8075ec278124828215dac22c7cf7ae31bd2fe0c417aa18dc",
+      "git_blob_oid": "c35dc42518ee33dbd20dca66520237c9a1e91bb9",
+      "original_accepted_sha256": "3b9598c5036ff0ed8075ec278124828215dac22c7cf7ae31bd2fe0c417aa18dc",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/inspect_execution.json",
+      "size_bytes": 404
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "f8180051b56b40bc5bc9c5d1c6051505699869533553769f0cf826a8aed0bed7",
+      "git_archive_sha256": "f8180051b56b40bc5bc9c5d1c6051505699869533553769f0cf826a8aed0bed7",
+      "git_blob_oid": "aaa742dcc89bc7aead82462146165b4d6736a120",
+      "original_accepted_sha256": "f8180051b56b40bc5bc9c5d1c6051505699869533553769f0cf826a8aed0bed7",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/linked_h12_active_window_recomputation.json",
+      "size_bytes": 74254
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "b663debf953e1b70cecd4fa447ad1a1d2e55536a9375e24bae782cbf85777af7",
+      "git_archive_sha256": "b663debf953e1b70cecd4fa447ad1a1d2e55536a9375e24bae782cbf85777af7",
+      "git_blob_oid": "5b32348a624c73f4515fb6b64f3733e82a519beb",
+      "original_accepted_sha256": "b663debf953e1b70cecd4fa447ad1a1d2e55536a9375e24bae782cbf85777af7",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/monomers_calibration_recomputed.json",
+      "size_bytes": 27429
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 57,
+      "current_filesystem_sha256": "ccc4952440cb3b0a82b1ce86ad5e73ff52883c533f06318c753375b043acb172",
+      "git_archive_sha256": "ccc4952440cb3b0a82b1ce86ad5e73ff52883c533f06318c753375b043acb172",
+      "git_blob_oid": "5c292536a99f0719087cb2cec32743d3eaecec58",
+      "original_accepted_sha256": "ccc4952440cb3b0a82b1ce86ad5e73ff52883c533f06318c753375b043acb172",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/report_hashes.json",
+      "size_bytes": 1676
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 439,
+      "current_filesystem_sha256": "6b7db82ebe9ee1a1b231a2ccc332f5d3f92a2bf60fa4ca89f4f3e3968dce7c98",
+      "git_archive_sha256": "6b7db82ebe9ee1a1b231a2ccc332f5d3f92a2bf60fa4ca89f4f3e3968dce7c98",
+      "git_blob_oid": "ce52844480ca8921e3bae4ec539a51157e98973c",
+      "original_accepted_sha256": "6b7db82ebe9ee1a1b231a2ccc332f5d3f92a2bf60fa4ca89f4f3e3968dce7c98",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/review.py",
+      "size_bytes": 25837
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 0,
+      "current_filesystem_sha256": "1eb9e8179cb8df76d7134bf92d6576d688da673ccbab56d3afd49ad93b2868d9",
+      "git_archive_sha256": "1eb9e8179cb8df76d7134bf92d6576d688da673ccbab56d3afd49ad93b2868d9",
+      "git_blob_oid": "b1abbfbae89b8820256614f6378389ee007edbd4",
+      "original_accepted_sha256": "1eb9e8179cb8df76d7134bf92d6576d688da673ccbab56d3afd49ad93b2868d9",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/substrates_calibration_recomputed.json",
+      "size_bytes": 23673
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 7,
+      "current_filesystem_sha256": "79ade186a495f7fb8174408570d03d6503d2fbbad1b6a77c56e1ae57b11f174d",
+      "git_archive_sha256": "79ade186a495f7fb8174408570d03d6503d2fbbad1b6a77c56e1ae57b11f174d",
+      "git_blob_oid": "61cd59c28f311552def7c927346feee126fbbb81",
+      "original_accepted_sha256": "79ade186a495f7fb8174408570d03d6503d2fbbad1b6a77c56e1ae57b11f174d",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/verification.log",
+      "size_bytes": 1315
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 11,
+      "current_filesystem_sha256": "a890e0553a6e5429af3d112a11a9b32a80873612eecfca0338c14de1f3f296c9",
+      "git_archive_sha256": "a890e0553a6e5429af3d112a11a9b32a80873612eecfca0338c14de1f3f296c9",
+      "git_blob_oid": "f021cbb4f4d83f029cb9f465d1eb81aac0e54409",
+      "original_accepted_sha256": "a890e0553a6e5429af3d112a11a9b32a80873612eecfca0338c14de1f3f296c9",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/verification_attempt1.log",
+      "size_bytes": 1324
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 7,
+      "current_filesystem_sha256": "4c6936c3ed7e4d1709c6a544bacedd840d0532253a4429d5064ff6faedcf40e8",
+      "git_archive_sha256": "4c6936c3ed7e4d1709c6a544bacedd840d0532253a4429d5064ff6faedcf40e8",
+      "git_blob_oid": "5ba3e87d3810eb8f2d5fb5254ed20570b4a669cf",
+      "original_accepted_sha256": "4c6936c3ed7e4d1709c6a544bacedd840d0532253a4429d5064ff6faedcf40e8",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/verification_attempt1_execution.json",
+      "size_bytes": 258
+    },
+    {
+      "all_three_byte_equal": true,
+      "crlf_count": 7,
+      "current_filesystem_sha256": "af42cb46cf55f185eadb550b49fd3604fd1673d37e69ca6ff8ca0c26cf4ac70d",
+      "git_archive_sha256": "af42cb46cf55f185eadb550b49fd3604fd1673d37e69ca6ff8ca0c26cf4ac70d",
+      "git_blob_oid": "36db1394cff73406245307c5dd550c5e9a40b6d6",
+      "original_accepted_sha256": "af42cb46cf55f185eadb550b49fd3604fd1673d37e69ca6ff8ca0c26cf4ac70d",
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinProcessingII/verification_execution.json",
+      "size_bytes": 257
+    }
+  ]
+}

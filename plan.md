@@ -17,7 +17,12 @@
   Native Git archive verification matched all 32 original independent review
   files and all eight accepted compact bundle files byte-for-byte, including
   CRLF receipts. Acceptance-root Git attributes preserve those hashed bytes.
-  Independent copy/integration verification is next; source and all unrelated
+  Independent copy/integration verification ACCEPTED the sealed candidate at
+  `c3ec943df61e485c0f50a3f770f85fdb5eae2cd1`: all 40 committed/current/original
+  files and 11 recorded receipt hashes match, strict PP2 PASS, index integrity
+  OK, honesty INTEGRITY_OK at five eligible / 23 blocked. Final integration
+  receipt is preserved under the PP2 acceptance root's `integration/` folder.
+  PP2 is persistently complete on this candidate; source and all unrelated
   evidence bundles remain unchanged.
 - Global index regeneration truthfully keeps unrelated stale publications
   non-green: 3 PASS, 19 source-provenance FAIL, 2 MISSING. No old hash is
@@ -28,13 +33,11 @@
   tree/baseline remains separate at four eligible until explicit integration.
   No main or canonical production-code merge/push is performed here.
 - Other M1 execution agents: PT `6524c537-d310-4b4e-9e87-b61c5b65aae1`;
-  PM `694b1228-e957-4d47-9ff1-b1e152cefa33`;
-  RP `1c26bcfc-0159-4072-9c30-120ef0ed11d2`;
-  RM `caf6caf0-9351-4559-b40c-345d8f160897`.
-  PP2 doer and initial review have completed. The same independent verdict
-  owner `a353318a-b485-44c2-83d5-ab5929a6044e` will verify only the committed
-  publication/integration delta next, not repeat its approved producer review.
-  No parent validation is currently live.
+  PM `694b1228-e957-4d47-9ff1-b1e152cefa33`.
+  RP/RM full-gate doers have completed; independent RNA verdict owner
+  `9e80679b-8eb2-4a96-b12f-235ad39c70b9` is reviewing their separate evidence.
+  PP2 doer and both independent acceptance stages have completed; reviewer
+  `a353318a-b485-44c2-83d5-ab5929a6044e` is idle, with no live helper.
 - All execution uses canonical WSL `/mnt/e/opencell/.venv-wsl`. Native Windows
   Git manages linked worktrees. Python wrapper arguments must be relative or
   WSL-native, never unconverted Windows paths. Private PP2 input copies were

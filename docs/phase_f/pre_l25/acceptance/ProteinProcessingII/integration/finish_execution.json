@@ -1,0 +1,8 @@
+{
+  "command": ".\\bin\\oc-py.cmd -B artifacts/m1_integration/independent_pp2/check.py --finish",
+  "cwd": "E:\\opencell-worktrees\\m1-accepted-20261019",
+  "started_utc": "2026-10-19T11:02:06.4329636Z",
+  "finished_utc": "2026-10-19T11:02:14.2409060Z",
+  "powershell_pid": 15144,
+  "exit_code": 0
+}
