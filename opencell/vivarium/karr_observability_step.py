@@ -11,12 +11,14 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+from scipy.io import loadmat
 from vivarium.core.process import Step
 
 from opencell.analysis.cell_mass import AVOGADRO
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
 from opencell.m3 import translation as tl
+from opencell.vivarium.karr_trna_aminoacylation import _parse_wid_array
 from opencell.vivarium.protein_state import MIGRATED_WIDS, flat_counts_schema
 
 
@@ -31,6 +33,38 @@ def _load_rna_mw(m2_model: tx.KarrTranscriptionModel) -> dict[str, float]:
             f"rna_molecular_weight size {arr.size} != gene_wcm_ids size {len(m2_model.gene_wcm_ids)}"
         )
     return dict(zip(m2_model.gene_wcm_ids, arr.tolist(), strict=False))
+
+
+def _load_rna_form_mw(m2_model: tx.KarrTranscriptionModel) -> dict[str, dict[str, float]]:
+    legacy = _load_rna_mw(m2_model)
+    path = Path(__file__).resolve().parents[2] / "data/karr_fixtures/per_process/Rna_flat.mat"
+    fx = loadmat(str(path))["data"]["fixture"][0, 0]
+    wids = _parse_wid_array(fx["wholeCellModelIDs"])
+    weights = np.asarray(fx["molecularWeights"][0, 0], dtype=float).reshape(-1)
+    if len(wids) != weights.size or not np.all(np.isfinite(weights) & (weights > 0)):
+        raise RuntimeError("Rna fixture molecular weights do not match its global rows.")
+
+    def form_weights(form: str) -> dict[str, float]:
+        rows = np.asarray(fx[f"{form}Indexs"][0, 0], dtype=int).reshape(-1) - 1
+        keys = [
+            f"intergenic::{row + 1}" if form == "intergenic" else wids[row]
+            for row in rows
+        ]
+        if len(keys) != len(set(keys)):
+            raise RuntimeError(f"Rna {form} keys do not uniquely identify source rows.")
+        return dict(zip(keys, weights[rows].tolist(), strict=True))
+
+    nascent = form_weights("nascent")
+    # Match RP/RM's shared counts authority without merging nascent and processed forms.
+    processed = {
+        f"processed::{wid}" if wid in nascent else wid: mw
+        for wid, mw in form_weights("processed").items()
+    }
+    return {
+        "counts": {**legacy, **nascent, **processed, **form_weights("intergenic")},
+        "modified_counts": {**legacy, **form_weights("mature")},
+        "aminoacylated_counts": {**legacy, **form_weights("aminoacylated")},
+    }
 
 
 def _mass_from_counts(counts: dict[str, Any], mw_by_wid: dict[str, float]) -> float:
@@ -87,9 +121,10 @@ class KarrObservabilityStep(Step):
         self.m1_model: km.KarrMetabolismModel = m1_model
         self.m2_model: tx.KarrTranscriptionModel = m2_model
         self.m3_model: tl.KarrTranslationModel = m3_model
-        self.rna_mw_by_wid = _load_rna_mw(self.m2_model)
+        self._rna_mw_by_store = _load_rna_form_mw(self.m2_model)
+        self.rna_mw_by_wid = self._rna_mw_by_store["counts"]
         self.protein_mw_by_wid = _load_protein_mw(self.m3_model)
-        self._rna_wids = tuple(self.m2_model.gene_wcm_ids)
+        self._rna_wids = tuple(self.rna_mw_by_wid)
         self._protein_wids = tuple(self.m3_model.protein_wcm_ids)
         self._substrate_wids = tuple(str(wid) for wid in self.m1_model.raw["ids"]["substrate_wcm_585"])
         self.cell_dry_mass_reference_g = float(self.m1_model.stored_runtime["cell_dry_total_mass_g"])
@@ -104,19 +139,17 @@ class KarrObservabilityStep(Step):
         self._cytokinesis_complete_s = float("nan")
 
     def ports_schema(self) -> dict[str, Any]:
-        counts_schema = {
-            wid: {
-                "_default": 0.0,
-                "_updater": "accumulate",
-                "_emit": False,
-            }
-            for wid in self._rna_wids
-        }
         return {
             "rna": {
-                "counts": counts_schema,
-                "aminoacylated_counts": counts_schema,
-                "modified_counts": counts_schema,
+                store: {
+                    wid: {
+                        "_default": 0.0,
+                        "_updater": "accumulate",
+                        "_emit": False,
+                    }
+                    for wid in weights
+                }
+                for store, weights in self._rna_mw_by_store.items()
             },
             "protein": {
                 # Design 9.3 (compartmental protein-state migration, Stage
@@ -213,18 +246,14 @@ class KarrObservabilityStep(Step):
         dt = max(float(timestep), 0.0)
         current_time_s = self._elapsed_s + dt
         rna = states.get("rna", {})
-        rna_counts = rna.get("counts", {})
-        aminoacylated_counts = rna.get("aminoacylated_counts", {})
-        modified_counts = rna.get("modified_counts", {})
         protein_counts = states.get("protein", {}).get("counts", {})
         chromosome = states.get("chromosome", {})
         cell = states.get("cell", {})
         substrates = states.get("substrates", {})
 
-        rna_mass_g = (
-            _mass_from_counts(rna_counts, self.rna_mw_by_wid)
-            + _mass_from_counts(aminoacylated_counts, self.rna_mw_by_wid)
-            + _mass_from_counts(modified_counts, self.rna_mw_by_wid)
+        rna_mass_g = sum(
+            _mass_from_counts(rna.get(store, {}), weights)
+            for store, weights in self._rna_mw_by_store.items()
         )
         protein_mass_g = _mass_from_counts(protein_counts, self.protein_mw_by_wid)
         fork = chromosome.get("fork_position_bp", {})
