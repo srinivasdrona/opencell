@@ -29,6 +29,7 @@ if str(_HELPER_DIR) not in sys.path:
 import _l2_2_design_a_runner_helpers as helpers
 import l2_2_design_a_runner as runner
 
+from opencell.util import mcg16807_state_codec as codec
 from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS
 
 _PM = "ProteinModification"
@@ -270,10 +271,18 @@ def test_design_a_repeated_sample_ignores_mutated_process_cache(monkeypatch) -> 
 
     def observe(self, timestep, runtime):
         assert self.parameters["rng_seed"] == expected_seed
-        for actual, expected in zip(
-            self._rng.get_state(), np.random.RandomState(expected_seed).get_state(), strict=True
-        ):
-            np.testing.assert_array_equal(actual, expected)
+        initial_state = self._rng.get_state()
+        encoded = codec.seed_state(expected_seed)
+        assert initial_state == ("mcg16807", expected_seed, encoded)
+        expected_uniforms = []
+        for _ in range(8):
+            value, encoded = codec.draw_and_advance(encoded)
+            expected_uniforms.append(value)
+        probe = deepcopy(self._rng)
+        assert probe is not self._rng
+        np.testing.assert_array_equal(probe.random(8), expected_uniforms)
+        assert probe.get_state() == ("mcg16807", expected_seed, encoded)
+        assert self._rng.get_state() == initial_state
         seen.append(self)
         return original(self, timestep, runtime)
 

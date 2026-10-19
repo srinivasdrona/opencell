@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
+import pytest
+from scipy.io import loadmat
 from vivarium.core.engine import Engine
 
 # Ensure pytest imports from this worktree even if another editable install exists.
@@ -21,6 +23,7 @@ if "opencell" in sys.modules:
 
 from opencell.vivarium.karr_composite import build_karr_chassis_v6
 from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess
+from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS
 
 
 def _build_state(process: KarrProteinModificationProcess) -> dict[str, Any]:
@@ -186,23 +189,51 @@ def test_partial_modification_no_transition() -> None:
     assert 0 < process._n_completed[target_idx] < process.required_modifications[target_idx]
 
 
-def test_mass_conservation() -> None:
+@pytest.mark.parametrize(
+    ("migrated_live", "migrated_shadow"),
+    [(1.0, 0.0), (1.0, 999_999.0), (0.0, 1.0)],
+    ids=["live-clean", "live-legacy-poison", "zero-live-positive-shadow"],
+)
+def test_mass_conservation(migrated_live: float, migrated_shadow: float) -> None:
     expected_process = KarrProteinModificationProcess({"rng_seed": 21})
     observed_process = KarrProteinModificationProcess({"rng_seed": 21})
+    fixture = loadmat(
+        _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / "ProteinModification_flat.mat",
+        squeeze_me=True,
+        struct_as_record=False,
+    )["data"].fixture
+    homes = {
+        str(wid): {"tc": "c", "tm": "m"}.get(comp, comp)
+        for wid, comp in zip(
+            fixture.unmodifiedMonomerWholeCellModelIDs,
+            [COMPARTMENTS[int(i) - 1] for i in fixture.monomerCompartments],
+            strict=True,
+        )
+    }
 
     state = _build_state(expected_process)
     _set_substrates(state, expected_process, value=5_000.0)
     _set_all_enzyme_counts(state, expected_process, value=2_000.0)
+    folded = state["protein"].setdefault("compartment_counts", {}).setdefault("folded", {})
     for wid in expected_process.unmodified_monomer_wids[:5]:
-        state["protein"]["unmodified_counts"][wid] = 1.0
+        if wid in MIGRATED_WIDS:
+            folded[wid] = {homes[wid]: migrated_live}
+            state["protein"]["unmodified_counts"][wid] = migrated_shadow
+        else:
+            state["protein"]["unmodified_counts"][wid] = 1.0
+    assert folded["MG_217_MONOMER"][homes["MG_217_MONOMER"]] == migrated_live
 
+    # ProteinModification.m:227-255 reads folded forms in fixture home compartments.
     unmodified = np.asarray(
         [
-            state["protein"]["unmodified_counts"][wid]
+            folded.get(wid, {}).get(homes[wid], 0.0)
+            if wid in MIGRATED_WIDS
+            else state["protein"]["unmodified_counts"][wid]
             for wid in expected_process.unmodified_monomer_wids
         ],
         dtype=np.float64,
     )
+    np.testing.assert_array_equal(observed_process.live_inputs(state)[0], unmodified)
     substrates = np.asarray(
         [state["substrates"][wid] for wid in expected_process.substrate_wids], dtype=np.float64
     )
