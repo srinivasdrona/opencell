@@ -1,0 +1,143 @@
+{
+  "method": "Every actual Karr seed-pair/tick W1 via equal-mass sorted-rank identity, fixed seed-level bootstrap B1000; scalar evaluator re-score using retained measured OC raw numeric fields.",
+  "B": 1000,
+  "N": 50,
+  "M": 100,
+  "validation_seed": 827675,
+  "channels": {
+    "substrates": {
+      "q95_independent": 71853.90085285714,
+      "q95_retained": 71853.90085285716,
+      "bootstrap_values_summary_independent": {
+        "mean": 68445.7304983143,
+        "stddev": 2206.7451728205397,
+        "min": 60818.65408571429,
+        "max": 75435.0410857143
+      },
+      "threshold_independent": 143707.8017057143,
+      "threshold_retained": 143707.80170571432,
+      "retained_w1_rescored": 0.005714285714285714,
+      "rederived_channel_verdict": "SEED_NOISE",
+      "actual_karr_stats": {
+        "min": 0.0,
+        "max": 6681271.0,
+        "mean": 43278.188428571426,
+        "stddev": 328963.33129402617,
+        "skew": 9.386028713186747,
+        "kurtosis": 104.1923641334762
+      },
+      "rank_formula_scipy_checks": [
+        {
+          "left_seed": 0,
+          "right_seed": 1,
+          "tick": 2,
+          "rank_formula": 1.2857142857142858,
+          "scipy": 1.285714285714286
+        },
+        {
+          "left_seed": 49,
+          "right_seed": 0,
+          "tick": 99,
+          "rank_formula": 0.0,
+          "scipy": 0.0
+        },
+        {
+          "left_seed": 13,
+          "right_seed": 28,
+          "tick": 51,
+          "rank_formula": 0.0,
+          "scipy": 0.0
+        },
+        {
+          "left_seed": 11,
+          "right_seed": 46,
+          "tick": 10,
+          "rank_formula": 0.0,
+          "scipy": 0.0
+        },
+        {
+          "left_seed": 0,
+          "right_seed": 0,
+          "tick": 2,
+          "rank_formula": 0.0,
+          "scipy": 0.0
+        }
+      ],
+      "original_oc_tensor_available": false,
+      "independent_oc_w1_recomputed_from_original_tensor": false
+    },
+    "monomers": {
+      "q95_independent": 0.0006345193637621023,
+      "q95_retained": 0.0006345193637621,
+      "bootstrap_values_summary_independent": {
+        "mean": 0.0006119242738589211,
+        "stddev": 1.5561110218007534e-05,
+        "min": 0.0005549792531120332,
+        "max": 0.0006513831258644537
+      },
+      "threshold_independent": 1.0,
+      "threshold_retained": 1.0,
+      "retained_w1_rescored": 0.0,
+      "rederived_channel_verdict": "SEED_NOISE",
+      "actual_karr_stats": {
+        "min": 0.0,
+        "max": 3.0,
+        "mean": 0.0005423928077455049,
+        "stddev": 0.02377386842152507,
+        "skew": 45.57797682649843,
+        "kurtosis": 2228.06893610269
+      },
+      "rank_formula_scipy_checks": [
+        {
+          "left_seed": 0,
+          "right_seed": 1,
+          "tick": 2,
+          "rank_formula": 0.0,
+          "scipy": 0.0
+        },
+        {
+          "left_seed": 49,
+          "right_seed": 0,
+          "tick": 99,
+          "rank_formula": 0.0,
+          "scipy": 0.0
+        },
+        {
+          "left_seed": 13,
+          "right_seed": 28,
+          "tick": 51,
+          "rank_formula": 0.0,
+          "scipy": 0.0
+        },
+        {
+          "left_seed": 11,
+          "right_seed": 46,
+          "tick": 10,
+          "rank_formula": 0.0006915629322268327,
+          "scipy": 0.0006915629322268302
+        },
+        {
+          "left_seed": 0,
+          "right_seed": 0,
+          "tick": 2,
+          "rank_formula": 0.0,
+          "scipy": 0.0
+        }
+      ],
+      "original_oc_tensor_available": false,
+      "independent_oc_w1_recomputed_from_original_tensor": false
+    }
+  },
+  "mechanical_verdict": "PASS",
+  "channel_verdicts": {
+    "monomers": "SEED_NOISE",
+    "substrates": "SEED_NOISE"
+  },
+  "reasons": [],
+  "h12": {
+    "retained_deterministic_convergence_warning": false,
+    "support_required_for_current_packet": false,
+    "note": "No convergence/H12 demotion is retained. W1=0 is sorted empirical-distribution agreement, not coordinate-wise identity; historical support is not assumed or promoted."
+  },
+  "limitation": "Original OC tensors are not saved. This independently recalibrates Karr nulls and re-scores retained source-bound numeric measurements; it is not independent reproduction of original full OC outputs nor a new full biological sweep."
+}

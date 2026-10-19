@@ -2,9 +2,9 @@
   "aggregate_verdict": "NON_GREEN",
   "catalog_path": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
   "catalog_sha256": "ecdf29ff022b64fa099a864507f1de24ffec4044f3e17b34b09035c82cba798e",
-  "content_hash": "74486dded507a7118f30339ada7eee96b5f61097e1b8ff4dd23e49a1af6d73b6",
+  "content_hash": "9884579a8470160d842223dbe9fc963fd212816b2d2628d1f1dee4e69cf0a8ae",
   "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
-  "generated_at": "2026-10-19T10:49:12.769369+00:00",
+  "generated_at": "2026-10-19T12:13:53.017287+00:00",
   "n_in_scope": 24,
   "rows": [
     {
@@ -615,12 +615,12 @@
     },
     {
       "artifact_hashes": {
-        "SUMMARY.json": "8dae6975883f4ab4542d6a52f16975d4e8726eefaf3d5029b96c6088ca6c9a1b",
+        "SUMMARY.json": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
         "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
-        "null_calibration.json": "78eb9c1351a5885dbe98090374ec157100d0ef64c4a3af0e37410823a44905bc",
-        "provenance.json": "336c4f2bea3496f6957e638aa3cd32e6b236b64e0ace299e5e0b8568e0f931b6",
-        "result.json": "46dbb11bc4c4ae669a49c037b5d751bf9761475950df46c824b7e4ddb8aa9866",
-        "sweep_provenance.json": "35e0255addbad458ceb58885bcabff560cb8fcef3ccc103ce098775235a092f4",
+        "null_calibration.json": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+        "provenance.json": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+        "result.json": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+        "sweep_provenance.json": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
         "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
       },
       "bucket": "ALGORITHMIC_SHALLOW",
@@ -638,26 +638,17 @@
         "substrates": "SEED_NOISE"
       },
       "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
-      "green": false,
+      "green": true,
       "harness_type": "design_a_per_tick",
-      "mechanical_verdict": "FAIL",
+      "mechanical_verdict": "PASS",
       "process": "ProteinTranslocation",
       "provenance_git_sha": "unknown",
-      "reasons": [
-        "STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)",
-        "STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=70eea3160d38.., current=090dd4354b8d..)",
-        "STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)",
-        "STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=b1fc70e56d26.., current=ed9bde575ed9..)",
-        "STALE_SWEEP_PROVENANCE: tick_runner source changed since evidence was generated (recorded=2c68d5a5bde1.., current=073a452e57bb..)",
-        "STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=c80c096f2d7b.., current=5494ea378d41..)",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'protein_state_module'",
-        "STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'"
-      ],
+      "reasons": [],
       "sweep_provenance": {
         "completion_status": "COMPLETE",
         "evaluator_schema_version": 5,
         "git_dirty": null,
-        "git_sha": "32ac7b05d9e4c6fca5916f54afe03703f1576324",
+        "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
         "inputs_verified": true,
         "result_schema_version": 1
       },
@@ -1129,8 +1120,8 @@
   ],
   "schema_version": 1,
   "tally": {
-    "FAIL": 19,
+    "FAIL": 18,
     "MISSING_EVIDENCE": 2,
-    "PASS": 3
+    "PASS": 4
   }
 }

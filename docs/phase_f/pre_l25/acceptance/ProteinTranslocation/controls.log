@@ -1,0 +1,48 @@
+{"stage": "fresh_frozen_controls_start", "at": "2026-10-19T11:53:34.329082+00:00", "pid": 587, "argv": ["artifacts/m1_cohort/m1_pt/independent_acceptance/run_controls.py"], "cwd": "/mnt/e/opencell-worktrees/m1-pt-20261017", "pytest_args": ["-q", "-rsxX", "-p", "no:cacheprovider", "--basetemp=artifacts/m1_cohort/m1_pt/independent_acceptance/scratch/pytest/controls", "--junitxml=artifacts/m1_cohort/m1_pt/independent_acceptance/controls.xml", "tests/vivarium/test_protein_translocation_sample_isolation.py", "tests/scripts/test_ptrans_published_attestation.py", "tests/vivarium/test_karr_protein_translocation_l2_replay.py", "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_1_translocation_adapter_preserves_2892_compartment_positions", "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_2_load_v2_ensemble_returns_2892_monomer_vectors", "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_3_run_protein_translocation_tick_preserves_non_authority_monomers", "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_4_planted_collapsed_sum_mutation_canary", "tests/vivarium/test_l2_no_oracle_dependency.py::test_l2_process_source_does_not_depend_on_replay_oracle[karr_protein_translocation.py]", "tests/vivarium/test_karr_protein_translocation.py", "tests/unit/test_karr_protein_translocation_strict_zero.py", "tests/vivarium/test_protein_translocation_stage2.py::test_c11_persistent_stream_and_fixture_order", "tests/vivarium/test_protein_translocation_stage2.py::test_canary_rejects_reseed_rng", "tests/vivarium/test_protein_translocation_stage2.py::test_canary_rejects_repeated_selection_stream_with_advancing_rng"], "candidate_configuration": "ONLY publication module EVIDENCE_ROOT/BUNDLE retargeted"}
+
+1 error in 11.79s
+Traceback (most recent call last):
+  File "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/run_controls.py", line 56, in <module>
+    rc = pytest.main(args, plugins=[CandidateOnly()])
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/_pytest/config/__init__.py", line 199, in main
+    ret: ExitCode | int = config.hook.pytest_cmdline_main(config=config)
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/pluggy/_hooks.py", line 512, in __call__
+    return self._hookexec(self.name, self._hookimpls.copy(), kwargs, firstresult)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/pluggy/_manager.py", line 120, in _hookexec
+    return self._inner_hookexec(hook_name, methods, kwargs, firstresult)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/pluggy/_callers.py", line 167, in _multicall
+    raise exception
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/pluggy/_callers.py", line 121, in _multicall
+    res = hook_impl.function(*args)
+          ^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/_pytest/main.py", line 365, in pytest_cmdline_main
+    return wrap_session(config, _main)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/_pytest/main.py", line 360, in wrap_session
+    config._ensure_unconfigure()
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/_pytest/config/__init__.py", line 1177, in _ensure_unconfigure
+    self._cleanup_stack.close()
+  File "/usr/lib/python3.12/contextlib.py", line 618, in close
+    self.__exit__(None, None, None)
+  File "/usr/lib/python3.12/contextlib.py", line 610, in __exit__
+    raise exc_details[1]
+  File "/usr/lib/python3.12/contextlib.py", line 595, in __exit__
+    if cb(*exc_details):
+       ^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/contextlib.py", line 478, in _exit_wrapper
+    callback(*args, **kwds)
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/_pytest/capture.py", line 778, in stop_global_capturing
+    self._global_capturing.pop_outerr_to_orig()
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/_pytest/capture.py", line 659, in pop_outerr_to_orig
+    out, err = self.readouterr()
+               ^^^^^^^^^^^^^^^^^
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/_pytest/capture.py", line 706, in readouterr
+    out = self.out.snap() if self.out else ""
+          ^^^^^^^^^^^^^^^
+  File "/mnt/e/opencell/.venv-wsl/lib/python3.12/site-packages/_pytest/capture.py", line 594, in snap
+    self.tmpfile.truncate()
+FileNotFoundError: [Errno 2] No such file or directory

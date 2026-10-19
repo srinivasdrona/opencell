@@ -1,0 +1,22 @@
+2026-10-19T17:17:15.8788307+05:30 hostPID=18748 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\preservation.py before
+2026-10-19T17:18:50.2702208+05:30 exit=0
+2026-10-19T17:20:31.3472296+05:30 hostPID=16960 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\inspect_inputs.py
+2026-10-19T17:22:08.3669669+05:30 exit=0
+2026-10-19T17:23:32.5296033+05:30 hostPID=13812 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\run_controls.py
+2026-10-19T17:23:32.5665462+05:30 hostPID=17000 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\actual_owners.py
+2026-10-19T17:23:55.4436002+05:30 exit=1
+2026-10-19T17:24:01.3124882+05:30 exit=0
+2026-10-19T17:25:21.4880797+05:30 hostPID=13880 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\numeric_and_population.py
+2026-10-19T17:25:21.5175303+05:30 hostPID=15580 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\run_controls.py retry1 -s avoids DrvFS capture truncate failure
+2026-10-19T17:25:48.2494660+05:30 exit=0
+2026-10-19T17:26:14.1847942+05:30 exit=0
+2026-10-19T17:27:15.3429326+05:30 hostPID=7444 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\publication_audits.py
+2026-10-19T17:27:48.9186896+05:30 exit=0
+2026-10-19T17:29:02.8836525+05:30 hostPID=12848 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\integration_receipt.py
+2026-10-19T17:29:02.9113010+05:30 hostPID=16260 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\legacy_owner_receipt.py
+2026-10-19T17:29:04.8545228+05:30 exit=0
+2026-10-19T17:29:41.7138767+05:30 exit=0
+2026-10-19T17:30:17.9721390+05:30 hostPID=22132 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\preservation.py after
+2026-10-19T17:30:54.8076154+05:30 exit=0
+2026-10-19T17:33:44.5832369+05:30 hostPID=14892 command=.\bin\oc-py.cmd artifacts\m1_cohort\m1_pt\independent_acceptance\finish.py
+2026-10-19T17:33:47.0918779+05:30 exit=0

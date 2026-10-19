@@ -1,0 +1,53 @@
+{
+  "job": {
+    "duration_s": 4665.939118697001,
+    "exit_code": 0,
+    "finished_at": "2026-10-19T11:37:30.731084+00:00",
+    "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinTranslocation.log",
+    "output_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
+    "process": "ProteinTranslocation",
+    "reason": null,
+    "started_at": "2026-10-19T10:19:44.791961+00:00",
+    "status": "RAN_EXIT_0"
+  },
+  "native_head": "65df71c26553f42dd95759b948de42647987bf68",
+  "sentinel": {
+    "completion_status": "COMPLETE",
+    "evaluator_schema_version": 5,
+    "git_dirty": null,
+    "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
+    "inputs_verified": true,
+    "m_ticks": 100,
+    "n_seeds": 50,
+    "process": "ProteinTranslocation",
+    "result_schema_version": 1,
+    "schema_version": 2,
+    "sidecar_hashes": {
+      "SUMMARY.json": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+      "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+      "input_manifest.json": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+      "null_calibration.json": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+      "provenance.json": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+      "result.json": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+      "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+    },
+    "source_hashes": {
+      "catalog_entry": "6674d9aa70b639fb96908b539924cbed52c20c52a19a205e999f5520b430f223",
+      "evidence_schema_module": "7bf13a083465ade3ee93d2421b112dfc3b23c0d78bec3f5c17fb177f4fbec93f",
+      "helpers": "ed9bde575ed9a171442de51dd6e94886dba9f6445a3b883f5d71015bcc56c50d",
+      "l2_replay_common": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852",
+      "oc_module": "5494ea378d4169ae1b5b8042395277d922053201b02d115814a7a6b2b1cd5231",
+      "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+      "protein_state_module": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b",
+      "runner": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+      "tick_runner": "073a452e57bb7f4641ba9f219623cc3296de3ddda518cab35f39c1794b45924e",
+      "util_matlab_rng_module": "5c2a982aa874c6ff2d62ae1fff85b58436eab4b47caa7b9a36d1f087b19b72fa",
+      "util_module": "dbdea5b4ad6dba7019f05cbb59ae20d8db0065804327daa4c74fc6ef3e63264e",
+      "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+    },
+    "written_at": "2026-10-19T11:37:42.065907+00:00"
+  },
+  "native_log": "# command: ['/mnt/e/opencell/.venv-wsl/bin/python', '/mnt/e/opencell-worktrees/m1-pt-20261017/tests/vivarium/l2_2_design_a_runner.py', '--process', 'ProteinTranslocation', '--seeds', '50', '--ticks', '100', '--output-dir', '/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/l2_2_gates/ProteinTranslocation/.latest.rebuild-823-1792405184789460333']\n# started_at: 2026-10-19T10:19:44.791961+00:00\nProteinTranslocation PASS substrates=SEED_NOISE@0.005714 monomers=SEED_NOISE@0.000000\n",
+  "telemetry": "    PID    PPID                  STARTED     ELAPSED %CPU %MEM COMMAND\n    823     822 Mon Oct 19 15:49:43 2026       00:19  1.4  0.0 python scripts/l22_evidence/sweep.py run --processes ProteinTranslocation --max-workers 1 --force --report-out artifacts/m1_cohort/m1_pt/sweep_report.json\n    831     823 Mon Oct 19 15:49:44 2026       00:18 35.1  0.5 /mnt/e/opencell/.venv-wsl/bin/python /mnt/e/opencell-worktrees/m1-pt-20261017/tests/vivarium/l2_2_design_a_runner.py --process ProteinTranslocation --seeds 50 --ticks 100 --output-dir /mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/l2_2_gates/ProteinTranslocation/.latest.rebuild-823-1792405184789460333\n\nObserved: 2026-10-19T16:01:15.6927468+05:30\n    PID    PPID                  STARTED     ELAPSED     TIME %CPU   RSS STAT WCHAN  COMMAND\n    823     822 Mon Oct 19 15:49:43 2026       11:32 00:00:00  0.0 25396 Ssl+ futex_ python scripts/l22_evidence/sweep.py run --processes ProteinTranslocation --max-workers 1 --force --report-out artifacts/m1_cohort/m1_pt/sweep_report.json\n    831     823 Mon Oct 19 15:49:44 2026       11:31 00:10:26 90.7 1076068 Rl+ -     /mnt/e/opencell/.venv-wsl/bin/python /mnt/e/opencell-worktrees/m1-pt-20261017/tests/vivarium/l2_2_design_a_runner.py --process ProteinTranslocation --seeds 50 --ticks 100 --output-dir /mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/l2_2_gates/ProteinTranslocation/.latest.rebuild-823-1792405184789460333\n\nObserved: 2026-10-19T16:21:52.6780430+05:30\n    PID    PPID                  STARTED     ELAPSED     TIME %CPU   RSS STAT WCHAN  COMMAND\n    823     822 Mon Oct 19 15:49:43 2026       32:09 00:00:00  0.0 25396 Ssl+ futex_ python scripts/l22_evidence/sweep.py run --processes ProteinTranslocation --max-workers 1 --force --report-out artifacts/m1_cohort/m1_pt/sweep_report.json\n    831     823 Mon Oct 19 15:49:44 2026       32:08 00:30:13 94.0 1077020 Rl+ -     /mnt/e/opencell/.venv-wsl/bin/python /mnt/e/opencell-worktrees/m1-pt-20261017/tests/vivarium/l2_2_design_a_runner.py --process ProteinTranslocation --seeds 50 --ticks 100 --output-dir /mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/l2_2_gates/ProteinTranslocation/.latest.rebuild-823-1792405184789460333\n\nObserved: 2026-10-19T16:52:40.6221496+05:30\n    PID    PPID                  STARTED     ELAPSED     TIME %CPU   RSS STAT WCHAN  COMMAND\n    823     822 Mon Oct 19 15:49:43 2026    01:02:57 00:00:00  0.0 25396 Ssl+ futex_ python scripts/l22_evidence/sweep.py run --processes ProteinTranslocation --max-workers 1 --force --report-out artifacts/m1_cohort/m1_pt/sweep_report.json\n    831     823 Mon Oct 19 15:49:44 2026    01:02:56 01:00:24 95.9 1078092 Rl+ -     /mnt/e/opencell/.venv-wsl/bin/python /mnt/e/opencell-worktrees/m1-pt-20261017/tests/vivarium/l2_2_design_a_runner.py --process ProteinTranslocation --seeds 50 --ticks 100 --output-dir /mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/l2_2_gates/ProteinTranslocation/.latest.rebuild-823-1792405184789460333\n",
+  "note": "Independent receipt inspection of original execution, not this review's full rerun"
+}

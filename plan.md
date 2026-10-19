@@ -24,6 +24,15 @@
   receipt is preserved under the PP2 acceptance root's `integration/` folder.
   PP2 is persistently complete on this candidate; source and all unrelated
   evidence bundles remain unchanged.
+- PT full N50/M100/B1000 gate and both current PT evidence/isolation findings
+  are independently ACCEPTED at the same unchanged runtime source. Its exact
+  compact bundle and review receipts are now published in this candidate.
+  Parent verified strict PT and PP2 rows PASS with no reasons, generated-index
+  integrity OK (4 PASS / 18 stale FAIL / 2 MISSING), and honesty INTEGRITY_OK
+  at six eligible / 22 blocked, actual 140-file digest
+  `a4694f00ef286d47283aa90605a3120030c1d700e79cf9560132bcfe50d41525`.
+  Commit and independent committed-copy check follow; RP/RM mass repair and
+  PM source-faithful RNG repair remain separate, unpromoted work.
 - Global index regeneration truthfully keeps unrelated stale publications
   non-green: 3 PASS, 19 source-provenance FAIL, 2 MISSING. No old hash is
   refreshed, no unrelated open finding is waived, and no historical raw
@@ -32,10 +41,13 @@
   `E:\opencell-worktrees\pre-l25-honesty-rebaseline\plan.md`. Its production
   tree/baseline remains separate at four eligible until explicit integration.
   No main or canonical production-code merge/push is performed here.
-- Other M1 execution agents: PT `6524c537-d310-4b4e-9e87-b61c5b65aae1`;
-  PM `694b1228-e957-4d47-9ff1-b1e152cefa33`.
-  RP/RM full-gate doers have completed; independent RNA verdict owner
-  `9e80679b-8eb2-4a96-b12f-235ad39c70b9` is reviewing their separate evidence.
+- PT independent verdict owner `af792a2b-aa91-41aa-a532-1920599876cc` completed
+  acceptance; its committed-copy verification follows publication.
+  RNA verdict owner `9e80679b-8eb2-4a96-b12f-235ad39c70b9` is reviewing the
+  observer-only `406256b` repair after frozen mass regressions.
+  PM test author `866ce338-0ad8-4328-84b0-7f82a8f79eed` is strengthening
+  source RNG vectors from already-recorded MATLAB authority; the local MATLAB
+  license is expired. Original PM doer `694b1228` is idle until that freeze.
   PP2 doer and both independent acceptance stages have completed; reviewer
   `a353318a-b485-44c2-83d5-ab5929a6044e` is idle, with no live helper.
 - All execution uses canonical WSL `/mnt/e/opencell/.venv-wsl`. Native Windows

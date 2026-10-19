@@ -1,0 +1,2 @@
+{"stage": "active_actual_owner_controls_start", "at": "2026-10-19T11:53:55.000975+00:00", "pid": 590, "argv": ["artifacts/m1_cohort/m1_pt/independent_acceptance/actual_owners.py"], "cwd": "/mnt/e/opencell-worktrees/m1-pt-20261017"}
+{"stage": "active_actual_owner_controls_complete", "at": "2026-10-19T11:54:00.938277+00:00", "pid": 590, "argv": ["artifacts/m1_cohort/m1_pt/independent_acceptance/actual_owners.py"], "cwd": "/mnt/e/opencell-worktrees/m1-pt-20261017", "calls": 6, "samples": [[0, 2], [1, 2]], "distinct_actual_owners": 6, "changed_coordinates": [2, 2, 2, 2, 2, 2]}

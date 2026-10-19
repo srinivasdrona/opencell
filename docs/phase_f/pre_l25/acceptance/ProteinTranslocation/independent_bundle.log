@@ -1,0 +1,2 @@
+bundled 1 process dir(s), 8 file(s) into artifacts/m1_cohort/m1_pt/independent_acceptance/regenerated_bundle
+  ProteinTranslocation: ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json']

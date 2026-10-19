@@ -74,3 +74,36 @@ Design contract sentence: each claim is semantically valid only if row wording m
 ## Risks
 - R1: Future changes to the compartment authority, request calculator, or RNG seeding must stale this adjudication and the L2.2 evidence bundle.
 - R2: L2.2 validates isolated process distributions; chassis allocation and same-tick integration remain independently guarded by C12 and L2.4.
+
+## Current independent evidence acceptance - 2026-10-19
+
+`PTRANS-COMPLETE-ATTESTATION` and `PTRANS-SAMPLE-ISOLATION` are independently
+ACCEPTED at reviewed source `65df71c26553f42dd95759b948de42647987bf68`.
+The producer/algorithm findings above remain resolved; they were not reopened.
+Complete independent commands, numeric proof, source inventories, ownership
+witnesses and preservation receipts are published under
+`docs/phase_f/pre_l25/acceptance/ProteinTranslocation/`. `VERDICT.json` records
+the separate finding verdicts; `controls_retry1.xml` records 27 PASS with no
+failures, errors, skips or xfails.
+
+The fresh full registered gate used 50 distinct seeds, 100 ticks, B1000 and
+all 2,892 compartment positions. Independent Karr-null recalibration and
+numeric re-scoring give PASS; primary monomer W1 is zero. This is not a claim
+that saved full OC tensors exist or that the reviewer reran the full campaign.
+There is no retained deterministic-convergence/H12 demotion in this packet.
+
+All 64 consumed records, including all 50 seed files and all runtime/parameter
+inputs, were independently rehashed against the actual loader descriptors and
+accepted population. Constructor authority reads, 12 registered source hashes,
+sidecar/sentinel bindings and all 5,000 allocator summaries are verified.
+Strict and portable candidate audits both have integrity OK. The four
+unchanged publication assertions were executed against the explicit new
+candidate bundle, not the stale historical tracked publication.
+
+Actual repeated/interleaved active Design-A samples have six distinct public
+execution owners with matching initial per-sample streams and full-width
+outputs, even with advanced metadata and poisoned after/hint inputs. No
+execution reset or cache clearing hid reuse. The unchanged contiguous legacy
+100-tick replay instead retains one owner and its persistent stream. Original
+sources and prior outputs are unchanged. The eight published compact files
+are byte-identical to the independently accepted candidate.

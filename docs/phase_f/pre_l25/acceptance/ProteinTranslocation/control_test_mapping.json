@@ -1,0 +1,303 @@
+{
+  "xml": {
+    "path": "artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml",
+    "sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+    "tests": 27,
+    "passed": 27,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "xfails": 0
+  },
+  "all_testcases": [
+    {
+      "classname": "tests.vivarium.test_protein_translocation_sample_isolation",
+      "name": "test_translocation_execution_owns_fresh_sample_rng[repeat]",
+      "time_s": "1.847",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_protein_translocation_sample_isolation",
+      "name": "test_translocation_execution_owns_fresh_sample_rng[advanced_metadata]",
+      "time_s": "1.389",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_scores_and_thresholds_remain_byte_bound",
+      "time_s": "0.026",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_attestation_binds_all_resolved_sources",
+      "time_s": "0.006",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_attestation_binds_its_parameter_fixture",
+      "time_s": "0.012",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_attestation_is_current_under_strict_verification",
+      "time_s": "1.016",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation_l2_replay",
+      "name": "test_karr_protein_translocation_l2_replay_identity_per_tick[rng_seed_0]",
+      "time_s": "20.549",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_ptransloc_design_a_full_vector",
+      "name": "test_contract_1_translocation_adapter_preserves_2892_compartment_positions",
+      "time_s": "0.001",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_ptransloc_design_a_full_vector",
+      "name": "test_contract_2_load_v2_ensemble_returns_2892_monomer_vectors",
+      "time_s": "0.495",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_ptransloc_design_a_full_vector",
+      "name": "test_contract_3_run_protein_translocation_tick_preserves_non_authority_monomers",
+      "time_s": "0.918",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_ptransloc_design_a_full_vector",
+      "name": "test_contract_4_planted_collapsed_sum_mutation_canary",
+      "time_s": "0.001",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_l2_no_oracle_dependency",
+      "name": "test_l2_process_source_does_not_depend_on_replay_oracle[karr_protein_translocation.py]",
+      "time_s": "0.009",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_fixture_loads",
+      "time_s": "0.333",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_no_cytoplasmic_no_translocation",
+      "time_s": "0.330",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_srp_mediated_lipoprotein_path",
+      "time_s": "0.335",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_direct_integral_membrane_path",
+      "time_s": "0.330",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_timestep_scales_translocase_capacity",
+      "time_s": "0.337",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_atp_consumption_per_translocation",
+      "time_s": "0.343",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_mixed_copy_order_breaks_after_first_infeasible_copy",
+      "time_s": "0.339",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_srp_starvation_blocks_membrane_only",
+      "time_s": "0.342",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_translocase_starvation_blocks_all",
+      "time_s": "0.347",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_protein_authority_store_updates",
+      "time_s": "0.593",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_deterministic_with_seed",
+      "time_s": "0.643",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.unit.test_karr_protein_translocation_strict_zero",
+      "name": "test_karr_protein_translocation_strict_zero_no_global_fallback",
+      "time_s": "0.324",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_protein_translocation_stage2",
+      "name": "test_c11_persistent_stream_and_fixture_order",
+      "time_s": "0.334",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_protein_translocation_stage2",
+      "name": "test_canary_rejects_reseed_rng",
+      "time_s": "0.340",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_protein_translocation_stage2",
+      "name": "test_canary_rejects_repeated_selection_stream_with_advancing_rng",
+      "time_s": "0.365",
+      "outcome": "PASS"
+    }
+  ],
+  "findings": {
+    "PTRANS-COMPLETE-ATTESTATION": {
+      "verdict_scope": "Independent acceptance of this fresh candidate packet at frozen65; committed/publication eligibility remains parent-owned.",
+      "source": "65df71c26553f42dd95759b948de42647987bf68",
+      "command_ledger": "artifacts/m1_cohort/m1_pt/independent_acceptance/commands.jsonl",
+      "native_command_ledger": "artifacts/m1_cohort/m1_pt/independent_acceptance/native_commands.log",
+      "XML": {
+        "path": "artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml",
+        "sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+        "tests": 27,
+        "passed": 27,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "xfails": 0
+      },
+      "verdict": "ACCEPTED",
+      "proof": "All64 consumed records independently rehashed and equal fresh capture plus original preflight descriptors; all50 unique accepted-population/copy/embeddedseed identities verified; four fixture authorities and constructor actual reads covered;12 current source hashes,7 sentinel sidecars and8 compact bytes verified; N50/M100/B1000 and every5000 allocator row verified.",
+      "controls": [
+        {
+          "classname": "tests.scripts.test_ptrans_published_attestation",
+          "name": "test_ptrans_published_scores_and_thresholds_remain_byte_bound",
+          "time_s": "0.026",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.scripts.test_ptrans_published_attestation",
+          "name": "test_ptrans_published_attestation_binds_all_resolved_sources",
+          "time_s": "0.006",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.scripts.test_ptrans_published_attestation",
+          "name": "test_ptrans_published_attestation_binds_its_parameter_fixture",
+          "time_s": "0.012",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.scripts.test_ptrans_published_attestation",
+          "name": "test_ptrans_published_attestation_is_current_under_strict_verification",
+          "time_s": "1.016",
+          "outcome": "PASS"
+        }
+      ],
+      "control_source_sha256": "3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d",
+      "evidence": [
+        "all_consumed_rehashes.json",
+        "complete_50_seed_inventory.json",
+        "accepted_population_verification.json",
+        "constructor_authority.json",
+        "shape_activity_allocator.json",
+        "all_descriptor_drift_rejections.json",
+        "source_and_compact_bindings.json",
+        "sweep_time_and_command.json",
+        "independent_numeric_proof.json",
+        "publication_proof.json",
+        "publication_commands.json",
+        "publication_candidate_input_configuration.json"
+      ]
+    },
+    "PTRANS-SAMPLE-ISOLATION": {
+      "verdict_scope": "Independent acceptance of this fresh candidate packet at frozen65; committed/publication eligibility remains parent-owned.",
+      "source": "65df71c26553f42dd95759b948de42647987bf68",
+      "command_ledger": "artifacts/m1_cohort/m1_pt/independent_acceptance/commands.jsonl",
+      "native_command_ledger": "artifacts/m1_cohort/m1_pt/independent_acceptance/native_commands.log",
+      "XML": {
+        "path": "artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml",
+        "sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+        "tests": 27,
+        "passed": 27,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "xfails": 0
+      },
+      "verdict": "ACCEPTED",
+      "proof": "Frozen2/2 controls pass. Actual active A=(seed0,tick2)/B=(seed1,tick2), sequence A,A,B,A,B,A:6 distinct real next_update owners begin at derived initial RNG, advance, emit nonempty changes at2 monomer coordinates each, retain full2892 output; repeated/interleaved outputs remain exact with advanced metadata and poison after/hint fields. No execution RNG reset/cache clearing. Original contiguous100tick replay observed1 owner,100 contiguous RNG transitions,20 advancingticks and13 nonempty updates; original assertions pass.",
+      "controls": [
+        {
+          "classname": "tests.vivarium.test_protein_translocation_sample_isolation",
+          "name": "test_translocation_execution_owns_fresh_sample_rng[repeat]",
+          "time_s": "1.847",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.vivarium.test_protein_translocation_sample_isolation",
+          "name": "test_translocation_execution_owns_fresh_sample_rng[advanced_metadata]",
+          "time_s": "1.389",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.vivarium.test_karr_protein_translocation_l2_replay",
+          "name": "test_karr_protein_translocation_l2_replay_identity_per_tick[rng_seed_0]",
+          "time_s": "20.549",
+          "outcome": "PASS"
+        }
+      ],
+      "control_source_sha256": {
+        "tests/vivarium/test_protein_translocation_sample_isolation.py": "b3e2076c77b45fb036e86704f3af7560016fd5f503fea9eba43b006aeb22eea0",
+        "tests/vivarium/test_karr_protein_translocation_l2_replay.py": "c69f01d5e21e058984d68cf6ac98aafee498eebf05c54e2c68e5d544c6836b5b"
+      },
+      "evidence": [
+        "actual_owner_controls.json",
+        "actual_owner_outputs.npz",
+        "legacy_contiguous_actual_owner.json",
+        "pytest_reports.json"
+      ]
+    }
+  },
+  "test_and_source_hashes": {
+    "tests/scripts/test_ptrans_published_attestation.py": "3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d",
+    "tests/vivarium/test_protein_translocation_sample_isolation.py": "b3e2076c77b45fb036e86704f3af7560016fd5f503fea9eba43b006aeb22eea0",
+    "tests/vivarium/test_karr_protein_translocation_l2_replay.py": "c69f01d5e21e058984d68cf6ac98aafee498eebf05c54e2c68e5d544c6836b5b",
+    "tests/vivarium/test_ptransloc_design_a_full_vector.py": "08887341a72cf3c82f9c91d031400a429a441d81b6998afa32c82f5b2c3964ea",
+    "tests/vivarium/test_karr_protein_translocation.py": "31c322c13761c65f905b21f5ffbf412761fcd6a0756aef81848141e6683c82ba",
+    "tests/vivarium/test_l2_no_oracle_dependency.py": "d3bea9d07b61e354b3fec7c8d10db02b0ebeb3b2140bc69694b46a9c6a5cebcd",
+    "tests/unit/test_karr_protein_translocation_strict_zero.py": "332d21366affbecbff4cd38187b345777f6566032211f4dfbb939f2ca52a7cb9",
+    "tests/vivarium/test_protein_translocation_stage2.py": "209c206c2d8a0812e7f7337d4f3e00e4197f86fa775dd0792e6ef427c61b164f",
+    "opencell/vivarium/karr_protein_translocation.py": "5494ea378d4169ae1b5b8042395277d922053201b02d115814a7a6b2b1cd5231",
+    "opencell/vivarium/protein_state.py": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b",
+    "tests/vivarium/_l2_2_design_a_runner_helpers.py": "090dd4354b8df4c50dc1d9459c7df2466b8a17554f9679cdc4a6826e5570a3a0",
+    "tests/vivarium/l2_2_design_a_runner.py": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+    "scripts/l22_evidence/generator.py": "cee04e1c2cd506b386e2dcbe1c9c6c67c35d972c4ddbfd6c04ad0323bae2e1d1",
+    "scripts/l22_evidence/verdict.py": "ddb4f7b05981c21ea25266f508a6c55d7f9548b84628eaab8cd30a5ad44219d2",
+    "scripts/l22_evidence/schema.py": "7bf13a083465ade3ee93d2421b112dfc3b23c0d78bec3f5c17fb177f4fbec93f",
+    "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml": "ecdf29ff022b64fa099a864507f1de24ffec4044f3e17b34b09035c82cba798e"
+  }
+}

@@ -2,7 +2,7 @@
   "completion_status": "COMPLETE",
   "evaluator_schema_version": 5,
   "git_dirty": null,
-  "git_sha": "32ac7b05d9e4c6fca5916f54afe03703f1576324",
+  "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
   "inputs_verified": true,
   "m_ticks": 100,
   "n_seeds": 50,
@@ -10,25 +10,27 @@
   "result_schema_version": 1,
   "schema_version": 2,
   "sidecar_hashes": {
-    "SUMMARY.json": "8dae6975883f4ab4542d6a52f16975d4e8726eefaf3d5029b96c6088ca6c9a1b",
+    "SUMMARY.json": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
     "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
-    "input_manifest.json": "e68882106c9c33d580da8c410048ca54abee40b50e42354b64f293ab6505158f",
-    "null_calibration.json": "78eb9c1351a5885dbe98090374ec157100d0ef64c4a3af0e37410823a44905bc",
-    "provenance.json": "336c4f2bea3496f6957e638aa3cd32e6b236b64e0ace299e5e0b8568e0f931b6",
-    "result.json": "46dbb11bc4c4ae669a49c037b5d751bf9761475950df46c824b7e4ddb8aa9866",
+    "input_manifest.json": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+    "null_calibration.json": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+    "provenance.json": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+    "result.json": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
     "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
   },
   "source_hashes": {
     "catalog_entry": "6674d9aa70b639fb96908b539924cbed52c20c52a19a205e999f5520b430f223",
-    "helpers": "b1fc70e56d2649e9bfc2a3ded5b295bb50c341051f047dee8eed48f5052f78d0",
+    "evidence_schema_module": "7bf13a083465ade3ee93d2421b112dfc3b23c0d78bec3f5c17fb177f4fbec93f",
+    "helpers": "ed9bde575ed9a171442de51dd6e94886dba9f6445a3b883f5d71015bcc56c50d",
     "l2_replay_common": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852",
-    "oc_module": "c80c096f2d7bc22852caaae198a8bd639d104d1107200cca6dc958e63a981b15",
+    "oc_module": "5494ea378d4169ae1b5b8042395277d922053201b02d115814a7a6b2b1cd5231",
     "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
-    "runner": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee",
-    "tick_runner": "2c68d5a5bde15fd316f2bf07764b9aa602e914e9d2b938a5e05151334ec611cf",
+    "protein_state_module": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b",
+    "runner": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+    "tick_runner": "073a452e57bb7f4641ba9f219623cc3296de3ddda518cab35f39c1794b45924e",
     "util_matlab_rng_module": "5c2a982aa874c6ff2d62ae1fff85b58436eab4b47caa7b9a36d1f087b19b72fa",
     "util_module": "dbdea5b4ad6dba7019f05cbb59ae20d8db0065804327daa4c74fc6ef3e63264e",
     "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
   },
-  "written_at": "2026-10-11T16:20:07.266900+00:00"
+  "written_at": "2026-10-19T11:37:42.065907+00:00"
 }

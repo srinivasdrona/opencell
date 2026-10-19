@@ -1,0 +1,166 @@
+{
+  "samples": [
+    [
+      0,
+      2
+    ],
+    [
+      1,
+      2
+    ]
+  ],
+  "sequence_records": [
+    {
+      "sequence": 0,
+      "seed": 0,
+      "tick": 2,
+      "poison_after": false,
+      "owner_id": 136492757735792,
+      "sample_seed": 2009226636,
+      "rng_initial_sha256": "4ccfc255d6a53a8dd133879869f485a60facc22b33699816ef90356528a33fe2",
+      "rng_after_sha256": "13f68ee08ec8d503861105b36e97ec8eac5443cbd266b883ba3da36748dafcd5",
+      "rng_advanced": true,
+      "nonempty_update": true,
+      "runtime_root_keys": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "monomers",
+        "protein",
+        "complex",
+        "requests",
+        "substrates_allocated"
+      ],
+      "changed_monomer_coordinates": 2,
+      "full_projected_width": 2892
+    },
+    {
+      "sequence": 1,
+      "seed": 0,
+      "tick": 2,
+      "poison_after": false,
+      "owner_id": 136492765235920,
+      "sample_seed": 2009226636,
+      "rng_initial_sha256": "4ccfc255d6a53a8dd133879869f485a60facc22b33699816ef90356528a33fe2",
+      "rng_after_sha256": "13f68ee08ec8d503861105b36e97ec8eac5443cbd266b883ba3da36748dafcd5",
+      "rng_advanced": true,
+      "nonempty_update": true,
+      "runtime_root_keys": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "monomers",
+        "protein",
+        "complex",
+        "requests",
+        "substrates_allocated"
+      ],
+      "changed_monomer_coordinates": 2,
+      "full_projected_width": 2892
+    },
+    {
+      "sequence": 2,
+      "seed": 1,
+      "tick": 2,
+      "poison_after": false,
+      "owner_id": 136492748480944,
+      "sample_seed": 4205438457,
+      "rng_initial_sha256": "4a6359445b92829f077c8a56a660dcb33f577403dbe6a50724b9478c85476b6d",
+      "rng_after_sha256": "7d52015d8d6a5488998a03788da7759b476e25a129d0cdec5bd518eebe4fe527",
+      "rng_advanced": true,
+      "nonempty_update": true,
+      "runtime_root_keys": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "monomers",
+        "protein",
+        "complex",
+        "requests",
+        "substrates_allocated"
+      ],
+      "changed_monomer_coordinates": 2,
+      "full_projected_width": 2892
+    },
+    {
+      "sequence": 3,
+      "seed": 0,
+      "tick": 2,
+      "poison_after": true,
+      "owner_id": 136492745685376,
+      "sample_seed": 2009226636,
+      "rng_initial_sha256": "4ccfc255d6a53a8dd133879869f485a60facc22b33699816ef90356528a33fe2",
+      "rng_after_sha256": "13f68ee08ec8d503861105b36e97ec8eac5443cbd266b883ba3da36748dafcd5",
+      "rng_advanced": true,
+      "nonempty_update": true,
+      "runtime_root_keys": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "monomers",
+        "protein",
+        "complex",
+        "requests",
+        "substrates_allocated"
+      ],
+      "changed_monomer_coordinates": 2,
+      "full_projected_width": 2892
+    },
+    {
+      "sequence": 4,
+      "seed": 1,
+      "tick": 2,
+      "poison_after": true,
+      "owner_id": 136492753536496,
+      "sample_seed": 4205438457,
+      "rng_initial_sha256": "4a6359445b92829f077c8a56a660dcb33f577403dbe6a50724b9478c85476b6d",
+      "rng_after_sha256": "7d52015d8d6a5488998a03788da7759b476e25a129d0cdec5bd518eebe4fe527",
+      "rng_advanced": true,
+      "nonempty_update": true,
+      "runtime_root_keys": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "monomers",
+        "protein",
+        "complex",
+        "requests",
+        "substrates_allocated"
+      ],
+      "changed_monomer_coordinates": 2,
+      "full_projected_width": 2892
+    },
+    {
+      "sequence": 5,
+      "seed": 0,
+      "tick": 2,
+      "poison_after": true,
+      "owner_id": 136492745490208,
+      "sample_seed": 2009226636,
+      "rng_initial_sha256": "4ccfc255d6a53a8dd133879869f485a60facc22b33699816ef90356528a33fe2",
+      "rng_after_sha256": "13f68ee08ec8d503861105b36e97ec8eac5443cbd266b883ba3da36748dafcd5",
+      "rng_advanced": true,
+      "nonempty_update": true,
+      "runtime_root_keys": [
+        "substrates",
+        "enzymes",
+        "boundEnzymes",
+        "monomers",
+        "protein",
+        "complex",
+        "requests",
+        "substrates_allocated"
+      ],
+      "changed_monomer_coordinates": 2,
+      "full_projected_width": 2892
+    }
+  ],
+  "six_distinct_execution_owners": true,
+  "same_key_repeat_interleave_exact": true,
+  "metadata_advanced_without_execution_effect": true,
+  "poisoned_after_and_hint_ignored": true,
+  "inputs_unchanged": true,
+  "cache_cleared_or_execution_rng_reset": false,
+  "public_entrypoint": "helpers.run_oc_tick -> real class.next_update (observed, unchanged delegation)",
+  "original_class_next_update_restored": true
+}

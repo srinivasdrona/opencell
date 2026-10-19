@@ -1,0 +1,2 @@
+{"stage": "preservation_after_start", "at": "2026-10-19T12:00:20.002438+00:00", "pid": 351, "argv": ["artifacts/m1_cohort/m1_pt/independent_acceptance/preservation.py", "after"], "cwd": "/mnt/e/opencell-worktrees/m1-pt-20261017"}
+{"stage": "preservation_after_complete", "at": "2026-10-19T12:00:54.797915+00:00", "pid": 351, "argv": ["artifacts/m1_cohort/m1_pt/independent_acceptance/preservation.py", "after"], "cwd": "/mnt/e/opencell-worktrees/m1-pt-20261017", "files": 3649, "changes": [], "new_prior_outputs": [], "finished_at": "2026-10-19T12:00:54.786333+00:00"}

@@ -1,0 +1,15 @@
+[
+  {
+    "module": "/mnt/e/opencell-worktrees/m1-pt-20261017/tests/scripts/test_ptrans_published_attestation.py",
+    "original_sha256": "3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d",
+    "old_constants": {
+      "EVIDENCE_ROOT": "/mnt/e/opencell-worktrees/m1-pt-20261017/docs/phase_f/l2_2_design_a/evidence_bundle",
+      "BUNDLE": "/mnt/e/opencell-worktrees/m1-pt-20261017/docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest"
+    },
+    "new_constants": {
+      "EVIDENCE_ROOT": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle",
+      "BUNDLE": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest"
+    },
+    "assertions_or_code_modified": false
+  }
+]

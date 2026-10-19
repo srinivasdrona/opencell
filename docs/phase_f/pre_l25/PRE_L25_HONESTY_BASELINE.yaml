@@ -8,12 +8,12 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "debfe45f9fbc1b3dd23ab5cfc352b340b1bf662762c338574466e3bea679c808"
+  sha256: "a4694f00ef286d47283aa90605a3120030c1d700e79cf9560132bcfe50d41525"
   file_count: 140
 authorities:
   l1b_method_completeness: "PASS 115/115"
   l1b_wiring_conformance: "PASS 28/28"
-  l2_2_distributional_fidelity: "NON_GREEN: 3 PASS / 19 FAIL (stale source provenance) / 2 MISSING_EVIDENCE / 24 required"
+  l2_2_distributional_fidelity: "NON_GREEN: 4 PASS / 18 FAIL (stale source provenance) / 2 MISSING_EVIDENCE / 24 required"
   l2_4_chassis_conservation: "PASS 4 seeds x 100 ticks"
   qualification: >-
     These authorities retain their existing meanings. This baseline adds the
@@ -430,8 +430,8 @@ processes:
 
   - name: ProteinTranslocation
     behavior_gate: L2.2
-    behavior_verdict: FAIL
-    eligibility: BLOCKED_LOWER_GATE
+    behavior_verdict: PASS
+    eligibility: ELIGIBLE
     findings:
       - id: PTRANS-STAGE2-ALGORITHM
         kind: CODE_DEVIATION
@@ -458,33 +458,37 @@ processes:
             lines: "1-34"
       - id: PTRANS-COMPLETE-ATTESTATION
         kind: EVIDENCE_CONFIG_MISMATCH
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          The genuine N50 execution and computed PASS remain valid recorded
-          results, but its published input manifest binds only seed zero and
-          two Python files, with no parameter fixtures. The shared evidence
-          attestation must bind every consumed seed file and parameter input
-          before this process is eligible under the no-known-gap policy.
+          Fresh complete N50/M100/B1000 evidence and portable publication are
+          independently accepted. All 64 consumed records bind every distinct
+          seed and actual runtime/parameter input; source, constructor,
+          sidecar and sentinel hashes are current. No historical hashes were
+          refreshed to represent a new execution.
         evidence:
           - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/input_manifest.json
             lines: "1-19"
           - path: tests/vivarium/l2_2_design_a_runner.py
             lines: "1476-1493"
+          - path: docs/phase_f/pre_l25/acceptance/ProteinTranslocation/VERDICT.json
+            lines: "1-70"
       - id: PTRANS-SAMPLE-ISOLATION
         kind: EVIDENCE_CONFIG_MISMATCH
-        disposition: OPEN
+        disposition: RESOLVED
         summary: >-
-          The Design-A translocation adapter executes a mutable cached
-          process. A parent probe advanced the cached metadata owner's
-          stream, then observed that same owner and its noninitial RNG
-          state at the real public update. Fixed sample-key execution
-          must be isolated before validation readiness is restored;
-          this is not a claim that the recorded clean-run score changed.
+          Independent active repeated/interleaved Design-A witnesses verify
+          fresh actual public execution owners and initial per-sample streams,
+          including advanced metadata and poisoned after/hint controls.
+          The unchanged contiguous 100-tick replay separately retains one
+          persistent owner. No RNG reset or cache clearing substitutes for
+          correct sample isolation.
         evidence:
           - path: tests/vivarium/_l2_2_design_a_runner_helpers.py
             lines: "1618-1621"
           - path: tests/vivarium/_l2_2_design_a_runner_helpers.py
             lines: "2512-2515"
+          - path: docs/phase_f/pre_l25/acceptance/ProteinTranslocation/VERDICT.json
+            lines: "71-120"
 
   - name: RNADecay
     behavior_gate: L2.2
@@ -758,5 +762,5 @@ processes:
             lines: "40-43"
 
 summary:
-  eligible: 5
-  blocked: 23
+  eligible: 6
+  blocked: 22
