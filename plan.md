@@ -1,4 +1,24 @@
-# M1 accepted-process candidate - 2026-10-19
+# M1 final-source assembly - 2026-10-19
+
+## Current revision is under construction, not newly eligible
+
+- Active branch: `integrate/m1-final-freeze-20261019`, in this existing
+  worktree. Previous accepted branch `integrate/m1-accepted-20261019` stays at
+  `9f53a27` with its verified six eligible processes; those receipts below
+  describe that source snapshot, not this revised runtime's current readiness.
+- Independently accepted PM source/test lineage through `7a0a6d5` has been
+  imported as `7f7c1ea` through `d641c1b`. The source/test/fixture/schema trees
+  exactly match the reviewed PM branch. The only first-import conflicts were
+  append-only journals: native Git union preserved every old record as an
+  exact prefix and every incoming record, with zero ID/content collisions.
+- PM's shared schema bytes now differ. Inherited M1 gate publications are
+  historical for this revised tree, not refreshed or accepted as current.
+  No readiness count is claimed until reviewed RNA total-mass fixes join this
+  branch, one source freeze completes, and all five registered gates rerun.
+- Independent PM code closure is 178 PASS; original100tick replay is exact.
+  RNA observer fix is accepted, while the separately frozen production
+  `compute_cell_mass` consumer repair is active in the RP worktree. No main
+  or canonical production-code merge/push; no gate run before final freeze.
 
 ## Operational handoff
 
