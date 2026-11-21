@@ -29,6 +29,60 @@ _PM = "ProteinModification"
 _KEY = "mcg16807_state_codec_module"
 _CODEC = Path(codec.__file__).resolve()
 
+_ORIGINAL_PM_INPUTS = (
+    "tests/vivarium/l2_2_design_a_runner.py",
+    "tests/vivarium/_l2_2_design_a_runner_helpers.py",
+    "tests/vivarium/_l2_2_design_a_projections.py",
+    "opencell/vivarium/__init__.py",
+    "tests/vivarium/l2_replay_common.py",
+    "scripts/l22_evidence/schema.py",
+    "opencell/vivarium/protein_state.py",
+    "opencell/util/mcg16807_state_codec.py",
+    "opencell/vivarium/karr_protein_modification.py",
+    "data/karr_fixtures/per_process/ProteinModification_flat.mat",
+    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+    "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+    "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+)
+_MASS_CODE_INPUTS = (
+    "opencell/analysis/cell_mass.py",
+    "opencell/vivarium/karr_observability_step.py",
+    "opencell/vivarium/karr_protein_activation.py",
+    "opencell/m1/karr_metabolism.py",
+    "opencell/m2/transcription.py",
+    "opencell/m3/translation.py",
+    "opencell/data/__init__.py",
+    "opencell/data/substrate_mass_classes.py",
+)
+_MASS_PARAMETER_INPUTS = (
+    "data/karr_fixtures/parameters.json",
+    "data/karr_fixtures/karr_native_m3_vocab.json",
+    *(f"data/karr_fixtures/karr_native_m{model}.{suffix}"
+      for model in (1, 2, 3) for suffix in ("json", "npz")),
+    *(f"data/karr_fixtures/per_process/{name}_flat.mat" for name in (
+        "Rna", "ProteinMonomer", "ProteinComplex", "ProteinActivation",
+        "ProteinProcessingI", "ProteinProcessingII",
+    )),
+)
+
+
+def _required_runtime_paths() -> set[Path]:
+    # Independent source contract: preserve original PM/codec inputs plus
+    # the actual mass-loader/owner/parameter domains. Not capture's own list.
+    return {
+        (_ROOT / name).resolve()
+        for name in (*_ORIGINAL_PM_INPUTS, *_MASS_CODE_INPUTS, *_MASS_PARAMETER_INPUTS)
+    }
+
+
+def _assert_required_runtime_sources(sources) -> None:
+    paths = [Path(row["path"]).resolve() for row in sources]
+    required = _required_runtime_paths()
+    assert set(paths) == required, "required PM/codec/mass source membership differs"
+    assert len(paths) == len(required), "duplicate or unrequired captured source"
+    for row in sources:
+        assert row["sha256"] == hashlib.sha256(Path(row["path"]).read_bytes()).hexdigest()
+
 
 def _assert_actual_codec_binding(sources) -> None:
     assert pm.seed_state is codec.seed_state, "actual codec seed function differs"
@@ -44,7 +98,7 @@ def _assert_actual_codec_binding(sources) -> None:
 
 def test_pm_real_codec_calls_are_bound_by_actual_runtime_capture(monkeypatch) -> None:
     sources = helpers.capture_runtime_inputs(_PM)
-    assert len(sources) == 13
+    _assert_required_runtime_sources(sources)
     _assert_actual_codec_binding(sources)
     seed_function, draw_function = pm.seed_state, pm.draw_and_advance
     seeded, drawn = [], []
