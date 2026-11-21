@@ -1,11 +1,11 @@
 ---
-title: "Five Green Gates, an Expired License, and Three Scales for One Cell"
+title: "Days 126-184: Five Green Gates, an Expired License, and Three Scales for One Cell"
 date: 2026-11-21
 authors: [sdrona]
 tags: [opencell, matlab, fidelity, l2.2, l2.5, rng, mass-conservation, vivarium, multi-agent]
 ---
 
-*November 21, 2026 — Progress snapshot from the terrace (workbench paused since October 19)*
+*November 21, 2026 — Days 126–184 snapshot from the terrace (active Cohort 1 work through Day 151 / October 19; paused Days 152–184)*
 
 ---
 
@@ -25,9 +25,9 @@ tags: [opencell, matlab, fidelity, l2.2, l2.5, rng, mass-conservation, vivarium,
 
 **Bugg:** `ProteinTranslocation` (2,892 primary coordinates), `ProteinProcessingII` (482), `ProteinModification` (964), `RNAProcessing` (693), and `RNAModification` (694). Genuine frozen-source Design-A sweeps on local candidate `65df71c`—fifty seeds, a thousand Karr-only bootstrap resamples, a hundred ticks per seed for four of them and twenty ticks for `ProteinProcessingII`.
 
-**Tehol:** Even with product-manager arithmetic, four plus five is nine. So `main` now reads nine out of twenty-eight eligible?
+**Tehol:** Even with product-manager arithmetic, four plus five is nine. So our canonical scoreboard now reads nine out of twenty-eight eligible?
 
-**Bugg:** `main` still reads four out of twenty-eight eligible and twenty-four blocked, sir. None of the Cohort 1 branches has merged to `main`, `L2.5` composition has not started, and we are not certifying a single new process as no-known-gap ready today.
+**Bugg:** Our canonical honesty baseline still reads four out of twenty-eight eligible and twenty-four blocked on its local audit branch, sir—and published `main` hasn't even received that four-process rebaseline yet, let alone Cohort 1. Published `main`'s code is still September's pre-rebaseline `L2.2` `22/22` checkpoint plus dev-blog dispatches, `L2.5` composition has not started, and we are not certifying a single new process as no-known-gap ready today.
 
 **Tehol:** *[pulls the blanket back up and grins]* Five green gates, zero promotions, and a month-long pause. Either we finally grew some discipline, or we stepped on a wonderfully educational rake. Walk me onto the rake.
 
@@ -109,7 +109,7 @@ tags: [opencell, matlab, fidelity, l2.2, l2.5, rng, mass-conservation, vivarium,
 
 **Tehol:** Let's state the November 21 reality plainly—no fog, no "almost done" promises. Since October 19, nothing has been churning offstage?
 
-**Bugg:** Nothing, sir. Every agent is stopped, no gates are running, `L2.5` composition has not begun, and all Cohort 1 commits remain local and unpushed while `main` takes only this post.
+**Bugg:** Nothing, sir. At this snapshot every agent had been stopped since October 19, no gates were running, `L2.5` composition has not begun, and both the `4/28` canonical honesty baseline and all Cohort 1 commits remain on local, unpushed branches while published `main` takes only the blog dispatches.
 
 **Tehol:** Good. Because playing whack-a-mole across three mass readers—observer Monday, `compute_cell_mass` Tuesday, CSV `MassEstimator` Wednesday, protein intermediates whenever `L2.5` explodes—is infrastructure comedy, not science. When we unpause the bench, what is the exact bounded move?
 
@@ -129,4 +129,4 @@ tags: [opencell, matlab, fidelity, l2.2, l2.5, rng, mass-conservation, vivarium,
 
 ---
 
-*This is the OpenCell dev blog. Follow the repository at [github.com/srinivasdrona/opencell](https://github.com/srinivasdrona/opencell). Canonical `main` remains at 4/28 pre-L2.5 processes eligible (24 blocked); Cohort 1 stochastic repairs and mass components remain on local branches pending unified three-reader mass closure and a single post-freeze five-gate rerun.*
+*This is the OpenCell dev blog. Follow the repository at [github.com/srinivasdrona/opencell](https://github.com/srinivasdrona/opencell). Published `main` still carries the September 16 pre-rebaseline code checkpoint plus dev-blog dispatches; the canonical pre-L2.5 honesty baseline remains on its local audit branch at 4/28 processes eligible (24 blocked), and Cohort 1 stochastic repairs and mass components remain on local branches pending unified three-reader mass closure (bounded repair authorized separately after initial publication; none complete yet) and a single post-freeze five-gate rerun.*
