@@ -32,10 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from opencell.analysis.cell_mass import AVOGADRO
-from opencell.analysis.cell_mass import _load_protein_mw
-from opencell.analysis.cell_mass import _load_rna_mw
-from opencell.analysis.cell_mass import _load_substrate_mw
+from opencell.analysis.cell_mass import CellMassProjection
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
 from opencell.m3 import translation as tl
@@ -93,6 +90,7 @@ def _snapshot_runtime_state(engine: Engine) -> dict[str, Any]:
         "substrates": _get_store_dict(engine, ("substrates",)),
         "rna": _get_store_dict(engine, ("rna",)),
         "protein": _get_store_dict(engine, ("protein",)),
+        "complex": _get_store_dict(engine, ("complex",)),
         "chromosome": _get_store_dict(engine, ("chromosome",)),
         "cell": _get_store_dict(engine, ("cell",)),
         "phenotype_observables": _get_store_dict(engine, ("phenotype_observables",)),
@@ -159,9 +157,7 @@ def _division_detected(state: dict[str, Any]) -> bool:
 
 @dataclass
 class MassEstimator:
-    substrate_mw: dict[str, float]
-    rna_mw: dict[str, float]
-    protein_mw: dict[str, float]
+    projection: CellMassProjection
     dry_fraction: float
     density_g_per_l: float
 
@@ -174,42 +170,13 @@ class MassEstimator:
         dry_fraction = max(1.0 - wet_fraction, 1e-12)
         density_g_per_l = float(raw["states"]["Geometry"]["density"])
         return cls(
-            substrate_mw=_load_substrate_mw(m1_model),
-            rna_mw=_load_rna_mw(m2_model),
-            protein_mw=_load_protein_mw(m3_model),
+            projection=CellMassProjection.build(m1_model, m2_model, m3_model),
             dry_fraction=dry_fraction,
             density_g_per_l=density_g_per_l,
         )
 
     def dry_mass_g(self, state: dict[str, Any]) -> float:
-        substrates = state.get("substrates", {})
-        rna = state.get("rna", {})
-        protein = state.get("protein", {})
-        rna_counts = rna.get("counts", {})
-        protein_counts = protein.get("counts", {})
-
-        sub_da = 0.0
-        for sid, count in substrates.items():
-            mw = self.substrate_mw.get(str(sid))
-            if mw is None or mw <= 0.0:
-                continue
-            sub_da += float(count) * mw
-
-        rna_da = 0.0
-        for gid, count in rna_counts.items():
-            mw = self.rna_mw.get(str(gid))
-            if mw is None or mw <= 0.0:
-                continue
-            rna_da += float(count) * mw
-
-        protein_da = 0.0
-        for pid, count in protein_counts.items():
-            mw = self.protein_mw.get(str(pid))
-            if mw is None or mw <= 0.0:
-                continue
-            protein_da += float(count) * mw
-
-        return float((sub_da + rna_da + protein_da) / AVOGADRO)
+        return self.projection.compute(state).total_g
 
     def total_mass_g(self, dry_mass_g: float) -> float:
         return float(dry_mass_g / self.dry_fraction)

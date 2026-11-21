@@ -2892,6 +2892,7 @@ def build_karr_chassis_v6(
     topology["karr_observability_step"] = {
         "rna": ("rna",),
         "protein": ("protein",),
+        "complex": ("complex",),
         "chromosome": ("chromosome",),
         "cell": ("cell",),
         "substrates": ("substrates",),

@@ -2,6 +2,35 @@
 
 ## Current revision is under construction, not newly eligible
 
+- **2026-11-21T18:52Z combined source is bounded-validated, not newly eligible.**
+  Accepted mass/callerf187 and PM69a391 are assembled with guard868377ae /
+  test-only parent e92bbb4. Fresh combined81 PASS, PM178 PASS (including
+  unchanged actual persistent100-tick/all5-observable exact replay), and
+  compatibility27 PASS/1 inherited P10a RNA-class XFAIL; zero ordinary
+  failures/errors/skips. Registered4seeds×100 substrate ledger PASS with
+  complex-visible observer and actual CSV snapshot, not a gram oracle.
+  Source-derived unchanged mixed RNA/substrate/protein/total grams agree
+  in standalone helper, genuine Engine observer and live CSV projection;
+  full total1.347970715592014e-14g.10202 present physical-owner leaves are
+  visible, zero hidden; frozen UNIT basket and poison/zero/cache/particle/
+  live-writer guards PASS. Original13-count RED remains immutable history;
+  independent exact-path/hash adjudication resolves it without runtime edits.
+- All250 accepted raw files/unique embedded seeds0..49/providers/full
+  before-after families qualified against exact source-copy manifests.
+  N50/M100/B1000 for PT/PM/RP/RM; PP2 M20. Actual pre-consumption closures
+  PT37/PM35/RP38/RM37/PP2 33 paths, no source copy or metadata relabelling.
+  Accepted CSV13 Ruff diagnostics remain, all other six source files clean;
+  original pre-mass CSV had16, zero introduced relative to accepted bytes.
+  Native whitespace PASS. Existing five producer/codec/fixture/catalog/
+  incoming frozen tests and both complete journal prefixes are preserved.
+- Committing the coherent shared-source assembly next, then exact resulting
+  commit/closure/raw/config freeze under `artifacts/cohort1/final_source_freeze`.
+  All five full campaigns, independent integrated-source/freeze review,
+  eligibility/index/publication and push remain pending. Canonical retained
+  baseline stays4; this source validation does not promote the target to9.
+
+### Prior under-construction notes (historical snapshots, superseded above)
+
 - Active branch: `integrate/m1-final-freeze-20261019`, in this existing
   worktree. Previous accepted branch `integrate/m1-accepted-20261019` stays at
   `9f53a27` with its verified six eligible processes; those receipts below
@@ -26,6 +55,65 @@
   it has not been imported or treated as approved yet.
 
 ## Operational handoff
+
+- **Current (2026-11-21T18:52Z):** bounded validation and raw qualification
+  complete; no own live processes/agents. Completed mass81 shell
+  `m1-combined-81` PS4964/Python390; PM178 PS15660/Python642; compatibility
+  PS15676/Python836; raw inventory PS28616; ledger100 PS25388/Python1061.
+  Before source commit HEAD is accepted test-onlye92bbb4, same active
+  `integrate/m1-final-freeze-20261019`; tested13 source/test blobs are intact.
+  Journal e92bbb4 prefixes are archived in `resumed/entry/`. Commit with
+  unchanged installed normal hooks and existing accepted Python transport
+  only; canonical WSL scripts/local target imports, explicit native Windows
+  Git. No source mutation or gate launch after exact commit/config seal.
+  Exact XML/source hashes/material/inputs/lint/command receipts in `resumed/`.
+  Handoff ends before all five N50 campaigns; parent reviews freeze first.
+
+- **Active resumed integration (2026-11-21T18:42Z):** same candidate and
+  `integrate/m1-final-freeze-20261019`, HEAD
+  `e92bbb4e74209e5ed6c6a6b5876e7cbc9d7b02d7`, no push. Original13 source/test
+  blobs remain staged; candidate plan is unstaged. Accepted exact capture
+  guard/reference packet is `pm_capture_contract_adjudication/` below
+  `artifacts/cohort1/final_source_freeze/`; do not reapply/reset the merge.
+  Launching finite combined81 shell `m1-combined-81`; real command/PID/time
+  receipts will be written in `final_source_freeze/resumed/`. Raw input
+  inventory can proceed independently; all five N50 campaigns remain barred
+  before reviewed commit/config freeze. Use existing owned scratch parent,
+  canonical WSL/local imports and explicit native Windows Git. Incomingf187
+  and historical9f53 remain untouched. Current retained-four baseline stays
+  separate; no promotion to9. Earlier STOP and historical handoffs below
+  are preserved history and no longer describe current HEAD.
+
+- Resumed live command inventory: `m1-combined-81`, `m1-combined-pm178`,
+  `m1-source-compat`; starting bounded `m1-source-ledger100` (4seeds×100,
+  registered substrate ledger only). Raw-input qualification shell
+  `m1-source-input-inventory` completed18:46:11Z/exit0/PowerShell28616:
+  all250 accepted raw hashes/unique embedded seeds0..49/providers/families
+  qualified, no source copy; PT37/PM35/RP38/RM37/PP2 33 actual runtime inputs.
+  Exact per-command Python PIDs/times/source hashes are under `resumed/`.
+
+- **Current live candidate (2026-11-21):**
+  `E:\opencell-worktrees\m1-accepted-20261019`,
+  branch `integrate/m1-final-freeze-20261019`, HEAD
+  `69a391afaccc773a2791fc093e7a49fb5f36e7ae`, no push/new commit.
+  Accepted seven-runtime source assembly and six changed/new frozen test
+  modules are staged; the seventh test already matched. Journals retain
+  exact candidate prefixes plus19 unique incoming records each. Plan and
+  journals are modified but not committed. No unmerged paths remain.
+  All entry producer/codec/catalog and21 fixture hashes are preserved.
+  No active processes/agents owned by this integration; completed shell
+  `m1-first-combined`, PowerShell29536/Linux390, exit1.
+  Blocking immutable source-count case is persisted under
+  `artifacts/cohort1/final_source_freeze/` and
+  `STATUS_m1_final_source_integration.md`. Proper capture35 cannot be
+  truncated to13 to satisfy the frozen PM guard. Independent contract
+  adjudication is prerequisite to a coherent green commit, fresh combined
+  validation and exact-source five-gate handoff. Owned pytest scratch
+  parent exists; use canonical WSL/local imports and native Windows Git.
+  Incoming f1873cf is read-only/clean; historical accepted branch9f53a27
+  and canonical separate retained-four baseline remain unchanged.
+  Historical gate/readiness statements below refer only to their original
+  snapshots, not this under-construction source.
 
 - Candidate worktree: `E:\opencell-worktrees\m1-accepted-20261019`, branch
   `integrate/m1-accepted-20261019`, from independently reviewed source

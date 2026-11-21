@@ -409,23 +409,25 @@ def measure_dry_mass_protein_monomer_g(
     from the same arrays State_Mass.calcMass() consumes in MATLAB.
     No hard-coded value.
 
-    Chassis predicted: aggregator's protein contribution --
-    breakdown.protein_mass_g over m3.counts_mature (16177 mol).  At
-    t=0 chassis hits ~70% of Karr's monomer total, well within the
-    [0.50, 1.50] tolerance band -> green.  This is the largest Phase
-    E.1c win: a previously-opaque xfail becomes a green sub-target.
+    Chassis predicted: the aggregator's source-owning monomer subtotal,
+    including all represented forms and compartments. Physical complex
+    material remains in the full protein/total aggregates, not this
+    monomer-only comparison or its Dalton diagnostic.
     """
+    from opencell.analysis.cell_mass import AVOGADRO
+
     breakdown = _build_chassis_mass_breakdown(m1, m2, m3)
+    monomer_da = breakdown.extra["protein_monomer_da"]
     target = _karr_archive_protein_monomer_dry_mass_g()
     return PhenotypeMeasurement(
         name="p10b_dry_mass_protein_monomer_g",
-        predicted=breakdown.protein_mass_g,
+        predicted=monomer_da / AVOGADRO,
         target=target,
         unit="g",
         extra={
             "n_proteins_with_mw": breakdown.extra["n_proteins_with_mw"],
             "n_proteins_total": breakdown.extra["n_proteins_total"],
-            "protein_da": breakdown.extra["protein_da"],
+            "protein_da": monomer_da,
         },
     )
 

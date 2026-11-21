@@ -251,15 +251,16 @@ def capture_runtime_inputs(process_name: str) -> list[dict[str, Any]]:
         *schema.PROCESS_DEPENDENCY_FILES.get(process_name, {}).values(),
         _REPO_ROOT / entry.oc_module,
     ]
+    uses_protein_authority = schema.PROTEIN_STATE_MODULE in paths
     fixture_names = [process_name, *schema.PROCESS_PARAMETER_FIXTURES.get(process_name, ())]
-    if "protein_state_module" in schema.PROCESS_DEPENDENCY_FILES.get(process_name, {}):
+    if uses_protein_authority:
         fixture_names.extend(schema.PROTEIN_AUTHORITY_FIXTURES)
     paths.extend(
         _REPO_ROOT / "data" / "karr_fixtures" / "per_process" / f"{name}_flat.mat"
         for name in dict.fromkeys(fixture_names)
     )
     sources = merge_input_sources([capture_input_source(path) for path in paths])
-    if "protein_state_module" in schema.PROCESS_DEPENDENCY_FILES.get(process_name, {}):
+    if uses_protein_authority:
         from opencell.vivarium import protein_state
 
         # MIGRATED_WIDS is computed at import time, before this run's snapshots.

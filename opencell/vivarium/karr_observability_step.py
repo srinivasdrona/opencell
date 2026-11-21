@@ -11,80 +11,13 @@ from pathlib import Path
 from typing import Any
 
 import numpy as np
-from scipy.io import loadmat
 from vivarium.core.process import Step
 
-from opencell.analysis.cell_mass import AVOGADRO
+from opencell.analysis.cell_mass import CellMassProjection
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
 from opencell.m3 import translation as tl
-from opencell.vivarium.karr_trna_aminoacylation import _parse_wid_array
 from opencell.vivarium.protein_state import MIGRATED_WIDS, flat_counts_schema
-
-
-def _load_rna_mw(m2_model: tx.KarrTranscriptionModel) -> dict[str, float]:
-    npz_path = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "karr_native_m2.npz"
-    payload = np.load(npz_path)
-    if "rna_molecular_weight" not in payload.files:
-        raise RuntimeError("M2 fixture missing rna_molecular_weight.")
-    arr = np.asarray(payload["rna_molecular_weight"], dtype=float).reshape(-1)
-    if arr.size != len(m2_model.gene_wcm_ids):
-        raise RuntimeError(
-            f"rna_molecular_weight size {arr.size} != gene_wcm_ids size {len(m2_model.gene_wcm_ids)}"
-        )
-    return dict(zip(m2_model.gene_wcm_ids, arr.tolist(), strict=False))
-
-
-def _load_rna_form_mw(m2_model: tx.KarrTranscriptionModel) -> dict[str, dict[str, float]]:
-    legacy = _load_rna_mw(m2_model)
-    path = Path(__file__).resolve().parents[2] / "data/karr_fixtures/per_process/Rna_flat.mat"
-    fx = loadmat(str(path))["data"]["fixture"][0, 0]
-    wids = _parse_wid_array(fx["wholeCellModelIDs"])
-    weights = np.asarray(fx["molecularWeights"][0, 0], dtype=float).reshape(-1)
-    if len(wids) != weights.size or not np.all(np.isfinite(weights) & (weights > 0)):
-        raise RuntimeError("Rna fixture molecular weights do not match its global rows.")
-
-    def form_weights(form: str) -> dict[str, float]:
-        rows = np.asarray(fx[f"{form}Indexs"][0, 0], dtype=int).reshape(-1) - 1
-        keys = [
-            f"intergenic::{row + 1}" if form == "intergenic" else wids[row]
-            for row in rows
-        ]
-        if len(keys) != len(set(keys)):
-            raise RuntimeError(f"Rna {form} keys do not uniquely identify source rows.")
-        return dict(zip(keys, weights[rows].tolist(), strict=True))
-
-    nascent = form_weights("nascent")
-    # Match RP/RM's shared counts authority without merging nascent and processed forms.
-    processed = {
-        f"processed::{wid}" if wid in nascent else wid: mw
-        for wid, mw in form_weights("processed").items()
-    }
-    return {
-        "counts": {**legacy, **nascent, **processed, **form_weights("intergenic")},
-        "modified_counts": {**legacy, **form_weights("mature")},
-        "aminoacylated_counts": {**legacy, **form_weights("aminoacylated")},
-    }
-
-
-def _mass_from_counts(counts: dict[str, Any], mw_by_wid: dict[str, float]) -> float:
-    total_da = 0.0
-    for wid, raw_count in counts.items():
-        mw = mw_by_wid.get(wid)
-        if mw is None or mw <= 0.0:
-            continue
-        total_da += float(raw_count) * mw
-    return float(total_da / AVOGADRO)
-
-
-def _load_protein_mw(m3_model: tl.KarrTranslationModel) -> dict[str, float]:
-    arr = np.asarray(m3_model.molecular_weight, dtype=float).reshape(-1)
-    if arr.size != len(m3_model.protein_wcm_ids):
-        raise RuntimeError(
-            "protein molecular_weight size "
-            f"{arr.size} != protein_wcm_ids size {len(m3_model.protein_wcm_ids)}"
-        )
-    return dict(zip(m3_model.protein_wcm_ids, arr.tolist(), strict=False))
 
 
 def _load_dna_mass_fraction_default() -> float:
@@ -121,9 +54,10 @@ class KarrObservabilityStep(Step):
         self.m1_model: km.KarrMetabolismModel = m1_model
         self.m2_model: tx.KarrTranscriptionModel = m2_model
         self.m3_model: tl.KarrTranslationModel = m3_model
-        self._rna_mw_by_store = _load_rna_form_mw(self.m2_model)
+        self._mass_projection = CellMassProjection.build(m1_model, m2_model, m3_model)
+        self._rna_mw_by_store = self._mass_projection.rna_mw_by_store
         self.rna_mw_by_wid = self._rna_mw_by_store["counts"]
-        self.protein_mw_by_wid = _load_protein_mw(self.m3_model)
+        self.protein_mw_by_wid = self._mass_projection.protein_mw
         self._rna_wids = tuple(self.rna_mw_by_wid)
         self._protein_wids = tuple(self.m3_model.protein_wcm_ids)
         self._substrate_wids = tuple(str(wid) for wid in self.m1_model.raw["ids"]["substrate_wcm_585"])
@@ -152,33 +86,8 @@ class KarrObservabilityStep(Step):
                 for store, weights in self._rna_mw_by_store.items()
             },
             "protein": {
-                # Design 9.3 (compartmental protein-state migration, Stage
-                # 1b): this Step is a READ-ONLY consumer of every protein
-                # WID's derived flat `protein.counts` value for the
-                # `protein_mass_g` aggregate below -- it never writes any
-                # of them (see `next_update`: the only update key is
-                # `phenotype_observables`).
-                #
-                # For the 8 migrated WIDs, `protein.counts[wid]` is now
-                # `Pi(compartment_counts.mature[wid])`, exclusively owned
-                # by `ProteinFlatProjectionStep`'s rejecting updater
-                # (protein_state.py D3). Dropping those 8 leaves from this
-                # schema entirely is NOT equivalent to "read-only":
-                # Vivarium projects each process's own per-tick `states`
-                # view from its OWN declared ports_schema, so omitting a
-                # leaf here would make `next_update` stop *seeing* it too
-                # (confirmed empirically against `karr_host_interaction.py`
-                # -- the analogous omission there raised a KeyError for
-                # exactly these 8 WIDs). Instead, `flat_counts_schema`
-                # (protein_state.py) hands back the *same* `@cache`-
-                # memoised rejecting-updater object `ProteinFlatProjectionStep`
-                # already declares for these WIDs -- reusing it here means
-                # both declarations compare equal (`store.py:536`, identity
-                # equality on the callable), so there is no conflict and no
-                # warning, while `self._protein_wids` (the mass-calculation
-                # inventory) and `next_update`'s unconditional
-                # `states.get("protein", {}).get("counts", {})` read both
-                # keep seeing every protein WID exactly as before.
+                # Share the projection owner's rejecting updater without
+                # writing its derived flat leaves.
                 "counts": {
                     **{
                         wid: {
@@ -194,7 +103,16 @@ class KarrObservabilityStep(Step):
                         for wid, schema in flat_counts_schema(MIGRATED_WIDS).items()
                         if wid in self._protein_wids
                     },
-                }
+                },
+                # Engine's deep read selector adds no defaults/updaters: an
+                # absent canonical pool stays empty in flat-only inputs.
+                "compartment_counts": "**",
+                **{store: "**" for store in self._mass_projection.protein_queue_mw},
+                **{store: "**" for store in self._mass_projection.activation_mw_by_store},
+            },
+            "complex": {
+                "counts": "**",
+                **{store: "**" for store in self._mass_projection.complex_activation_mw_by_store},
             },
             "chromosome": {
                 "replication_state": {"_default": "idle", "_updater": "set", "_emit": False},
@@ -219,6 +137,7 @@ class KarrObservabilityStep(Step):
             "phenotype_observables": {
                 "rna_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
                 "protein_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
+                "cell_dry_mass_g": {"_default": 0.0, "_updater": "set", "_emit": True},
                 "dna_mass_g": {"_default": self._base_dna_mass_g, "_updater": "set", "_emit": True},
                 "cytokinesis_start_tick_s": {"_default": float("nan"), "_updater": "set", "_emit": True},
                 "cytokinesis_complete_tick_s": {
@@ -245,17 +164,11 @@ class KarrObservabilityStep(Step):
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         dt = max(float(timestep), 0.0)
         current_time_s = self._elapsed_s + dt
-        rna = states.get("rna", {})
-        protein_counts = states.get("protein", {}).get("counts", {})
         chromosome = states.get("chromosome", {})
         cell = states.get("cell", {})
         substrates = states.get("substrates", {})
 
-        rna_mass_g = sum(
-            _mass_from_counts(rna.get(store, {}), weights)
-            for store, weights in self._rna_mw_by_store.items()
-        )
-        protein_mass_g = _mass_from_counts(protein_counts, self.protein_mw_by_wid)
+        mass = self._mass_projection.compute(states)
         fork = chromosome.get("fork_position_bp", {})
         left_fork = abs(float(fork.get("left", 0.0)))
         right_fork = abs(float(fork.get("right", 0.0)))
@@ -282,8 +195,9 @@ class KarrObservabilityStep(Step):
 
         return {
             "phenotype_observables": {
-                "rna_mass_g": float(rna_mass_g),
-                "protein_mass_g": float(protein_mass_g),
+                "rna_mass_g": mass.rna_mass_g,
+                "protein_mass_g": mass.protein_mass_g,
+                "cell_dry_mass_g": mass.total_g,
                 "dna_mass_g": float(dna_mass_g),
                 "cytokinesis_start_tick_s": float(self._cytokinesis_start_s),
                 "cytokinesis_complete_tick_s": float(self._cytokinesis_complete_s),
