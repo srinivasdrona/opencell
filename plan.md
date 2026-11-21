@@ -2,6 +2,16 @@
 
 ## Current revision is under construction, not newly eligible
 
+- **Committed combined source:** `7586be17b746c8e6f18068898859f346192ed892`,
+  normal hooks PASS, accepted guard868377ae/e92bbb4 ancestry retained.
+  This commit contains the coherent seven-source assembly, six changed/new
+  incoming frozen test modules, current candidate plan and two provenance
+  appends only. The seventh incoming test already matched. Source bytes
+  equal the freshly tested blobs; no new biology/RNG/parameter/catalog/
+  old-evidence/index/baseline edits. Companion actual-SHA journal/plan
+  receipt follows; exact resulting HEAD/config/input freeze is generated
+  under `artifacts/cohort1/final_source_freeze/SOURCE_FREEZE.json`.
+
 - **2026-11-21T18:52Z combined source is bounded-validated, not newly eligible.**
   Accepted mass/callerf187 and PM69a391 are assembled with guard868377ae /
   test-only parent e92bbb4. Fresh combined81 PASS, PM178 PASS (including
@@ -23,7 +33,7 @@
   original pre-mass CSV had16, zero introduced relative to accepted bytes.
   Native whitespace PASS. Existing five producer/codec/fixture/catalog/
   incoming frozen tests and both complete journal prefixes are preserved.
-- Committing the coherent shared-source assembly next, then exact resulting
+- Source assembly is committed; sealing the exact resulting
   commit/closure/raw/config freeze under `artifacts/cohort1/final_source_freeze`.
   All five full campaigns, independent integrated-source/freeze review,
   eligibility/index/publication and push remain pending. Canonical retained
@@ -55,6 +65,22 @@
   it has not been imported or treated as approved yet.
 
 ## Operational handoff
+
+- **Source committed/freeze handoff (2026-11-21T18:55Z):** branch
+  `integrate/m1-final-freeze-20261019`, same target worktree, source commit
+  `7586be17b746c8e6f18068898859f346192ed892`, local/unpushed. Normal source
+  commit shell `m1-source-commit`, PS20356,18:53:45Z–18:53:49Z/exit0;
+  installed Catalog and LLM hooks both genuinely PASS using existing
+  accepted canonical-Python/native-Git transport. No owned live processes.
+  Final journal/plan receipt records this actual source SHA; source bytes
+  do not change in that companion commit. `SOURCE_FREEZE.json` pins the
+  resulting exact HEAD, five actual closures, source/test/fixture/catalog/
+  raw250 hashes, configurations and five direct registered runner commands.
+  Verify with the ignored `resumed/seal_freeze.cjs --verify` before launch.
+  Parent reviews this freeze first; do not mutate source/fixtures/shared
+  schema between or during the five campaigns. No campaign launched here,
+  no old PASS rehash, no eligibility/index/publication/push. Retained-four
+  canonical baseline remains separate; no target9 claim.
 
 - **Current (2026-11-21T18:52Z):** bounded validation and raw qualification
   complete; no own live processes/agents. Completed mass81 shell
