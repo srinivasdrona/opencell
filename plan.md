@@ -2,6 +2,14 @@
 
 ## Current candidate — accepted M1 evidence persisted locally, review pending
 
+- **Evidence-only landing committed:** `a480d90b4386d62f4d20d7c8b2489292b05e302a`,
+  normal installed hooks PASS,84 exact authorized paths. All40 accepted
+  packet bytes match committed blobs; no runtime/fixture/test/catalog diff
+  from measured10393. Actual-SHA journal/delivery companion follows;
+  final local tip is named by native Git delivery receipt, not substituted
+  into measured-generation source identity. Current candidate9/28 remains
+  subject to independent committed-copy acceptance; no main merge/push.
+
 - **2026-11-23 evidence/honesty landing:** all five fresh10393-source
   N50/B1000 campaigns and independent numerical/current-source/PORTABLE+
   STRICT acceptance are complete (PP2M20, other fourM100). Exact accepted40
@@ -100,6 +108,17 @@
   it has not been imported or treated as approved yet.
 
 ## Operational handoff
+
+- **Post-landing commit — 2026-11-23T17:41Z:** actual persistence commit
+  `a480d90b4386d62f4d20d7c8b2489292b05e302a` on the same local branch.
+  Normal commit shell `m1-evidence-persistence-commit`, PS11160,
+  17:40:27Z–17:40:36Z/exit0; canonical-WSL Python bridge/native Git guard
+  executed, installed hooks unchanged. No own live processes/agents.
+  Completing companion actual-SHA journals/DELIVERY/plan receipt only;
+  source/packet/index/audit/baseline bytes remain fixed from accepted landing.
+  Parent e079 performs separate independent committed-copy verification.
+  Current committed acceptance root `cohort1_final_10393/`; machine audit
+  result9/19, complete full-index5/17/2, no source rerun or cohort2 promotion.
 
 - **Current evidence persistence stage — 2026-11-23:** same target worktree/
   `integrate/m1-final-freeze-20261019`, measured generationHEAD10393 and
