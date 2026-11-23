@@ -253,17 +253,60 @@ def test_tracked_baseline_is_current_and_fail_closed() -> None:
     result = honesty.audit_baseline()
     assert result.integrity_ok
     assert result.process_count == 28
-    assert result.eligible_count == 4
-    assert result.blocked_count == 24
+    baseline = yaml.safe_load(honesty.DEFAULT_BASELINE.read_text(encoding="utf-8"))
+    registry = {
+        row["name"]: row
+        for row in yaml.safe_load(
+            honesty.PROCESS_CATALOG.read_text(encoding="utf-8")
+        )["processes"]
+    }
+    processes = {row["name"]: row for row in baseline["processes"]}
+    assert set(processes) == set(registry)
+    evidence = json.loads(honesty.L2_2_EVIDENCE_INDEX.read_text(encoding="utf-8"))
+    passing = {
+        row["process"]
+        for row in evidence["rows"]
+        if row["mechanical_verdict"] == "PASS" and row["green"] and not row["reasons"]
+    }
+    copied = json.loads(
+        (
+            REPO_ROOT
+            / "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/COPIED_FILES.json"
+        ).read_text(encoding="utf-8")
+    )
+    accepted_cohort = {
+        Path(path).parts[-3] for path in copied["accepted_packet"]
+    }
+    assert accepted_cohort
+    assert passing == accepted_cohort
+    retained = {
+        name
+        for name, row in processes.items()
+        if not registry[name]["in_scope_L2_2"]
+        and row["behavior_gate"] == "L2.1"
+        and row["behavior_verdict"] == "GENUINE"
+    }
+    eligible = {
+        name for name, row in processes.items() if row["eligibility"] == "ELIGIBLE"
+    }
+    assert eligible == accepted_cohort | retained
+    for name in eligible:
+        assert not any(
+            finding["disposition"] in honesty.BLOCKING_DISPOSITIONS
+            for finding in processes[name]["findings"]
+        )
+    assert result.eligible_count == len(eligible)
+    assert result.blocked_count == len(registry) - len(eligible)
     assert not result.all_eligible
-    assert any(
-        "ProteinTranslocation/PTRANS-COMPLETE-ATTESTATION" in item
-        for item in result.blockers
-    )
-    assert any(
-        "ProteinTranslocation/PTRANS-SAMPLE-ISOLATION" in item
-        for item in result.blockers
-    )
+    translocation = {
+        finding["id"]: finding
+        for finding in processes["ProteinTranslocation"]["findings"]
+    }
+    for finding_id in ("PTRANS-COMPLETE-ATTESTATION", "PTRANS-SAMPLE-ISOLATION"):
+        assert translocation[finding_id]["disposition"] == "RESOLVED"
+        assert not any(
+            f"ProteinTranslocation/{finding_id}" in item for item in result.blockers
+        )
     assert any("Metabolism/MET-CODE-DEVIATIONS" in item for item in result.blockers)
     assert any("Metabolism/MET-EVIDENCE-CONFIG" in item for item in result.blockers)
 
@@ -277,8 +320,8 @@ def test_txreg_stage_a_production_files_included_in_provenance_and_dependencies(
     1. pre_l25_honesty.collect_source_dependencies()
     2. data/karr_method_inventory/oc_method_map.yaml under TranscriptionalRegulation.oc_files
     3. data/schemas/per_process_wiring/TranscriptionalRegulation.yaml under provenance.oc_files_referenced
-    TxReg remains blocked; the aggregate also includes the separate translocation
-    attestation gap. Existing TxReg findings remain OPEN.
+    TxReg remains blocked and its existing findings remain OPEN. Other processes'
+    accepted evidence must not impose an unrelated aggregate count on this contract.
     """
     req_files = {
         "opencell/state/chromosome_store.py",
@@ -317,14 +360,12 @@ def test_txreg_stage_a_production_files_included_in_provenance_and_dependencies(
             req in wiring_oc_files
         ), f"TranscriptionalRegulation.yaml oc_files_referenced must include {req}"
 
-    # 4. No eligibility or finding disposition changes
+    # 4. No TxReg eligibility or finding disposition changes
     baseline_path = (
         REPO_ROOT / "docs" / "phase_f" / "pre_l25" / "PRE_L25_HONESTY_BASELINE.yaml"
     )
     with open(baseline_path, encoding="utf-8") as f:
         baseline = yaml.safe_load(f)
-    assert baseline["summary"]["eligible"] == 4
-    assert baseline["summary"]["blocked"] == 24
     txreg_proc = next(
         p for p in baseline["processes"] if p["name"] == "TranscriptionalRegulation"
     )
