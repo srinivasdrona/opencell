@@ -1,0 +1,888 @@
+{
+  "utc": "2026-11-23T17:40:07.611Z",
+  "pid": 20856,
+  "model": "unknown",
+  "measured_generation_head": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+  "source_commit": "7586be17b746c8e6f18068898859f346192ed892",
+  "persistence_parent_head": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+  "acceptance_verdict_sha256": "bd26519c845dea1606d3a0b2def47ff0fe66cdc23ccede91b3bf6adbf0c8a484",
+  "source135_raw250_repair12_original45_prior_review_preserved": true,
+  "immutable_files_verified": 538,
+  "unrelated_bundle_files_preserved": 166,
+  "exact_accepted_packet_files": 40,
+  "original_packet_git_history": {
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/analytical_check.json": {
+      "sha256": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
+      "blob_oid": "24127f071fb0c74da6f68364cbda047552fa8c68"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/input_manifest.json": {
+      "sha256": "b0a04cb6562f425404d2342bc9117115a147f181bc573087df8795cf9e0ef12e",
+      "blob_oid": "106077aa35f0451446bb7b574b2b3264068fb05e"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/null_calibration.json": {
+      "sha256": "ef29162aa0725499d40cbd6c6c863b95c020f02e3fda452f7791629535604aca",
+      "blob_oid": "f4346e59ec222b929d9780ef438b210c234b2251"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/provenance.json": {
+      "sha256": "afaefec0e9e4c1b80242f52711bf9cfa43027e9671162a977fc031e05f8157db",
+      "blob_oid": "c96c7fe610f6d0c8499d180c2200fd3e2337ce09"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/result.json": {
+      "sha256": "a0847a7e08069eb84df0222ed21aff35bbf4957afd8cb70931a4048960701984",
+      "blob_oid": "a2f78820057b9e9e7164e26a6849cf36b621d1a4"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/SUMMARY.json": {
+      "sha256": "69d213d0d9a4495da1e9ab96760de4267c044db9fd8e0fb70da3845da5581412",
+      "blob_oid": "32bc4778cd645a62d3698ebcbd633d536f2e5762"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/sweep_provenance.json": {
+      "sha256": "c72de9e83bbe9d82c8f54765741bc31950209a1dd07bcb9e712a16183f6a4824",
+      "blob_oid": "6dc5d9fae0b0c482f78222cf10ffbfcb0539d4b4"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/thresholds.json": {
+      "sha256": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442",
+      "blob_oid": "a8e54c8e884736ac5360dd0785e7517483b9dc8f"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/analytical_check.json": {
+      "sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "blob_oid": "b1e47b76f38dd066e25314ca52ec27219023afea"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/input_manifest.json": {
+      "sha256": "e60f6fe898c881b3ce42c124b95352db2572a5cdebd414010553ffcb965beec5",
+      "blob_oid": "5f816fc16a7df015bda2cda918316e2a40d42904"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/null_calibration.json": {
+      "sha256": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "blob_oid": "9282e068b4422ac898bd5dbf8294b29bdf0b3b66"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/provenance.json": {
+      "sha256": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "blob_oid": "9a18ab36cc5c1c48953b10a2719cb9a3575e9e99"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/result.json": {
+      "sha256": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "blob_oid": "bd8d03b7687ecc1adca4c710532fe0c462711673"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/SUMMARY.json": {
+      "sha256": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "blob_oid": "6462eb88da76ec458018832ab2f1436a7305f231"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/sweep_provenance.json": {
+      "sha256": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "blob_oid": "fe46532c41f487587c14c41aa01c7bd3d8b11b2a"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/thresholds.json": {
+      "sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "blob_oid": "f8b3415c942f53bb89835ae52358177723a5046e"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/analytical_check.json": {
+      "sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+      "blob_oid": "655ed6bdb1ddbd959a41c8e71547267adf74f655"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/input_manifest.json": {
+      "sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+      "blob_oid": "1827044a48cdec679cd88fa8e3ae763c0e5b8c4d"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/null_calibration.json": {
+      "sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+      "blob_oid": "81b0490062bc58f2a050dbed0ec1e524ab5f7684"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/provenance.json": {
+      "sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+      "blob_oid": "3758e966609248d7e4d86dee36b99d2254554a15"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/result.json": {
+      "sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+      "blob_oid": "a2781ae0227d58f52bcd5f2957d9a77a32c1c26e"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/SUMMARY.json": {
+      "sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+      "blob_oid": "6bc4f77805ef14e89ade7aa3bd4f3e0274b474c9"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json": {
+      "sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
+      "blob_oid": "2d3577367355a2cc10c3aa4fa80ff0db55f22d49"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/thresholds.json": {
+      "sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954",
+      "blob_oid": "cdb7e81ab4d66eba7b5bfd8ab87c20a4eda0bfaf"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/analytical_check.json": {
+      "sha256": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
+      "blob_oid": "c968d31a7e13c9cecf8d95eaefc37d72b7e9bf96"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/input_manifest.json": {
+      "sha256": "ef69013799cc9ba75a42909e8948254adb58a9107f72bb281ee03e069d57d6b8",
+      "blob_oid": "d1d02c091d912965cec6950f0c6aca9abeca5b09"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/null_calibration.json": {
+      "sha256": "1ce8ce2c0d274730a86b48cdf3ed3fbe67b2b94afa234e604fd910eb45ea8c21",
+      "blob_oid": "caecca4834c9cb1727b8658da3530e76cb71d59a"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/provenance.json": {
+      "sha256": "28ea6f7c7acba9dfdf00648f312152f220ca87c320c5004125417fd954382286",
+      "blob_oid": "9d31fc7f5cf7554d4de6aa083ff22ddf3582c8a2"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/result.json": {
+      "sha256": "8a2883468f7ae124436be18f0fa8da73b14ab6098b71b640e501554de68d4dfb",
+      "blob_oid": "546dc22e2215be7bc730bc602b3451bc58f6c829"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/SUMMARY.json": {
+      "sha256": "88f841477ece883b513ab844e537b92bea7d258f9ee5d57bbcf68643f80beaab",
+      "blob_oid": "0909ad6d54055418a8df3c09d66a21a9ce51371f"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/sweep_provenance.json": {
+      "sha256": "f79cad3e320b1cb82715ffb10f23fc32aafffbfa16aa11f3fce8cdaead04a27b",
+      "blob_oid": "b5355b5c94cc576c4493ddbaa6b673d131ce9ec4"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/thresholds.json": {
+      "sha256": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb",
+      "blob_oid": "c471c7336f42c91362f243aee0dfaf66a7355710"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/analytical_check.json": {
+      "sha256": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
+      "blob_oid": "e988efa2c98e117f06a6a23c88ccbb1e10c5db94"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/input_manifest.json": {
+      "sha256": "701b6e99acd3ed73450a2a183102ea5630b7f5c46e9b92e47b5e3f7e97b9e5e0",
+      "blob_oid": "d094cd962b911e322fc7cec4c3704e1d53dcb83a"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/null_calibration.json": {
+      "sha256": "7d9f447f0b56425c3c2f55c69012486a0c0930696a7f63b5f0484164c609da3e",
+      "blob_oid": "c9149bd97dde97b7cdb68700a65d0fa4165a7db0"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/provenance.json": {
+      "sha256": "84ebba91993d5d7b4834cdd5d6022b5b1c4ee7da0f3410846bcae85c01cec3dd",
+      "blob_oid": "a135654f1a3b78eea713bf92fbca130a4d121c2b"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/result.json": {
+      "sha256": "942ab28abcdd166ac7d0daf9dd85633a3aca2aa93b600a679f7bbd5ce053aee1",
+      "blob_oid": "15c0c844f501ced153249e22b6c4e5d7d0170781"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/SUMMARY.json": {
+      "sha256": "9e79c245cbe3a9370bef4f494eb0636ebd9e2b7885266344d4bf380d79611f59",
+      "blob_oid": "829d624f2ace00f58b8cac12144e2fe7409ae844"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/sweep_provenance.json": {
+      "sha256": "8cce946765ae4768050f7adfc22efe9ea16f7e4adcf045dd49e3feac32834ff5",
+      "blob_oid": "e409479e649edb6330c3c565d67ea8bc257b0487"
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/thresholds.json": {
+      "sha256": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59",
+      "blob_oid": "82bd1e6cc4cd34ccad260ace8957867f0f3b089d"
+    }
+  },
+  "index_modes": {
+    "portable": {
+      "tally": {
+        "FAIL": 17,
+        "MISSING_EVIDENCE": 2,
+        "PASS": 5
+      },
+      "content_hash": "8f232f383df1e1974ced7c75424e940ccbdc9d97b39895ce3bb15d7ff207bb37",
+      "target_rows": {
+        "ProteinModification": {
+          "artifact_hashes": {
+            "SUMMARY.json": "d6d7bd61fbfc8a9e0ae28cf665dd9eff8fbc965b9d93e29139c9a8a637878640",
+            "analytical_check.json": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
+            "null_calibration.json": "5cc733c105fa010f46d25d03a8d9a8a4d369b911dc57d506a1bc85fa9f271176",
+            "provenance.json": "2d9390997b6676e0830a84a5cc8edc4d5a280cff7285e905ee9281db1785d983",
+            "result.json": "f0792b2949c5e00a4abc7bf099605c73ae949390127e148d910e5af3574a0d32",
+            "sweep_provenance.json": "796645e6851c970fef1eb62f5ce4071fa503e2cc648b513d3e6930864b4f1be9",
+            "thresholds.json": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442"
+          },
+          "bucket": "ALGORITHMIC_SHALLOW",
+          "catalog_soft_flags": {
+            "M_ticks": 100,
+            "N_seeds": 50,
+            "closed_form_dominant": "false",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "monomers",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "monomers": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "ProteinModification",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": []
+        },
+        "ProteinProcessingII": {
+          "artifact_hashes": {
+            "SUMMARY.json": "32bdca902015632b86f0da5c294d2ac04d052f14c070c35d65df7385077cf832",
+            "analytical_check.json": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+            "null_calibration.json": "b03e284ab04b69e840c7991fe1c65b3b891a86fe32b3f6fd54fe606b47c0e38a",
+            "provenance.json": "52c64a2fee6ee296ad27527c4be8f997dcd2ee1bee7cf058584d31bd882f98fe",
+            "result.json": "eac8bb002c735d7751b4eea12fb8e3cfb88b444ca9dc678ce83126130b2df3c1",
+            "sweep_provenance.json": "35993cbe6dfe707c1896ece5b3792a5df100c47dc9c28f1d0358aeeafad6f110",
+            "thresholds.json": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be"
+          },
+          "bucket": "TRIVIAL_RNG",
+          "catalog_soft_flags": {
+            "M_ticks": 20,
+            "N_seeds": 50,
+            "closed_form_dominant": "confirmed_biology_validated",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "monomers",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "monomers": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "ProteinProcessingII",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": [
+            "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+          ]
+        },
+        "ProteinTranslocation": {
+          "artifact_hashes": {
+            "SUMMARY.json": "58dab7e9824dc330ae00f16fad4c59d95ef9ecdffa746ee4facd757f9ac0616c",
+            "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+            "null_calibration.json": "c5a6b9e03601de2efb7fd940eac5ba76054783c8846a4384b83d21d7df1d87a7",
+            "provenance.json": "dacbb95620a77b1311303230e17765b75647471a737f3d7778b2ad4c4fd536e6",
+            "result.json": "ea2f7180b8f42dbe974fd42d949d6e56070469f37296b0ef7c2f5e85077ac934",
+            "sweep_provenance.json": "49686b466b1bcbb5dd7ac3e3e63424a497b671716a4bef9f41024d846ec16c16",
+            "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+          },
+          "bucket": "ALGORITHMIC_SHALLOW",
+          "catalog_soft_flags": {
+            "M_ticks": 100,
+            "N_seeds": 50,
+            "closed_form_dominant": "confirmed_biology_validated",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "monomers",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "monomers": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "ProteinTranslocation",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": []
+        },
+        "RNAModification": {
+          "artifact_hashes": {
+            "SUMMARY.json": "09cbafe90434fb2378564982647fada6ebda4282f84497a22c5af2b40400a175",
+            "analytical_check.json": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
+            "null_calibration.json": "5f6e873035db33fac723021fd47fe67a8359c0e1e7a53871db8ce8a620a55161",
+            "provenance.json": "02ea867af9e6d8cf0b66989203a4603843447230c84e5c4c0f8d6543303e4dc5",
+            "result.json": "9f5e19a2db1fc6e70185f432c9e431909c8df98babc412b4a5d524fd05e3c3c0",
+            "sweep_provenance.json": "852cf4ae79c67f3aba3d3870a411037b4fdc423abc56e8b8ee5da9d9778f8fc0",
+            "thresholds.json": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb"
+          },
+          "bucket": "ALGORITHMIC_SHALLOW",
+          "catalog_soft_flags": {
+            "M_ticks": 100,
+            "N_seeds": 50,
+            "closed_form_dominant": "false",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "rnas",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "RNAs": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "RNAModification",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": []
+        },
+        "RNAProcessing": {
+          "artifact_hashes": {
+            "SUMMARY.json": "c1fb374c923361f686a500dac583c91250e8a4063828fda1cad73c1e3c0e3e27",
+            "analytical_check.json": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
+            "null_calibration.json": "abceb74486ab8c521eb6b56cb5861ccff171e67830f2f1078b944ed17fca3b5b",
+            "provenance.json": "12898656c39b7a862302ee2cdc98b8e6e1aa905226e1ad7c3be412063890fff4",
+            "result.json": "20ece50e85ddaf0de8b685fb2d30b5c0e98826eeccf9e6c40856aca1ee952b78",
+            "sweep_provenance.json": "3883b337ed71273a34066b393a7f70e6188db06b89e8c839a5ebf2cfdc771de5",
+            "thresholds.json": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59"
+          },
+          "bucket": "ALGORITHMIC_SHALLOW",
+          "catalog_soft_flags": {
+            "M_ticks": 100,
+            "N_seeds": 50,
+            "closed_form_dominant": "false",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "rnas",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "RNAs": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "RNAProcessing",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": []
+        }
+      }
+    },
+    "strict": {
+      "tally": {
+        "FAIL": 17,
+        "MISSING_EVIDENCE": 2,
+        "PASS": 5
+      },
+      "content_hash": "4e030fc0249b444d038aa06443bea130a4000d1bacd1dfae83d5f8568ee6c0c6",
+      "target_rows": {
+        "ProteinModification": {
+          "artifact_hashes": {
+            "SUMMARY.json": "d6d7bd61fbfc8a9e0ae28cf665dd9eff8fbc965b9d93e29139c9a8a637878640",
+            "analytical_check.json": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
+            "null_calibration.json": "5cc733c105fa010f46d25d03a8d9a8a4d369b911dc57d506a1bc85fa9f271176",
+            "provenance.json": "2d9390997b6676e0830a84a5cc8edc4d5a280cff7285e905ee9281db1785d983",
+            "result.json": "f0792b2949c5e00a4abc7bf099605c73ae949390127e148d910e5af3574a0d32",
+            "sweep_provenance.json": "796645e6851c970fef1eb62f5ce4071fa503e2cc648b513d3e6930864b4f1be9",
+            "thresholds.json": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442"
+          },
+          "bucket": "ALGORITHMIC_SHALLOW",
+          "catalog_soft_flags": {
+            "M_ticks": 100,
+            "N_seeds": 50,
+            "closed_form_dominant": "false",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "monomers",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "monomers": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "ProteinModification",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": []
+        },
+        "ProteinProcessingII": {
+          "artifact_hashes": {
+            "SUMMARY.json": "32bdca902015632b86f0da5c294d2ac04d052f14c070c35d65df7385077cf832",
+            "analytical_check.json": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+            "null_calibration.json": "b03e284ab04b69e840c7991fe1c65b3b891a86fe32b3f6fd54fe606b47c0e38a",
+            "provenance.json": "52c64a2fee6ee296ad27527c4be8f997dcd2ee1bee7cf058584d31bd882f98fe",
+            "result.json": "eac8bb002c735d7751b4eea12fb8e3cfb88b444ca9dc678ce83126130b2df3c1",
+            "sweep_provenance.json": "35993cbe6dfe707c1896ece5b3792a5df100c47dc9c28f1d0358aeeafad6f110",
+            "thresholds.json": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be"
+          },
+          "bucket": "TRIVIAL_RNG",
+          "catalog_soft_flags": {
+            "M_ticks": 20,
+            "N_seeds": 50,
+            "closed_form_dominant": "confirmed_biology_validated",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "monomers",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "monomers": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "ProteinProcessingII",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": [
+            "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+          ]
+        },
+        "ProteinTranslocation": {
+          "artifact_hashes": {
+            "SUMMARY.json": "58dab7e9824dc330ae00f16fad4c59d95ef9ecdffa746ee4facd757f9ac0616c",
+            "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+            "null_calibration.json": "c5a6b9e03601de2efb7fd940eac5ba76054783c8846a4384b83d21d7df1d87a7",
+            "provenance.json": "dacbb95620a77b1311303230e17765b75647471a737f3d7778b2ad4c4fd536e6",
+            "result.json": "ea2f7180b8f42dbe974fd42d949d6e56070469f37296b0ef7c2f5e85077ac934",
+            "sweep_provenance.json": "49686b466b1bcbb5dd7ac3e3e63424a497b671716a4bef9f41024d846ec16c16",
+            "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+          },
+          "bucket": "ALGORITHMIC_SHALLOW",
+          "catalog_soft_flags": {
+            "M_ticks": 100,
+            "N_seeds": 50,
+            "closed_form_dominant": "confirmed_biology_validated",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "monomers",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "monomers": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "ProteinTranslocation",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": []
+        },
+        "RNAModification": {
+          "artifact_hashes": {
+            "SUMMARY.json": "09cbafe90434fb2378564982647fada6ebda4282f84497a22c5af2b40400a175",
+            "analytical_check.json": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
+            "null_calibration.json": "5f6e873035db33fac723021fd47fe67a8359c0e1e7a53871db8ce8a620a55161",
+            "provenance.json": "02ea867af9e6d8cf0b66989203a4603843447230c84e5c4c0f8d6543303e4dc5",
+            "result.json": "9f5e19a2db1fc6e70185f432c9e431909c8df98babc412b4a5d524fd05e3c3c0",
+            "sweep_provenance.json": "852cf4ae79c67f3aba3d3870a411037b4fdc423abc56e8b8ee5da9d9778f8fc0",
+            "thresholds.json": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb"
+          },
+          "bucket": "ALGORITHMIC_SHALLOW",
+          "catalog_soft_flags": {
+            "M_ticks": 100,
+            "N_seeds": 50,
+            "closed_form_dominant": "false",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "rnas",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "RNAs": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "RNAModification",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": []
+        },
+        "RNAProcessing": {
+          "artifact_hashes": {
+            "SUMMARY.json": "c1fb374c923361f686a500dac583c91250e8a4063828fda1cad73c1e3c0e3e27",
+            "analytical_check.json": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
+            "null_calibration.json": "abceb74486ab8c521eb6b56cb5861ccff171e67830f2f1078b944ed17fca3b5b",
+            "provenance.json": "12898656c39b7a862302ee2cdc98b8e6e1aa905226e1ad7c3be412063890fff4",
+            "result.json": "20ece50e85ddaf0de8b685fb2d30b5c0e98826eeccf9e6c40856aca1ee952b78",
+            "sweep_provenance.json": "3883b337ed71273a34066b393a7f70e6188db06b89e8c839a5ebf2cfdc771de5",
+            "thresholds.json": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59"
+          },
+          "bucket": "ALGORITHMIC_SHALLOW",
+          "catalog_soft_flags": {
+            "M_ticks": 100,
+            "N_seeds": 50,
+            "closed_form_dominant": "false",
+            "harness_type": "design_a_per_tick",
+            "in_scope_L2_2": true,
+            "primary_channel": "rnas",
+            "primary_distance": "per_tick_vector_w1_mean"
+          },
+          "channel_verdicts": {
+            "RNAs": "SEED_NOISE",
+            "substrates": "SEED_NOISE"
+          },
+          "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest",
+          "green": true,
+          "harness_type": "design_a_per_tick",
+          "mechanical_verdict": "PASS",
+          "process": "RNAProcessing",
+          "provenance_git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+          "reasons": [],
+          "sweep_provenance": {
+            "completion_status": "COMPLETE",
+            "evaluator_schema_version": 5,
+            "git_dirty": false,
+            "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+            "inputs_verified": true,
+            "result_schema_version": 1
+          },
+          "warnings": []
+        }
+      }
+    }
+  },
+  "baseline": {
+    "eligible": [
+      "ChromosomeSegregation",
+      "HostInteraction",
+      "ProteinActivation",
+      "ProteinModification",
+      "ProteinProcessingII",
+      "ProteinTranslocation",
+      "RNAModification",
+      "RNAProcessing",
+      "TerminalOrganelleAssembly"
+    ],
+    "retained_L21": [
+      "ChromosomeSegregation",
+      "HostInteraction",
+      "ProteinActivation",
+      "TerminalOrganelleAssembly"
+    ],
+    "blocked": 19,
+    "source_digest": "a479e3386f209d6aa0d7b20aa71684208df0fb1f49b8b3eb4625e328e0984e3a",
+    "source_file_count": 140,
+    "changes": [
+      {
+        "process": "Cytokinesis",
+        "before_behavior": "PASS",
+        "after_behavior": "FAIL",
+        "eligibility": "BLOCKED_LOWER_GATE",
+        "findings_changed": false
+      },
+      {
+        "process": "ProteinModification",
+        "before_behavior": "FAIL",
+        "after_behavior": "PASS",
+        "eligibility": "ELIGIBLE",
+        "findings_changed": true
+      },
+      {
+        "process": "ProteinProcessingII",
+        "before_behavior": "PASS",
+        "after_behavior": "PASS",
+        "eligibility": "ELIGIBLE",
+        "findings_changed": true
+      },
+      {
+        "process": "ProteinTranslocation",
+        "before_behavior": "PASS",
+        "after_behavior": "PASS",
+        "eligibility": "ELIGIBLE",
+        "findings_changed": true
+      },
+      {
+        "process": "RNAModification",
+        "before_behavior": "FAIL",
+        "after_behavior": "PASS",
+        "eligibility": "ELIGIBLE",
+        "findings_changed": true
+      },
+      {
+        "process": "RNAProcessing",
+        "before_behavior": "FAIL",
+        "after_behavior": "PASS",
+        "eligibility": "ELIGIBLE",
+        "findings_changed": true
+      },
+      {
+        "process": "RibosomeAssembly",
+        "before_behavior": "PASS",
+        "after_behavior": "FAIL",
+        "eligibility": "BLOCKED_LOWER_GATE",
+        "findings_changed": false
+      }
+    ],
+    "all_unrelated_findings_preserved": true,
+    "full_index_tally": {
+      "MISSING_EVIDENCE": 2,
+      "FAIL": 17,
+      "PASS": 5
+    },
+    "integrity_ok": true
+  },
+  "journals": {
+    "data/provenance/llm_interactions.jsonl": {
+      "original_prefix_sha256": "e3529483c24ab62dfbb17e0cc78aed2f52d4c90f54d2e7d4a4cb8f32138486f2",
+      "original_prefix_bytes": 126494,
+      "current_sha256": "c800277e9eeec12ee0ef66cf633cee0052ed24e28a72685f3fd61ec59378b013",
+      "prefix_preserved": true,
+      "collisions": 0
+    },
+    "opencell/provenance/llm_interactions.jsonl": {
+      "original_prefix_sha256": "8cc633356e3ce04782e1b25516e617104003c01fd267f90d5ac6bfab5f459dba",
+      "original_prefix_bytes": 1037693,
+      "current_sha256": "13ffa8acecd0935869e4e6cd3e23bada9b57ff8c15d107940a7ac87d66e36cf0",
+      "prefix_preserved": true,
+      "collisions": 0
+    }
+  },
+  "validation_commands": [
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "generate",
+        "--out",
+        "docs/phase_f/l2_2_design_a/evidence_index.json",
+        "--evidence-root",
+        "docs/phase_f/l2_2_design_a/evidence_bundle"
+      ],
+      "exit": 0,
+      "label": "full_generate",
+      "log_sha256": "c31ebe5c9bce7c8bacd3d5992d1be25c6351a28ce2a32542cb6c17491404872f",
+      "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_generate.log"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "docs/phase_f/l2_2_design_a/evidence_index.json",
+        "--evidence-root",
+        "docs/phase_f/l2_2_design_a/evidence_bundle"
+      ],
+      "exit": 0,
+      "label": "full_portable_audit",
+      "log_sha256": "bbed5ea52c48a4d9031ded8afe6d6c01c02a42e6e9cf35c8a4b697c7c0a22908",
+      "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_portable_audit.log"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "docs/phase_f/l2_2_design_a/evidence_index.json",
+        "--evidence-root",
+        "docs/phase_f/l2_2_design_a/evidence_bundle",
+        "--verify-input-files"
+      ],
+      "exit": 1,
+      "label": "full_strict_audit",
+      "log_sha256": "cdd0d197bb4ce05183f6f90c78f48b08082dff3c4d451e2c91e3723136932222",
+      "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_audit.log"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "generate",
+        "--out",
+        "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_index.json",
+        "--evidence-root",
+        "docs/phase_f/l2_2_design_a/evidence_bundle",
+        "--verify-input-files"
+      ],
+      "exit": 0,
+      "label": "full_strict_generate",
+      "log_sha256": "581869cc6d07e3555df9b56c46a3bf1b47177ca7d88e57343bebbd21beaa8ccf",
+      "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_generate.log"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_index.json",
+        "--evidence-root",
+        "docs/phase_f/l2_2_design_a/evidence_bundle",
+        "--verify-input-files"
+      ],
+      "exit": 0,
+      "label": "full_strict_mode_audit",
+      "log_sha256": "36b2aa439a2e2a3341ac039e3fc6782f49bcdaa2b90a97e31584526b934d46f2",
+      "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_mode_audit.log"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "-m",
+        "pytest",
+        "tests/scripts/test_pre_l25_honesty.py",
+        "tests/scripts/test_l22_evidence_portability.py",
+        "tests/scripts/test_l22_evidence_generator.py::test_catalog_scope_matches_expected_24_names",
+        "tests/scripts/test_l22_evidence_generator.py::test_index_has_exactly_one_row_per_in_scope_process_no_extras",
+        "tests/scripts/test_l22_evidence_generator.py::test_content_hash_is_deterministic_across_regenerations",
+        "tests/scripts/test_l22_evidence_generator.py::test_content_hash_changes_when_evidence_root_differs",
+        "tests/scripts/test_l22_evidence_generator.py::test_audit_reports_failure_when_index_file_absent",
+        "-k",
+        "not test_tracked_baseline_is_current_and_fail_closed",
+        "--capture=sys",
+        "-q",
+        "-rs",
+        "-rx",
+        "--tb=short",
+        "-o",
+        "junit_family=legacy",
+        "--basetemp=artifacts/cohort1/evidence_honesty_landing/pytest_scratch/publication",
+        "--junitxml=artifacts/cohort1/evidence_honesty_landing/publication_honesty_tests.xml"
+      ],
+      "exit": 1,
+      "label": "publication_honesty_tests",
+      "log_sha256": "4df4b3392701772a95d080e756e021068cd03031e3e5fd2d393187da0a2e9f52",
+      "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/publication_honesty_tests.log"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "-m",
+        "pytest",
+        "tests/scripts/test_pre_l25_honesty.py",
+        "-k",
+        "not (test_tracked_baseline_is_current_and_fail_closed or test_txreg_stage_a_production_files_included_in_provenance_and_dependencies)",
+        "--capture=sys",
+        "-q",
+        "-rs",
+        "-rx",
+        "--tb=short",
+        "-o",
+        "junit_family=legacy",
+        "--basetemp=artifacts/cohort1/evidence_honesty_landing/pytest_scratch/honesty_units",
+        "--junitxml=artifacts/cohort1/evidence_honesty_landing/honesty_unit_tests.xml"
+      ],
+      "exit": 0,
+      "label": "honesty_unit_tests",
+      "log_sha256": "182dfc56cfe3b239900287382a21f93139f8cf7ffd40571226c1da16e7388de9",
+      "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/honesty_unit_tests.log"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/pre_l25_honesty.py",
+        "source-digest"
+      ],
+      "exit": 0,
+      "label": "honesty_source_digest",
+      "log_sha256": "d389e4f3d5ef386a9bdacfa6535b2da5370da2e12c446589f9a546fae5beadcd",
+      "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/honesty_source_digest.log"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/pre_l25_honesty.py",
+        "audit"
+      ],
+      "exit": 0,
+      "label": "honesty_audit",
+      "log_sha256": "640fb89c78ec2ef642e5ac0f8fa93490cdc8c015120b53e4ccabee10efdcf96c",
+      "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/honesty_audit.log"
+    }
+  ],
+  "strict_mode_disclosure": "Portable-mode canonical index cannot be compared byte-identically to strict regeneration because unrelated stale/missing raw inputs add reasons. Original strict-against-portable EXIT1 retained; full strict-mode counterpart generated/audited EXIT0, target-five identical PASS/no reasons. No stale evidence is refreshed.",
+  "inherited_test_snapshot_limitation": {
+    "unchanged_test_sha256": "74c3fe0bac42e118d26b3a5acf0bbbad648ebc4b022d37785052b220f8f8fe36",
+    "test_snapshot_premise": {
+      "eligible": 4,
+      "blocked": 24,
+      "requires_old_open_PTRANS_findings": true
+    },
+    "unchanged_entry_baseline_summary": {
+      "eligible": 6,
+      "blocked": 22
+    },
+    "measured_finding_derived_candidate_summary": {
+      "eligible": 9,
+      "blocked": 19
+    },
+    "initial_selection": "19 PASS / 1 inherited TxReg fixed-four snapshot FAIL / 1 deselected / 0 skips",
+    "focused_existing_units": "7 PASS / 2 inherited fixed-four snapshot tests deselected / 0 skips",
+    "tests_not_modified": true,
+    "actual_current_validator": "pre_l25_honesty.audit_baseline INTEGRITY_OK9/28 with exact full current index/digest140; no validator weakening"
+  },
+  "limitations": [
+    "Raw OC output tensors not retained; scalar allocator inputs are not outputs; no raw-sample W1/bootstrap reanalysis.",
+    "Delayed Nov23 completion revalidation, not contemporaneous sweep; original Nov21 outputs and missing-sentinel RED unchanged.",
+    "Candidate9/28 is not canonical audit global4 or L2.5/whole-cell readiness.",
+    "Independent committed-copy review pending; no public push/main merge, source or biological reruns."
+  ]
+}

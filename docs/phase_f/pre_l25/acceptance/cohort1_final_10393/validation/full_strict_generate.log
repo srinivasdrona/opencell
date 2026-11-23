@@ -1,0 +1,5 @@
+wrote docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_index.json (24 rows, aggregate=NON_GREEN)
+  evidence_root: docs/phase_f/l2_2_design_a/evidence_bundle
+  FAIL: 17
+  MISSING_EVIDENCE: 2
+  PASS: 5

@@ -1,5 +1,30 @@
 # ProteinTranslocation Semantic Audit
 
+## Current-source evidence acceptance — 2026-11-23
+
+All four PTRANS findings remain resolved on measured source10393/source7586.
+The accepted119-WID source algorithm, home compartments, capacity request and
+persistent one-based permutation are unchanged (`karr_protein_translocation.py:
+282-510`; `karr_request_calculators.py:804-846`). The current public per-sample
+factory/dispatch remains fresh-owner (`_l2_2_design_a_runner_helpers.py:
+1793-1798,2545-2607`), distinct from contiguous persistent replay ownership.
+Prior repeated/interleaved/poisoned isolation proofs remain immutable.
+
+Fresh N50/M100/B1000 measures all2892 coordinates with87 consumed records
+(50 raw plus37 runtime/parameter inputs). Independent numerical/current-source/
+PORTABLE+STRICT acceptance is complete, no reasons/warnings. Shared mass/input
+binding changes are covered by this new source-bound campaign, not a refresh
+of historical65df/9f53 hashes or the old64-record proof.
+Current per-finding source proof, accepted packet/review and original-to-new
+byte lineage are under
+`docs/phase_f/pre_l25/acceptance/cohort1_final_10393/`.
+
+Nov23 delayed completion revalidation is explicit, not a contemporaneous
+sweep or new biological run. Full raw OC tensors were not retained; no raw
+sample reanalysis is claimed. Historical audit and prior acceptance below
+remain valid records about their original snapshots only; candidate honesty
+uses the actual full current index and no unrelated process is promoted.
+
 ## Header
 - Process name: `ProteinTranslocation` (`protein_translocation`)
 - Audited files:

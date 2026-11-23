@@ -1,0 +1,20 @@
+{
+  "unchanged_test_sha256": "74c3fe0bac42e118d26b3a5acf0bbbad648ebc4b022d37785052b220f8f8fe36",
+  "test_snapshot_premise": {
+    "eligible": 4,
+    "blocked": 24,
+    "requires_old_open_PTRANS_findings": true
+  },
+  "unchanged_entry_baseline_summary": {
+    "eligible": 6,
+    "blocked": 22
+  },
+  "measured_finding_derived_candidate_summary": {
+    "eligible": 9,
+    "blocked": 19
+  },
+  "initial_selection": "19 PASS / 1 inherited TxReg fixed-four snapshot FAIL / 1 deselected / 0 skips",
+  "focused_existing_units": "7 PASS / 2 inherited fixed-four snapshot tests deselected / 0 skips",
+  "tests_not_modified": true,
+  "actual_current_validator": "pre_l25_honesty.audit_baseline INTEGRITY_OK9/28 with exact full current index/digest140; no validator weakening"
+}

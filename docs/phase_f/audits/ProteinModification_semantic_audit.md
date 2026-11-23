@@ -1,5 +1,32 @@
 # ProteinModification Semantic Audit
 
+## Current-source independent acceptance — 2026-11-23
+
+`PMOD-DEVIATIONS` is resolved for measured source10393/source7586, not by
+reclassifying the old tick53 failure. The accepted private MCG16807/neutral
+codec and source one-uniform sampler pass the unchanged persistent100-tick/
+all-five-observable exact replay within fresh178 PASS. Source-owned folded
+precursors/free mature enzymes, exact requests and once-only grant-backed
+evolution remain accepted (`karr_protein_modification.py:314-414,606-624,659-715`;
+`karr_composite.py:2363-2416,2701-2748`). P10b uses only monomer mass, while
+full protein mass retains existing physical complexes (`phenotypes.py:396-432`).
+
+The fresh N50/M100/B1000 full964-coordinate campaign and85 actual consumed
+records are independently numerical/current-source/PORTABLE+STRICT ACCEPTED,
+no reasons. Exact PM source capture preserves original13 plus actual full-mass
+dependencies,35 total on these bytes. Shared mass81/compatibility27 PASS and
+one disclosed inherited P10a XFAIL are preserved, not re-executed here.
+Current packet, exact source anchors and per-finding proof:
+`docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md`;
+independent verdict and original commands are in that directory's review/.
+
+Delayed Nov23 completion revalidation is explicit, not a contemporaneous
+sweep/new biological run. Original campaign/review history is unchanged.
+Raw OC output tensors were not retained; scalar allocator inputs are not
+outputs. Candidate eligibility is derived separately; no whole-cell claim.
+All implementation/checkpoint text below is historical and does not reopen
+the resolved current-source PM findings.
+
 ## Implementation update — 2026-10-15 (independent adjudication OPEN)
 
 The historical audit below is retained as the pre-repair finding record, not

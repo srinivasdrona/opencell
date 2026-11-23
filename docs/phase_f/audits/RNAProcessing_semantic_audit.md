@@ -1,5 +1,32 @@
 # RNAProcessing Semantic Audit (L1b)
 
+## Current-source independent acceptance — 2026-11-23
+
+`RPROC-DEVIATIONS` is resolved for measured source10393/source7586.
+Exact requests/shared live readers, random class ordering, whole-class worst
+reactant bound, stochastic caps and all335 nascent/347 processed/11 global-row
+fragment outputs are accepted (`karr_rna_processing.py:211-293,333-400`).
+The obsolete seven-water test premise was independently source-adjudicated,
+not fitted by changing the source class bound. Same-tick grant/evolution
+remains accepted (`karr_composite.py:2363-2382,2715-2718`).
+
+Common form/global-fragment weights, actual observer schema visibility and
+standalone/CSV full mass are repaired (`cell_mass.py:99-129,193-429`), including
+duplicate biological fragment WIDs, actual charged products and complex
+material. Fresh mass81 and current mixed gram/real Engine/writer proof pass.
+The current full693-coordinate N50/M100/B1000 gate has88 actual consumed
+records and independent numerical/current-source/PORTABLE+STRICT ACCEPTANCE,
+no reasons. Exact per-finding proof and immutable independent receipt:
+`docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md`.
+
+RNADecay fragment consumption remains OPEN on that consumer's row; it is not
+an omitted RNAProcessing output or mass reader anymore. Full1041-RNA lifecycle,
+tRNA use and normal Translation binding are not certified by producer scope.
+Delayed completion revalidation and absent raw OC output tensors are disclosed
+in the current receipt; no new run or raw-sample reanalysis is claimed.
+The checkpoint/claim table below is immutable historical context, not a
+current-source blocker or new independent result.
+
 ## 2026-10-15 bounded implementation checkpoint
 
 This section supersedes the historical implementation descriptions below; it

@@ -8,12 +8,12 @@ policy: >-
   production configuration mismatch, or stale/missing semantic adjudication
   blocks the affected process.
 source_tree:
-  sha256: "a4694f00ef286d47283aa90605a3120030c1d700e79cf9560132bcfe50d41525"
+  sha256: "a479e3386f209d6aa0d7b20aa71684208df0fb1f49b8b3eb4625e328e0984e3a"
   file_count: 140
 authorities:
   l1b_method_completeness: "PASS 115/115"
   l1b_wiring_conformance: "PASS 28/28"
-  l2_2_distributional_fidelity: "NON_GREEN: 4 PASS / 18 FAIL (stale source provenance) / 2 MISSING_EVIDENCE / 24 required"
+  l2_2_distributional_fidelity: "NON_GREEN: 5 PASS / 17 FAIL (stale unrelated provenance) / 2 MISSING_EVIDENCE / 24 required"
   l2_4_chassis_conservation: "PASS 4 seeds x 100 ticks"
   qualification: >-
     These authorities retain their existing meanings. This baseline adds the
@@ -122,8 +122,8 @@ processes:
 
   - name: Cytokinesis
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: CYT-DEVIATIONS
         kind: CODE_DEVIATION
@@ -335,21 +335,24 @@ processes:
 
   - name: ProteinModification
     behavior_gate: L2.2
-    behavior_verdict: FAIL
-    eligibility: BLOCKED_LOWER_GATE
+    behavior_verdict: PASS
+    eligibility: ELIGIBLE
     findings:
-      - id: PMOD-DEVIATIONS
-        kind: CODE_DEVIATION
-        disposition: OPEN
-        summary: >-
-          Bounded source repair has frozen 88/88 PASS and four-seed L2.4 PASS,
-          but independent adjudication remains OPEN. Historical hinted replay
-          fails tick53 after shortcut removal; the frozen protected-process
-          manifest requires classification of the new PM wrappers. Historical
-          behavior PASS is not recertified genuine fidelity.
-        evidence:
-          - path: docs/phase_f/audits/ProteinModification_semantic_audit.md
-            lines: "3-43"
+    - id: PMOD-DEVIATIONS
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Independently accepted exact live source requests/evolution and once-only grants,
+        private MCG16807/neutral codec with source one-uniform sampler and unchanged exact persistent100tick/all5observable
+        replay. Fresh PM178/mass81/caller controls and actual full964 N50/M100/B1000 current-source
+        portable/strict gate accepted;85 consumed records. Old tick53/source-capture blockers are
+        resolved, not waived.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 19-46
+      - path: opencell/vivarium/karr_protein_modification.py
+        lines: 314-414
+      - path: docs/phase_f/audits/ProteinModification_semantic_audit.md
+        lines: 3-24
 
   - name: ProteinProcessingI
     behavior_gate: L2.2
@@ -370,125 +373,119 @@ processes:
     behavior_verdict: PASS
     eligibility: ELIGIBLE
     findings:
-      - id: PPII-DEVIATIONS
-        kind: CODE_DEVIATION
-        disposition: RESOLVED
-        summary: >-
-          Independently accepted source demand, live precursor/enzyme
-          authority, same-tick grant-backed once-only evolution and signal
-          writeback at reviewed source 65df71c. Fresh full N50/M20/B1000
-          evidence and the independent frozen control run are accepted.
-        evidence:
-          - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
-            lines: "3-42"
-          - path: docs/phase_f/pre_l25/acceptance/ProteinProcessingII/VERDICT.json
-            lines: "1-26"
-      - id: PPII-LEGACY-OWNERSHIP
-        kind: CODE_DEVIATION
-        disposition: RESOLVED
-        summary: >-
-          Independently accepted existing PP1 processed_counts to Folding
-          unfolded_counts ownership without mature-pool drain or global
-          migration. Actual source-owned handoff, mature-poison, once-only
-          and v5/v6 Engine controls pass.
-        evidence:
-          - path: opencell/vivarium/karr_protein_processing_ii.py
-            lines: "165-183"
-          - path: opencell/vivarium/karr_protein_processing_ii.py
-            lines: "379-448"
-          - path: docs/phase_f/pre_l25/acceptance/ProteinProcessingII/VERDICT.json
-            lines: "1-26"
-      - id: PPII-REPLAY-INPUT-EVIDENCE
-        kind: EVIDENCE_CONFIG_MISMATCH
-        disposition: RESOLVED
-        summary: >-
-          All 50 current accepted traces have all six before/after families,
-          including signalSequenceMonomers. Independent persistent-owner
-          100-tick replay and anti-omission controls pass. The fresh complete
-          N50/M20/B1000 gate, 61 consumed inputs and portable publication
-          are independently verified; no historical hashes were refreshed.
-        evidence:
-          - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
-            lines: "3-42"
-          - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/input_manifest.json
-            lines: "1-25"
-          - path: docs/phase_f/pre_l25/acceptance/ProteinProcessingII/VERDICT.json
-            lines: "1-42"
-      - id: PPII-PROJECTION-GUARD-INPUTS
-        kind: STALE_OR_MISSING_AUDIT
-        disposition: RESOLVED
-        summary: >-
-          Independent acceptance confirms the source-owned Design-A
-          projection, live mature-enzyme inputs, exact local WID order,
-          nonmigrated queues and selected no-dual-writer controls without
-          compatibility fallback or weakened assertions.
-        evidence:
-          - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
-            lines: "3-42"
-          - path: docs/phase_f/pre_l25/acceptance/ProteinProcessingII/controls.xml
-            lines: "1-1"
+    - id: PPII-DEVIATIONS
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Accepted source demand, live precursor/enzyme authority, same-tick grant-backed once-only
+        evolution and signal writeback remain unchanged. Current source10393 full482 N50/M20/B1000
+        evidence accepted,83 actual consumed records; historical65df evidence retained separately.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 111-130
+      - path: opencell/vivarium/karr_protein_processing_ii.py
+        lines: 148-200
+      - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+        lines: 3-24
+    - id: PPII-LEGACY-OWNERSHIP
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Accepted existing PP1 processed_counts to Folding unfolded_counts ownership without
+        mature-pool drain/global migration remains byte-identical. Actual handoff/mature-poison/once-only/v5-v6
+        witnesses retained; current-source83-input gate and shared full-mass reader accepted.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 111-130
+      - path: opencell/vivarium/karr_protein_processing_ii.py
+        lines: 148-200
+      - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+        lines: 3-24
+    - id: PPII-REPLAY-INPUT-EVIDENCE
+      kind: EVIDENCE_CONFIG_MISMATCH
+      disposition: RESOLVED
+      summary: All50 current accepted traces contain all6 before/after families including signalSequenceMonomers.
+        Accepted persistent100tick/six-family replay retained; current full482 N50/M20/B1000 portable/strict
+        gate has83 inputs, not historical61. Delayed completed-run sentinel remains explicit, not
+        a contemporaneous sweep.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 111-130
+      - path: opencell/vivarium/karr_protein_processing_ii.py
+        lines: 148-200
+      - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+        lines: 3-24
+    - id: PPII-PROJECTION-GUARD-INPUTS
+      kind: STALE_OR_MISSING_AUDIT
+      disposition: RESOLVED
+      summary: Source-owned Design-A projection, live mature enzymes, exact WID order/local queues/no-dual-writer
+        controls remain independently accepted on unchanged producer/guard bytes. Current full-mass
+        constructor source bindings add no fallback and preserve exact ownership.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 111-130
+      - path: opencell/vivarium/karr_protein_processing_ii.py
+        lines: 148-200
+      - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+        lines: 3-24
 
   - name: ProteinTranslocation
     behavior_gate: L2.2
     behavior_verdict: PASS
     eligibility: ELIGIBLE
     findings:
-      - id: PTRANS-STAGE2-ALGORITHM
-        kind: CODE_DEVIATION
-        disposition: RESOLVED
-        summary: >-
-          All 119 translocatable WIDs now use the compartment authority, the
-          request calculator implements MATLAB's capacity-clipped ATP/GTP/H2O
-          algebra without a current-pool floor, and one-based persistent RNG
-          behavior fails closed.
-        evidence:
-          - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
-            lines: "44-61"
-      - id: PTRANS-GENUINE-EVIDENCE
-        kind: EVIDENCE_CONFIG_MISMATCH
-        disposition: RESOLVED
-        summary: >-
-          Design-A now compares all 2,892 compartment positions using 50
-          genuine Karr seeds x 50 OpenCell seeds x 100 ticks; the mechanical
-          verdict is PASS with zero warnings and no single-seed reuse.
-        evidence:
-          - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/result.json
-            lines: "1-152"
-          - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json
-            lines: "1-34"
-      - id: PTRANS-COMPLETE-ATTESTATION
-        kind: EVIDENCE_CONFIG_MISMATCH
-        disposition: RESOLVED
-        summary: >-
-          Fresh complete N50/M100/B1000 evidence and portable publication are
-          independently accepted. All 64 consumed records bind every distinct
-          seed and actual runtime/parameter input; source, constructor,
-          sidecar and sentinel hashes are current. No historical hashes were
-          refreshed to represent a new execution.
-        evidence:
-          - path: docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/input_manifest.json
-            lines: "1-19"
-          - path: tests/vivarium/l2_2_design_a_runner.py
-            lines: "1476-1493"
-          - path: docs/phase_f/pre_l25/acceptance/ProteinTranslocation/VERDICT.json
-            lines: "1-70"
-      - id: PTRANS-SAMPLE-ISOLATION
-        kind: EVIDENCE_CONFIG_MISMATCH
-        disposition: RESOLVED
-        summary: >-
-          Independent active repeated/interleaved Design-A witnesses verify
-          fresh actual public execution owners and initial per-sample streams,
-          including advanced metadata and poisoned after/hint controls.
-          The unchanged contiguous 100-tick replay separately retains one
-          persistent owner. No RNG reset or cache clearing substitutes for
-          correct sample isolation.
-        evidence:
-          - path: tests/vivarium/_l2_2_design_a_runner_helpers.py
-            lines: "1618-1621"
-          - path: tests/vivarium/_l2_2_design_a_runner_helpers.py
-            lines: "2512-2515"
-          - path: docs/phase_f/pre_l25/acceptance/ProteinTranslocation/VERDICT.json
-            lines: "71-120"
+    - id: PTRANS-STAGE2-ALGORITHM
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Accepted119-WID compartment authority, exact capacity-clipped ATP/GTP/H2O request
+        without pool floor and one-based persistent RNG remain unchanged on source10393. Full current
+        source/fixture bindings and accepted2892-coordinate gate are retained.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 91-110
+      - path: opencell/vivarium/karr_protein_translocation.py
+        lines: 282-510
+      - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
+        lines: 3-24
+    - id: PTRANS-GENUINE-EVIDENCE
+      kind: EVIDENCE_CONFIG_MISMATCH
+      disposition: RESOLVED
+      summary: Current source10393 full2892-coordinate N50/M100/B1000 gate uses50 genuine distinct
+        seed files and per-sample execution owners; mechanical portable/strict PASS with no reasons/warnings.
+        Historical65df/9f53 gate is not relabelled as current.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 91-110
+      - path: opencell/vivarium/karr_protein_translocation.py
+        lines: 282-510
+      - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
+        lines: 3-24
+    - id: PTRANS-COMPLETE-ATTESTATION
+      kind: EVIDENCE_CONFIG_MISMATCH
+      disposition: RESOLVED
+      summary: Current source10393 independently accepted87 consumed records bind50 distinct seeds
+        plus37 actual runtime/parameter inputs, registered sources and exact sidecars. Documented
+        completed-run revalidation/sentinel and original-to-normalized byte lineage preserved; not
+        a new run or historical hash refresh.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 91-110
+      - path: opencell/vivarium/karr_protein_translocation.py
+        lines: 282-510
+      - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
+        lines: 3-24
+    - id: PTRANS-SAMPLE-ISOLATION
+      kind: EVIDENCE_CONFIG_MISMATCH
+      disposition: RESOLVED
+      summary: Prior independent repeated/interleaved active actual public owner/initial-stream/poisoned-hint
+        witnesses remain immutable and current factory dispatch source matches. Current gate binds
+        that source; contiguous100tick replay separately retains persistent ownership, no reset/cache-clearing
+        substitute.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 91-110
+      - path: opencell/vivarium/karr_protein_translocation.py
+        lines: 282-510
+      - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
+        lines: 3-24
 
   - name: RNADecay
     behavior_gate: L2.2
@@ -507,38 +504,45 @@ processes:
 
   - name: RNAModification
     behavior_gate: L2.2
-    behavior_verdict: FAIL
-    eligibility: BLOCKED_LOWER_GATE
+    behavior_verdict: PASS
+    eligibility: ELIGIBLE
     findings:
-      - id: RMOD-DEVIATIONS
-        kind: CODE_DEVIATION
-        disposition: OPEN
-        summary: >-
-          Source mechanics, all RNA forms, and same-tick allocation repaired in
-          the bounded 2026-10-15 lane. Independent semantic adjudication and
-          fresh source-bound statistical evidence remain OPEN; historical
-          no-op/hinted replays do not certify the changed implementation.
-        evidence:
-          - path: docs/phase_f/audits/RNAModification_semantic_audit.md
-            lines: "3-25"
+    - id: RMOD-DEVIATIONS
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Independently accepted exact request/stochastic source loop,347 processed/mature
+        rows,309 pass-throughs, aliases and same-tick grant-backed evolution; full694-coordinate
+        N50/M100/B1000 gate portable/strict PASS,87 consumed records. Common source-complete mass/caller
+        binding accepted; no hinted/no-op historical replay recertification. Consumer tRNA/Translation/full1041
+        lifecycle is not claimed repaired.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 72-90
+      - path: opencell/vivarium/karr_rna_modification.py
+        lines: 219-315
+      - path: docs/phase_f/audits/RNAModification_semantic_audit.md
+        lines: 3-24
 
   - name: RNAProcessing
     behavior_gate: L2.2
-    behavior_verdict: FAIL
-    eligibility: BLOCKED_LOWER_GATE
+    behavior_verdict: PASS
+    eligibility: ELIGIBLE
     findings:
-      - id: RPROC-DEVIATIONS
-        kind: CODE_DEVIATION
-        disposition: OPEN
-        summary: >-
-          Source requests/evolution/intergenic production and same-tick
-          allocation repaired in the bounded 2026-10-15 lane. Independent
-          adjudication/statistical evidence remain OPEN. One frozen ordering
-          test contradicts the MATLAB whole-class water bound; RNADecay fragment
-          consumption and WID-only RNA-mass observability are not repaired.
-        evidence:
-          - path: docs/phase_f/audits/RNAProcessing_semantic_audit.md
-            lines: "3-37"
+    - id: RPROC-DEVIATIONS
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Independently accepted exact requests, whole-class worst-reactant cap, random ordering,
+        full335nascent/347processed/11global-fragment production and source-bound693-coordinate
+        N50/M100/B1000 gate;88 consumed records. Current common full-form/complex mass and genuine
+        observer/CSV schema proof accepted. RNADecay consumer lifecycle remains explicitly OPEN
+        on its own row, not an omitted producer output or mass reader.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 47-71
+      - path: opencell/vivarium/karr_rna_processing.py
+        lines: 211-293
+      - path: docs/phase_f/audits/RNAProcessing_semantic_audit.md
+        lines: 3-24
 
   - name: Replication
     behavior_gate: L2.2
@@ -572,8 +576,8 @@ processes:
 
   - name: RibosomeAssembly
     behavior_gate: L2.2
-    behavior_verdict: PASS
-    eligibility: BLOCKED_CODE_DEVIATION
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
     findings:
       - id: RIBO-DEVIATIONS
         kind: CODE_DEVIATION
@@ -762,5 +766,5 @@ processes:
             lines: "40-43"
 
 summary:
-  eligible: 6
-  blocked: 22
+  eligible: 9
+  blocked: 19

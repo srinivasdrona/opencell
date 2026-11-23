@@ -1,0 +1,299 @@
+{
+  "utc": "2026-11-23T17:29:58.179Z",
+  "accepted_packet": {
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/SUMMARY.json": {
+      "sha256": "d6d7bd61fbfc8a9e0ae28cf665dd9eff8fbc965b9d93e29139c9a8a637878640",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/SUMMARY.json",
+      "bytes": 709
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/analytical_check.json": {
+      "sha256": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/analytical_check.json",
+      "bytes": 94
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/input_manifest.json": {
+      "sha256": "5d72703412fdcb4be5f672d5c15bb0839aa4234e736ca678891dc562376bc831",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/input_manifest.json",
+      "bytes": 16917
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/null_calibration.json": {
+      "sha256": "5cc733c105fa010f46d25d03a8d9a8a4d369b911dc57d506a1bc85fa9f271176",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/null_calibration.json",
+      "bytes": 824
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/provenance.json": {
+      "sha256": "2d9390997b6676e0830a84a5cc8edc4d5a280cff7285e905ee9281db1785d983",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/provenance.json",
+      "bytes": 408
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/result.json": {
+      "sha256": "f0792b2949c5e00a4abc7bf099605c73ae949390127e148d910e5af3574a0d32",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/result.json",
+      "bytes": 3331
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/sweep_provenance.json": {
+      "sha256": "796645e6851c970fef1eb62f5ce4071fa503e2cc648b513d3e6930864b4f1be9",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/sweep_provenance.json",
+      "bytes": 6411
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/thresholds.json": {
+      "sha256": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/thresholds.json",
+      "bytes": 446
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/SUMMARY.json": {
+      "sha256": "32bdca902015632b86f0da5c294d2ac04d052f14c070c35d65df7385077cf832",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/SUMMARY.json",
+      "bytes": 1028
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/analytical_check.json": {
+      "sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/analytical_check.json",
+      "bytes": 94
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/input_manifest.json": {
+      "sha256": "40ad7e7c153293d4298c628a3eec5772f5c48329881381db6fb1955f0660eb1c",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/input_manifest.json",
+      "bytes": 16586
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/null_calibration.json": {
+      "sha256": "b03e284ab04b69e840c7991fe1c65b3b891a86fe32b3f6fd54fe606b47c0e38a",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/null_calibration.json",
+      "bytes": 1139
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/provenance.json": {
+      "sha256": "52c64a2fee6ee296ad27527c4be8f997dcd2ee1bee7cf058584d31bd882f98fe",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/provenance.json",
+      "bytes": 408
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/result.json": {
+      "sha256": "eac8bb002c735d7751b4eea12fb8e3cfb88b444ca9dc678ce83126130b2df3c1",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/result.json",
+      "bytes": 3515
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/sweep_provenance.json": {
+      "sha256": "35993cbe6dfe707c1896ece5b3792a5df100c47dc9c28f1d0358aeeafad6f110",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/sweep_provenance.json",
+      "bytes": 6307
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/thresholds.json": {
+      "sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/thresholds.json",
+      "bytes": 440
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/SUMMARY.json": {
+      "sha256": "58dab7e9824dc330ae00f16fad4c59d95ef9ecdffa746ee4facd757f9ac0616c",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/SUMMARY.json",
+      "bytes": 710
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/analytical_check.json": {
+      "sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/analytical_check.json",
+      "bytes": 95
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/input_manifest.json": {
+      "sha256": "29189fb7fefad725703dc62dddcf209e075b4c9519469b995efe19d095fc38ef",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/input_manifest.json",
+      "bytes": 17267
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/null_calibration.json": {
+      "sha256": "c5a6b9e03601de2efb7fd940eac5ba76054783c8846a4384b83d21d7df1d87a7",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/null_calibration.json",
+      "bytes": 824
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/provenance.json": {
+      "sha256": "dacbb95620a77b1311303230e17765b75647471a737f3d7778b2ad4c4fd536e6",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/provenance.json",
+      "bytes": 409
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/result.json": {
+      "sha256": "ea2f7180b8f42dbe974fd42d949d6e56070469f37296b0ef7c2f5e85077ac934",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/result.json",
+      "bytes": 3280
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json": {
+      "sha256": "49686b466b1bcbb5dd7ac3e3e63424a497b671716a4bef9f41024d846ec16c16",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/sweep_provenance.json",
+      "bytes": 6495
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/thresholds.json": {
+      "sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/thresholds.json",
+      "bytes": 445
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/SUMMARY.json": {
+      "sha256": "09cbafe90434fb2378564982647fada6ebda4282f84497a22c5af2b40400a175",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/SUMMARY.json",
+      "bytes": 705
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/analytical_check.json": {
+      "sha256": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/analytical_check.json",
+      "bytes": 90
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/input_manifest.json": {
+      "sha256": "b7e498550c0e32280e4c4ba207f9229595c5b806d140ca812106a455c353c02d",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/input_manifest.json",
+      "bytes": 17048
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/null_calibration.json": {
+      "sha256": "5f6e873035db33fac723021fd47fe67a8359c0e1e7a53871db8ce8a620a55161",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/null_calibration.json",
+      "bytes": 806
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/provenance.json": {
+      "sha256": "02ea867af9e6d8cf0b66989203a4603843447230c84e5c4c0f8d6543303e4dc5",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/provenance.json",
+      "bytes": 404
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/result.json": {
+      "sha256": "9f5e19a2db1fc6e70185f432c9e431909c8df98babc412b4a5d524fd05e3c3c0",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/result.json",
+      "bytes": 3371
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/sweep_provenance.json": {
+      "sha256": "852cf4ae79c67f3aba3d3870a411037b4fdc423abc56e8b8ee5da9d9778f8fc0",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/sweep_provenance.json",
+      "bytes": 6304
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/thresholds.json": {
+      "sha256": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/thresholds.json",
+      "bytes": 451
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/SUMMARY.json": {
+      "sha256": "c1fb374c923361f686a500dac583c91250e8a4063828fda1cad73c1e3c0e3e27",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/SUMMARY.json",
+      "bytes": 703
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/analytical_check.json": {
+      "sha256": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/analytical_check.json",
+      "bytes": 88
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/input_manifest.json": {
+      "sha256": "5a783670b3dd183674e5aceda38f3e2fe864e303a2f18f0113515665a4705ec0",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/input_manifest.json",
+      "bytes": 17106
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/null_calibration.json": {
+      "sha256": "abceb74486ab8c521eb6b56cb5861ccff171e67830f2f1078b944ed17fca3b5b",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/null_calibration.json",
+      "bytes": 814
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/provenance.json": {
+      "sha256": "12898656c39b7a862302ee2cdc98b8e6e1aa905226e1ad7c3be412063890fff4",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/provenance.json",
+      "bytes": 402
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/result.json": {
+      "sha256": "20ece50e85ddaf0de8b685fb2d30b5c0e98826eeccf9e6c40856aca1ee952b78",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/result.json",
+      "bytes": 3209
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/sweep_provenance.json": {
+      "sha256": "3883b337ed71273a34066b393a7f70e6188db06b89e8c839a5ebf2cfdc771de5",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/sweep_provenance.json",
+      "bytes": 6407
+    },
+    "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/thresholds.json": {
+      "sha256": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59",
+      "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/thresholds.json",
+      "bytes": 437
+    }
+  },
+  "compact_receipts": {
+    "review/VERDICT.json": {
+      "sha256": "bd26519c845dea1606d3a0b2def47ff0fe66cdc23ccede91b3bf6adbf0c8a484",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\VERDICT.json"
+    },
+    "review/COMMANDS.json": {
+      "sha256": "e30ac8bdbbee85cf0871194e0ab36d39058fa768acf8df1fa9befb922084db3a",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\COMMANDS.json"
+    },
+    "review/PACKAGE_FILES.json": {
+      "sha256": "1e619ad6c34001e631a2dee1becfb951dc57aa20241179d4c4757a055067ea41",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\PACKAGE_FILES.json"
+    },
+    "review/METHOD_REVIEW.json": {
+      "sha256": "453cee6d347416231f47d7ca9b82cf1ff1fadbb681f30832f3f0880bdb428a5f",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\METHOD_REVIEW.json"
+    },
+    "review/METHOD_COMPLETION.json": {
+      "sha256": "a6a273cebe672f065bc4867dc142ad0fbc3a58061b82ffdaf56f802b74a6843d",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\METHOD_COMPLETION.json"
+    },
+    "review/TRANSFORM_AND_SENTINEL_PROOF.json": {
+      "sha256": "5a3738d1194aac85c48c2d4cfadc7cd9b87a390d6ca1075d5d9f1bdd96e64c69",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\TRANSFORM_AND_SENTINEL_PROOF.json"
+    },
+    "review/audit_portable.log": {
+      "sha256": "2507c69109396a99df5f124f81fc960e808b780b6b4b6f2a574312f5e7343b70",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\audit_portable.log"
+    },
+    "review/audit_strict.log": {
+      "sha256": "2507c69109396a99df5f124f81fc960e808b780b6b4b6f2a574312f5e7343b70",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\audit_strict.log"
+    },
+    "review/generate_portable.log": {
+      "sha256": "c60a81c977fe5462e56ec2e09cc6a396680e2c473620e57556e58404349b8d71",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\generate_portable.log"
+    },
+    "review/generate_strict.log": {
+      "sha256": "df2419be1918481ad53928e6212fddf755dd68408308da825ee1318e64a2293b",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\generate_strict.log"
+    },
+    "review/bundle.log": {
+      "sha256": "7f85fcbfa7313bb8bd7a676092a5a09e9c8f526ee0fff333d0e6db4c801b9b62",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_independent_acceptance\\bundle.log"
+    },
+    "finalization/FINALIZATION.json": {
+      "sha256": "26a7a8489cd9634df9cdc5e572e1b4749fd612e8d43f983c953251deb3dcf317",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\finalized_evidence\\FINALIZATION.json"
+    },
+    "history/ORIGINAL_MISSING_SENTINEL_VERDICT.json": {
+      "sha256": "5e2eafa19460ad6ca07b959e3388406778d4a82dadf20b9fa37485cf781a23e4",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\independent_acceptance\\VERDICT.json"
+    },
+    "source_repair/mass81.xml": {
+      "sha256": "520f043e21ea18c4a82a4c7d885e4ed9af903cd1bbd88f3b6d33c4dd4424de49",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\resumed\\mass81.xml"
+    },
+    "source_repair/pm178.xml": {
+      "sha256": "12f9fce5e5a30b9cc7f574649c621f514cf08c5a0bdf099275d4b3ef7d0c35fa",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\resumed\\pm178.xml"
+    },
+    "source_repair/compat.xml": {
+      "sha256": "45b8b98919748aabf549ff397b05acafbad621bc2bdbb870ce2b78513cc7df12",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\resumed\\compat.xml"
+    },
+    "source_repair/mass81_command.json": {
+      "sha256": "bb052e9fb6a6a6d95cbdbc65e8f22a77777d3876eb057c7a1dda825b3b62e5b6",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\resumed\\mass81_command.json"
+    },
+    "source_repair/pm178_command.json": {
+      "sha256": "553ec969175b30a6b617b5bc5b30a5eeb2c36a482e8fa219ea4169a6675326b9",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\resumed\\pm178_command.json"
+    },
+    "source_repair/compat_command.json": {
+      "sha256": "4be0b1e2722c3d85938a1404fca5c36b7f7776426c30bec13f5656af7f8a57cd",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\resumed\\compat_command.json"
+    },
+    "source_repair/ledger100_command.json": {
+      "sha256": "6b89779aa8f9fc75b2f2db0e52bce3c464cb5d4289c21abf0cddaeadd063bc68",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\resumed\\ledger100_command.json"
+    },
+    "source_repair/MATERIAL_PROOF.json": {
+      "sha256": "72138d969f2f3649ef3d97980d2a445a05eeea367fad7e8af113a098e2e4036f",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\resumed\\MATERIAL_PROOF.json"
+    },
+    "source_repair/ledger_summary.json": {
+      "sha256": "c3546811252331d92662c0900c1793a25ce2163a1b905fa202819c38deed6e8c",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\resumed\\ledger100\\summary.json"
+    },
+    "source_repair/PM_CAPTURE_CONTRACT.json": {
+      "sha256": "b686cdcdafd2532319686941e76fbae6724345b0f63939ef530d8afa0c54d187",
+      "original_path": "artifacts\\cohort1\\final_source_freeze\\pm_capture_contract_adjudication\\CONTRACT.json"
+    }
+  }
+}

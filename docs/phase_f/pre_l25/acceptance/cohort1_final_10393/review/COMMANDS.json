@@ -1,0 +1,94 @@
+[
+  {
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "bundle",
+      "--source-root",
+      "artifacts/cohort1/final_source_freeze/finalized_evidence/runner_layout",
+      "--bundle-root",
+      "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:21:43.918722+00:00",
+    "label": "bundle",
+    "started_utc": "2026-11-23T17:21:42.939931+00:00",
+    "stdout_path": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/bundle.log",
+    "stdout_sha256": "7f85fcbfa7313bb8bd7a676092a5a09e9c8f526ee0fff333d0e6db4c801b9b62"
+  },
+  {
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "generate",
+      "--out",
+      "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/index_portable.json",
+      "--evidence-root",
+      "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:21:49.218822+00:00",
+    "label": "generate_portable",
+    "started_utc": "2026-11-23T17:21:43.927571+00:00",
+    "stdout_path": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/generate_portable.log",
+    "stdout_sha256": "c60a81c977fe5462e56ec2e09cc6a396680e2c473620e57556e58404349b8d71"
+  },
+  {
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "audit",
+      "--index",
+      "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/index_portable.json",
+      "--evidence-root",
+      "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:21:57.721317+00:00",
+    "label": "audit_portable",
+    "started_utc": "2026-11-23T17:21:49.228907+00:00",
+    "stdout_path": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/audit_portable.log",
+    "stdout_sha256": "2507c69109396a99df5f124f81fc960e808b780b6b4b6f2a574312f5e7343b70"
+  },
+  {
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "generate",
+      "--out",
+      "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/index_strict.json",
+      "--evidence-root",
+      "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle",
+      "--verify-input-files"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:22:07.138119+00:00",
+    "label": "generate_strict",
+    "started_utc": "2026-11-23T17:21:57.773155+00:00",
+    "stdout_path": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/generate_strict.log",
+    "stdout_sha256": "df2419be1918481ad53928e6212fddf755dd68408308da825ee1318e64a2293b"
+  },
+  {
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "audit",
+      "--index",
+      "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/index_strict.json",
+      "--evidence-root",
+      "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle",
+      "--verify-input-files"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:22:24.349934+00:00",
+    "label": "audit_strict",
+    "started_utc": "2026-11-23T17:22:07.148046+00:00",
+    "stdout_path": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/audit_strict.log",
+    "stdout_sha256": "2507c69109396a99df5f124f81fc960e808b780b6b4b6f2a574312f5e7343b70"
+  }
+]

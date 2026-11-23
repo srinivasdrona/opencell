@@ -1,0 +1,911 @@
+{
+  "commands": [
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "bundle",
+        "--source-root",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/runner_layout",
+        "--bundle-root",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-21T21:54:05.297124+00:00",
+      "label": "bundle",
+      "started_utc": "2026-11-21T21:54:03.709293+00:00",
+      "stdout_path": "artifacts/cohort1/final_source_freeze/independent_acceptance/bundle.log",
+      "stdout_sha256": "ba89651e9ed4aeea05e474cf2f465a63381084661b53e63b511a97dab1136eeb"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "generate",
+        "--out",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/index_portable.json",
+        "--evidence-root",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-21T21:54:06.401444+00:00",
+      "label": "generate_portable",
+      "started_utc": "2026-11-21T21:54:05.314532+00:00",
+      "stdout_path": "artifacts/cohort1/final_source_freeze/independent_acceptance/generate_portable.log",
+      "stdout_sha256": "f73eacb04177e431fef0aad4e271f4c997b4f079afb04249b8c0c6efa461a444"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/index_portable.json",
+        "--evidence-root",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-21T21:54:08.182687+00:00",
+      "label": "audit_portable",
+      "started_utc": "2026-11-21T21:54:06.419009+00:00",
+      "stdout_path": "artifacts/cohort1/final_source_freeze/independent_acceptance/audit_portable.log",
+      "stdout_sha256": "9fc106835ddbfc167edf429b25d48a9da9b91cade101ca42a86fb36f6ad48c32"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "generate",
+        "--out",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/index_strict.json",
+        "--evidence-root",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle",
+        "--verify-input-files"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-21T21:54:09.260660+00:00",
+      "label": "generate_strict",
+      "started_utc": "2026-11-21T21:54:08.200345+00:00",
+      "stdout_path": "artifacts/cohort1/final_source_freeze/independent_acceptance/generate_strict.log",
+      "stdout_sha256": "48a595c28ab97b713b6c32ca16aa85035598d29f92174af42c81c0d02d1ee2d8"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/index_strict.json",
+        "--evidence-root",
+        "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle",
+        "--verify-input-files"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-21T21:54:11.054294+00:00",
+      "label": "audit_strict",
+      "started_utc": "2026-11-21T21:54:09.279666+00:00",
+      "stdout_path": "artifacts/cohort1/final_source_freeze/independent_acceptance/audit_strict.log",
+      "stdout_sha256": "9fc106835ddbfc167edf429b25d48a9da9b91cade101ca42a86fb36f6ad48c32"
+    }
+  ],
+  "completion_sentinel_boundary": {
+    "existing_builder": "scripts/l22_evidence/sweep.py:460-528",
+    "not_done": "No invented sweep sentinel, invocation of run_job, source checkout/commit, schema waiver or historical PASS hash refresh.",
+    "prerequisite": "Genuine completion/provenance attestation for these measured campaigns under the documented source/sidecar/input-verified contract, with parent authority for any retrospective packaging decision.",
+    "required_policy": "scripts/l22_evidence/generator.py:533-558; schema.py:118-152"
+  },
+  "eligibility": "NOT_PROMOTED; canonical local4/28 unchanged; no9/28/whole-cell/L2.5 claim",
+  "final_control_proof": "FINAL_CONTROL_PROOF.json",
+  "head": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+  "metadata_transport_verification": {
+    "actual_campaign_git_call_logs": {
+      "ProteinModification": {
+        "native_git_calls": 1,
+        "path": "artifacts/cohort1/final_source_freeze/NATIVE_GIT_METADATA_ProteinModification.jsonl",
+        "sha256": "6baff80fa9ebcba8596d74acfb9c747c6f1eccc3e8e8ee8b19aa8dc9d064eacf"
+      },
+      "ProteinProcessingII": {
+        "native_git_calls": 1,
+        "path": "artifacts/cohort1/final_source_freeze/NATIVE_GIT_METADATA_ProteinProcessingII.jsonl",
+        "sha256": "72356bff4fbd8cacc6293e91bbe215e1b41ad7994501ce2c79e9f81c33e4000a"
+      },
+      "ProteinTranslocation": {
+        "native_git_calls": 1,
+        "path": "artifacts/cohort1/final_source_freeze/NATIVE_GIT_METADATA_ProteinTranslocation.jsonl",
+        "sha256": "74e2e13430201956562909262a6c39a37a8f189f88bcad9dfd82434ace91a044"
+      },
+      "RNAModification": {
+        "native_git_calls": 1,
+        "path": "artifacts/cohort1/final_source_freeze/NATIVE_GIT_METADATA_RNAModification.jsonl",
+        "sha256": "4e5761cf768d5a7b374e9858b85bb239c76fcd038af0e74be64729deb8e3872a"
+      },
+      "RNAProcessing": {
+        "native_git_calls": 1,
+        "path": "artifacts/cohort1/final_source_freeze/NATIVE_GIT_METADATA_RNAProcessing.jsonl",
+        "sha256": "cb60f35e39bec5db1c67181c2be2ef2f7f4bb20c07d50495b836a725d01d762a"
+      }
+    },
+    "all_non_git_subprocess_calls_unmodified": true,
+    "bytes": 9969,
+    "driver_not_executed_by_reviewer": true,
+    "only_git_subprocess_calls_intercepted": true,
+    "sha256": "1ecfdfebb99aff1f48bfc49a198f1ec8684dc29b2703b43b86c900be4c88d10d"
+  },
+  "model": "unknown",
+  "numerical_channel_verdict": "ALL_FIVE_CHANNEL_PAYLOADS_MATCH_EXISTING_EVALUATOR",
+  "owned_final_control_initial_RED": {
+    "log": "final_checks_attempt1.log",
+    "reason": "Own literal syntax assumption (range(100)/np.not_equal) was invalid: actual frozen exact replay uses asserted n_ticks == 100, range(n_ticks), and np.flatnonzero(oc_after != karr_after). Corrected only own inspection, preserving actual replay and initial RED.",
+    "source_snapshot": "final_checks_attempt1.py"
+  },
+  "owned_initial_RED": {
+    "execution": "REVIEW_EXECUTION_attempt1.json",
+    "log": "review_attempt1.log",
+    "reason": "Review helper assumed uniform RUN_STATUS schema; PP2 compact N/M/B receipt differs. Corrected only own parser; actual configuration/seed/B/exit/warning authority remained independently checked.",
+    "subsequent_review_exit": 0
+  },
+  "partial_package_files": 35,
+  "partial_package_manifest": "PACKAGE_FILES.json",
+  "portable_verdict": "BLOCKED_MISSING_COMPLETION_SENTINELS",
+  "preservation": {
+    "campaign_files": 45,
+    "native_head_index_and_two_journal_prefixes": "UNCHANGED",
+    "read_evidence_files": 439,
+    "source_bound_files": 135
+  },
+  "process_evaluator_verdicts": {
+    "ProteinModification": "PASS",
+    "ProteinProcessingII": "PASS",
+    "ProteinTranslocation": "PASS",
+    "RNAModification": "PASS",
+    "RNAProcessing": "PASS"
+  },
+  "processes": {
+    "ProteinModification": {
+      "campaign_exit": 0,
+      "configuration": {
+        "B": 1000,
+        "M": 100,
+        "N": 50,
+        "harness": "design_a_per_tick",
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49
+        ]
+      },
+      "current_evaluator_verdict": {
+        "channel_verdicts": {
+          "monomers": "SEED_NOISE",
+          "substrates": "SEED_NOISE"
+        },
+        "mechanical_verdict": "PASS",
+        "reasons": []
+      },
+      "h12": null,
+      "missing_prerequisites": [
+        "sweep_provenance.json: current schema requires the genuine launcher-written completion sentinel; runner-only campaign has none"
+      ],
+      "numerical_channels": {
+        "monomers": {
+          "is_primary": true,
+          "n_nonzero_karr": 2026024,
+          "n_nonzero_oc": 2026010,
+          "q95_null": 0.05782120331950206,
+          "threshold": 1.0,
+          "verdict": "SEED_NOISE",
+          "w1": 0.00010165975103734455
+        },
+        "substrates": {
+          "is_primary": false,
+          "n_nonzero_karr": 5471,
+          "n_nonzero_oc": 5486,
+          "q95_null": 12.896554666666663,
+          "threshold": 25.793109333333327,
+          "verdict": "SEED_NOISE",
+          "w1": 0.037426666666666664
+        }
+      },
+      "portable": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/ProteinModification/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinModification"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "result_sha256": "950742ab710ddb957df872bc520ba2935af44bc4dee480ad085ce1a045817a98",
+      "result_utc": "2026-11-21T20:19:27.140862+00:00",
+      "retention": {
+        "allocator_scalar_input_summary_rows": 5000,
+        "current_formal_packet_policy": "No full OC tensor requirement in schema required files or evaluator field contract",
+        "disposition": "LIMITATION_RETAINED_NOT_AN_ADDED_GATE",
+        "full_raw_OC_output_tensors": "NOT_RETAINED",
+        "policy_anchors": [
+          "scripts/l22_evidence/schema.py:72-115",
+          "docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md:977-1013"
+        ],
+        "raw_output_reanalysis": "UNAVAILABLE; W1/KS/bootstrap cannot be independently recalculated from raw OC samples"
+      },
+      "runner_verdict": "PASS",
+      "source": {
+        "actual_cold_constructor_dependencies_bound": true,
+        "all_raw_seed_horizon_frame_widths_verified": true,
+        "before_consumption_code_parameters": 35,
+        "frozen_F_inputs": 50,
+        "manifest_entries": 85,
+        "verdict": "ACCEPT"
+      },
+      "strict": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/ProteinModification/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinModification"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "warnings_preserved": []
+    },
+    "ProteinProcessingII": {
+      "campaign_exit": 0,
+      "configuration": {
+        "B": 1000,
+        "M": 20,
+        "N": 50,
+        "harness": "design_a_per_tick",
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49
+        ]
+      },
+      "current_evaluator_verdict": {
+        "channel_verdicts": {
+          "monomers": "SEED_NOISE",
+          "substrates": "SEED_NOISE"
+        },
+        "mechanical_verdict": "PASS",
+        "reasons": []
+      },
+      "h12": {
+        "artifact_sha256": "df3c99cc93829eac834f3c7df34a7c6e2558ddf93d7e207e832afd52359b8abd",
+        "ref": "docs/phase_f/l2_2_design_a/h12/ProteinProcessingII_h12.json",
+        "scope": "Existing predictor/Karr authority validation, not fresh OC biology or RNG bit identity",
+        "validation_rejection": null
+      },
+      "missing_prerequisites": [
+        "sweep_provenance.json: current schema requires the genuine launcher-written completion sentinel; runner-only campaign has none"
+      ],
+      "numerical_channels": {
+        "monomers": {
+          "is_primary": true,
+          "n_nonzero_karr": 33,
+          "n_nonzero_oc": 33,
+          "q95_null": 9.128630705394158e-05,
+          "threshold": 1.0,
+          "verdict": "SEED_NOISE",
+          "w1": 0.0
+        },
+        "substrates": {
+          "is_primary": false,
+          "n_nonzero_karr": 51,
+          "n_nonzero_oc": 51,
+          "q95_null": 180.14732999999993,
+          "threshold": 360.29465999999985,
+          "verdict": "SEED_NOISE",
+          "w1": 0.0
+        }
+      },
+      "portable": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/ProteinProcessingII/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinProcessingII"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "result_sha256": "24a39ebdc29a4c82ce816b93d84441afb49762b3488a383f0166c6362a6c85f7",
+      "result_utc": "2026-11-21T19:39:39.603273+00:00",
+      "retention": {
+        "allocator_scalar_input_summary_rows": 1000,
+        "current_formal_packet_policy": "No full OC tensor requirement in schema required files or evaluator field contract",
+        "disposition": "LIMITATION_RETAINED_NOT_AN_ADDED_GATE",
+        "full_raw_OC_output_tensors": "NOT_RETAINED",
+        "policy_anchors": [
+          "scripts/l22_evidence/schema.py:72-115",
+          "docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md:977-1013"
+        ],
+        "raw_output_reanalysis": "UNAVAILABLE; W1/KS/bootstrap cannot be independently recalculated from raw OC samples"
+      },
+      "runner_verdict": "PASS",
+      "source": {
+        "actual_cold_constructor_dependencies_bound": true,
+        "all_raw_seed_horizon_frame_widths_verified": true,
+        "before_consumption_code_parameters": 33,
+        "frozen_F_inputs": 50,
+        "manifest_entries": 83,
+        "verdict": "ACCEPT"
+      },
+      "strict": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/ProteinProcessingII/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinProcessingII"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "warnings_preserved": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
+    },
+    "ProteinTranslocation": {
+      "campaign_exit": 0,
+      "configuration": {
+        "B": 1000,
+        "M": 100,
+        "N": 50,
+        "harness": "design_a_per_tick",
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49
+        ]
+      },
+      "current_evaluator_verdict": {
+        "channel_verdicts": {
+          "monomers": "SEED_NOISE",
+          "substrates": "SEED_NOISE"
+        },
+        "mechanical_verdict": "PASS",
+        "reasons": []
+      },
+      "h12": null,
+      "missing_prerequisites": [
+        "sweep_provenance.json: current schema requires the genuine launcher-written completion sentinel; runner-only campaign has none"
+      ],
+      "numerical_channels": {
+        "monomers": {
+          "is_primary": true,
+          "n_nonzero_karr": 7680,
+          "n_nonzero_oc": 7680,
+          "q95_null": 0.0006345193637621,
+          "threshold": 1.0,
+          "verdict": "SEED_NOISE",
+          "w1": 0.0
+        },
+        "substrates": {
+          "is_primary": false,
+          "n_nonzero_karr": 4207,
+          "n_nonzero_oc": 4213,
+          "q95_null": 71853.90085285716,
+          "threshold": 143707.80170571432,
+          "verdict": "SEED_NOISE",
+          "w1": 0.005714285714285714
+        }
+      },
+      "portable": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/ProteinTranslocation/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinTranslocation"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "result_sha256": "eb447bfeca3e30198425fecdeedaf5dac53ff4a374c24e6b615de84892bf14e4",
+      "result_utc": "2026-11-21T20:56:22.212244+00:00",
+      "retention": {
+        "allocator_scalar_input_summary_rows": 5000,
+        "current_formal_packet_policy": "No full OC tensor requirement in schema required files or evaluator field contract",
+        "disposition": "LIMITATION_RETAINED_NOT_AN_ADDED_GATE",
+        "full_raw_OC_output_tensors": "NOT_RETAINED",
+        "policy_anchors": [
+          "scripts/l22_evidence/schema.py:72-115",
+          "docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md:977-1013"
+        ],
+        "raw_output_reanalysis": "UNAVAILABLE; W1/KS/bootstrap cannot be independently recalculated from raw OC samples"
+      },
+      "runner_verdict": "PASS",
+      "source": {
+        "actual_cold_constructor_dependencies_bound": true,
+        "all_raw_seed_horizon_frame_widths_verified": true,
+        "before_consumption_code_parameters": 37,
+        "frozen_F_inputs": 50,
+        "manifest_entries": 87,
+        "verdict": "ACCEPT"
+      },
+      "strict": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/ProteinTranslocation/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process ProteinTranslocation"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "warnings_preserved": []
+    },
+    "RNAModification": {
+      "campaign_exit": 0,
+      "configuration": {
+        "B": 1000,
+        "M": 100,
+        "N": 50,
+        "harness": "design_a_per_tick",
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49
+        ]
+      },
+      "current_evaluator_verdict": {
+        "channel_verdicts": {
+          "RNAs": "SEED_NOISE",
+          "substrates": "SEED_NOISE"
+        },
+        "mechanical_verdict": "PASS",
+        "reasons": []
+      },
+      "h12": null,
+      "missing_prerequisites": [
+        "sweep_provenance.json: current schema requires the genuine launcher-written completion sentinel; runner-only campaign has none"
+      ],
+      "numerical_channels": {
+        "RNAs": {
+          "is_primary": true,
+          "n_nonzero_karr": 393017,
+          "n_nonzero_oc": 393035,
+          "q95_null": 0.5242923487031698,
+          "threshold": 1.0485846974063395,
+          "verdict": "SEED_NOISE",
+          "w1": 0.0009757925072046117
+        },
+        "substrates": {
+          "is_primary": false,
+          "n_nonzero_karr": 29222,
+          "n_nonzero_oc": 29009,
+          "q95_null": 879198.9655917233,
+          "threshold": 1758397.9311834467,
+          "verdict": "SEED_NOISE",
+          "w1": 0.06997931034482759
+        }
+      },
+      "portable": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/RNAModification/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process RNAModification"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "result_sha256": "9b831c807ed5733dd3d5c1a45933627196ba47f0d6adbe208269c15616137dc9",
+      "result_utc": "2026-11-21T20:04:20.659835+00:00",
+      "retention": {
+        "allocator_scalar_input_summary_rows": 5000,
+        "current_formal_packet_policy": "No full OC tensor requirement in schema required files or evaluator field contract",
+        "disposition": "LIMITATION_RETAINED_NOT_AN_ADDED_GATE",
+        "full_raw_OC_output_tensors": "NOT_RETAINED",
+        "policy_anchors": [
+          "scripts/l22_evidence/schema.py:72-115",
+          "docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md:977-1013"
+        ],
+        "raw_output_reanalysis": "UNAVAILABLE; W1/KS/bootstrap cannot be independently recalculated from raw OC samples"
+      },
+      "runner_verdict": "PASS",
+      "source": {
+        "actual_cold_constructor_dependencies_bound": true,
+        "all_raw_seed_horizon_frame_widths_verified": true,
+        "before_consumption_code_parameters": 37,
+        "frozen_F_inputs": 50,
+        "manifest_entries": 87,
+        "verdict": "ACCEPT"
+      },
+      "strict": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/RNAModification/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process RNAModification"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "warnings_preserved": []
+    },
+    "RNAProcessing": {
+      "campaign_exit": 0,
+      "configuration": {
+        "B": 1000,
+        "M": 100,
+        "N": 50,
+        "harness": "design_a_per_tick",
+        "seeds": [
+          0,
+          1,
+          2,
+          3,
+          4,
+          5,
+          6,
+          7,
+          8,
+          9,
+          10,
+          11,
+          12,
+          13,
+          14,
+          15,
+          16,
+          17,
+          18,
+          19,
+          20,
+          21,
+          22,
+          23,
+          24,
+          25,
+          26,
+          27,
+          28,
+          29,
+          30,
+          31,
+          32,
+          33,
+          34,
+          35,
+          36,
+          37,
+          38,
+          39,
+          40,
+          41,
+          42,
+          43,
+          44,
+          45,
+          46,
+          47,
+          48,
+          49
+        ]
+      },
+      "current_evaluator_verdict": {
+        "channel_verdicts": {
+          "RNAs": "SEED_NOISE",
+          "substrates": "SEED_NOISE"
+        },
+        "mechanical_verdict": "PASS",
+        "reasons": []
+      },
+      "h12": null,
+      "missing_prerequisites": [
+        "sweep_provenance.json: current schema requires the genuine launcher-written completion sentinel; runner-only campaign has none"
+      ],
+      "numerical_channels": {
+        "RNAs": {
+          "is_primary": true,
+          "n_nonzero_karr": 28449,
+          "n_nonzero_oc": 28449,
+          "q95_null": 0.008595786435786457,
+          "threshold": 1.0,
+          "verdict": "SEED_NOISE",
+          "w1": 0.0
+        },
+        "substrates": {
+          "is_primary": false,
+          "n_nonzero_karr": 856,
+          "n_nonzero_oc": 856,
+          "q95_null": 19047.641644285723,
+          "threshold": 38095.283288571445,
+          "verdict": "SEED_NOISE",
+          "w1": 0.0
+        }
+      },
+      "portable": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/RNAProcessing/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process RNAProcessing"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "result_sha256": "3970b34e473d8ccbd6104a99076ced3d8e96e02f7b8f107c5b32e91651386966",
+      "result_utc": "2026-11-21T20:05:33.988983+00:00",
+      "retention": {
+        "allocator_scalar_input_summary_rows": 5000,
+        "current_formal_packet_policy": "No full OC tensor requirement in schema required files or evaluator field contract",
+        "disposition": "LIMITATION_RETAINED_NOT_AN_ADDED_GATE",
+        "full_raw_OC_output_tensors": "NOT_RETAINED",
+        "policy_anchors": [
+          "scripts/l22_evidence/schema.py:72-115",
+          "docs/phase_f/l2_2_design_a/EVIDENCE_INDEX_SPEC.md:977-1013"
+        ],
+        "raw_output_reanalysis": "UNAVAILABLE; W1/KS/bootstrap cannot be independently recalculated from raw OC samples"
+      },
+      "runner_verdict": "PASS",
+      "source": {
+        "actual_cold_constructor_dependencies_bound": true,
+        "all_raw_seed_horizon_frame_widths_verified": true,
+        "before_consumption_code_parameters": 38,
+        "frozen_F_inputs": 50,
+        "manifest_entries": 88,
+        "verdict": "ACCEPT"
+      },
+      "strict": {
+        "green": false,
+        "packet_dir": "artifacts/cohort1/final_source_freeze/independent_acceptance/portable_bundle/RNAProcessing/latest",
+        "reasons": [
+          "MISSING_EVIDENCE: missing required/mandatory file(s) ['sweep_provenance.json'] for process RNAProcessing"
+        ],
+        "scope": "Actual existing packet validator",
+        "verdict": "MISSING_EVIDENCE"
+      },
+      "warnings_preserved": []
+    }
+  },
+  "retention": "Full raw OC tensors absent; scalar allocator diagnostics are not outputs. Existing packet contract does not require these tensors; raw-sample reanalysis remains impossible.",
+  "source_commit": "7586be17b746c8e6f18068898859f346192ed892",
+  "source_repair_validation": {
+    "compatibility": {
+      "error": 0,
+      "fail": 0,
+      "inherited_xfail": 1,
+      "ordinary_skip": 0,
+      "pass": 27,
+      "path": "artifacts/cohort1/final_source_freeze/resumed/compat.xml",
+      "replay_cases": [],
+      "sha256": "45b8b98919748aabf549ff397b05acafbad621bc2bdbb870ce2b78513cc7df12",
+      "xfail_reasons": [
+        {
+          "message": "STRUCTURAL GAP: chassis tracks only mature mRNA / RNA forms (525 genes, ~784 mol, ~7.0e-17 g, ~41% of Karr's full RNA-class total of 1.72e-16 g). Karr's State_Rna spans nascent / processed / aminoacylated / bound / misfolded / damaged forms across cytosol+membrane+terminal-organelle for all 4820 entries; chassis collapses these into mature-only at gene level. Predicted/target ratio ~0.41 < tol_rel_min=0.50.  Pinned xfail until M2 v2 lands per-form RNA tracking.",
+          "type": "pytest.xfail"
+        }
+      ]
+    },
+    "mass81": {
+      "error": 0,
+      "fail": 0,
+      "inherited_xfail": 0,
+      "ordinary_skip": 0,
+      "pass": 81,
+      "path": "artifacts/cohort1/final_source_freeze/resumed/mass81.xml",
+      "replay_cases": [],
+      "sha256": "520f043e21ea18c4a82a4c7d885e4ed9af903cd1bbd88f3b6d33c4dd4424de49",
+      "xfail_reasons": []
+    },
+    "pm178": {
+      "error": 0,
+      "fail": 0,
+      "inherited_xfail": 0,
+      "ordinary_skip": 0,
+      "pass": 178,
+      "path": "artifacts/cohort1/final_source_freeze/resumed/pm178.xml",
+      "replay_cases": [
+        {
+          "classname": "tests.vivarium.test_karr_protein_modification_l2_replay",
+          "file": "tests/vivarium/test_karr_protein_modification_l2_replay.py",
+          "line": "296",
+          "name": "test_karr_protein_modification_l2_replay_identity_per_tick[rng_seed_0]",
+          "time": "1.420"
+        }
+      ],
+      "sha256": "12f9fce5e5a30b9cc7f574649c621f514cf08c5a0bdf099275d4b3ef7d0c35fa",
+      "xfail_reasons": []
+    }
+  },
+  "source_verdict": "ACCEPT_BOUNDED_CURRENT_CLOSURE",
+  "status": "NUMERICAL_SOURCE_REVIEW_COMPLETE__FORMAL_PACKET_ACCEPTANCE_BLOCKED",
+  "strict_verdict": "BLOCKED_MISSING_COMPLETION_SENTINELS",
+  "total_per_channel_observations_across_campaigns": 21000,
+  "utc": "2026-11-21T21:54:13.535359+00:00",
+  "validator_integrity": {
+    "aggregate_verdict": "NON_GREEN",
+    "index_content_hash": "e3282bf8ede682e1da4bb6bb35b877a1b5631a632dcddb8449d6224c0766966a",
+    "portable_exit": 0,
+    "strict_exit": 0,
+    "tally": {
+      "MISSING_EVIDENCE": 24
+    }
+  }
+}

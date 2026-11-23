@@ -1,17 +1,403 @@
 {
-  "generated_at": "2026-08-06T13:23:14.421296+00:00",
+  "generated_at": "2026-11-21T20:04:20.659835+00:00",
   "inputs": [
     {
-      "path": "data/m1_sources/karr_native/per_process_traces_v2/RNAModification_100ticks.mat",
-      "sha256": "5058bc287da7053ace4c429ee8c090e5a2dc1baeb12e4b2c39cac3492b277f8d"
-    },
-    {
       "path": "tests/vivarium/l2_2_design_a_runner.py",
-      "sha256": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee"
+      "sha256": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d"
     },
     {
       "path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
-      "sha256": "a5046d6e3357f898573427e7d32bfac252a26f465578eafac87792c62663aeca"
+      "sha256": "f5b4493968a196c894c7ae0d132ebc540f424d269ed63a8c13986ebdc0531bca"
+    },
+    {
+      "path": "tests/vivarium/_l2_2_design_a_projections.py",
+      "sha256": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45"
+    },
+    {
+      "path": "opencell/vivarium/__init__.py",
+      "sha256": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+    },
+    {
+      "path": "opencell/analysis/cell_mass.py",
+      "sha256": "15e76dbb8f952677efd8b25bd02dddb19f18657b45a2b159e1f3b43ef61c64f3"
+    },
+    {
+      "path": "opencell/vivarium/karr_observability_step.py",
+      "sha256": "ab0b213f6ed1b3abe3c0c955d4a5053d80bf096341e09e4bbf97d09516341f8d"
+    },
+    {
+      "path": "tests/vivarium/l2_replay_common.py",
+      "sha256": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852"
+    },
+    {
+      "path": "scripts/l22_evidence/schema.py",
+      "sha256": "b89cc2e25cf690498967d973a0650f1eb219fa4f225fc654dabf08326029ba18"
+    },
+    {
+      "path": "opencell/vivarium/protein_state.py",
+      "sha256": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b"
+    },
+    {
+      "path": "opencell/vivarium/karr_protein_activation.py",
+      "sha256": "c3cee463dd8919274be9f0d1d41f15b3ef78c7668c1b550c50a813449272cb76"
+    },
+    {
+      "path": "opencell/m1/karr_metabolism.py",
+      "sha256": "25c75d055207503aa9621b24b2371daa17a0ee76292233b26a2eea66f9468ce5"
+    },
+    {
+      "path": "opencell/m2/transcription.py",
+      "sha256": "d36eea6470a5843b02679e08ae847199335dcde3b62487d03abeae7e6fa5590f"
+    },
+    {
+      "path": "opencell/m3/translation.py",
+      "sha256": "e360d220e7c920f6c7e2c913187899867a042888d57804ee96d8e29b17b5c122"
+    },
+    {
+      "path": "opencell/data/__init__.py",
+      "sha256": "4a49dfb9a8940ebeca133c80910beccb60a93341730558b24bb35a0d14029f54"
+    },
+    {
+      "path": "opencell/data/substrate_mass_classes.py",
+      "sha256": "8253863216b39261275b02db88b9e4494a5cee3356f818029c5c9248e89a0e76"
+    },
+    {
+      "path": "data/karr_fixtures/parameters.json",
+      "sha256": "d93c9af3bcaf47cefb893d048fa2055008d3cb47b5a3c27f8e2b051eec13cd47"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m3_vocab.json",
+      "sha256": "4f46664cba1f7c010f2cd4bcea7adf03da72aa151716cef181165b9d1a12da27"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m1.json",
+      "sha256": "f2b4f8cdcd27b4f56443a1e4334b6c7f96693d1cae038e787b958de062edb869"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m1.npz",
+      "sha256": "0d72b003f68f7efaf0d138f0f762fea20eba8a242964ad9880d34ffab76ec3ab"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m2.json",
+      "sha256": "fb795fbba29372867c05d82aa1c5d46e9e226ddac352beb6d3365aa9ffcd8b3d"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m2.npz",
+      "sha256": "25fcce837a96e85b66e180b4d3f15e16dcf8145bc76ff22db115dd055e93f9c4"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m3.json",
+      "sha256": "12f989039f32a92355472ee8dbca803c329605566dfbe81a95e1e8f1673634a8"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m3.npz",
+      "sha256": "9351eefacb327a6df7bad8bdb8f367c9ad17e2333f2756de03f4c3d0a03dd32c"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/Rna_flat.mat",
+      "sha256": "67b8bd3ee6965e4220de3f8ca7f9faeeb7f3f5199e7c21eee1b616c1d9a7fc1d"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinMonomer_flat.mat",
+      "sha256": "4b59dbd5d2e07bb724ec9145c0f2488062866c8dab208be7de0701cbbca70e27"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinComplex_flat.mat",
+      "sha256": "ca12556ff283f60106213eec85e77fadd068d37d32c8319ec0a06be6257dab13"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinActivation_flat.mat",
+      "sha256": "ea58c5d4ca279e2b10dff12bffe89e04926f4515324f0c13fb677759a4094a52"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat",
+      "sha256": "0a4ce7ad57266e4c1241f7fba34e6e9a20183855f8f396ca70e7b23d63acd535"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+      "sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinModification_flat.mat",
+      "sha256": "b89663e37c5ab6a68a8f978e670ecbedf05c5a2af4a5569b4e83d803b2c5807b"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+      "sha256": "1c02cba3d4422d7384a3d0c369b4bb02585705b9bed37d72c9c7b87515b0b41d"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+      "sha256": "cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe"
+    },
+    {
+      "path": "tests/vivarium/_rna_replay_inputs.py",
+      "sha256": "446c240e9403445e20edf86231f770cde9b1d0ba3e9c584278e47e370ddee158"
+    },
+    {
+      "path": "opencell/vivarium/karr_rna_modification.py",
+      "sha256": "692d3cce3bbb9c542cd2b36bab9b51723ee240c1b6ef77cf6c0f33a38ed3909d"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/RNAModification_flat.mat",
+      "sha256": "64e096360369eb89005318f006063fcec04ed690c0aa61c0a3c630807a0f449a"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/RNAProcessing_flat.mat",
+      "sha256": "0760c3b23845029039cc1f47020c260cbc52fa5a69595775a291534ca4b28006"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+      "sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2/RNAModification_100ticks.mat",
+      "seed": 0,
+      "sha256": "5058bc287da7053ace4c429ee8c090e5a2dc1baeb12e4b2c39cac3492b277f8d"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s001/RNAModification_100ticks.mat",
+      "seed": 1,
+      "sha256": "e18ecb5e9b467214673cb5fd4a6422973b3a6ac360d39b8cec137c903560a51e"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s002/RNAModification_100ticks.mat",
+      "seed": 2,
+      "sha256": "7beca90c2b938ce898812c2ed09ed358acf39ef08bc4894763ebb5d2d399685b"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s003/RNAModification_100ticks.mat",
+      "seed": 3,
+      "sha256": "acdebd179fb83d7d55b743fbde113759f033d73fa630ab75e0070ff53ff28f88"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s004/RNAModification_100ticks.mat",
+      "seed": 4,
+      "sha256": "3f72535ed8e8cd22b8cc8d59f2861229d7afda905b973859363509c1fd26d9c6"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s005/RNAModification_100ticks.mat",
+      "seed": 5,
+      "sha256": "2885a466c798d8834850b9a6852525f579674f63b3ab171550956d2351fbd666"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s006/RNAModification_100ticks.mat",
+      "seed": 6,
+      "sha256": "01944e2f31fc602dc9004badef8f9c7b931d40c296a3820e498c5a0d3eaa6f2d"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s007/RNAModification_100ticks.mat",
+      "seed": 7,
+      "sha256": "c8e706f1c6978ddca0f215da0c8ad0de9e25d1b3bf440c50ad2c20cfb5276548"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s008/RNAModification_100ticks.mat",
+      "seed": 8,
+      "sha256": "18acdf87e5c0a4e35059bac13db10fa5a492231c3bcac46e1df7d05a93cf1aa9"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s009/RNAModification_100ticks.mat",
+      "seed": 9,
+      "sha256": "64e854007767d2ab3397a11be4a2227076e2993c8549613f10743d1ddc8c442c"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s010/RNAModification_100ticks.mat",
+      "seed": 10,
+      "sha256": "83fbc2a8adea52c284d7a3470b8f97d9aec31f8d97dadc51162d3c7af8d50856"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s011/RNAModification_100ticks.mat",
+      "seed": 11,
+      "sha256": "2b8813b0c5391d1b80ce46a1a9f0167a778ebd4a98a56f331af5ea47a75876b0"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s012/RNAModification_100ticks.mat",
+      "seed": 12,
+      "sha256": "2d3bf5f33750eda893e6d127d146dc16a7d504888019939c2fd688053666f85f"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s013/RNAModification_100ticks.mat",
+      "seed": 13,
+      "sha256": "6384127ec472a9e7cdfd8f69fc08e93215899d8ae3109293ad40f451f841d246"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s014/RNAModification_100ticks.mat",
+      "seed": 14,
+      "sha256": "b11af6c75b0906225ddc07e2923863a3b4085aaf4694088bd330c8b6aa170dbc"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s015/RNAModification_100ticks.mat",
+      "seed": 15,
+      "sha256": "e78e6ed6dde3162426eaa909f0ed4d8e7803e27a2661c95c4d245bf6b191249f"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s016/RNAModification_100ticks.mat",
+      "seed": 16,
+      "sha256": "b99f87600557894dc39d02ff9a518955f61896808376d3b2534e9e5d38463e2a"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s017/RNAModification_100ticks.mat",
+      "seed": 17,
+      "sha256": "d33c0ac5bfeb4c030ddf9a96c934d9f03a435f4fbb3222829a295feaa177a436"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s018/RNAModification_100ticks.mat",
+      "seed": 18,
+      "sha256": "c84efcfbf8660e9117487d222dc5eed598fd91c7344e97d01bdbab1f71f0792e"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s019/RNAModification_100ticks.mat",
+      "seed": 19,
+      "sha256": "72652abbf24a2538ca70cd8c22eb85254e29cc5149d14f58a040826c628eaef2"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s020/RNAModification_100ticks.mat",
+      "seed": 20,
+      "sha256": "e27fd53102395f8df7358cd79131bd6bdd4950fe9dd4b4840fe7e1572bdcfb7b"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s021/RNAModification_100ticks.mat",
+      "seed": 21,
+      "sha256": "07425c3930ff143f1ca95b8571618db02cfd152aa7614345929322da986640be"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s022/RNAModification_100ticks.mat",
+      "seed": 22,
+      "sha256": "944cd8f6db0c96cb1a67a33642dcb5c21d0490d42ec3490d6886af2de8dd6981"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s023/RNAModification_100ticks.mat",
+      "seed": 23,
+      "sha256": "3f8802e871ce0dd40ea125756a2ecefc1ca32a994304387f395231a4b3bca4fc"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s024/RNAModification_100ticks.mat",
+      "seed": 24,
+      "sha256": "2549b6191bdcedc7955857275978a6d44a85b222dfd2c0804fdb0425df079eb8"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s025/RNAModification_100ticks.mat",
+      "seed": 25,
+      "sha256": "6713c046ba2207eb99e76a0026d37669fbde6823c9890059183b0a3feff43456"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s026/RNAModification_100ticks.mat",
+      "seed": 26,
+      "sha256": "0d68e559c8f7a6d99d5440cd8230dfffa84d34b9d4b854053a14208b557353f4"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s027/RNAModification_100ticks.mat",
+      "seed": 27,
+      "sha256": "b8b85a2f7879625fb0f5db56535ab47a1f7dc36c1c1283d611ce87d776e4eff7"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s028/RNAModification_100ticks.mat",
+      "seed": 28,
+      "sha256": "1f34d8a31ca55bce5ea877916b655962a11f4a5d22f7c755813060327e6184e7"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s029/RNAModification_100ticks.mat",
+      "seed": 29,
+      "sha256": "92c6ecac5674c549e0f32f382c8a322b4bb11d216ca0e618d4f5a27314374dae"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s030/RNAModification_100ticks.mat",
+      "seed": 30,
+      "sha256": "6c7e8b518f3846d51608ecc2bf3345ca187421605586a97258bed5fdc530b58e"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s031/RNAModification_100ticks.mat",
+      "seed": 31,
+      "sha256": "ecb1a7fa992f92dc769f07dff7261da0d4689e75e1521ce2cf3d918d7b0d2861"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s032/RNAModification_100ticks.mat",
+      "seed": 32,
+      "sha256": "1b5c6ecfe972a06e7c521682ac2098489665a45e587afb242528bef41b1a69bd"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s033/RNAModification_100ticks.mat",
+      "seed": 33,
+      "sha256": "02f81a910092a7d10a78f2cc123c4a2b4cb61d4512ecaaf712a36c9ac956980f"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s034/RNAModification_100ticks.mat",
+      "seed": 34,
+      "sha256": "4b5c4c5d04f6a63c41edc0cfe320c4c16139898975a1d4a8f9d5fd6b407c8e49"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s035/RNAModification_100ticks.mat",
+      "seed": 35,
+      "sha256": "675819352cd058aa182bb11c2b766d73c02da97ec94ea0fa381bc8998e558db5"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s036/RNAModification_100ticks.mat",
+      "seed": 36,
+      "sha256": "40c6d28f85c6316c21074574c551eb0500a2f722dd414e816b448d7602bd2184"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s037/RNAModification_100ticks.mat",
+      "seed": 37,
+      "sha256": "7ab68f90cc95e739ae599137693c0bc3907b46d05e4c5419d97ad209b3240b13"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s038/RNAModification_100ticks.mat",
+      "seed": 38,
+      "sha256": "ce490504f3e3e84480fd913fdee3129e530d328b2f45dd79dd399e8821c5307b"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s039/RNAModification_100ticks.mat",
+      "seed": 39,
+      "sha256": "d3d3ef285d7cb47db4727bb3dd4e663a79e44ec924e81faae314e6a2b3a24c4c"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s040/RNAModification_100ticks.mat",
+      "seed": 40,
+      "sha256": "54346b17527e5d92cf87bac77cd3db3ec660d31f65a9dc619bbe2abf19f6ba95"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s041/RNAModification_100ticks.mat",
+      "seed": 41,
+      "sha256": "54b0a3fb775d3d71b683b7f13e9d9c14835965697954d24051471dfb95862bc6"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s042/RNAModification_100ticks.mat",
+      "seed": 42,
+      "sha256": "f7a2f6ba04a3ecf4964f24f670858a7d3654897060078538806df410524694cd"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s043/RNAModification_100ticks.mat",
+      "seed": 43,
+      "sha256": "fb939c1bf48b62989ecbee08795e72d8cdb381ab92955cb148d1cadf3f7adac8"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s044/RNAModification_100ticks.mat",
+      "seed": 44,
+      "sha256": "8fc72f3f04fec9bb779db473d18bff340a9e10edffd242318cb8cb9d463c8b17"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s045/RNAModification_100ticks.mat",
+      "seed": 45,
+      "sha256": "40fc313d1db339b57574ae19dcbcf65dd6cbe5e9b5d933458c580232ddec4562"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s046/RNAModification_100ticks.mat",
+      "seed": 46,
+      "sha256": "64daebde23511a8fa4539b779a5541994246b2d9e65d02f47f5a69c3cddd3adb"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s047/RNAModification_100ticks.mat",
+      "seed": 47,
+      "sha256": "9e493acb9e685a64314ddb243a2c0f427350d3f29999f12da5cdee7b00fb2bf4"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s048/RNAModification_100ticks.mat",
+      "seed": 48,
+      "sha256": "a333f84f1feb671b901c36da9231c340e47ec28ce2040413b0446e4e8529b383"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s049/RNAModification_100ticks.mat",
+      "seed": 49,
+      "sha256": "f166acd50a4ff097c6f7b7eb555eadcbfa0b616c8cfc4fbea3b2680cfd68b131"
     }
   ],
   "m_ticks": 100,

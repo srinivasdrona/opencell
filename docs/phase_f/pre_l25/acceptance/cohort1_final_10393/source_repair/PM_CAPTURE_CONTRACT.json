@@ -1,0 +1,777 @@
+{
+  "utc": "2026-11-21T23:15:27.781997+05:30",
+  "original_guard_sha256": "be36927f8a5000c55f4f6d5fab05f61cdc7ee947204821ebc996fc730cba20a0",
+  "revised_guard_sha256": "13f7b174a8d03dafbd0ba879c99b0e1db9539b3a184881c63cf503066c74011b",
+  "original_committed_declaration_paths": [
+    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+    "data/karr_fixtures/per_process/ProteinModification_flat.mat",
+    "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+    "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+    "opencell/util/mcg16807_state_codec.py",
+    "opencell/vivarium/__init__.py",
+    "opencell/vivarium/karr_protein_modification.py",
+    "opencell/vivarium/protein_state.py",
+    "scripts/l22_evidence/schema.py",
+    "tests/vivarium/_l2_2_design_a_projections.py",
+    "tests/vivarium/_l2_2_design_a_runner_helpers.py",
+    "tests/vivarium/l2_2_design_a_runner.py",
+    "tests/vivarium/l2_replay_common.py"
+  ],
+  "expected_source_contract_paths": [
+    "data/karr_fixtures/karr_native_m1.json",
+    "data/karr_fixtures/karr_native_m1.npz",
+    "data/karr_fixtures/karr_native_m2.json",
+    "data/karr_fixtures/karr_native_m2.npz",
+    "data/karr_fixtures/karr_native_m3.json",
+    "data/karr_fixtures/karr_native_m3.npz",
+    "data/karr_fixtures/karr_native_m3_vocab.json",
+    "data/karr_fixtures/parameters.json",
+    "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+    "data/karr_fixtures/per_process/ProteinActivation_flat.mat",
+    "data/karr_fixtures/per_process/ProteinComplex_flat.mat",
+    "data/karr_fixtures/per_process/ProteinModification_flat.mat",
+    "data/karr_fixtures/per_process/ProteinMonomer_flat.mat",
+    "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+    "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat",
+    "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+    "data/karr_fixtures/per_process/Rna_flat.mat",
+    "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+    "opencell/analysis/cell_mass.py",
+    "opencell/data/__init__.py",
+    "opencell/data/substrate_mass_classes.py",
+    "opencell/m1/karr_metabolism.py",
+    "opencell/m2/transcription.py",
+    "opencell/m3/translation.py",
+    "opencell/util/mcg16807_state_codec.py",
+    "opencell/vivarium/__init__.py",
+    "opencell/vivarium/karr_observability_step.py",
+    "opencell/vivarium/karr_protein_activation.py",
+    "opencell/vivarium/karr_protein_modification.py",
+    "opencell/vivarium/protein_state.py",
+    "scripts/l22_evidence/schema.py",
+    "tests/vivarium/_l2_2_design_a_projections.py",
+    "tests/vivarium/_l2_2_design_a_runner_helpers.py",
+    "tests/vivarium/l2_2_design_a_runner.py",
+    "tests/vivarium/l2_replay_common.py"
+  ],
+  "actual_capture_count": 35,
+  "actual_constructor_capture_count": 35,
+  "actual_required_before_consumption": [
+    "data/karr_fixtures/karr_native_m1.json",
+    "data/karr_fixtures/karr_native_m1.npz",
+    "data/karr_fixtures/karr_native_m2.json",
+    "data/karr_fixtures/karr_native_m2.npz",
+    "data/karr_fixtures/karr_native_m3.json",
+    "data/karr_fixtures/karr_native_m3.npz",
+    "data/karr_fixtures/karr_native_m3_vocab.json",
+    "data/karr_fixtures/parameters.json",
+    "data/karr_fixtures/per_process/ProteinActivation_flat.mat",
+    "data/karr_fixtures/per_process/ProteinComplex_flat.mat",
+    "data/karr_fixtures/per_process/ProteinModification_flat.mat",
+    "data/karr_fixtures/per_process/ProteinMonomer_flat.mat",
+    "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+    "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat",
+    "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+    "data/karr_fixtures/per_process/Rna_flat.mat",
+    "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+    "opencell/analysis/cell_mass.py",
+    "opencell/data/__init__.py",
+    "opencell/data/substrate_mass_classes.py",
+    "opencell/m1/karr_metabolism.py",
+    "opencell/m2/transcription.py",
+    "opencell/m3/translation.py",
+    "opencell/util/mcg16807_state_codec.py",
+    "opencell/vivarium/karr_observability_step.py",
+    "opencell/vivarium/karr_protein_activation.py",
+    "opencell/vivarium/karr_protein_modification.py",
+    "opencell/vivarium/protein_state.py",
+    "tests/vivarium/_l2_2_design_a_runner_helpers.py",
+    "tests/vivarium/l2_replay_common.py"
+  ],
+  "captured_hashes": [
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/l2_2_design_a_runner.py",
+      "sha256": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/_l2_2_design_a_runner_helpers.py",
+      "sha256": "f5b4493968a196c894c7ae0d132ebc540f424d269ed63a8c13986ebdc0531bca"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/_l2_2_design_a_projections.py",
+      "sha256": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/__init__.py",
+      "sha256": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/analysis/cell_mass.py",
+      "sha256": "15e76dbb8f952677efd8b25bd02dddb19f18657b45a2b159e1f3b43ef61c64f3"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/karr_observability_step.py",
+      "sha256": "ab0b213f6ed1b3abe3c0c955d4a5053d80bf096341e09e4bbf97d09516341f8d"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/l2_replay_common.py",
+      "sha256": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/scripts/l22_evidence/schema.py",
+      "sha256": "b89cc2e25cf690498967d973a0650f1eb219fa4f225fc654dabf08326029ba18"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/protein_state.py",
+      "sha256": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/karr_protein_activation.py",
+      "sha256": "c3cee463dd8919274be9f0d1d41f15b3ef78c7668c1b550c50a813449272cb76"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/m1/karr_metabolism.py",
+      "sha256": "25c75d055207503aa9621b24b2371daa17a0ee76292233b26a2eea66f9468ce5"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/m2/transcription.py",
+      "sha256": "d36eea6470a5843b02679e08ae847199335dcde3b62487d03abeae7e6fa5590f"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/m3/translation.py",
+      "sha256": "e360d220e7c920f6c7e2c913187899867a042888d57804ee96d8e29b17b5c122"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/data/__init__.py",
+      "sha256": "4a49dfb9a8940ebeca133c80910beccb60a93341730558b24bb35a0d14029f54"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/data/substrate_mass_classes.py",
+      "sha256": "8253863216b39261275b02db88b9e4494a5cee3356f818029c5c9248e89a0e76"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/parameters.json",
+      "sha256": "d93c9af3bcaf47cefb893d048fa2055008d3cb47b5a3c27f8e2b051eec13cd47"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m3_vocab.json",
+      "sha256": "4f46664cba1f7c010f2cd4bcea7adf03da72aa151716cef181165b9d1a12da27"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m1.json",
+      "sha256": "f2b4f8cdcd27b4f56443a1e4334b6c7f96693d1cae038e787b958de062edb869"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m1.npz",
+      "sha256": "0d72b003f68f7efaf0d138f0f762fea20eba8a242964ad9880d34ffab76ec3ab"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m2.json",
+      "sha256": "fb795fbba29372867c05d82aa1c5d46e9e226ddac352beb6d3365aa9ffcd8b3d"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m2.npz",
+      "sha256": "25fcce837a96e85b66e180b4d3f15e16dcf8145bc76ff22db115dd055e93f9c4"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m3.json",
+      "sha256": "12f989039f32a92355472ee8dbca803c329605566dfbe81a95e1e8f1673634a8"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m3.npz",
+      "sha256": "9351eefacb327a6df7bad8bdb8f367c9ad17e2333f2756de03f4c3d0a03dd32c"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/Rna_flat.mat",
+      "sha256": "67b8bd3ee6965e4220de3f8ca7f9faeeb7f3f5199e7c21eee1b616c1d9a7fc1d"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinMonomer_flat.mat",
+      "sha256": "4b59dbd5d2e07bb724ec9145c0f2488062866c8dab208be7de0701cbbca70e27"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinComplex_flat.mat",
+      "sha256": "ca12556ff283f60106213eec85e77fadd068d37d32c8319ec0a06be6257dab13"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinActivation_flat.mat",
+      "sha256": "ea58c5d4ca279e2b10dff12bffe89e04926f4515324f0c13fb677759a4094a52"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinProcessingI_flat.mat",
+      "sha256": "0a4ce7ad57266e4c1241f7fba34e6e9a20183855f8f396ca70e7b23d63acd535"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+      "sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinModification_flat.mat",
+      "sha256": "b89663e37c5ab6a68a8f978e670ecbedf05c5a2af4a5569b4e83d803b2c5807b"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+      "sha256": "1c02cba3d4422d7384a3d0c369b4bb02585705b9bed37d72c9c7b87515b0b41d"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+      "sha256": "cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/util/mcg16807_state_codec.py",
+      "sha256": "be0045904fb9aabe236ca9f713db362da6938a3fac15fe7e4cd7eedc95f64f36"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/karr_protein_modification.py",
+      "sha256": "6c5706fdce2ace59700e1a8ca24ab1e74d353c4befde348920e3f5471a9795e9"
+    },
+    {
+      "path": "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat",
+      "sha256": "658e25f30acd8ea84f7bf4b1b2536bf994ad389d9cb575dfeefbf628fe151f01"
+    }
+  ],
+  "source_required_equals_original_paths_union_actual_consumers": true,
+  "current_registered_declaration_matches_independent_reference": true,
+  "actual_constructor_and_mass_phases_distinguished": [
+    [
+      "cold_import",
+      "<module>"
+    ],
+    [
+      "cold_import",
+      "CellMassBreakdown"
+    ],
+    [
+      "cold_import",
+      "CellMassProjection"
+    ],
+    [
+      "cold_import",
+      "KarrObservabilityStep"
+    ],
+    [
+      "live_csv_constructor",
+      "<genexpr>"
+    ],
+    [
+      "live_csv_constructor",
+      "<module>"
+    ],
+    [
+      "live_csv_constructor",
+      "DiagnosticCollector"
+    ],
+    [
+      "live_csv_constructor",
+      "MassEstimator"
+    ],
+    [
+      "live_csv_constructor",
+      "_fixture_wids"
+    ],
+    [
+      "live_csv_constructor",
+      "_load_protein_mw"
+    ],
+    [
+      "live_csv_constructor",
+      "_load_rna_mw"
+    ],
+    [
+      "live_csv_constructor",
+      "_load_substrate_mw"
+    ],
+    [
+      "live_csv_constructor",
+      "_mass_da"
+    ],
+    [
+      "live_csv_constructor",
+      "_protein_fixture"
+    ],
+    [
+      "live_csv_constructor",
+      "build"
+    ],
+    [
+      "live_csv_constructor",
+      "compute"
+    ],
+    [
+      "live_csv_constructor",
+      "dry_mass_g"
+    ],
+    [
+      "live_csv_constructor",
+      "form_weights"
+    ],
+    [
+      "live_csv_constructor",
+      "load_rna_form_mw"
+    ],
+    [
+      "mass_helper",
+      "<genexpr>"
+    ],
+    [
+      "mass_helper",
+      "_fixture_wids"
+    ],
+    [
+      "mass_helper",
+      "_load_protein_mw"
+    ],
+    [
+      "mass_helper",
+      "_load_rna_mw"
+    ],
+    [
+      "mass_helper",
+      "_load_substrate_mw"
+    ],
+    [
+      "mass_helper",
+      "_mass_da"
+    ],
+    [
+      "mass_helper",
+      "_protein_fixture"
+    ],
+    [
+      "mass_helper",
+      "build"
+    ],
+    [
+      "mass_helper",
+      "compute"
+    ],
+    [
+      "mass_helper",
+      "compute_cell_mass"
+    ],
+    [
+      "mass_helper",
+      "form_weights"
+    ],
+    [
+      "mass_helper",
+      "load_rna_form_mw"
+    ],
+    [
+      "mass_observer_constructor",
+      "<genexpr>"
+    ],
+    [
+      "mass_observer_constructor",
+      "__init__"
+    ],
+    [
+      "mass_observer_constructor",
+      "_fixture_wids"
+    ],
+    [
+      "mass_observer_constructor",
+      "_load_dna_mass_fraction_default"
+    ],
+    [
+      "mass_observer_constructor",
+      "_load_protein_mw"
+    ],
+    [
+      "mass_observer_constructor",
+      "_load_rna_mw"
+    ],
+    [
+      "mass_observer_constructor",
+      "_load_substrate_mw"
+    ],
+    [
+      "mass_observer_constructor",
+      "_mass_da"
+    ],
+    [
+      "mass_observer_constructor",
+      "_protein_fixture"
+    ],
+    [
+      "mass_observer_constructor",
+      "build"
+    ],
+    [
+      "mass_observer_constructor",
+      "compute"
+    ],
+    [
+      "mass_observer_constructor",
+      "form_weights"
+    ],
+    [
+      "mass_observer_constructor",
+      "load_rna_form_mw"
+    ],
+    [
+      "mass_observer_constructor",
+      "next_update"
+    ]
+  ],
+  "codec_functions_states_calls_and_old_negative_bodies_unchanged": true,
+  "missing_and_drift_all_required_rejected": [
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/l2_2_design_a_runner.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/l2_2_design_a_runner.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/_l2_2_design_a_runner_helpers.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/_l2_2_design_a_runner_helpers.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/_l2_2_design_a_projections.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/_l2_2_design_a_projections.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/__init__.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/__init__.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/analysis/cell_mass.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/analysis/cell_mass.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/karr_observability_step.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/karr_observability_step.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/l2_replay_common.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/tests/vivarium/l2_replay_common.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/scripts/l22_evidence/schema.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/scripts/l22_evidence/schema.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/protein_state.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/protein_state.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/karr_protein_activation.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/karr_protein_activation.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/m1/karr_metabolism.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/m1/karr_metabolism.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/m2/transcription.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/m2/transcription.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/m3/translation.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/m3/translation.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/data/__init__.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/data/__init__.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/data/substrate_mass_classes.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/data/substrate_mass_classes.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/parameters.json"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/parameters.json"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m3_vocab.json"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m3_vocab.json"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m1.json"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m1.json"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m1.npz"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m1.npz"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m2.json"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m2.json"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m2.npz"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m2.npz"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m3.json"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m3.json"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m3.npz"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/karr_native_m3.npz"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/Rna_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/Rna_flat.mat"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinMonomer_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinMonomer_flat.mat"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinComplex_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinComplex_flat.mat"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinActivation_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinActivation_flat.mat"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinProcessingI_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinProcessingI_flat.mat"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinProcessingII_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinProcessingII_flat.mat"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinModification_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinModification_flat.mat"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinTranslocation_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/ProteinTranslocation_flat.mat"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/util/mcg16807_state_codec.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/util/mcg16807_state_codec.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/karr_protein_modification.py"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/vivarium/karr_protein_modification.py"
+    ],
+    [
+      "omission",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+    ],
+    [
+      "drift",
+      "/mnt/e/opencell-worktrees/m1-accepted-20261019/data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
+    ]
+  ],
+  "duplicate_and_unrequired_rejected": true,
+  "not_hardcoded_35_or_len_ge_13": true,
+  "no_runtime_or_registry_changes": true,
+  "validation": {
+    "utc": "2026-11-21T23:47:33.602097+05:30",
+    "original_pair": {
+      "PASS": 4,
+      "ordinary_FAIL": 1,
+      "ERROR": 0,
+      "SKIP": 0,
+      "XFAIL": 0
+    },
+    "revised_pair": {
+      "PASS": 5,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0,
+      "XFAIL": 0
+    },
+    "including_old_codec_and_mass_negative_controls": {
+      "PASS": 8,
+      "FAIL": 0,
+      "ERROR": 0,
+      "SKIP": 0,
+      "XFAIL": 0
+    },
+    "cases": [
+      {
+        "name": "test_pm_real_codec_calls_are_bound_by_actual_runtime_capture",
+        "module": "tests.vivarium.test_pm_rng_codec_input_binding",
+        "outcome": "PASS"
+      },
+      {
+        "name": "test_pm_codec_omission_exposes_real_import_and_actual_capture_gap",
+        "module": "tests.vivarium.test_pm_rng_codec_input_binding",
+        "outcome": "PASS"
+      },
+      {
+        "name": "test_pm_codec_same_filename_hash_cannot_replace_actual_function_source",
+        "module": "tests.vivarium.test_pm_rng_codec_input_binding",
+        "outcome": "PASS"
+      },
+      {
+        "name": "test_pm_captured_codec_bytes_detect_drift_in_owned_copy",
+        "module": "tests.vivarium.test_pm_rng_codec_input_binding",
+        "outcome": "PASS"
+      },
+      {
+        "name": "test_actual_cold_and_mass_constructor_sources_are_bound[ProteinModification]",
+        "module": "tests.scripts.test_shared_mass_input_binding",
+        "outcome": "PASS"
+      },
+      {
+        "name": "test_guard_and_existing_hash_verifier_reject_omission_and_drift",
+        "module": "tests.scripts.test_shared_mass_input_binding",
+        "outcome": "PASS"
+      },
+      {
+        "name": "test_cold_registered_constructor_really_requires_mass_code[opencell/analysis/cell_mass.py]",
+        "module": "tests.scripts.test_shared_mass_input_binding",
+        "outcome": "PASS"
+      },
+      {
+        "name": "test_cold_registered_constructor_really_requires_mass_code[opencell/vivarium/karr_observability_step.py]",
+        "module": "tests.scripts.test_shared_mass_input_binding",
+        "outcome": "PASS"
+      }
+    ],
+    "lint": "One original I001 import-order diagnostic unchanged; zero introduced. All other Ruff checks PASS.",
+    "source_assembly": "Integrator staged runtime remains uncommitted; no full campaigns/source eligibility claimed."
+  },
+  "selective_guard_commit": "868377ae5ba7b441571ed67784c9e5b9a0aaac5c",
+  "staged_source_13_blobs_and_unrelated_index_unchanged": true,
+  "final_journal_receipt_commit": "e92bbb4e74209e5ed6c6a6b5876e7cbc9d7b02d7",
+  "final_head": "e92bbb4e74209e5ed6c6a6b5876e7cbc9d7b02d7",
+  "final_preservation_receipt": "snapshot_final.json",
+  "source_assembly_status": "UNCOMMITTED: integrator13 staged blobs unchanged; plan remains unstaged"
+}

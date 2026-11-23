@@ -1,0 +1,21 @@
+{
+  "utc_start": "2026-11-21T18:47:25.765843+00:00",
+  "pid": 1061,
+  "argv": [
+    "artifacts/cohort1/final_source_freeze/resumed/run_ledger.py"
+  ],
+  "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+  "N": 4,
+  "M": 100,
+  "seeds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "ledger_snapshot_is_real_csv_snapshot": true,
+  "claim": "registered substrate attribution/availability ledger, NOT RNA/protein gram oracle",
+  "utc_end": "2026-11-21T18:48:52.726274+00:00",
+  "verdict": "PASS",
+  "total_failures": 0
+}

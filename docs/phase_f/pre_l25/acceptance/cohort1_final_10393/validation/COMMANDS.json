@@ -1,0 +1,199 @@
+[
+  {
+    "label": "full_generate",
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "generate",
+      "--out",
+      "docs/phase_f/l2_2_design_a/evidence_index.json",
+      "--evidence-root",
+      "docs/phase_f/l2_2_design_a/evidence_bundle"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "started_utc": "2026-11-23T17:30:03.737810+00:00",
+    "pid": 386,
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:30:28.457672+00:00",
+    "log": "artifacts/cohort1/evidence_honesty_landing/full_generate.log",
+    "log_sha256": "c31ebe5c9bce7c8bacd3d5992d1be25c6351a28ce2a32542cb6c17491404872f",
+    "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_generate.log"
+  },
+  {
+    "label": "full_portable_audit",
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "audit",
+      "--index",
+      "docs/phase_f/l2_2_design_a/evidence_index.json",
+      "--evidence-root",
+      "docs/phase_f/l2_2_design_a/evidence_bundle"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "started_utc": "2026-11-23T17:30:28.464600+00:00",
+    "pid": 386,
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:30:53.614311+00:00",
+    "log": "artifacts/cohort1/evidence_honesty_landing/full_portable_audit.log",
+    "log_sha256": "bbed5ea52c48a4d9031ded8afe6d6c01c02a42e6e9cf35c8a4b697c7c0a22908",
+    "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_portable_audit.log"
+  },
+  {
+    "label": "full_strict_audit",
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "audit",
+      "--index",
+      "docs/phase_f/l2_2_design_a/evidence_index.json",
+      "--evidence-root",
+      "docs/phase_f/l2_2_design_a/evidence_bundle",
+      "--verify-input-files"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "started_utc": "2026-11-23T17:30:53.623616+00:00",
+    "pid": 386,
+    "exit": 1,
+    "finished_utc": "2026-11-23T17:31:32.130617+00:00",
+    "log": "artifacts/cohort1/evidence_honesty_landing/full_strict_audit.log",
+    "log_sha256": "cdd0d197bb4ce05183f6f90c78f48b08082dff3c4d451e2c91e3723136932222",
+    "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_audit.log"
+  },
+  {
+    "label": "full_strict_generate",
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "generate",
+      "--out",
+      "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_index.json",
+      "--evidence-root",
+      "docs/phase_f/l2_2_design_a/evidence_bundle",
+      "--verify-input-files"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "started_utc": "2026-11-23T17:33:38.478588+00:00",
+    "pid": 395,
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:34:00.872745+00:00",
+    "log": "artifacts/cohort1/evidence_honesty_landing/full_strict_generate.log",
+    "log_sha256": "581869cc6d07e3555df9b56c46a3bf1b47177ca7d88e57343bebbd21beaa8ccf",
+    "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_generate.log"
+  },
+  {
+    "label": "full_strict_mode_audit",
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/l22_evidence/generator.py",
+      "audit",
+      "--index",
+      "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_index.json",
+      "--evidence-root",
+      "docs/phase_f/l2_2_design_a/evidence_bundle",
+      "--verify-input-files"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "started_utc": "2026-11-23T17:34:00.879039+00:00",
+    "pid": 395,
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:34:37.599662+00:00",
+    "log": "artifacts/cohort1/evidence_honesty_landing/full_strict_mode_audit.log",
+    "log_sha256": "36b2aa439a2e2a3341ac039e3fc6782f49bcdaa2b90a97e31584526b934d46f2",
+    "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_mode_audit.log"
+  },
+  {
+    "label": "publication_honesty_tests",
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "-m",
+      "pytest",
+      "tests/scripts/test_pre_l25_honesty.py",
+      "tests/scripts/test_l22_evidence_portability.py",
+      "tests/scripts/test_l22_evidence_generator.py::test_catalog_scope_matches_expected_24_names",
+      "tests/scripts/test_l22_evidence_generator.py::test_index_has_exactly_one_row_per_in_scope_process_no_extras",
+      "tests/scripts/test_l22_evidence_generator.py::test_content_hash_is_deterministic_across_regenerations",
+      "tests/scripts/test_l22_evidence_generator.py::test_content_hash_changes_when_evidence_root_differs",
+      "tests/scripts/test_l22_evidence_generator.py::test_audit_reports_failure_when_index_file_absent",
+      "-k",
+      "not test_tracked_baseline_is_current_and_fail_closed",
+      "--capture=sys",
+      "-q",
+      "-rs",
+      "-rx",
+      "--tb=short",
+      "-o",
+      "junit_family=legacy",
+      "--basetemp=artifacts/cohort1/evidence_honesty_landing/pytest_scratch/publication",
+      "--junitxml=artifacts/cohort1/evidence_honesty_landing/publication_honesty_tests.xml"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "started_utc": "2026-11-23T17:35:32.111232+00:00",
+    "pid": 376,
+    "exit": 1,
+    "finished_utc": "2026-11-23T17:37:21.540812+00:00",
+    "log": "artifacts/cohort1/evidence_honesty_landing/publication_honesty_tests.log",
+    "log_sha256": "4df4b3392701772a95d080e756e021068cd03031e3e5fd2d393187da0a2e9f52",
+    "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/publication_honesty_tests.log"
+  },
+  {
+    "label": "honesty_unit_tests",
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "-m",
+      "pytest",
+      "tests/scripts/test_pre_l25_honesty.py",
+      "-k",
+      "not (test_tracked_baseline_is_current_and_fail_closed or test_txreg_stage_a_production_files_included_in_provenance_and_dependencies)",
+      "--capture=sys",
+      "-q",
+      "-rs",
+      "-rx",
+      "--tb=short",
+      "-o",
+      "junit_family=legacy",
+      "--basetemp=artifacts/cohort1/evidence_honesty_landing/pytest_scratch/honesty_units",
+      "--junitxml=artifacts/cohort1/evidence_honesty_landing/honesty_unit_tests.xml"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "started_utc": "2026-11-23T17:37:48.659713+00:00",
+    "pid": 383,
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:37:59.896974+00:00",
+    "log": "artifacts/cohort1/evidence_honesty_landing/honesty_unit_tests.log",
+    "log_sha256": "182dfc56cfe3b239900287382a21f93139f8cf7ffd40571226c1da16e7388de9",
+    "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/honesty_unit_tests.log"
+  },
+  {
+    "label": "honesty_source_digest",
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/pre_l25_honesty.py",
+      "source-digest"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "started_utc": "2026-11-23T17:37:59.903603+00:00",
+    "pid": 383,
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:38:01.135349+00:00",
+    "log": "artifacts/cohort1/evidence_honesty_landing/honesty_source_digest.log",
+    "log_sha256": "d389e4f3d5ef386a9bdacfa6535b2da5370da2e12c446589f9a546fae5beadcd",
+    "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/honesty_source_digest.log"
+  },
+  {
+    "label": "honesty_audit",
+    "argv": [
+      "/mnt/e/opencell/.venv-wsl/bin/python",
+      "scripts/pre_l25_honesty.py",
+      "audit"
+    ],
+    "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+    "started_utc": "2026-11-23T17:38:01.143434+00:00",
+    "pid": 383,
+    "exit": 0,
+    "finished_utc": "2026-11-23T17:38:02.900822+00:00",
+    "log": "artifacts/cohort1/evidence_honesty_landing/honesty_audit.log",
+    "log_sha256": "640fb89c78ec2ef642e5ac0f8fa93490cdc8c015120b53e4ccabee10efdcf96c",
+    "persisted_log": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/honesty_audit.log"
+  }
+]

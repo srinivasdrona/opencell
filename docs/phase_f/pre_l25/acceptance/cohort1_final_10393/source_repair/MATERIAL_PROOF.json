@@ -1,0 +1,41 @@
+{
+  "reference": "unchanged independent frozen full/mixed source contract, not fitted output",
+  "source_grams": {
+    "rna": 5.911064909285404e-16,
+    "substrate": 9.639096931740103e-15,
+    "protein": 3.249503733251496e-15,
+    "total": 1.347970715592014e-14
+  },
+  "actual_grams": {
+    "standalone": {
+      "rna": 5.911064909285405e-16,
+      "substrate": 9.639096931740103e-15,
+      "protein": 3.2495037332514963e-15,
+      "total": 1.347970715592014e-14
+    },
+    "observer_actual_engine": {
+      "rna": 5.911064909285406e-16,
+      "protein": 3.2495037332514963e-15,
+      "total": 1.347970715592014e-14
+    },
+    "csv_actual_shared_projection": {
+      "rna": 5.911064909285405e-16,
+      "substrate": 9.639096931740103e-15,
+      "protein": 3.2495037332514963e-15,
+      "total": 1.347970715592014e-14
+    },
+    "csv_dry_mass_g": {
+      "total": 1.347970715592014e-14
+    }
+  },
+  "physical_present_owned_leaves": 10202,
+  "present_by_root": {
+    "rna": 1077,
+    "protein": 8941,
+    "complex": 184
+  },
+  "missing_present_owned_leaves": 0,
+  "full_UNITrna_monomer_visibility": "frozen81 actual Engine basket assertion and XML receipt",
+  "protein_monomer_da": 1139150091.4184003,
+  "protein_complex_da": 817746796.7601999
+}

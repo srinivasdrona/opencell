@@ -1,0 +1,7 @@
+.......F............                                                     [100%]
+=================================== FAILURES ===================================
+_ test_txreg_stage_a_production_files_included_in_provenance_and_dependencies __
+tests/scripts/test_pre_l25_honesty.py:326: in test_txreg_stage_a_production_files_included_in_provenance_and_dependencies
+    assert baseline["summary"]["eligible"] == 4
+E   assert 9 == 4
+1 failed, 19 passed, 1 deselected in 102.66s (0:01:42)

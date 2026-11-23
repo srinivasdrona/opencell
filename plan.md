@@ -1,6 +1,41 @@
 # M1 final-source assembly - 2026-10-19
 
-## Current revision is under construction, not newly eligible
+## Current candidate — accepted M1 evidence persisted locally, review pending
+
+- **2026-11-23 evidence/honesty landing:** all five fresh10393-source
+  N50/B1000 campaigns and independent numerical/current-source/PORTABLE+
+  STRICT acceptance are complete (PP2M20, other fourM100). Exact accepted40
+  compact files now occupy the five canonical bundle paths; full existing
+  bundle regeneration is5 PASS/17 stale FAIL/2 MISSING, target5 no reasons.
+  All166 unrelated packet files remain unchanged, not rehashed as passes.
+- Five semantic audits/current-source findings are reconciled to accepted
+  PM private-MCG/exact100tick replay/P10b and complete RNA/monomer/existing
+  complex mass/source bindings; RP/RM full producer/forms/current shared
+  mass and source-bound gates accepted. Existing PT/PP2 ownership/isolation
+  repairs are preserved; their current evidence uses this10393 packet.
+  Existing honesty validator derives **candidate9/28 ELIGIBLE,19 BLOCKED**,
+  INTEGRITY_OK, actual140-file digest
+  a479e3386f209d6aa0d7b20aa71684208df0fb1f49b8b3eb4625e328e0984e3a.
+  Canonical separate audit baseline remains4 until distinct integration.
+- Source135/raw250/12 bounded repair receipts/original45 campaign files and
+  old missing-sentinel RED/current independent review remain exact. Nov23
+  completed-run revalidation is explicit, never a contemporaneous sweep.
+  Full raw OC output tensors were not retained; scalar allocator inputs
+  are not outputs, no raw-sample reanalysis claimed.
+- Full portable generate/audit and strict-mode full counterpart/audit EXIT0.
+  Existing publication/unit selection19 PASS/1 inherited fixed-four snapshot
+  FAIL/1 deselected; seven count-independent honesty unit controls PASS.
+  Two unchanged snapshot guards demand4 eligible though entry baseline
+  already6. No test/validator change or all-suite PASS claim.
+- RNADecay/tRNA consumption, normal Translation binding/full1041 RNA
+  lifecycle, DNAS Seed capture/Ribo genuineM200 and other cohort2 findings
+  remain OPEN; unrelated findings are unchanged. No biological/source/RNG/
+  fixture/schema/catalog/test changes, reruns, canonical audit write,
+  all28/L2.5 claim, main merge or push. Current compact acceptance and actual
+  committed-copy handoff: `docs/phase_f/pre_l25/acceptance/cohort1_final_10393/`.
+  Independent committed-copy acceptance is next.
+
+### Frozen source assembly and prior under-construction history
 
 - **Committed combined source:** `7586be17b746c8e6f18068898859f346192ed892`,
   normal hooks PASS, accepted guard868377ae/e92bbb4 ancestry retained.
@@ -65,6 +100,25 @@
   it has not been imported or treated as approved yet.
 
 ## Operational handoff
+
+- **Current evidence persistence stage — 2026-11-23:** same target worktree/
+  `integrate/m1-final-freeze-20261019`, measured generationHEAD10393 and
+  source7586 remain fixed; evidence-only commits legitimately advance local
+  HEAD. Do not invoke old source-freeze fixed-HEAD equality driver after
+  metadata commits; verify135 bound hashes/raw250 directly instead.
+  No live own agents/processes; completed CLI shells `m1-full-index-landing`,
+  `m1-full-strict-index`, `m1-evidence-honesty-validation`,
+  `m1-current-honesty-audit`. Exact command/PID/time/exit/XML/preservation
+  receipts in `artifacts/cohort1/evidence_honesty_landing/`, meaningful
+  copies in new acceptance/cohort1_final_10393. Full current index is not
+  the scoped5-only index. Strict audit requires matching strict-generated
+  payload because unrelated missing local raw inputs add reason fields.
+  Commit exact selective evidence/audit/baseline/plan/journal paths only,
+  normal installed hooks via existing Python-only WSL/native-Git bridge.
+  Both original journal prefixes/order remain exact; actualSHA companion
+  receipt follows, no amend. No campaign reruns/source mutation/global
+  config/hook or other worktree writes. Parent e079 committed-copy review
+  follows clean local delivery, no push/main merge/whole-cell promotion.
 
 - **Source committed/freeze handoff (2026-11-21T18:55Z):** branch
   `integrate/m1-final-freeze-20261019`, same target worktree, source commit

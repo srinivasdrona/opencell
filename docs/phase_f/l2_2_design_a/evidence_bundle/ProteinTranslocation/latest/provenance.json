@@ -1,8 +1,8 @@
 {
-  "generated_at": "2026-10-19T11:37:28.937401+00:00",
-  "git_sha": "unknown",
+  "generated_at": "2026-11-21T20:56:22.212244+00:00",
+  "git_sha": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
   "harness_version": "design_a_v1_3",
   "oracle_path": "data/m1_sources/karr_native/per_process_traces_v2/ProteinTranslocation_100ticks.mat",
-  "platform": "Linux-6.18.54.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
+  "platform": "Linux-6.18.58.1-microsoft-standard-WSL2-x86_64-with-glibc2.35",
   "python_version": "3.12.13 (main, Mar  4 2026, 09:23:07) [GCC 11.4.0]"
 }

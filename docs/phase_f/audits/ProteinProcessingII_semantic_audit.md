@@ -1,5 +1,30 @@
 # ProteinProcessingII Semantic Wiring Audit
 
+## Current-source evidence acceptance — 2026-11-23
+
+All four PPII findings remain resolved on measured source10393/source7586.
+Accepted source demand, live enzymes, PP1 processed_counts -> Folding
+unfolded_counts, no mature drain, same-tick grant-backed once-only evolution
+and signal writeback remain unchanged (`karr_protein_processing_ii.py:
+148-200,264-448,509-582`). Prior independent six-family persistent100-tick
+replay, source projection and ownership/negative witnesses are preserved.
+
+The current full482-coordinate N50/M20/B1000 gate has83 actual consumed
+records (50 distinct raw seeds plus33 runtime/parameter inputs) and all six
+before/after source families, including signalSequenceMonomers. Independent
+numerical/current-source/PORTABLE+STRICT acceptance is complete, no reasons.
+The registered deterministic-convergence warning/H12 basis remains disclosed.
+This current source packet replaces only the current publication references;
+old65df/9f53 gate/61-record receipts are not recertified as new evidence.
+Current per-finding proof and exact accepted review/packet hashes:
+`docs/phase_f/pre_l25/acceptance/cohort1_final_10393/`.
+
+Delayed completion revalidation is explicitly retrospective and new copies
+only; no sweep_run_job/new biological run is claimed. Full raw OC tensors
+were not retained; scalar allocator summaries are not outputs. Old acceptance
+directories and historical checkpoints below stay unchanged. Current candidate
+eligibility derives from the full index/findings; no cohort2/whole-cell claim.
+
 ## Current independent acceptance - 2026-10-19
 
 All four current PP2 findings are independently ACCEPTED at reviewed source

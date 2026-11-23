@@ -1,5 +1,30 @@
 # RNAModification Semantic Audit
 
+## Current-source independent acceptance — 2026-11-23
+
+`RMOD-DEVIATIONS` is resolved for measured source10393/source7586.
+Exact requests/shared live inputs, all347 processed/mature rows, processed
+aliases,309 no-reaction pass-through rows and the unbounded stochastic source
+loop are accepted (`karr_rna_modification.py:107-123,219-315,327-379,437-451`).
+No trace hint, capped deterministic shortcut or availability request remains.
+Same-tick phase/grant/public evolution is preserved in the actual chassis.
+The common source mapper/observer/CSV now weighs these forms with physical
+complex/Activation owners once; frozen mass81 and source gram proof pass.
+
+The actual full694-coordinate N50/M100/B1000 gate has87 consumed records,
+all50 distinct seeds and independent numerical/current-source/PORTABLE+STRICT
+ACCEPTANCE without reasons. Source/read visibility/capture and finding proof:
+`docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md`;
+review/ preserves exact independent verdict/commands. Delayed completion
+revalidation is not a contemporaneous sweep; original files stay unchanged.
+Full raw OC tensors were not retained, so raw-sample reanalysis is unavailable.
+
+RNADecay/tRNA consumption, normal Translation binding/full1041 RNA lifecycle
+and other cohort2 findings remain OPEN on their consumer rows, not silently
+waived by this producer acceptance. Historical no-op/hinted replay/checkpoints
+below are not current-source evidence. Candidate eligibility is separately
+derived; no coupled whole-cell or L2.5 readiness claim.
+
 ## 2026-10-15 implementation checkpoint (supersedes historical code descriptions below)
 
 - Source request (MATLAB 289-294) now lives in
