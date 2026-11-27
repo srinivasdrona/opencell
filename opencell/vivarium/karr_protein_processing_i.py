@@ -11,6 +11,7 @@ from scipy.io import loadmat
 from vivarium.core.process import Process
 
 from opencell.vivarium.karr_trna_aminoacylation import _parse_wid_array, _resolve_fixture_path
+from opencell.vivarium.protein_state import MIGRATED_WIDS, compartment_counts_schema
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat"
 _D2_COMPLEX_FIXTURE_PATH = "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
@@ -122,6 +123,7 @@ class KarrProteinProcessingIProcess(Process):
         processed_schema = {
             wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
             for wid in self.processed_monomer_wids
+            if wid not in MIGRATED_WIDS
         }
         protein_enzyme_schema = {
             wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
@@ -131,6 +133,7 @@ class KarrProteinProcessingIProcess(Process):
             wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
             for wid in self.complex_enzyme_wids
         }
+        authority_schema = compartment_counts_schema(MIGRATED_WIDS)
 
         return {
             "substrates": {
@@ -157,10 +160,20 @@ class KarrProteinProcessingIProcess(Process):
                 "unprocessed_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.unprocessed_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "processed_counts": processed_schema,
                 "counts": protein_enzyme_schema,
                 "enzyme_counts": protein_enzyme_schema,
+                # Design 9.3/M02-M03: the 8 migrated terminal-organelle WIDs'
+                # nascent->processedI transition (ProteinProcessingI.m
+                # L163-164, both at cytosol) is source-correct at the
+                # compartment authority; they are not written to the legacy
+                # `unprocessed_counts`/`processed_counts` branches above.
+                "compartment_counts": {
+                    "nascent": authority_schema["nascent"],
+                    "processed_i": authority_schema["processed_i"],
+                },
             },
             "complex": {
                 "counts": complex_enzyme_schema,
@@ -190,15 +203,30 @@ class KarrProteinProcessingIProcess(Process):
         protein_counts = protein_state.get("counts", {})
         if not isinstance(protein_counts, dict):
             protein_counts = {}
+        nascent_authority_state = protein_state.get("compartment_counts", {}).get("nascent", {})
 
+        # Design 9.3/M02: the 8 migrated terminal-organelle WIDs always read
+        # their nascent pool from the compartment authority (cytosol),
+        # independent of the legacy compat-mode decision below, which only
+        # concerns the remaining non-migrated WIDs.
         unprocessed = np.asarray(
-            [float(unprocessed_state.get(wid, 0.0)) for wid in self.unprocessed_monomer_wids],
+            [
+                float(nascent_authority_state.get(wid, {}).get("c", 0.0))
+                if wid in MIGRATED_WIDS
+                else float(unprocessed_state.get(wid, 0.0))
+                for wid in self.unprocessed_monomer_wids
+            ],
             dtype=np.float64,
         )
         use_protein_counts_compat = False
         if unprocessed.sum() <= 0.0 and protein_counts:
             counts_unprocessed = np.asarray(
-                [float(protein_counts.get(wid, 0.0)) for wid in self.unprocessed_monomer_wids],
+                [
+                    float(nascent_authority_state.get(wid, {}).get("c", 0.0))
+                    if wid in MIGRATED_WIDS
+                    else float(protein_counts.get(wid, 0.0))
+                    for wid in self.unprocessed_monomer_wids
+                ],
                 dtype=np.float64,
             )
             if counts_unprocessed.sum() > 0.0:
@@ -288,22 +316,43 @@ class KarrProteinProcessingIProcess(Process):
         unprocessed_updates = {
             wid: -float(processed_events[i])
             for i, wid in enumerate(self.unprocessed_monomer_wids)
-            if processed_events[i] > 0
+            if processed_events[i] > 0 and wid not in MIGRATED_WIDS
         }
         processed_updates = {
             wid: float(processed_events[i])
             for i, wid in enumerate(self.processed_monomer_wids)
-            if processed_events[i] > 0
+            if processed_events[i] > 0 and wid not in MIGRATED_WIDS
         }
-        if unprocessed_updates or processed_updates:
+        # Design 9.3/M02-M03: migrated WIDs' nascent->processedI transition
+        # (same cytosol compartment throughout, ProteinProcessingI.m
+        # L163-164) routes through the authority instead.
+        migrated_nascent_deltas = {
+            wid: -float(processed_events[i])
+            for i, wid in enumerate(self.unprocessed_monomer_wids)
+            if processed_events[i] > 0 and wid in MIGRATED_WIDS
+        }
+        migrated_processed_i_deltas = {
+            wid: float(processed_events[i])
+            for i, wid in enumerate(self.processed_monomer_wids)
+            if processed_events[i] > 0 and wid in MIGRATED_WIDS
+        }
+        if unprocessed_updates or processed_updates or migrated_nascent_deltas or migrated_processed_i_deltas:
             update["protein"] = {
                 "unprocessed_counts": unprocessed_updates,
                 "processed_counts": processed_updates,
             }
+            if migrated_nascent_deltas or migrated_processed_i_deltas:
+                update["protein"]["compartment_counts"] = {
+                    "nascent": {wid: {"c": delta} for wid, delta in migrated_nascent_deltas.items()},
+                    "processed_i": {
+                        wid: {"c": delta} for wid, delta in migrated_processed_i_deltas.items()
+                    },
+                }
             if use_protein_counts_compat:
                 compat_counts_updates = {
-                    **unprocessed_updates,
-                    **processed_updates,
+                    wid: delta
+                    for wid, delta in {**unprocessed_updates, **processed_updates}.items()
+                    if wid not in MIGRATED_WIDS
                 }
                 update["protein"]["counts"] = compat_counts_updates
 

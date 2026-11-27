@@ -1,17 +1,387 @@
 {
-  "generated_at": "2026-08-18T09:19:28.299767+00:00",
+  "generated_at": "2026-11-21T19:39:39.603273+00:00",
   "inputs": [
     {
-      "path": "data/m1_sources/karr_native/per_process_traces_v2/ProteinProcessingII_100ticks.mat",
-      "sha256": "0d86b69b6896c76c36056a20d19e6c530b781b4413f70550d74cb95aeeda2387"
-    },
-    {
       "path": "tests/vivarium/l2_2_design_a_runner.py",
-      "sha256": "5cd107f5e64b252dbe4b2bc41b493d2687450636e5b69e976d3571337422abee"
+      "sha256": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d"
     },
     {
       "path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
-      "sha256": "a5046d6e3357f898573427e7d32bfac252a26f465578eafac87792c62663aeca"
+      "sha256": "f5b4493968a196c894c7ae0d132ebc540f424d269ed63a8c13986ebdc0531bca"
+    },
+    {
+      "path": "tests/vivarium/_l2_2_design_a_projections.py",
+      "sha256": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45"
+    },
+    {
+      "path": "opencell/vivarium/__init__.py",
+      "sha256": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17"
+    },
+    {
+      "path": "opencell/analysis/cell_mass.py",
+      "sha256": "15e76dbb8f952677efd8b25bd02dddb19f18657b45a2b159e1f3b43ef61c64f3"
+    },
+    {
+      "path": "opencell/vivarium/karr_observability_step.py",
+      "sha256": "ab0b213f6ed1b3abe3c0c955d4a5053d80bf096341e09e4bbf97d09516341f8d"
+    },
+    {
+      "path": "tests/vivarium/l2_replay_common.py",
+      "sha256": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852"
+    },
+    {
+      "path": "scripts/l22_evidence/schema.py",
+      "sha256": "b89cc2e25cf690498967d973a0650f1eb219fa4f225fc654dabf08326029ba18"
+    },
+    {
+      "path": "opencell/vivarium/protein_state.py",
+      "sha256": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b"
+    },
+    {
+      "path": "opencell/vivarium/karr_protein_activation.py",
+      "sha256": "c3cee463dd8919274be9f0d1d41f15b3ef78c7668c1b550c50a813449272cb76"
+    },
+    {
+      "path": "opencell/m1/karr_metabolism.py",
+      "sha256": "25c75d055207503aa9621b24b2371daa17a0ee76292233b26a2eea66f9468ce5"
+    },
+    {
+      "path": "opencell/m2/transcription.py",
+      "sha256": "d36eea6470a5843b02679e08ae847199335dcde3b62487d03abeae7e6fa5590f"
+    },
+    {
+      "path": "opencell/m3/translation.py",
+      "sha256": "e360d220e7c920f6c7e2c913187899867a042888d57804ee96d8e29b17b5c122"
+    },
+    {
+      "path": "opencell/data/__init__.py",
+      "sha256": "4a49dfb9a8940ebeca133c80910beccb60a93341730558b24bb35a0d14029f54"
+    },
+    {
+      "path": "opencell/data/substrate_mass_classes.py",
+      "sha256": "8253863216b39261275b02db88b9e4494a5cee3356f818029c5c9248e89a0e76"
+    },
+    {
+      "path": "data/karr_fixtures/parameters.json",
+      "sha256": "d93c9af3bcaf47cefb893d048fa2055008d3cb47b5a3c27f8e2b051eec13cd47"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m3_vocab.json",
+      "sha256": "4f46664cba1f7c010f2cd4bcea7adf03da72aa151716cef181165b9d1a12da27"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m1.json",
+      "sha256": "f2b4f8cdcd27b4f56443a1e4334b6c7f96693d1cae038e787b958de062edb869"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m1.npz",
+      "sha256": "0d72b003f68f7efaf0d138f0f762fea20eba8a242964ad9880d34ffab76ec3ab"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m2.json",
+      "sha256": "fb795fbba29372867c05d82aa1c5d46e9e226ddac352beb6d3365aa9ffcd8b3d"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m2.npz",
+      "sha256": "25fcce837a96e85b66e180b4d3f15e16dcf8145bc76ff22db115dd055e93f9c4"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m3.json",
+      "sha256": "12f989039f32a92355472ee8dbca803c329605566dfbe81a95e1e8f1673634a8"
+    },
+    {
+      "path": "data/karr_fixtures/karr_native_m3.npz",
+      "sha256": "9351eefacb327a6df7bad8bdb8f367c9ad17e2333f2756de03f4c3d0a03dd32c"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/Rna_flat.mat",
+      "sha256": "67b8bd3ee6965e4220de3f8ca7f9faeeb7f3f5199e7c21eee1b616c1d9a7fc1d"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinMonomer_flat.mat",
+      "sha256": "4b59dbd5d2e07bb724ec9145c0f2488062866c8dab208be7de0701cbbca70e27"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinComplex_flat.mat",
+      "sha256": "ca12556ff283f60106213eec85e77fadd068d37d32c8319ec0a06be6257dab13"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinActivation_flat.mat",
+      "sha256": "ea58c5d4ca279e2b10dff12bffe89e04926f4515324f0c13fb677759a4094a52"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinProcessingI_flat.mat",
+      "sha256": "0a4ce7ad57266e4c1241f7fba34e6e9a20183855f8f396ca70e7b23d63acd535"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat",
+      "sha256": "a386207b68bc7d306b8385a0a0aa34ea28bc68d2af0f1530da113f80808699af"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinModification_flat.mat",
+      "sha256": "b89663e37c5ab6a68a8f978e670ecbedf05c5a2af4a5569b4e83d803b2c5807b"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/ProteinTranslocation_flat.mat",
+      "sha256": "1c02cba3d4422d7384a3d0c369b4bb02585705b9bed37d72c9c7b87515b0b41d"
+    },
+    {
+      "path": "data/karr_fixtures/per_process/TerminalOrganelleAssembly_flat.mat",
+      "sha256": "cdf3c89d8f32cd429d130cc650b01c53f855a520faa796e318dbead75bcbeabe"
+    },
+    {
+      "path": "opencell/vivarium/karr_protein_processing_ii.py",
+      "sha256": "13b8fea04446f6b9452441f8dccf296ab92ebbf92b7b46f7a100f3bdd0fe1668"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2/ProteinProcessingII_100ticks.mat",
+      "seed": 0,
+      "sha256": "0d86b69b6896c76c36056a20d19e6c530b781b4413f70550d74cb95aeeda2387"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s001/ProteinProcessingII_100ticks.mat",
+      "seed": 1,
+      "sha256": "004105defd96f0ee6242e1ff577cf8602ff4c7fd57177ff166c66560a9c76bf0"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s002/ProteinProcessingII_100ticks.mat",
+      "seed": 2,
+      "sha256": "d5cd05894d48ee708c93d2e83fc7c740391c8f0bbb14b9eef619763cafc6f27b"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s003/ProteinProcessingII_100ticks.mat",
+      "seed": 3,
+      "sha256": "26293b55dca6dfb6c87ddaf4d95b24a7c8459f5ed1c976006e979d7c90f9bb39"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s004/ProteinProcessingII_100ticks.mat",
+      "seed": 4,
+      "sha256": "71fa4a5794f309528ff766ba8c4e184808a182469b2424deb435efcd1cddcd39"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s005/ProteinProcessingII_100ticks.mat",
+      "seed": 5,
+      "sha256": "6786ae655ced6d3f1716559106c1860befff6fe08569d91d73a8225c4165bb09"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s006/ProteinProcessingII_100ticks.mat",
+      "seed": 6,
+      "sha256": "c2d841c16e1e33fc0363f963463ddc6d9e8b1dd010b3a6b17b2b08ad2b8bb36b"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s007/ProteinProcessingII_100ticks.mat",
+      "seed": 7,
+      "sha256": "ca03a8bbce7d3256f6b6401b1342433ce718eb7ca2ee2014b2b75139921dc163"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s008/ProteinProcessingII_100ticks.mat",
+      "seed": 8,
+      "sha256": "73c85ce9d597c19ebd41f468831ca3f7ba723448de6980e38ead58b8064b40ff"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s009/ProteinProcessingII_100ticks.mat",
+      "seed": 9,
+      "sha256": "0cacd0465193d7321b3c4913876646e4ca34c6693c03d1a55692b1191f8a4180"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s010/ProteinProcessingII_100ticks.mat",
+      "seed": 10,
+      "sha256": "24f9c056d2c2a6f2df725809f6a8a7ace40c062693fd0c7c213c48db738f398d"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s011/ProteinProcessingII_100ticks.mat",
+      "seed": 11,
+      "sha256": "dbd0227cd0e303ba75fd8937fd932190291f23471852f989b743413ad01eb78f"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s012/ProteinProcessingII_100ticks.mat",
+      "seed": 12,
+      "sha256": "bc2b7c183b951db7758fde19051e8ed97961957a2049f11caea0166d2a6dd252"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s013/ProteinProcessingII_100ticks.mat",
+      "seed": 13,
+      "sha256": "fca9646525320b3f0b6a8127dd8c7e80596884bbc9964967fccf3d98ef407df9"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s014/ProteinProcessingII_100ticks.mat",
+      "seed": 14,
+      "sha256": "992c2a6df2092b44eae04a0b0ebea0426d76cebdfd778abcb3f2360bbf610659"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s015/ProteinProcessingII_100ticks.mat",
+      "seed": 15,
+      "sha256": "f99ecec271b9f00dff3475ab43755dd9416481efbf9c2839d9e2c3171ed89b9a"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s016/ProteinProcessingII_100ticks.mat",
+      "seed": 16,
+      "sha256": "37a23f5dddd40db6fabe7204cd2da5cb0d9340306e5418e8e700bccb648b8922"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s017/ProteinProcessingII_100ticks.mat",
+      "seed": 17,
+      "sha256": "cd3ea5785b90a07ff62018c8169d3a931cfa82749c93e4a0ae3b75b9833dcbd2"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s018/ProteinProcessingII_100ticks.mat",
+      "seed": 18,
+      "sha256": "97940b717185d39aa673c869953942d5ced23bec791ef783075c366a7a52dbaa"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s019/ProteinProcessingII_100ticks.mat",
+      "seed": 19,
+      "sha256": "6641ed0b32821be3ff73107351698ed107e24387c57db2ae20847256f9995c8f"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s020/ProteinProcessingII_100ticks.mat",
+      "seed": 20,
+      "sha256": "274c44077409d30847cd26761df64ca85f5f6dec0012848894837c628123ac2d"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s021/ProteinProcessingII_100ticks.mat",
+      "seed": 21,
+      "sha256": "cab3171d4a38d38ca6620e49553850290ebe5ae2fbb72572bd1cc58c595b6eb3"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s022/ProteinProcessingII_100ticks.mat",
+      "seed": 22,
+      "sha256": "376bfff074680b8c0dd6bec8c06e7788998ffb85d87bdef61bb7745f20d58f1f"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s023/ProteinProcessingII_100ticks.mat",
+      "seed": 23,
+      "sha256": "e1c48f8ba4f2beb7afc5c068f8f7d6cac6ab13164a44c67c72e0fd08ebe16e18"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s024/ProteinProcessingII_100ticks.mat",
+      "seed": 24,
+      "sha256": "aad9482ad3edc7b9efabbe8b34d7826dd2fc64c3facb33beb0b847a741bc34c5"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s025/ProteinProcessingII_100ticks.mat",
+      "seed": 25,
+      "sha256": "b1f424c509858441c46a1020d9dea6fdf715e384c569d53fb770396d35145f33"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s026/ProteinProcessingII_100ticks.mat",
+      "seed": 26,
+      "sha256": "7d9c1f3898cacd0bca36e6defd54b02583bb06cab0bf70c9c01b8faf03021ced"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s027/ProteinProcessingII_100ticks.mat",
+      "seed": 27,
+      "sha256": "be2bd7a6deb096656526aea172f0ae618c40d7475d8ebba3e94f2bfeeda406f3"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s028/ProteinProcessingII_100ticks.mat",
+      "seed": 28,
+      "sha256": "34bbbcb1867a92d881c847df20d644dc5f3ea63cf2b5c0498f7ab11e000835b4"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s029/ProteinProcessingII_100ticks.mat",
+      "seed": 29,
+      "sha256": "81fab0a66ebee3071dd8657a300d0d96b2c71f1ae3da3d00162081646a6cff5f"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s030/ProteinProcessingII_100ticks.mat",
+      "seed": 30,
+      "sha256": "3f19777587a72fd9025231c045f70f4f593c2ca38ad9ceee154528722267db0c"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s031/ProteinProcessingII_100ticks.mat",
+      "seed": 31,
+      "sha256": "b9d18bea28a19c02b5c6f176569183a1a5c441c3982c4210b6e8fbd36135e21e"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s032/ProteinProcessingII_100ticks.mat",
+      "seed": 32,
+      "sha256": "f2e5797384e26585b1037a1267a0cb19d7290b19329ea2e6a1bb735130487753"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s033/ProteinProcessingII_100ticks.mat",
+      "seed": 33,
+      "sha256": "1161f4d8df90eb5591fc895ca5b487b1b571308975e83bdb7ec2654d3faa0ddc"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s034/ProteinProcessingII_100ticks.mat",
+      "seed": 34,
+      "sha256": "7b369a4a163b0c302fadba52ef88298efc3717cd47be7dd0db1400b0f8706ebe"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s035/ProteinProcessingII_100ticks.mat",
+      "seed": 35,
+      "sha256": "aab51cbc66c3aa41fae4bec1bf51eac0b850738d8c78b88a0ebeeebc4fa97379"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s036/ProteinProcessingII_100ticks.mat",
+      "seed": 36,
+      "sha256": "a78c1ac09a4aac927d51682b0d64d10bc185a142d10fae983e723583e894f470"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s037/ProteinProcessingII_100ticks.mat",
+      "seed": 37,
+      "sha256": "bca0a414d026eb8c1fe5e06d3f924a9181ea844e1b86fc44bfc10d05b418eade"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s038/ProteinProcessingII_100ticks.mat",
+      "seed": 38,
+      "sha256": "8d761cf3a7096b3ef52d2a9411b47f08c5584e381010a76e49e23ffca995a85c"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s039/ProteinProcessingII_100ticks.mat",
+      "seed": 39,
+      "sha256": "1c835386103f59f690b11dfd59cfb7d1cc1e337431d3d08b8d84ceeff215d214"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s040/ProteinProcessingII_100ticks.mat",
+      "seed": 40,
+      "sha256": "2460d2b19381d3b70eae372e5590568c4e729917de68d809b6a63c964e239218"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s041/ProteinProcessingII_100ticks.mat",
+      "seed": 41,
+      "sha256": "507a0a4f7fcaf357ead9983ef090c7f621e9064a44b59719d6d945c94051ecfd"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s042/ProteinProcessingII_100ticks.mat",
+      "seed": 42,
+      "sha256": "9dde7987d5c8c215e91437ac5e301c89851c1135441902e4e75a08be17d2f9c7"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s043/ProteinProcessingII_100ticks.mat",
+      "seed": 43,
+      "sha256": "f8bddf23fbc112cf993c1b4659fe81cac3a573d82aa5510a8c94f68fb7ce02fe"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s044/ProteinProcessingII_100ticks.mat",
+      "seed": 44,
+      "sha256": "65eb872fe0a9f2c8a11da22bc1c03fb3c6e9eaf4b1ae9786cda4715320bec670"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s045/ProteinProcessingII_100ticks.mat",
+      "seed": 45,
+      "sha256": "bf2d5a92344f0b7670d927fc3b8008494d3b35ebdfa6410e46cef76d38b9b162"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s046/ProteinProcessingII_100ticks.mat",
+      "seed": 46,
+      "sha256": "4a4d4aeda8c2294d2319175cec8ddb7e43c43a755b984f3136908e6f0ab911bd"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s047/ProteinProcessingII_100ticks.mat",
+      "seed": 47,
+      "sha256": "2022a50c794077d98d037788ae1411101791fe6d7e0ede241f9dcf3f24da95ce"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s048/ProteinProcessingII_100ticks.mat",
+      "seed": 48,
+      "sha256": "c11f49aab2972aecb592cae8bfb2068fc244d02553d001d3d5b8adffd4a16dc1"
+    },
+    {
+      "path": "data/m1_sources/karr_native/per_process_traces_v2_s049/ProteinProcessingII_100ticks.mat",
+      "seed": 49,
+      "sha256": "0347c4fec06a29927acfea3311ab93a6d4f3db3e9f62955cdf3be5d5bed20cdf"
     }
   ],
   "m_ticks": 20,

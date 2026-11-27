@@ -1,0 +1,59 @@
+{
+  "process": "ProteinProcessingII",
+  "scope": "Final committed publication integration only",
+  "candidate_head": "c3ec943df61e485c0f50a3f770f85fdb5eae2cd1",
+  "reviewed_runtime_head": "65df71c26553f42dd95759b948de42647987bf68",
+  "verdict": "ACCEPTED",
+  "remaining_pp2_integration_defects": [],
+  "runtime_source_changed": false,
+  "committed_filesystem_original_byte_identity": {"passed": 40, "receipts": 32, "compact_bundle_files": 8},
+  "native_git_blob_object_ids_verified": 40,
+  "additional_committed_publication_authorities_verified": 4,
+  "recorded_receipt_hashes_verified": 11,
+  "strict_current_pp2_row": "PASS/green/no reasons",
+  "current_inputs_verified": {"total": 61, "seeds": 50, "runtime_fixture": 11},
+  "portable_full_index": {
+    "integrity": "OK",
+    "exit_code": 0,
+    "aggregate": "NON_GREEN",
+    "tally": {"PASS": 3, "FAIL": 19, "MISSING_EVIDENCE": 2},
+    "all_fail_rows_retain_stale_provenance_reasons": true,
+    "sha256": "5c567b8919259313bd1b35f317abfcaf6b9b69a1b270d9e35227086490739ddc",
+    "content_hash": "74486dded507a7118f30339ada7eee96b5f61097e1b8ff4dd23e49a1af6d73b6"
+  },
+  "honesty": {
+    "integrity": "INTEGRITY_OK",
+    "exit_code": 0,
+    "eligible": 5,
+    "blocked": 23,
+    "denominator": 28,
+    "source_digest": "debfe45f9fbc1b3dd23ab5cfc352b340b1bf662762c338574466e3bea679c808",
+    "source_file_count": 140,
+    "baseline_sha256": "6e10d433cb6851bbdcc9f5ae291d710b260a57a9585a2cde1bfcb53c77688bb4"
+  },
+  "pp2_findings": {
+    "PPII-DEVIATIONS": "RESOLVED",
+    "PPII-LEGACY-OWNERSHIP": "RESOLVED",
+    "PPII-REPLAY-INPUT-EVIDENCE": "RESOLVED",
+    "PPII-PROJECTION-GUARD-INPUTS": "RESOLVED"
+  },
+  "other_findings_and_eligible_membership_unchanged": true,
+  "semantic_audit_sha256": "ba8b1423b09c3c49ebbca752cae6e1abb2e431bf6bb26643fd87a7fcfccac90b",
+  "tests_or_biological_campaigns_repeated": false,
+  "earlier_receipts_modified": false,
+  "global_all_process_pass_claimed": false,
+  "merge_push_commit_performed": false,
+  "evidence": {
+    "status": "STATUS.md",
+    "measured_results": "integration_measurements.json",
+    "measured_results_sha256": "ab948f23b29e35e469e9a4cb563ada5c2e085ada76f7cfe0914264672426d654",
+    "native_blob_byte_proof": "committed_and_filesystem_preservation.json",
+    "native_blob_byte_proof_sha256": "75f27fc32cf8122d810f3d89dfe61d1efb574c3eea504f45c213b93abf5e5f25",
+    "authority_byte_proof": "committed_authority_bytes.json",
+    "current_pp2_row": "strict_current_pp2_row.json",
+    "current_inputs": "candidate_current_input_bytes.json",
+    "actual_main_commands": "audit_commands.json",
+    "portable_audit_stdout": "portable_full_index.log",
+    "honesty_audit_stdout": "honesty.log"
+  }
+}

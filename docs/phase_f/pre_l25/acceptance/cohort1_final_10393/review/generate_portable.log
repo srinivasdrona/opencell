@@ -1,0 +1,4 @@
+wrote artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/index_portable.json (24 rows, aggregate=NON_GREEN)
+  evidence_root: artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle
+  MISSING_EVIDENCE: 19
+  PASS: 5

@@ -1,0 +1,10 @@
+{
+  "time": "2026-10-19T17:15:51.8204202+05:30",
+  "native_powershell_pid": 5392,
+  "head": "65df71c26553f42dd95759b948de42647987bf68",
+  "branch": "exec/m1-pt-20261017",
+  "status": [],
+  "ignored_status": "\"artifacts\\\\m1_cohort\\\\m1_pt\\\\independent_acceptance\\\\STATUS.md\"",
+  "cwd": "E:\\opencell-worktrees\\m1-pt-20261017",
+  "command": "git rev-parse HEAD; git branch --show-current; git status --porcelain=v1; git check-ignore <review STATUS>; git ls-files"
+}

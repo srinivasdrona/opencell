@@ -158,7 +158,7 @@ def test_generate_falls_back_to_bundle_when_evidence_root_absent(tmp_path, monke
     assert resolved == schema.BUNDLE_ROOT
 
     payload = gen.build_evidence_index()  # no explicit evidence_root -> must use the fallback above
-    assert payload["n_in_scope"] == 22
+    assert payload["n_in_scope"] == 24
     assert payload["tally"] == explicit_bundle_payload["tally"]
     assert payload["tally"].get(schema.STATUS_PASS, 0) >= 1, "expected at least one real PASS row post-migration"
 

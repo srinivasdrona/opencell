@@ -62,11 +62,13 @@ _SCRATCH_RESET = {}
 _OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids', 'monomers': 'monomer_wids'}
 
 
-# L2.1 harness overrides (Pattern A). Karr's monomers trace is 2892 = 482 monomers x 6 compartments (column-major). OC tracks cytosol (compartment 0) = first 482 indices.
 _CANONICAL_WIDS: dict[str, list[str]] = {}
-_STORE_PATH_OVERRIDE: dict[str, tuple[str, ...]] = {}
+_STORE_PATH_OVERRIDE: dict[str, tuple[str, ...]] = {
+    'monomers': ('protein', 'compartment_counts', 'processed_i')
+}
 _INDEX_PROJECTION_ATTR: dict[str, str] = {}
-_INDEX_PROJECTION_LITERAL = {'monomers': np.arange(482)}
+_INDEX_PROJECTION_LITERAL = {'monomers': np.arange(2892)}
+_COMPARTMENTS = ("c", "d", "e", "m", "tc", "tm")
 
 
 def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
@@ -136,15 +138,18 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
         mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
         mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
         if sum(mutated_tick_counts.values()) == 0:
-            pytest.skip(
-                "L2.1 N/A: no-op trace. Every mutated observable "
-                f"({list(mutated_obs)}) is identical between states_before and "
-                f"states_after across all {n_ticks} ticks. Per-observable "
-                f"nonzero-delta counts: {mutated_tick_counts}."
+            pytest.fail(
+                "L2.1 failure: no-op trace. Claimed active F trace produced zero mutated ticks "
+                f"across all {n_ticks} ticks: {mutated_tick_counts}."
             )
 
         process = KarrProteinTranslocationProcess({"rng_seed": int(rng_seed)})
         state_template = build_state_template(process)
+
+        canonical_wids = dict(_CANONICAL_WIDS)
+        canonical_wids["monomers"] = [
+            f"{wid}[{comp}]" for comp in _COMPARTMENTS for wid in process.monomer_wids
+        ]
 
         wids_by_observable: dict[str, list[str]] = {}
         for observable in _OBSERVABLES:
@@ -156,15 +161,26 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
                 observable,
                 karr_len=int(karr_before.shape[0]),
                 explicit_attr=explicit_attr,
-                canonical_wids_override=_CANONICAL_WIDS,
+                canonical_wids_override=canonical_wids,
             )
 
         mismatch_ticks: set[int] = set()
-        total_oc_events = 0
-        total_karr_events = 0
+        karr_active_ticks: list[int] = []
+        total_oc_c_leave = 0
+        total_oc_e_arrive = 0
+        total_oc_m_arrive = 0
+        total_karr_c_leave = 0
+        total_karr_e_arrive = 0
+        total_karr_m_arrive = 0
 
         for tick in range(n_ticks):
             state = build_state_template(process)
+            # Ensure processed_i compartment counts container exists
+            comp_store = state.setdefault("protein", {}).setdefault("compartment_counts", {}).setdefault("processed_i", {})
+            for wid in getattr(process, "translocatable_wids", []):
+                if wid not in comp_store:
+                    comp_store[wid] = {c: 0.0 for c in _COMPARTMENTS}
+
             before_vectors = {
                 observable: project_karr_vector(
                     process,
@@ -188,7 +204,6 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
             refresh_allocator_views(process, state)
 
             update = process.next_update(1.0, state)
-            _apply_update(state, update, process)
 
             before_monomers = _snap_integral_counts(
                 tick=tick,
@@ -196,6 +211,26 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
                 label="before",
                 values=before_vectors["monomers"],
             )
+
+            # Check Karr active ticks and conservation
+            karr_monomers_after = project_karr_vector(
+                process,
+                "monomers",
+                cell_vector(trace, "states_after", "monomers", tick),
+                index_projection_attr=_INDEX_PROJECTION_ATTR,
+                index_projection_literal=_INDEX_PROJECTION_LITERAL,
+            )
+            karr_diff = karr_monomers_after - before_monomers
+            if np.any(karr_diff != 0):
+                karr_active_ticks.append(tick)
+                assert bool(update), f"Active tick {tick} in Karr trace produced empty update from OC process"
+                assert int(round(float(np.sum(karr_diff)))) == 0, f"Tick {tick}: Karr total monomers not conserved"
+                n_monomers = len(process.monomer_wids)
+                total_karr_c_leave += int(round(float(np.sum(karr_diff[0 * n_monomers : 1 * n_monomers]))))
+                total_karr_e_arrive += int(round(float(np.sum(karr_diff[2 * n_monomers : 3 * n_monomers]))))
+                total_karr_m_arrive += int(round(float(np.sum(karr_diff[3 * n_monomers : 4 * n_monomers]))))
+
+            _apply_update(state, update, process)
 
             for observable in _OBSERVABLES:
                 karr_after = project_karr_vector(
@@ -222,6 +257,7 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
                     wids=wids_by_observable[observable],
                     bound_enzymes_before=before_vectors.get("boundEnzymes"),
                     store_path_override=_STORE_PATH_OVERRIDE,
+                    before_vector=before_vectors.get(observable),
                 )
                 oc_after = _snap_integral_counts(
                     tick=tick,
@@ -248,14 +284,24 @@ def test_karr_protein_translocation_l2_replay_identity_per_tick(rng_seed: int) -
                 if not np.array_equal(oc_after, karr_after):
                     mismatch_ticks.add(tick)
                 if observable == "monomers":
-                    total_oc_events += int(round(float(np.sum(before_monomers - oc_after))))
-                    total_karr_events += int(round(float(np.sum(before_monomers - karr_after))))
+                    oc_diff = oc_after - before_monomers
+                    assert int(round(float(np.sum(oc_diff)))) == 0, f"Tick {tick}: OC total monomers not conserved"
+                    n_monomers = len(process.monomer_wids)
+                    total_oc_c_leave += int(round(float(np.sum(oc_diff[0 * n_monomers : 1 * n_monomers]))))
+                    total_oc_e_arrive += int(round(float(np.sum(oc_diff[2 * n_monomers : 3 * n_monomers]))))
+                    total_oc_m_arrive += int(round(float(np.sum(oc_diff[3 * n_monomers : 4 * n_monomers]))))
 
-        assert len(mismatch_ticks) <= 1, (
-            "ProteinTranslocation replay drift exceeded the single randperm-order tick budget: "
-            f"mismatch_ticks={sorted(mismatch_ticks)}"
+        assert len(karr_active_ticks) == 13, (
+            f"Expected 13 active ticks in Karr trace, got {len(karr_active_ticks)}: {karr_active_ticks}"
         )
-        assert abs(total_oc_events - total_karr_events) <= 1, (
-            "ProteinTranslocation replay drift changed more than one translocation event "
-            f"across the 100-tick seed-0 trace: oc={total_oc_events}, karr={total_karr_events}"
+        assert total_karr_c_leave == -17, f"Expected -17 Karr cytosol departures, got {total_karr_c_leave}"
+        assert total_karr_e_arrive == 4, f"Expected +4 Karr extracellular arrivals, got {total_karr_e_arrive}"
+        assert total_karr_m_arrive == 13, f"Expected +13 Karr membrane arrivals, got {total_karr_m_arrive}"
+
+        assert total_oc_c_leave == -17, f"Expected -17 OC cytosol departures, got {total_oc_c_leave}"
+        assert total_oc_e_arrive == 4, f"Expected +4 OC extracellular arrivals, got {total_oc_e_arrive}"
+        assert total_oc_m_arrive == 13, f"Expected +13 OC membrane arrivals, got {total_oc_m_arrive}"
+
+        assert len(mismatch_ticks) == 0, (
+            f"ProteinTranslocation replay drift on ticks: {sorted(mismatch_ticks)}"
         )

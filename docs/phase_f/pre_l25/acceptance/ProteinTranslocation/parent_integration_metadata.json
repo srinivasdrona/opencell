@@ -1,0 +1,114 @@
+{
+  "current_baseline_PT_row": {
+    "name": "ProteinTranslocation",
+    "behavior_gate": "L2.2",
+    "behavior_verdict": "PASS",
+    "eligibility": "BLOCKED_EVIDENCE_CONFIG_MISMATCH",
+    "findings": [
+      {
+        "id": "PTRANS-STAGE2-ALGORITHM",
+        "kind": "CODE_DEVIATION",
+        "disposition": "RESOLVED",
+        "summary": "All 119 translocatable WIDs now use the compartment authority, the request calculator implements MATLAB's capacity-clipped ATP/GTP/H2O algebra without a current-pool floor, and one-based persistent RNG behavior fails closed.",
+        "evidence": [
+          {
+            "path": "docs/phase_f/audits/ProteinTranslocation_semantic_audit.md",
+            "lines": "44-61"
+          }
+        ]
+      },
+      {
+        "id": "PTRANS-GENUINE-EVIDENCE",
+        "kind": "EVIDENCE_CONFIG_MISMATCH",
+        "disposition": "RESOLVED",
+        "summary": "Design-A now compares all 2,892 compartment positions using 50 genuine Karr seeds x 50 OpenCell seeds x 100 ticks; the mechanical verdict is PASS with zero warnings and no single-seed reuse.",
+        "evidence": [
+          {
+            "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/result.json",
+            "lines": "1-152"
+          },
+          {
+            "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json",
+            "lines": "1-34"
+          }
+        ]
+      },
+      {
+        "id": "PTRANS-COMPLETE-ATTESTATION",
+        "kind": "EVIDENCE_CONFIG_MISMATCH",
+        "disposition": "OPEN",
+        "summary": "The genuine N50 execution and computed PASS remain valid recorded results, but its published input manifest binds only seed zero and two Python files, with no parameter fixtures. The shared evidence attestation must bind every consumed seed file and parameter input before this process is eligible under the no-known-gap policy.",
+        "evidence": [
+          {
+            "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/input_manifest.json",
+            "lines": "1-19"
+          },
+          {
+            "path": "tests/vivarium/l2_2_design_a_runner.py",
+            "lines": "1476-1493"
+          }
+        ]
+      },
+      {
+        "id": "PTRANS-SAMPLE-ISOLATION",
+        "kind": "EVIDENCE_CONFIG_MISMATCH",
+        "disposition": "OPEN",
+        "summary": "The Design-A translocation adapter executes a mutable cached process. A parent probe advanced the cached metadata owner's stream, then observed that same owner and its noninitial RNG state at the real public update. Fixed sample-key execution must be isolated before validation readiness is restored; this is not a claim that the recorded clean-run score changed.",
+        "evidence": [
+          {
+            "path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
+            "lines": "1618-1621"
+          },
+          {
+            "path": "tests/vivarium/_l2_2_design_a_runner_helpers.py",
+            "lines": "2512-2515"
+          }
+        ]
+      }
+    ]
+  },
+  "baseline_source_tree": {
+    "sha256": "be95a0b307b08590de24a760183a631d37b96e490526016e17666de72e46809e",
+    "file_count": 140
+  },
+  "actual_source_tree": {
+    "sha256": "2b78bca95460efce2451e23b6f8f9b30fefaec24604297dae33485d13faa2ecc",
+    "file_count": 140
+  },
+  "source_tree_metadata_is_stale": true,
+  "staleness_disposition": "Parent integration metadata requirement after approved F1 source delta, not a new PT biological rejection",
+  "catalog_source": "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml",
+  "catalog_sha256": "ecdf29ff022b64fa099a864507f1de24ffec4044f3e17b34b09035c82cba798e",
+  "verbatim_entry_lines": "300-314",
+  "resolved_findings_to_preserve": [
+    {
+      "id": "PTRANS-STAGE2-ALGORITHM",
+      "kind": "CODE_DEVIATION",
+      "disposition": "RESOLVED",
+      "summary": "All 119 translocatable WIDs now use the compartment authority, the request calculator implements MATLAB's capacity-clipped ATP/GTP/H2O algebra without a current-pool floor, and one-based persistent RNG behavior fails closed.",
+      "evidence": [
+        {
+          "path": "docs/phase_f/audits/ProteinTranslocation_semantic_audit.md",
+          "lines": "44-61"
+        }
+      ]
+    },
+    {
+      "id": "PTRANS-GENUINE-EVIDENCE",
+      "kind": "EVIDENCE_CONFIG_MISMATCH",
+      "disposition": "RESOLVED",
+      "summary": "Design-A now compares all 2,892 compartment positions using 50 genuine Karr seeds x 50 OpenCell seeds x 100 ticks; the mechanical verdict is PASS with zero warnings and no single-seed reuse.",
+      "evidence": [
+        {
+          "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/result.json",
+          "lines": "1-152"
+        },
+        {
+          "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json",
+          "lines": "1-34"
+        }
+      ]
+    }
+  ],
+  "read_only": true
+}

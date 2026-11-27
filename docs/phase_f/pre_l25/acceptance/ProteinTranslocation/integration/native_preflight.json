@@ -1,0 +1,11 @@
+{
+  "at": "2026-10-19T18:03:29.4076468+05:30",
+  "pid": 15148,
+  "cwd": "E:\\opencell-worktrees\\m1-accepted-20261019",
+  "head": "f87ebf1939a0a172a13f3d15c2ede0af0a3bca95",
+  "branch": "integrate/m1-accepted-20261019",
+  "status": [],
+  "pre_pt_commit": "058fa1b5e5519a5312635a396701ea4d5c8740d9",
+  "publication_commit": "e372a5b158b27b42ad94f2c1065a1867d4fb58da",
+  "ignored": "\"artifacts\\\\m1_integration\\\\independent_pt\\\\STATUS.md\""
+}

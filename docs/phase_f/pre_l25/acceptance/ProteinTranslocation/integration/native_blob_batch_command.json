@@ -1,0 +1,10 @@
+{
+  "started_at": "2026-10-19T18:12:27.1611881+05:30",
+  "finished_at": "2026-10-19T18:12:27.2637626+05:30",
+  "native_powershell_pid": 5868,
+  "git_pid": 11760,
+  "command": "native git --no-pager cat-file --batch; exact77object IDs from committed_byte_proof.json via StandardInput; binary BaseStream copy to native_blob_batch.bin",
+  "objects": 77,
+  "exit_code": 0,
+  "stderr": ""
+}

@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import sys
+from copy import deepcopy
 from pathlib import Path
 from typing import Any
 
 import pytest
+from vivarium.core.engine import Engine
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -18,7 +20,11 @@ if "opencell" in sys.modules:
                 del sys.modules[mod_name]
 
 from opencell.state.chromosome_store import SparseTriplet
-from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
+from opencell.vivarium.karr_allocation_step import KarrAllocationStep
+from opencell.vivarium.karr_chromosome_segregation import (
+    KarrChromosomeSegregationEvolutionStep,
+    KarrChromosomeSegregationProcess,
+)
 
 # Real linkingNumbers values pulled from the tick-99 anchor trace
 # (data/m1_sources/karr_native/per_process_traces_v2_event_s000/
@@ -102,6 +108,72 @@ def _base_state(
     }
 
 
+def _evolution_step(
+    process: KarrChromosomeSegregationProcess,
+) -> KarrChromosomeSegregationEvolutionStep:
+    return KarrChromosomeSegregationEvolutionStep({"segregation_process": process})
+
+
+def _build_production_phase_engine(
+    process: KarrChromosomeSegregationProcess,
+    *,
+    gtp_pool: float,
+    h2o_pool: float,
+) -> Engine:
+    evolution = _evolution_step(process)
+    allocation = KarrAllocationStep(
+        {
+            "consumer_processes": [(process.name, [process.gtp_wid, process.h2o_wid])],
+            "substrate_wids": list(process.substrate_wids),
+        }
+    )
+    state = _base_state(process, gtp=0.0, h2o=0.0)
+    state["substrates"] = {wid: 0.0 for wid in process.substrate_wids}
+    state["substrates"][process.gtp_wid] = gtp_pool
+    state["substrates"][process.h2o_wid] = h2o_pool
+    state["requests"] = {
+        process.name: {
+            process.gtp_wid: 0.0,
+            process.h2o_wid: 0.0,
+        }
+    }
+
+    return Engine(
+        processes={process.name: process},
+        steps={
+            allocation.name: allocation,
+            evolution.name: evolution,
+        },
+        flow={
+            allocation.name: [],
+            evolution.name: [(allocation.name,)],
+        },
+        topology={
+            process.name: {
+                "chromosome": ("chromosome",),
+                "protein": ("protein",),
+                "complex": ("complex",),
+                "requests": ("requests",),
+            },
+            allocation.name: {
+                "substrates": ("substrates",),
+                "requests": ("requests",),
+                "substrates_allocated": ("substrates_allocated",),
+            },
+            evolution.name: {
+                "chromosome": ("chromosome",),
+                "protein": ("protein",),
+                "complex": ("complex",),
+                "substrates": ("substrates",),
+                "substrates_allocated": ("substrates_allocated",),
+            },
+        },
+        initial_state=state,
+        emit_step=1.0,
+        display_info=False,
+    )
+
+
 def test_instantiates_with_expected_defaults() -> None:
     p = KarrChromosomeSegregationProcess({"time_step": 1.0})
     assert p.name == "karr_chromosome_segregation"
@@ -115,12 +187,41 @@ def test_instantiates_with_expected_defaults() -> None:
     assert p.topoiv_wid in p.required_enzyme_wids
 
 
+def test_request_and_evolution_surfaces_are_split_without_duplicate_enzyme_ports() -> None:
+    p = KarrChromosomeSegregationProcess({})
+    request_ports = p.ports_schema()
+    evolution_ports = p.evolution_ports_schema()
+
+    assert "linkingNumbers" not in request_ports["chromosome"]
+    assert "substrates" not in request_ports
+    assert "substrates_allocated" not in request_ports
+    assert "linkingNumbers" in evolution_ports["chromosome"]
+    assert "requests" not in evolution_ports
+    for ports in (request_ports, evolution_ports):
+        assert "enzymes" not in ports
+        assert "boundEnzymes" not in ports
+
+
+def test_request_helper_does_not_mutate_state() -> None:
+    p = KarrChromosomeSegregationProcess({})
+    state = _base_state(p, gtp=0.0, h2o=0.0)
+    before = deepcopy(state)
+
+    assert p.calculate_request(state) == {
+        p.gtp_wid: p.gtp_cost,
+        p.h2o_wid: p.gtp_cost,
+    }
+    assert state == before
+
+
 def test_fires_and_applies_exact_stoichiometry_when_all_gates_open() -> None:
     p = KarrChromosomeSegregationProcess({})
     state = _base_state(p, gtp=1.0, h2o=1.0)
 
-    update = p.next_update(1.0, state)
+    request_update = p.next_update(1.0, state)
+    update = _evolution_step(p).next_update(1.0, state)
 
+    assert request_update["requests"][p.name] == {p.gtp_wid: 1.0, p.h2o_wid: 1.0}
     assert update["chromosome"]["segregated"] is True
     assert update["chromosome"]["segregation_complete"] is True
     assert update["chromosome"]["cell_cycle_event"] == "segregation_complete"
@@ -134,18 +235,19 @@ def test_fires_and_applies_exact_stoichiometry_when_all_gates_open() -> None:
         p.pi_wid: 1.0,
         p.h_wid: 1.0,
     }
-    assert update["requests"][p.name] == {p.gtp_wid: 1.0, p.h2o_wid: 1.0}
+    assert "requests" not in update
 
 
 def test_already_segregated_is_a_no_op() -> None:
     p = KarrChromosomeSegregationProcess({})
     state = _base_state(p, segregated=True, gtp=100.0, h2o=100.0)
 
-    update = p.next_update(1.0, state)
+    request_update = p.next_update(1.0, state)
+    update = _evolution_step(p).next_update(1.0, state)
 
     assert "segregated" not in update["chromosome"]
     assert "substrates" not in update
-    assert update["requests"][p.name] == {p.gtp_wid: 0.0, p.h2o_wid: 0.0}
+    assert request_update["requests"][p.name] == {p.gtp_wid: 0.0, p.h2o_wid: 0.0}
     assert update["chromosome"]["cell_cycle_event"] == "none"
 
 
@@ -153,23 +255,25 @@ def test_not_fully_replicated_blocks_request_and_segregation() -> None:
     p = KarrChromosomeSegregationProcess({})
     state = _base_state(p, polymerized=_partial_polymerized_regions(p), gtp=100.0, h2o=100.0)
 
-    update = p.next_update(1.0, state)
+    request_update = p.next_update(1.0, state)
+    update = _evolution_step(p).next_update(1.0, state)
 
     assert "segregated" not in update["chromosome"]
     assert "substrates" not in update
-    assert update["requests"][p.name] == {p.gtp_wid: 0.0, p.h2o_wid: 0.0}
+    assert request_update["requests"][p.name] == {p.gtp_wid: 0.0, p.h2o_wid: 0.0}
 
 
 def test_not_fully_supercoiled_blocks_segregation_but_not_request() -> None:
     p = KarrChromosomeSegregationProcess({})
     state = _base_state(p, linking=_not_supercoiled_linking_numbers(p), gtp=100.0, h2o=100.0)
 
-    update = p.next_update(1.0, state)
+    request_update = p.next_update(1.0, state)
+    update = _evolution_step(p).next_update(1.0, state)
 
     # calcResourceRequirements_Current does not gate on supercoiled -- Karr
     # still requests GTP/H2O -- but evolveState's extra supercoiled
     # requirement blocks the actual segregation event.
-    assert update["requests"][p.name] == {p.gtp_wid: 1.0, p.h2o_wid: 1.0}
+    assert request_update["requests"][p.name] == {p.gtp_wid: 1.0, p.h2o_wid: 1.0}
     assert "segregated" not in update["chromosome"]
     assert "substrates" not in update
 
@@ -187,9 +291,10 @@ def test_missing_each_enzyme_blocks_request_and_segregation(missing_wid_attr: st
     if missing_wid in state["complex"]["counts"]:
         state["complex"]["counts"][missing_wid] = 0.0
 
-    update = p.next_update(1.0, state)
+    request_update = p.next_update(1.0, state)
+    update = _evolution_step(p).next_update(1.0, state)
 
-    assert update["requests"][p.name] == {p.gtp_wid: 0.0, p.h2o_wid: 0.0}
+    assert request_update["requests"][p.name] == {p.gtp_wid: 0.0, p.h2o_wid: 0.0}
     assert "segregated" not in update["chromosome"]
     assert "substrates" not in update
 
@@ -202,6 +307,8 @@ def test_missing_required_complex_input_raises_keyerror() -> None:
 
     with pytest.raises(KeyError, match=missing_wid):
         p.next_update(1.0, state)
+    with pytest.raises(KeyError, match=missing_wid):
+        _evolution_step(p).next_update(1.0, state)
 
 
 @pytest.mark.parametrize("gtp,h2o", [(0.0, 10.0), (10.0, 0.0), (0.5, 0.5)])
@@ -209,12 +316,13 @@ def test_insufficient_allocated_gtp_or_h2o_blocks_segregation(gtp: float, h2o: f
     p = KarrChromosomeSegregationProcess({})
     state = _base_state(p, gtp=gtp, h2o=h2o)
 
-    update = p.next_update(1.0, state)
+    request_update = p.next_update(1.0, state)
+    update = _evolution_step(p).next_update(1.0, state)
 
     # Request is still emitted (calcResourceRequirements_Current does not
     # gate on the substrates it is requesting), but evolveState's
     # `substrates(gtp) >= gtpCost && substrates(water) >= gtpCost` blocks.
-    assert update["requests"][p.name] == {p.gtp_wid: 1.0, p.h2o_wid: 1.0}
+    assert request_update["requests"][p.name] == {p.gtp_wid: 1.0, p.h2o_wid: 1.0}
     assert "segregated" not in update["chromosome"]
     assert "substrates" not in update
 
@@ -223,16 +331,92 @@ def test_fires_at_most_once_across_ticks() -> None:
     p = KarrChromosomeSegregationProcess({})
     state = _base_state(p, gtp=1.0, h2o=1.0)
 
-    update1 = p.next_update(1.0, state)
+    evolution = _evolution_step(p)
+    update1 = evolution.next_update(1.0, state)
     assert update1["chromosome"]["segregated"] is True
 
     # Apply the segregated flag (as the real Engine/replay harness would)
     # and re-derive: the process must not fire again.
     state["chromosome"]["segregated"] = True
-    update2 = p.next_update(1.0, state)
+    update2 = evolution.next_update(1.0, state)
     assert "segregated" not in update2["chromosome"]
     assert "substrates" not in update2
-    assert update2["requests"][p.name] == {p.gtp_wid: 0.0, p.h2o_wid: 0.0}
+
+
+def test_production_engine_fires_on_tick_one_with_exact_stoichiometry() -> None:
+    p = KarrChromosomeSegregationProcess({})
+    engine = _build_production_phase_engine(p, gtp_pool=p.gtp_cost, h2o_pool=p.gtp_cost)
+    before = deepcopy(engine.state.get_value())
+
+    engine.update(1.0)
+    after = engine.state.get_value()
+
+    assert before["chromosome"]["segregated"] is False
+    assert after["chromosome"]["segregated"] is True
+    assert after["requests"][p.name] == {
+        p.gtp_wid: p.gtp_cost,
+        p.h2o_wid: p.gtp_cost,
+    }
+    assert after["substrates_allocated"][p.name] == {
+        p.gtp_wid: p.gtp_cost,
+        p.h2o_wid: p.gtp_cost,
+    }
+    expected_deltas = {
+        p.gtp_wid: -p.gtp_cost,
+        p.h2o_wid: -p.gtp_cost,
+        p.gdp_wid: p.gtp_cost,
+        p.pi_wid: p.gtp_cost,
+        p.h_wid: p.gtp_cost,
+    }
+    assert {
+        wid: after["substrates"][wid] - before["substrates"][wid]
+        for wid in expected_deltas
+    } == expected_deltas
+
+
+def test_production_engine_insufficient_allocation_is_no_op() -> None:
+    p = KarrChromosomeSegregationProcess({})
+    engine = _build_production_phase_engine(p, gtp_pool=0.0, h2o_pool=p.gtp_cost)
+    before = deepcopy(engine.state.get_value())
+
+    engine.update(1.0)
+    after = engine.state.get_value()
+
+    assert after["requests"][p.name] == {
+        p.gtp_wid: p.gtp_cost,
+        p.h2o_wid: p.gtp_cost,
+    }
+    assert after["substrates_allocated"][p.name][p.gtp_wid] == 0.0
+    assert after["chromosome"]["segregated"] is False
+    assert {
+        wid: after["substrates"][wid] - before["substrates"][wid]
+        for wid in p.substrate_wids
+    } == {wid: 0.0 for wid in p.substrate_wids}
+
+
+def test_production_engine_executes_transition_only_once() -> None:
+    p = KarrChromosomeSegregationProcess({})
+    engine = _build_production_phase_engine(
+        p,
+        gtp_pool=2.0 * p.gtp_cost,
+        h2o_pool=2.0 * p.gtp_cost,
+    )
+
+    engine.update(1.0)
+    after_tick_one = deepcopy(engine.state.get_value())
+    engine.update(1.0)
+    after_tick_two = engine.state.get_value()
+
+    assert after_tick_one["chromosome"]["segregated"] is True
+    assert after_tick_two["chromosome"]["segregated"] is True
+    assert after_tick_two["requests"][p.name] == {
+        p.gtp_wid: 0.0,
+        p.h2o_wid: 0.0,
+    }
+    assert {
+        wid: after_tick_two["substrates"][wid] - after_tick_one["substrates"][wid]
+        for wid in p.substrate_wids
+    } == {wid: 0.0 for wid in p.substrate_wids}
 
 
 def test_double_stranded_region_helper_matches_direct_algebra() -> None:

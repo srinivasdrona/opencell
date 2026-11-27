@@ -23,6 +23,7 @@ if str(_HELPER_DIR) not in sys.path:
 
 import _l2_2_design_a_runner_helpers as runner_helpers  # noqa: E402
 import l2_2_design_a_runner as runner  # noqa: E402
+from _design_a_synthetic_oracle import bind_synthetic_oracle
 
 _RNA_PRIMARY_PROCESSES = (
     "RNAProcessing",
@@ -88,7 +89,7 @@ def test_rnas_primary_oracle_laundering_flips_primary_channel(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    oracle = _fake_rnas_primary_oracle(process_name)
+    oracle = bind_synthetic_oracle(_fake_rnas_primary_oracle(process_name), tmp_path)
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(
         runner.runner_helpers,
@@ -169,7 +170,7 @@ def test_rnas_primary_distance_falsifier_rejects_zero_rna_surface(
     monkeypatch: pytest.MonkeyPatch,
     tmp_path: Path,
 ) -> None:
-    oracle = _fake_rnas_primary_oracle(process_name)
+    oracle = bind_synthetic_oracle(_fake_rnas_primary_oracle(process_name), tmp_path)
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(
         runner.runner_helpers,

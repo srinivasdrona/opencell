@@ -100,7 +100,7 @@ buckets:
 
 processes:
 
-  # ===== ALGORITHMIC_DEEP (4) — the actual L2.2 workload ====================
+  # ===== ALGORITHMIC_DEEP (5) — the actual L2.2 workload ====================
 
   - name: Translation
     oc_module: opencell/vivarium/karr_translation.py
@@ -455,21 +455,23 @@ processes:
     rationale_M: "same pattern as PPI"
     notes: "Affects monomer counts that Translation gate measures. closed_form_dominant=confirmed_biology_validated (Day-29 substrate-stress: 939 -> 936-937 events as alpha drops; max per_tick_W1=0.002 across all 5 alpha; convergence holds because the closed-form cleavage is genuinely substrate-non-limiting for the tested range)."
 
-  # ===== DETERMINISTIC (6) — no L2.2 test required ===========================
+  # ===== DETERMINISTIC (4) + two corrected stochastic entries ===============
 
   - name: ChromosomeCondensation
     oc_module: opencell/vivarium/karr_chromosome_condensation.py
-    bucket: DETERMINISTIC
-    in_scope_L2_2: false
-    M_ticks: null
-    N_seeds: null
-    event_density: n/a
-    input_channels: []
-    output_channels: []
-    primary_channel: null
-    karr_artifact: n/a
-    rationale_M: "no RNG = no distributional surface"
-    notes: "L2.1 sufficient. Skip Design-A entirely."
+    bucket: ALGORITHMIC_DEEP
+    harness_type: design_a_per_tick
+    in_scope_L2_2: true
+    M_ticks: 100
+    N_seeds: 50
+    event_density: moderate
+    input_channels: [substrates, enzymes, boundEnzymes, chromosome]
+    output_channels: [substrates, enzymes, boundEnzymes, chromosome]
+    primary_channel: chromosome
+    primary_projection: [complexBoundSites.delta_nnz]
+    karr_artifact: per_process_traces_v2
+    rationale_M: "Iterative affinity-weighted chromosome binding is active on 66/100 seed-0 ticks."
+    notes: "Corrected 2026-09-17: Karr calls bindProteinToChromosomeStochastically and OC consumes an mcg16807 stream. L2.1 seed-0 replay is necessary but not distributional evidence."
 
   - name: ChromosomeSegregation
     oc_module: opencell/vivarium/karr_chromosome_segregation.py
@@ -529,17 +531,18 @@ processes:
 
   - name: TranscriptionalRegulation
     oc_module: opencell/vivarium/karr_transcriptional_regulation.py
-    bucket: DETERMINISTIC
-    in_scope_L2_2: false
-    M_ticks: null
-    N_seeds: null
-    event_density: n/a
-    input_channels: []
-    output_channels: []
-    primary_channel: null
-    karr_artifact: n/a
-    rationale_M: "no RNG"
-    notes: "L2.1 sufficient."
+    bucket: EVENT_CLASS
+    harness_type: event_class
+    in_scope_L2_2: true
+    M_ticks: 4000
+    N_seeds: 50
+    event_density: sparse
+    input_channels: [enzymes, boundEnzymes, chromosome]
+    output_channels: [enzymes, boundEnzymes, tfBoundPromoters, boundTFs]
+    primary_channel: tfBoundPromoters
+    karr_artifact: per_process_traces_v2
+    rationale_M: "Stable affinity-weighted TF binding produced 70 active ticks in the accepted 4000-tick seed-0 window."
+    notes: "Corrected 2026-09-17: binding draws from the shared Chromosome.randStream. The ledger-bound L2.1 replay proves one trace, not the event distribution across seeds."
 
 # --- The "+1": Allocator (infrastructure, not a Karr process) ---------------
 

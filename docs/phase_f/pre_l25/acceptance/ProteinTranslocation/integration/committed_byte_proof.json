@@ -1,0 +1,932 @@
+{
+  "sealed_head": "f87ebf1939a0a172a13f3d15c2ede0af0a3bca95",
+  "method": "Native Windows Git ls-tree blob IDs and native Git archive bytes, independently SHA1-framed as Git blobs and SHA256-compared to current and original bytes. Not merely attributes or parent report.",
+  "review_root_files": 69,
+  "compact_files": 8,
+  "matches": 77,
+  "records": [
+    {
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/SUMMARY.json",
+      "native_git_blob_oid": "6bc4f77805ef14e89ade7aa3bd4f3e0274b474c9",
+      "archive_blob_oid_independent": "6bc4f77805ef14e89ade7aa3bd4f3e0274b474c9",
+      "bytes": 710,
+      "committed_sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+      "current_sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+      "original_sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest/SUMMARY.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/analytical_check.json",
+      "native_git_blob_oid": "655ed6bdb1ddbd959a41c8e71547267adf74f655",
+      "archive_blob_oid_independent": "655ed6bdb1ddbd959a41c8e71547267adf74f655",
+      "bytes": 95,
+      "committed_sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+      "current_sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+      "original_sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest/analytical_check.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/input_manifest.json",
+      "native_git_blob_oid": "1827044a48cdec679cd88fa8e3ae763c0e5b8c4d",
+      "archive_blob_oid_independent": "1827044a48cdec679cd88fa8e3ae763c0e5b8c4d",
+      "bytes": 13692,
+      "committed_sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+      "current_sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+      "original_sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest/input_manifest.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/null_calibration.json",
+      "native_git_blob_oid": "81b0490062bc58f2a050dbed0ec1e524ab5f7684",
+      "archive_blob_oid_independent": "81b0490062bc58f2a050dbed0ec1e524ab5f7684",
+      "bytes": 824,
+      "committed_sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+      "current_sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+      "original_sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest/null_calibration.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/provenance.json",
+      "native_git_blob_oid": "3758e966609248d7e4d86dee36b99d2254554a15",
+      "archive_blob_oid_independent": "3758e966609248d7e4d86dee36b99d2254554a15",
+      "bytes": 376,
+      "committed_sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+      "current_sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+      "original_sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest/provenance.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/result.json",
+      "native_git_blob_oid": "a2781ae0227d58f52bcd5f2957d9a77a32c1c26e",
+      "archive_blob_oid_independent": "a2781ae0227d58f52bcd5f2957d9a77a32c1c26e",
+      "bytes": 3180,
+      "committed_sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+      "current_sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+      "original_sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest/result.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json",
+      "native_git_blob_oid": "2d3577367355a2cc10c3aa4fa80ff0db55f22d49",
+      "archive_blob_oid_independent": "2d3577367355a2cc10c3aa4fa80ff0db55f22d49",
+      "bytes": 2123,
+      "committed_sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
+      "current_sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
+      "original_sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/thresholds.json",
+      "native_git_blob_oid": "cdb7e81ab4d66eba7b5bfd8ab87c20a4eda0bfaf",
+      "archive_blob_oid_independent": "cdb7e81ab4d66eba7b5bfd8ab87c20a4eda0bfaf",
+      "bytes": 445,
+      "committed_sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954",
+      "current_sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954",
+      "original_sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest/thresholds.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/REVIEW_DELIVERY_MANIFEST.json",
+      "native_git_blob_oid": "274278e5f7f5c2b7e86bdd53311fa5fc873ea71d",
+      "archive_blob_oid_independent": "274278e5f7f5c2b7e86bdd53311fa5fc873ea71d",
+      "bytes": 1904,
+      "committed_sha256": "bdfd976653b9dff1a4a88fe4350d2279b885d5054c36fda20cc6e2df0ce6c2c1",
+      "current_sha256": "bdfd976653b9dff1a4a88fe4350d2279b885d5054c36fda20cc6e2df0ce6c2c1",
+      "original_sha256": "bdfd976653b9dff1a4a88fe4350d2279b885d5054c36fda20cc6e2df0ce6c2c1",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/REVIEW_DELIVERY_MANIFEST.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/STATUS.md",
+      "native_git_blob_oid": "ffd9fba3d12844de86b15f6a6dc7f341bd6724a3",
+      "archive_blob_oid_independent": "ffd9fba3d12844de86b15f6a6dc7f341bd6724a3",
+      "bytes": 34822,
+      "committed_sha256": "b9c640597b930fa8e7e0788d2ce871f507501817e6c627506546704ac08f956e",
+      "current_sha256": "b9c640597b930fa8e7e0788d2ce871f507501817e6c627506546704ac08f956e",
+      "original_sha256": "b9c640597b930fa8e7e0788d2ce871f507501817e6c627506546704ac08f956e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/STATUS.md",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/VERDICT.json",
+      "native_git_blob_oid": "4cb335f20da6cfd7c8aee1eb83d4a0bfd4c55280",
+      "archive_blob_oid_independent": "4cb335f20da6cfd7c8aee1eb83d4a0bfd4c55280",
+      "bytes": 43918,
+      "committed_sha256": "2e868c3bf04831ba241cb3da4bf42ce8a5706ab2c5fb2151a8d9fef8acd481bf",
+      "current_sha256": "2e868c3bf04831ba241cb3da4bf42ce8a5706ab2c5fb2151a8d9fef8acd481bf",
+      "original_sha256": "2e868c3bf04831ba241cb3da4bf42ce8a5706ab2c5fb2151a8d9fef8acd481bf",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/VERDICT.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/accepted_population_structure.json",
+      "native_git_blob_oid": "7822ba62dcd0d6c6f1d7f6b24cb62905bf15fc76",
+      "archive_blob_oid_independent": "7822ba62dcd0d6c6f1d7f6b24cb62905bf15fc76",
+      "bytes": 177,
+      "committed_sha256": "211abd7ac8004a4981534ed5163cdedecc0cc7bba640c0c11e7989c1e311807e",
+      "current_sha256": "211abd7ac8004a4981534ed5163cdedecc0cc7bba640c0c11e7989c1e311807e",
+      "original_sha256": "211abd7ac8004a4981534ed5163cdedecc0cc7bba640c0c11e7989c1e311807e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/accepted_population_structure.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/accepted_population_verification.json",
+      "native_git_blob_oid": "ed5fba9f6da819bbb060d26e760f00c512153c30",
+      "archive_blob_oid_independent": "ed5fba9f6da819bbb060d26e760f00c512153c30",
+      "bytes": 11384,
+      "committed_sha256": "4c8cd02f9496a0bceb800f5e46a8a21010d12e6706e794014fe0bdd79b9e966f",
+      "current_sha256": "4c8cd02f9496a0bceb800f5e46a8a21010d12e6706e794014fe0bdd79b9e966f",
+      "original_sha256": "4c8cd02f9496a0bceb800f5e46a8a21010d12e6706e794014fe0bdd79b9e966f",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/accepted_population_verification.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/actual_owner_controls.json",
+      "native_git_blob_oid": "1b7f2bca8fe9892433d95dababd2e84e7765d50f",
+      "archive_blob_oid_independent": "1b7f2bca8fe9892433d95dababd2e84e7765d50f",
+      "bytes": 4724,
+      "committed_sha256": "80d9ed569760e9ca422d23cb1a0ae3524e4a545e3e5d49456a24192d83fd9d0e",
+      "current_sha256": "80d9ed569760e9ca422d23cb1a0ae3524e4a545e3e5d49456a24192d83fd9d0e",
+      "original_sha256": "80d9ed569760e9ca422d23cb1a0ae3524e4a545e3e5d49456a24192d83fd9d0e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/actual_owner_controls.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/actual_owner_outputs.npz",
+      "native_git_blob_oid": "6392b9e2a055639c7ec10777cfc2aae9af7a0af3",
+      "archive_blob_oid_independent": "6392b9e2a055639c7ec10777cfc2aae9af7a0af3",
+      "bytes": 2998,
+      "committed_sha256": "b2c1ea506f24dcd6bd3391ecab9a577f14444109b648d8a57b9a49f12b0895ca",
+      "current_sha256": "b2c1ea506f24dcd6bd3391ecab9a577f14444109b648d8a57b9a49f12b0895ca",
+      "original_sha256": "b2c1ea506f24dcd6bd3391ecab9a577f14444109b648d8a57b9a49f12b0895ca",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/actual_owner_outputs.npz",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/actual_owners.log",
+      "native_git_blob_oid": "fd56652b6cd84986efd0e73f5bace098fdbef2c6",
+      "archive_blob_oid_independent": "fd56652b6cd84986efd0e73f5bace098fdbef2c6",
+      "bytes": 582,
+      "committed_sha256": "42c73540f4bf2b2a340e72e1b558957017c7b622997a85510d2a556804610837",
+      "current_sha256": "42c73540f4bf2b2a340e72e1b558957017c7b622997a85510d2a556804610837",
+      "original_sha256": "42c73540f4bf2b2a340e72e1b558957017c7b622997a85510d2a556804610837",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/actual_owners.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/actual_owners.py",
+      "native_git_blob_oid": "570bf22492f8cea6973dbf8255562dd189ded271",
+      "archive_blob_oid_independent": "570bf22492f8cea6973dbf8255562dd189ded271",
+      "bytes": 4759,
+      "committed_sha256": "ced652d2bbffb374313924fcc5bfaa3d0e08dd9bd2423881033d2a8c7501c4ad",
+      "current_sha256": "ced652d2bbffb374313924fcc5bfaa3d0e08dd9bd2423881033d2a8c7501c4ad",
+      "original_sha256": "ced652d2bbffb374313924fcc5bfaa3d0e08dd9bd2423881033d2a8c7501c4ad",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/actual_owners.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/all_consumed_rehashes.json",
+      "native_git_blob_oid": "8bdf3d92c3d0f70c69dc9805d84c469bed524878",
+      "archive_blob_oid_independent": "8bdf3d92c3d0f70c69dc9805d84c469bed524878",
+      "bytes": 19922,
+      "committed_sha256": "0ffd684e8b024e3a3921f291f4d3cc43acf300b1fbab67f980222ca96fa4d096",
+      "current_sha256": "0ffd684e8b024e3a3921f291f4d3cc43acf300b1fbab67f980222ca96fa4d096",
+      "original_sha256": "0ffd684e8b024e3a3921f291f4d3cc43acf300b1fbab67f980222ca96fa4d096",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/all_consumed_rehashes.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/all_descriptor_drift_rejections.json",
+      "native_git_blob_oid": "13ca860ab73ad5725e8c531aceed5ab87ee65441",
+      "archive_blob_oid_independent": "13ca860ab73ad5725e8c531aceed5ab87ee65441",
+      "bytes": 23309,
+      "committed_sha256": "7b319497b08c7770d2d52d1f11cbf4d0aa171df99dac6aba43611d141943f2a7",
+      "current_sha256": "7b319497b08c7770d2d52d1f11cbf4d0aa171df99dac6aba43611d141943f2a7",
+      "original_sha256": "7b319497b08c7770d2d52d1f11cbf4d0aa171df99dac6aba43611d141943f2a7",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/all_descriptor_drift_rejections.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/candidate_index_portable.json",
+      "native_git_blob_oid": "43b57992834dbb86c0609d01d695000e93f28c57",
+      "archive_blob_oid_independent": "43b57992834dbb86c0609d01d695000e93f28c57",
+      "bytes": 23131,
+      "committed_sha256": "acb96e8bc35824d420ec9626d2356fd9dc78c6831a55326c4d1071ff8cba508d",
+      "current_sha256": "acb96e8bc35824d420ec9626d2356fd9dc78c6831a55326c4d1071ff8cba508d",
+      "original_sha256": "acb96e8bc35824d420ec9626d2356fd9dc78c6831a55326c4d1071ff8cba508d",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/candidate_index_portable.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/candidate_index_strict.json",
+      "native_git_blob_oid": "21ed37b5608e91a3ea07600de608d4b5e956390a",
+      "archive_blob_oid_independent": "21ed37b5608e91a3ea07600de608d4b5e956390a",
+      "bytes": 23131,
+      "committed_sha256": "0a2ae47424984e13ef0dc7ab79ff2ba8e41c65d59f9b06af0ee2d4d1e60c995a",
+      "current_sha256": "0a2ae47424984e13ef0dc7ab79ff2ba8e41c65d59f9b06af0ee2d4d1e60c995a",
+      "original_sha256": "0a2ae47424984e13ef0dc7ab79ff2ba8e41c65d59f9b06af0ee2d4d1e60c995a",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/candidate_index_strict.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/catalog_entry_verbatim.txt",
+      "native_git_blob_oid": "c23b15020f4f7f180aa3e5a9ba3e3e6d1aaf2473",
+      "archive_blob_oid_independent": "c23b15020f4f7f180aa3e5a9ba3e3e6d1aaf2473",
+      "bytes": 836,
+      "committed_sha256": "43dce61b70bdc179ba0704946b29e7e9f70bc2a349153e89761125c4f036f122",
+      "current_sha256": "43dce61b70bdc179ba0704946b29e7e9f70bc2a349153e89761125c4f036f122",
+      "original_sha256": "43dce61b70bdc179ba0704946b29e7e9f70bc2a349153e89761125c4f036f122",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/catalog_entry_verbatim.txt",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/commands.jsonl",
+      "native_git_blob_oid": "a43bcf61d8a34d0432817348551cd1aca2c55e74",
+      "archive_blob_oid_independent": "a43bcf61d8a34d0432817348551cd1aca2c55e74",
+      "bytes": 20038,
+      "committed_sha256": "241e2dcdf47649468737c4cfe18b97ffddd2fde1f0c0e8443265be05b4e99ab9",
+      "current_sha256": "241e2dcdf47649468737c4cfe18b97ffddd2fde1f0c0e8443265be05b4e99ab9",
+      "original_sha256": "241e2dcdf47649468737c4cfe18b97ffddd2fde1f0c0e8443265be05b4e99ab9",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/commands.jsonl",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/complete_50_seed_inventory.json",
+      "native_git_blob_oid": "75fc3c70a6c6936c290fa487e501954eb3c9cc72",
+      "archive_blob_oid_independent": "75fc3c70a6c6936c290fa487e501954eb3c9cc72",
+      "bytes": 49928,
+      "committed_sha256": "620ce70d3526c477cc20adb8be2dcad32033b56f795fd4bffb5067f395c4ac95",
+      "current_sha256": "620ce70d3526c477cc20adb8be2dcad32033b56f795fd4bffb5067f395c4ac95",
+      "original_sha256": "620ce70d3526c477cc20adb8be2dcad32033b56f795fd4bffb5067f395c4ac95",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/complete_50_seed_inventory.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/constructor_authority.json",
+      "native_git_blob_oid": "638f86b6446c6c110e59018f0487f9bf3194d851",
+      "archive_blob_oid_independent": "638f86b6446c6c110e59018f0487f9bf3194d851",
+      "bytes": 13359,
+      "committed_sha256": "45bf7d2b6bf88d8f346b543e0ba8e04d24cbfde5dd1dd27936a50948563a144a",
+      "current_sha256": "45bf7d2b6bf88d8f346b543e0ba8e04d24cbfde5dd1dd27936a50948563a144a",
+      "original_sha256": "45bf7d2b6bf88d8f346b543e0ba8e04d24cbfde5dd1dd27936a50948563a144a",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/constructor_authority.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/control_test_mapping.json",
+      "native_git_blob_oid": "857f0477c89c41d599bf9927a36241650e089d21",
+      "archive_blob_oid_independent": "857f0477c89c41d599bf9927a36241650e089d21",
+      "bytes": 13234,
+      "committed_sha256": "ebebc7181e62c875b5b5fe6e744db0f698d4ae566aae15cdb96d71bd3cc8692e",
+      "current_sha256": "ebebc7181e62c875b5b5fe6e744db0f698d4ae566aae15cdb96d71bd3cc8692e",
+      "original_sha256": "ebebc7181e62c875b5b5fe6e744db0f698d4ae566aae15cdb96d71bd3cc8692e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/control_test_mapping.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/controls.log",
+      "native_git_blob_oid": "ad3815a6f4f94ba3b85f7760870b01ad92ef65bf",
+      "archive_blob_oid_independent": "ad3815a6f4f94ba3b85f7760870b01ad92ef65bf",
+      "bytes": 4817,
+      "committed_sha256": "50fb7474200e8763fb5ec78528439cdef2900940ceb3099e9ce5b2c9f229de12",
+      "current_sha256": "50fb7474200e8763fb5ec78528439cdef2900940ceb3099e9ce5b2c9f229de12",
+      "original_sha256": "50fb7474200e8763fb5ec78528439cdef2900940ceb3099e9ce5b2c9f229de12",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/controls.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/controls.xml",
+      "native_git_blob_oid": "b50720b1655e85bee476bc1e4eaaafebcc5c50e3",
+      "archive_blob_oid_independent": "b50720b1655e85bee476bc1e4eaaafebcc5c50e3",
+      "bytes": 1565,
+      "committed_sha256": "004e46ec0a73a22b0eb2425f4406ba540b782ae8b820c12e9173216fa348a9c3",
+      "current_sha256": "004e46ec0a73a22b0eb2425f4406ba540b782ae8b820c12e9173216fa348a9c3",
+      "original_sha256": "004e46ec0a73a22b0eb2425f4406ba540b782ae8b820c12e9173216fa348a9c3",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/controls.xml",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/controls_retry1.log",
+      "native_git_blob_oid": "cdab9f2b244a691f0746684829e4f9456e5126ab",
+      "archive_blob_oid_independent": "cdab9f2b244a691f0746684829e4f9456e5126ab",
+      "bytes": 2275,
+      "committed_sha256": "15199e57ea91fd69a26a1893227ea5fb5a542719516e2a839adef608050d2ec7",
+      "current_sha256": "15199e57ea91fd69a26a1893227ea5fb5a542719516e2a839adef608050d2ec7",
+      "original_sha256": "15199e57ea91fd69a26a1893227ea5fb5a542719516e2a839adef608050d2ec7",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/controls_retry1.xml",
+      "native_git_blob_oid": "4b30ff98f2dc0185f67d56be634a72884280f734",
+      "archive_blob_oid_independent": "4b30ff98f2dc0185f67d56be634a72884280f734",
+      "bytes": 4207,
+      "committed_sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+      "current_sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+      "original_sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/doer_candidate_audit_portable.log",
+      "native_git_blob_oid": "a41673cfb3da409914cd4c58165df95d1df5e9b7",
+      "archive_blob_oid_independent": "a41673cfb3da409914cd4c58165df95d1df5e9b7",
+      "bytes": 7363,
+      "committed_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "current_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "original_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/doer_candidate_audit_portable.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/doer_candidate_audit_strict.log",
+      "native_git_blob_oid": "a41673cfb3da409914cd4c58165df95d1df5e9b7",
+      "archive_blob_oid_independent": "a41673cfb3da409914cd4c58165df95d1df5e9b7",
+      "bytes": 7363,
+      "committed_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "current_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "original_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/doer_candidate_audit_strict.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/environment.json",
+      "native_git_blob_oid": "4f7fd7e5942ea61a4c1c652b2723740bb7630fdb",
+      "archive_blob_oid_independent": "4f7fd7e5942ea61a4c1c652b2723740bb7630fdb",
+      "bytes": 2089,
+      "committed_sha256": "9dec1bfda0eee7dce7640bffaf1d959f2771ae0f506701bb1ed50fc7e7b762f5",
+      "current_sha256": "9dec1bfda0eee7dce7640bffaf1d959f2771ae0f506701bb1ed50fc7e7b762f5",
+      "original_sha256": "9dec1bfda0eee7dce7640bffaf1d959f2771ae0f506701bb1ed50fc7e7b762f5",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/environment.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/final_native_delivery_check.json",
+      "native_git_blob_oid": "4fe472c9888fd9e500dabaae9fcc4eaaf12d547e",
+      "archive_blob_oid_independent": "4fe472c9888fd9e500dabaae9fcc4eaaf12d547e",
+      "bytes": 714,
+      "committed_sha256": "2fb6fa583d6c8d7d4ed56c73d4875430a4d7d3925d7afc261aa741c328c78f9e",
+      "current_sha256": "2fb6fa583d6c8d7d4ed56c73d4875430a4d7d3925d7afc261aa741c328c78f9e",
+      "original_sha256": "2fb6fa583d6c8d7d4ed56c73d4875430a4d7d3925d7afc261aa741c328c78f9e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/final_native_delivery_check.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/finish.log",
+      "native_git_blob_oid": "4fca835bb8fef957c7163f2f7a881719419f257e",
+      "archive_blob_oid_independent": "4fca835bb8fef957c7163f2f7a881719419f257e",
+      "bytes": 736,
+      "committed_sha256": "4bfd2d6242a96796abe28191438117a930cb5bc0545ea1e9985eebd6a445b2b7",
+      "current_sha256": "4bfd2d6242a96796abe28191438117a930cb5bc0545ea1e9985eebd6a445b2b7",
+      "original_sha256": "4bfd2d6242a96796abe28191438117a930cb5bc0545ea1e9985eebd6a445b2b7",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/finish.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/finish.py",
+      "native_git_blob_oid": "d160ae6c4eaab8c50cfe798a04da1955714ea980",
+      "archive_blob_oid_independent": "d160ae6c4eaab8c50cfe798a04da1955714ea980",
+      "bytes": 23129,
+      "committed_sha256": "37865883f44d141f78e9dd78bf089f49ea01cfe2655123fd9de84eda1a27ae1b",
+      "current_sha256": "37865883f44d141f78e9dd78bf089f49ea01cfe2655123fd9de84eda1a27ae1b",
+      "original_sha256": "37865883f44d141f78e9dd78bf089f49ea01cfe2655123fd9de84eda1a27ae1b",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/finish.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_audit_portable.log",
+      "native_git_blob_oid": "a41673cfb3da409914cd4c58165df95d1df5e9b7",
+      "archive_blob_oid_independent": "a41673cfb3da409914cd4c58165df95d1df5e9b7",
+      "bytes": 7363,
+      "committed_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "current_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "original_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_audit_portable.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_audit_strict.log",
+      "native_git_blob_oid": "a41673cfb3da409914cd4c58165df95d1df5e9b7",
+      "archive_blob_oid_independent": "a41673cfb3da409914cd4c58165df95d1df5e9b7",
+      "bytes": 7363,
+      "committed_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "current_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "original_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_audit_strict.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_bundle.log",
+      "native_git_blob_oid": "fc72a73177118760d2107db7d3f2dac1ad44d095",
+      "archive_blob_oid_independent": "fc72a73177118760d2107db7d3f2dac1ad44d095",
+      "bytes": 301,
+      "committed_sha256": "987df9017da9c68b7fe38dbb7bb9646dd7d4198f99138bf70d6de05b37a080e0",
+      "current_sha256": "987df9017da9c68b7fe38dbb7bb9646dd7d4198f99138bf70d6de05b37a080e0",
+      "original_sha256": "987df9017da9c68b7fe38dbb7bb9646dd7d4198f99138bf70d6de05b37a080e0",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_bundle.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_candidate_row.json",
+      "native_git_blob_oid": "bbcf89848fa62a217f47b384a98a2c298be3ea40",
+      "archive_blob_oid_independent": "bbcf89848fa62a217f47b384a98a2c298be3ea40",
+      "bytes": 1614,
+      "committed_sha256": "12c866019767af5d2f9ac383b44d157edaabfcd9d38b6a9afa0a34f18f0d1094",
+      "current_sha256": "12c866019767af5d2f9ac383b44d157edaabfcd9d38b6a9afa0a34f18f0d1094",
+      "original_sha256": "12c866019767af5d2f9ac383b44d157edaabfcd9d38b6a9afa0a34f18f0d1094",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_candidate_row.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_generate_portable.log",
+      "native_git_blob_oid": "85d08df1b1f7916099e41d026ad05a4563e8d767",
+      "archive_blob_oid_independent": "85d08df1b1f7916099e41d026ad05a4563e8d767",
+      "bytes": 208,
+      "committed_sha256": "b6dd6446b8c93771931ac6ef6390ee17ba0891bcf70a53d9493100bcef879710",
+      "current_sha256": "b6dd6446b8c93771931ac6ef6390ee17ba0891bcf70a53d9493100bcef879710",
+      "original_sha256": "b6dd6446b8c93771931ac6ef6390ee17ba0891bcf70a53d9493100bcef879710",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_generate_portable.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_generate_strict.log",
+      "native_git_blob_oid": "c19062bf73bf1a02c5067c204588540df6cfc1c8",
+      "archive_blob_oid_independent": "c19062bf73bf1a02c5067c204588540df6cfc1c8",
+      "bytes": 206,
+      "committed_sha256": "e6ea7186b9a44a7df99c205de92528797738b802f772370f6c3b9f1f2331a66a",
+      "current_sha256": "e6ea7186b9a44a7df99c205de92528797738b802f772370f6c3b9f1f2331a66a",
+      "original_sha256": "e6ea7186b9a44a7df99c205de92528797738b802f772370f6c3b9f1f2331a66a",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_generate_strict.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_karr_only_arrays.npz",
+      "native_git_blob_oid": "50e5bad6c9ab6c824f5bdeef43335937c3a4dc4d",
+      "archive_blob_oid_independent": "50e5bad6c9ab6c824f5bdeef43335937c3a4dc4d",
+      "bytes": 292768,
+      "committed_sha256": "e28914d78247106d6feadbe15580312c6d7a0357f5634fcabce3a068b5f46271",
+      "current_sha256": "e28914d78247106d6feadbe15580312c6d7a0357f5634fcabce3a068b5f46271",
+      "original_sha256": "e28914d78247106d6feadbe15580312c6d7a0357f5634fcabce3a068b5f46271",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_karr_only_arrays.npz",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_null_monomers.npz",
+      "native_git_blob_oid": "3f0c6bf452b88d61c90bc50e8c8b2d89f5ff5ce6",
+      "archive_blob_oid_independent": "3f0c6bf452b88d61c90bc50e8c8b2d89f5ff5ce6",
+      "bytes": 284859,
+      "committed_sha256": "6cbd9b42cfdcde5ea7a0436205ebfd19fdd584a56b969074173c29ff68c890d6",
+      "current_sha256": "6cbd9b42cfdcde5ea7a0436205ebfd19fdd584a56b969074173c29ff68c890d6",
+      "original_sha256": "6cbd9b42cfdcde5ea7a0436205ebfd19fdd584a56b969074173c29ff68c890d6",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_null_monomers.npz",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_null_substrates.npz",
+      "native_git_blob_oid": "d0311412a3d1b1627d60ad382de31e7b531d8086",
+      "archive_blob_oid_independent": "d0311412a3d1b1627d60ad382de31e7b531d8086",
+      "bytes": 391521,
+      "committed_sha256": "2a832f89c79764f5acec9556152d03b723bdfd190822336cab825ad19f628322",
+      "current_sha256": "2a832f89c79764f5acec9556152d03b723bdfd190822336cab825ad19f628322",
+      "original_sha256": "2a832f89c79764f5acec9556152d03b723bdfd190822336cab825ad19f628322",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_null_substrates.npz",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/independent_numeric_proof.json",
+      "native_git_blob_oid": "7a144ebe187412d8acb4a85ec3ebc7457ebd04e5",
+      "archive_blob_oid_independent": "7a144ebe187412d8acb4a85ec3ebc7457ebd04e5",
+      "bytes": 4304,
+      "committed_sha256": "e1387b0341063c48ece49940c8a91a394186ea103d19a5ec18117b812cccf89e",
+      "current_sha256": "e1387b0341063c48ece49940c8a91a394186ea103d19a5ec18117b812cccf89e",
+      "original_sha256": "e1387b0341063c48ece49940c8a91a394186ea103d19a5ec18117b812cccf89e",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/independent_numeric_proof.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/inspect_inputs.log",
+      "native_git_blob_oid": "73f3d116d72c675eed4da593f1482d24ce3ef4fe",
+      "archive_blob_oid_independent": "73f3d116d72c675eed4da593f1482d24ce3ef4fe",
+      "bytes": 1256,
+      "committed_sha256": "95ef87f74f591cd7aaef6f09e01627dc767d1330cd7d933a466e069067da59c3",
+      "current_sha256": "95ef87f74f591cd7aaef6f09e01627dc767d1330cd7d933a466e069067da59c3",
+      "original_sha256": "95ef87f74f591cd7aaef6f09e01627dc767d1330cd7d933a466e069067da59c3",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/inspect_inputs.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/inspect_inputs.py",
+      "native_git_blob_oid": "12c1b802bbf0263420272d171a1b80d74b2a983c",
+      "archive_blob_oid_independent": "12c1b802bbf0263420272d171a1b80d74b2a983c",
+      "bytes": 12160,
+      "committed_sha256": "8f784960de82f42f1d5bb3401a3e7dbb4b5947713ee42b1b7bfeedb1580acfd2",
+      "current_sha256": "8f784960de82f42f1d5bb3401a3e7dbb4b5947713ee42b1b7bfeedb1580acfd2",
+      "original_sha256": "8f784960de82f42f1d5bb3401a3e7dbb4b5947713ee42b1b7bfeedb1580acfd2",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/inspect_inputs.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/integration_receipt.log",
+      "native_git_blob_oid": "7b998239a048f074d7bba6db0f682312a2da6555",
+      "archive_blob_oid_independent": "7b998239a048f074d7bba6db0f682312a2da6555",
+      "bytes": 609,
+      "committed_sha256": "98d082ddab7fa854415fd39a26a4e1215587b6775f2ea0ee1de1dcd700531214",
+      "current_sha256": "98d082ddab7fa854415fd39a26a4e1215587b6775f2ea0ee1de1dcd700531214",
+      "original_sha256": "98d082ddab7fa854415fd39a26a4e1215587b6775f2ea0ee1de1dcd700531214",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/integration_receipt.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/integration_receipt.py",
+      "native_git_blob_oid": "b68ce52f455790aa9bb2a0d1f7e11188ad681215",
+      "archive_blob_oid_independent": "b68ce52f455790aa9bb2a0d1f7e11188ad681215",
+      "bytes": 1800,
+      "committed_sha256": "b08c9a2e2b47af38bc9e12ee7042015da4d874b126b4c697fa647a8e0d3d7c98",
+      "current_sha256": "b08c9a2e2b47af38bc9e12ee7042015da4d874b126b4c697fa647a8e0d3d7c98",
+      "original_sha256": "b08c9a2e2b47af38bc9e12ee7042015da4d874b126b4c697fa647a8e0d3d7c98",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/integration_receipt.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/legacy_contiguous_actual_owner.json",
+      "native_git_blob_oid": "be7c480a27c3e1bd5531a59d592c615d1adfcb84",
+      "archive_blob_oid_independent": "be7c480a27c3e1bd5531a59d592c615d1adfcb84",
+      "bytes": 31868,
+      "committed_sha256": "0c8a7f2e2e078b2251a89fe4dd7c48cda0a557bca4166fc684f8ba4eddfbf515",
+      "current_sha256": "0c8a7f2e2e078b2251a89fe4dd7c48cda0a557bca4166fc684f8ba4eddfbf515",
+      "original_sha256": "0c8a7f2e2e078b2251a89fe4dd7c48cda0a557bca4166fc684f8ba4eddfbf515",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/legacy_contiguous_actual_owner.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/legacy_owner_receipt.log",
+      "native_git_blob_oid": "05a48f8ecdb550cb2f02f8e9594a4c2830f18734",
+      "archive_blob_oid_independent": "05a48f8ecdb550cb2f02f8e9594a4c2830f18734",
+      "bytes": 570,
+      "committed_sha256": "f4e0640cce24e6f5aa434bd0a2ba6e1f55fc443075b7b23001fcd0b10793c220",
+      "current_sha256": "f4e0640cce24e6f5aa434bd0a2ba6e1f55fc443075b7b23001fcd0b10793c220",
+      "original_sha256": "f4e0640cce24e6f5aa434bd0a2ba6e1f55fc443075b7b23001fcd0b10793c220",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/legacy_owner_receipt.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/legacy_owner_receipt.py",
+      "native_git_blob_oid": "caf2fe0e7e455f233535b94a9e5d49e201995d18",
+      "archive_blob_oid_independent": "caf2fe0e7e455f233535b94a9e5d49e201995d18",
+      "bytes": 2296,
+      "committed_sha256": "60978f273e3fa13f51854a467a64e3cdeb48c7821f6cd0c3d28deaeaa1743e06",
+      "current_sha256": "60978f273e3fa13f51854a467a64e3cdeb48c7821f6cd0c3d28deaeaa1743e06",
+      "original_sha256": "60978f273e3fa13f51854a467a64e3cdeb48c7821f6cd0c3d28deaeaa1743e06",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/legacy_owner_receipt.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/native_commands.log",
+      "native_git_blob_oid": "901dd4f8a2539741bd925e01ce59c1a08d47a3d1",
+      "archive_blob_oid_independent": "901dd4f8a2539741bd925e01ce59c1a08d47a3d1",
+      "bytes": 2068,
+      "committed_sha256": "ca908b05a935dd2005847b8b7c6b7a41685ff581e3a86d29bf093546f856246b",
+      "current_sha256": "ca908b05a935dd2005847b8b7c6b7a41685ff581e3a86d29bf093546f856246b",
+      "original_sha256": "ca908b05a935dd2005847b8b7c6b7a41685ff581e3a86d29bf093546f856246b",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/native_commands.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/native_postflight.json",
+      "native_git_blob_oid": "efb3bcb842d96ccc8f36c5ba8cc7ba767513f27a",
+      "archive_blob_oid_independent": "efb3bcb842d96ccc8f36c5ba8cc7ba767513f27a",
+      "bytes": 260,
+      "committed_sha256": "b3f8f5776196949baa757f8c00ba13ad66bf2c96647248110151bb4a40ebf43a",
+      "current_sha256": "b3f8f5776196949baa757f8c00ba13ad66bf2c96647248110151bb4a40ebf43a",
+      "original_sha256": "b3f8f5776196949baa757f8c00ba13ad66bf2c96647248110151bb4a40ebf43a",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/native_postflight.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/native_preflight.json",
+      "native_git_blob_oid": "d68ea263294b293e18c7acd371e704ebeff740ad",
+      "archive_blob_oid_independent": "d68ea263294b293e18c7acd371e704ebeff740ad",
+      "bytes": 484,
+      "committed_sha256": "82fb8e82c176d5bf24feb4c8a00a7af38700eec640a527f2b3ea52bea2ca6786",
+      "current_sha256": "82fb8e82c176d5bf24feb4c8a00a7af38700eec640a527f2b3ea52bea2ca6786",
+      "original_sha256": "82fb8e82c176d5bf24feb4c8a00a7af38700eec640a527f2b3ea52bea2ca6786",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/native_preflight.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/numeric_and_population.log",
+      "native_git_blob_oid": "e12496f00b4e2ca8cbbb19ed11a370bc0f6da9c3",
+      "archive_blob_oid_independent": "e12496f00b4e2ca8cbbb19ed11a370bc0f6da9c3",
+      "bytes": 712,
+      "committed_sha256": "3c036918ebdfa0276ac49c38472445268fbef5a023d59723ccfa84c52b398d10",
+      "current_sha256": "3c036918ebdfa0276ac49c38472445268fbef5a023d59723ccfa84c52b398d10",
+      "original_sha256": "3c036918ebdfa0276ac49c38472445268fbef5a023d59723ccfa84c52b398d10",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/numeric_and_population.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/numeric_and_population.py",
+      "native_git_blob_oid": "a496a318ef883b1be2e9a092ec8e07ee0d4a77ad",
+      "archive_blob_oid_independent": "a496a318ef883b1be2e9a092ec8e07ee0d4a77ad",
+      "bytes": 7666,
+      "committed_sha256": "7a4cc069eb930c7917ebedc8bb037b2a426352ecacac9c6861e091b65fdd8fe0",
+      "current_sha256": "7a4cc069eb930c7917ebedc8bb037b2a426352ecacac9c6861e091b65fdd8fe0",
+      "original_sha256": "7a4cc069eb930c7917ebedc8bb037b2a426352ecacac9c6861e091b65fdd8fe0",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/numeric_and_population.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/parent_integration_metadata.json",
+      "native_git_blob_oid": "37c9fcb76cd54e5b28ef1644588bbb88ed3cecd3",
+      "archive_blob_oid_independent": "37c9fcb76cd54e5b28ef1644588bbb88ed3cecd3",
+      "bytes": 4981,
+      "committed_sha256": "f87ba62a924e7eb178f1ae9a18dc94c80f8824c0ec27e9af3e1605f140b555b1",
+      "current_sha256": "f87ba62a924e7eb178f1ae9a18dc94c80f8824c0ec27e9af3e1605f140b555b1",
+      "original_sha256": "f87ba62a924e7eb178f1ae9a18dc94c80f8824c0ec27e9af3e1605f140b555b1",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/parent_integration_metadata.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/population_pt_entries.json",
+      "native_git_blob_oid": "fe51488c7066f6687ef680d6bfaa4f7768ef205c",
+      "archive_blob_oid_independent": "fe51488c7066f6687ef680d6bfaa4f7768ef205c",
+      "bytes": 3,
+      "committed_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "current_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "original_sha256": "37517e5f3dc66819f61f5a7bb8ace1921282415f10551d2defa5c3eb0985b570",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/population_pt_entries.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/preservation.py",
+      "native_git_blob_oid": "116dab12dd3fb8f95ebd078011feee23c059c176",
+      "archive_blob_oid_independent": "116dab12dd3fb8f95ebd078011feee23c059c176",
+      "bytes": 2357,
+      "committed_sha256": "eb60910522d244dd40f95b4539ea7f43b02000cc7bd00e62ed069d68e4e98485",
+      "current_sha256": "eb60910522d244dd40f95b4539ea7f43b02000cc7bd00e62ed069d68e4e98485",
+      "original_sha256": "eb60910522d244dd40f95b4539ea7f43b02000cc7bd00e62ed069d68e4e98485",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/preservation.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/preservation_after.json",
+      "native_git_blob_oid": "f60dc6ef3a422dd40c6ca78e7c48374f6d9a1dbf",
+      "archive_blob_oid_independent": "f60dc6ef3a422dd40c6ca78e7c48374f6d9a1dbf",
+      "bytes": 117,
+      "committed_sha256": "8da47397d818635a99ae3477e902144555a5490f172f969339576410f419fad8",
+      "current_sha256": "8da47397d818635a99ae3477e902144555a5490f172f969339576410f419fad8",
+      "original_sha256": "8da47397d818635a99ae3477e902144555a5490f172f969339576410f419fad8",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/preservation_after.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/preservation_after.log",
+      "native_git_blob_oid": "b0f77339156e0f555cfc4d04c86bf0a6c948b34c",
+      "archive_blob_oid_independent": "b0f77339156e0f555cfc4d04c86bf0a6c948b34c",
+      "bytes": 571,
+      "committed_sha256": "b9c29e3a0e63c77217883c65752f0c4b4ba2fdf79f1af6cc5dfefda406f27ef5",
+      "current_sha256": "b9c29e3a0e63c77217883c65752f0c4b4ba2fdf79f1af6cc5dfefda406f27ef5",
+      "original_sha256": "b9c29e3a0e63c77217883c65752f0c4b4ba2fdf79f1af6cc5dfefda406f27ef5",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/preservation_after.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/preservation_before.json",
+      "native_git_blob_oid": "1b0c7207a0bee857569625e816281e373c138b71",
+      "archive_blob_oid_independent": "1b0c7207a0bee857569625e816281e373c138b71",
+      "bytes": 755030,
+      "committed_sha256": "2e0c3e065e6d9ea26b06edac6cc508aa758e211615685c5f486008fd6b1031ff",
+      "current_sha256": "2e0c3e065e6d9ea26b06edac6cc508aa758e211615685c5f486008fd6b1031ff",
+      "original_sha256": "2e0c3e065e6d9ea26b06edac6cc508aa758e211615685c5f486008fd6b1031ff",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/preservation_before.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/preservation_before.log",
+      "native_git_blob_oid": "278f6115e974dcc9f80f36b75207a92b5fb7185f",
+      "archive_blob_oid_independent": "278f6115e974dcc9f80f36b75207a92b5fb7185f",
+      "bytes": 504,
+      "committed_sha256": "5e9a9ffecddffc9604dbd3aa6394a7540f31346edcbff02966101aa1b2aec4ec",
+      "current_sha256": "5e9a9ffecddffc9604dbd3aa6394a7540f31346edcbff02966101aa1b2aec4ec",
+      "original_sha256": "5e9a9ffecddffc9604dbd3aa6394a7540f31346edcbff02966101aa1b2aec4ec",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/preservation_before.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/publication_audits.log",
+      "native_git_blob_oid": "acc8e5bf0cae8b3acb1c9a7e9374117a61e55c88",
+      "archive_blob_oid_independent": "acc8e5bf0cae8b3acb1c9a7e9374117a61e55c88",
+      "bytes": 10530,
+      "committed_sha256": "3996d5acb5d5e27a9b395046ddf672cc91438d3a3aeb5af7b349e6579fdc798d",
+      "current_sha256": "3996d5acb5d5e27a9b395046ddf672cc91438d3a3aeb5af7b349e6579fdc798d",
+      "original_sha256": "3996d5acb5d5e27a9b395046ddf672cc91438d3a3aeb5af7b349e6579fdc798d",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/publication_audits.log",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/publication_audits.py",
+      "native_git_blob_oid": "b91a7ae9e51563b0929ba859ea08585a07f57634",
+      "archive_blob_oid_independent": "b91a7ae9e51563b0929ba859ea08585a07f57634",
+      "bytes": 5506,
+      "committed_sha256": "7ab2f0ee4938c1906ec718e3d981a0ecd6a6b42b7d9c79f3c57fa76b9fb232ff",
+      "current_sha256": "7ab2f0ee4938c1906ec718e3d981a0ecd6a6b42b7d9c79f3c57fa76b9fb232ff",
+      "original_sha256": "7ab2f0ee4938c1906ec718e3d981a0ecd6a6b42b7d9c79f3c57fa76b9fb232ff",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/publication_audits.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/publication_candidate_input_configuration.json",
+      "native_git_blob_oid": "8f0bbc5aa286bd0bfbfd668b5d16fe03018bcda6",
+      "archive_blob_oid_independent": "8f0bbc5aa286bd0bfbfd668b5d16fe03018bcda6",
+      "bytes": 791,
+      "committed_sha256": "469743e3f8486f4e5db58c748944ebe813bd464e155504d900882e93e3413b40",
+      "current_sha256": "469743e3f8486f4e5db58c748944ebe813bd464e155504d900882e93e3413b40",
+      "original_sha256": "469743e3f8486f4e5db58c748944ebe813bd464e155504d900882e93e3413b40",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/publication_candidate_input_configuration.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/publication_commands.json",
+      "native_git_blob_oid": "b23d504c47b43fa8d27ffb7744db47dac40b505a",
+      "archive_blob_oid_independent": "b23d504c47b43fa8d27ffb7744db47dac40b505a",
+      "bytes": 4488,
+      "committed_sha256": "ce1934cafbd7b12f0033286408c24381a82fd9ccf110e6dc2407f7bc37513bc3",
+      "current_sha256": "ce1934cafbd7b12f0033286408c24381a82fd9ccf110e6dc2407f7bc37513bc3",
+      "original_sha256": "ce1934cafbd7b12f0033286408c24381a82fd9ccf110e6dc2407f7bc37513bc3",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/publication_commands.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/publication_proof.json",
+      "native_git_blob_oid": "fab6ba36c8dc195a07f8f4d40726ba12510b922f",
+      "archive_blob_oid_independent": "fab6ba36c8dc195a07f8f4d40726ba12510b922f",
+      "bytes": 3674,
+      "committed_sha256": "998cc22d2600f547f5e98b37b89ec77a0a8f14b8964c3e027edd0fec3e8901f7",
+      "current_sha256": "998cc22d2600f547f5e98b37b89ec77a0a8f14b8964c3e027edd0fec3e8901f7",
+      "original_sha256": "998cc22d2600f547f5e98b37b89ec77a0a8f14b8964c3e027edd0fec3e8901f7",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/publication_proof.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/pytest_reports.json",
+      "native_git_blob_oid": "7ac72637765e542198797ab0819440728909a7e4",
+      "archive_blob_oid_independent": "7ac72637765e542198797ab0819440728909a7e4",
+      "bytes": 21255,
+      "committed_sha256": "188175df3fb7193637a2b7b88a1afd65684a673df5da02af44518c0dd2f76572",
+      "current_sha256": "188175df3fb7193637a2b7b88a1afd65684a673df5da02af44518c0dd2f76572",
+      "original_sha256": "188175df3fb7193637a2b7b88a1afd65684a673df5da02af44518c0dd2f76572",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/pytest_reports.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/review_common.py",
+      "native_git_blob_oid": "1c13ffd3dacf0e808991e7c40a11732e37fe0624",
+      "archive_blob_oid_independent": "1c13ffd3dacf0e808991e7c40a11732e37fe0624",
+      "bytes": 2098,
+      "committed_sha256": "a8dcbac895cb22ac382de3b66aba2be93befbbd19649ea5635bd6e1079cbbce7",
+      "current_sha256": "a8dcbac895cb22ac382de3b66aba2be93befbbd19649ea5635bd6e1079cbbce7",
+      "original_sha256": "a8dcbac895cb22ac382de3b66aba2be93befbbd19649ea5635bd6e1079cbbce7",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/review_common.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/run_controls.py",
+      "native_git_blob_oid": "794224bf7114e2286c6a5a4c7833bc59fb611265",
+      "archive_blob_oid_independent": "794224bf7114e2286c6a5a4c7833bc59fb611265",
+      "bytes": 3981,
+      "committed_sha256": "0b3c35863779dea62c2ee6e4cec998684b5563221a6bf60043b69ddae8bd8fc6",
+      "current_sha256": "0b3c35863779dea62c2ee6e4cec998684b5563221a6bf60043b69ddae8bd8fc6",
+      "original_sha256": "0b3c35863779dea62c2ee6e4cec998684b5563221a6bf60043b69ddae8bd8fc6",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/run_controls.py",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/shape_activity_allocator.json",
+      "native_git_blob_oid": "c3467cb937d342b27dd7f7d952becdd429c0fc48",
+      "archive_blob_oid_independent": "c3467cb937d342b27dd7f7d952becdd429c0fc48",
+      "bytes": 2589,
+      "committed_sha256": "bcf25f3764e18f57e15058be8f42068dcd9a03f659dbc12cd7c0fb15eb493a55",
+      "current_sha256": "bcf25f3764e18f57e15058be8f42068dcd9a03f659dbc12cd7c0fb15eb493a55",
+      "original_sha256": "bcf25f3764e18f57e15058be8f42068dcd9a03f659dbc12cd7c0fb15eb493a55",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/shape_activity_allocator.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/source_and_compact_bindings.json",
+      "native_git_blob_oid": "c50898d2a8549c54c14f1e36b807ecc9dac01038",
+      "archive_blob_oid_independent": "c50898d2a8549c54c14f1e36b807ecc9dac01038",
+      "bytes": 3151,
+      "committed_sha256": "efa8222d986fcedecf0e57f0818a68e42249ae2b437ce4d05329410b2e79a330",
+      "current_sha256": "efa8222d986fcedecf0e57f0818a68e42249ae2b437ce4d05329410b2e79a330",
+      "original_sha256": "efa8222d986fcedecf0e57f0818a68e42249ae2b437ce4d05329410b2e79a330",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/source_and_compact_bindings.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/sweep_time_and_command.json",
+      "native_git_blob_oid": "b5b27e964ed4fb73428645cc695cbcbfbf892ccb",
+      "archive_blob_oid_independent": "b5b27e964ed4fb73428645cc695cbcbfbf892ccb",
+      "bytes": 6294,
+      "committed_sha256": "9710d06e18f14c6bdfdc71fefc869d48f7e3c4eb351bfaa31cb3f33266979075",
+      "current_sha256": "9710d06e18f14c6bdfdc71fefc869d48f7e3c4eb351bfaa31cb3f33266979075",
+      "original_sha256": "9710d06e18f14c6bdfdc71fefc869d48f7e3c4eb351bfaa31cb3f33266979075",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/sweep_time_and_command.json",
+      "equal": true
+    },
+    {
+      "path": "docs/phase_f/pre_l25/acceptance/ProteinTranslocation/tracked_paths.txt",
+      "native_git_blob_oid": "994a9236cf2e8f9027298cf27e117e59fd8264a9",
+      "archive_blob_oid_independent": "994a9236cf2e8f9027298cf27e117e59fd8264a9",
+      "bytes": 208176,
+      "committed_sha256": "df081054dbb666d8ab4674fbae0c8963f15e10a9affd5c5bb202a60ba4bc5dba",
+      "current_sha256": "df081054dbb666d8ab4674fbae0c8963f15e10a9affd5c5bb202a60ba4bc5dba",
+      "original_sha256": "df081054dbb666d8ab4674fbae0c8963f15e10a9affd5c5bb202a60ba4bc5dba",
+      "original": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/independent_acceptance/tracked_paths.txt",
+      "equal": true
+    }
+  ],
+  "original_delivery_manifest_matches": [
+    {
+      "name": "VERDICT.json",
+      "expected_and_actual_sha256": "2e868c3bf04831ba241cb3da4bf42ce8a5706ab2c5fb2151a8d9fef8acd481bf"
+    },
+    {
+      "name": "control_test_mapping.json",
+      "expected_and_actual_sha256": "ebebc7181e62c875b5b5fe6e744db0f698d4ae566aae15cdb96d71bd3cc8692e"
+    },
+    {
+      "name": "controls_retry1.xml",
+      "expected_and_actual_sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87"
+    },
+    {
+      "name": "all_consumed_rehashes.json",
+      "expected_and_actual_sha256": "0ffd684e8b024e3a3921f291f4d3cc43acf300b1fbab67f980222ca96fa4d096"
+    },
+    {
+      "name": "complete_50_seed_inventory.json",
+      "expected_and_actual_sha256": "620ce70d3526c477cc20adb8be2dcad32033b56f795fd4bffb5067f395c4ac95"
+    },
+    {
+      "name": "accepted_population_verification.json",
+      "expected_and_actual_sha256": "4c8cd02f9496a0bceb800f5e46a8a21010d12e6706e794014fe0bdd79b9e966f"
+    },
+    {
+      "name": "constructor_authority.json",
+      "expected_and_actual_sha256": "45bf7d2b6bf88d8f346b543e0ba8e04d24cbfde5dd1dd27936a50948563a144a"
+    },
+    {
+      "name": "source_and_compact_bindings.json",
+      "expected_and_actual_sha256": "efa8222d986fcedecf0e57f0818a68e42249ae2b437ce4d05329410b2e79a330"
+    },
+    {
+      "name": "independent_numeric_proof.json",
+      "expected_and_actual_sha256": "e1387b0341063c48ece49940c8a91a394186ea103d19a5ec18117b812cccf89e"
+    },
+    {
+      "name": "publication_proof.json",
+      "expected_and_actual_sha256": "998cc22d2600f547f5e98b37b89ec77a0a8f14b8964c3e027edd0fec3e8901f7"
+    },
+    {
+      "name": "publication_commands.json",
+      "expected_and_actual_sha256": "ce1934cafbd7b12f0033286408c24381a82fd9ccf110e6dc2407f7bc37513bc3"
+    },
+    {
+      "name": "actual_owner_controls.json",
+      "expected_and_actual_sha256": "80d9ed569760e9ca422d23cb1a0ae3524e4a545e3e5d49456a24192d83fd9d0e"
+    },
+    {
+      "name": "legacy_contiguous_actual_owner.json",
+      "expected_and_actual_sha256": "0c8a7f2e2e078b2251a89fe4dd7c48cda0a557bca4166fc684f8ba4eddfbf515"
+    },
+    {
+      "name": "preservation_before.json",
+      "expected_and_actual_sha256": "2e0c3e065e6d9ea26b06edac6cc508aa758e211615685c5f486008fd6b1031ff"
+    },
+    {
+      "name": "preservation_after.json",
+      "expected_and_actual_sha256": "8da47397d818635a99ae3477e902144555a5490f172f969339576410f419fad8"
+    },
+    {
+      "name": "native_preflight.json",
+      "expected_and_actual_sha256": "82fb8e82c176d5bf24feb4c8a00a7af38700eec640a527f2b3ea52bea2ca6786"
+    },
+    {
+      "name": "native_postflight.json",
+      "expected_and_actual_sha256": "b3f8f5776196949baa757f8c00ba13ad66bf2c96647248110151bb4a40ebf43a"
+    },
+    {
+      "name": "catalog_entry_verbatim.txt",
+      "expected_and_actual_sha256": "43dce61b70bdc179ba0704946b29e7e9f70bc2a349153e89761125c4f036f122"
+    }
+  ],
+  "also_matches_parent_report": true,
+  "original_nested_duplicate_bundle": "Original review has8 additional nested regenerated_bundle outputs; these duplicate the same compact8 and are not among the69 original root receipts. Their accepted compact content is separately bound by the original proof."
+}

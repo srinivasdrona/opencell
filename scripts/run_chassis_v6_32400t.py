@@ -32,10 +32,7 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from opencell.analysis.cell_mass import AVOGADRO
-from opencell.analysis.cell_mass import _load_protein_mw
-from opencell.analysis.cell_mass import _load_rna_mw
-from opencell.analysis.cell_mass import _load_substrate_mw
+from opencell.analysis.cell_mass import CellMassProjection
 from opencell.m1 import karr_metabolism as km
 from opencell.m2 import transcription as tx
 from opencell.m3 import translation as tl
@@ -93,6 +90,7 @@ def _snapshot_runtime_state(engine: Engine) -> dict[str, Any]:
         "substrates": _get_store_dict(engine, ("substrates",)),
         "rna": _get_store_dict(engine, ("rna",)),
         "protein": _get_store_dict(engine, ("protein",)),
+        "complex": _get_store_dict(engine, ("complex",)),
         "chromosome": _get_store_dict(engine, ("chromosome",)),
         "cell": _get_store_dict(engine, ("cell",)),
         "phenotype_observables": _get_store_dict(engine, ("phenotype_observables",)),
@@ -159,9 +157,7 @@ def _division_detected(state: dict[str, Any]) -> bool:
 
 @dataclass
 class MassEstimator:
-    substrate_mw: dict[str, float]
-    rna_mw: dict[str, float]
-    protein_mw: dict[str, float]
+    projection: CellMassProjection
     dry_fraction: float
     density_g_per_l: float
 
@@ -174,42 +170,13 @@ class MassEstimator:
         dry_fraction = max(1.0 - wet_fraction, 1e-12)
         density_g_per_l = float(raw["states"]["Geometry"]["density"])
         return cls(
-            substrate_mw=_load_substrate_mw(m1_model),
-            rna_mw=_load_rna_mw(m2_model),
-            protein_mw=_load_protein_mw(m3_model),
+            projection=CellMassProjection.build(m1_model, m2_model, m3_model),
             dry_fraction=dry_fraction,
             density_g_per_l=density_g_per_l,
         )
 
     def dry_mass_g(self, state: dict[str, Any]) -> float:
-        substrates = state.get("substrates", {})
-        rna = state.get("rna", {})
-        protein = state.get("protein", {})
-        rna_counts = rna.get("counts", {})
-        protein_counts = protein.get("counts", {})
-
-        sub_da = 0.0
-        for sid, count in substrates.items():
-            mw = self.substrate_mw.get(str(sid))
-            if mw is None or mw <= 0.0:
-                continue
-            sub_da += float(count) * mw
-
-        rna_da = 0.0
-        for gid, count in rna_counts.items():
-            mw = self.rna_mw.get(str(gid))
-            if mw is None or mw <= 0.0:
-                continue
-            rna_da += float(count) * mw
-
-        protein_da = 0.0
-        for pid, count in protein_counts.items():
-            mw = self.protein_mw.get(str(pid))
-            if mw is None or mw <= 0.0:
-                continue
-            protein_da += float(count) * mw
-
-        return float((sub_da + rna_da + protein_da) / AVOGADRO)
+        return self.projection.compute(state).total_g
 
     def total_mass_g(self, dry_mass_g: float) -> float:
         return float(dry_mass_g / self.dry_fraction)
@@ -232,7 +199,9 @@ class DiagnosticCollector:
         self._composite = composite
         self._process_trace_stride = max(1, int(process_trace_stride))
         self._current_tick = {"tick": 0}
+        self._call_depth = 0
         self.per_tick_process_sums: dict[str, float] = defaultdict(float)
+        self.per_tick_allocations_at_use: dict[str, dict[str, float]] = {}
         self.exception_counts: dict[str, int] = defaultdict(int)
         self._entities: dict[str, Any] = {}
         self._entities.update(getattr(composite, "processes", {}))
@@ -248,11 +217,13 @@ class DiagnosticCollector:
             self.process_trace_files[name] = f
             self.process_trace_writers[name] = w
         self._seed_entities(seed=seed)
+        self._seed_shared_chromosome_rand_stream(seed=seed)
         self._patch_entities()
 
     def set_tick(self, tick: int) -> None:
         self._current_tick["tick"] = int(tick)
         self.per_tick_process_sums.clear()
+        self.per_tick_allocations_at_use.clear()
 
     def close(self) -> None:
         for f in self.process_trace_files.values():
@@ -265,18 +236,50 @@ class DiagnosticCollector:
             if hasattr(entity, "_command_result"):
                 entity._command_result = None
 
+    def _seed_shared_chromosome_rand_stream(self, *, seed: int) -> None:
+        """Set/reset the shared chromosome state RNG leaf
+        (``chromosome._shared_rand_stream_state``, dec-007/DC-2) to the
+        requested run seed, in place, on the composite's own
+        ``initial_state`` dict. Ordinary entity RNG seeding (above) is
+        unaffected -- this only touches the one state-owned chromosome
+        leaf so a requested run seed propagates to TxReg's sole-consumer
+        draw sequence (Stage B) exactly like every other entity's seed."""
+        from opencell.state.chromosome_store import CHROMOSOME_RAND_STREAM_KEY
+        from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+
+        initial_state = getattr(self._composite, "initial_state", None)
+        if not isinstance(initial_state, dict):
+            return
+        chrom_state = initial_state.get("chromosome")
+        if not isinstance(chrom_state, dict):
+            return
+        stream_state = ChromosomeStateRandStream(int(seed)).get_state()
+        chrom_state[CHROMOSOME_RAND_STREAM_KEY] = np.array(
+            [stream_state["seed"], stream_state["mcg_state"]], dtype=np.int64
+        )
+
     def _seed_entities(self, *, seed: int) -> None:
+        from opencell.util.matlab_rng import MatlabRandStream
+        from opencell.vivarium.karr_protein_processing_ii import (
+            KarrProteinProcessingIIEvolutionStep,
+        )
+
         names = sorted(self._entities.keys())
         children = np.random.SeedSequence(int(seed)).spawn(len(names))
         for idx, name in enumerate(names):
             entity = self._entities[name]
+            if isinstance(entity, KarrProteinProcessingIIEvolutionStep):
+                entity = entity.processing_process
             child = children[idx]
             entity_seed = int(child.generate_state(1, dtype=np.uint32)[0])
             params = getattr(entity, "parameters", None)
             if isinstance(params, dict) and "rng_seed" in params:
                 params["rng_seed"] = entity_seed
             if hasattr(entity, "_rng"):
-                entity._rng = np.random.default_rng(entity_seed)
+                if isinstance(entity._rng, MatlabRandStream):
+                    entity._rng = MatlabRandStream(entity_seed)
+                else:
+                    entity._rng = np.random.default_rng(entity_seed)
 
     def _patch_entities(self) -> None:
         for entity_name, entity_obj in self._entities.items():
@@ -297,6 +300,11 @@ class DiagnosticCollector:
             except Exception:
                 port_updaters = {}
             original_next_update = entity_obj.next_update
+            is_step = (
+                entity_name in getattr(self._composite, "steps", {})
+                or getattr(entity_obj, "is_step", lambda: False)()
+            )
+            owner = getattr(entity_obj, "allocation_owner", entity_name.removesuffix("_evolution"))
             trace_heartbeat_on_noop = bool(
                 getattr(entity_obj, "parameters", {}).get("emit_trace_heartbeat_on_noop", False)
             )
@@ -310,20 +318,34 @@ class DiagnosticCollector:
                 _shared_ports: dict[str, tuple[str, ...]] = shared_ports,
                 _port_updaters: dict[str, dict[str, str]] = port_updaters,
                 _trace_heartbeat_on_noop: bool = trace_heartbeat_on_noop,
+                _is_step: bool = is_step,
+                _owner: str = owner,
             ) -> dict[str, Any]:
                 tick = int(self._current_tick["tick"])
+                outermost = self._call_depth == 0
+                if outermost and _is_step:
+                    allocations = states.get("substrates_allocated", {})
+                    if isinstance(allocations, dict) and _owner in allocations:
+                        self.per_tick_allocations_at_use[_owner] = dict(allocations[_owner])
+                self._call_depth += 1
                 try:
                     update = _original(timestep, states)
                 except Exception:
                     self.exception_counts[_entity_name] += 1
                     raise
+                finally:
+                    self._call_depth -= 1
+                if not outermost:
+                    return update
 
                 if update is None:
                     update = {}
                 if not (isinstance(update, dict) and _shared_ports):
                     return update
 
-                writer = self.process_trace_writers[_entity_name]
+                writer = self.process_trace_writers.get(
+                    _owner, self.process_trace_writers[_entity_name]
+                )
                 wrote_trace_row = False
                 for port_name, port_update in update.items():
                     port_name_str = str(port_name)
@@ -351,15 +373,19 @@ class DiagnosticCollector:
                         # Keep conservation accounting on substrate writes only.
                         if store_path and store_path[0] == "substrates":
                             self.per_tick_process_sums[wid_str] += float(delta)
+                            if _is_step and delta < 0:
+                                self.per_tick_allocations_at_use.setdefault(_owner, {}).setdefault(
+                                    wid_str, 0.0
+                                )
                         if tick % self._process_trace_stride == 0:
-                            writer.writerow([tick, _entity_name, wid_str, f"{delta:.12g}"])
+                            writer.writerow([tick, _owner, wid_str, f"{delta:.12g}"])
                             wrote_trace_row = True
                 if (
                     (tick % self._process_trace_stride == 0)
                     and not wrote_trace_row
                     and _trace_heartbeat_on_noop
                 ):
-                    writer.writerow([tick, _entity_name, "__noop__", "0"])
+                    writer.writerow([tick, _owner, "__noop__", "0"])
                 return update
 
             entity_obj.next_update = wrapped_next_update

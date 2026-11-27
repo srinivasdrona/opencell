@@ -1,5 +1,30 @@
 # ProteinTranslocation Semantic Audit
 
+## Current-source evidence acceptance — 2026-11-23
+
+All four PTRANS findings remain resolved on measured source10393/source7586.
+The accepted119-WID source algorithm, home compartments, capacity request and
+persistent one-based permutation are unchanged (`karr_protein_translocation.py:
+282-510`; `karr_request_calculators.py:804-846`). The current public per-sample
+factory/dispatch remains fresh-owner (`_l2_2_design_a_runner_helpers.py:
+1793-1798,2545-2607`), distinct from contiguous persistent replay ownership.
+Prior repeated/interleaved/poisoned isolation proofs remain immutable.
+
+Fresh N50/M100/B1000 measures all2892 coordinates with87 consumed records
+(50 raw plus37 runtime/parameter inputs). Independent numerical/current-source/
+PORTABLE+STRICT acceptance is complete, no reasons/warnings. Shared mass/input
+binding changes are covered by this new source-bound campaign, not a refresh
+of historical65df/9f53 hashes or the old64-record proof.
+Current per-finding source proof, accepted packet/review and original-to-new
+byte lineage are under
+`docs/phase_f/pre_l25/acceptance/cohort1_final_10393/`.
+
+Nov23 delayed completion revalidation is explicit, not a contemporaneous
+sweep or new biological run. Full raw OC tensors were not retained; no raw
+sample reanalysis is claimed. Historical audit and prior acceptance below
+remain valid records about their original snapshots only; candidate honesty
+uses the actual full current index and no unrelated process is promoted.
+
 ## Header
 - Process name: `ProteinTranslocation` (`protein_translocation`)
 - Audited files:
@@ -43,30 +68,28 @@ Design contract sentence: each claim is semantically valid only if row wording m
 ## Claim Table
 | Claim ID | Category | Row Says | MATLAB Says | OC Says | Verdict | Note |
 |---|---|---|---|---|---|---|
-| PT-S1-01 | S1 | `consume_stoichiometry` lists ATP/GTP/H2O in cytosol (`ProteinTranslocation.yaml:112-145`). | `evolveState` consumes ATP/GTP/H2O (`ProteinTranslocation.m:362-364`), matching substrate set (`:141-149`). | `next_update` decrements ATP/H2O and decrements GTP when SRP cost applies (`karr_protein_translocation.py:433-441`). | VERIFIED | Strict completeness satisfied for consume substrate set. |
-| PT-S2-01 | S2 | Each row consume entry maps to OC consume anchor (`ProteinTranslocation.yaml:120-145`). | Per-copy consume path exists for ATP/H2O always and GTP when SRP-path monomer selected (`ProteinTranslocation.m:334-337`, `:362-364`). | Real consume path is emitted via negative substrate deltas (`karr_protein_translocation.py:433`, `:436`, `:440`). | VERIFIED | `judgment=required` (GTP is sign/pathway-dependent). |
-| PT-S3-01 | S3 | `produce_stoichiometry` lists ADP/GDP/PI/H in cytosol (`ProteinTranslocation.yaml:146-190`). | `evolveState` produces ADP/GDP/PI/H (`ProteinTranslocation.m:365-368`). | `next_update` produces ADP/PI/H always when translocation occurs and GDP when GTP spent (`karr_protein_translocation.py:434-441`). | VERIFIED | `judgment=required` (GDP is sign/pathway-dependent). |
-| PT-S4-01 | S4 | Row says OC uses species-phase batching and raw enzyme counts, not Karr rate-scaled checks (`ProteinTranslocation.yaml:53-55`, `:320-321`). | Karr uses one global `randperm` over monomer copies plus rate-scaled capacities and break-on-first-failure (`ProteinTranslocation.m:321-347`). | OC now uses copy-level `randperm(total_copies)`, rate-scaled capacities, and break-on-first-failure (`karr_protein_translocation.py:366-406`). | ROW_WRONG | Row deviation text is stale against current OC behavior. |
-| PT-S4-02 | S4 | Row MATLAB request formula omits capacity mins (`ProteinTranslocation.yaml:79-81`). | `calcResourceRequirements_Current` applies `min(translocases, demand)` for ATP and `min(SRPs, srp-demand)` for GTP before hydrolysis sum (`ProteinTranslocation.m:284-301`). | OC request calculator computes queued needs then applies pool-floor transform (`karr_request_calculators.py:734-753`). | ROW_WRONG | MATLAB-side row formula is semantically incomplete (capacity clipping missing). |
-| PT-S4-03 | S4 | Row states OC request uses `max(need, current_pool)` and can over-request vs pure need (`ProteinTranslocation.yaml:80-81`, `:322`). | MATLAB current requirements do not apply a current-pool floor (`ProteinTranslocation.m:288-301`). | OC request calculator applies `max(need, substrate_state)` for ATP/GTP/H2O (`karr_request_calculators.py:742-753`). | CODE_DEVIATES | Row correctly captures MATLAB-vs-OC request-floor divergence. |
-| PT-S5-01 | S5 | Row routes ATP/GTP/H2O consume and ADP/GDP/PI/H produce to cytosol tuples, mismatch=false (`ProteinTranslocation.yaml:191-226`). | Process substrate representation is single-compartment for this process and updates same substrate indices (`ProteinTranslocation.m:80-82`, `:362-368`). | OC writes flat shared-pool substrate deltas on `substrates` and is wired to shared substrate store (`karr_protein_translocation.py:432-442`; `karr_composite.py:855-860`, `:886-889`). | VERIFIED | Projection/merge exists, but no substrate tuple mismatch observed for this process. |
-| PT-S5-02 | S5 | Row lists terminal-organelle handling deviation: OC excludes `MG_191/MG_192` instead of Karr remap (`ProteinTranslocation.yaml:324`). | MATLAB remaps terminal-organelle compartments to cytosol/membrane before translocating-set derivation (`ProteinTranslocation.m:199-203`). | OC excludes those two monomers during fixture load (`karr_protein_translocation.py:25`, `:195-196`). | CODE_DEVIATES | Row accurately documents a compartment-routing-related implementation deviation. |
-| PT-S6-01 | S6 | Row allocator mode says Karr=`allocation`, OC=`allocation` (`ProteinTranslocation.yaml:75-77`). | Simulation computes per-process requirements and fair-share allocations, then injects allocation into `mod.substrates` before process `evolveState` (`@Simulation/evolveState.m:24-37`, `:63-70`). | OC wires `RequestCalculatorPTransloc` + `KarrAllocationStep` and process reads only `substrates_allocated[self.name]` (`karr_composite.py:789-791`, `:881-889`, `:941-948`; `karr_request_calculators.py:710-754`; `karr_protein_translocation.py:314-355`). | VERIFIED | Allocator engagement mode matches (request/grant-mediated execution). |
-| PT-S6-02 | S6 | Row notes OC request path is separate calculator step and no ProteinTranslocation-specific scheduler exception (`ProteinTranslocation.yaml:32-34`, `:253`). | MATLAB process order is randomized with only tRNA-before-translation hard rule; no ProteinTranslocation exception (`@Simulation/evolveState.m:48-57`). | OC flow enforces request-calculator-to-allocation ordering for ptransloc request path, with no explicit ptransloc-specific ordering edge beyond allocator coupling (`karr_composite.py:935-949`, `:1541-1562`). | VERIFIED | `judgment=required` (engine-level process-order semantics are implicit outside this file set). |
+| PT-S1-01 | S1 | `consume_stoichiometry` exhaustively lists ATP/GTP/H2O in cytosol with primary-source anchors. | `evolveState` computes and consumes ATP/GTP/H2O per selected copy (`ProteinTranslocation.m:334-368`). | `next_update` emits the same negative substrate deltas after successful authority-state transfers (`karr_protein_translocation.py:484-510`). | VERIFIED | Strict completeness satisfied for the consumed substrate set. |
+| PT-S2-01 | S2 | Each consume entry maps to the executable OC write path. | ATP/H2O are consumed for every translocated copy and GTP only for SRP-path copies (`ProteinTranslocation.m:334-368`). | OC uses the same pathway-dependent costs and emits deltas only for resources actually spent (`karr_protein_translocation.py:421-510`). | VERIFIED | GTP is correctly conditional on the SRP pathway. |
+| PT-S3-01 | S3 | `produce_stoichiometry` exhaustively lists ADP/GDP/PI/H in cytosol. | `evolveState` produces ADP/GDP/PI/H from the same hydrolysis ledger (`ProteinTranslocation.m:365-368`). | OC produces ADP/PI/H for ATP hydrolysis and GDP when GTP is spent (`karr_protein_translocation.py:493-510`). | VERIFIED | Product identities and magnitudes match. |
+| PT-S4-01 | S4 | Row states one persistent one-based copy-level permutation, rate-scaled capacities, and break-on-first-infeasible-copy behavior. | Karr draws one `randperm` over pending copies and stops at the first resource or enzyme failure (`ProteinTranslocation.m:309-347`). | OC rejects non-`MatlabRandStream`, draws before feasibility checks, applies the same capacities, and breaks on the first infeasible copy (`karr_protein_translocation.py:347-457`). | VERIFIED | Fixture-order and three-call observable sequence were independently re-probed. |
+| PT-S4-02 | S4 | Row request formula includes both capacity mins and `H2O = ATP + GTP`. | `calcResourceRequirements_Current` applies `min(translocases, demand)` and `min(SRPs, SRP demand)` (`ProteinTranslocation.m:281-301`). | `RequestCalculatorPTransloc.next_update` transcribes those terms over authoritative cytosolic processed-I counts (`karr_request_calculators.py:804-846`). | VERIFIED | Constructed cases independently matched `0/0/0`, `320/14/334`, `320/6/326`, and `0/14/14`. |
+| PT-S4-03 | S4 | Row states that OC has no current-pool floor and requests only calculated need. | MATLAB does not floor current requirements against the substrate pool (`ProteinTranslocation.m:281-301`). | OC initializes all requests to zero, computes only pending-copy need, and never reads the substrate pool in `next_update` (`karr_request_calculators.py:804-846`). | VERIFIED | The former request-floor deviation is removed. |
+| PT-S5-01 | S5 | Row routes ATP/GTP/H2O consumption and ADP/GDP/PI/H production to the cytosolic shared substrate pool. | ProteinTranslocation updates the same seven substrate indices (`ProteinTranslocation.m:362-368`). | OC emits the same seven flat shared-pool deltas and the composite wires them to `substrates` (`karr_protein_translocation.py:493-510`; `karr_composite.py:905-910`). | VERIFIED | No substrate-compartment mismatch exists for this process. |
+| PT-S5-02 | S5 | Row states all 119 translocatable WIDs use authoritative processed-I compartment counts. | MATLAB remaps terminal-organelle compartments before deriving the translocating set and transfers every selected copy between compartment columns (`ProteinTranslocation.m:198-201,350-353`). | OC declares and reads every translocatable WID under `compartment_counts.processed_i`, then conservatively transfers `c -> e/m`; no `protein.location` or translocation queue branch remains (`karr_protein_translocation.py:282-340,363-482`). | VERIFIED | Fixture-derived union is 124 authority WIDs / 7,440 leaves; 119 participate in translocation. |
+| PT-S6-01 | S6 | Row allocator mode says Karr=`allocation`, OC=`allocation`. | Simulation computes requirements, fair-share allocations, and injects grants before process evolution (`@Simulation/evolveState.m:24-37,63-70`). | OC wires `RequestCalculatorPTransloc` to `KarrAllocationStep`; the process reads only `substrates_allocated[self.name]` (`karr_composite.py:931-1005`; `karr_protein_translocation.py:358-359`). | VERIFIED | Same-tick Engine acceptance proves request, allocation, and evolution. |
+| PT-S6-02 | S6 | Row records a separate OC request Step and no ProteinTranslocation-specific scheduler exception. | MATLAB randomizes process order except for the tRNA-before-translation rule (`@Simulation/evolveState.m:48-57`). | OC adds only the generic request-before-allocation dependency and the common post-allocation process phase (`karr_composite.py:998-1008,2503-2518`). | VERIFIED | No process-specific ordering claim remains. |
 
 ## Aggregate Counts
-- VERIFIED: 6
-- ROW_WRONG: 2
-- CODE_DEVIATES: 2
+- VERIFIED: 10
+- ROW_WRONG: 0
+- CODE_DEVIATES: 0
 - MISSING: 0
 
 ## Priority-1 Fixes
-- PT-S4-01 (`ROW_WRONG`): update row `methods.evolveState`/`known_deviations` text to reflect current OC copy-level randperm + rate-scaled capacity behavior.
-- PT-S4-02 (`ROW_WRONG`): correct `allocator.request_formula.matlab` to include capacity min terms (`min(translocases, ...)`, `min(SRPs, ...)`) from `calcResourceRequirements_Current`.
+- None.
 
 ## Known-Deviation Mapping (Optional)
-- KD-PT-01: request-floor divergence (`PT-S4-03`).
-- KD-PT-02: terminal-organelle exclusion/remap divergence (`PT-S5-02`).
+- None. The schema-required calcFluxBounds absence is shared by MATLAB and OC and is not a behavioral deviation.
 
 ## Auditor Discretion List
 - PT-S2-01 (`judgment=required`)
@@ -74,5 +97,38 @@ Design contract sentence: each claim is semantically valid only if row wording m
 - PT-S6-02 (`judgment=required`)
 
 ## Risks
-- R1: Row still carries stale OC divergence text from a prior implementation phase; future auditors could over-attribute drift unless row is remediated.
-- R2: S6 ordering parity depends on Vivarium runtime scheduling semantics not fully encoded in `karr_composite.py`; claim PT-S6-02 is evidence-backed but marked discretionary.
+- R1: Future changes to the compartment authority, request calculator, or RNG seeding must stale this adjudication and the L2.2 evidence bundle.
+- R2: L2.2 validates isolated process distributions; chassis allocation and same-tick integration remain independently guarded by C12 and L2.4.
+
+## Current independent evidence acceptance - 2026-10-19
+
+`PTRANS-COMPLETE-ATTESTATION` and `PTRANS-SAMPLE-ISOLATION` are independently
+ACCEPTED at reviewed source `65df71c26553f42dd95759b948de42647987bf68`.
+The producer/algorithm findings above remain resolved; they were not reopened.
+Complete independent commands, numeric proof, source inventories, ownership
+witnesses and preservation receipts are published under
+`docs/phase_f/pre_l25/acceptance/ProteinTranslocation/`. `VERDICT.json` records
+the separate finding verdicts; `controls_retry1.xml` records 27 PASS with no
+failures, errors, skips or xfails.
+
+The fresh full registered gate used 50 distinct seeds, 100 ticks, B1000 and
+all 2,892 compartment positions. Independent Karr-null recalibration and
+numeric re-scoring give PASS; primary monomer W1 is zero. This is not a claim
+that saved full OC tensors exist or that the reviewer reran the full campaign.
+There is no retained deterministic-convergence/H12 demotion in this packet.
+
+All 64 consumed records, including all 50 seed files and all runtime/parameter
+inputs, were independently rehashed against the actual loader descriptors and
+accepted population. Constructor authority reads, 12 registered source hashes,
+sidecar/sentinel bindings and all 5,000 allocator summaries are verified.
+Strict and portable candidate audits both have integrity OK. The four
+unchanged publication assertions were executed against the explicit new
+candidate bundle, not the stale historical tracked publication.
+
+Actual repeated/interleaved active Design-A samples have six distinct public
+execution owners with matching initial per-sample streams and full-width
+outputs, even with advanced metadata and poisoned after/hint inputs. No
+execution reset or cache clearing hid reuse. The unchanged contiguous legacy
+100-tick replay instead retains one owner and its persistent stream. Original
+sources and prior outputs are unchanged. The eight published compact files
+are byte-identical to the independently accepted candidate.

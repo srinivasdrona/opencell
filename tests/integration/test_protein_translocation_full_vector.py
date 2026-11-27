@@ -3,8 +3,6 @@ from __future__ import annotations
 import sys
 from pathlib import Path
 
-import pytest
-
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
 if str(_REPO_ROOT) not in sys.path:
@@ -52,12 +50,17 @@ def test_protein_translocation_signed_deltas_cover_full_vector() -> None:
     h2o_need = atp_need + gtp_need
     assert gtp_need > 0
 
+    _COMPARTMENTS = ("c", "d", "e", "m", "tc", "tm")
     state = {
         "substrates": {wid: 0.0 for wid in process.substrate_wids},
         "protein": {
-            "counts": {wid: 0.0 for wid in process.protein_count_wids},
-            "unprocessed_counts": {wid: 0.0 for wid in process.translocatable_wids},
-            "location": {wid: "cytoplasm" for wid in process.translocatable_wids},
+            "counts": {"MG_297_MONOMER": 0.0},
+            "compartment_counts": {
+                "processed_i": {
+                    wid: {c: 0.0 for c in _COMPARTMENTS}
+                    for wid in process.translocatable_wids
+                }
+            },
         },
         "complex": {"counts": {wid: 0.0 for wid in process.complex_count_wids}},
         "requests": {
@@ -75,8 +78,7 @@ def test_protein_translocation_signed_deltas_cover_full_vector() -> None:
     state["substrates_allocated"][process.name][process.atp_wid] = float(atp_need)
     state["substrates_allocated"][process.name][process.gtp_wid] = float(gtp_need)
     state["substrates_allocated"][process.name][process.h2o_wid] = float(h2o_need)
-    state["protein"]["counts"][target_wid] = 1.0
-    state["protein"]["unprocessed_counts"][target_wid] = 1.0
+    state["protein"]["compartment_counts"]["processed_i"][target_wid]["c"] = 1.0
     _set_enzyme_count(state, process, process.srp_wid, 1.0)
     _set_enzyme_count(state, process, process.srp_receptor_wid, 1.0)
     _set_enzyme_count(state, process, process.translocase_atpase_wid, 1.0)
@@ -93,7 +95,16 @@ def test_protein_translocation_signed_deltas_cover_full_vector() -> None:
     assert delta[process.pi_wid] > 0.0
     assert delta[process.h_wid] > 0.0
 
-    assert delta[process.adp_wid] == pytest.approx(float(atp_need))
-    assert delta[process.gdp_wid] == pytest.approx(float(gtp_need))
-    assert delta[process.pi_wid] == pytest.approx(float(h2o_need))
-    assert delta[process.h_wid] == pytest.approx(float(h2o_need))
+    assert delta[process.atp_wid] == -float(atp_need)
+    assert delta[process.gtp_wid] == -float(gtp_need)
+    assert delta[process.h2o_wid] == -float(h2o_need)
+    assert delta[process.adp_wid] == float(atp_need)
+    assert delta[process.gdp_wid] == float(gtp_need)
+    assert delta[process.pi_wid] == float(h2o_need)
+    assert delta[process.h_wid] == float(h2o_need)
+
+    comp_delta = update["protein"]["compartment_counts"]["processed_i"][target_wid]
+    assert comp_delta["c"] == -1.0
+    dest = process.destination_by_wid[target_wid]
+    dest_key = "m" if dest in {"membrane", "m"} else ("e" if dest in {"extracellular", "e"} else dest)
+    assert comp_delta[dest_key] == 1.0

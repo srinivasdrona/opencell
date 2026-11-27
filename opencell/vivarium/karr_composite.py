@@ -42,12 +42,20 @@ from opencell.m2 import transcription as tx
 from opencell.m2 import transcription_v2 as tx_v2
 from opencell.m3 import translation as tl
 from opencell.m3 import translation_v2 as tl_v2
+from opencell.state.chromosome_store import CHROMOSOME_RAND_STREAM_KEY
+from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
 from opencell.vivarium.karr_allocation_step import KarrAllocationStep
 from opencell.vivarium.karr_cell_cycle_coordinator import CellCycleCoordinator
 from opencell.vivarium.karr_chromosome_condensation import (
+    PHASE_STORE_KEY,
+    KarrChromosomeCondensationEvolutionStep,
     KarrChromosomeCondensationProcess,
+    KarrChromosomeCondensationRequestProcess,
 )
-from opencell.vivarium.karr_chromosome_segregation import KarrChromosomeSegregationProcess
+from opencell.vivarium.karr_chromosome_segregation import (
+    KarrChromosomeSegregationEvolutionStep,
+    KarrChromosomeSegregationProcess,
+)
 from opencell.vivarium.karr_cytokinesis import KarrCytokinesisProcess
 from opencell.vivarium.karr_dna_damage import KarrDNADamageProcess
 from opencell.vivarium.karr_dna_repair import KarrDNARepairProcess
@@ -63,9 +71,18 @@ from opencell.vivarium.karr_observability_step import KarrObservabilityStep
 from opencell.vivarium.karr_protein_activation import KarrProteinActivationProcess
 from opencell.vivarium.karr_protein_decay_light import ProteinDecayLightProcess
 from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
-from opencell.vivarium.karr_protein_modification import KarrProteinModificationProcess
+from opencell.vivarium.karr_protein_modification import (
+    PM_PHASE_STORE_KEY,
+    KarrProteinModificationEvolutionStep,
+    KarrProteinModificationRequestProcess,
+)
 from opencell.vivarium.karr_protein_processing_i import KarrProteinProcessingIProcess
-from opencell.vivarium.karr_protein_processing_ii import KarrProteinProcessingIIProcess
+from opencell.vivarium.karr_protein_processing_ii import (
+    PP2_PHASE_STORE_KEY,
+    KarrProteinProcessingIIEvolutionStep,
+    KarrProteinProcessingIIProcess,
+    KarrProteinProcessingIIRequestProcess,
+)
 from opencell.vivarium.karr_protein_translocation import KarrProteinTranslocationProcess
 from opencell.vivarium.karr_replication import KarrReplicationProcess
 from opencell.vivarium.karr_replication_initiation import KarrReplicationInitiationProcess
@@ -83,8 +100,16 @@ from opencell.vivarium.karr_request_calculators import (
 )
 from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
 from opencell.vivarium.karr_rna_decay import RnaDecayLightProcess
-from opencell.vivarium.karr_rna_modification import KarrRNAModificationProcess
-from opencell.vivarium.karr_rna_processing import KarrRNAProcessingProcess
+from opencell.vivarium.karr_rna_modification import (
+    RNA_MODIFICATION_PHASE,
+    KarrRNAModificationEvolutionStep,
+    KarrRNAModificationRequestProcess,
+)
+from opencell.vivarium.karr_rna_processing import (
+    RNA_PROCESSING_PHASE,
+    KarrRNAProcessingEvolutionStep,
+    KarrRNAProcessingRequestProcess,
+)
 from opencell.vivarium.karr_terminal_organelle_assembly import (
     KarrTerminalOrganelleAssemblyProcess,
 )
@@ -98,6 +123,21 @@ from opencell.vivarium.karr_translation import KarrTranslationProcess
 from opencell.vivarium.karr_translation_v2 import KarrTranslationV2Process
 from opencell.vivarium.karr_translation_v3 import KarrTranslationV3Process
 from opencell.vivarium.karr_trna_aminoacylation import KarrTRNAAminoacylationProcess
+from opencell.vivarium.protein_flat_projection_step import ProteinFlatProjectionStep
+from opencell.vivarium.protein_state import (
+    MIGRATED_WIDS,
+    initial_compartment_counts,
+    load_mature_seed_from_canonical_fixture,
+)
+
+# Builders below spell the leaf key as a literal string (not this imported
+# name) so a static AST scan of this module can find the constant directly
+# inside each builder's function body (see
+# tests/vivarium/test_shared_chromosome_state_stage_ab.py::
+# test_stage_ab_composite_builders_initial_state_chromosome_rand_stream).
+# This assertion guards against the literal ever drifting from the
+# authoritative module constant.
+assert CHROMOSOME_RAND_STREAM_KEY == "_shared_rand_stream_state"
 
 if TYPE_CHECKING:
     from vivarium.core.engine import Engine
@@ -128,6 +168,93 @@ def _seed_required_complex_wids(
         if wid not in defaults:
             raise KeyError(f"Missing D2-stub complex default for required WID '{wid}'")
         complex_counts.setdefault(wid, float(defaults[wid]))
+
+
+def _seed_or_verify_count(
+    counts: dict[str, float],
+    *,
+    wid: str,
+    value: float,
+    store_label: str,
+) -> None:
+    """Seed ``wid`` with a source-derived value, or verify an existing duplicate matches it."""
+    existing = counts.get(wid)
+    if existing is None:
+        counts[wid] = float(value)
+    elif float(existing) != float(value):
+        raise ValueError(
+            f"Incompatible duplicate seed for {store_label}['{wid}']: "
+            f"existing={float(existing)} vs ChromosomeCondensation source-derived={float(value)}"
+        )
+
+
+def _seeded_chromosome_rand_stream_state(seed: int) -> np.ndarray:
+    """Seed-once-at-init shared chromosome RNG leaf value (dec-007 Decision
+    3, DC-2/§4.3): ``[seed, mcg_state]`` for a freshly-constructed
+    ``ChromosomeStateRandStream(seed)``, as an int64 shape-``(2,)`` array.
+    Composite builders call this exactly once, at initial-state
+    construction, to seed ``initial_state['chromosome']
+    ['_shared_rand_stream_state']`` -- the ONLY place production is
+    permitted to seed an absent key (``next_update`` never reseeds)."""
+    stream = ChromosomeStateRandStream(int(seed))
+    state = stream.get_state()
+    return np.array([state["seed"], state["mcg_state"]], dtype=np.int64)
+
+
+class _CallableInitialStateDict(dict):
+    """A plain ``dict`` that is ALSO callable, delegating the call to a
+    captured bound method.
+
+    ``vivarium.core.composer.Composite.initial_state`` is a METHOD (not an
+    attribute) that merges the composite's ``state`` with any override
+    passed in and fills in schema defaults
+    (``tests/vivarium/test_karr_protein_modification.py``'s
+    ``test_chassis_seeded_mg109_complex_enzyme_drives_mg109_only_targets``
+    calls it exactly this way: ``composite.initial_state()``). The Stage
+    A+B contract additionally requires ``getattr(chassis, "initial_state",
+    None)`` to be a plain ``dict`` (so callers can read
+    ``chassis.initial_state["chromosome"][...]`` directly without calling
+    it, matching the ``Engine``-returning builders' plain-dict
+    ``.initial_state`` attribute). Both are satisfied simultaneously by
+    installing one of these in place of the bound method: attribute access
+    sees a real ``dict`` (this object IS one), while calling it
+    (``chassis.initial_state()``) forwards verbatim to the ORIGINAL bound
+    method, so every pre-existing call site keeps its exact prior
+    behavior."""
+
+    def __init__(self, data: dict[str, Any], bound_method: Any) -> None:
+        super().__init__(data)
+        self._bound_method = bound_method
+
+    def __call__(self, *args: Any, **kwargs: Any) -> Any:
+        return self._bound_method(*args, **kwargs)
+
+
+def _seed_condensation_enzyme_state(
+    *,
+    complex_counts: dict[str, float],
+    bound_enzymes: dict[str, float],
+    condensation_proc: KarrChromosomeCondensationProcess,
+) -> None:
+    """Seed ChromosomeCondensation's free/bound SMC state from its fixture and trace anchor."""
+    _seed_or_verify_count(
+        complex_counts,
+        wid=condensation_proc.smc_wid,
+        value=float(condensation_proc._fixture_enzyme_smc),
+        store_label="complex.counts",
+    )
+    _seed_or_verify_count(
+        complex_counts,
+        wid=condensation_proc.smc_adp_wid,
+        value=float(condensation_proc._fixture_enzyme_smc_adp),
+        store_label="complex.counts",
+    )
+    _seed_or_verify_count(
+        bound_enzymes,
+        wid=condensation_proc.smc_adp_wid,
+        value=float(condensation_proc.trace_anchor_bound),
+        store_label="boundEnzymes",
+    )
 
 
 def _load_karr_initial_substrate_counts(
@@ -173,6 +300,42 @@ def _load_d2_mature_complex_counts_snapshot() -> dict[str, float]:
     return {
         wid: float(d2_stub._complex_counts_schema[wid]["_default"]) for wid in d2_stub.d2_owned_wids
     }
+
+
+def _seed_protein_activation_shared_state(
+    initial_state: dict[str, Any],
+    process: KarrProteinActivationProcess,
+) -> None:
+    canonical = process.canonical_state()
+    for store_name in ("protein", "complex"):
+        target_store = initial_state.setdefault(store_name, {})
+        source_store = canonical[store_name]
+        target_store.setdefault("counts", {}).update(source_store["counts"])
+        for branch_name, branch_state in source_store.items():
+            if branch_name == "counts":
+                continue
+            if branch_name == "activity":
+                target_store.setdefault("activity", {}).update(branch_state)
+            else:
+                target_store[branch_name] = deepcopy(branch_state)
+    initial_state["stimuli"] = dict(canonical["stimuli"])
+    initial_state["geometry"] = dict(canonical["geometry"])
+
+
+def _new_protein_flat_projection_steps() -> tuple[ProteinFlatProjectionStep, ProteinFlatProjectionStep]:
+    """Construct the Stage-1a `protein_flat_projection_pre`/`_post` Step
+    instances (design D5). `pre` is registered with an empty `flow` entry
+    (layer 0); `post` is registered with a `flow` entry depending on every
+    AUTH-W Step present in the calling builder. Behavior-neutral: with
+    `opencell.vivarium.protein_state.MIGRATED_WIDS` empty in Stage 1a,
+    neither instance reads or writes any leaf (see
+    `protein_flat_projection_step.py`).
+    """
+    pre_step = ProteinFlatProjectionStep({})
+    pre_step.name = "protein_flat_projection_pre"
+    post_step = ProteinFlatProjectionStep({})
+    post_step.name = "protein_flat_projection_post"
+    return pre_step, post_step
 
 
 CHASSIS_V6_EXPECTED_PROCESS_KEYS: tuple[str, ...] = (
@@ -791,6 +954,9 @@ def build_karr_chassis_v3(
     req_protein_translocation = RequestCalculatorPTransloc(
         {"protein_translocation_proc": p_trans_proc}
     )
+    protein_flat_projection_pre, protein_flat_projection_post = (
+        _new_protein_flat_projection_steps()
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -883,6 +1049,7 @@ def build_karr_chassis_v3(
         "request_calculator_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "karr_allocation_step": {
@@ -890,6 +1057,9 @@ def build_karr_chassis_v3(
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
         },
+        # Stage 1a (design D5): behavior-neutral flat-projection Steps.
+        "protein_flat_projection_pre": {"protein": ("protein",)},
+        "protein_flat_projection_post": {"protein": ("protein",)},
     }
 
     initial_state: dict[str, Any] = {
@@ -902,7 +1072,9 @@ def build_karr_chassis_v3(
         "rna": {"counts": rna_init},
         "protein": {
             "counts": prot_init,
-            "location": {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids},
+            "compartment_counts": initial_compartment_counts(
+                seed_mature=load_mature_seed_from_canonical_fixture()
+            ),
         },
         "complex": {"counts": complex_counts},
     }
@@ -932,6 +1104,8 @@ def build_karr_chassis_v3(
             "request_calculator_translation": req_translation,
             "request_calculator_protein_translocation": req_protein_translocation,
             "karr_allocation_step": allocation_step,
+            "protein_flat_projection_pre": protein_flat_projection_pre,
+            "protein_flat_projection_post": protein_flat_projection_post,
         },
         flow={
             "request_calculator_d2": [],
@@ -939,7 +1113,7 @@ def build_karr_chassis_v3(
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
-            "request_calculator_protein_translocation": [],
+            "request_calculator_protein_translocation": [("protein_flat_projection_pre",)],
             "karr_allocation_step": [
                 ("request_calculator_d2",),
                 ("request_calculator_pd",),
@@ -948,6 +1122,8 @@ def build_karr_chassis_v3(
                 ("request_calculator_translation",),
                 ("request_calculator_protein_translocation",),
             ],
+            "protein_flat_projection_pre": [],
+            "protein_flat_projection_post": [("karr_allocation_step",)],
         },
         topology=topology,
         initial_state=initial_state,
@@ -1050,11 +1226,16 @@ def build_karr_chassis_v4(
         for wid in tx_reg_proc.tf_wids
         if getattr(tx_reg_proc, "_tf_wid_source", {}).get(wid) == "complex"
     )
-    rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
-    rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
+    rna_proc = KarrRNAProcessingEvolutionStep({"time_step": time_step_s})
+    rna_request = KarrRNAProcessingRequestProcess({"time_step": time_step_s})
+    rna_mod_proc = KarrRNAModificationEvolutionStep({"time_step": time_step_s})
+    rna_mod_request = KarrRNAModificationRequestProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
     pp2_proc = KarrProteinProcessingIIProcess({"time_step": time_step_s})
-    p_mod_proc = KarrProteinModificationProcess({"time_step": time_step_s})
+    pp2_request_proc = KarrProteinProcessingIIRequestProcess({"time_step": time_step_s})
+    pp2_evolution_step = KarrProteinProcessingIIEvolutionStep({"processing_process": pp2_proc})
+    p_mod_proc = KarrProteinModificationRequestProcess({"time_step": time_step_s})
+    p_mod_evolution = KarrProteinModificationEvolutionStep({"modification_process": p_mod_proc})
     p_fold_proc = KarrProteinFoldingProcess({"time_step": time_step_s})
     p_trans_proc = KarrProteinTranslocationProcess({"time_step": time_step_s})
     p_activation_proc = KarrProteinActivationProcess({"time_step": time_step_s})
@@ -1167,6 +1348,9 @@ def build_karr_chassis_v4(
     req_protein_translocation = RequestCalculatorPTransloc(
         {"protein_translocation_proc": p_trans_proc}
     )
+    protein_flat_projection_pre, protein_flat_projection_post = (
+        _new_protein_flat_projection_steps()
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -1207,13 +1391,20 @@ def build_karr_chassis_v4(
         for wid in sorted(
             set(pp1_proc.unprocessed_monomer_wids) | set(pp2_proc.unprocessed_monomer_wids)
         )
+        if wid not in MIGRATED_WIDS
     }
-    protein_unfolded_init = {wid: 0.0 for wid in p_fold_proc.unfolded_monomer_wids}
+    protein_unfolded_init = {
+        wid: 0.0 for wid in p_fold_proc.unfolded_monomer_wids if wid not in MIGRATED_WIDS
+    }
     protein_unmodified_init = {
         wid: float(prot_init.get(wid, 0.0)) for wid in p_mod_proc.unmodified_monomer_wids
     }
-    protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
-    protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
+    protein_processed_init = {
+        wid: 0.0 for wid in pp2_proc.processed_monomer_wids if wid not in MIGRATED_WIDS
+    }
+    protein_signal_seq_init = {
+        wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids if wid not in MIGRATED_WIDS
+    }
     protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
     protein_enzyme_init = {
         wid: float(prot_init.get(wid, 0.0))
@@ -1221,7 +1412,6 @@ def build_karr_chassis_v4(
     }
     protein_enzyme_init.pop("MG_106_DIMER", None)
     protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
-    protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
     mature_complex_counts = _load_d2_mature_complex_counts_snapshot()
@@ -1272,8 +1462,17 @@ def build_karr_chassis_v4(
             ",".join(missing_tx_reg_complex_wids),
         )
     zero_seeded_regulatory_tfs: list[str] = []
+    activation_owned_complex_wids = {
+        wid
+        for wid in p_activation_proc.regulated_protein_wids
+        if p_activation_proc.store_by_wid[wid] == "complex"
+    }
     for tf_i, tf_wid in enumerate(tx_reg_proc.tf_wids):
-        if tf_wid not in tx_reg_tf_complex_wids or tf_wid not in mature_complex_counts:
+        if (
+            tf_wid not in tx_reg_tf_complex_wids
+            or tf_wid not in mature_complex_counts
+            or tf_wid in activation_owned_complex_wids
+        ):
             continue
         has_regulatory_target = bool(
             np.any(tx_reg_proc.tf_promoter_affinity[tf_i] > 0.0)
@@ -1350,6 +1549,7 @@ def build_karr_chassis_v4(
             "complex": ("complex",),
             "tf_binding": ("tf_binding",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
+            "chromosome": ("chromosome",),
         },
         "karr_rna_processing": {
             "substrates": ("substrates",),
@@ -1358,7 +1558,9 @@ def build_karr_chassis_v4(
             "complex": ("complex",),
             "requests": ("_internal_requests_rna_proc",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (RNA_PROCESSING_PHASE,),
         },
+        "karr_rna_processing_request": {"phase": (RNA_PROCESSING_PHASE,)},
         "karr_rna_modification": {
             "substrates": ("substrates",),
             "rna": ("rna",),
@@ -1366,7 +1568,9 @@ def build_karr_chassis_v4(
             "complex": ("complex",),
             "requests": ("_internal_requests_rna_mod",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (RNA_MODIFICATION_PHASE,),
         },
+        "karr_rna_modification_request": {"phase": (RNA_MODIFICATION_PHASE,)},
         "karr_protein_processing_i": {
             "substrates": ("substrates",),
             "protein": ("protein",),
@@ -1375,10 +1579,14 @@ def build_karr_chassis_v4(
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_processing_ii": {
+            "phase": (PP2_PHASE_STORE_KEY,),
+        },
+        "karr_protein_processing_ii_evolution": {
             "substrates": ("substrates",),
             "protein": ("protein",),
             "requests": ("_internal_requests_pp2",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (PP2_PHASE_STORE_KEY,),
         },
         "karr_protein_modification": {
             "substrates": ("substrates",),
@@ -1386,6 +1594,14 @@ def build_karr_chassis_v4(
             "complex": ("complex",),
             "requests": ("_internal_requests_pmod",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (PM_PHASE_STORE_KEY,),
+        },
+        "karr_protein_modification_evolution": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "complex": ("complex",),
+            "substrates_allocated": ("substrates_allocated",),
+            "phase": (PM_PHASE_STORE_KEY,),
         },
         "karr_protein_folding": {
             "substrates": ("substrates",),
@@ -1401,9 +1617,10 @@ def build_karr_chassis_v4(
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_activation": {
-            "substrates": ("activation_substrates",),
-            "stimuli": ("stimuli",),
             "protein": ("protein",),
+            "complex": ("complex",),
+            "stimuli": ("stimuli",),
+            "geometry": ("geometry",),
         },
         "karr_ftsz_polymerization": {
             "cell": ("cell",),
@@ -1434,11 +1651,14 @@ def build_karr_chassis_v4(
         "request_calculator_rna_pathway": {
             "substrates": ("substrates",),
             "rna": ("rna",),
+            "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_protein_pathway": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_metabolism": {
@@ -1455,6 +1675,7 @@ def build_karr_chassis_v4(
         "request_calculator_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "karr_allocation_step": {
@@ -1462,6 +1683,9 @@ def build_karr_chassis_v4(
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
         },
+        # Stage 1a (design D5): behavior-neutral flat-projection Steps.
+        "protein_flat_projection_pre": {"protein": ("protein",)},
+        "protein_flat_projection_post": {"protein": ("protein",)},
     }
 
     initial_state: dict[str, Any] = {
@@ -1485,15 +1709,17 @@ def build_karr_chassis_v4(
             "signal_sequence_counts": protein_signal_seq_init,
             "modified_counts": protein_modified_init,
             "enzyme_counts": protein_enzyme_init,
-            "location": protein_location_init,
             "activity": protein_activity_init,
+            "compartment_counts": initial_compartment_counts(
+                seed_mature=load_mature_seed_from_canonical_fixture()
+            ),
         },
         "complex": {"counts": complex_counts},
-        "stimuli": {wid: 0.0 for wid in p_activation_proc.stimuli_wids},
-        "activation_substrates": {
-            wid: float(initial_substrates.get(wid, 0.0)) for wid in p_activation_proc.substrate_wids
-        },
+        "stimuli": {},
         "tx_rate_fold_change": tx_rate_fold_init,
+        "chromosome": {
+            "_shared_rand_stream_state": _seeded_chromosome_rand_stream_state(0),
+        },
         "cell": {
             "ftsz_ring_count": float(ftsz_proc.initial_ring_count),
             "ftsz_ring_complete": bool(
@@ -1502,6 +1728,7 @@ def build_karr_chassis_v4(
             ),
         },
     }
+    _seed_protein_activation_shared_state(initial_state, p_activation_proc)
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
         from opencell.vivarium.karr_metabolism import _CYTOSOL_COMPARTMENT_0
@@ -1522,9 +1749,11 @@ def build_karr_chassis_v4(
             "karr_ribosome_assembly": ribasm_proc,
             "karr_transcriptional_regulation": tx_reg_proc,
             "karr_rna_processing": rna_proc,
+            "karr_rna_processing_request": rna_request,
             "karr_rna_modification": rna_mod_proc,
+            "karr_rna_modification_request": rna_mod_request,
             "karr_protein_processing_i": pp1_proc,
-            "karr_protein_processing_ii": pp2_proc,
+            "karr_protein_processing_ii": pp2_request_proc,
             "karr_protein_modification": p_mod_proc,
             "karr_protein_folding": p_fold_proc,
             "karr_protein_translocation": p_trans_proc,
@@ -1543,18 +1772,26 @@ def build_karr_chassis_v4(
             "request_calculator_translation": req_translation,
             "request_calculator_protein_translocation": req_protein_translocation,
             "karr_allocation_step": allocation_step,
+            "karr_protein_processing_ii_evolution": pp2_evolution_step,
+            "karr_protein_modification_evolution": p_mod_evolution,
+            "protein_flat_projection_pre": protein_flat_projection_pre,
+            "protein_flat_projection_post": protein_flat_projection_post,
         },
         flow={
             "request_calculator_d2": [],
             "request_calculator_pd": [],
-            "request_calculator_ribasm": [],
+            "request_calculator_ribasm": [("protein_flat_projection_pre",)],
             "request_calculator_trna": [],
             "request_calculator_rna_pathway": [],
-            "request_calculator_protein_pathway": [],
+            "karr_rna_modification": [("karr_allocation_step",)],
+            "karr_rna_modification_request": [],
+            "karr_rna_processing": [("karr_allocation_step",)],
+            "karr_rna_processing_request": [],
+            "request_calculator_protein_pathway": [("protein_flat_projection_pre",)],
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
-            "request_calculator_protein_translocation": [],
+            "request_calculator_protein_translocation": [("protein_flat_projection_pre",)],
             "karr_allocation_step": [
                 ("request_calculator_d2",),
                 ("request_calculator_pd",),
@@ -1566,6 +1803,13 @@ def build_karr_chassis_v4(
                 ("request_calculator_transcription",),
                 ("request_calculator_translation",),
                 ("request_calculator_protein_translocation",),
+            ],
+            "protein_flat_projection_pre": [],
+            "karr_protein_processing_ii_evolution": [("karr_allocation_step",)],
+            "karr_protein_modification_evolution": [("karr_allocation_step",)],
+            "protein_flat_projection_post": [
+                ("karr_protein_processing_ii_evolution",),
+                ("karr_protein_modification_evolution",),
             ],
         },
         topology=topology,
@@ -1587,7 +1831,7 @@ def build_karr_chassis_v5(
     time_step_s: float = 1.0,
     emit_step_s: float | None = None,
     condition: int = 1,
-    dynamic_bounds: bool = False,
+    dynamic_bounds: bool = True,
     enable_pool_replenishment: bool = False,
     seed_from_fixture: bool = True,
     karr_parity_mode: bool = True,
@@ -1673,11 +1917,16 @@ def build_karr_chassis_v5(
         for wid in tx_reg_proc.tf_wids
         if getattr(tx_reg_proc, "_tf_wid_source", {}).get(wid) == "complex"
     )
-    rna_proc = KarrRNAProcessingProcess({"time_step": time_step_s})
-    rna_mod_proc = KarrRNAModificationProcess({"time_step": time_step_s})
+    rna_proc = KarrRNAProcessingEvolutionStep({"time_step": time_step_s})
+    rna_request = KarrRNAProcessingRequestProcess({"time_step": time_step_s})
+    rna_mod_proc = KarrRNAModificationEvolutionStep({"time_step": time_step_s})
+    rna_mod_request = KarrRNAModificationRequestProcess({"time_step": time_step_s})
     pp1_proc = KarrProteinProcessingIProcess({"time_step": time_step_s})
     pp2_proc = KarrProteinProcessingIIProcess({"time_step": time_step_s})
-    p_mod_proc = KarrProteinModificationProcess({"time_step": time_step_s})
+    pp2_request_proc = KarrProteinProcessingIIRequestProcess({"time_step": time_step_s})
+    pp2_evolution_step = KarrProteinProcessingIIEvolutionStep({"processing_process": pp2_proc})
+    p_mod_proc = KarrProteinModificationRequestProcess({"time_step": time_step_s})
+    p_mod_evolution = KarrProteinModificationEvolutionStep({"modification_process": p_mod_proc})
     p_fold_proc = KarrProteinFoldingProcess({"time_step": time_step_s})
     p_trans_proc = KarrProteinTranslocationProcess({"time_step": time_step_s})
     p_activation_proc = KarrProteinActivationProcess({"time_step": time_step_s})
@@ -1699,8 +1948,14 @@ def build_karr_chassis_v5(
             "process_rng_ledger_path": False,
         }
     )
-    condensation_proc = KarrChromosomeCondensationProcess({"time_step": time_step_s})
+    condensation_proc = KarrChromosomeCondensationRequestProcess({"time_step": time_step_s})
+    condensation_evolution_step = KarrChromosomeCondensationEvolutionStep(
+        {"condensation_process": condensation_proc}
+    )
     segregation_proc = KarrChromosomeSegregationProcess({"time_step": time_step_s})
+    segregation_evolution_step = KarrChromosomeSegregationEvolutionStep(
+        {"segregation_process": segregation_proc}
+    )
     dna_damage_proc = KarrDNADamageProcess({"time_step": time_step_s})
     dna_repair_proc = KarrDNARepairProcess({"time_step": time_step_s})
     # Geometry.volume is shared into FtsZ below, but this chassis currently
@@ -1842,6 +2097,9 @@ def build_karr_chassis_v5(
     req_protein_translocation = RequestCalculatorPTransloc(
         {"protein_translocation_proc": p_trans_proc}
     )
+    protein_flat_projection_pre, protein_flat_projection_post = (
+        _new_protein_flat_projection_steps()
+    )
 
     rxn_ids = m1_model.rxn_wcm_ids_645
     m1_sub_ids = [str(wid) for wid in m1_model.raw["ids"]["substrate_wcm_585"]]
@@ -1904,18 +2162,30 @@ def build_karr_chassis_v5(
         # Ensure every translation monomer is explicitly initialized so ports-schema
         # defaults cannot reintroduce non-zero counts_mature values.
         unprocessed_monomer_wids |= set(m3_model.protein_wcm_ids)
+    # Design D1/C6: every translocatable WID is migrated (Stage 2); its
+    # nascent pool lives at `compartment_counts.nascent`, not this legacy
+    # queue -- seeding it here would resurrect a leaf no reader consults
+    # (confirmed empirically: `build_karr_chassis_v6`'s realized store had
+    # `unprocessed_counts` keys for every then-migrated WID before this fix).
+    unprocessed_monomer_wids -= set(MIGRATED_WIDS)
     protein_unprocessed_init = {
         wid: float(protein_unprocessed_seed.get(wid, 0.0))
         for wid in sorted(unprocessed_monomer_wids)
     }
     protein_unfolded_init = {
-        wid: float(prot_init.get(wid, 0.0)) for wid in p_fold_proc.unfolded_monomer_wids
+        wid: float(prot_init.get(wid, 0.0))
+        for wid in p_fold_proc.unfolded_monomer_wids
+        if wid not in MIGRATED_WIDS
     }
     protein_unmodified_init = {
         wid: float(prot_init.get(wid, 0.0)) for wid in p_mod_proc.unmodified_monomer_wids
     }
-    protein_processed_init = {wid: 0.0 for wid in pp2_proc.processed_monomer_wids}
-    protein_signal_seq_init = {wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids}
+    protein_processed_init = {
+        wid: 0.0 for wid in pp2_proc.processed_monomer_wids if wid not in MIGRATED_WIDS
+    }
+    protein_signal_seq_init = {
+        wid: 0.0 for wid in pp2_proc.signal_sequence_monomer_wids if wid not in MIGRATED_WIDS
+    }
     protein_modified_init = {wid: 0.0 for wid in p_mod_proc.modified_monomer_wids}
     protein_enzyme_init = {
         wid: float(prot_init.get(wid, 0.0))
@@ -1923,7 +2193,6 @@ def build_karr_chassis_v5(
     }
     protein_enzyme_init.pop("MG_106_DIMER", None)
     protein_enzyme_init["MG_172_MONOMER"] = 38.0  # from PP1_flat.mat enzymes column
-    protein_location_init = {wid: "cytoplasm" for wid in p_trans_proc.translocatable_wids}
     protein_activity_init = {wid: 0 for wid in p_activation_proc.regulated_protein_wids}
 
     mature_complex_counts = _load_d2_mature_complex_counts_snapshot()
@@ -1985,8 +2254,17 @@ def build_karr_chassis_v5(
             ",".join(missing_tx_reg_complex_wids),
         )
     zero_seeded_regulatory_tfs: list[str] = []
+    activation_owned_complex_wids = {
+        wid
+        for wid in p_activation_proc.regulated_protein_wids
+        if p_activation_proc.store_by_wid[wid] == "complex"
+    }
     for tf_i, tf_wid in enumerate(tx_reg_proc.tf_wids):
-        if tf_wid not in tx_reg_tf_complex_wids or tf_wid not in mature_complex_counts:
+        if (
+            tf_wid not in tx_reg_tf_complex_wids
+            or tf_wid not in mature_complex_counts
+            or tf_wid in activation_owned_complex_wids
+        ):
             continue
         has_regulatory_target = bool(
             np.any(tx_reg_proc.tf_promoter_affinity[tf_i] > 0.0)
@@ -2013,6 +2291,13 @@ def build_karr_chassis_v5(
         complex_counts[supercoil_proc.gyrase_wid] = float(supercoil_init["free_gyrase_count"])
     else:
         prot_init[supercoil_proc.gyrase_wid] = float(supercoil_init["free_gyrase_count"])
+
+    bound_enzymes_init = dict(supercoil_init["boundEnzymes"])
+    _seed_condensation_enzyme_state(
+        complex_counts=complex_counts,
+        bound_enzymes=bound_enzymes_init,
+        condensation_proc=condensation_proc,
+    )
 
     m1_topo = {
         "metabolic_reaction": ("metabolic_reaction",),
@@ -2073,6 +2358,7 @@ def build_karr_chassis_v5(
             "complex": ("complex",),
             "tf_binding": ("tf_binding",),
             "tx_rate_fold_change": ("tx_rate_fold_change",),
+            "chromosome": ("chromosome",),
         },
         "karr_rna_processing": {
             "substrates": ("substrates",),
@@ -2081,7 +2367,9 @@ def build_karr_chassis_v5(
             "complex": ("complex",),
             "requests": ("_internal_requests_rna_proc",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (RNA_PROCESSING_PHASE,),
         },
+        "karr_rna_processing_request": {"phase": (RNA_PROCESSING_PHASE,)},
         "karr_rna_modification": {
             "substrates": ("substrates",),
             "rna": ("rna",),
@@ -2089,7 +2377,9 @@ def build_karr_chassis_v5(
             "complex": ("complex",),
             "requests": ("_internal_requests_rna_mod",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (RNA_MODIFICATION_PHASE,),
         },
+        "karr_rna_modification_request": {"phase": (RNA_MODIFICATION_PHASE,)},
         "karr_protein_processing_i": {
             "substrates": ("substrates",),
             "protein": ("protein",),
@@ -2098,10 +2388,14 @@ def build_karr_chassis_v5(
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_processing_ii": {
+            "phase": (PP2_PHASE_STORE_KEY,),
+        },
+        "karr_protein_processing_ii_evolution": {
             "substrates": ("substrates",),
             "protein": ("protein",),
             "requests": ("_internal_requests_pp2",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (PP2_PHASE_STORE_KEY,),
         },
         "karr_protein_modification": {
             "substrates": ("substrates",),
@@ -2109,6 +2403,14 @@ def build_karr_chassis_v5(
             "complex": ("complex",),
             "requests": ("_internal_requests_pmod",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (PM_PHASE_STORE_KEY,),
+        },
+        "karr_protein_modification_evolution": {
+            "substrates": ("substrates",),
+            "protein": ("protein",),
+            "complex": ("complex",),
+            "substrates_allocated": ("substrates_allocated",),
+            "phase": (PM_PHASE_STORE_KEY,),
         },
         "karr_protein_folding": {
             "substrates": ("substrates",),
@@ -2124,9 +2426,10 @@ def build_karr_chassis_v5(
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_protein_activation": {
-            "substrates": ("activation_substrates",),
-            "stimuli": ("stimuli",),
             "protein": ("protein",),
+            "complex": ("complex",),
+            "stimuli": ("stimuli",),
+            "geometry": ("geometry",),
         },
         "karr_replication_initiation": {
             "chromosome": ("chromosome",),
@@ -2152,16 +2455,32 @@ def build_karr_chassis_v5(
         },
         "karr_chromosome_condensation": {
             "chromosome": ("chromosome",),
+            "enzymes": ("complex", "counts"),
+            "boundEnzymes": ("boundEnzymes",),
             "substrates": ("substrates",),
             "requests": ("requests",),
             "substrates_allocated": ("substrates_allocated",),
+            "phase": (PHASE_STORE_KEY,),
+        },
+        "karr_chromosome_condensation_evolution": {
+            "chromosome": ("chromosome",),
+            "enzymes": ("complex", "counts"),
+            "boundEnzymes": ("boundEnzymes",),
+            "substrates": ("substrates",),
+            "substrates_allocated": ("substrates_allocated",),
+            "phase": (PHASE_STORE_KEY,),
         },
         "karr_chromosome_segregation": {
             "chromosome": ("chromosome",),
             "protein": ("protein",),
             "complex": ("complex",),
-            "substrates": ("substrates",),
             "requests": ("requests",),
+        },
+        "karr_chromosome_segregation_evolution": {
+            "chromosome": ("chromosome",),
+            "protein": ("protein",),
+            "complex": ("complex",),
+            "substrates": ("substrates",),
             "substrates_allocated": ("substrates_allocated",),
         },
         "karr_dna_damage": {
@@ -2194,7 +2513,6 @@ def build_karr_chassis_v5(
         },
         "karr_terminal_organelle_assembly": {
             "protein": ("protein",),
-            "cell": ("cell",),
         },
         "request_calculator_d2": {
             "complex": ("complex",),
@@ -2218,16 +2536,20 @@ def build_karr_chassis_v5(
         "request_calculator_rna_pathway": {
             "substrates": ("substrates",),
             "rna": ("rna",),
+            "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_protein_pathway": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_protein_translocation": {
             "substrates": ("substrates",),
             "protein": ("protein",),
+            "complex": ("complex",),
             "requests": ("requests",),
         },
         "request_calculator_metabolism": {
@@ -2250,6 +2572,9 @@ def build_karr_chassis_v5(
             "chromosome": ("chromosome",),
             "cell": ("cell",),
         },
+        # Stage 1a (design D5): behavior-neutral flat-projection Steps.
+        "protein_flat_projection_pre": {"protein": ("protein",)},
+        "protein_flat_projection_post": {"protein": ("protein",)},
     }
 
     initial_state: dict[str, Any] = {
@@ -2273,18 +2598,20 @@ def build_karr_chassis_v5(
             "signal_sequence_counts": protein_signal_seq_init,
             "modified_counts": protein_modified_init,
             "enzyme_counts": protein_enzyme_init,
-            "location": protein_location_init,
             "activity": protein_activity_init,
+            "compartment_counts": initial_compartment_counts(
+                seed_mature=load_mature_seed_from_canonical_fixture()
+            ),
         },
         "complex": {"counts": complex_counts},
-        "stimuli": {wid: 0.0 for wid in p_activation_proc.stimuli_wids},
-        "activation_substrates": {
-            wid: float(initial_substrates.get(wid, 0.0)) for wid in p_activation_proc.substrate_wids
-        },
+        "stimuli": {},
         "tx_rate_fold_change": tx_rate_fold_init,
-        "boundEnzymes": supercoil_init["boundEnzymes"],
+        "boundEnzymes": bound_enzymes_init,
+        PHASE_STORE_KEY: {"request_ready": False},
+        PP2_PHASE_STORE_KEY: {"request_ready": False},
         "chromosome": {
             **supercoil_init["chromosome"],
+            "_shared_rand_stream_state": _seeded_chromosome_rand_stream_state(0),
             "fork_position_bp": {"left": 0.0, "right": 0.0},
             "fork_positions": {"left": 0.0, "right": 0.0},
             "events": {"replication_complete": 0.0},
@@ -2316,12 +2643,9 @@ def build_karr_chassis_v5(
             "division_progress": 0.0,
             "division_complete": False,
             "division_event_count": 0.0,
-            "terminal_organelle_count": 0.0,
-            "terminal_organelle_components_assembled": {
-                wid: 0.0 for wid in terminal_organelle_proc.component_wids
-            },
         },
     }
+    _seed_protein_activation_shared_state(initial_state, p_activation_proc)
     if dynamic_bounds:
         initial_state["m1_dynamic_diagnostics"] = {k: 0.0 for k in m1_proc._diagnostics_schema()}
         from opencell.vivarium.karr_metabolism import _CYTOSOL_COMPARTMENT_0
@@ -2342,9 +2666,11 @@ def build_karr_chassis_v5(
             "karr_ribosome_assembly": ribasm_proc,
             "karr_transcriptional_regulation": tx_reg_proc,
             "karr_rna_processing": rna_proc,
+            "karr_rna_processing_request": rna_request,
             "karr_rna_modification": rna_mod_proc,
+            "karr_rna_modification_request": rna_mod_request,
             "karr_protein_processing_i": pp1_proc,
-            "karr_protein_processing_ii": pp2_proc,
+            "karr_protein_processing_ii": pp2_request_proc,
             "karr_protein_modification": p_mod_proc,
             "karr_protein_folding": p_fold_proc,
             "karr_protein_translocation": p_trans_proc,
@@ -2372,16 +2698,26 @@ def build_karr_chassis_v5(
             "request_calculator_transcription": req_transcription,
             "request_calculator_translation": req_translation,
             "karr_allocation_step": allocation_step,
+            "karr_protein_processing_ii_evolution": pp2_evolution_step,
+            "karr_protein_modification_evolution": p_mod_evolution,
+            "karr_chromosome_condensation_evolution": condensation_evolution_step,
+            "karr_chromosome_segregation_evolution": segregation_evolution_step,
             "cell_cycle_coordinator": coordinator_step,
+            "protein_flat_projection_pre": protein_flat_projection_pre,
+            "protein_flat_projection_post": protein_flat_projection_post,
         },
         flow={
             "request_calculator_d2": [],
             "request_calculator_pd": [],
-            "request_calculator_ribasm": [],
+            "request_calculator_ribasm": [("protein_flat_projection_pre",)],
             "request_calculator_trna": [],
             "request_calculator_rna_pathway": [],
-            "request_calculator_protein_pathway": [],
-            "request_calculator_protein_translocation": [],
+            "karr_rna_modification": [("karr_allocation_step",)],
+            "karr_rna_modification_request": [],
+            "karr_rna_processing": [("karr_allocation_step",)],
+            "karr_rna_processing_request": [],
+            "request_calculator_protein_pathway": [("protein_flat_projection_pre",)],
+            "request_calculator_protein_translocation": [("protein_flat_projection_pre",)],
             "request_calculator_metabolism": [],
             "request_calculator_transcription": [],
             "request_calculator_translation": [],
@@ -2397,7 +2733,19 @@ def build_karr_chassis_v5(
                 ("request_calculator_transcription",),
                 ("request_calculator_translation",),
             ],
-            "cell_cycle_coordinator": [("karr_allocation_step",)],
+            "karr_chromosome_condensation_evolution": [("karr_allocation_step",)],
+            "karr_protein_processing_ii_evolution": [("karr_allocation_step",)],
+            "karr_protein_modification_evolution": [("karr_allocation_step",)],
+            "karr_chromosome_segregation_evolution": [("karr_allocation_step",)],
+            "cell_cycle_coordinator": [("karr_chromosome_segregation_evolution",)],
+            "protein_flat_projection_pre": [],
+            "protein_flat_projection_post": [
+                ("karr_allocation_step",),
+                ("karr_protein_modification_evolution",),
+                ("karr_chromosome_condensation_evolution",),
+                ("karr_chromosome_segregation_evolution",),
+                ("karr_protein_processing_ii_evolution",),
+            ],
         },
         topology=topology,
         initial_state=initial_state,
@@ -2494,7 +2842,22 @@ def build_karr_chassis_v6(
     topology["karr_host_interaction"] = {
         "cell": ("cell",),
         "protein": ("protein",),
+        "complex": ("complex",),
     }
+    protein_counts = initial_state["protein"]["counts"]
+    complex_counts = initial_state["complex"]["counts"]
+    for wid, count in host_interaction_proc.fitted_monomer_counts_by_wid.items():
+        protein_counts[wid] = count
+    for wid, count in host_interaction_proc.fitted_complex_counts_by_wid.items():
+        complex_counts[wid] = count
+    _seed_condensation_enzyme_state(
+        complex_counts=complex_counts,
+        bound_enzymes=initial_state["boundEnzymes"],
+        condensation_proc=processes["karr_chromosome_condensation"],
+    )
+    initial_state["cell"].update(
+        host_interaction_proc.calculate_host_state(protein_counts, complex_counts)
+    )
 
     allocation_step = steps["karr_allocation_step"]
     consumer_map: dict[str, list[str]] = {
@@ -2529,12 +2892,17 @@ def build_karr_chassis_v6(
     topology["karr_observability_step"] = {
         "rna": ("rna",),
         "protein": ("protein",),
+        "complex": ("complex",),
         "chromosome": ("chromosome",),
         "cell": ("cell",),
         "substrates": ("substrates",),
         "phenotype_observables": ("phenotype_observables",),
     }
-    flow["karr_observability_step"] = [("karr_allocation_step",)]
+    flow["karr_observability_step"] = [
+        ("karr_chromosome_condensation_evolution",),
+        ("karr_chromosome_segregation_evolution",),
+        ("protein_flat_projection_post",),
+    ]
 
     chromosome_state = initial_state.setdefault("chromosome", {})
     chromosome_state.pop("damage_sites", None)
@@ -2542,13 +2910,19 @@ def build_karr_chassis_v6(
     chromosome_state.setdefault("repair_events_cumulative", [])
     assert_chassis_runtime_identity(processes)
 
-    return Composite(
+    composite = Composite(
         processes=processes,
         steps=steps,
         flow=flow,
         topology=topology,
         state=initial_state,
     )
+    # Stage A+B (dec-007): expose `.initial_state` as a plain dict for
+    # direct attribute access (matching the Engine-returning builders,
+    # v4/v5) while preserving every pre-existing `composite.initial_state()`
+    # CALL site's exact behavior (see `_CallableInitialStateDict`).
+    composite.initial_state = _CallableInitialStateDict(initial_state, composite.initial_state)
+    return composite
 
 __all__ = [
     "CHASSIS_V6_EXPECTED_PROCESS_KEYS",

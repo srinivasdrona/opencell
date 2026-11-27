@@ -26,6 +26,7 @@ from vivarium.core.process import Process
 
 from opencell.m3 import translation as tl
 from opencell.m3 import translation_v2 as tl_v2
+from opencell.vivarium.protein_state import MIGRATED_WIDS, compartment_counts_schema
 
 _RIBOSOME_ACTIVE_WID = "RIBOSOME_70S"
 _RIBOSOME_STATE_ACTIVE = 1
@@ -208,7 +209,14 @@ class KarrTranslationV3Process(Process):
                         "_emit": True,
                     }
                     for i, pid in enumerate(self.protein_ids)
-                }
+                    if pid not in MIGRATED_WIDS
+                },
+                # Design 9.3/M01: nascent output for the 8 migrated
+                # terminal-organelle WIDs is source-correct at
+                # `compartment_counts.nascent[wid]["c"]` (translation always
+                # produces cytosolic nascent copies, ProteinProcessingI.m
+                # L163-164), not the legacy `unprocessed_counts` pool.
+                "compartment_counts": {"nascent": compartment_counts_schema(MIGRATED_WIDS)["nascent"]},
             },
             "substrates": {
                 wid: {
@@ -695,9 +703,18 @@ class KarrTranslationV3Process(Process):
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         protein_state = states.get("protein", {})
         counts_state = protein_state.get("unprocessed_counts", protein_state.get("counts", {}))
+        nascent_authority_state = (
+            protein_state.get("compartment_counts", {}).get("nascent", {})
+        )
         counts = np.array(
             [
-                float(counts_state.get(pid, self.kinetics_model.counts_mature[i]))
+                # Design 9.3/M01: for the 8 migrated terminal-organelle WIDs,
+                # the nascent pool lives at `compartment_counts.nascent[wid]["c"]`,
+                # not the legacy `unprocessed_counts`; it starts at zero (no
+                # mature-snapshot bootstrap fallback applies to a flow-only pool).
+                float(nascent_authority_state.get(pid, {}).get("c", 0.0))
+                if pid in MIGRATED_WIDS
+                else float(counts_state.get(pid, self.kinetics_model.counts_mature[i]))
                 for i, pid in enumerate(self.protein_ids)
             ],
             dtype=float,
@@ -766,9 +783,20 @@ class KarrTranslationV3Process(Process):
 
         update: dict[str, Any] = {
             "protein": {
-                "unprocessed_counts": protein_delta_update
+                "unprocessed_counts": {
+                    pid: delta
+                    for pid, delta in protein_delta_update.items()
+                    if pid not in MIGRATED_WIDS
+                }
             }
         }
+        migrated_nascent_deltas = {
+            pid: delta for pid, delta in protein_delta_update.items() if pid in MIGRATED_WIDS
+        }
+        if migrated_nascent_deltas:
+            update["protein"]["compartment_counts"] = {
+                "nascent": {pid: {"c": delta} for pid, delta in migrated_nascent_deltas.items()}
+            }
         if enzyme_deltas:
             update["enzymes"] = enzyme_deltas
 

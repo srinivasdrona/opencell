@@ -1,0 +1,770 @@
+schema_version: "1.0"
+title: "Pre-L2.5 no-known-gap honesty baseline"
+audit_base_commit: "3df0f7f"
+canonical_process_count: 28
+policy: >-
+  A lower-gate PASS is necessary but not sufficient for L2.5 eligibility.
+  Every unresolved MATLAB-to-OpenCell behavior deviation, validation-versus-
+  production configuration mismatch, or stale/missing semantic adjudication
+  blocks the affected process.
+source_tree:
+  sha256: "a479e3386f209d6aa0d7b20aa71684208df0fb1f49b8b3eb4625e328e0984e3a"
+  file_count: 140
+authorities:
+  l1b_method_completeness: "PASS 115/115"
+  l1b_wiring_conformance: "PASS 28/28"
+  l2_2_distributional_fidelity: "NON_GREEN: 5 PASS / 17 FAIL (stale unrelated provenance) / 2 MISSING_EVIDENCE / 24 required"
+  l2_4_chassis_conservation: "PASS 4 seeds x 100 ticks"
+  qualification: >-
+    These authorities retain their existing meanings. This baseline adds the
+    no-known-gap eligibility property that none of them independently proves.
+    The current generated index rejects stale inherited source attestations;
+    those FAIL rows are not newly executed biological failures. Historical
+    raw bundles and unresolved findings are retained without hash replacement.
+
+processes:
+  - name: ChromosomeCondensation
+    behavior_gate: L2.2
+    behavior_verdict: MISSING_EVIDENCE
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: CC-PRODUCTION-WIRING
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Chassis v5/v6 now connect live free/bound SMC state, seed fixture/trace
+          counts fail-closed, and preserve order-independent shared-store
+          updater semantics.
+        evidence:
+          - path: opencell/vivarium/karr_composite.py
+            lines: "139-183"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2173-2178"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2317-2323"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2684-2688"
+          - path: docs/phase_f/audits/ChromosomeCondensation_semantic_audit.md
+            lines: "33-33"
+      - id: CC-REQUEST-TIMING
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          The authoritative process emits requests before allocation and one
+          post-allocation evolution Step consumes the same-tick grant exactly
+          once through an explicit request-ready handshake.
+        evidence:
+          - path: opencell/vivarium/karr_chromosome_condensation.py
+            lines: "2055-2118"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2329-2338"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2590-2597"
+          - path: docs/phase_f/audits/ChromosomeCondensation_semantic_audit.md
+            lines: "31-31"
+      - id: CC-NONKARR-PATHS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The module retains aggregate compatibility state, a non-literal
+          fallback, and a trace-hint outcome override outside the literal
+          chromosome-binding path.
+        evidence:
+          - path: opencell/vivarium/karr_chromosome_condensation.py
+            lines: "691-861"
+      - id: CC-COMPARTMENT-PROJECTION
+        kind: REPRESENTATION_DIFFERENCE
+        disposition: ACCEPTED_EQUIVALENT
+        summary: >-
+          MATLAB substrate state is compartment-indexed while OpenCell uses a
+          flat shared value per WID; this is behavior-equivalent here because
+          every ChromosomeCondensation substrate is cytosolic-only.
+        evidence:
+          - path: docs/phase_f/audits/ChromosomeCondensation_semantic_audit.md
+            lines: "29-29"
+      - id: CC-INITIALIZATION
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Karr initializes with twenty stochastic warm-up calls under infinite
+          ATP/H2O; OpenCell seeds fixture/trace-derived state instead.
+        evidence:
+          - path: opencell/vivarium/karr_chromosome_condensation.py
+            lines: "440-473"
+
+  - name: ChromosomeSegregation
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: ELIGIBLE
+    findings:
+      - id: CHRSEG-REQUEST-TIMING
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Request, allocation, and literal evolution now execute in ordered
+          phases within one Engine tick.
+        evidence:
+          - path: opencell/vivarium/karr_chromosome_segregation.py
+            lines: "433-503"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2377-2399"
+      - id: CHRSEG-UPDATER-CONFLICT
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Unused duplicate enzyme ports were removed; the process reads
+          canonical protein/complex state without an updater conflict.
+        evidence:
+          - path: opencell/vivarium/karr_chromosome_segregation.py
+            lines: "333-343"
+          - path: opencell/vivarium/karr_dna_supercoiling.py
+            lines: "1043-1049"
+
+  - name: Cytokinesis
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: CYT-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Request formulas, lifecycle resource behavior, and the retained
+          zero-GTP compatibility surface differ from MATLAB.
+        evidence:
+          - path: docs/phase_f/audits/Cytokinesis_semantic_audit.md
+            lines: "53-65"
+
+  - name: DNADamage
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: DNA-DMG-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Small-molecule stoichiometry, rate semantics, and allocator/writeback
+          behavior retain unresolved MATLAB-to-OpenCell differences.
+        evidence:
+          - path: docs/phase_f/audits/DNADamage_semantic_audit.md
+            lines: "48-67"
+
+  - name: DNARepair
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: DNA-REP-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Consumed/produced species, random subfunction ordering, and allocator
+          mediation remain non-equivalent to MATLAB.
+        evidence:
+          - path: docs/phase_f/audits/DNARepair_semantic_audit.md
+            lines: "59-82"
+
+  - name: DNASupercoiling
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: DNA-SUP-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The request formula differs and request-allocation-evolve ordering is
+          not represented equivalently.
+        evidence:
+          - path: docs/phase_f/audits/DNASupercoiling_semantic_audit.md
+            lines: "44-58"
+      - id: DNA-SUP-UPDATER-CONFLICT
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          DNASupercoiling declares shared enzyme leaves with set semantics
+          while ChromosomeSegregation declares the same leaves accumulate,
+          producing an order-sensitive Vivarium schema conflict.
+        evidence:
+          - path: opencell/vivarium/karr_dna_supercoiling.py
+            lines: "1037-1049"
+          - path: opencell/vivarium/karr_chromosome_segregation.py
+            lines: "333-343"
+
+  - name: FtsZPolymerization
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: FTSZ-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Non-GTP species bypass allocation and the exact MATLAB request
+          semantics remain unavailable for direct re-adjudication.
+        evidence:
+          - path: docs/phase_f/audits/FtsZPolymerization_semantic_audit.md
+            lines: "26-48"
+
+  - name: HostInteraction
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: ELIGIBLE
+    findings:
+      - id: HI-INITIALIZATION
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Host now reads canonical monomer/complex state and initializes the
+          six booleans through the same literal cascade used every tick.
+        evidence:
+          - path: opencell/vivarium/karr_host_interaction.py
+            lines: "379-449"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2491-2507"
+
+  - name: MacromolecularComplexation
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: MCX-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The cluster-1 fallback guard is behaviorally different and complete
+          substrate coverage is not yet established.
+        evidence:
+          - path: docs/phase_f/audits/MacromolecularComplexation_semantic_audit.md
+            lines: "44-81"
+
+  - name: Metabolism
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: MET-CODE-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Request/allocation integration, execution order, LP-bound input
+          source, and compartment projection remain behaviorally different.
+        evidence:
+          - path: docs/phase_f/audits/Metabolism_semantic_audit.md
+            lines: "40-50"
+      - id: MET-EVIDENCE-CONFIG
+        kind: EVIDENCE_CONFIG_MISMATCH
+        disposition: OPEN
+        summary: >-
+          L2.2 uses dynamic bounds, Karr writeback, and GLPK, while the v6
+          chassis enables allocator budgeting but retains the default solver
+          and writeback behavior.
+        evidence:
+          - path: tests/vivarium/_l2_2_design_a_runner_helpers.py
+            lines: "1517-1544"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "1620-1628"
+          - path: opencell/vivarium/karr_metabolism.py
+            lines: "124-150"
+
+  - name: ProteinActivation
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: ELIGIBLE
+    findings:
+      - id: PA-RULE-INPUTS
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          OpenCell now applies Karr's true-stimulus exemption and count-to-mM
+          conversion using live geometry volume.
+        evidence:
+          - path: opencell/vivarium/karr_protein_activation.py
+            lines: "226-264"
+      - id: PA-COMPARTMENT-PROJECTION
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          All six protein compartments now have authoritative active/inactive
+          state and exact whole-count transfer.
+        evidence:
+          - path: opencell/vivarium/karr_protein_activation.py
+            lines: "194-264"
+      - id: PA-PRODUCTION-STATE
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Production topology now maps protein, complex, stimuli, geometry, and
+          canonical active/inactive state without a metabolite surrogate.
+        evidence:
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2126-2130"
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2277-2283"
+
+  - name: ProteinDecay
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: PDEC-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Substrate stoichiometry and process formulas retain unresolved
+          differences, with additional required claims missing.
+        evidence:
+          - path: docs/phase_f/audits/ProteinDecay_semantic_audit.md
+            lines: "52-55"
+
+  - name: ProteinFolding
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: PFOLD-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          The recorded prosthetic-group versus ATP consumption difference is
+          unresolved and direct source completeness remains unverified.
+        evidence:
+          - path: docs/phase_f/audits/ProteinFolding_semantic_audit.md
+            lines: "75-77"
+
+  - name: ProteinModification
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: ELIGIBLE
+    findings:
+    - id: PMOD-DEVIATIONS
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Independently accepted exact live source requests/evolution and once-only grants,
+        private MCG16807/neutral codec with source one-uniform sampler and unchanged exact persistent100tick/all5observable
+        replay. Fresh PM178/mass81/caller controls and actual full964 N50/M100/B1000 current-source
+        portable/strict gate accepted;85 consumed records. Old tick53/source-capture blockers are
+        resolved, not waived.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 19-46
+      - path: opencell/vivarium/karr_protein_modification.py
+        lines: 314-414
+      - path: docs/phase_f/audits/ProteinModification_semantic_audit.md
+        lines: 3-24
+
+  - name: ProteinProcessingI
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: PPI-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Formula and writeback behavior retain two unresolved deviations.
+        evidence:
+          - path: docs/phase_f/audits/ProteinProcessingI_semantic_audit.md
+            lines: "77-80"
+
+  - name: ProteinProcessingII
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: ELIGIBLE
+    findings:
+    - id: PPII-DEVIATIONS
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Accepted source demand, live precursor/enzyme authority, same-tick grant-backed once-only
+        evolution and signal writeback remain unchanged. Current source10393 full482 N50/M20/B1000
+        evidence accepted,83 actual consumed records; historical65df evidence retained separately.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 111-130
+      - path: opencell/vivarium/karr_protein_processing_ii.py
+        lines: 148-200
+      - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+        lines: 3-24
+    - id: PPII-LEGACY-OWNERSHIP
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Accepted existing PP1 processed_counts to Folding unfolded_counts ownership without
+        mature-pool drain/global migration remains byte-identical. Actual handoff/mature-poison/once-only/v5-v6
+        witnesses retained; current-source83-input gate and shared full-mass reader accepted.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 111-130
+      - path: opencell/vivarium/karr_protein_processing_ii.py
+        lines: 148-200
+      - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+        lines: 3-24
+    - id: PPII-REPLAY-INPUT-EVIDENCE
+      kind: EVIDENCE_CONFIG_MISMATCH
+      disposition: RESOLVED
+      summary: All50 current accepted traces contain all6 before/after families including signalSequenceMonomers.
+        Accepted persistent100tick/six-family replay retained; current full482 N50/M20/B1000 portable/strict
+        gate has83 inputs, not historical61. Delayed completed-run sentinel remains explicit, not
+        a contemporaneous sweep.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 111-130
+      - path: opencell/vivarium/karr_protein_processing_ii.py
+        lines: 148-200
+      - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+        lines: 3-24
+    - id: PPII-PROJECTION-GUARD-INPUTS
+      kind: STALE_OR_MISSING_AUDIT
+      disposition: RESOLVED
+      summary: Source-owned Design-A projection, live mature enzymes, exact WID order/local queues/no-dual-writer
+        controls remain independently accepted on unchanged producer/guard bytes. Current full-mass
+        constructor source bindings add no fallback and preserve exact ownership.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 111-130
+      - path: opencell/vivarium/karr_protein_processing_ii.py
+        lines: 148-200
+      - path: docs/phase_f/audits/ProteinProcessingII_semantic_audit.md
+        lines: 3-24
+
+  - name: ProteinTranslocation
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: ELIGIBLE
+    findings:
+    - id: PTRANS-STAGE2-ALGORITHM
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Accepted119-WID compartment authority, exact capacity-clipped ATP/GTP/H2O request
+        without pool floor and one-based persistent RNG remain unchanged on source10393. Full current
+        source/fixture bindings and accepted2892-coordinate gate are retained.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 91-110
+      - path: opencell/vivarium/karr_protein_translocation.py
+        lines: 282-510
+      - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
+        lines: 3-24
+    - id: PTRANS-GENUINE-EVIDENCE
+      kind: EVIDENCE_CONFIG_MISMATCH
+      disposition: RESOLVED
+      summary: Current source10393 full2892-coordinate N50/M100/B1000 gate uses50 genuine distinct
+        seed files and per-sample execution owners; mechanical portable/strict PASS with no reasons/warnings.
+        Historical65df/9f53 gate is not relabelled as current.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 91-110
+      - path: opencell/vivarium/karr_protein_translocation.py
+        lines: 282-510
+      - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
+        lines: 3-24
+    - id: PTRANS-COMPLETE-ATTESTATION
+      kind: EVIDENCE_CONFIG_MISMATCH
+      disposition: RESOLVED
+      summary: Current source10393 independently accepted87 consumed records bind50 distinct seeds
+        plus37 actual runtime/parameter inputs, registered sources and exact sidecars. Documented
+        completed-run revalidation/sentinel and original-to-normalized byte lineage preserved; not
+        a new run or historical hash refresh.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 91-110
+      - path: opencell/vivarium/karr_protein_translocation.py
+        lines: 282-510
+      - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
+        lines: 3-24
+    - id: PTRANS-SAMPLE-ISOLATION
+      kind: EVIDENCE_CONFIG_MISMATCH
+      disposition: RESOLVED
+      summary: Prior independent repeated/interleaved active actual public owner/initial-stream/poisoned-hint
+        witnesses remain immutable and current factory dispatch source matches. Current gate binds
+        that source; contiguous100tick replay separately retains persistent ownership, no reset/cache-clearing
+        substitute.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 91-110
+      - path: opencell/vivarium/karr_protein_translocation.py
+        lines: 282-510
+      - path: docs/phase_f/audits/ProteinTranslocation_semantic_audit.md
+        lines: 3-24
+
+  - name: RNADecay
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: RDECAY-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          One implementation deviation remains open and two required semantic
+          claims are missing.
+        evidence:
+          - path: docs/phase_f/audits/RNADecay_semantic_audit.md
+            lines: "62-65"
+
+  - name: RNAModification
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: ELIGIBLE
+    findings:
+    - id: RMOD-DEVIATIONS
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Independently accepted exact request/stochastic source loop,347 processed/mature
+        rows,309 pass-throughs, aliases and same-tick grant-backed evolution; full694-coordinate
+        N50/M100/B1000 gate portable/strict PASS,87 consumed records. Common source-complete mass/caller
+        binding accepted; no hinted/no-op historical replay recertification. Consumer tRNA/Translation/full1041
+        lifecycle is not claimed repaired.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 72-90
+      - path: opencell/vivarium/karr_rna_modification.py
+        lines: 219-315
+      - path: docs/phase_f/audits/RNAModification_semantic_audit.md
+        lines: 3-24
+
+  - name: RNAProcessing
+    behavior_gate: L2.2
+    behavior_verdict: PASS
+    eligibility: ELIGIBLE
+    findings:
+    - id: RPROC-DEVIATIONS
+      kind: CODE_DEVIATION
+      disposition: RESOLVED
+      summary: Independently accepted exact requests, whole-class worst-reactant cap, random ordering,
+        full335nascent/347processed/11global-fragment production and source-bound693-coordinate
+        N50/M100/B1000 gate;88 consumed records. Current common full-form/complex mass and genuine
+        observer/CSV schema proof accepted. RNADecay consumer lifecycle remains explicitly OPEN
+        on its own row, not an omitted producer output or mass reader.
+      evidence:
+      - path: docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md
+        lines: 47-71
+      - path: opencell/vivarium/karr_rna_processing.py
+        lines: 211-293
+      - path: docs/phase_f/audits/RNAProcessing_semantic_audit.md
+        lines: 3-24
+
+  - name: Replication
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: REPL-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two implementation deviations, four missing claims, and five wrong
+          row claims remain unresolved.
+        evidence:
+          - path: docs/phase_f/audits/Replication_semantic_audit.md
+            lines: "72-75"
+
+  - name: ReplicationInitiation
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: REPLINIT-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two implementation deviations remain, with one missing and two wrong
+          row claims.
+        evidence:
+          - path: docs/phase_f/audits/ReplicationInitiation_semantic_audit.md
+            lines: "59-62"
+
+  - name: RibosomeAssembly
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: RIBO-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two implementation deviations and one missing semantic claim remain.
+        evidence:
+          - path: docs/phase_f/audits/RibosomeAssembly_semantic_audit.md
+            lines: "54-57"
+
+  - name: TerminalOrganelleAssembly
+    behavior_gate: L2.1
+    behavior_verdict: GENUINE
+    eligibility: ELIGIBLE
+    findings:
+      - id: TOA-REDUCED-STATE
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Resolved: TOA now derives its incorporated/unincorporated view from
+          the shared compartmental ProteinMonomer authority and performs the
+          complete fixed-point full-count transfer.
+        evidence:
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "265-326"
+          - path: tests/vivarium/test_toa_karr_transfer.py
+            lines: "135-239"
+      - id: TOA-PRODUCTION-TOPOLOGY
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Resolved: the sole TOA protein port maps to the shared compartmental
+          authority; the obsolete cell/substrate/hint surfaces are removed.
+        evidence:
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2294-2296"
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "238-248"
+      - id: TOA-TRACE-HINT
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Resolved: production TOA has no trace-hint or oracle-input surface;
+          every delta derives from live compartment counts and fixture rules.
+        evidence:
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "265-326"
+          - path: tests/vivarium/test_toa_karr_transfer.py
+            lines: "263-285"
+      - id: TOA-COMPARTMENT-PROJECTION
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Resolved: source and destination compartments retain biological
+          c/m/tc/tm identities loaded from the canonical fixture.
+        evidence:
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "184-205"
+          - path: tests/vivarium/test_protein_state_static_lint.py
+            lines: "87-132"
+      - id: TOA-PLANE-SWAP
+        kind: CODE_DEVIATION
+        disposition: RESOLVED
+        summary: >-
+          Resolved during the repair: localization requirement plane 1 is
+          evaluated against incorporated counts and plane 2 against
+          unincorporated counts, matching MATLAB.
+        evidence:
+          - path: opencell/vivarium/karr_terminal_organelle_assembly.py
+            lines: "206-234"
+          - path: tests/vivarium/test_toa_karr_transfer.py
+            lines: "196-239"
+
+  - name: Transcription
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: TX-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Four implementation deviations remain open and two row claims are
+          wrong.
+        evidence:
+          - path: docs/phase_f/audits/Transcription_semantic_audit.md
+            lines: "81-83"
+
+  - name: TranscriptionalRegulation
+    behavior_gate: L2.2
+    behavior_verdict: MISSING_EVIDENCE
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: TXREG-PRODUCTION-TOPOLOGY
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Production now wires the chromosome port (Stage A+B, dec-007):
+          TxReg reads/writes the state-owned, serialized
+          `_shared_rand_stream_state` RNG leaf via `ChromosomeStore`. It
+          still omits authoritative chromosome footprint/bound-state
+          writeback -- TF-binding commits remain in TxReg's private
+          `tf_bound_promoters`/`bound_tfs` surface rather than the shared
+          `monomerBoundSites`/`complexBoundSites` store, and enzyme/
+          bound-enzyme deltas are not written back to the shared chromosome
+          occupancy arrays (deferred to Stage C).
+        evidence:
+          - path: opencell/vivarium/karr_composite.py
+            lines: "2297-2303"
+      - id: TXREG-SHARED-CHROMOSOME-WRITEBACK
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Karr writes bound TF footprints into shared chromosome occupancy;
+          OpenCell updates only process-local promoter occupancy.
+        evidence:
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "1491-1569"
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "1632-1647"
+      - id: TXREG-RNG-PROVENANCE
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Autonomous OpenCell now draws from a single, state-owned,
+          serialized `ChromosomeStateRandStream` reconstructed from the
+          chromosome leaf every tick (Stage A+B, dec-007, sole TxReg
+          consumer), preserving the prior draw sequence bit-for-bit under
+          the dec-006 L2.1 replay. It does not yet reproduce Karr's
+          multi-consumer inter-process shared-stream interleaving with
+          other chromosome-binding processes (DNADamage, DNASupercoiling,
+          Replication, ChromosomeCondensation), which requires the Stage E
+          sequential commit owner (DC-9).
+        evidence:
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "916-964"
+      - id: TXREG-COPY-REDUCTION
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Karr produces a fold-change value for both chromosome copies;
+          OpenCell sends only the primary-copy column to Transcription.
+        evidence:
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "16-26"
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "1598-1659"
+      - id: TXREG-INITIALIZATION
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Karr pre-binds transcription factors during initializeState;
+          OpenCell starts unbound and first binds during tick one.
+        evidence:
+          - path: opencell/vivarium/karr_transcriptional_regulation.py
+            lines: "36-42"
+
+  - name: Translation
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: TL-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Five implementation deviations remain open and four wiring-row
+          claims are wrong.
+        evidence:
+          - path: docs/phase_f/audits/Translation_semantic_audit.md
+            lines: "70-73"
+
+  - name: tRNAAminoacylation
+    behavior_gate: L2.2
+    behavior_verdict: FAIL
+    eligibility: BLOCKED_LOWER_GATE
+    findings:
+      - id: TRNA-DEVIATIONS
+        kind: CODE_DEVIATION
+        disposition: OPEN
+        summary: >-
+          Two implementation deviations and three missing semantic claims
+          remain.
+        evidence:
+          - path: docs/phase_f/audits/tRNAAminoacylation_semantic_audit.md
+            lines: "40-43"
+
+summary:
+  eligible: 9
+  blocked: 19

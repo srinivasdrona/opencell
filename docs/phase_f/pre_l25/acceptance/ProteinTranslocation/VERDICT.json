@@ -1,0 +1,1084 @@
+{
+  "schema": "independent-ptrans-candidate-acceptance-v1",
+  "completed_at": "2026-10-19T12:03:46.839718+00:00",
+  "role": "NEW independent evidence/publication verdict owner",
+  "result": "ACCEPTED",
+  "source_head": "65df71c26553f42dd95759b948de42647987bf68",
+  "worktree": "E:\\opencell-worktrees\\m1-pt-20261017",
+  "findings": {
+    "PTRANS-COMPLETE-ATTESTATION": {
+      "verdict_scope": "Independent acceptance of this fresh candidate packet at frozen65; committed/publication eligibility remains parent-owned.",
+      "source": "65df71c26553f42dd95759b948de42647987bf68",
+      "command_ledger": "artifacts/m1_cohort/m1_pt/independent_acceptance/commands.jsonl",
+      "native_command_ledger": "artifacts/m1_cohort/m1_pt/independent_acceptance/native_commands.log",
+      "XML": {
+        "path": "artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml",
+        "sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+        "tests": 27,
+        "passed": 27,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "xfails": 0
+      },
+      "verdict": "ACCEPTED",
+      "proof": "All64 consumed records independently rehashed and equal fresh capture plus original preflight descriptors; all50 unique accepted-population/copy/embeddedseed identities verified; four fixture authorities and constructor actual reads covered;12 current source hashes,7 sentinel sidecars and8 compact bytes verified; N50/M100/B1000 and every5000 allocator row verified.",
+      "controls": [
+        {
+          "classname": "tests.scripts.test_ptrans_published_attestation",
+          "name": "test_ptrans_published_scores_and_thresholds_remain_byte_bound",
+          "time_s": "0.026",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.scripts.test_ptrans_published_attestation",
+          "name": "test_ptrans_published_attestation_binds_all_resolved_sources",
+          "time_s": "0.006",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.scripts.test_ptrans_published_attestation",
+          "name": "test_ptrans_published_attestation_binds_its_parameter_fixture",
+          "time_s": "0.012",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.scripts.test_ptrans_published_attestation",
+          "name": "test_ptrans_published_attestation_is_current_under_strict_verification",
+          "time_s": "1.016",
+          "outcome": "PASS"
+        }
+      ],
+      "control_source_sha256": "3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d",
+      "evidence": [
+        "all_consumed_rehashes.json",
+        "complete_50_seed_inventory.json",
+        "accepted_population_verification.json",
+        "constructor_authority.json",
+        "shape_activity_allocator.json",
+        "all_descriptor_drift_rejections.json",
+        "source_and_compact_bindings.json",
+        "sweep_time_and_command.json",
+        "independent_numeric_proof.json",
+        "publication_proof.json",
+        "publication_commands.json",
+        "publication_candidate_input_configuration.json"
+      ]
+    },
+    "PTRANS-SAMPLE-ISOLATION": {
+      "verdict_scope": "Independent acceptance of this fresh candidate packet at frozen65; committed/publication eligibility remains parent-owned.",
+      "source": "65df71c26553f42dd95759b948de42647987bf68",
+      "command_ledger": "artifacts/m1_cohort/m1_pt/independent_acceptance/commands.jsonl",
+      "native_command_ledger": "artifacts/m1_cohort/m1_pt/independent_acceptance/native_commands.log",
+      "XML": {
+        "path": "artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml",
+        "sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+        "tests": 27,
+        "passed": 27,
+        "errors": 0,
+        "failures": 0,
+        "skipped": 0,
+        "xfails": 0
+      },
+      "verdict": "ACCEPTED",
+      "proof": "Frozen2/2 controls pass. Actual active A=(seed0,tick2)/B=(seed1,tick2), sequence A,A,B,A,B,A:6 distinct real next_update owners begin at derived initial RNG, advance, emit nonempty changes at2 monomer coordinates each, retain full2892 output; repeated/interleaved outputs remain exact with advanced metadata and poison after/hint fields. No execution RNG reset/cache clearing. Original contiguous100tick replay observed1 owner,100 contiguous RNG transitions,20 advancingticks and13 nonempty updates; original assertions pass.",
+      "controls": [
+        {
+          "classname": "tests.vivarium.test_protein_translocation_sample_isolation",
+          "name": "test_translocation_execution_owns_fresh_sample_rng[repeat]",
+          "time_s": "1.847",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.vivarium.test_protein_translocation_sample_isolation",
+          "name": "test_translocation_execution_owns_fresh_sample_rng[advanced_metadata]",
+          "time_s": "1.389",
+          "outcome": "PASS"
+        },
+        {
+          "classname": "tests.vivarium.test_karr_protein_translocation_l2_replay",
+          "name": "test_karr_protein_translocation_l2_replay_identity_per_tick[rng_seed_0]",
+          "time_s": "20.549",
+          "outcome": "PASS"
+        }
+      ],
+      "control_source_sha256": {
+        "tests/vivarium/test_protein_translocation_sample_isolation.py": "b3e2076c77b45fb036e86704f3af7560016fd5f503fea9eba43b006aeb22eea0",
+        "tests/vivarium/test_karr_protein_translocation_l2_replay.py": "c69f01d5e21e058984d68cf6ac98aafee498eebf05c54e2c68e5d544c6836b5b"
+      },
+      "evidence": [
+        "actual_owner_controls.json",
+        "actual_owner_outputs.npz",
+        "legacy_contiguous_actual_owner.json",
+        "pytest_reports.json"
+      ]
+    }
+  },
+  "preserved_resolved_findings": [
+    "PTRANS-STAGE2-ALGORITHM",
+    "PTRANS-GENUINE-EVIDENCE"
+  ],
+  "implementation_or_F1_reopened": false,
+  "stage_tuple": {
+    "code_reviewed": "EXISTING APPROVED",
+    "gate_measured": "PASS",
+    "candidate_bundled": "COMPLETE",
+    "independent_accepted": "ACCEPTED",
+    "committed_eligibility": "PENDING_PARENT_BYTE_IDENTICAL_PUBLICATION_AND_BASELINE"
+  },
+  "catalog": {
+    "N": 50,
+    "seeds": [
+      0,
+      1,
+      2,
+      3,
+      4,
+      5,
+      6,
+      7,
+      8,
+      9,
+      10,
+      11,
+      12,
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23,
+      24,
+      25,
+      26,
+      27,
+      28,
+      29,
+      30,
+      31,
+      32,
+      33,
+      34,
+      35,
+      36,
+      37,
+      38,
+      39,
+      40,
+      41,
+      42,
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+    ],
+    "M": 100,
+    "B": 1000,
+    "primary_channel": "monomers",
+    "full_width": 2892,
+    "raw_per_tick_shape": [
+      6,
+      482
+    ]
+  },
+  "consumed_count": 64,
+  "oracle_count": 50,
+  "runtime_count": 14,
+  "fixture_count": 4,
+  "all_allocator_seed_ticks_verified": 5000,
+  "actual_oracle_activity": {
+    "monomers": {
+      "shape": [
+        50,
+        100,
+        2892
+      ],
+      "active_seed_ticks": 759,
+      "nonzero_delta_coordinates": 1726,
+      "active_ticks_per_seed": [
+        13,
+        18,
+        15,
+        15,
+        12,
+        13,
+        17,
+        16,
+        14,
+        12,
+        16,
+        10,
+        15,
+        13,
+        21,
+        14,
+        23,
+        14,
+        12,
+        21,
+        16,
+        19,
+        20,
+        19,
+        14,
+        17,
+        13,
+        10,
+        14,
+        10,
+        14,
+        21,
+        15,
+        14,
+        19,
+        10,
+        15,
+        16,
+        13,
+        22,
+        18,
+        16,
+        15,
+        11,
+        15,
+        11,
+        17,
+        13,
+        12,
+        16
+      ],
+      "after_nonzero": 7680
+    },
+    "substrates": {
+      "shape": [
+        50,
+        100,
+        7
+      ],
+      "active_seed_ticks": 759,
+      "nonzero_delta_coordinates": 4197,
+      "active_ticks_per_seed": [
+        13,
+        18,
+        15,
+        15,
+        12,
+        13,
+        17,
+        16,
+        14,
+        12,
+        16,
+        10,
+        15,
+        13,
+        21,
+        14,
+        23,
+        14,
+        12,
+        21,
+        16,
+        19,
+        20,
+        19,
+        14,
+        17,
+        13,
+        10,
+        14,
+        10,
+        14,
+        21,
+        15,
+        14,
+        19,
+        10,
+        15,
+        16,
+        13,
+        22,
+        18,
+        16,
+        15,
+        11,
+        15,
+        11,
+        17,
+        13,
+        12,
+        16
+      ],
+      "after_nonzero": 4207
+    }
+  },
+  "numeric_proof": {
+    "method": "Every actual Karr seed-pair/tick W1 via equal-mass sorted-rank identity, fixed seed-level bootstrap B1000; scalar evaluator re-score using retained measured OC raw numeric fields.",
+    "B": 1000,
+    "N": 50,
+    "M": 100,
+    "validation_seed": 827675,
+    "channels": {
+      "substrates": {
+        "q95_independent": 71853.90085285714,
+        "q95_retained": 71853.90085285716,
+        "bootstrap_values_summary_independent": {
+          "mean": 68445.7304983143,
+          "stddev": 2206.7451728205397,
+          "min": 60818.65408571429,
+          "max": 75435.0410857143
+        },
+        "threshold_independent": 143707.8017057143,
+        "threshold_retained": 143707.80170571432,
+        "retained_w1_rescored": 0.005714285714285714,
+        "rederived_channel_verdict": "SEED_NOISE",
+        "actual_karr_stats": {
+          "min": 0.0,
+          "max": 6681271.0,
+          "mean": 43278.188428571426,
+          "stddev": 328963.33129402617,
+          "skew": 9.386028713186747,
+          "kurtosis": 104.1923641334762
+        },
+        "rank_formula_scipy_checks": [
+          {
+            "left_seed": 0,
+            "right_seed": 1,
+            "tick": 2,
+            "rank_formula": 1.2857142857142858,
+            "scipy": 1.285714285714286
+          },
+          {
+            "left_seed": 49,
+            "right_seed": 0,
+            "tick": 99,
+            "rank_formula": 0.0,
+            "scipy": 0.0
+          },
+          {
+            "left_seed": 13,
+            "right_seed": 28,
+            "tick": 51,
+            "rank_formula": 0.0,
+            "scipy": 0.0
+          },
+          {
+            "left_seed": 11,
+            "right_seed": 46,
+            "tick": 10,
+            "rank_formula": 0.0,
+            "scipy": 0.0
+          },
+          {
+            "left_seed": 0,
+            "right_seed": 0,
+            "tick": 2,
+            "rank_formula": 0.0,
+            "scipy": 0.0
+          }
+        ],
+        "original_oc_tensor_available": false,
+        "independent_oc_w1_recomputed_from_original_tensor": false
+      },
+      "monomers": {
+        "q95_independent": 0.0006345193637621023,
+        "q95_retained": 0.0006345193637621,
+        "bootstrap_values_summary_independent": {
+          "mean": 0.0006119242738589211,
+          "stddev": 1.5561110218007534e-05,
+          "min": 0.0005549792531120332,
+          "max": 0.0006513831258644537
+        },
+        "threshold_independent": 1.0,
+        "threshold_retained": 1.0,
+        "retained_w1_rescored": 0.0,
+        "rederived_channel_verdict": "SEED_NOISE",
+        "actual_karr_stats": {
+          "min": 0.0,
+          "max": 3.0,
+          "mean": 0.0005423928077455049,
+          "stddev": 0.02377386842152507,
+          "skew": 45.57797682649843,
+          "kurtosis": 2228.06893610269
+        },
+        "rank_formula_scipy_checks": [
+          {
+            "left_seed": 0,
+            "right_seed": 1,
+            "tick": 2,
+            "rank_formula": 0.0,
+            "scipy": 0.0
+          },
+          {
+            "left_seed": 49,
+            "right_seed": 0,
+            "tick": 99,
+            "rank_formula": 0.0,
+            "scipy": 0.0
+          },
+          {
+            "left_seed": 13,
+            "right_seed": 28,
+            "tick": 51,
+            "rank_formula": 0.0,
+            "scipy": 0.0
+          },
+          {
+            "left_seed": 11,
+            "right_seed": 46,
+            "tick": 10,
+            "rank_formula": 0.0006915629322268327,
+            "scipy": 0.0006915629322268302
+          },
+          {
+            "left_seed": 0,
+            "right_seed": 0,
+            "tick": 2,
+            "rank_formula": 0.0,
+            "scipy": 0.0
+          }
+        ],
+        "original_oc_tensor_available": false,
+        "independent_oc_w1_recomputed_from_original_tensor": false
+      }
+    },
+    "mechanical_verdict": "PASS",
+    "channel_verdicts": {
+      "monomers": "SEED_NOISE",
+      "substrates": "SEED_NOISE"
+    },
+    "reasons": [],
+    "h12": {
+      "retained_deterministic_convergence_warning": false,
+      "support_required_for_current_packet": false,
+      "note": "No convergence/H12 demotion is retained. W1=0 is sorted empirical-distribution agreement, not coordinate-wise identity; historical support is not assumed or promoted."
+    },
+    "limitation": "Original OC tensors are not saved. This independently recalibrates Karr nulls and re-scores retained source-bound numeric measurements; it is not independent reproduction of original full OC outputs nor a new full biological sweep."
+  },
+  "source_contract_hashes": {
+    "runner": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+    "helpers": "ed9bde575ed9a171442de51dd6e94886dba9f6445a3b883f5d71015bcc56c50d",
+    "projections": "2de64997bc27fe392a4572e9908dca382c40dc6ca6b62d486da73c91d3692a45",
+    "vivarium_init": "f9c93ee10e5e4aa690e2b167e0fe606bd6764e5d3ac4b7837a1e4268f237ec17",
+    "tick_runner": "073a452e57bb7f4641ba9f219623cc3296de3ddda518cab35f39c1794b45924e",
+    "oc_module": "5494ea378d4169ae1b5b8042395277d922053201b02d115814a7a6b2b1cd5231",
+    "util_module": "dbdea5b4ad6dba7019f05cbb59ae20d8db0065804327daa4c74fc6ef3e63264e",
+    "util_matlab_rng_module": "5c2a982aa874c6ff2d62ae1fff85b58436eab4b47caa7b9a36d1f087b19b72fa",
+    "protein_state_module": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b",
+    "l2_replay_common": "1914934316f884ec045192a1cc3bc11eb680969c5cc8de095c5e8bc4e4b28852",
+    "evidence_schema_module": "7bf13a083465ade3ee93d2421b112dfc3b23c0d78bec3f5c17fb177f4fbec93f",
+    "catalog_entry": "6674d9aa70b639fb96908b539924cbed52c20c52a19a205e999f5520b430f223"
+  },
+  "control_and_module_sha256": {
+    "tests/scripts/test_ptrans_published_attestation.py": "3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d",
+    "tests/vivarium/test_protein_translocation_sample_isolation.py": "b3e2076c77b45fb036e86704f3af7560016fd5f503fea9eba43b006aeb22eea0",
+    "tests/vivarium/test_karr_protein_translocation_l2_replay.py": "c69f01d5e21e058984d68cf6ac98aafee498eebf05c54e2c68e5d544c6836b5b",
+    "tests/vivarium/test_ptransloc_design_a_full_vector.py": "08887341a72cf3c82f9c91d031400a429a441d81b6998afa32c82f5b2c3964ea",
+    "tests/vivarium/test_karr_protein_translocation.py": "31c322c13761c65f905b21f5ffbf412761fcd6a0756aef81848141e6683c82ba",
+    "tests/vivarium/test_l2_no_oracle_dependency.py": "d3bea9d07b61e354b3fec7c8d10db02b0ebeb3b2140bc69694b46a9c6a5cebcd",
+    "tests/unit/test_karr_protein_translocation_strict_zero.py": "332d21366affbecbff4cd38187b345777f6566032211f4dfbb939f2ca52a7cb9",
+    "tests/vivarium/test_protein_translocation_stage2.py": "209c206c2d8a0812e7f7337d4f3e00e4197f86fa775dd0792e6ef427c61b164f",
+    "opencell/vivarium/karr_protein_translocation.py": "5494ea378d4169ae1b5b8042395277d922053201b02d115814a7a6b2b1cd5231",
+    "opencell/vivarium/protein_state.py": "85a626e158b19a68941a40c003f313ac5ba9bd2e9108339f7d11e637bf8a5b8b",
+    "tests/vivarium/_l2_2_design_a_runner_helpers.py": "090dd4354b8df4c50dc1d9459c7df2466b8a17554f9679cdc4a6826e5570a3a0",
+    "tests/vivarium/l2_2_design_a_runner.py": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+    "scripts/l22_evidence/generator.py": "cee04e1c2cd506b386e2dcbe1c9c6c67c35d972c4ddbfd6c04ad0323bae2e1d1",
+    "scripts/l22_evidence/verdict.py": "ddb4f7b05981c21ea25266f508a6c55d7f9548b84628eaab8cd30a5ad44219d2",
+    "scripts/l22_evidence/schema.py": "7bf13a083465ade3ee93d2421b112dfc3b23c0d78bec3f5c17fb177f4fbec93f",
+    "docs/phase_f/l2_2_design_a/PROCESS_CATALOG.yaml": "ecdf29ff022b64fa099a864507f1de24ffec4044f3e17b34b09035c82cba798e"
+  },
+  "candidate_compact_files": [
+    {
+      "name": "result.json",
+      "raw_sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+      "candidate_sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a"
+    },
+    {
+      "name": "input_manifest.json",
+      "raw_sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94",
+      "candidate_sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94"
+    },
+    {
+      "name": "provenance.json",
+      "raw_sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+      "candidate_sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c"
+    },
+    {
+      "name": "thresholds.json",
+      "raw_sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954",
+      "candidate_sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+    },
+    {
+      "name": "null_calibration.json",
+      "raw_sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+      "candidate_sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260"
+    },
+    {
+      "name": "SUMMARY.json",
+      "raw_sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+      "candidate_sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f"
+    },
+    {
+      "name": "analytical_check.json",
+      "raw_sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+      "candidate_sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183"
+    },
+    {
+      "name": "sweep_provenance.json",
+      "raw_sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
+      "candidate_sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605"
+    }
+  ],
+  "candidate_index_sha256": "77f852f802723fe49a09968ae3eb842678c8c4d2041548af20b6f6bb144c2383",
+  "candidate_generation_and_audits": {
+    "input_root": "artifacts/m1_cohort/m1_pt/evidence_bundle",
+    "owned_row": {
+      "artifact_hashes": {
+        "SUMMARY.json": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+        "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+        "null_calibration.json": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+        "provenance.json": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+        "result.json": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+        "sweep_provenance.json": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
+        "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+      },
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "catalog_soft_flags": {
+        "M_ticks": 100,
+        "N_seeds": 50,
+        "closed_form_dominant": "confirmed_biology_validated",
+        "harness_type": "design_a_per_tick",
+        "in_scope_L2_2": true,
+        "primary_channel": "monomers",
+        "primary_distance": "per_tick_vector_w1_mean"
+      },
+      "channel_verdicts": {
+        "monomers": "SEED_NOISE",
+        "substrates": "SEED_NOISE"
+      },
+      "evidence_dir": "artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest",
+      "green": true,
+      "harness_type": "design_a_per_tick",
+      "mechanical_verdict": "PASS",
+      "process": "ProteinTranslocation",
+      "provenance_git_sha": "unknown",
+      "reasons": [],
+      "sweep_provenance": {
+        "completion_status": "COMPLETE",
+        "evaluator_schema_version": 5,
+        "git_dirty": null,
+        "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
+        "inputs_verified": true,
+        "result_schema_version": 1
+      },
+      "warnings": []
+    },
+    "tally": {
+      "MISSING_EVIDENCE": 23,
+      "PASS": 1
+    },
+    "aggregate": "NON_GREEN",
+    "strict_portable_doer_content_hash": "2f65efcd99ef565318b7242f3261f97b8abd3884e23508dd63b9c133d6325f06",
+    "fresh_generator_module_sha256": "cee04e1c2cd506b386e2dcbe1c9c6c67c35d972c4ddbfd6c04ad0323bae2e1d1",
+    "candidate_index_sha256": "77f852f802723fe49a09968ae3eb842678c8c4d2041548af20b6f6bb144c2383",
+    "independent_index_strict_sha256": "0a2ae47424984e13ef0dc7ab79ff2ba8e41c65d59f9b06af0ee2d4d1e60c995a",
+    "independent_index_portable_sha256": "acb96e8bc35824d420ec9626d2356fd9dc78c6831a55326c4d1071ff8cba508d",
+    "normalized_input_paths": 64,
+    "independently_regenerated_and_live_candidate_identical": [
+      {
+        "name": "result.json",
+        "sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a"
+      },
+      {
+        "name": "input_manifest.json",
+        "sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94"
+      },
+      {
+        "name": "provenance.json",
+        "sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c"
+      },
+      {
+        "name": "thresholds.json",
+        "sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+      },
+      {
+        "name": "null_calibration.json",
+        "sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260"
+      },
+      {
+        "name": "SUMMARY.json",
+        "sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f"
+      },
+      {
+        "name": "analytical_check.json",
+        "sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183"
+      },
+      {
+        "name": "sweep_provenance.json",
+        "sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605"
+      }
+    ],
+    "portable_audit_meaning": "Default non-strict semantics exercised against explicit candidate; raw files remained mounted, not deleted or hidden."
+  },
+  "fresh_test_result": {
+    "path": "artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml",
+    "sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+    "tests": 27,
+    "passed": 27,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "xfails": 0
+  },
+  "all_frozen_test_cases": [
+    {
+      "classname": "tests.vivarium.test_protein_translocation_sample_isolation",
+      "name": "test_translocation_execution_owns_fresh_sample_rng[repeat]",
+      "time_s": "1.847",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_protein_translocation_sample_isolation",
+      "name": "test_translocation_execution_owns_fresh_sample_rng[advanced_metadata]",
+      "time_s": "1.389",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_scores_and_thresholds_remain_byte_bound",
+      "time_s": "0.026",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_attestation_binds_all_resolved_sources",
+      "time_s": "0.006",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_attestation_binds_its_parameter_fixture",
+      "time_s": "0.012",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_attestation_is_current_under_strict_verification",
+      "time_s": "1.016",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation_l2_replay",
+      "name": "test_karr_protein_translocation_l2_replay_identity_per_tick[rng_seed_0]",
+      "time_s": "20.549",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_ptransloc_design_a_full_vector",
+      "name": "test_contract_1_translocation_adapter_preserves_2892_compartment_positions",
+      "time_s": "0.001",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_ptransloc_design_a_full_vector",
+      "name": "test_contract_2_load_v2_ensemble_returns_2892_monomer_vectors",
+      "time_s": "0.495",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_ptransloc_design_a_full_vector",
+      "name": "test_contract_3_run_protein_translocation_tick_preserves_non_authority_monomers",
+      "time_s": "0.918",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_ptransloc_design_a_full_vector",
+      "name": "test_contract_4_planted_collapsed_sum_mutation_canary",
+      "time_s": "0.001",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_l2_no_oracle_dependency",
+      "name": "test_l2_process_source_does_not_depend_on_replay_oracle[karr_protein_translocation.py]",
+      "time_s": "0.009",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_fixture_loads",
+      "time_s": "0.333",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_no_cytoplasmic_no_translocation",
+      "time_s": "0.330",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_srp_mediated_lipoprotein_path",
+      "time_s": "0.335",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_direct_integral_membrane_path",
+      "time_s": "0.330",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_timestep_scales_translocase_capacity",
+      "time_s": "0.337",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_atp_consumption_per_translocation",
+      "time_s": "0.343",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_mixed_copy_order_breaks_after_first_infeasible_copy",
+      "time_s": "0.339",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_srp_starvation_blocks_membrane_only",
+      "time_s": "0.342",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_translocase_starvation_blocks_all",
+      "time_s": "0.347",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_protein_authority_store_updates",
+      "time_s": "0.593",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_karr_protein_translocation",
+      "name": "test_deterministic_with_seed",
+      "time_s": "0.643",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.unit.test_karr_protein_translocation_strict_zero",
+      "name": "test_karr_protein_translocation_strict_zero_no_global_fallback",
+      "time_s": "0.324",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_protein_translocation_stage2",
+      "name": "test_c11_persistent_stream_and_fixture_order",
+      "time_s": "0.334",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_protein_translocation_stage2",
+      "name": "test_canary_rejects_reseed_rng",
+      "time_s": "0.340",
+      "outcome": "PASS"
+    },
+    {
+      "classname": "tests.vivarium.test_protein_translocation_stage2",
+      "name": "test_canary_rejects_repeated_selection_stream_with_advancing_rng",
+      "time_s": "0.365",
+      "outcome": "PASS"
+    }
+  ],
+  "publication_configuration": [
+    {
+      "module": "/mnt/e/opencell-worktrees/m1-pt-20261017/tests/scripts/test_ptrans_published_attestation.py",
+      "original_sha256": "3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d",
+      "old_constants": {
+        "EVIDENCE_ROOT": "/mnt/e/opencell-worktrees/m1-pt-20261017/docs/phase_f/l2_2_design_a/evidence_bundle",
+        "BUNDLE": "/mnt/e/opencell-worktrees/m1-pt-20261017/docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest"
+      },
+      "new_constants": {
+        "EVIDENCE_ROOT": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle",
+        "BUNDLE": "/mnt/e/opencell-worktrees/m1-pt-20261017/artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest"
+      },
+      "assertions_or_code_modified": false
+    }
+  ],
+  "publication_commands": [
+    {
+      "name": "independent_bundle",
+      "command": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "bundle",
+        "--source-root",
+        "artifacts/l2_2_gates",
+        "--bundle-root",
+        "artifacts/m1_cohort/m1_pt/independent_acceptance/regenerated_bundle"
+      ],
+      "child_pid": 658,
+      "started_at": "2026-10-19T11:57:36.618559+00:00",
+      "finished_at": "2026-10-19T11:57:37.103420+00:00",
+      "exit_code": 0,
+      "log": "independent_bundle.log",
+      "log_sha256": "987df9017da9c68b7fe38dbb7bb9646dd7d4198f99138bf70d6de05b37a080e0"
+    },
+    {
+      "name": "independent_generate_strict",
+      "command": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "generate",
+        "--out",
+        "artifacts/m1_cohort/m1_pt/independent_acceptance/candidate_index_strict.json",
+        "--evidence-root",
+        "artifacts/m1_cohort/m1_pt/evidence_bundle",
+        "--verify-input-files"
+      ],
+      "child_pid": 659,
+      "started_at": "2026-10-19T11:57:37.124248+00:00",
+      "finished_at": "2026-10-19T11:57:38.589830+00:00",
+      "exit_code": 0,
+      "log": "independent_generate_strict.log",
+      "log_sha256": "e6ea7186b9a44a7df99c205de92528797738b802f772370f6c3b9f1f2331a66a"
+    },
+    {
+      "name": "independent_audit_strict",
+      "command": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "artifacts/m1_cohort/m1_pt/independent_acceptance/candidate_index_strict.json",
+        "--evidence-root",
+        "artifacts/m1_cohort/m1_pt/evidence_bundle",
+        "--verify-input-files"
+      ],
+      "child_pid": 660,
+      "started_at": "2026-10-19T11:57:38.615401+00:00",
+      "finished_at": "2026-10-19T11:57:41.150369+00:00",
+      "exit_code": 0,
+      "log": "independent_audit_strict.log",
+      "log_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e"
+    },
+    {
+      "name": "independent_audit_portable",
+      "command": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "artifacts/m1_cohort/m1_pt/independent_acceptance/candidate_index_strict.json",
+        "--evidence-root",
+        "artifacts/m1_cohort/m1_pt/evidence_bundle"
+      ],
+      "child_pid": 664,
+      "started_at": "2026-10-19T11:57:41.190300+00:00",
+      "finished_at": "2026-10-19T11:57:42.544306+00:00",
+      "exit_code": 0,
+      "log": "independent_audit_portable.log",
+      "log_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e"
+    },
+    {
+      "name": "independent_generate_portable",
+      "command": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "generate",
+        "--out",
+        "artifacts/m1_cohort/m1_pt/independent_acceptance/candidate_index_portable.json",
+        "--evidence-root",
+        "artifacts/m1_cohort/m1_pt/evidence_bundle"
+      ],
+      "child_pid": 665,
+      "started_at": "2026-10-19T11:57:42.566883+00:00",
+      "finished_at": "2026-10-19T11:57:43.427874+00:00",
+      "exit_code": 0,
+      "log": "independent_generate_portable.log",
+      "log_sha256": "b6dd6446b8c93771931ac6ef6390ee17ba0891bcf70a53d9493100bcef879710"
+    },
+    {
+      "name": "doer_candidate_audit_strict",
+      "command": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "artifacts/m1_cohort/m1_pt/candidate_index_resume.json",
+        "--evidence-root",
+        "artifacts/m1_cohort/m1_pt/evidence_bundle",
+        "--verify-input-files"
+      ],
+      "child_pid": 666,
+      "started_at": "2026-10-19T11:57:43.452993+00:00",
+      "finished_at": "2026-10-19T11:57:45.968030+00:00",
+      "exit_code": 0,
+      "log": "doer_candidate_audit_strict.log",
+      "log_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e"
+    },
+    {
+      "name": "doer_candidate_audit_portable",
+      "command": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "artifacts/m1_cohort/m1_pt/candidate_index_resume.json",
+        "--evidence-root",
+        "artifacts/m1_cohort/m1_pt/evidence_bundle"
+      ],
+      "child_pid": 667,
+      "started_at": "2026-10-19T11:57:45.993029+00:00",
+      "finished_at": "2026-10-19T11:57:47.364909+00:00",
+      "exit_code": 0,
+      "log": "doer_candidate_audit_portable.log",
+      "log_sha256": "47ea7177b520ae6558e2f1cc4daf9b2339543f545f274d21e32572e62fbc836e"
+    }
+  ],
+  "original_sweep_execution": {
+    "duration_s": 4665.939118697001,
+    "exit_code": 0,
+    "finished_at": "2026-10-19T11:37:30.731084+00:00",
+    "log_path": "artifacts/l2_2_gates/_sweep_logs/ProteinTranslocation.log",
+    "output_dir": "artifacts/l2_2_gates/ProteinTranslocation/latest",
+    "process": "ProteinTranslocation",
+    "reason": null,
+    "started_at": "2026-10-19T10:19:44.791961+00:00",
+    "status": "RAN_EXIT_0"
+  },
+  "environment": {
+    "time": "2026-10-19T11:51:18.853804+00:00",
+    "pid": 386,
+    "executable": "/mnt/e/opencell/.venv-wsl/bin/python",
+    "prefix": "/mnt/e/opencell/.venv-wsl",
+    "imports": {
+      "opencell": "/mnt/e/opencell-worktrees/m1-pt-20261017/opencell/__init__.py",
+      "_l2_2_design_a_runner_helpers": "/mnt/e/opencell-worktrees/m1-pt-20261017/tests/vivarium/_l2_2_design_a_runner_helpers.py",
+      "l2_2_design_a_runner": "/mnt/e/opencell-worktrees/m1-pt-20261017/tests/vivarium/l2_2_design_a_runner.py",
+      "opencell.vivarium.karr_protein_translocation": "/mnt/e/opencell-worktrees/m1-pt-20261017/opencell/vivarium/karr_protein_translocation.py",
+      "opencell.vivarium.protein_state": "/mnt/e/opencell-worktrees/m1-pt-20261017/opencell/vivarium/protein_state.py",
+      "scripts.l22_evidence.generator": "/mnt/e/opencell-worktrees/m1-pt-20261017/scripts/l22_evidence/generator.py",
+      "scripts.l22_evidence.schema": "/mnt/e/opencell-worktrees/m1-pt-20261017/scripts/l22_evidence/schema.py",
+      "scripts.l22_evidence.verdict": "/mnt/e/opencell-worktrees/m1-pt-20261017/scripts/l22_evidence/verdict.py"
+    },
+    "native_git": {
+      "time": "2026-10-19T17:15:51.8204202+05:30",
+      "native_powershell_pid": 5392,
+      "head": "65df71c26553f42dd95759b948de42647987bf68",
+      "branch": "exec/m1-pt-20261017",
+      "status": [],
+      "ignored_status": "\"artifacts\\\\m1_cohort\\\\m1_pt\\\\independent_acceptance\\\\STATUS.md\"",
+      "cwd": "E:\\opencell-worktrees\\m1-pt-20261017",
+      "command": "git rev-parse HEAD; git branch --show-current; git status --porcelain=v1; git check-ignore <review STATUS>; git ls-files"
+    },
+    "catalog": {
+      "name": "ProteinTranslocation",
+      "bucket": "ALGORITHMIC_SHALLOW",
+      "harness_type": "design_a_per_tick",
+      "m_ticks": 100,
+      "n_seeds": 50,
+      "primary_channel": "monomers",
+      "closed_form_dominant": "confirmed_biology_validated",
+      "event_channels": [],
+      "output_channels": [
+        "substrates",
+        "monomers"
+      ],
+      "primary_distance": "per_tick_vector_w1_mean",
+      "oc_module": "opencell/vivarium/karr_protein_translocation.py"
+    }
+  },
+  "native_postflight": {
+    "time": "2026-10-19T17:30:17.9350050+05:30",
+    "native_powershell_pid": 23220,
+    "head": "65df71c26553f42dd95759b948de42647987bf68",
+    "status": [],
+    "diff_stat": [],
+    "command": "git rev-parse HEAD; git status --porcelain=v1; git diff --stat"
+  },
+  "preservation": {
+    "files": 3649,
+    "changes": [],
+    "new_prior_outputs": [],
+    "finished_at": "2026-10-19T12:00:54.786333+00:00"
+  },
+  "limitations": [
+    "No original full OC tensors retained: original full N50/M100/B1000 biological execution is accepted via frozen producer/consumption/sentinel/actual input evidence, NOT claimed independently rerun in full.",
+    "This reviewer independently recalibrated full Karr-only B1000 nulls and re-scored retained measured OC raw numeric fields. Original full OC W1 cannot be recomputed from absent tensors; actual fresh biological execution here is bounded active-owner samples, existing public-input controls and original100tick contiguous replay.",
+    "W1=0 is equality of empirical value distributions, not coordinate-wise bit identity. Full2892 positions were retained; no collapsed482 proxy used. The existing standalone legacy replay provides its own narrower identity assertions.",
+    "No retained deterministic-convergence/H12 warning exists in this packet. No old H12 support is assumed or promoted; existing approved mechanics/stage2 biological adjudication is reused rather than generically reopened.",
+    "Portable audit used the existing default non-strict mode with raw data still mounted. No physical absent-raw clone was created and no raw files were hidden/deleted.",
+    "The first pytest invocation failed in DrvFS file-descriptor capture (FileNotFoundError during truncate); it is not counted as PASS. Same frozen assertions passed27/27 in fresh retry XML with -s, changing only capture/scratch/output configuration.",
+    "No publication/baseline/semantic/source/test/global-index/plan/journal edits, commits, nested agents, merge or push were performed. Parent owns persistent integrated eligibility."
+  ],
+  "parent_publication_instructions": [
+    {
+      "action": "Verify accepted source closure before integration",
+      "instruction": "Use native Windows Git and canonical WSL/local imports in the destination. Compare all12 scoped source/contract hashes in source_and_compact_bindings.json. New actual source drift requires honest new validation or reviewed re-attestation; do not refresh old hashes. No generic mechanics/F1 re-review is requested."
+    },
+    {
+      "action": "Publish exact candidate bytes",
+      "from": "artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest",
+      "to": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
+      "instruction": "Copy exactly the eight named files/hash values in candidate_compact_files. Verify every destination hash against this receipt. Preserve unknown runner git_sha, native sweep git_sha, timestamps, scores, thresholds and normalized input paths verbatim. Preserve original raw/local and old evidence in history; no hash laundering."
+    },
+    {
+      "action": "Verify integrated publication",
+      "instruction": "After byte-identical copy, run the four original tests without the review retargeting plugin and the two sample-isolation tests through destination bin wrappers with fresh own scratch parents and XML. Regenerate/audit the GLOBAL index from the explicit integrated COMPLETE bundle using existing generator, strict --verify-input-files locally and default portable mode. Do not replace the global24-row index with this scoped1PASS/23MISSING candidate index, and do not assert all-green for unrelated rows.",
+      "commands_from_destination_cwd": [
+        ".\\bin\\oc-pytest.cmd tests/scripts/test_ptrans_published_attestation.py tests/vivarium/test_protein_translocation_sample_isolation.py -q -rsxX -p no:cacheprovider --basetemp=<fresh-parent-receipt>/pytest --junitxml=<fresh-parent-receipt>/integrated_pt.xml",
+        ".\\bin\\oc-py.cmd scripts/l22_evidence/generator.py generate --out docs/phase_f/l2_2_design_a/evidence_index.json --evidence-root docs/phase_f/l2_2_design_a/evidence_bundle --verify-input-files",
+        ".\\bin\\oc-py.cmd scripts/l22_evidence/generator.py audit --index docs/phase_f/l2_2_design_a/evidence_index.json --evidence-root docs/phase_f/l2_2_design_a/evidence_bundle --verify-input-files",
+        ".\\bin\\oc-py.cmd scripts/l22_evidence/generator.py audit --index docs/phase_f/l2_2_design_a/evidence_index.json --evidence-root docs/phase_f/l2_2_design_a/evidence_bundle"
+      ]
+    },
+    {
+      "action": "Record bounded semantic closure, preserving prior biology adjudication",
+      "path": "docs/phase_f/audits/ProteinTranslocation_semantic_audit.md",
+      "instruction": "Keep the existing10 VERIFIED / zero deviation/missing claim table and prior stage2 algorithm verdict. Add the current evidence/publication acceptance receipt, complete64-input/50seed/4fixture closure, full2892 projection, real sample-owner and persistent replay receipts. Explicitly retain the absent-full-OC-tensor, scalar-rescore/Karr-only-recalibration limitation; no new chassis or bit-identity claim from the statistical W1 score."
+    },
+    {
+      "action": "Reconcile baseline after integrated verification",
+      "path": "docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml",
+      "instruction": "Only after integrated source/copy/tests/audits pass, set PTRANS-COMPLETE-ATTESTATION and PTRANS-SAMPLE-ISOLATION to RESOLVED with current exact file/line references and this independent receipt; replace obsolete representative-only/cached-owner summaries with closure facts. Preserve PTRANS-STAGE2-ALGORITHM and PTRANS-GENUINE-EVIDENCE as RESOLVED. Retain behavior_gate=L2.2 and behavior_verdict=PASS; derive PT eligibility=ELIGIBLE only if no other applicable blocker remains. Recompute baseline summary counts, not unrelated findings.",
+      "suggested_current_source_anchors": {
+        "complete_input_capture": "tests/vivarium/_l2_2_design_a_runner_helpers.py:243-290",
+        "final_input_drift_guard_and_manifest": "tests/vivarium/l2_2_design_a_runner.py:1485-1491",
+        "fresh_sample_owner": "tests/vivarium/_l2_2_design_a_runner_helpers.py:2544-2546",
+        "actual_next_update_guard": "tests/vivarium/_l2_2_design_a_runner_helpers.py:2578-2580",
+        "frozen_isolation_controls": "tests/vivarium/test_protein_translocation_sample_isolation.py:12-49",
+        "frozen_publication_controls": "tests/scripts/test_ptrans_published_attestation.py:37-95"
+      }
+    },
+    {
+      "action": "Refresh stale baseline source-digest metadata; parent-only integration requirement",
+      "recorded": {
+        "sha256": "be95a0b307b08590de24a760183a631d37b96e490526016e17666de72e46809e",
+        "file_count": 140
+      },
+      "actual_at_frozen65": {
+        "sha256": "2b78bca95460efce2451e23b6f8f9b30fefaec24604297dae33485d13faa2ecc",
+        "file_count": 140
+      },
+      "instruction": "The baseline source_tree metadata predates the approved F1 delta. Recompute in the final integrated destination, update source_tree.sha256/file_count, then run baseline audit. This known metadata staleness is not a new PT biological rejection; do not count unrelated baseline blockers as this lane failing.",
+      "commands_from_destination_cwd": [
+        ".\\bin\\oc-py.cmd scripts/pre_l25_honesty.py source-digest",
+        ".\\bin\\oc-py.cmd scripts/pre_l25_honesty.py audit"
+      ]
+    }
+  ],
+  "no_known_applicable_PT_gap_remains_in_reviewed_candidate_packet": true
+}

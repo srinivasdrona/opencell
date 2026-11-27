@@ -1,0 +1,56 @@
+{
+  "exchange_wid_count": 124,
+  "exchange_wid_source": "data/karr_fixtures/per_process/Metabolism_flat.mat via Metabolism.substrateIndexs_externalExchangedMetabolites / KarrWritebackFixture.sub_idx_external",
+  "max_abs_unattributed": 0,
+  "part_a_failures": 0,
+  "part_b_failures": 0,
+  "per_seed": [
+    {
+      "exchange_wids_skipped": 12400,
+      "failures": [],
+      "horizon_completed": true,
+      "max_abs_unattributed": 0,
+      "seed": 0,
+      "ticks_completed": 100,
+      "ticks_requested": 100
+    },
+    {
+      "exchange_wids_skipped": 12400,
+      "failures": [],
+      "horizon_completed": true,
+      "max_abs_unattributed": 0,
+      "seed": 1,
+      "ticks_completed": 100,
+      "ticks_requested": 100
+    },
+    {
+      "exchange_wids_skipped": 12400,
+      "failures": [],
+      "horizon_completed": true,
+      "max_abs_unattributed": 0,
+      "seed": 2,
+      "ticks_completed": 100,
+      "ticks_requested": 100
+    },
+    {
+      "exchange_wids_skipped": 12400,
+      "failures": [],
+      "horizon_completed": true,
+      "max_abs_unattributed": 0,
+      "seed": 3,
+      "ticks_completed": 100,
+      "ticks_requested": 100
+    }
+  ],
+  "requested_ticks": 100,
+  "seeds": [
+    0,
+    1,
+    2,
+    3
+  ],
+  "stability_failure": null,
+  "top_failures": [],
+  "total_failures": 0,
+  "verdict": "PASS"
+}

@@ -1,0 +1,50 @@
+{
+  "exit_code": 0,
+  "xml": "publication.xml",
+  "xml_sha256": "4fe54bf363f534e928647a2d0a0cde12b0c2a32f3c0744492bc94a248f2581c6",
+  "tests": 4,
+  "errors": 0,
+  "failures": 0,
+  "skipped": 0,
+  "testcases": [
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_scores_and_thresholds_remain_byte_bound",
+      "duration_s": "0.028",
+      "children": []
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_attestation_binds_all_resolved_sources",
+      "duration_s": "0.007",
+      "children": []
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_attestation_binds_its_parameter_fixture",
+      "duration_s": "0.012",
+      "children": []
+    },
+    {
+      "classname": "tests.scripts.test_ptrans_published_attestation",
+      "name": "test_ptrans_published_attestation_is_current_under_strict_verification",
+      "duration_s": "1.166",
+      "children": []
+    }
+  ],
+  "actual_EVIDENCE_ROOT": "/mnt/e/opencell-worktrees/m1-accepted-20261019/docs/phase_f/l2_2_design_a/evidence_bundle",
+  "actual_BUNDLE": "/mnt/e/opencell-worktrees/m1-accepted-20261019/docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest",
+  "original_source_sha256": "3d7e27e2a220d80f6c75b75b46f49e7b3efd3ab258272d4b9cbe9a73f602e19d",
+  "input_constants_modified": false,
+  "custom_plugins_supplied": [],
+  "pytest_args": [
+    "tests/scripts/test_ptrans_published_attestation.py",
+    "-q",
+    "-s",
+    "-rsxX",
+    "-p",
+    "no:cacheprovider",
+    "--basetemp=artifacts/m1_integration/independent_pt/scratch/pytest/publication",
+    "--junitxml=artifacts/m1_integration/independent_pt/publication.xml"
+  ]
+}

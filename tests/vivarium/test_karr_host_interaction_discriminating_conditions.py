@@ -158,9 +158,21 @@ def test_literal_port_reproduces_genuine_condition_bit_exact(
         "Fixture enzyme WID count must match the trace's enzyme vector length "
         "(same enzymeWholeCellModelIDs ordering used by both)."
     )
-    protein_counts = {wid: float(value) for wid, value in zip(wids, enzymes_before, strict=True)}
+    protein_counts: dict[str, float] = {}
+    complex_counts: dict[str, float] = {}
+    for wid, value in zip(wids, enzymes_before, strict=True):
+        target = (
+            protein_counts
+            if process.enzyme_store_by_wid[wid] == "protein"
+            else complex_counts
+        )
+        target[wid] = float(value)
 
-    state = {"cell": {}, "protein": {"counts": protein_counts}}
+    state = {
+        "cell": {},
+        "protein": {"counts": protein_counts},
+        "complex": {"counts": complex_counts},
+    }
     update = process.next_update(1.0, state)
     cell_update = update.get("cell", {})
     computed = {field: cell_update.get(field, False) for field in _HOST_FIELDS}

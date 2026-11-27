@@ -1,5 +1,5 @@
 {
-  "allocator_inputs_ref": "artifacts/l2_2_gates/RNAProcessing/latest/allocator_inputs.json",
+  "allocator_inputs_ref": "artifacts/cohort1/final_source_freeze/finalized_evidence/runner_layout/RNAProcessing/latest/allocator_inputs.json",
   "bootstrap_B": 1000,
   "bucket": "ALGORITHMIC_SHALLOW",
   "canonical_seed_count": 50,
@@ -9,13 +9,13 @@
       "aggregation": "per_tick_vector_w1_mean",
       "is_event_channel": false,
       "is_primary": true,
-      "ks_pvalue": 0.8847518827590138,
-      "ks_stat": 0.00044357864357857935,
+      "ks_pvalue": 1.0,
+      "ks_stat": 0.0,
       "n_nonzero_karr": 28449,
-      "n_nonzero_oc": 26912,
+      "n_nonzero_oc": 28449,
       "per_sample_w1_summary": {
-        "max": 0.011544011544011523,
-        "mean": 0.00044357864357864375,
+        "max": 0.0,
+        "mean": 0.0,
         "min": 0.0
       },
       "q95_null": 0.008595786435786457,
@@ -28,19 +28,19 @@
         "stddev": 0.11376246257063953
       },
       "samples_oc": {
-        "kurtosis": 348.7401232721717,
+        "kurtosis": 327.78568669879525,
         "max": 5.0,
-        "mean": 0.00908080808080808,
+        "mean": 0.009524386724386725,
         "min": 0.0,
-        "skew": 16.094714051581516,
-        "stddev": 0.11183278639841143
+        "skew": 15.570968177573544,
+        "stddev": 0.11376246257063953
       },
       "threshold": 1.0,
       "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.00044357864357864375,
+      "w1_oc_vs_karr": 0.0,
       "w1_oc_vs_karr_ci95": [
-        0.007262626262626279,
-        0.00844650072150074
+        0.0074519480519480655,
+        0.008663802308802324
       ]
     },
     "substrates": {
@@ -92,7 +92,7 @@
   },
   "n_observations_per_channel": 5000,
   "process": "RNAProcessing",
-  "provenance_ref": "artifacts/l2_2_gates/RNAProcessing/latest/provenance.json",
+  "provenance_ref": "artifacts/cohort1/final_source_freeze/finalized_evidence/runner_layout/RNAProcessing/latest/provenance.json",
   "seeds": [
     0,
     1,
@@ -146,7 +146,7 @@
     49
   ],
   "ticks": 100,
-  "timestamp": "2026-08-06T13:37:31.876675+00:00",
+  "timestamp": "2026-11-21T20:05:33.988983+00:00",
   "verdict": "PASS",
   "warnings": []
 }

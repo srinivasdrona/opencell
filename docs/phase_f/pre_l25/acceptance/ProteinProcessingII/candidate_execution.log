@@ -1,0 +1,6 @@
+{"started_utc": "2026-10-19T10:37:50.076596+00:00", "pid": 4364, "ppid": 4363, "argv": ["artifacts/m1_cohort/m1_pp2/independent_acceptance/review.py", "candidate"], "cwd": "/mnt/e/opencell-worktrees/m1-pp2-20261017", "executable": "/mnt/e/opencell/.venv-wsl/bin/python", "opencell_file": "/mnt/e/opencell-worktrees/m1-pp2-20261017/opencell/__init__.py"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/candidate_commands.json", "sha256": "5da914a5f735db12b2b5586c3b3c40378b0787b6c7b3acd68dd936efb1e86b90"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/candidate_commands.json", "sha256": "3f853bfd3ee440da762f509a8de16561fd4f33366a23db29b7e8dc4151683ddb"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/candidate_commands.json", "sha256": "2c0d82933428c4ccf3d187ac4dc6e7425f0f55ec0bc95caab4daeb8ee61ddfcc"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/independent_candidate_verification.json", "sha256": "8930ce1c77a9d97ac4135a41c1aab3814d7684a87988b03ca458939636025105"}
+{"finished_utc": "2026-10-19T10:38:01.240189+00:00", "pid": 4364}

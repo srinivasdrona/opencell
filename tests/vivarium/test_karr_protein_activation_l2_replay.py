@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import h5py
 import numpy as np
@@ -23,88 +24,79 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 from l2_replay_common import (
-    apply_count_update,
-    build_state_template,
+    assert_identity_or_tolerance,
+    audit_trace_mutated_ticks,
     cell_vector,
-    collect_count_delta_dicts,
-    infer_wids_for_observable,
-    overlay_observable_into_state,
     project_karr_vector,
-    project_observable_from_state,
-    refresh_allocator_views,
     resolve_trace_path,
-)
-from l2_replay_common import (
-    assert_delta_integral as _assert_delta_integral_shared,
-)
-from l2_replay_common import (
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
-)
-from l2_replay_common import (
-    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
 )
 
 from opencell.vivarium.karr_protein_activation import KarrProteinActivationProcess
 
 _TRACE_PROCESS_NAME = "ProteinActivation"
-_OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes')
-
-# Observables Karr records but `next_update` does not write into. Their
-# `oc_after` MUST be rebuilt from `states_before` (Rule 7 pass-through
-# provenance).
-_PASS_THROUGH = frozenset({'boundEnzymes', 'enzymes'})
-
-# Rule 4b manifest (declared for mechanical lint coverage).
-_SCRATCH_RESET = {}
-
-# Optional explicit observable->WID attribute mapping. Any missing or unknown
-# attr falls back to heuristic inference from process attrs / state schema.
-_OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids'}
+_OBSERVABLES = ("substrates", "enzymes", "boundEnzymes")
+_PASS_THROUGH = frozenset({"boundEnzymes", "enzymes"})
+_SCRATCH_RESET: dict[str, str] = {}
+_INDEX_PROJECTION_LITERAL = {"substrates": np.arange(10)}
+_ACTIVE_NONCYTOSOL_COUNTS = "activation_active_noncytosol_counts"
+_INACTIVE_COUNTS = "activation_inactive_counts"
 
 
-# L2.1 harness overrides (Pattern A). Karr's substrates trace is 60 = 10 substrates x 6 compartments. OC tracks cytosol (first 10).
-_CANONICAL_WIDS: dict[str, list[str]] = {}
-_STORE_PATH_OVERRIDE: dict[str, tuple[str, ...]] = {}
-_INDEX_PROJECTION_ATTR: dict[str, str] = {}
-_INDEX_PROJECTION_LITERAL = {'substrates': np.arange(10)}
-
-
-def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
-    _assert_delta_integral_shared(label, deltas)
-
-
-def _apply_update(
-    state: dict[str, object],
-    update: dict[str, object],
-    process: KarrProteinActivationProcess,
-) -> None:
-    del process  # state is rebuilt per tick; only delta application is needed here.
-    for label, deltas in collect_count_delta_dicts(update):
-        _assert_delta_integral(label, deltas)
-    apply_count_update(state, update)
-
-
-def _audit_trace_mutated_ticks(
-    trace: h5py.File,
-    observables: tuple[str, ...],
-    n_ticks: int,
-) -> dict[str, int]:
-    return _audit_trace_mutated_ticks_shared(trace, observables, n_ticks)
-
-
-def _assert_identity_or_tolerance(
-    *,
-    tick: int,
-    observable: str,
-    oc_after: np.ndarray,
-    karr_after: np.ndarray,
-) -> None:
-    _assert_identity_or_tolerance_shared(
-        tick=tick,
-        observable=observable,
-        oc_after=oc_after,
-        karr_after=karr_after,
+def _assert_integral_delta(path: str, value: object) -> None:
+    if isinstance(value, dict):
+        for key, child in value.items():
+            if path == "protein" and key == "activity":
+                continue
+            _assert_integral_delta(f"{path}.{key}", child)
+        return
+    numeric = float(value)
+    assert numeric == float(np.rint(numeric)), (
+        f"L2a delta non-integral: path={path}, value={numeric}"
     )
+
+
+def _apply_update(state: dict[str, Any], update: dict[str, Any]) -> None:
+    _assert_integral_delta("", update)
+    for wid, value in update.get("protein", {}).get("activity", {}).items():
+        state["protein"]["activity"][wid] = int(value)
+    for store_name in ("protein", "complex"):
+        store_update = update.get(store_name, {})
+        for wid, delta in store_update.get("counts", {}).items():
+            state[store_name]["counts"][wid] += float(delta)
+        for branch_name in (_ACTIVE_NONCYTOSOL_COUNTS, _INACTIVE_COUNTS):
+            for wid, compartment_updates in store_update.get(branch_name, {}).items():
+                for compartment, delta in compartment_updates.items():
+                    state[store_name][branch_name][wid][compartment] += float(delta)
+
+
+def _state_from_trace_substrates(
+    process: KarrProteinActivationProcess,
+    substrates_before: np.ndarray,
+) -> dict[str, Any]:
+    state = process.canonical_state()
+    substrate_index = {wid: index for index, wid in enumerate(process.substrate_wids)}
+    for wid in process.regulated_protein_wids:
+        store = state[process.store_by_wid[wid]]
+        store["counts"][wid] = float(substrates_before[substrate_index[wid]])
+        for compartment in range(1, process.compartment_count):
+            key = process.compartment_keys[compartment]
+            store[_ACTIVE_NONCYTOSOL_COUNTS][wid][key] = 0.0
+        for key in process.compartment_keys:
+            store[_INACTIVE_COUNTS][wid][key] = 0.0
+    return state
+
+
+def _project_substrates_after(
+    process: KarrProteinActivationProcess,
+    state: dict[str, Any],
+    substrates_before: np.ndarray,
+) -> np.ndarray:
+    projected = substrates_before.copy()
+    active, _ = process.state_matrices(state)
+    substrate_index = {wid: index for index, wid in enumerate(process.substrate_wids)}
+    for row, wid in enumerate(process.regulated_protein_wids):
+        projected[substrate_index[wid]] = active[row, 0]
+    return projected
 
 
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
@@ -118,86 +110,56 @@ def test_karr_protein_activation_l2_replay_identity_per_tick(rng_seed: int) -> N
             recorded_seed = int(np.asarray(trace["metadata/rng_seed"][()]).reshape(-1)[0])
             assert int(rng_seed) == recorded_seed
 
-        mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
-        mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+        mutated_tick_counts = audit_trace_mutated_ticks(trace, ("substrates",), n_ticks)
         if sum(mutated_tick_counts.values()) == 0:
             pytest.skip(
-                "L2.1 N/A: no-op trace. Every mutated observable "
-                f"({list(mutated_obs)}) is identical between states_before and "
-                f"states_after across all {n_ticks} ticks. Per-observable "
-                f"nonzero-delta counts: {mutated_tick_counts}."
+                "L2.1 N/A: no-op trace. substrates is identical between "
+                f"states_before and states_after across all {n_ticks} ticks."
             )
 
         process = KarrProteinActivationProcess({"rng_seed": int(rng_seed)})
-        state_template = build_state_template(process)
-
-        wids_by_observable: dict[str, list[str]] = {}
-        for observable in _OBSERVABLES:
-            karr_before = cell_vector(trace, "states_before", observable, 0)
-            explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
-            wids_by_observable[observable] = infer_wids_for_observable(
-                process,
-                state_template,
-                observable,
-                karr_len=int(karr_before.shape[0]),
-                explicit_attr=explicit_attr,
-                canonical_wids_override=_CANONICAL_WIDS,
-            )
-
         for tick in range(n_ticks):
-            state = build_state_template(process)
             before_vectors = {
                 observable: project_karr_vector(
                     process,
                     observable,
                     cell_vector(trace, "states_before", observable, tick),
-                    index_projection_attr=_INDEX_PROJECTION_ATTR,
                     index_projection_literal=_INDEX_PROJECTION_LITERAL,
                 )
                 for observable in _OBSERVABLES
             }
-
-            for observable in _OBSERVABLES:
-                overlay_observable_into_state(
-                    process=process,
-                    state=state,
-                    observable=observable,
-                    vector=before_vectors[observable],
-                    wids=wids_by_observable[observable],
-                    store_path_override=_STORE_PATH_OVERRIDE,
-                )
-            refresh_allocator_views(process, state)
-
+            state = _state_from_trace_substrates(process, before_vectors["substrates"])
             update = process.next_update(1.0, state)
-            _apply_update(state, update, process)
+            _apply_update(state, update)
 
             for observable in _OBSERVABLES:
                 karr_after = project_karr_vector(
                     process,
                     observable,
                     cell_vector(trace, "states_after", observable, tick),
-                    index_projection_attr=_INDEX_PROJECTION_ATTR,
                     index_projection_literal=_INDEX_PROJECTION_LITERAL,
                 )
-                expected_len = len(wids_by_observable[observable])
-                if karr_after.shape[0] != expected_len:
-                    mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
-                    pytest.fail(
-                        "L2a wid-length drift: "
-                        f"tick={tick}, observable={observable}, "
-                        f"karr_len={karr_after.shape[0]}, "
-                        f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
-                    )
-
-                oc_after = project_observable_from_state(
-                    process=process,
-                    state=state,
-                    observable=observable,
-                    wids=wids_by_observable[observable],
-                    bound_enzymes_before=before_vectors.get("boundEnzymes"),
-                    store_path_override=_STORE_PATH_OVERRIDE,
+                expected_length = (
+                    len(process.substrate_wids)
+                    if observable == "substrates"
+                    else before_vectors[observable].shape[0]
                 )
-                _assert_identity_or_tolerance(
+                assert karr_after.shape[0] == expected_length, (
+                    "L2a wid-length drift: "
+                    f"tick={tick}, observable={observable}, "
+                    f"karr_len={karr_after.shape[0]}, "
+                    f"mapped_len={expected_length}"
+                )
+
+                if observable == "substrates":
+                    oc_after = _project_substrates_after(
+                        process,
+                        state,
+                        before_vectors["substrates"],
+                    )
+                else:
+                    oc_after = before_vectors[observable].copy()
+                assert_identity_or_tolerance(
                     tick=tick,
                     observable=observable,
                     oc_after=oc_after,

@@ -1,0 +1,650 @@
+[
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_sample_isolation.py::test_translocation_execution_owns_fresh_sample_rng[repeat]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.0002740900000048896,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_sample_isolation.py::test_translocation_execution_owns_fresh_sample_rng[repeat]",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 1.8462492110000426,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_sample_isolation.py::test_translocation_execution_owns_fresh_sample_rng[repeat]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.0002185600000075283,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_sample_isolation.py::test_translocation_execution_owns_fresh_sample_rng[advanced_metadata]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.000380578000033438,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_sample_isolation.py::test_translocation_execution_owns_fresh_sample_rng[advanced_metadata]",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 1.3884155800000144,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_sample_isolation.py::test_translocation_execution_owns_fresh_sample_rng[advanced_metadata]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00021412199998849246,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_scores_and_thresholds_remain_byte_bound",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.00014228099996671517,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_scores_and_thresholds_remain_byte_bound",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.02579641099998753,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_scores_and_thresholds_remain_byte_bound",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 9.929499998406754e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_attestation_binds_all_resolved_sources",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 8.937600000535895e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_attestation_binds_all_resolved_sources",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.006090196000002379,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_attestation_binds_all_resolved_sources",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 9.69910000208074e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_attestation_binds_its_parameter_fixture",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 9.158000000297761e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_attestation_binds_its_parameter_fixture",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.011512476000007155,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_attestation_binds_its_parameter_fixture",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.0001102169999853686,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_attestation_is_current_under_strict_verification",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 8.917600001723258e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_attestation_is_current_under_strict_verification",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 1.0157451520000222,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/scripts/test_ptrans_published_attestation.py::test_ptrans_published_attestation_is_current_under_strict_verification",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 9.799499997598105e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation_l2_replay.py::test_karr_protein_translocation_l2_replay_identity_per_tick[rng_seed_0]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.0002160290000006171,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation_l2_replay.py::test_karr_protein_translocation_l2_replay_identity_per_tick[rng_seed_0]",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 20.548183897,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation_l2_replay.py::test_karr_protein_translocation_l2_replay_identity_per_tick[rng_seed_0]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00011742899999944711,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_1_translocation_adapter_preserves_2892_compartment_positions",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 8.727000005137597e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_1_translocation_adapter_preserves_2892_compartment_positions",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.00028054699998847354,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_1_translocation_adapter_preserves_2892_compartment_positions",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00022593999995024205,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_2_load_v2_ensemble_returns_2892_monomer_vectors",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.0001395720000232359,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_2_load_v2_ensemble_returns_2892_monomer_vectors",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.4948508219999894,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_2_load_v2_ensemble_returns_2892_monomer_vectors",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.0001500930000020162,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_3_run_protein_translocation_tick_preserves_non_authority_monomers",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 9.077700002535494e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_3_run_protein_translocation_tick_preserves_non_authority_monomers",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.9182162139999832,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_3_run_protein_translocation_tick_preserves_non_authority_monomers",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 9.448499997688486e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_4_planted_collapsed_sum_mutation_canary",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 8.697000004076472e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_4_planted_collapsed_sum_mutation_canary",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.0003764360000104716,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_ptransloc_design_a_full_vector.py::test_contract_4_planted_collapsed_sum_mutation_canary",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00011542600003622283,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_l2_no_oracle_dependency.py::test_l2_process_source_does_not_depend_on_replay_oracle[karr_protein_translocation.py]",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.00020570200001657213,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_l2_no_oracle_dependency.py::test_l2_process_source_does_not_depend_on_replay_oracle[karr_protein_translocation.py]",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.00901081800003567,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_l2_no_oracle_dependency.py::test_l2_process_source_does_not_depend_on_replay_oracle[karr_protein_translocation.py]",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00013386200004106286,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_fixture_loads",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 9.578699996382056e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_fixture_loads",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.3329036960000167,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_fixture_loads",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 9.618800004318473e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_no_cytoplasmic_no_translocation",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 8.376400000997819e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_no_cytoplasmic_no_translocation",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.32971255699999347,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_no_cytoplasmic_no_translocation",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00010139899995920132,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_srp_mediated_lipoprotein_path",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.00010520600000063496,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_srp_mediated_lipoprotein_path",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.33432397699999683,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_srp_mediated_lipoprotein_path",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00014140800004724952,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_direct_integral_membrane_path",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.00011268700001210163,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_direct_integral_membrane_path",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.32991612699998996,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_direct_integral_membrane_path",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 9.374000001116656e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_timestep_scales_translocase_capacity",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.00011966800002483069,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_timestep_scales_translocase_capacity",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.337066698000001,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_timestep_scales_translocase_capacity",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.0001135200000135228,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_atp_consumption_per_translocation",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.00012798399995972431,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_atp_consumption_per_translocation",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.34255726999998615,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_atp_consumption_per_translocation",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 9.735899999441244e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_mixed_copy_order_breaks_after_first_infeasible_copy",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 9.237200004008628e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_mixed_copy_order_breaks_after_first_infeasible_copy",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.33902878800000735,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_mixed_copy_order_breaks_after_first_infeasible_copy",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00010234699999500663,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_srp_starvation_blocks_membrane_only",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 8.848100003433501e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_srp_starvation_blocks_membrane_only",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.34168214800001806,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_srp_starvation_blocks_membrane_only",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00012023699997598669,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_translocase_starvation_blocks_all",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 8.800800003427867e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_translocase_starvation_blocks_all",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.34632441099995503,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_translocase_starvation_blocks_all",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.0001196380000010322,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_protein_authority_store_updates",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 9.279599998990307e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_protein_authority_store_updates",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.5931087540000135,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_protein_authority_store_updates",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00010576100004300315,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_deterministic_with_seed",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.0001446489999921141,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_deterministic_with_seed",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.6423127470000054,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_karr_protein_translocation.py::test_deterministic_with_seed",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00011571900000717505,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/unit/test_karr_protein_translocation_strict_zero.py::test_karr_protein_translocation_strict_zero_no_global_fallback",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 8.511999999427644e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/unit/test_karr_protein_translocation_strict_zero.py::test_karr_protein_translocation_strict_zero_no_global_fallback",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.3240755799999988,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/unit/test_karr_protein_translocation_strict_zero.py::test_karr_protein_translocation_strict_zero_no_global_fallback",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 9.488799997825481e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_stage2.py::test_c11_persistent_stream_and_fixture_order",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 0.0001219989999867721,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_stage2.py::test_c11_persistent_stream_and_fixture_order",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.3337617239999986,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_stage2.py::test_c11_persistent_stream_and_fixture_order",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 9.997199998679207e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_stage2.py::test_canary_rejects_reseed_rng",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 9.49870000113151e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_stage2.py::test_canary_rejects_reseed_rng",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.33950858800000105,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_stage2.py::test_canary_rejects_reseed_rng",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00017675999998800762,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_stage2.py::test_canary_rejects_repeated_selection_stream_with_advancing_rng",
+    "when": "setup",
+    "outcome": "passed",
+    "duration_s": 9.560799998098446e-05,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_stage2.py::test_canary_rejects_repeated_selection_stream_with_advancing_rng",
+    "when": "call",
+    "outcome": "passed",
+    "duration_s": 0.3648610920000124,
+    "wasxfail": null,
+    "longrepr": null
+  },
+  {
+    "nodeid": "tests/vivarium/test_protein_translocation_stage2.py::test_canary_rejects_repeated_selection_stream_with_advancing_rng",
+    "when": "teardown",
+    "outcome": "passed",
+    "duration_s": 0.00015293199999177887,
+    "wasxfail": null,
+    "longrepr": null
+  }
+]

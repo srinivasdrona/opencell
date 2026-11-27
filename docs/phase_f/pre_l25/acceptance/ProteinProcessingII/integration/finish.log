@@ -1,0 +1,7 @@
+{"started_utc": "2026-10-19T11:02:07.108744+00:00", "pid": 5418, "ppid": 5417, "argv": ["artifacts/m1_integration/independent_pp2/check.py", "--finish"], "executable": "/mnt/e/opencell/.venv-wsl/bin/python", "opencell_file": "/mnt/e/opencell-worktrees/m1-accepted-20261019/opencell/__init__.py", "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019"}
+{"report": "committed_authority_bytes.json", "sha256": "f535642f178c21bd33d3bc84f75b2f50762f5b4b9522ab497747b54aa03c63e9"}
+{"report": "committed_and_filesystem_preservation.json", "sha256": "75f27fc32cf8122d810f3d89dfe61d1efb574c3eea504f45c213b93abf5e5f25"}
+{"report": "strict_current_pp2_row.json", "sha256": "22511a594ff6bdac42ccda9f685323a43edae52f32a82fc6637533de48061788"}
+{"report": "candidate_current_input_bytes.json", "sha256": "a4264e62eda159b19548fb9c84e61e4b8591392fb7394a6e04c0eaadfaf04477"}
+{"report": "integration_measurements.json", "sha256": "ab948f23b29e35e469e9a4cb563ada5c2e085ada76f7cfe0914264672426d654"}
+{"finished_utc": "2026-10-19T11:02:14.169241+00:00", "pid": 5418, "verdict": "ACCEPTED"}

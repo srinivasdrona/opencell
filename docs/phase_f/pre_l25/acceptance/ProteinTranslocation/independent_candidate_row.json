@@ -1,0 +1,41 @@
+{
+  "artifact_hashes": {
+    "SUMMARY.json": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+    "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+    "null_calibration.json": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+    "provenance.json": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+    "result.json": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+    "sweep_provenance.json": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
+    "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+  },
+  "bucket": "ALGORITHMIC_SHALLOW",
+  "catalog_soft_flags": {
+    "M_ticks": 100,
+    "N_seeds": 50,
+    "closed_form_dominant": "confirmed_biology_validated",
+    "harness_type": "design_a_per_tick",
+    "in_scope_L2_2": true,
+    "primary_channel": "monomers",
+    "primary_distance": "per_tick_vector_w1_mean"
+  },
+  "channel_verdicts": {
+    "monomers": "SEED_NOISE",
+    "substrates": "SEED_NOISE"
+  },
+  "evidence_dir": "artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest",
+  "green": true,
+  "harness_type": "design_a_per_tick",
+  "mechanical_verdict": "PASS",
+  "process": "ProteinTranslocation",
+  "provenance_git_sha": "unknown",
+  "reasons": [],
+  "sweep_provenance": {
+    "completion_status": "COMPLETE",
+    "evaluator_schema_version": 5,
+    "git_dirty": null,
+    "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
+    "inputs_verified": true,
+    "result_schema_version": 1
+  },
+  "warnings": []
+}

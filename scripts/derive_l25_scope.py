@@ -20,22 +20,25 @@ shared-pool pairs) is reused unmodified from ``scripts/derive_l25_pair_matrix``
 -- that machinery is sound; only its ``l2_2_passed`` fallback field (which is
 a scope flag in disguise, not a verdict) is discarded and replaced.
 
-A "known short-circuit gap" overlay is computed by grepping each process's
-``oc_module`` source for the literal token ``trace_hint`` (cross-referenced
-against ``docs/phase_f/L2_5_SHORTCIRCUIT_AUDIT.md``, but re-verified live here
-rather than trusted as a static list) -- a process flagged this way is never
-eligible for *selection* even if its gate verdict is otherwise green, per the
-"no known-gap waiver" rule.
+Two no-known-gap overlays are then applied:
+
+* the historical short-circuit check mechanically flags a live ``trace_hint``
+  token for conservative compatibility with the original scope gate; and
+* ``scripts/pre_l25_honesty.py`` validates a hash-locked 28-process baseline
+  that adjudicates broader code deviations, evidence-versus-production
+  configuration mismatches, and stale/missing semantic audits.
+
+A process must clear its lower gate and both overlays before it is selectable.
 
 Usage (always via the WSL wrapper -- see repo Copilot instructions):
     bin\\oc-py scripts/derive_l25_scope.py                 # regenerate + write + validate
     bin\\oc-py scripts/derive_l25_scope.py --check          # regenerate, diff vs tracked file, no write
     bin\\oc-py scripts/derive_l25_scope.py --out <path>     # write elsewhere (tests)
 
-Exit code is 0 iff every required coverage class is covered by a selected
-pair whose both processes are eligible and gap-free. Today's honest answer
-is exit 1 (see docs/phase_f/L2_5_SCOPE_RATIFICATION.md) -- that is the
-correct, disciplined, non-waived outcome, not a bug in this script.
+Exit code is 0 iff every required coverage class is covered by a selected pair
+whose processes are lower-gate green, short-circuit-gap-free, and explicitly
+eligible in the current honesty baseline. A nonzero result while blockers are
+open is the intended fail-closed outcome.
 """
 
 from __future__ import annotations
@@ -57,6 +60,7 @@ for _p in (_REPO, _SCRIPTS):
         sys.path.insert(0, str(_p))
 
 import derive_l25_pair_matrix as pairmat  # noqa: E402 (flat sibling module)
+import pre_l25_honesty as honesty  # noqa: E402 (flat sibling module)
 
 from scripts.l22_evidence import generator as l22gen  # noqa: E402
 
@@ -79,10 +83,18 @@ class ProcessVerdict:
     eligible: bool
     known_short_circuit_gap: bool
     gap_reason: str | None
+    honesty_eligibility: str
+    honesty_blockers: tuple[str, ...]
+    honesty_integrity_ok: bool
 
     @property
     def eligible_gap_free(self) -> bool:
-        return self.eligible and not self.known_short_circuit_gap
+        return (
+            self.eligible
+            and not self.known_short_circuit_gap
+            and self.honesty_integrity_ok
+            and self.honesty_eligibility == "ELIGIBLE"
+        )
 
 
 def _load_raw_catalog_rows(catalog_path: Path) -> dict[str, dict[str, Any]]:
@@ -179,11 +191,26 @@ def _l2_2_verdicts(catalog_path: Path) -> dict[str, tuple[str, dict[str, Any]]]:
     return out
 
 
+def _honesty_eligibility() -> tuple[dict[str, dict[str, Any]], honesty.BaselineAudit]:
+    result = honesty.audit_baseline()
+    if not result.integrity_ok:
+        return {}, result
+    baseline = yaml.safe_load(honesty.DEFAULT_BASELINE.read_text(encoding="utf-8")) or {}
+    rows = baseline.get("processes", [])
+    by_name = {
+        str(row["name"]): row
+        for row in rows
+        if isinstance(row, dict) and isinstance(row.get("name"), str)
+    }
+    return by_name, result
+
+
 def derive_process_verdicts(
     catalog_rows: dict[str, dict[str, Any]], catalog_path: Path
 ) -> list[ProcessVerdict]:
     l2_2_rows = _l2_2_verdicts(catalog_path)
     l2_2_error = l2_2_rows.pop("__error__", None)
+    honesty_rows, honesty_result = _honesty_eligibility()
 
     verdicts: list[ProcessVerdict] = []
     for name in sorted(catalog_rows):
@@ -208,6 +235,22 @@ def derive_process_verdicts(
                 verdict, detail = l2_2_rows[name]
             eligible = verdict in L2_2_GATE_PASS_VERDICTS
 
+        honesty_row = honesty_rows.get(name)
+        if honesty_row is None:
+            honesty_eligibility = "BLOCKED_STALE_OR_MISSING_AUDIT"
+            honesty_blockers = tuple(honesty_result.problems) or (
+                f"no pre-L2.5 honesty baseline row for {name}",
+            )
+        else:
+            honesty_eligibility = str(honesty_row.get("eligibility", "")).strip()
+            honesty_blockers = tuple(
+                str(finding.get("id", "<missing>"))
+                for finding in honesty_row.get("findings", [])
+                if isinstance(finding, dict)
+                and str(finding.get("disposition", "")).strip()
+                in honesty.BLOCKING_DISPOSITIONS
+            )
+
         verdicts.append(
             ProcessVerdict(
                 name=name,
@@ -219,6 +262,9 @@ def derive_process_verdicts(
                 eligible=eligible,
                 known_short_circuit_gap=gap,
                 gap_reason=gap_reason,
+                honesty_eligibility=honesty_eligibility,
+                honesty_blockers=honesty_blockers,
+                honesty_integrity_ok=honesty_result.integrity_ok,
             )
         )
     return verdicts
@@ -463,8 +509,19 @@ def build_payload() -> tuple[dict[str, Any], bool]:
     n_eligible = sum(1 for v in verdicts if v.eligible)
     n_eligible_gap_free = sum(1 for v in verdicts if v.eligible_gap_free)
     n_known_gap = sum(1 for v in verdicts if v.known_short_circuit_gap)
+    n_honesty_eligible = sum(
+        1
+        for v in verdicts
+        if v.honesty_integrity_ok and v.honesty_eligibility == "ELIGIBLE"
+    )
+    honesty_integrity_ok = all(v.honesty_integrity_ok for v in verdicts)
 
-    ok = len(selection["uncovered"]) == 0 and len(verdicts) == 28 and not registry_violations
+    ok = (
+        len(selection["uncovered"]) == 0
+        and len(verdicts) == 28
+        and not registry_violations
+        and honesty_integrity_ok
+    )
 
     try:
         catalog_source_desc = catalog_path.relative_to(_REPO).as_posix()
@@ -511,6 +568,15 @@ def build_payload() -> tuple[dict[str, Any], bool]:
             ),
             "reference": SHORTCIRCUIT_AUDIT_DOC,
         },
+        "pre_l2_5_honesty": {
+            "baseline": honesty.DEFAULT_BASELINE.relative_to(_REPO).as_posix(),
+            "integrity_ok": honesty_integrity_ok,
+            "eligible_processes": n_honesty_eligible,
+            "policy": (
+                "A process is selectable only when the hash-locked honesty baseline "
+                "contains no unresolved code, evidence-configuration, or audit blocker."
+            ),
+        },
         "processes": [
             {
                 "name": v.name,
@@ -521,6 +587,9 @@ def build_payload() -> tuple[dict[str, Any], bool]:
                 "eligible": v.eligible,
                 "known_short_circuit_gap": v.known_short_circuit_gap,
                 "gap_reason": v.gap_reason,
+                "honesty_eligibility": v.honesty_eligibility,
+                "honesty_blockers": list(v.honesty_blockers),
+                "honesty_integrity_ok": v.honesty_integrity_ok,
                 "eligible_gap_free": v.eligible_gap_free,
             }
             for v in verdicts
@@ -542,6 +611,7 @@ def build_payload() -> tuple[dict[str, Any], bool]:
             "n_eligible_processes": n_eligible,
             "n_eligible_gap_free_processes": n_eligible_gap_free,
             "n_known_gap_processes": n_known_gap,
+            "n_honesty_eligible_processes": n_honesty_eligible,
             "n_selected_pairs": len(selection["selected_pairs"]),
             "n_uncovered_classes": len(selection["uncovered"]),
             "ok": ok,
@@ -603,6 +673,11 @@ def print_summary(payload: dict[str, Any]) -> None:
     print(
         f"eligible processes: {s['n_eligible_processes']}/28 "
         f"({s['n_eligible_gap_free_processes']} gap-free, {s['n_known_gap_processes']} known-gap)"
+    )
+    print(
+        "pre-L2.5 honesty: "
+        f"{s['n_honesty_eligible_processes']}/28 eligible, "
+        f"integrity={'OK' if payload['pre_l2_5_honesty']['integrity_ok'] else 'FAIL'}"
     )
     print(
         f"pairs: {payload['pair_universe']['eligible_pairs']} eligible, "

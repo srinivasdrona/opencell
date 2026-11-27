@@ -1,0 +1,4 @@
+wrote artifacts/m1_cohort/m1_pt/independent_acceptance/candidate_index_portable.json (24 rows, aggregate=NON_GREEN)
+  evidence_root: artifacts/m1_cohort/m1_pt/evidence_bundle
+  MISSING_EVIDENCE: 23
+  PASS: 1

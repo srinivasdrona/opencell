@@ -1,0 +1,17 @@
+{
+  "finished_utc": "2026-10-19T11:04:33.6507301Z",
+  "powershell_pid": 15012,
+  "candidate_head": "c3ec943df61e485c0f50a3f770f85fdb5eae2cd1",
+  "native_status": [],
+  "published_files_rechecked": 40,
+  "published_files_changed": 0,
+  "authority_files_changed": 0,
+  "unrelated_bundle_files_changed": 0,
+  "original_receipts": 32,
+  "original_bundle": 8,
+  "original_native_status": [],
+  "verdict": "ACCEPTED",
+  "verdict_sha256": "9f89a55d5c339dfc080949759f93d7c83d5490cbad0455f6527c5e15d790c6e2",
+  "status_sha256": "6efaa1e214216ad6f6fa34256a23d2cd6b130c4cd1c9607ef0df49de4476a701",
+  "no_live_review_command_shells": true
+}

@@ -285,11 +285,17 @@ VIVARIUM_INIT_MODULE = REPO_ROOT / "opencell" / "vivarium" / "__init__.py"
 # `resolve_event_registry_process_contract`/`process_contract_hashes` and
 # EVIDENCE_INDEX_SPEC.md Section 13.18 for the full design and the
 # migration of pre-existing tracked evidence to this scheme.
+# Every Vivarium package import executes the composite's observer/mass imports.
+SHARED_MASS_IMPORT_FILES = {
+    "cell_mass_module": REPO_ROOT / "opencell" / "analysis" / "cell_mass.py",
+    "karr_observability_step_module": REPO_ROOT / "opencell" / "vivarium" / "karr_observability_step.py",
+}
 SWEEP_PROVENANCE_SOURCE_FILES = {
     "runner": RUNNER_SCRIPT,
     "helpers": RUNNER_HELPERS_MODULE,
     "projections": RUNNER_PROJECTIONS_MODULE,
     "vivarium_init": VIVARIUM_INIT_MODULE,
+    **SHARED_MASS_IMPORT_FILES,
 }
 
 # Event-class bridge rows must stale on the EVENT path that actually
@@ -306,6 +312,7 @@ EVENT_CLASS_SOURCE_FILES = {
     "l2_event_metrics": L2_EVENT_METRICS_MODULE,
     "l2_event_evidence": L2_EVENT_EVIDENCE_MODULE,
     "vivarium_init": VIVARIUM_INIT_MODULE,
+    **SHARED_MASS_IMPORT_FILES,
 }
 
 WINDOWED_CONTINUOUS_SOURCE_FILES = {
@@ -313,6 +320,7 @@ WINDOWED_CONTINUOUS_SOURCE_FILES = {
     "division_cohort_selector": DIVISION_COHORT_SELECTOR_MODULE,
     "division_window_spec": DIVISION_WINDOW_SPEC_MODULE,
     "vivarium_init": VIVARIUM_INIT_MODULE,
+    **SHARED_MASS_IMPORT_FILES,
 }
 
 # --- Per-process metric-evaluation dependency modules (beyond the four
@@ -507,6 +515,8 @@ L2_EVENT_RIBOSOME_SMOKE_ADAPTER_MODULE = REPO_ROOT / "scripts" / "l2_event" / "a
 L2_EVENT_RIBOSOME_N50_GATE_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ribosome_assembly_n50_gate.py"
 L2_EVENT_RIBOSOME_SEED_AUDIT_MODULE = REPO_ROOT / "scripts" / "l2_event" / "ribosome_assembly_seed_audit.py"
 L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.py"
+# Both source-before RNA adapters execute this helper, not the fidelity test utilities.
+RNA_REPLAY_INPUTS_MODULE = REPO_ROOT / "tests" / "vivarium" / "_rna_replay_inputs.py"
 
 # --- Explicit per-process runtime dependency registry (F1, corrected F5) ----
 #
@@ -552,11 +562,8 @@ L2_REPLAY_COMMON_MODULE = REPO_ROOT / "tests" / "vivarium" / "l2_replay_common.p
 # called by any evidence-generation path today -- this entry has ZERO
 # effect on the Design-A tally.
 #
-# `ChromosomeCondensation` (out of scope: not in `catalog.in_scope_processes()`)
-# is deliberately NOT registered here -- it is never looked up by any
-# in-scope evidence row regardless, so omitting it has no staling impact
-# either way; see EVIDENCE_INDEX_SPEC.md Section 13.11 for why it is
-# excluded from the audit too (out-of-scope processes are never iterated).
+PROTEIN_STATE_MODULE = REPO_ROOT / "opencell" / "vivarium" / "protein_state.py"
+
 PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     "FtsZPolymerization": {
         "ftsz_windowed_n20_gate_module": FTSZ_WINDOWED_N20_GATE_MODULE,
@@ -585,13 +592,41 @@ PROCESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
     },
     "ProteinProcessingI": {
         "karr_trna_aminoacylation_module": KARR_TRNA_AMINOACYLATION_MODULE,
+        "protein_state_module": PROTEIN_STATE_MODULE,
+    },
+    "ProteinProcessingII": {
+        "protein_state_module": PROTEIN_STATE_MODULE,
+    },
+    "ProteinModification": {
+        "protein_state_module": PROTEIN_STATE_MODULE,
+        "mcg16807_state_codec_module": MCG16807_STATE_CODEC_MODULE,
+    },
+    "ProteinFolding": {
+        "protein_state_module": PROTEIN_STATE_MODULE,
+    },
+    "ProteinDecay": {
+        "protein_state_module": PROTEIN_STATE_MODULE,
     },
     "RNAProcessing": {
         "karr_trna_aminoacylation_module": KARR_TRNA_AMINOACYLATION_MODULE,
+        "rna_replay_inputs_module": RNA_REPLAY_INPUTS_MODULE,
+    },
+    "RNAModification": {
+        "rna_replay_inputs_module": RNA_REPLAY_INPUTS_MODULE,
     },
     "ProteinTranslocation": {
         "util_module": UTIL_MODULE,
         "util_matlab_rng_module": UTIL_MATLAB_RNG_MODULE,
+        "protein_state_module": PROTEIN_STATE_MODULE,
+    },
+    "ChromosomeCondensation": {
+        "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+        "m_gen_constants_module": M_GEN_CONSTANTS_MODULE,
+        "chromcond_mcg_rand_module": REPO_ROOT / "opencell" / "util" / "chromcond_mcg_rand.py",
+    },
+    "TranscriptionalRegulation": {
+        "chromosome_store_module": CHROMOSOME_STORE_MODULE,
+        "txreg_mcg_rand_module": REPO_ROOT / "opencell" / "util" / "txreg_mcg_rand.py",
     },
     "DNARepair": {
         "chromosome_store_module": CHROMOSOME_STORE_MODULE,
@@ -724,13 +759,59 @@ def process_dependency_hashes(process: str) -> dict[str, str | None]:
 # module at all) rather than by process name, since it is a runner-harness-level
 # dependency, not a per-process one -- keyed the same way
 # `SWEEP_PROVENANCE_SOURCE_FILES` is, just scoped narrower than "always".
-HARNESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
-    "design_a_per_tick": {"l2_replay_common": L2_REPLAY_COMMON_MODULE},
+# Actual mass-reader construction executes these loaders/owners and consumes
+# these fixtures; a cold producer import alone is not a parameter read.
+SHARED_MASS_CONSTRUCTOR_FILES = {
+    "mass_protein_state_module": PROTEIN_STATE_MODULE,
+    "mass_protein_activation_module": REPO_ROOT / "opencell" / "vivarium" / "karr_protein_activation.py",
+    "mass_m1_loader_module": M1_KARR_METABOLISM_MODULE,
+    "mass_m2_loader_module": M2_TRANSCRIPTION_MODULE,
+    "mass_m3_loader_module": M3_TRANSLATION_MODULE,
+    "mass_data_init_module": REPO_ROOT / "opencell" / "data" / "__init__.py",
+    "mass_substrate_classes_module": REPO_ROOT / "opencell" / "data" / "substrate_mass_classes.py",
+    "mass_parameters": REPO_ROOT / "data" / "karr_fixtures" / "parameters.json",
+    "mass_m3_vocabulary": REPO_ROOT / "data" / "karr_fixtures" / "karr_native_m3_vocab.json",
+    **{
+        f"mass_m{module}_{suffix}": REPO_ROOT / "data" / "karr_fixtures" / f"karr_native_m{module}.{suffix}"
+        for module in (1, 2, 3) for suffix in ("json", "npz")
+    },
+    **{
+        f"mass_{name}_fixture": REPO_ROOT / "data" / "karr_fixtures" / "per_process" / f"{name}_flat.mat"
+        for name in (
+            "Rna", "ProteinMonomer", "ProteinComplex", "ProteinActivation",
+            "ProteinProcessingI", "ProteinProcessingII", "ProteinModification",
+            "ProteinTranslocation", "TerminalOrganelleAssembly",
+        )
+    },
 }
+HARNESS_DEPENDENCY_FILES: dict[str, dict[str, Path]] = {
+    "design_a_per_tick": {
+        "l2_replay_common": L2_REPLAY_COMMON_MODULE,
+        "evidence_schema_module": Path(__file__).resolve(),
+        **SHARED_MASS_CONSTRUCTOR_FILES,
+    },
+}
+
+# Extra parameter/membership fixtures beyond the process's own flat fixture.
+# Paths are repo-relative so a worktree's actual data, not a sibling's copy,
+# is bound before constructing the sample process.
+PROCESS_PARAMETER_FIXTURES: dict[str, tuple[str, ...]] = {
+    # The combined PM adapter constructs only PM; Folding's fixtures are not consumed.
+    "ProteinModification": ("MacromolecularComplexation",),
+    "ProteinFolding": ("MacromolecularComplexation", "RibosomeAssembly"),
+    "ProteinProcessingI": ("MacromolecularComplexation", "RibosomeAssembly"),
+    "ProteinDecay": ("MacromolecularComplexation",),
+    "ProteinTranslocation": ("MacromolecularComplexation", "RibosomeAssembly"),
+    "RNAProcessing": ("Rna", "MacromolecularComplexation", "RibosomeAssembly"),
+    # RM derives processed:: disambiguation from RNAProcessing's nascent WIDs.
+    "RNAModification": ("RNAProcessing", "MacromolecularComplexation"),
+    "tRNAAminoacylation": ("MacromolecularComplexation", "RibosomeAssembly"),
+}
+PROTEIN_AUTHORITY_FIXTURES = ("ProteinTranslocation", "TerminalOrganelleAssembly")
 
 
 def harness_dependency_hashes(harness_type: str | None) -> dict[str, str | None]:
-    """sha256 of every module registered in `HARNESS_DEPENDENCY_FILES` for
+    """sha256 of every source/parameter file in `HARNESS_DEPENDENCY_FILES` for
     `harness_type` (e.g. `l2_replay_common.py` for every
     `design_a_per_tick` process) -- empty dict for `None`/an unregistered
     harness_type (e.g. `event_class`, which is intentionally unregistered:

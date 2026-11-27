@@ -1,0 +1,45 @@
+[
+  {
+    "argv": [
+      "generate",
+      "--out",
+      "artifacts/m1_cohort/m1_pp2/independent_acceptance/candidate_evidence_index.json",
+      "--evidence-root",
+      "artifacts/m1_cohort/m1_pp2/evidence_bundle"
+    ],
+    "entrypoint": "scripts/l22_evidence/generator.py",
+    "exit_code": 0,
+    "finished_utc": "2026-10-19T10:37:53.410540+00:00",
+    "pid": 4364,
+    "started_utc": "2026-10-19T10:37:50.567521+00:00"
+  },
+  {
+    "argv": [
+      "audit",
+      "--index",
+      "artifacts/m1_cohort/m1_pp2/independent_acceptance/candidate_evidence_index.json",
+      "--evidence-root",
+      "artifacts/m1_cohort/m1_pp2/evidence_bundle",
+      "--verify-input-files"
+    ],
+    "entrypoint": "scripts/l22_evidence/generator.py",
+    "exit_code": 0,
+    "finished_utc": "2026-10-19T10:37:57.797000+00:00",
+    "pid": 4364,
+    "started_utc": "2026-10-19T10:37:53.432556+00:00"
+  },
+  {
+    "argv": [
+      "audit",
+      "--index",
+      "artifacts/m1_cohort/m1_pp2/independent_acceptance/candidate_evidence_index.json",
+      "--evidence-root",
+      "artifacts/m1_cohort/m1_pp2/evidence_bundle"
+    ],
+    "entrypoint": "scripts/l22_evidence/generator.py",
+    "exit_code": 0,
+    "finished_utc": "2026-10-19T10:37:59.150520+00:00",
+    "pid": 4364,
+    "started_utc": "2026-10-19T10:37:57.817187+00:00"
+  }
+]

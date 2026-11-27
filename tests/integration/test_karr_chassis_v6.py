@@ -24,6 +24,15 @@ from opencell.vivarium.karr_composite import (
     build_karr_chassis_v6,
 )
 
+_HOST_FIELDS = (
+    "host_attached",
+    "host_tlr1_activated",
+    "host_tlr2_activated",
+    "host_tlr6_activated",
+    "host_nfkb_activated",
+    "host_inflammatory_response_activated",
+)
+
 
 def _build_engine() -> Engine:
     composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
@@ -50,14 +59,14 @@ def _sum_state_counts(state: dict[str, object], store: str) -> float:
 
 def test_v6_builds() -> None:
     composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
-    proc_keys = set(composite["processes"].keys())
+    proc_keys = set(composite["processes"])
     assert proc_keys >= set(CHASSIS_V6_EXPECTED_PROCESS_KEYS)
 
 
 def test_v6_one_tick() -> None:
-    engine = _build_engine()
     with warnings.catch_warnings():
         warnings.simplefilter("error", UserWarning)
+        engine = _build_engine()
         engine.update(1.0)
     state = engine.state.get_value()
     assert "chromosome" in state
@@ -65,10 +74,114 @@ def test_v6_one_tick() -> None:
     assert "protein" in state
 
 
+def test_v6_protein_activation_uses_one_shared_canonical_state() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    process = composite["processes"]["karr_protein_activation"]
+    initial_state = composite["state"]
+
+    assert composite["topology"]["karr_protein_activation"] == {
+        "protein": ("protein",),
+        "complex": ("complex",),
+        "stimuli": ("stimuli",),
+        "geometry": ("geometry",),
+    }
+    assert "activation_substrates" not in initial_state
+    assert composite["topology"]["karr_translation"]["protein"] == ("protein",)
+    assert composite["topology"]["karr_transcriptional_regulation"]["protein"] == (
+        "protein",
+    )
+    assert composite["topology"]["karr_transcriptional_regulation"]["complex"] == (
+        "complex",
+    )
+
+    expected = process.canonical_state()
+    expected_active, expected_inactive = process.state_matrices(expected)
+    initial_active, initial_inactive = process.state_matrices(initial_state)
+    np.testing.assert_array_equal(initial_active, expected_active)
+    np.testing.assert_array_equal(initial_inactive, expected_inactive)
+    assert initial_state["geometry"]["volume"] == process.default_geometry_volume
+    assert initial_state["stimuli"] == process.default_stimuli
+
+    engine = Engine(composite=composite, emit_step=1.0, display_info=False)
+    engine_active, engine_inactive = process.state_matrices(engine.state.get_value())
+    np.testing.assert_array_equal(engine_active, expected_active)
+    np.testing.assert_array_equal(engine_inactive, expected_inactive)
+
+
+def test_v6_host_initializes_from_canonical_stores_and_stays_positive() -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    process = composite["processes"]["karr_host_interaction"]
+    initial_state = composite["state"]
+    expected = {field: True for field in _HOST_FIELDS}
+
+    assert composite["topology"]["karr_host_interaction"] == {
+        "cell": ("cell",),
+        "protein": ("protein",),
+        "complex": ("complex",),
+    }
+    assert {
+        field: initial_state["cell"][field] for field in _HOST_FIELDS
+    } == expected
+    for wid, count in process.fitted_monomer_counts_by_wid.items():
+        assert initial_state["protein"]["counts"][wid] == count
+    for wid, count in process.fitted_complex_counts_by_wid.items():
+        assert initial_state["complex"]["counts"][wid] == count
+
+    engine = Engine(composite=composite, emit_step=1.0, display_info=False)
+    before_update = engine.state.get_value()
+    assert {field: before_update["cell"][field] for field in _HOST_FIELDS} == expected
+
+    engine.update(1.0)
+    after_update = engine.state.get_value()
+    assert {field: after_update["cell"][field] for field in _HOST_FIELDS} == expected
+
+
+@pytest.mark.parametrize(
+    ("pentamer_count", "expected"),
+    (
+        (17.0, (True, True, True, False, True, True)),
+        (0.0, (True, False, False, False, False, False)),
+    ),
+)
+def test_v6_host_complex_port_drives_engine_cascade(
+    pentamer_count: float,
+    expected: tuple[bool, ...],
+) -> None:
+    composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
+    initial_state = composite["state"]
+    protein_counts = initial_state["protein"]["counts"]
+    for wid in (
+        "MG_075_MONOMER",
+        "MG_149_MONOMER",
+        "MG_309_MONOMER",
+        "MG_412_MONOMER",
+    ):
+        protein_counts[wid] = 0.0
+    initial_state["complex"]["counts"]["MG_410_411_412_PENTAMER"] = pentamer_count
+
+    engine = Engine(composite=composite, emit_step=1.0, display_info=False)
+    engine.update(1.0)
+    cell = engine.state.get_value()["cell"]
+
+    assert tuple(bool(cell[field]) for field in _HOST_FIELDS) == expected
+
+
 def test_v6_chromosome_segregation_complex_seed_gate_and_effect() -> None:
     composite = build_karr_chassis_v6(time_step_s=1.0, emit_step_s=1.0)
     process = composite["processes"]["karr_chromosome_segregation"]
+    evolution = composite["steps"]["karr_chromosome_segregation_evolution"]
     state = composite["state"]
+
+    assert evolution._segregation_process is process
+    assert composite["flow"]["karr_chromosome_segregation_evolution"] == [
+        ("karr_allocation_step",)
+    ]
+    assert composite["topology"]["karr_chromosome_segregation"] == {
+        "chromosome": ("chromosome",),
+        "protein": ("protein",),
+        "complex": ("complex",),
+        "requests": ("requests",),
+    }
 
     required_complex_wid = "MG_221_OCTAMER"
     complex_seed = float(state["complex"]["counts"].get(required_complex_wid, 0.0))
@@ -114,14 +227,24 @@ def test_v6_chromosome_segregation_complex_seed_gate_and_effect() -> None:
             }
         },
     }
-    update = process.next_update(1.0, process_state)
+    request_update = process.next_update(1.0, process_state)
+    update = evolution.next_update(1.0, process_state)
+    assert request_update["requests"][process.name] == {
+        process.gtp_wid: process.gtp_cost,
+        process.h2o_wid: process.gtp_cost,
+    }
     assert update["chromosome"].get("segregated") is True
 
     no_complex_state = dict(process_state)
     no_complex_counts = dict(state["complex"]["counts"])
     no_complex_counts[required_complex_wid] = 0.0
     no_complex_state["complex"] = {"counts": no_complex_counts}
-    update_without_complex = process.next_update(1.0, no_complex_state)
+    request_without_complex = process.next_update(1.0, no_complex_state)
+    update_without_complex = evolution.next_update(1.0, no_complex_state)
+    assert request_without_complex["requests"][process.name] == {
+        process.gtp_wid: 0.0,
+        process.h2o_wid: 0.0,
+    }
     assert "segregated" not in update_without_complex["chromosome"]
 
 

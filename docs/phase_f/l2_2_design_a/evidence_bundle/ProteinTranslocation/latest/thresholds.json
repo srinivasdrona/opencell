@@ -11,7 +11,7 @@
       "threshold": 143707.80170571432
     },
     "monomers": {
-      "q95_null": 0.0038079045643153423,
+      "q95_null": 0.0006345193637621,
       "k_eng": 2.0,
       "absolute_floor": 1.0,
       "threshold": 1.0

@@ -1,0 +1,567 @@
+integrity: FAIL
+aggregate_verdict (mechanically re-derived): NON_GREEN
+  FAIL: 17
+  MISSING_EVIDENCE: 2
+  PASS: 5
+PROBLEM: stored evidence_index.json does not match a fresh regeneration from the current catalog + evidence tree (hand-edited, stale, or tampered). Run `generate` and commit the refreshed index.
+NON_GREEN_ROW: ChromosomeCondensation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ChromosomeCondensation
+NON_GREEN_ROW: Cytokinesis verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s000/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s001/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s002/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s003/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s004/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s005/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s007/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s008/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s009/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s010/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s011/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s013/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s017/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s021/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s022/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s023/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s024/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s027/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s029/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s030/Cytokinesis_5000ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+NON_GREEN_ROW: DNADamage verdict=FAIL
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common_module source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+NON_GREEN_ROW: DNARepair verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/DNARepair_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: DNASupercoiling verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/DNASupercoiling_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: FtsZPolymerization verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s000/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s001/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s002/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s003/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s004/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s005/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s007/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s008/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s009/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s010/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s011/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s013/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s017/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s021/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s022/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s023/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s024/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s027/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s029/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/dual_division_cohort_current/per_process_traces_v2_event_s030/FtsZPolymerization_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_replay_common.py sha256 changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+NON_GREEN_ROW: MacromolecularComplexation verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: Metabolism verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/Metabolism_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: karr_protein_decay_light_module source changed since evidence was generated (recorded=f00efd6f524f.., current=18cb108f8bf0..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: ProteinDecay verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/ProteinDecay_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=f00efd6f524f.., current=18cb108f8bf0..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: ProteinFolding verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/ProteinFolding_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=4e0c360dea3c.., current=700542266851..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: ProteinProcessingI verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/ProteinProcessingI_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=9b4f9eebdf01.., current=a8cc517486ed..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: RNADecay verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/RNADecay_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: Replication verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/Replication_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: ReplicationInitiation verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_s000/ReplicationInitiation_200ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: RibosomeAssembly verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s000/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s001/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s002/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s003/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s004/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s005/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s006/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s007/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s008/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s009/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s010/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s011/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s012/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s013/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s014/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s015/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s016/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s017/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s018/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s019/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s020/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s021/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s022/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s023/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s024/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s025/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s026/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s027/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s028/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s029/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s030/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s031/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s032/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s033/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s034/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s035/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s036/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s037/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s038/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s039/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s040/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s041/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s042/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s043/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s044/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s045/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s046/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s047/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s048/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2_event_s049/RibosomeAssembly_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+NON_GREEN_ROW: Transcription verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: TranscriptionalRegulation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process TranscriptionalRegulation
+NON_GREEN_ROW: Translation verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: karr_translation_v3_module source changed since evidence was generated (recorded=bd4e07e45eea.., current=66ca64329539..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'
+NON_GREEN_ROW: tRNAAminoacylation verdict=FAIL
+  REASON: STALE_VS_TREE: input data/m1_sources/karr_native/per_process_traces_v2/tRNAAminoacylation_100ticks.mat no longer exists on disk (--verify-input-files requested but the raw oracle data is not mounted at this path -- expected in a fresh clone/bundle-only checkout; omit --verify-input-files for the portable audit)
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=f5b4493968a1..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=29170d3832ff..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'cell_mass_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'karr_observability_step_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_protein_activation_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_loader_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_data_init_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_substrate_classes_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_parameters'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_vocabulary'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m1_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m2_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_json'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_m3_npz'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_Rna_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinMonomer_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinComplex_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinActivation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingI_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinProcessingII_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinModification_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_ProteinTranslocation_fixture'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'mass_TerminalOrganelleAssembly_fixture'

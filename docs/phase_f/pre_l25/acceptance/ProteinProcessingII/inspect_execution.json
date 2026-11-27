@@ -1,0 +1,8 @@
+{
+  "command": ".\\bin\\oc-py.cmd artifacts/m1_cohort/m1_pp2/independent_acceptance/review.py inspect",
+  "started_utc": "2026-10-19T10:33:42.5862140Z",
+  "finished_utc": "2026-10-19T10:33:43.5450173Z",
+  "powershell_pid": 2624,
+  "exit_code": 1,
+  "prior_attempt": "Backslash path arguments stripped by bash; exit 2 before script start; corrected relative POSIX arguments required by wrapper"
+}

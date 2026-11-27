@@ -22,7 +22,7 @@ from typing import Any
 import h5py
 import numpy as np
 from scipy.io import loadmat
-from vivarium.core.process import Process
+from vivarium.core.process import Process, Step
 
 from opencell.m_gen_constants import GENOME_LENGTH_BP, N_CHROMOSOME_COMPARTMENTS
 from opencell.state.chromosome_store import ChromosomeStore, SparseTriplet, sparse_triplet_schema
@@ -689,17 +689,25 @@ class KarrChromosomeCondensationProcess(Process):
         }
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        """Combined evolution + request update (standalone/L2-replay behavior)."""
         del timestep  # this process is count-based for L2 replay semantics.
+        update, n_bound = self._evolve(states)
+        smc_before, smc_adp_before = self._free_smc_counts(states)
+        update["requests"] = self._request_update(max(0, smc_before + smc_adp_before - n_bound))
+        return update
+
+    def _evolve(self, states: dict[str, Any]) -> tuple[dict[str, Any], int]:
+        """Karr evolveState: dissociate free SMC-ADP, then bind within the allocation.
+
+        Returns the update without requests and the number of newly bound SMC.
+        """
         allocated = states.get("substrates_allocated", {}).get(self.name, {})
         available_atp = self._allocated_or_state(allocated, self.atp_wid)
         available_h2o = self._allocated_or_state(allocated, self.water_wid)
         max_binding_energy = min(_safe_count(available_atp), _safe_count(available_h2o))
 
-        enzymes_state = states.get("enzymes", {})
         bound_state = states.get("boundEnzymes", {})
         trace_hint = states.get("trace_hint", {})
-        if not isinstance(enzymes_state, dict):
-            enzymes_state = {}
         if not isinstance(bound_state, dict):
             bound_state = {}
         if not isinstance(trace_hint, dict):
@@ -719,10 +727,7 @@ class KarrChromosomeCondensationProcess(Process):
                 if delta != 0:
                     bound_update[wid] = float(delta)
 
-        smc_before = _safe_count(enzymes_state.get(self.smc_wid, float(self._fixture_enzyme_smc)))
-        smc_adp_before = _safe_count(
-            enzymes_state.get(self.smc_adp_wid, float(self._fixture_enzyme_smc_adp))
-        )
+        smc_before, smc_adp_before = self._free_smc_counts(states)
 
         chrom_state = states.get("chromosome", {})
         if not isinstance(chrom_state, dict):
@@ -803,14 +808,7 @@ class KarrChromosomeCondensationProcess(Process):
             chromosome_update["condensation_level"] = cond_delta
             update["chromosome"] = chromosome_update
 
-        request_need = float(max(0, smc_before + smc_delta))
-        update["requests"] = {
-            self.name: {
-                self.atp_wid: request_need,
-                self.water_wid: request_need,
-            }
-        }
-        return update
+        return update, n_bound
 
     def _sample_smc_binding_no_hints(
         self,
@@ -2020,5 +2018,107 @@ class KarrChromosomeCondensationProcess(Process):
             return 0.0
         return float(delta)
 
+    def evolution_ports_schema(self) -> dict[str, Any]:
+        schema = self.ports_schema()
+        del schema["requests"]
+        return schema
 
-__all__ = ["KarrChromosomeCondensationProcess"]
+    def calculate_request(self, states: dict[str, Any]) -> dict[str, float]:
+        """Pre-allocation request: free SMC after dissociation, the binding cap.
+
+        Binding is unknown before allocation, so this is the combined request
+        formula evaluated with zero SMC bound.
+        """
+        smc_before, smc_adp_before = self._free_smc_counts(states)
+        return self._request_update(smc_before + smc_adp_before)[self.name]
+
+    def evolve_state(self, states: dict[str, Any]) -> dict[str, Any]:
+        """Karr evolveState against allocated ATP/H2O; emits no requests."""
+        update, _ = self._evolve(states)
+        return update
+
+    def _request_update(self, request_need: int) -> dict[str, dict[str, float]]:
+        need = float(request_need)
+        return {self.name: {self.atp_wid: need, self.water_wid: need}}
+
+    def _free_smc_counts(self, states: dict[str, Any]) -> tuple[int, int]:
+        enzymes_state = states.get("enzymes", {})
+        if not isinstance(enzymes_state, dict):
+            enzymes_state = {}
+        smc_before = _safe_count(enzymes_state.get(self.smc_wid, float(self._fixture_enzyme_smc)))
+        smc_adp_before = _safe_count(
+            enzymes_state.get(self.smc_adp_wid, float(self._fixture_enzyme_smc_adp))
+        )
+        return smc_before, smc_adp_before
+
+
+PHASE_STORE_KEY = "_internal_chromosome_condensation_phase"
+
+
+def _phase_ports_schema() -> dict[str, Any]:
+    return {
+        "request_ready": {"_default": False, "_updater": "set", "_emit": False},
+    }
+
+
+class KarrChromosomeCondensationRequestProcess(KarrChromosomeCondensationProcess):
+    """Chassis request phase: emits requests only; evolution runs after allocation.
+
+    The authoritative instance is shared with ``KarrChromosomeCondensationEvolutionStep``
+    so all request/evolution hidden state (RNG, chromosome bookkeeping) has one owner.
+    Each request emission also arms ``phase.request_ready`` so the evolution Step
+    runs exactly once per request, never at Engine construction.
+    """
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = super().ports_schema()
+        schema["phase"] = _phase_ports_schema()
+        return schema
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep
+        return {
+            "requests": {self.name: self.calculate_request(states)},
+            "phase": {"request_ready": True},
+        }
+
+
+class KarrChromosomeCondensationEvolutionStep(Step):
+    """Execute Karr ChromosomeCondensation.evolveState once per armed request, after allocation."""
+
+    name = "karr_chromosome_condensation_evolution"
+    defaults: dict[str, Any] = {"condensation_process": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        process = self.parameters.get("condensation_process")
+        if not isinstance(process, KarrChromosomeCondensationRequestProcess):
+            raise ValueError(
+                "KarrChromosomeCondensationEvolutionStep requires parameter "
+                "condensation_process: KarrChromosomeCondensationRequestProcess "
+                "(a combined process would evolve twice per tick)"
+            )
+        self._condensation_process = process
+
+    def ports_schema(self) -> dict[str, Any]:
+        # The request process's schema already carries the shared phase port.
+        return self._condensation_process.evolution_ports_schema()
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        # Vivarium passes timestep 0.0 to Steps on every run, including Engine
+        # construction, so the request_ready store handshake gates evolution instead.
+        del timestep
+        phase = states.get("phase", {})
+        if not isinstance(phase, dict) or phase.get("request_ready") is not True:
+            return {}
+        update = self._condensation_process.evolve_state(states)
+        update["phase"] = {"request_ready": False}
+        return update
+
+
+__all__ = [
+    "PHASE_STORE_KEY",
+    "KarrChromosomeCondensationEvolutionStep",
+    "KarrChromosomeCondensationProcess",
+    "KarrChromosomeCondensationRequestProcess",
+]

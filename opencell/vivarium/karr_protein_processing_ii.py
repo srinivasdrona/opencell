@@ -7,7 +7,9 @@ from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
-from vivarium.core.process import Process
+from vivarium.core.process import Process, Step
+
+from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS, compartment_counts_schema
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinProcessingII_flat.mat"
 
@@ -74,6 +76,28 @@ class KarrProteinProcessingIIProcess(Process):
             fx["signalSequenceMonomerWholeCellModelIDs"]
         )
 
+        # Design 9.3/M05-M08: per-migrated-WID biological compartment (design
+        # 4.2 -- ProteinProcessingII.m modifies proteins "in the membrane and
+        # cytosol rather than in the terminal organelle membrane or cytosol"
+        # L196-198; `monomerCompartments` is the tc->c / tm->m remapped KB
+        # compartment used throughout PP2/Folding/Modification). Decoded from
+        # the fixture, never hardcoded.
+        monomer_compartments_kb = np.asarray(
+            fx["monomerCompartments"][0, 0], dtype=np.int64
+        ).reshape(-1)
+        self.migrated_compartment_by_wid: dict[str, str] = {
+            wid: COMPARTMENTS[int(monomer_compartments_kb[i]) - 1]
+            for i, wid in enumerate(self.unprocessed_monomer_wids)
+            if wid in MIGRATED_WIDS
+        }
+        enzyme_compartments = np.asarray(
+            fx["enzymeMonomerCompartmentIndexs"][0, 0], dtype=np.int64
+        ).reshape(-1)
+        self.enzyme_compartment_by_wid = {
+            wid: COMPARTMENTS[int(enzyme_compartments[i]) - 1]
+            for i, wid in enumerate(self.enzyme_wids)
+        }
+
         self.substrate_index_water = _parse_index_1based(fx["substrateIndexs_water"])
         self.substrate_index_pg160 = _parse_index_1based(fx["substrateIndexs_PG160"])
         self.substrate_index_snglyp = _parse_index_1based(fx["substrateIndexs_SNGLYP"])
@@ -121,7 +145,63 @@ class KarrProteinProcessingIIProcess(Process):
             np.asarray(fx["lipoproteinDiacylglycerylTransferaseSpecificRate"][0, 0]).reshape(-1)[0]
         )
 
+    def input_protein_schema(self) -> dict[str, Any]:
+        """Source-owned processed-I and mature enzyme inputs (copyFromState)."""
+        authority_schema = compartment_counts_schema(MIGRATED_WIDS)
+        return {
+            "processed_counts": {
+                wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
+                for wid in self.unprocessed_monomer_wids
+                if wid not in MIGRATED_WIDS
+            },
+            "compartment_counts": {
+                "processed_i": authority_schema["processed_i"],
+                "mature": {
+                    wid: authority_schema["mature"][wid] for wid in self.enzyme_wids
+                },
+            },
+        }
+
+    def read_processing_inputs(
+        self, states: dict[str, Any]
+    ) -> tuple[np.ndarray, np.ndarray]:
+        """ProteinProcessingII.m:205-217 and Process.m:611-670 live inputs."""
+        protein = states.get("protein", {})
+        authority = protein.get("compartment_counts", {})
+        processed_i = authority.get("processed_i", {})
+        processed_i_queue = protein.get("processed_counts", {})
+        precursors = np.asarray([
+            float(processed_i.get(wid, {}).get(self.migrated_compartment_by_wid[wid], 0.0))
+            if wid in MIGRATED_WIDS else float(processed_i_queue.get(wid, 0.0))
+            for wid in self.unprocessed_monomer_wids
+        ], dtype=np.float64)
+        mature = authority.get("mature", {})
+        enzymes = np.asarray([
+            float(mature.get(wid, {}).get(self.enzyme_compartment_by_wid[wid], 0.0))
+            for wid in self.enzyme_wids
+        ], dtype=np.float64)
+        return precursors, enzymes
+
+    def calculate_request(self, states: dict[str, Any]) -> dict[str, float]:
+        """ProteinProcessingII.m:325-345; no substrate availability or RNG."""
+        precursors, enzymes = self.read_processing_inputs(states)
+        dt = float(self.parameters["time_step"])
+        request = np.zeros(len(self.substrate_wids), dtype=np.float64)
+        request[self.substrate_index_water] = min(
+            np.ceil(enzymes[self.enzyme_index_signal_peptidase]
+                    * self.lipoprotein_signal_peptidase_specific_rate * dt),
+            np.sum(precursors[self.peptidase_indices]),
+        )
+        request[self.substrate_index_pg160] = min(
+            np.ceil(enzymes[self.enzyme_index_dag_transferase]
+                    * self.lipoprotein_diacylglyceryl_transferase_specific_rate * dt),
+            np.sum(precursors[self.lipoprotein_indices]),
+        )
+        return {wid: float(request[i]) for i, wid in enumerate(self.substrate_wids)}
+
     def ports_schema(self) -> dict[str, Any]:
+        authority_schema = compartment_counts_schema(MIGRATED_WIDS)
+        input_schema = self.input_protein_schema()
         return {
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
@@ -144,21 +224,27 @@ class KarrProteinProcessingIIProcess(Process):
                 for wid in self.unprocessed_monomer_wids
             },
             "protein": {
-                "processed_counts": {
-                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in self.processed_monomer_wids
-                },
+                "processed_counts": input_schema["processed_counts"],
                 "unfolded_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.processed_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "signal_sequence_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in self.signal_sequence_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "enzyme_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.enzyme_wids
+                },
+                # Nonmigrated form queues above connect PP1's processed-I
+                # to Folding's processed-II; mature counts are never PP2 inputs.
+                "compartment_counts": {
+                    **input_schema["compartment_counts"],
+                    "processed_ii": authority_schema["processed_ii"],
+                    "signal_sequence": authority_schema["signal_sequence"],
                 },
             },
             "requests": {
@@ -188,18 +274,7 @@ class KarrProteinProcessingIIProcess(Process):
         )
         dt = float(self.parameters["time_step"])
         output_wids = self.processed_monomer_wids
-        protein_state = states.get("protein", {})
-        unprocessed_all = np.asarray(
-            [
-                float(protein_state.get("counts", {}).get(wid, 0.0))
-                for wid in self.unprocessed_monomer_wids
-            ],
-            dtype=np.float64,
-        )
-        enzymes = np.asarray(
-            [float(protein_state.get("enzyme_counts", {}).get(wid, 0.0)) for wid in self.enzyme_wids],
-            dtype=np.float64,
-        )
+        unprocessed_all, enzymes = self.read_processing_inputs(states)
         unprocessed_pool = np.floor(np.clip(unprocessed_all, a_min=0.0, a_max=None)).astype(np.int64)
         substrate_pool = np.floor(np.clip(substrates, a_min=0.0, a_max=None)).astype(np.int64)
 
@@ -321,26 +396,52 @@ class KarrProteinProcessingIIProcess(Process):
         processed_update = {
             wid: float(processed_delta[i])
             for i, wid in enumerate(self.processed_monomer_wids)
-            if processed_delta[i] != 0
+            if processed_delta[i] != 0 and wid not in MIGRATED_WIDS
         }
         unprocessed_update = {
             wid: float(unprocessed_delta_vec[i])
             for i, wid in enumerate(self.unprocessed_monomer_wids)
-            if unprocessed_delta_vec[i] != 0
+            if unprocessed_delta_vec[i] != 0 and wid not in MIGRATED_WIDS
         }
         signal_update = {
             wid: float(signal_delta[i])
             for i, wid in enumerate(self.signal_sequence_monomer_wids)
-            if signal_delta[i] != 0
+            if signal_delta[i] != 0 and wid not in MIGRATED_WIDS
         }
 
-        protein_update: dict[str, dict[str, float]] = {}
+        # Design 9.3/M05-M07: migrated WIDs route processedI decrement /
+        # processedII increment through the authority, each at its own
+        # biological compartment (m for the 3 membrane-destined WIDs, c for
+        # the 5 cytosol-destined WIDs -- design 4.2/4.4).
+        processed_i_authority_update: dict[str, dict[str, float]] = {}
+        processed_ii_authority_update: dict[str, dict[str, float]] = {}
+        signal_authority_update = {
+            wid: {"c": float(signal_delta[i])}
+            for i, wid in enumerate(self.signal_sequence_monomer_wids)
+            if wid in MIGRATED_WIDS and signal_delta[i] != 0
+        }
+        for i, wid in enumerate(self.unprocessed_monomer_wids):
+            if wid not in MIGRATED_WIDS:
+                continue
+            comp = self.migrated_compartment_by_wid[wid]
+            if unprocessed_delta_vec[i] != 0:
+                processed_i_authority_update[wid] = {comp: float(unprocessed_delta_vec[i])}
+            if processed_delta[i] != 0:
+                processed_ii_authority_update[wid] = {comp: float(processed_delta[i])}
+
+        protein_update: dict[str, Any] = {}
         if processed_update:
-            protein_update["processed_counts"] = processed_update
+            protein_update["unfolded_counts"] = processed_update
         if unprocessed_update:
-            protein_update["counts"] = unprocessed_update
+            protein_update["processed_counts"] = unprocessed_update
         if signal_update:
             protein_update["signal_sequence_counts"] = signal_update
+        if processed_i_authority_update or processed_ii_authority_update or signal_authority_update:
+            protein_update["compartment_counts"] = {
+                "processed_i": processed_i_authority_update,
+                "processed_ii": processed_ii_authority_update,
+                "signal_sequence": signal_authority_update,
+            }
         if protein_update:
             update["protein"] = protein_update
 
@@ -434,4 +535,56 @@ class KarrProteinProcessingIIProcess(Process):
             substrate_pool[self.substrate_index_pg160] -= transferase_events
 
 
-__all__ = ["KarrProteinProcessingIIProcess"]
+PP2_PHASE_STORE_KEY = "_internal_protein_processing_ii_phase"
+
+
+def _phase_ports_schema() -> dict[str, Any]:
+    return {"request_ready": {"_default": False, "_updater": "set", "_emit": False}}
+
+
+class KarrProteinProcessingIIRequestProcess(Process):
+    """Arm this tick's calculator/allocation/evolution without evolving at t0."""
+
+    name = "karr_protein_processing_ii"
+    defaults: dict[str, Any] = {"time_step": 1.0}
+
+    def ports_schema(self) -> dict[str, Any]:
+        return {"phase": _phase_ports_schema()}
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep, states
+        return {"phase": {"request_ready": True}}
+
+
+class KarrProteinProcessingIIEvolutionStep(Step):
+    """Consume the new grant once per armed request via public next_update."""
+
+    name = "karr_protein_processing_ii_evolution"
+    defaults: dict[str, Any] = {"processing_process": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        process = self.parameters["processing_process"]
+        if not isinstance(process, KarrProteinProcessingIIProcess):
+            raise ValueError("PP2 evolution requires an explicit KarrProteinProcessingIIProcess")
+        self.processing_process = process
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = self.processing_process.ports_schema()
+        schema["phase"] = _phase_ports_schema()
+        return schema
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        if states.get("phase", {}).get("request_ready") is not True:
+            return {}
+        update = self.processing_process.next_update(timestep, states)
+        update["phase"] = {"request_ready": False}
+        return update
+
+
+__all__ = [
+    "KarrProteinProcessingIIProcess",
+    "KarrProteinProcessingIIRequestProcess",
+    "KarrProteinProcessingIIEvolutionStep",
+    "PP2_PHASE_STORE_KEY",
+]

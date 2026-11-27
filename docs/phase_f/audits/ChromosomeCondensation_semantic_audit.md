@@ -1,88 +1,68 @@
 # ChromosomeCondensation Semantic Audit
 
-Process name: `ChromosomeCondensation`  
-Audited files:
-- `data/schemas/per_process_wiring/ChromosomeCondensation.yaml`
-- `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ChromosomeCondensation.m`
-- `data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m`
-- `opencell/vivarium/karr_chromosome_condensation.py`
-- `opencell/vivarium/karr_composite.py`  
-Scope policy: **strict completeness** (row does not declare exemplar/non-exhaustive consume/produce scope).
+Process: `ChromosomeCondensation`
+Authority: primary `ChromosomeCondensation.m` plus current
+`karr_chromosome_condensation.py` and chassis-v6 topology.
+Scope: strict documentation completeness; verdicts distinguish row defects from
+implementation deviations.
 
-## Deliberate Action Prefix v2
+## Classification correction
 
-Beat 1 (contract):
-- Required behavior: classify S1-S6 semantic claims by comparing row statements to executable MATLAB and OC behavior.
-- Done means: claim-level verdicts are reproducible from cited code anchors and use only `VERIFIED|ROW_WRONG|CODE_DEVIATES|MISSING`.
+ChromosomeCondensation is **stochastic**, not deterministic. MATLAB calls
+`bindProteinToChromosomeStochastically` (`ChromosomeCondensation.m:266-268`).
+OC's literal-chromosome path makes explicit weighted region and position draws
+through `ChromCondMcgRandStream`
+(`karr_chromosome_condensation.py:1219-1258`). This process therefore requires
+stochastic/distributional fidelity evidence; stochasticity is not itself a
+deviation.
 
-Beat 2 (surface):
-- Row surface: `ChromosomeCondensation.yaml` (`consume_stoichiometry`, `produce_stoichiometry`, `allocator`, `compartment_routing`, `ordering_constraints`, `deviations`).
-- MATLAB surface: `ChromosomeCondensation.m` (`calcResourceRequirements_Current`, `evolveState`) and `Simulation/evolveState.m` (allocation/order loop).
-- OC surface: `karr_chromosome_condensation.py` (`ports_schema`, `next_update`, `_allocated_or_state`) and `karr_composite.py` (allocation wiring + flow).
-- Suspect pattern named before verdicting: stale row prose claiming allocator fallback to global substrates.
+## Claim table
 
-Beat 3 (expected outcome):
-- Deliver a deterministic claim table covering S1-S6, with aggregate counts and Priority-1 row-remediation items.
+| Claim ID | Category | Documented claim and evidence | Verdict |
+|---|---|---|---|
+| CC-S1-01 | S1 | ATP and H2O are the complete consumed-substrate set; MATLAB decrements only those species (`ChromosomeCondensation.m:273-281`) and OC does the same (`karr_chromosome_condensation.py:786-800`). | VERIFIED |
+| CC-S2-01 | S2 | The listed consume paths are executable and gated by the number actually bound, not merely requested. | VERIFIED |
+| CC-S3-01 | S3 | ADP from free SMC-ADP dissociation plus PI/H from ATP hydrolysis are the complete produced-substrate set (`ChromosomeCondensation.m:241-244,282-283`; OC `:779-800`). | VERIFIED |
+| CC-S4-01 | S4 | Both implementations cap binding by allocated ATP, allocated H2O, and free SMC after dissociation (`ChromosomeCondensation.m:247-250`; OC `:693-696,735-746`) and apply the same count stoichiometry. | VERIFIED |
+| CC-S4-02 | S4 | The row now explicitly records affinity/region-weighted stochastic binding. MATLAB invokes the stochastic chromosome-binding helper; OC draws a weighted region and a random position with an explicit MCG stream (`karr_chromosome_condensation.py:1244-1252`). | VERIFIED |
+| CC-S4-03 | S4 | The row discloses that OC also retains aggregate `smc_bound_count`/`condensation_level`, a trace-hint override, and a non-literal fallback (`karr_chromosome_condensation.py:646-689,741-760,856-861`). These are not MATLAB state/behavior. | CODE_DEVIATES |
+| CC-S5-01 | S5 | MATLAB substrate writeback is compartment-indexed, while OC exposes a flat per-WID shared substrate surface. All five process substrates are cytosolic-only, so this merge is an accepted-equivalent projection for ChromosomeCondensation. | VERIFIED |
+| CC-S6-01 | S6 | ATP/H2O grants are allocated-only in OC (`karr_chromosome_condensation.py:693-696`); the prior “fallback to global substrates” statement is absent. | VERIFIED |
+| CC-S6-02 | S6 | MATLAB orders request → allocation → evolve in one tick. OC now uses the authoritative request-only process in the normal process phase and one evolution Step after `karr_allocation_step`, coordinated by an explicit `request_ready` store handshake (`karr_chromosome_condensation.py:2055-2118`; `karr_composite.py:2329-2338,2590-2597`). A real Engine tick requests, receives, and consumes the grant while binding SMC exactly once. | VERIFIED |
+| CC-S6-03 | S6 | MATLAB initializes with 20 stochastic warm-up calls under infinite ATP/H2O (`ChromosomeCondensation.m:220-230`); OC initializes from fixture/trace-derived state and seeded streams (`karr_chromosome_condensation.py:465-473`). | CODE_DEVIATES |
+| CC-S6-04 | S6 | Chassis v5/v6 maps `enzymes` to canonical `complex.counts` and `boundEnzymes` to the existing root store, seeds free SMC/SMC-ADP/bound SMC-ADP from fixture/trace values, and rejects incompatible duplicate seeds (`karr_composite.py:139-183,2173-2178,2317-2323,2684-2688`). | VERIFIED |
 
-Beat 4 (invert / pre-mortem):
-- Likely false-pass mode: trusting row notes about allocator bypass/fallback without validating current OC helper implementation.
+## Aggregate counts
 
-Beat 5 (act then verify):
-- Verification evidence is captured per claim with executable MATLAB/OC anchors and row line references.
+- VERIFIED: 9
+- ROW_WRONG: 0
+- CODE_DEVIATES: 2
+- MISSING: 0
 
-PM sanity-check sentence: **PM: I am assuming row scope (full vs exemplar) is explicit; if not, completeness verdicts may be mis-attributed.**
+## Open implementation deviations
 
-## Revision-Class Minimum
+- Aggregate/fallback/trace-hint behavior outside the literal stochastic path.
+- Initialization differs from MATLAB's 20-step stochastic warm-up.
 
-Design contract sentence:
-- Semantic truth being checked: row claims for consume/produce/formula/routing/allocator semantics must match MATLAB behavior and current OC behavior for ChromosomeCondensation.
+## Iteration-1 integration status
 
-Decision ledger (non-obvious attribution calls):
-- D1: Compartment routing attribution.
-  - Chosen: treat row cytosol routing as provisionally valid for listed substrates, but flag projection/merge representation risk separately.
-  - Why: MATLAB here is compartment-indexed at simulation level, while OC process substrate store is flat per WID.
-- D2: Allocator mode attribution.
-  - Chosen: classify OC as allocator-fed (not mixed fallback) because `_allocated_or_state` returns allocated values only.
-  - Why: direct code evidence (`karr_chromosome_condensation.py:832-838`) contradicts row fallback prose.
-- D3: Allocator-coupled ordering attribution.
-  - Chosen: mark timing-equivalence claim as `MISSING` with `judgment=required`.
-  - Why: MATLAB ordering is explicit (`requirements -> allocation -> evolve`), while OC request emission is embedded in a process and allocation is wired as a step flow.
+- Live free/bound SMC wiring is resolved and independently reviewed.
+- A real Engine stress canary derives the minimum fair-share request from one
+  post-tick snapshot, receives a real allocator grant, binds SMC, and conserves
+  free/bound counts and hydrolysis.
+- The exact default source seed remains allocator-starved by unrelated request
+  competition; it remains a strict diagnostic and is not counted as repaired.
 
-Risks (unresolved ambiguity):
-- R1: Exact Vivarium process-vs-step execution timing is not fully derivable from `karr_composite.py` alone, so request/grant same-tick vs next-tick semantics are partially inferential.
-- R2: Practical impact of flat substrate routing depends on whether these WIDs are effectively cytosol-only in runtime state.
+## Iteration-2 integration status
 
-| Claim ID | Category | Row Says | MATLAB Says | OC Says | Verdict | Note |
-|---|---|---|---|---|---|---|
-| CC-S1-01 | S1 | Consume list includes only `ATP` and `H2O` with `-nBound` (`ChromosomeCondensation.yaml:175-199`). | Consume-side substrate decrements are only ATP and H2O (`ChromosomeCondensation.m:280-281`). | Consume deltas are only ATP and H2O (`karr_chromosome_condensation.py:398-400`). | VERIFIED | Strict consume completeness holds. |
-| CC-S2-01 | S2 | Row consume entries anchor OC consume path in `next_update` (`ChromosomeCondensation.yaml:183-199`). | ATP/H2O consume path is in post-bind update (`ChromosomeCondensation.m:273-281`). | Real OC consume path exists (`substrate_delta` then `update["substrates"]`) (`karr_chromosome_condensation.py:397-400`, `417-419`). | VERIFIED | No fabricated consume entry detected. |
-| CC-S3-01 | S3 | Produce list is `ADP`, `PI`, `H` (`ChromosomeCondensation.yaml:200-236`). | ADP produced on SMC-ADP dissociation and PI/H produced on hydrolysis (`ChromosomeCondensation.m:241-244`, `282-283`). | OC produces ADP from dissociation and PI/H from `n_bound` hydrolysis branch (`karr_chromosome_condensation.py:393-403`). | VERIFIED | Produce completeness and fabrication both hold. |
-| CC-S4-01 | S4 | Row formulas encode hydrolysis family: `ATP/H2O=-nBound`, `PI/H=+nBound` (`ChromosomeCondensation.yaml:178-190`, `215-227`). | `nBound` is applied with matching signs to ATP/H2O/PI/H updates (`ChromosomeCondensation.m:266-283`). | `n_bound` is applied with identical sign pattern in `substrate_delta` (`karr_chromosome_condensation.py:397-403`). | VERIFIED | Hydrolysis formula family matches modulo syntax/casing. |
-| CC-S4-02 | S4 | Row claims binding is energy-limited and SMC-limited (`ChromosomeCondensation.yaml:80`, `178-199`). | `nBindingMax = min(ATP, H2O, SMC_after_dissociation)` (`ChromosomeCondensation.m:242`, `247-250`). | `n_binding_max = min(available_atp, available_h2o, free_smc_after_dissociation)` (`karr_chromosome_condensation.py:323-368`). | VERIFIED | Bound/limit transform family matches. |
-| CC-S5-01 | S5 | Row routes ATP/H2O consume and ADP/PI/H produce to cytosol (`ChromosomeCondensation.yaml:237-262`). | Process substrates are ATP/ADP/PI/H2O/H (`ChromosomeCondensation.m:139-145`) and are written through compartment-indexed simulation mappings (`Simulation/evolveState.m:63-73`). | OC writes same WID set through flat `substrates` deltas (`karr_chromosome_condensation.py:295-297`, `393-403`). | VERIFIED | `judgment=required`: tuple parity is inferred at cytosol layer; OC store is flat by WID. |
-| CC-S5-02 | S5 | Row states `shared_pool_projection_merges_compartments: false` (`ChromosomeCondensation.yaml:401`). | MATLAB allocation/writeback is compartment-indexed (`Simulation/evolveState.m:27`, `32-33`, `63-73`). | OC process substrate port is compartment-flattened (WID-only map) and wired to shared `substrates` store (`karr_chromosome_condensation.py:295-297`; `karr_composite.py:2115-2119`). | ROW_WRONG | Row underreports projection/merge representation risk; `judgment=required` on practical effect. |
-| CC-S6-01 | S6 | Row says `oc_current: mixed` with ATP/H2O fallback-to-global behavior (`ChromosomeCondensation.yaml:137-140`, `155-162`, `405`). | MATLAB is allocator-engaged: requirements computed then allocations applied before `evolveState` (`Simulation/evolveState.m:24-37`, `63-70`; `ChromosomeCondensation.m:233-237`). | OC reads `substrates_allocated` and helper returns allocated-only (`karr_chromosome_condensation.py:323-326`, `832-838`); process is in allocation consumer set (`karr_composite.py:1774-1776`). | ROW_WRONG | OC is not mixed fallback in current code; ATP/H2O bypass claim is stale. |
-| CC-S6-02 | S6 | Row notes embedded OC request emission and no standalone request calculator, but no explicit allocator-coupled timing claim (`ChromosomeCondensation.yaml:73`, `404`, `282-287`). | MATLAB ordering is explicit: per-tick `calcResourceRequirements_Current -> allocation -> evolveState` (`Simulation/evolveState.m:31-37`, `69-70`). | OC emits requests inside process (`karr_chromosome_condensation.py:435-441`), while allocation step flow depends on request-calculator steps (`karr_composite.py:2320-2331`, `2345-2356`). | MISSING | Missing explicit row claim for request/grant timing equivalence; `judgment=required`. |
+- Request, allocation, and evolution now occur in one Engine tick.
+- An explicit internal `request_ready` handshake prevents Engine-construction
+  evolution, stale/double consumption, and schema/lifecycle side effects.
+- Standalone combined `next_update` remains unchanged for replay compatibility.
 
-## Aggregate Counts
+## Documentation corrections completed
 
-- VERIFIED: 6
-- ROW_WRONG: 2
-- CODE_DEVIATES: 0
-- MISSING: 1
-
-## Priority-1 Fixes
-
-- `CC-S5-02` (`ROW_WRONG`): revise projection/merge field to reflect OC flat shared-substrate representation and its compartment implications.
-- `CC-S6-01` (`ROW_WRONG`): update allocator mode/bypass text; remove stale ATP/H2O fallback-to-global claim.
-- `CC-S6-02` (`MISSING`): add explicit allocator-coupled timing claim (same-tick vs next-tick request/grant semantics) for OC vs MATLAB ordering.
-
-## Known-Deviation Mapping
-
-- No A1-A4 deviation IDs are currently encoded for this row; current critical findings are row staleness/omission (`ROW_WRONG`, `MISSING`).
-
-## Auditor Discretion List (`judgment=required`)
-
-- `CC-S5-01` (cytosol tuple parity inferred while OC store is flat)
-- `CC-S5-02` (projection/merge practical impact depends on runtime compartment usage of these WIDs)
-- `CC-S6-02` (request/grant timing depends on engine process-step scheduling semantics)
+- Removed the deterministic implication.
+- Removed stale mixed/global-substrate fallback wording.
+- Separated source-faithful stochastic binding from the five remaining
+  implementation/integration deviations.

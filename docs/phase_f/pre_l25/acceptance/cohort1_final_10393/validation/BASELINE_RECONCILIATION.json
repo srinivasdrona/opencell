@@ -1,0 +1,80 @@
+{
+  "eligible": [
+    "ChromosomeSegregation",
+    "HostInteraction",
+    "ProteinActivation",
+    "ProteinModification",
+    "ProteinProcessingII",
+    "ProteinTranslocation",
+    "RNAModification",
+    "RNAProcessing",
+    "TerminalOrganelleAssembly"
+  ],
+  "retained_L21": [
+    "ChromosomeSegregation",
+    "HostInteraction",
+    "ProteinActivation",
+    "TerminalOrganelleAssembly"
+  ],
+  "blocked": 19,
+  "source_digest": "a479e3386f209d6aa0d7b20aa71684208df0fb1f49b8b3eb4625e328e0984e3a",
+  "source_file_count": 140,
+  "changes": [
+    {
+      "process": "Cytokinesis",
+      "before_behavior": "PASS",
+      "after_behavior": "FAIL",
+      "eligibility": "BLOCKED_LOWER_GATE",
+      "findings_changed": false
+    },
+    {
+      "process": "ProteinModification",
+      "before_behavior": "FAIL",
+      "after_behavior": "PASS",
+      "eligibility": "ELIGIBLE",
+      "findings_changed": true
+    },
+    {
+      "process": "ProteinProcessingII",
+      "before_behavior": "PASS",
+      "after_behavior": "PASS",
+      "eligibility": "ELIGIBLE",
+      "findings_changed": true
+    },
+    {
+      "process": "ProteinTranslocation",
+      "before_behavior": "PASS",
+      "after_behavior": "PASS",
+      "eligibility": "ELIGIBLE",
+      "findings_changed": true
+    },
+    {
+      "process": "RNAModification",
+      "before_behavior": "FAIL",
+      "after_behavior": "PASS",
+      "eligibility": "ELIGIBLE",
+      "findings_changed": true
+    },
+    {
+      "process": "RNAProcessing",
+      "before_behavior": "FAIL",
+      "after_behavior": "PASS",
+      "eligibility": "ELIGIBLE",
+      "findings_changed": true
+    },
+    {
+      "process": "RibosomeAssembly",
+      "before_behavior": "PASS",
+      "after_behavior": "FAIL",
+      "eligibility": "BLOCKED_LOWER_GATE",
+      "findings_changed": false
+    }
+  ],
+  "all_unrelated_findings_preserved": true,
+  "full_index_tally": {
+    "MISSING_EVIDENCE": 2,
+    "FAIL": 17,
+    "PASS": 5
+  },
+  "integrity_ok": true
+}

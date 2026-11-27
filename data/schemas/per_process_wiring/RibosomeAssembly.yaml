@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorRibAsm.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "210-210"
+        lines: "232-248"
         note: "Dedicated request step that computes GTP/H2O demand from the current subunit state."
         symbol: "RequestCalculatorRibAsm.next_update"
       supporting:

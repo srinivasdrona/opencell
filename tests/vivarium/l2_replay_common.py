@@ -107,6 +107,8 @@ def resolve_trace_path(process_name: str) -> Path:
         _REPO_ROOT / rel,
         Path("E:/opencell") / rel,
         Path("/mnt/e/opencell") / rel,
+        Path("E:/opencell-worktrees/main-integrate") / rel,
+        Path("/mnt/e/opencell-worktrees/main-integrate") / rel,
     ]
     for candidate in candidates:
         if candidate.exists():
@@ -123,6 +125,8 @@ def resolve_per_process_fixture_path(process_name: str) -> Path:
         _REPO_ROOT / rel,
         Path("E:/opencell") / rel,
         Path("/mnt/e/opencell") / rel,
+        Path("E:/opencell-worktrees/main-integrate") / rel,
+        Path("/mnt/e/opencell-worktrees/main-integrate") / rel,
     ]
     for candidate in candidates:
         if candidate.exists():
@@ -491,6 +495,9 @@ def observable_store_path(
             return ("rna", "modified_counts")
         return ("rna", "counts")
     if observable == "monomers":
+        processed_i = _get_nested_mapping(state, ("protein", "compartment_counts", "processed_i"))
+        if isinstance(processed_i, dict) and processed_i:
+            return ("protein", "compartment_counts", "processed_i")
         unprocessed = _get_nested_mapping(state, ("protein", "unprocessed_counts"))
         if isinstance(unprocessed, dict) and unprocessed:
             return ("protein", "unprocessed_counts")
@@ -576,6 +583,16 @@ def overlay_observable_into_state(
     store_path = observable_store_path(observable, state, store_path_override=store_path_override)
     if store_path is None:
         return
+    if store_path == ("protein", "compartment_counts", "processed_i"):
+        store = _ensure_nested_mapping(state, store_path)
+        monomer_wids = getattr(process, "monomer_wids", None)
+        if monomer_wids is not None and len(vector) == 6 * len(monomer_wids):
+            for c_idx, comp in enumerate(("c", "d", "e", "m", "tc", "tm")):
+                offset = c_idx * len(monomer_wids)
+                for m_idx, wid in enumerate(monomer_wids):
+                    if wid in store and isinstance(store[wid], dict):
+                        store[wid][comp] = float(vector[offset + m_idx])
+        return
     store = _ensure_nested_mapping(state, store_path)
     n = min(len(wids), vector.shape[0])
     for idx in range(n):
@@ -638,6 +655,7 @@ def project_observable_from_state(
     wids: list[str],
     bound_enzymes_before: np.ndarray | None,
     store_path_override: dict[str, tuple[str, ...]] | None = None,
+    before_vector: np.ndarray | None = None,
 ) -> np.ndarray:
     if observable == "boundEnzymes":
         store_path = observable_store_path(
@@ -665,6 +683,20 @@ def project_observable_from_state(
     store_path = observable_store_path(observable, state, store_path_override=store_path_override)
     if store_path is None:
         return np.zeros(len(wids), dtype=np.float64)
+    if store_path == ("protein", "compartment_counts", "processed_i"):
+        monomer_wids = getattr(process, "monomer_wids", None)
+        if monomer_wids is not None:
+            comp_counts = _get_nested_mapping(state, store_path) or {}
+            if before_vector is not None and len(before_vector) == 6 * len(monomer_wids):
+                out = np.asarray(before_vector, dtype=np.float64).copy()
+            else:
+                out = np.zeros(6 * len(monomer_wids), dtype=np.float64)
+            for c_idx, comp in enumerate(("c", "d", "e", "m", "tc", "tm")):
+                offset = c_idx * len(monomer_wids)
+                for m_idx, wid in enumerate(monomer_wids):
+                    if wid in comp_counts and isinstance(comp_counts[wid], dict):
+                        out[offset + m_idx] = float(comp_counts[wid].get(comp, 0.0))
+            return out
     store = _get_nested_mapping(state, store_path) or {}
     return np.asarray([float(store.get(wid, 0.0)) for wid in wids], dtype=np.float64).reshape(-1)
 

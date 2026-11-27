@@ -1,3 +1,344 @@
+# M1 final-source assembly - 2026-10-19
+
+## Current public-main integration — 2026-11-27
+
+- User authorized accepted cohort-one source/evidence as the default public
+  main version, superseding the earlier branch-only publication limit.
+  Local publication branch `publish/cohort1-main-20261127` integrates the
+  complete independently accepted `0c0dd11e5c452a2c627f01489f0d78342a788b55`
+  history into main base `aadbb6f7f88d6b84b2ca4c3c20a0218f3afe770a`.
+  Public remote main has **not yet been updated**; the parent owns the
+  separately authored blog merge, final verification and normal main push.
+- This integrated source has **9/28 finding-derived ELIGIBLE, 19 BLOCKED**:
+  retained genuine L2.1 ChromosomeSegregation, HostInteraction,
+  ProteinActivation and TerminalOrganelleAssembly, plus accepted current M1
+  ProteinModification, ProteinProcessingII, ProteinTranslocation,
+  RNAModification and RNAProcessing. Full L2.2 index is **5 PASS / 17 stale
+  FAIL / 2 MISSING_EVIDENCE of 24**, not all-green or L2.5 certification.
+  The separate historical audit tree's retained-four count is not the
+  readiness count of this integrated source or its eventual public main.
+- Measured generation `10393d59ca9f5b7e135e5098ebde854c0334cf9e` and runtime
+  source `7586be17b746c8e6f18068898859f346192ed892` remain unchanged identities;
+  publication commits are metadata/history integration, not new campaigns.
+  All135 bound source/parameter/helper/schema/catalog/test hashes and40
+  accepted compact packet bytes must remain exact. Existing main blog bytes
+  and both entire main journal prefixes/order are preserved.
+- Independent committed-copy acceptance is complete, not pending:
+  `docs/phase_f/pre_l25/acceptance/cohort1_main_20261127/COMMITTED_REVIEW.json`
+  is the exact final review, SHA256
+  `167ec4ec7cfb0cf3730e953740b7b7ada934f83ebb0a6f888c28e1c9a94b9eeb`.
+  It supersedes the historical pending-review notes below without deleting
+  their original receipts or failed attempts.
+- Retrospective completed-run sentinels retain original run hashes/times and
+  explicit no-sweep-launch attestation. Raw OC tensors were **not retained**;
+  scalar allocator inputs are not outputs, so raw-sample bootstrap/W1
+  reanalysis remains unavailable. No runtime repair, biology rerun, M2/S2/RNA
+  API implementation merge, all28/L2.5/whole-cell claim or remote push here.
+  Nineteen blocked rows and separate worktree findings remain OPEN.
+
+## Operational handoff — local main publication
+
+- Assigned worktree only:
+  `E:\opencell-worktrees\publish-cohort1-main-20261127`; branch
+  `publish/cohort1-main-20261127`. Accepted donor is read-only at `0c0dd11`;
+  dirty `E:\opencell`, main-integrate, canonical audit plan and the concurrent
+  `publish/blog-cohort1-20261127` branch are not modified.
+- Native `C:\Program Files\Git\cmd\git.exe` owns every linked-worktree Git
+  operation. Installed hooks remain unchanged; the existing source-approved
+  Python transport is adapted only under own ignored
+  `artifacts/cohort1/main_publication/`, with process-local Python bridge.
+  Canonical WSL `/mnt/e/opencell/.venv-wsl` and assigned local imports only.
+- No own live agents/services. Exact commands, exits, source/packet/main-blog/
+  journal preservation proof and final local SHA are retained in
+  `artifacts/cohort1/main_publication/DELIVER_JSON.json` and `STATUS.md`.
+  Parent must join the separately committed article, verify combined bytes
+  and publish main normally; this branch itself is not pushed.
+- Raw ignored inputs needed by strict checks are private byte-identical
+  accepted copies only; destination ancestors are checked for reparse,
+  canonical aliases and hardlinks. No junctions or venv copies. Never run the
+  old source-freeze fixed-HEAD driver after metadata commits: compare the135
+  frozen hashes and250 raw hashes directly, keeping10393 distinct from HEAD.
+  Strict indices are generated in strict mode; audit integrity exit0 never
+  means all24 processes PASS. Historical plan/footer below is preserved.
+
+## Historical candidate landing — superseded by completed review and main integration above
+
+- **Evidence-only landing committed:** `a480d90b4386d62f4d20d7c8b2489292b05e302a`,
+  normal installed hooks PASS,84 exact authorized paths. All40 accepted
+  packet bytes match committed blobs; no runtime/fixture/test/catalog diff
+  from measured10393. Actual-SHA journal/delivery companion follows;
+  final local tip is named by native Git delivery receipt, not substituted
+  into measured-generation source identity. Current candidate9/28 remains
+  subject to independent committed-copy acceptance; no main merge/push.
+
+- **2026-11-23 evidence/honesty landing:** all five fresh10393-source
+  N50/B1000 campaigns and independent numerical/current-source/PORTABLE+
+  STRICT acceptance are complete (PP2M20, other fourM100). Exact accepted40
+  compact files now occupy the five canonical bundle paths; full existing
+  bundle regeneration is5 PASS/17 stale FAIL/2 MISSING, target5 no reasons.
+  All166 unrelated packet files remain unchanged, not rehashed as passes.
+- Five semantic audits/current-source findings are reconciled to accepted
+  PM private-MCG/exact100tick replay/P10b and complete RNA/monomer/existing
+  complex mass/source bindings; RP/RM full producer/forms/current shared
+  mass and source-bound gates accepted. Existing PT/PP2 ownership/isolation
+  repairs are preserved; their current evidence uses this10393 packet.
+  Existing honesty validator derives **candidate9/28 ELIGIBLE,19 BLOCKED**,
+  INTEGRITY_OK, actual140-file digest
+  a479e3386f209d6aa0d7b20aa71684208df0fb1f49b8b3eb4625e328e0984e3a.
+  Canonical separate audit baseline remains4 until distinct integration.
+- Source135/raw250/12 bounded repair receipts/original45 campaign files and
+  old missing-sentinel RED/current independent review remain exact. Nov23
+  completed-run revalidation is explicit, never a contemporaneous sweep.
+  Full raw OC output tensors were not retained; scalar allocator inputs
+  are not outputs, no raw-sample reanalysis claimed.
+- Full portable generate/audit and strict-mode full counterpart/audit EXIT0.
+  Existing publication/unit selection19 PASS/1 inherited fixed-four snapshot
+  FAIL/1 deselected; seven count-independent honesty unit controls PASS.
+  Two unchanged snapshot guards demand4 eligible though entry baseline
+  already6. No test/validator change or all-suite PASS claim.
+- RNADecay/tRNA consumption, normal Translation binding/full1041 RNA
+  lifecycle, DNAS Seed capture/Ribo genuineM200 and other cohort2 findings
+  remain OPEN; unrelated findings are unchanged. No biological/source/RNG/
+  fixture/schema/catalog/test changes, reruns, canonical audit write,
+  all28/L2.5 claim, main merge or push. Current compact acceptance and actual
+  committed-copy handoff: `docs/phase_f/pre_l25/acceptance/cohort1_final_10393/`.
+  Independent committed-copy acceptance is next.
+
+### Frozen source assembly and prior under-construction history
+
+- **Committed combined source:** `7586be17b746c8e6f18068898859f346192ed892`,
+  normal hooks PASS, accepted guard868377ae/e92bbb4 ancestry retained.
+  This commit contains the coherent seven-source assembly, six changed/new
+  incoming frozen test modules, current candidate plan and two provenance
+  appends only. The seventh incoming test already matched. Source bytes
+  equal the freshly tested blobs; no new biology/RNG/parameter/catalog/
+  old-evidence/index/baseline edits. Companion actual-SHA journal/plan
+  receipt follows; exact resulting HEAD/config/input freeze is generated
+  under `artifacts/cohort1/final_source_freeze/SOURCE_FREEZE.json`.
+
+- **2026-11-21T18:52Z combined source is bounded-validated, not newly eligible.**
+  Accepted mass/callerf187 and PM69a391 are assembled with guard868377ae /
+  test-only parent e92bbb4. Fresh combined81 PASS, PM178 PASS (including
+  unchanged actual persistent100-tick/all5-observable exact replay), and
+  compatibility27 PASS/1 inherited P10a RNA-class XFAIL; zero ordinary
+  failures/errors/skips. Registered4seeds×100 substrate ledger PASS with
+  complex-visible observer and actual CSV snapshot, not a gram oracle.
+  Source-derived unchanged mixed RNA/substrate/protein/total grams agree
+  in standalone helper, genuine Engine observer and live CSV projection;
+  full total1.347970715592014e-14g.10202 present physical-owner leaves are
+  visible, zero hidden; frozen UNIT basket and poison/zero/cache/particle/
+  live-writer guards PASS. Original13-count RED remains immutable history;
+  independent exact-path/hash adjudication resolves it without runtime edits.
+- All250 accepted raw files/unique embedded seeds0..49/providers/full
+  before-after families qualified against exact source-copy manifests.
+  N50/M100/B1000 for PT/PM/RP/RM; PP2 M20. Actual pre-consumption closures
+  PT37/PM35/RP38/RM37/PP2 33 paths, no source copy or metadata relabelling.
+  Accepted CSV13 Ruff diagnostics remain, all other six source files clean;
+  original pre-mass CSV had16, zero introduced relative to accepted bytes.
+  Native whitespace PASS. Existing five producer/codec/fixture/catalog/
+  incoming frozen tests and both complete journal prefixes are preserved.
+- Source assembly is committed; sealing the exact resulting
+  commit/closure/raw/config freeze under `artifacts/cohort1/final_source_freeze`.
+  All five full campaigns, independent integrated-source/freeze review,
+  eligibility/index/publication and push remain pending. Canonical retained
+  baseline stays4; this source validation does not promote the target to9.
+
+### Prior under-construction notes (historical snapshots, superseded above)
+
+- Active branch: `integrate/m1-final-freeze-20261019`, in this existing
+  worktree. Previous accepted branch `integrate/m1-accepted-20261019` stays at
+  `9f53a27` with its verified six eligible processes; those receipts below
+  describe that source snapshot, not this revised runtime's current readiness.
+- Independently accepted PM source/test lineage through `7a0a6d5` has been
+  imported as `7f7c1ea` through `d641c1b`. The source/test/fixture/schema trees
+  exactly match the reviewed PM branch. The only first-import conflicts were
+  append-only journals: native Git union preserved every old record as an
+  exact prefix and every incoming record, with zero ID/content collisions.
+- PM's shared schema bytes now differ. Inherited M1 gate publications are
+  historical for this revised tree, not refreshed or accepted as current.
+  No readiness count is claimed until reviewed RNA total-mass fixes join this
+  branch, one source freeze completes, and all five registered gates rerun.
+- Independent PM code closure is 178 PASS; original100tick replay is exact.
+  RNA observer fix is accepted, while the separately frozen production
+  `compute_cell_mass` consumer repair is active in the RP worktree. No main
+  or canonical production-code merge/push; no gate run before final freeze.
+- Accepted RNA observer/frozen-test lineage through `0817ac9` is now imported
+  as `a05c789` through `2ee7414`, with exact source/test matches and all old
+  journal records preserved. The remaining source-correct total-consumer
+  patch `8829930` / `bf46bfe` has 41 doer PASS and is in independent review;
+  it has not been imported or treated as approved yet.
+
+## Operational handoff
+
+- **Post-landing commit — 2026-11-23T17:41Z:** actual persistence commit
+  `a480d90b4386d62f4d20d7c8b2489292b05e302a` on the same local branch.
+  Normal commit shell `m1-evidence-persistence-commit`, PS11160,
+  17:40:27Z–17:40:36Z/exit0; canonical-WSL Python bridge/native Git guard
+  executed, installed hooks unchanged. No own live processes/agents.
+  Completing companion actual-SHA journals/DELIVERY/plan receipt only;
+  source/packet/index/audit/baseline bytes remain fixed from accepted landing.
+  Parent e079 performs separate independent committed-copy verification.
+  Current committed acceptance root `cohort1_final_10393/`; machine audit
+  result9/19, complete full-index5/17/2, no source rerun or cohort2 promotion.
+
+- **Current evidence persistence stage — 2026-11-23:** same target worktree/
+  `integrate/m1-final-freeze-20261019`, measured generationHEAD10393 and
+  source7586 remain fixed; evidence-only commits legitimately advance local
+  HEAD. Do not invoke old source-freeze fixed-HEAD equality driver after
+  metadata commits; verify135 bound hashes/raw250 directly instead.
+  No live own agents/processes; completed CLI shells `m1-full-index-landing`,
+  `m1-full-strict-index`, `m1-evidence-honesty-validation`,
+  `m1-current-honesty-audit`. Exact command/PID/time/exit/XML/preservation
+  receipts in `artifacts/cohort1/evidence_honesty_landing/`, meaningful
+  copies in new acceptance/cohort1_final_10393. Full current index is not
+  the scoped5-only index. Strict audit requires matching strict-generated
+  payload because unrelated missing local raw inputs add reason fields.
+  Commit exact selective evidence/audit/baseline/plan/journal paths only,
+  normal installed hooks via existing Python-only WSL/native-Git bridge.
+  Both original journal prefixes/order remain exact; actualSHA companion
+  receipt follows, no amend. No campaign reruns/source mutation/global
+  config/hook or other worktree writes. Parent e079 committed-copy review
+  follows clean local delivery, no push/main merge/whole-cell promotion.
+
+- **Source committed/freeze handoff (2026-11-21T18:55Z):** branch
+  `integrate/m1-final-freeze-20261019`, same target worktree, source commit
+  `7586be17b746c8e6f18068898859f346192ed892`, local/unpushed. Normal source
+  commit shell `m1-source-commit`, PS20356,18:53:45Z–18:53:49Z/exit0;
+  installed Catalog and LLM hooks both genuinely PASS using existing
+  accepted canonical-Python/native-Git transport. No owned live processes.
+  Final journal/plan receipt records this actual source SHA; source bytes
+  do not change in that companion commit. `SOURCE_FREEZE.json` pins the
+  resulting exact HEAD, five actual closures, source/test/fixture/catalog/
+  raw250 hashes, configurations and five direct registered runner commands.
+  Verify with the ignored `resumed/seal_freeze.cjs --verify` before launch.
+  Parent reviews this freeze first; do not mutate source/fixtures/shared
+  schema between or during the five campaigns. No campaign launched here,
+  no old PASS rehash, no eligibility/index/publication/push. Retained-four
+  canonical baseline remains separate; no target9 claim.
+
+- **Current (2026-11-21T18:52Z):** bounded validation and raw qualification
+  complete; no own live processes/agents. Completed mass81 shell
+  `m1-combined-81` PS4964/Python390; PM178 PS15660/Python642; compatibility
+  PS15676/Python836; raw inventory PS28616; ledger100 PS25388/Python1061.
+  Before source commit HEAD is accepted test-onlye92bbb4, same active
+  `integrate/m1-final-freeze-20261019`; tested13 source/test blobs are intact.
+  Journal e92bbb4 prefixes are archived in `resumed/entry/`. Commit with
+  unchanged installed normal hooks and existing accepted Python transport
+  only; canonical WSL scripts/local target imports, explicit native Windows
+  Git. No source mutation or gate launch after exact commit/config seal.
+  Exact XML/source hashes/material/inputs/lint/command receipts in `resumed/`.
+  Handoff ends before all five N50 campaigns; parent reviews freeze first.
+
+- **Active resumed integration (2026-11-21T18:42Z):** same candidate and
+  `integrate/m1-final-freeze-20261019`, HEAD
+  `e92bbb4e74209e5ed6c6a6b5876e7cbc9d7b02d7`, no push. Original13 source/test
+  blobs remain staged; candidate plan is unstaged. Accepted exact capture
+  guard/reference packet is `pm_capture_contract_adjudication/` below
+  `artifacts/cohort1/final_source_freeze/`; do not reapply/reset the merge.
+  Launching finite combined81 shell `m1-combined-81`; real command/PID/time
+  receipts will be written in `final_source_freeze/resumed/`. Raw input
+  inventory can proceed independently; all five N50 campaigns remain barred
+  before reviewed commit/config freeze. Use existing owned scratch parent,
+  canonical WSL/local imports and explicit native Windows Git. Incomingf187
+  and historical9f53 remain untouched. Current retained-four baseline stays
+  separate; no promotion to9. Earlier STOP and historical handoffs below
+  are preserved history and no longer describe current HEAD.
+
+- Resumed live command inventory: `m1-combined-81`, `m1-combined-pm178`,
+  `m1-source-compat`; starting bounded `m1-source-ledger100` (4seeds×100,
+  registered substrate ledger only). Raw-input qualification shell
+  `m1-source-input-inventory` completed18:46:11Z/exit0/PowerShell28616:
+  all250 accepted raw hashes/unique embedded seeds0..49/providers/families
+  qualified, no source copy; PT37/PM35/RP38/RM37/PP2 33 actual runtime inputs.
+  Exact per-command Python PIDs/times/source hashes are under `resumed/`.
+
+- **Current live candidate (2026-11-21):**
+  `E:\opencell-worktrees\m1-accepted-20261019`,
+  branch `integrate/m1-final-freeze-20261019`, HEAD
+  `69a391afaccc773a2791fc093e7a49fb5f36e7ae`, no push/new commit.
+  Accepted seven-runtime source assembly and six changed/new frozen test
+  modules are staged; the seventh test already matched. Journals retain
+  exact candidate prefixes plus19 unique incoming records each. Plan and
+  journals are modified but not committed. No unmerged paths remain.
+  All entry producer/codec/catalog and21 fixture hashes are preserved.
+  No active processes/agents owned by this integration; completed shell
+  `m1-first-combined`, PowerShell29536/Linux390, exit1.
+  Blocking immutable source-count case is persisted under
+  `artifacts/cohort1/final_source_freeze/` and
+  `STATUS_m1_final_source_integration.md`. Proper capture35 cannot be
+  truncated to13 to satisfy the frozen PM guard. Independent contract
+  adjudication is prerequisite to a coherent green commit, fresh combined
+  validation and exact-source five-gate handoff. Owned pytest scratch
+  parent exists; use canonical WSL/local imports and native Windows Git.
+  Incoming f1873cf is read-only/clean; historical accepted branch9f53a27
+  and canonical separate retained-four baseline remain unchanged.
+  Historical gate/readiness statements below refer only to their original
+  snapshots, not this under-construction source.
+
+- Candidate worktree: `E:\opencell-worktrees\m1-accepted-20261019`, branch
+  `integrate/m1-accepted-20261019`, from independently reviewed source
+  `65df71c26553f42dd95759b948de42647987bf68`. No production code changed.
+- PP2 full N50/M20/B1000 gate and all four current PP2 findings independently
+  ACCEPTED. Unchanged candidate bundle and complete independent receipts are
+  staged in their existing evidence/acceptance roots. The candidate honesty
+  audit now reports INTEGRITY_OK, five eligible and 23 blocked, using actual
+  140-file digest `debfe45f9fbc1b3dd23ab5cfc352b340b1bf662762c338574466e3bea679c808`.
+  The integrated PP2 row passes strict current-input verification with no
+  reasons; full generated-index integrity is OK. Publication is committed at
+  `6cdf887e7c1b89b5c13f29a415b04210a98f7152`; exact reviewer-byte preservation
+  is committed at `922ef9696e0ac00c18f3d01533cfaf3a48e3bb40`.
+  Native Git archive verification matched all 32 original independent review
+  files and all eight accepted compact bundle files byte-for-byte, including
+  CRLF receipts. Acceptance-root Git attributes preserve those hashed bytes.
+  Independent copy/integration verification ACCEPTED the sealed candidate at
+  `c3ec943df61e485c0f50a3f770f85fdb5eae2cd1`: all 40 committed/current/original
+  files and 11 recorded receipt hashes match, strict PP2 PASS, index integrity
+  OK, honesty INTEGRITY_OK at five eligible / 23 blocked. Final integration
+  receipt is preserved under the PP2 acceptance root's `integration/` folder.
+  PP2 is persistently complete on this candidate; source and all unrelated
+  evidence bundles remain unchanged.
+- PT full N50/M100/B1000 gate and both current PT evidence/isolation findings
+  are independently ACCEPTED at the same unchanged runtime source. Its exact
+  compact bundle and review receipts are now published in this candidate.
+  Parent verified strict PT and PP2 rows PASS with no reasons, generated-index
+  integrity OK (4 PASS / 18 stale FAIL / 2 MISSING), and honesty INTEGRITY_OK
+  at six eligible / 22 blocked, actual 140-file digest
+  `a4694f00ef286d47283aa90605a3120030c1d700e79cf9560132bcfe50d41525`.
+  Publication is committed at `e372a5b158b27b42ad94f2c1065a1867d4fb58da`.
+  Native Git archive verification matches all 69 original PT review files and
+  all eight compact evidence files, both committed and current bytes.
+  Independent committed-copy check ACCEPTED `f87ebf1`: all 77 exact copies,
+  all 18 delivery hashes, four original actual-publication assertions PASS,
+  strict PT/PP2 PASS, index integrity OK and honesty INTEGRITY_OK 6/28.
+  Its final receipt is preserved under the PT acceptance `integration/` root.
+  PT and PP2 are persistently complete on this source snapshot (2/5 M1).
+  RP/RM mass repair and PM source-faithful RNG repair remain unpromoted work.
+- Global index regeneration truthfully keeps unrelated stale publications
+  non-green: 3 PASS, 19 source-provenance FAIL, 2 MISSING. No old hash is
+  refreshed, no unrelated open finding is waived, and no historical raw
+  publication is deleted. This is not a newly measured biological regression.
+- Canonical all-24 campaign queue remains in
+  `E:\opencell-worktrees\pre-l25-honesty-rebaseline\plan.md`. Its production
+  tree/baseline remains separate at four eligible until explicit integration.
+  No main or canonical production-code merge/push is performed here.
+- PT independent verdict owner `af792a2b-aa91-41aa-a532-1920599876cc` completed
+  acceptance; its committed-copy verification follows publication.
+  RNA verdict owner `9e80679b-8eb2-4a96-b12f-235ad39c70b9` is reviewing the
+  observer-only `406256b` repair after frozen mass regressions.
+  PM test author `866ce338-0ad8-4328-84b0-7f82a8f79eed` froze stronger source
+  vectors at `2ed9e79` using already-recorded MATLAB authority, plus the
+  one-uniform weighted-sampler counterexample. Original separate doer
+  `694b1228` has resumed the repair; no fresh licensed MATLAB run is claimed.
+  PP2 doer and both independent acceptance stages have completed; reviewer
+  `a353318a-b485-44c2-83d5-ab5929a6044e` is idle, with no live helper.
+- All execution uses canonical WSL `/mnt/e/opencell/.venv-wsl`. Native Windows
+  Git manages linked worktrees. Python wrapper arguments must be relative or
+  WSL-native, never unconverted Windows paths. Private PP2 input copies were
+  rehashed against the accepted manifest; the only source junction targets
+  the direct existing WholeCell mirror. Preserve all original live evidence.
+
+The inherited ladder/history below is retained, not a current progress claim.
+
 ## L-ladder (canonical, reconciled 2026-07-02 with L2.4 relocation)
 
 The L-ladder went through a terminology drift around L2.2 vs L2.2.k (composition harness) vs L3 (direct coupling), then again on 2026-07-01 when the original L1 was split into L1a/L1b/L1c ("aliveness family"), then again on 2026-07-02 when the "L1c" gate was found to be structurally more complex than several L2 rungs (28 processes × ≤100 ticks × autonomous). L1c was renamed to L2.4 and relocated to sit BEFORE L2.5 in the ladder. Rationale: diagnostic dependency (L2.5 needs allocator + shared pool proven correct; L2.4 proves those; therefore L2.4 must precede L2.5). See `D:\OneDrive - Microsoft\.pm-os\DECISIONS.md` entry `2026-07-02 | opencell | ladder-rename-l1c-to-l2_4`.
@@ -58,6 +399,1403 @@ L5   chassis (whole-cell phenotype, ensemble across 4+ seeds, ~30K ticks)
 **Overlap with L3/L4:** L2.5 (shared-pool) and L3 (direct hand-off) are peer rungs that test 2 processes through different mechanisms (allocator vs direct port). Both must be green for L4/L5 to mean anything. L2.5 comes first because it tests the wiring the chassis actually uses.
 
 ## Operational handoff (compaction wake-up block) — refresh before stepping away
+
+**Bounded binding continuation COMPLETE (2026-10-15):** branch
+`integrate/pre-l25-fidelity-batch-20261015`, verified clean start
+`48e0a8410fbd0d4c1da8d7a918a2e77b856f0810`, all local/unpushed. Exact ports:
+`b4a3c69`→`058893a`, `cbc4eaf`→`bd5ea3d`, `92cce53`→`3bc852b`,
+`ad07c52`→`5a94d0f`, `0a8634f`→`c25ef05`; plan-only966f45b omitted.
+Actual RNA/PM closure956fea2, strict RNA diagnostic-order correction83b0afc,
+real-SHA provenance1283506/e7c8472; attribution-only correction3328f55.
+Final documentary/provenance tip is recorded in the mirrored STATUS file.
+
+Exact final command:
+`& .\artifacts\fidelity_binding_combined\joint.ps1 -RunName joint-final`
+(32 selectors), **465PASS/1 inherited CC-starvation XFAIL in613.31s**, zero
+ordinary skips. Includes exact accepted PP2/replay/projected90, RNA101,
+PM source/adapter/strict-zero120, binding16, PT isolation2, capture7, new
+closure11, real allocation canaries32 and changed-surface conservation6.
+Registry/import30PASS (covered separately, not redundantly rerun). Ruff14
+changed Python filesPASS; frozen12 exact blobs and protected production/
+catalog/protected124-WID/evidence/index bytes unchanged. Both append-only
+journals retain all incoming/current events' exact content and order.
+
+All200 accepted files match frozen manifest hashes. RNA full-family activity:
+RP1070 primary-active ticks, actual seeds0/1 tick5; RM2244 primary-active
+ticks, actual seeds1/2 tick6, repeat-identical fresh owners. Canonical RM
+seed0 remains no-op N/A, not active proof. No statistical gate was run.
+Honesty freshly recomputed scoped140 files:
+`be95a0b307b08590de24a760183a631d37b96e490526016e17666de72e46809e`;
+unchanged scope, INTEGRITY_OK4/28,24 blocked. Separate actual five-lane
+runtime/parameter closure25 files:
+`cea9c319404d7a43dc7473f93a972a88202d7f1e1283608abe026164fae4d906`.
+No old evidence/source hash was refreshed or fabricated.
+
+Required closure MATCHED is NOT independent approval/readiness. PT publication
+remains1PASS/3FAIL (1/50 trace bindings, no parameter binding, stale sources).
+Expanded compatibility26PASS/5FAIL/2 old catalog assertions deselected; all
+five failures reproduce exactly on48e0a84 (old Metabolism cube assumption,
+tRNA laundering verdict assumption, three missing legacy overlay hooks).
+Read-only population reports all fourRESOLVED50/50; its broad destination
+check flags49 unrelated pre-existing MacromolecularComplexation files, retained.
+Do not repair these by changing frozen assertions, catalog, or published bytes.
+
+No live shell/PID/agent, MERGE_HEAD or CHERRY_PICK_HEAD remains. Logs/XML,
+reproducers, manifests and input snapshots: `artifacts\fidelity_binding_combined`;
+full report mirrored to parent session `files\STATUS_fidelity_binding_combined_port.md`.
+Parent owns independent review, same-reviewer acceptance, publication/fresh
+gates and eligibility; both PT blockers and canonical4/28 remain unchanged.
+No nested agents, push/main/canonical merge, source fetch/extraction, fixture/
+raw edits, evidence migration/publication, ensemble or L2.5 occurred.
+Native Windows Git only; Python/scripts use WSL cwd
+`/mnt/e/opencell-worktrees/integrate-fidelity-batch`, venv
+`/mnt/e/opencell/.venv-wsl`. Use relative/WSL arguments; wrapper splits spaced
+`-k`/logger text, so use Python argv. Fresh Design-A owners must not reset
+persistent legacy replay RNG. Never recursively clean unrelated scratch/raw
+paths or junctions. Incoming partial-tree plan never replaced this handoff.
+
+**Earlier isolated integration lane (before binding continuation; historical):** worktree
+`E:\opencell-worktrees\integrate-fidelity-batch`, branch
+`integrate/pre-l25-fidelity-batch-20261015`, base `95059f1`. Frozen merges:
+PP2 `be36287` → `768fc7e`, PM `89ac0f3` → `9a15bf3`, RNA `666fbb1` →
+`c041968`. Guard/anchor fix `2f36964`, pre-handoff provenance tip `48001b3`;
+all local/unpushed. All four real phase owners, authority-schema unions,
+fresh sample owners, PT sole request writer and CC/StageAB contracts survive.
+
+Final exact joint command: `& .\artifacts\fidelity_batch_integration\joint.ps1`
+(complete25-file selector list), **421 PASS /1 existing CC starvation XFAIL**
+in561.00s, no skips. Combined L2.4 seeds0–3 ×100:400/400 ticks, zero
+PartA/PartB/stability failures. Both observers' real-owner positive,
+overspend, missing-leaf and unknown-owner canaries:32/32 PASS; no nested PM
+double accounting. Ordinary Processes retain pre-update allocation snapshots.
+L1b115/115, wiring28/28, honesty INTEGRITY_OK4/28,24 blocked.
+Source digest140 files:
+`be95a0b307b08590de24a760183a631d37b96e490526016e17666de72e46809e`;
+focused Ruff33 files:20 inherited diagnostics, zero new; diffcheck clean.
+Both journals preserve every frozen event's bytes/order; all200 accepted
+raw files match tracked paths/hashes/embedded seeds0–49/100ticks/full families.
+
+Frozen binding remains4 PASS/16 intended FAIL. PP2 six-family and RP
+full-family replay PASS; PM tick53 and RM event tick0 exact stochastic
+diagnostics and canonical RM no-op N/A remain explicit. No RNA N50 sweeps,
+binding implementation, semantic promotion or evidence-index publication.
+Next: common binding against this complete tree, plus PT sample isolation;
+both PT blockers remain OPEN. Canonical status below is preserved.
+No agents, pushes, live shells or MERGE_HEAD. Logs/reproducer/32-case XML
+are local under `artifacts\fidelity_batch_integration`; detailed checkpoints
+are in the session artifact `STATUS_fidelity_batch_integration.md`.
+
+**Current status (2026-10-15) — shared attestation gap reopens PT; canonical readiness baseline 4/28:**
+
+- Parent verified the same representative-seed-only defect in the previously
+  eligible ProteinTranslocation published manifest: 50 resolved seeds, only
+  one oracle file hash and no parameter fixtures. The actual genuine ensemble
+  execution/score is not revoked, but readiness is temporarily blocked by
+  `PTRANS-COMPLETE-ATTESTATION`. Canonical audit count is now4/28,24 blocked.
+  Isolated feature-branch5/28 pins are historical, not new certifications.
+- The shared binding repair must restore this existing PT evidence as well as
+  bind the four repaired-process candidates. Do not retain5 by waiving a known
+  contract gap, drop unrelated evidence rows, or ignore new source staleness.
+  Use independently reviewed verified-byte re-attestation/migration or rerun;
+  never edit scores, thresholds or verdict strings to manufacture acceptance.
+- RNA reviewer found no additional high-confidence producer algorithm/phase
+  bug, but rejected mutable cached process reuse in both Design-A adapters.
+  Repeated identical samples changed output. Original RNA author is now
+  freezing repeated/interleaved/cache-poison regressions; original doer next.
+  Fixed per-sample execution must not reset persistent legacy replay RNG.
+- RNA author subsequently failed on a request-body timeout before new isolation
+  work; committed artifacts are intact. Parent is adding the narrow execution-
+  isolation regressions directly instead of restarting the large context, then
+  returning implementation to the original doer and independent reviewer.
+- Those regressions are now frozen at11 PASS /6 intended FAIL; no producer
+  algorithm changed. Canonical honesty rebaseline is verified9/9 and
+  INTEGRITY_OK4/28, source digest unchanged. Independent doer fixes RNA sample
+  ownership next; common binding author continues independently in PP2.
+- RNA freeze is `a202f24`; original doer
+  `47e288fe-a412-4728-96da-65e194efbff3` is live on the helper-only fresh-owner
+  fix. Tests are frozen; expected combined source/input/isolation count101.
+- RNA isolation fix `666fbb1` is parent101/101 and independently MATCHED on
+  re-review; doer/reviewer are now idle. All four bounded candidate producer
+  repairs and adapters have cleared review; empirical RNA gates and complete
+  evidence binding are still pending.
+- Parent found the same cached-owner execution in PT's adapter and verified
+  an advanced metadata RNG reaches actual public execution (zero-input sampler
+  initialization probe, not a biological fidelity claim). Added separate
+  `PTRANS-SAMPLE-ISOLATION` blocker; canonical count remains4/28. Restore PT
+  only after both attestation and sample isolation are closed.
+- Next parent stage: draft shared-file integration of the three frozen feature
+  snapshots before applying the common binding repair. Preserve all root4/28
+  blockers; do not integrate a moving PP2 test-author branch or publish scores
+  as readiness. Source models/thresholds stay frozen.
+- Common evidence-binding freeze has now completed: `cc8f802`, `249f519`,
+  `0d68732`, provenance through `be36287`, measured4 GREEN/16 intended RED.
+  All author sessions are idle; no long command remains live.
+- Integration is next in isolated
+  `E:\opencell-worktrees\integrate-fidelity-batch`, not directly in canonical
+  audit. Frozen merge targets: PP2 `be36287`, PM `89ac0f3`, RNA `666fbb1`.
+  Reconcile shared calculator/composite/observers/helpers and protected tests
+  once; retain canonical4/28 and all genuine evidence blockers. Only after that
+  should the single common binding doer operate against the complete code tree.
+
+**Earlier parallel-lane record (superseded by the current handoff above):**
+
+- PP2 independent reviewer `2b6b081d-9fa9-4e18-8801-90cf58d63695` returned
+  DID NOT MATCH solely on two evidence-binding defects: missing protein-authority
+  code dependency, and N50 input manifest binding seed0 only/no parameter
+  fixtures. Reviewer closed all biological/runtime/replay categories and
+  independently re-derived fresh PASS. PP2 author is freezing binding canaries.
+- Shared evidence schema/runner repair has ONE owner in the PP2 lane. Do not
+  have PM/RNA implement competing provenance frameworks; port the reviewed
+  common repair and bind each lane's real helper/fixture dependencies.
+- PM bounded production AND adapter delta are independently MATCHED. Shell
+  `pmod-fresh-design-a` has now completed from `5c57210`: computed PASS,
+  N50/M100,5000 observations,B1000,zero warnings. Primary W1=
+  0.00010414937759336126; substrate W1=0.03502666666666667. This is still a
+  candidate: the old3-input attestation must meet the repaired common contract.
+  No model/gate shell remains live.
+- RNA test correction/harness is now `94d3e9f` / `7a7b611`: reported84 unit
+  PASS +11 input/adapter PASS, source-only replay mismatches/missing intergenic
+  oracle explicitly retained. Parent is isolating its trace cache and restoring
+  both accepted50 cohorts before fresh review/gates; main data must stay intact.
+  Parent now reproduced95/95 and completed isolated restoration: both exact50
+  cohorts/100ticks/full family sets verified; main hashes unchanged. Independent
+  two-process review is next; statistical gates wait for the shared binding fix.
+  Reviewer `d1e8bfef-5471-431a-8eb4-943b86b0663d` is now live on `b2e7778`.
+  Restored replay is7 PASS/1 RM event exact mismatch/1 audited canonical RM
+  no-op N/A; RP full-family replay passes. Source binding remains the shared
+  prerequisite for statistical acceptance, not a reason to tune random draws.
+
+- Run independent process repairs concurrently in isolated worktrees. Preserve
+  test-author -> implementer -> independent-reviewer ordering within each lane,
+  but serialize shared-surface reconciliation and eligibility integration only.
+- Protein lane A: ProteinProcessingII in
+  `E:\opencell-worktrees\fix-protein-processing-ii-fidelity`, tip `c7cd1cc`.
+  Implementer `3c96c6ae-682d-4090-b1b8-fef846e8adf8` is idle; bounded repair
+  reports 57/57 and four-seed conservation PASS, not overall eligibility.
+  Test author `9bfbbe1e-4fc6-4a28-a21f-52bdb3bd93f4` is correcting verified
+  stale no-dual-writer/replay input projections; production is frozen.
+  Input repair landed at `864ecd2` / `8701f1a`: reported 69 PASS and one
+  explicit missing signal-sequence oracle FAIL; five observed replay families
+  match all 100 ticks with source-owned inputs, not full-source coverage.
+  The same author is now source-adjudicating a narrow nonmigrated form-route
+  correction (`PP1.processed_counts -> PP2 -> Folding.unfolded_counts`) rather
+  than assuming a global 482-WID authority migration is necessary.
+  That freeze is now committed at `196efe0` / `b279774`: parent reproduced
+  67 PASS / 13 FAIL (12 local route defects plus missing signal-oracle family).
+  Author is idle; original doer is next for the narrow local correction.
+- PP2 oracle selection is reconciled: all 50 files in
+  `l22-stale5-regen`, `l22-final-sweep`, and `integrate-l22-dnas-current`
+  match the tracked `oracle_population_manifest.json` PP2 records exactly.
+  Accepted seed-0 SHA is
+  `0d86b69b6896c76c36056a20d19e6c530b781b4413f70550d74cb95aeeda2387`;
+  current canonical seed-0 SHA `1cbcb450...` is explicitly archived as stale
+  in `L22_STALE5_REGEN_REPORT.md`. After narrow production repair `aae8d93` /
+  `e8930e7`, parent restored the exact accepted50 cohort into an isolated PP2
+  worktree cache: all hashes/seeds/100ticks/six families verified, main cache
+  unchanged. Full six-family replay/evidence projection is next; no new
+  statistical verdict or eligibility increase has been claimed.
+  That replay/projection work is now `6ad3130` / `c49fa41` / `f7869ee`;
+  parent reproduced90/90, including100-tick six-family identity and real signal
+  mutations. PP2-only registered N50/M20 sweep and fresh independent review
+  are next; planned shell `ppii-fresh-design-a`, isolated feature worktree.
+  Sweep has now completed from `fa0ac62`, computedPASS with W1=0 on both
+  channels and the authorized deterministic-convergence warning. Reviewer
+  `2b6b081d-9fa9-4e18-8801-90cf58d63695` is live; promotion awaits that verdict.
+- Protein lane B: ProteinModification, isolated worktree
+  `E:\opencell-worktrees\fix-protein-modification-fidelity`; freeze
+  `caaa189` / `2e902fb` is parent-accepted: new tests 43 PASS / 45 RED.
+  Bounded production repair is now `d3c242c`; parent reproduced frozen88/88.
+  Implementer `d44e1601-82f2-4d3e-9c27-cbfefcaa290b` is idle; original test
+  author `e723c978-1b4e-479b-ab76-d4c4b8a34033` is live for wrapper-manifest,
+  source-owned compatibility inputs and old hinted replay correction/diagnosis.
+  That follow-up landed at `45e1dc8` / `68c154c`:137 PASS/1 exact replay RED,
+  with all100 source inputs verified. Author is idle; next are independent
+  sampling-law/production review and source-only Design-A adapter validation.
+  Persistent replay tick53 mismatch is not yet source-certified or waived;
+  Design-A distributions, not tuned identical draws, remain the registered gate.
+  Fixed-snapshot reviewer `afe79323-decc-4c9e-9576-dc9099fa43fd` is live on
+  `99ee89a`; test author is concurrently verifying PM-only Design-A source
+  projections. Existing accepted PM50 cohort is fully present in
+  `l22-final-sweep` and matches the population manifest; local cache has seed0
+  only, matching the same manifest.
+  Bounded production review returned MATCHED; sampling-law support is confirmed
+  without exact paired RNG identity. PM adapter `5dd07ea` / `be2ccb4` is
+  parent-accepted36/36 and undergoing delta review. Local PM cohort now has
+  all50 accepted hashes; N50/M100 sweep is next, shell `pmod-fresh-design-a`.
+  It overlaps PP2's protein request-calculator
+  class, so reconcile its shared-file edits against PP2 before integration.
+- RNA lane C: RNAModification plus RNAProcessing, isolated worktree
+  `E:\opencell-worktrees\fix-rna-pathway-fidelity`; freezes `55d9c3b` /
+  `de67be1` are parent-reproduced: 46 PASS / 37 RED including legacy tests.
+  Implementer `47e288fe-a412-4728-96da-65e194efbff3` is now idle; original
+  test author `eac71b90-e24c-489f-94f1-99fdd1b751f9` is live on the narrow
+  source-conflicting competition scenario and source-only replay/Design-A inputs.
+  Coordinate
+  the pair because they share `RequestCalculatorRNAPathway` and RNA form routing.
+- RNA implementation now landed at `6ab80b6` / `183ff18`, provenance
+  `80a0855`; doer is idle. Parent reproduced82 PASS/1 conflicting test:
+  tRNA-first competition grants7 water but source uses whole-class bound12.
+  Independent author must adjudicate a genuine order-sensitive fixture case,
+  not weaken the source bound or merely increase water until both pass.
+  Legacy input-only replay/evidence projections also require correction before
+  a fresh statistical verdict; no no-op replay may count as positive coverage.
+  Accepted50 cohorts for both RNA processes in `l22-final-sweep` match tracked
+  population hashes exactly. Local RM seed0 matches; RP seed0 is archived-stale;
+  both lack49 local seeds. Isolated restoration is pending the active freeze.
+- No lane may broaden the shared protein/chromosome authority migration,
+  modify another lane's files/worktree, or self-certify L2.5 eligibility.
+  Parent owns shared topology/accounting, dependency-closed source digests,
+  source-bound evidence reruns, and final eligibility adjudication.
+- PM and RNA implementation can now proceed concurrently against their
+  independent freezes; do not launch broad evidence sweeps or L2.5 itself.
+- RNA intergenic output identity is fixture global-row based within existing
+  `rna.counts` (`intergenic::<1-based Rna.intergenicIndexs row>`), not repeated
+  biological WID. This preserves all 11 fragments without a second authority.
+  RNADecay consumption is not claimed repaired by this producer-side slice.
+- Runtime `MIGRATED_WIDS` currently has 124 members (PT's 119 plus TOA union);
+  derive membership from the code, never conflate the PT subset with the union.
+- Operational trap: worktree `WholeCell` and canonical trace junctions must
+  point directly to canonical targets, never through another worktree; never
+  recursively delete junction-bearing directories. All Python stays in WSL.
+
+**Current status (2026-10-14) — shared chromosome-state Stage A+B integrated and independently MATCHED:**
+
+- Audit branch integration commit is `27fb7a8`; nothing is pushed and no
+  agents/processes remain live.
+- Stage A adds the exact state-owned int64 `[seed, mcg_state]` leaf at
+  `chromosome._shared_rand_stream_state`, strict fail-closed restoration, and
+  one unified `ChromosomeStateRandStream`.
+- Stage B wires TxReg as the sole production consumer without moving candidate
+  selection, footprint authority, t0 initialization, multi-consumer ordering,
+  two-column fold-change, or checkpoint persistence.
+- Independent review initially found stale-handle/legacy reseeding, malformed
+  state coercion, a weighted-sampling boundary mismatch, stale baseline prose,
+  and missing digest dependencies. All were frozen test-first, repaired, and
+  the same reviewer returned **`VERDICT: MATCHED`**.
+- Final parent acceptance: Stage A+B + TxReg fast **121 PASS**; replay/CC
+  compatibility **29 PASS / 1 strict XFAIL**; L2.4 **4 seeds x 100 ticks
+  PASS**; L1b **115/115** and **28/28**; final honesty/integrity selection
+  **38 PASS**; `INTEGRITY_OK 5/28`.
+- Source digest now tracks 130 files, including `chromosome_store.py` and
+  `chromosome_state_rand.py`:
+  `ab4da2a9bd747c1bfd2e56348983a118f60501feb3ff3b4a6baeee3c402794e8`.
+- Integrated smoke: Stage A+B plus honesty contracts **38 PASS** and
+  `pre_l25_honesty.py audit` remains **INTEGRITY_OK 5/28** at the exact
+  130-file digest above.
+- Next bounded TxReg iteration is Stage C: freeze index-for-index footprint
+  authority/writeback parity before removing the private occupancy surface.
+  Stage D t0 initialization and Stage E multi-consumer ordering remain deferred.
+- No TxReg eligibility promotion: L2.2 evidence and Stages C/D/E remain open.
+
+**Current status (2026-10-14) — CC Iteration 2 integrated and re-adjudicated; baseline remains 5/28:**
+
+- Audit branch tip before this metadata checkpoint is merge `3df0f7f`.
+  Nothing is pushed; no agents or long-running shells are live.
+- ChromosomeCondensation same-tick request -> allocation -> evolution is
+  resolved through the explicit `request_ready` handshake. Semantic audit is
+  now **9 VERIFIED / 2 CODE_DEVIATES**; only compatibility/fallback/hint paths
+  and non-MATLAB initialization remain open.
+- Integrated acceptance: CC **38 PASS / 1 strict XFAIL**, L2.4 **4 seeds x
+  100 ticks PASS**, L1b **115/115** and **28/28**, baseline/L1b regression
+  **33 PASS**, and `pre_l25_honesty.py audit` **INTEGRITY_OK 5/28**.
+- Refreshed source digest:
+  `e828cc7587e850f44b67b907a290e523de3f5f16fe4e187d71d07c0a90580935`
+  over 128 files.
+- ChromosomeCondensation is not promoted: L2.2 remains
+  `MISSING_EVIDENCE`, and the two production deviations remain open.
+- Immediate next step: bring `fix/shared-chromosome-state-stage-ab-20261013`
+  (frozen boundary `27fd135`, **12 PASS / 13 RED**) onto the latest audit tip,
+  preserving provenance by unique `event_id`, then implement/review Stage A+B.
+- Stage A+B is now refreshed at merge `ab53ef5`; the frozen boundary reproduces
+  exactly **12 PASS / 13 RED**. A bounded implementer is next; no broader
+  footprint-authority, t0-sweep, multi-consumer, or two-column work is allowed.
+
+**Current status (2026-10-13) — CC Iteration 1 and TxReg Iteration 0 integrated; baseline stays 5/28:**
+
+- Audit branch integration commits: `f744bd6` (ChromosomeCondensation Iteration
+  1) and `b351897` (TranscriptionalRegulation Iteration 0). Nothing pushed; all
+  agents are idle.
+- CC live SMC/free-bound wiring is resolved and independently MATCHED. Semantic
+  audit is now **8 VERIFIED / 3 CODE_DEVIATES**: remaining gaps are one-tick
+  request timing, aggregate/fallback/hint compatibility paths, and cold-start
+  initialization. Flat substrate routing is accepted-equivalent.
+- TxReg canonical seed-0 active-window replay baseline is restored and
+  independently MATCHED. Canonical migrated hashes: trace `645a2e68...`,
+  ledger `ac2426dc...`, draw digest `88c7c28c...`; full 4000-tick replay passes.
+  All five production blockers remain open.
+- Final integrated verification: focused CC+TxReg **85 PASS / 2 strict XFAIL**,
+  L1b **115/115** and **28/28**, baseline/L1b regression **27/27**,
+  `pre_l25_honesty.py audit` **INTEGRITY_OK 5/28**, source digest
+  `abc50be529364dd4c59acd646f56c11fda7979c47d015fb88bf58add009024b6`.
+- Next iterative round:
+  1. ChromosomeCondensation Iteration 2 — freeze and repair same-tick
+     request -> allocation -> consume behavior; default allocator starvation
+     remains a separate upstream diagnostic.
+  2. TranscriptionalRegulation — Opus design of the shared chromosome-state
+     subsystem (footprint arrays, shared state RNG commit stream, unified t0
+     initialization), before any production test freeze.
+- Live next-round agents:
+  - CC Iteration-2 Gemini test writer:
+    `1b59a1ea-0685-4ea2-9232-dc9fced37137`
+  - Shared chromosome-state Opus designer:
+    `15b00770-2582-46cf-873a-c95cae04b628`
+- Isolated worktrees:
+  - `E:\opencell-worktrees\fix-chromosome-condensation-iter2`
+  - `E:\opencell-worktrees\design-shared-chromosome-state`
+  Both branch from integrated checkpoint `76fd1d8`.
+- Shared chromosome-state design landed at `e3ab9da` / `bf6d3a0` but is not
+  reviewer-ready. Parent found three blocking design gaps:
+  1. DC-8 says CC explicit-position commits with empty weights consume zero
+     shared draws, contradicting both source audits (`weights=[]` is normalized
+     before `sampleAccessibleRegions` and successful commits advance the
+     chromosome stream).
+  2. DNADamage is omitted from the participant table despite being the
+     provenance-pinned shared-stream interleaver that motivated the ledger hash.
+  3. Multi-consumer ordering assumes Vivarium process flow serializes shared
+     RNG state; the design must prove actual Engine update visibility or choose
+     a single sequential chromosome-commit owner. Flow-DAG prose alone is
+     insufficient.
+- The same Opus planner must correct these source/engine contracts before GPT
+  critique or any shared-state test freeze.
+- Opus corrected the design at `d93567b` / `53c4e89`: CC real commits consume
+  the shared stream, DNADamage is a verified dual-stream interleaver, and an
+  Engine probe proved ordinary Processes share tick-start state while Steps see
+  merged updates. Multi-consumer stages now use one sequential
+  `ChromosomeCommitStep` intent owner; the first single-consumer Stage A+B keeps
+  TxReg self-draw on serialized shared state. Fresh GPT critique is now required.
+- Live shared-state reviewer: `13e73b63-d3c8-48cf-9449-cc6491fe7d45`.
+- GPT critique returned **`VERDICT: DID NOT MATCH`** with four design blockers:
+  1. Shared stream schema/checkpoint/writeback is underspecified and absent-key
+     fallback could silently reseed each tick.
+  2. Stage B routes TxReg through `ChromosomeStore.sample_accessible_regions`
+     before deciding whether Stage B is RNG-only or moves the full
+     accessibility algorithm.
+  3. One multi-writer `set`-updated intent leaf can overwrite/stale intents;
+     per-process leaves or a proven append contract are required.
+  4. The commit owner omits release-rate intents (DNASupercoiling and
+     Replication SSB release), so multi-consumer draw accounting is incomplete.
+- Opus must revise again before any Stage A+B test freeze. First slice should be
+  explicitly RNG-only for TxReg unless the complete accessibility algorithm is
+  moved and ledger-parity proven in the same slice.
+- Second Opus revision landed at `d70f1d3` / `2b7b85e`: exact int64 stream-state
+  leaf/writeback/fail-closed absence semantics, RNG-only Stage B, static
+  per-process generation-tagged intent leaves, and bind/damage/release intent
+  families (including Replication SSB release) are now specified. The same GPT
+  reviewer must re-adjudicate before tests.
+- Fresh GPT re-review returned **`VERDICT: MATCHED`**. Stage A+B is accepted as
+  the first slice: exact fail-closed serialized stream state plus TxReg as one
+  RNG-only consumer; footprint authority removal remains Stage C. Non-blocking
+  implementation details to pin later are the Stage-E generation/tick source
+  and test-ledger adapter writeback facade.
+- Shared-state Stage A+B test worktree:
+  `E:\opencell-worktrees\fix-shared-chromosome-state-stage-ab`, base `a804eb7`.
+  Live Gemini test writer: `e6e8dbc6-ce88-428d-9b36-a32070b0afea`.
+- Stage A+B tests landed at `2b4e7a1` / `e9a8f8a` with reported
+  **12 PASS / 7 intentional RED**, while the existing TxReg fast/replay baseline
+  remains green. Parent review of the frozen contracts is pending before any
+  implementer launch.
+- Parent reproduced **12 PASS / 7 RED** but found three hollow greens:
+  production continuity stops after the zero-draw tick without tick-3/reference
+  comparison; candidate parity compares `TxRegMcgRandStream` to itself instead
+  of the future state-owned stream; and the dec-007 gate checks only dec-006.
+  Test author must correct all three before Stage A+B implementation.
+- Corrected Stage A+B tests landed at `89ef6fa` / `65ea553`; parent now
+  reproduces **10 guard GREEN / 10 hard RED**. Three-tick store continuity,
+  future-provider candidate parity, state round-trip continuation, and a real
+  dec-007 registry/file gate are frozen. Opus must author dec-007 on the Stage
+  A+B branch before Sonnet implementation; production remains frozen.
+- dec-007 landed at `ad2a2a7` / `80064c6`; the gate now passes and parent
+  boundary is **11 GREEN / 9 RED**. One source-faithfulness gap remains before
+  implementation: no test proves the composite seeds the leaf once or that
+  L2.4/long-run chassis seeders set the shared chromosome stream from the
+  requested run seed. Without it, multi-seed runs could all reuse seed 0.
+- Run-seed contracts landed at `8a21d44` / `27fd135`; parent now reproduces
+  **12 GREEN / 13 hard RED**. Composite v4/v5/v6 initialization,
+  ConservationCollector/DiagnosticCollector propagation, deterministic distinct
+  seeds, three-tick continuity, future-provider parity, and dec-007 are frozen.
+- Stage A+B implementation is intentionally queued behind CC Iteration-2
+  integration because both edit `karr_composite.py`; production branches must
+  remain sequential to avoid conflicting shared chassis changes.
+- CC Iteration-2 tests landed at `47275fb` / `0376b35`; parent reproduced
+  **28 PASS / 1 hard RED / 1 strict XFAIL**. One architecture assertion is
+  over-constrained: it requires a separate request Step, while the established
+  ChromosomeSegregation pattern uses the authoritative Process itself as the
+  pre-allocation request producer and adds only a post-allocation evolution
+  Step. The test must require request-only process output in orchestrated
+  chassis mode plus one evolution Step after allocation, preventing duplicate
+  evolution without inventing a dummy request Step.
+- CC test correction landed at `5342d62` / `eb3fb95`; parent now reproduces
+  **29 PASS / 2 hard RED / 1 strict XFAIL**. The REDs are request-only
+  authoritative process behavior and same-tick binding. The test also rejects
+  duplicate evolution; default allocator starvation remains strict XFAIL.
+- Sonnet may implement the established ChromosomeSegregation-style phase split:
+  preserve standalone combined `next_update` for replay compatibility, use a
+  request-only authoritative process instance in chassis v5/v6, and add one
+  post-allocation evolution Step referencing that exact instance.
+- Live CC Iteration-2 implementer:
+  `8f4a1991-d56a-411b-a946-96261fd6aa82`.
+- CC implementer landed production `e81edc5` / provenance `fbd4040`, but three
+  frozen tests are invalid after the phase split: the old two-tick stress test
+  requires binding specifically on tick 2 even when same-tick binding correctly
+  occurs on tick 1; mutation wrappers placed in `steps` subclass `Process`
+  instead of `Step`; and the lag wrapper consumes its first call during Engine
+  initialization. Tests must be corrected before acceptance; production is not
+  integrated.
+- CC test corrections landed at `0c88fd3` / `8d5571f`. Parent acceptance is
+  now **31 PASS / 1 strict XFAIL** with L2.4 4x100 PASS. The request-only
+  authoritative process and post-allocation evolution Step are ready for fresh
+  GPT review; default allocator starvation remains the sole strict diagnostic.
+- Live CC Iteration-2 reviewer: `0522f35e-50f0-46ec-b662-e628d2352e63`.
+- CC reviewer returned **`VERDICT: DID NOT MATCH`**: Vivarium calls the
+  evolution Step at `timestep=0` during Engine construction, and the Step
+  currently dissociates free SMC-ADP/produces ADP before tick 1. Test author
+  must freeze initial-state immutability across Engine construction; then the
+  evolution Step must return `{}` for initialization/no-op calls before any
+  biological evolution.
+- Engine-init regressions landed at `d9cc80c` / `0672331`; current boundary is
+  **12 PASS / 2 hard RED / 1 strict XFAIL** in the focused file plus 20/20
+  existing CC tests. Sonnet may now add only the timestep<=0 no-op guard and
+  revalidate the unchanged phase-split behavior.
+- The narrow `timestep<=0` fix is invalid because Vivarium passes `0.0` to
+  Steps during initialization **and every tick**. Correct production semantics
+  require a one-shot Step lifecycle guard: first invocation no-ops, subsequent
+  invocations evolve. The frozen init test also wrongly treats Engine-created
+  zero-valued request/allocation defaults as biological mutation; absent and
+  declared-zero structural bookkeeping must be normalized as equivalent.
+- Lifecycle tests landed at `a30f704` / `e6d5e14`; current focused boundary is
+  **13 PASS / 2 hard RED / 1 strict XFAIL** plus 20/20 existing tests. Sonnet
+  may now implement only a private one-shot Step initialization guard: first
+  invocation returns `{}`, subsequent invocations evolve regardless of timestep.
+- The one-shot implementation probe exposed three final contract/lifecycle
+  details:
+  1. v6 reuses Step objects from the temporary v5 Engine, so the initialization
+     guard must be explicitly reset before constructing the v6 Engine.
+  2. SMC conservation must include free SMC + free SMC-ADP + bound SMC; Karr
+     dissociates all free SMC-ADP at evolveState start, so `delta_free ==
+     -delta_bound` alone is false after init is correctly no-op.
+  3. `complexBoundSites` sparse arrays require structural comparison, not raw
+     dict `==`.
+- Test author must freeze these corrections before the production lifecycle
+  guard can commit.
+- Final corrections landed at `6faa4e4` / `3fb3b5e`; focused boundary is again
+  **13 PASS / 2 hard RED / 1 strict XFAIL**, with only Engine-init mutation and
+  fresh-Step lifecycle RED. Sonnet may implement a one-shot guard plus a narrow
+  `reset_for_engine_initialization()` re-arm in v6 after the temporary v5 Engine
+  has consumed the first call.
+- Lifecycle fix landed at `fc16545` / verified provenance `ef58a2d`. Parent
+  acceptance is **35 PASS / 1 strict XFAIL**, Engine construction leaves CC
+  biology unchanged, tick 1 requests/grants/binds once, L2.4 4x100 PASS, and
+  diff/L1b/Ruff are clean. The same GPT reviewer must re-adjudicate before
+  integration.
+- Re-review still returned **`DID NOT MATCH`**: the one-shot flag lives on the
+  reusable Step instance, so constructing a second Engine from the same
+  Composite consumes biological evolution during the second initialization.
+  Tests must freeze per-Engine-lifecycle re-arming (two Engine constructions,
+  neither mutates CC state) before the implementation can bind reset to a real
+  Vivarium construction hook/schema lifecycle.
+- Composite-reuse regression landed at `2a60215` / `596d71c`; current focused
+  boundary is **15 PASS / 1 hard RED / 1 strict XFAIL**. Vivarium
+  `Process.get_schema()` runs during each Engine store construction, providing a
+  per-Engine lifecycle hook to re-arm the existing one-shot guard.
+- Final re-arm fix landed at `3cc602b` / verified provenance `ca441b4`. Parent
+  acceptance is **36 PASS / 1 strict XFAIL**, two Engines from one Composite
+  preserve init state, tick 1 evolves exactly once, and L2.4 4x100 PASS. The
+  original reviewer must re-adjudicate before integration.
+- Re-review found `get_schema()` re-arming unsafe: read-only schema inspection
+  can skip the next real evolution tick. The hidden lifecycle flag must be
+  removed. Replace it with an explicit internal request-ready handshake store:
+  request-only process sets ready each process phase; evolution Step runs only
+  when ready, clears it after exactly one evolution; Engine initialization and
+  repeated Composite construction see ready=false. Tests must freeze the port,
+  topology, set/clear semantics, and stale/double-consumption canaries.
+- Explicit handshake tests landed at `6e672d3` / `7995935`; current focused
+  boundary is **13 PASS / 5 hard RED / 1 strict XFAIL** plus 20/20 existing CC
+  tests. Sonnet may now remove the one-shot/get_schema/reset machinery and wire
+  one boolean `request_ready` state leaf shared by the request process and
+  evolution Step.
+- Handshake implementation landed at `a31606f` / verified provenance `0bca00e`.
+  Parent acceptance is **38 PASS / 1 strict XFAIL**, repeated Engine/schema
+  access is side-effect free, request/evolution run exactly once per tick,
+  request_ready clears each tick, and L2.4 4x100 PASS. Final reviewer
+  re-adjudication is required before integration.
+- Final GPT re-review returned **`VERDICT: MATCHED`** at `0bca00e`, with zero
+  findings. The explicit request_ready handshake survives repeated Engines and
+  schema reads, evolves exactly once after allocation, clears per tick, and
+  preserves standalone replay. Integrate Iteration 2, resolve the request-timing
+  audit/baseline claim, refresh digest, but keep CC blocked on missing L2.2
+  evidence plus remaining compatibility/initialization gaps.
+
+**Current status (2026-10-13) — first iterations MATCHED; integration without promotion next:**
+
+- ChromosomeCondensation Iteration 1 branch tip `849011b` has independent
+  **`VERDICT: MATCHED`**. It wires live SMC/SMC-ADP and bound state into v5/v6
+  using source-derived 5/3/78 seeds. Parent/reviewer acceptance: focused
+  **18 PASS / 2 strict XFAIL**, related **44 PASS / 1 audited skip**, L2.4
+  4x100 PASS. Remaining explicit blockers include default allocator starvation,
+  one-tick request lag, aggregate/fallback/hint paths, cold-start positions, and
+  unavailable genuine multi-seed evidence. No eligibility promotion.
+- TranscriptionalRegulation Iteration 0 branch tip `dfd005b` has independent
+  **`VERDICT: MATCHED`**. The canonical 4000-tick trace+ledger pair is
+  provenance-complete and bit-identical: trace `645a2e68...`, ledger
+  `ac2426dc...`, draw digest `88c7c28c...`, 4000 lists / 135 active ticks /
+  378 draws. Acceptance: **97/97** fast, **2/2** replay. Remaining five
+  production blockers still require shared chromosome-state design; no
+  eligibility promotion.
+- Integrate both isolated branches into
+  `audit/pre-l25-honesty-rebaseline-20260917`. Re-adjudicate the CC wiring claim
+  as resolved, record TxReg evidence baseline restored, refresh the fail-closed
+  source digest, and require `INTEGRITY_OK` to remain **5/28**.
+
+**Current status (2026-10-13) — first test freeze returned; CC correction pending:**
+
+- TxReg Iteration 0 tests landed on its isolated branch at `a681ab4` with
+  provenance `4d8f064`. Parent reproduced **97/97** fast tests. The correct
+  source-derived chassis contract is `MG_428_DIMER=8`, `MG_205_DIMER=0`, with
+  TU_063/TU_318 responding. A ledger-only hash append is mechanically unsafe:
+  the 4000-tick trace itself lacks DNADamage source metadata, so a coordinated
+  dual-artifact migration or re-extraction is required.
+- ChromosomeCondensation Iteration 1 tests landed at `3d0f87f` with provenance
+  `94e8892`; parent reproduced **15 PASS / 4 intentional failures**. The topology
+  target is live `complex.counts` plus root `boundEnzymes`, and current production
+  is correctly exposed as a zero-SMC no-op.
+- CC tests require one test-author correction before freezing: use exact
+  source-derived seeds (free SMC=5, free SMC-ADP=3, bound=78 and existing ATP/H2O)
+  rather than invented 60/50M values; mark the explicitly out-of-scope same-tick
+  Iteration-2 diagnostic `xfail(strict=True)` so Iteration 1 can finish green
+  without weakening the future contract.
+- TxReg implementation remains evidence/harness-only. CC production repair may
+  start only after the corrected test boundary is parent-accepted.
+
+**Frozen iteration tips (parent-reproduced):**
+
+- ChromosomeCondensation worktree
+  `E:\opencell-worktrees\fix-chromosome-condensation-iter1`, HEAD `bc374fe`:
+  **15 PASS / 3 hard RED / 1 strict XFAIL**. The hard REDs are exactly missing
+  enzyme topology, missing bound-enzyme topology/seed, and zero-SMC live
+  execution. The strict XFAIL preserves the Iteration-2 same-tick contract.
+- TranscriptionalRegulation worktree
+  `E:\opencell-worktrees\fix-transcriptional-regulation-iter0`, HEAD `73771f7`:
+  **97/97** fast tests. The checked-in event replay is independently reproduced
+  at **1 PASS / 1 intentional provenance RED** on missing
+  `dnadamage_source_sha256`.
+- Next implementers are isolated and non-overlapping:
+  CC may edit chassis topology/seeding only; TxReg may add/run a fail-closed
+  coordinated trace+ledger provenance migration only. Neither may edit shared
+  chromosome production behavior in this iteration.
+- Live work:
+  - CC Iteration-1 Sonnet implementer:
+    `671725c0-21eb-4b69-97a4-e3968fdd5960`
+  - TxReg test author is correcting the checked-in ledger contract from
+    bug-expected GREEN (`pytest.raises`) to repair-expected RED (positive load).
+- TxReg correction is now frozen at `b116d67`: parent reproduced
+  **96 PASS / 1 hard RED** in the fast set, and **1 PASS / 1 hard RED** in the
+  real event replay, both failing only on missing DNADamage provenance. The
+  coordinated trace+ledger migration is now authorized; production remains
+  frozen.
+- TxReg Iteration-0 Sonnet migration agent:
+  `61e4076b-40cd-4fbe-9552-c11cf8cf2bc9`. It may add one fail-closed migration
+  script and modify only the canonical trace+ledger pair outside git; full
+  4000-tick replay is required before acceptance.
+- CC implementer returned without committing. Its saved `karr_composite.py`
+  patch correctly wires/seeds the process and passes L2.4/L1b, but the frozen
+  source-seed live test remains red because proportional allocation grants CC
+  zero ATP: unrelated request paths demand ~1.01M ATP against ~36k available.
+  Increasing the pool does not necessarily help because several competing
+  requests scale with the pool.
+- CC test contract must separate two facts: (a) wiring is executable under a
+  mechanically derived allocation-threshold stress state; (b) the real default
+  source seed remains a strict XFAIL due to external allocator/request
+  starvation. No fabricated `60`-copy constant or direct allocation injection
+  is allowed. Same-tick consumption remains a separate strict XFAIL.
+- The first derived-threshold revision was off by one because it combined
+  post-tick competing requests with the pre-tick ATP pool (`36234` vs real
+  post-tick `36229`). Request 28 therefore floors to zero; request 29 grants one.
+  The helper must derive both requests and pools from the same post-tick Engine
+  snapshot before CC implementation can commit.
+- CC Iteration 1 is now committed on its isolated branch at production
+  `aab74ed`, provenance `849011b`. Parent acceptance is **18 PASS / 2 strict
+  XFAIL**, L2.4 4x100 PASS, diff/Ruff clean. The strict diagnostics preserve
+  default allocator starvation and the one-tick request lag.
+- Fresh GPT review is required before integration, with special attention to
+  root `boundEnzymes` updater ownership, v5/v6 seed duplication checks, and
+  whether the derived stress canary proves real topology execution without
+  laundering the default-starvation blocker.
+- Live CC reviewer: `49fcf57d-18e5-497b-baf0-155fd870c16c`.
+- CC fresh review returned **`VERDICT: MATCHED`** with zero findings. Reviewer
+  independently confirmed v5/v6 source-derived 5/3/78 seeding, duplicate
+  guards, updater order-independence, real stress allocation/binding, and both
+  strict diagnostics. Integration is ready after targeted cleanup of a mangled
+  untracked `C` output path created by a Windows path passed through `oc-py`.
+- TxReg migration landed at script `351370c` / provenance `cb5eb0e`; canonical
+  trace+ledger migration is applied. Full 4000-tick replay is **2/2 PASS**,
+  per-tick draws are unchanged, and only the DNADamage metadata plus bound
+  trace/hash fields changed. One frozen test still asserts the pre-migration
+  metadata field is absent; test author must replace it with post-migration
+  hash/metadata/idempotency assertions before review.
+- TxReg post-migration tests are now frozen through `dfd005b`. Parent acceptance
+  is **97/97** fast tests, **2/2** replay including all 4000 ticks, and migration
+  CLI idempotency returns `already_migrated` with trace hash `645a2e68...`,
+  ledger hash `ac2426dc...`, 135 active draw ticks, and unchanged draw digest
+  `88c7c28c...`. Fresh GPT review is required before integration.
+- Live TxReg reviewer: `0b4e917c-a72d-4059-85e7-e394ce9679d4`.
+
+**Current status (2026-10-13) — RNG ownership resolved; first repair iterations split:**
+
+- Both auditors converged on **MIXED** RNG ownership from primary MATLAB:
+  every process has an independent `Process.randStream`, while the shared
+  Chromosome state has a separate `CellState.randStream`. ChromosomeCondensation
+  uses its process stream for region/position decisions, then advances the
+  shared chromosome stream when committing sites. TranscriptionalRegulation
+  has no process decision draw; its binding decision occurs on the shared
+  chromosome-state stream.
+- Consequence: ChromosomeCondensation can be repaired locally through L2.1/L2.2
+  before the shared stream exists. TranscriptionalRegulation cannot close RNG,
+  footprint ownership, topology, or initialization faithfully without a shared
+  chromosome-state subsystem. CC remains a contributor to the shared stream at
+  later composition rungs, not a consumer of TR's decision stream.
+- ChromosomeCondensation audit results: all five blockers real; flat substrate
+  projection is accepted-equivalent. Production currently binds zero SMC
+  because `enzymes`/`boundEnzymes` are unwired. First bounded iteration freezes
+  a real chassis binding canary, then repairs live enzyme/bound-state wiring and
+  allocator enrollment. Same-tick request consumption is a separate Iteration 2.
+- TranscriptionalRegulation audit results: all five blockers real. Before any
+  shared-state production migration, Iteration 0 must repair the fidelity
+  baseline: reconcile the stale MG_205 chassis expectation and make the
+  4000-tick event ledger pass its DNADamage provenance requirement. Only then
+  design the shared chromosome footprint/RNG/initialization subsystem.
+- Planned isolated worktrees:
+  - `E:\opencell-worktrees\fix-chromosome-condensation-iter1`
+  - `E:\opencell-worktrees\fix-transcriptional-regulation-iter0`
+  Both branch from `cd0031a`; Gemini test writers run first. Production changes
+  remain sequential and cannot overlap on shared chromosome surfaces.
+- Live test-writer agents:
+  - ChromosomeCondensation Iteration 1: `d05be657-487c-4572-8dc3-59d412697e9e`
+  - TranscriptionalRegulation Iteration 0: `fb742eba-d38e-4931-bce6-4475098d855f`
+
+**Current status (2026-10-13) — dual audits returned; RNG ownership contradiction under review:**
+
+- Both read-only Opus audits completed cleanly at branch tip `a4852f1`; no
+  production/test/evidence/baseline edits were made.
+- ChromosomeCondensation: all five recorded blockers are real, but flat
+  substrate projection is behavior-neutral. The decisive new finding is that
+  production wiring leaves live SMC enzymes at zero, so the chassis process is
+  currently a binding no-op. Recommended first local iteration is enzyme/bound
+  state wiring, then same-tick allocation, then path consolidation.
+- TranscriptionalRegulation: all five blockers are real and current production
+  topology leaves chromosome/binding/writeback surfaces unwired. Its active
+  4000-tick replay currently fails closed because the RNG ledger lacks the now-
+  required DNADamage source hash; only seed 0 exists.
+- The reports conflict on the architectural prerequisite:
+  ChromosomeCondensation says Karr gives each process an independent stream;
+  TranscriptionalRegulation says chromosome-binding processes consume one
+  shared/interleaved Chromosome randStream. This determines whether CC can be
+  repaired locally or both require a shared chromosome-state/RNG migration.
+- Follow-up round reuses both auditors to resolve the exact MATLAB object
+  ownership/aliasing and seeding path with quoted source lines and a minimal
+  runtime identity probe. No tests or implementation are authorized until both
+  reports converge.
+
+**Current status (2026-10-13) — dual read-only audit round starting from honest 5/28:**
+
+- Worktree `E:\opencell-worktrees\pre-l25-honesty-rebaseline`, branch
+  `audit/pre-l25-honesty-rebaseline-20260917`, HEAD `4d57006`; clean, nothing
+  pushed. No live agent or process at this checkpoint.
+- Round 1 will launch two detached Opus planner/auditors in parallel:
+  `ChromosomeCondensation` and `TranscriptionalRegulation`. They are read-only,
+  use local MATLAB/fixtures/traces as authority, and must independently
+  reproduce or reject every recorded blocker. No production, test, audit,
+  wiring, evidence, baseline, or plan edit is authorized.
+- Live read-only agents:
+  - ChromosomeCondensation audit: `4d56f594-2241-44ac-a1e4-27631ebcf243`
+  - TranscriptionalRegulation audit: `6270517f-3022-4695-9e94-52ab22c65488`
+- Iteration rule after reports: parent validates both, then repairs one process
+  at a time through frozen tests -> Sonnet implementation -> GPT review ->
+  evidence/audit/baseline. Shared chromosome/RNG surfaces must not be edited by
+  two implementation agents concurrently.
+- Expected first implementation candidate is ChromosomeCondensation if its
+  blockers remain bounded. TranscriptionalRegulation follows unless the audits
+  prove a shared prerequisite should be extracted first.
+- Source selection is fixed: executable MATLAB classes under canonical
+  `E:\opencell\data\m1_sources\WholeCell`, per-process fixtures and traces,
+  current OC code/topology, and existing semantic audits. No network fetch.
+
+**Current status (2026-10-11) — honest 5/28 integrated into the audit branch:**
+
+- Worktree `E:\opencell-worktrees\pre-l25-honesty-rebaseline`, branch
+  `audit/pre-l25-honesty-rebaseline-20260917`, fast-forwarded cleanly from
+  `4b08282` to ProteinTranslocation Stage-2 tip `8a9a003`; nothing pushed.
+  The source repair branch remains at the same integrated tip.
+- Post-integration verification: `pre_l25_honesty.py audit` is
+  **INTEGRITY_OK, 5/28 eligible / 23 blocked**, source digest
+  `9dcb2830b3d4b8e75edda88512ebad10b5ef82c01914d398edb38a1896bcab81`;
+  baseline regression tests are **8/8**.
+- ProteinTranslocation has two independent `VERDICT: MATCHED` reviews,
+  **50/50** final focused acceptance, L1b **115/115** and **28/28**, semantic
+  audit **10 VERIFIED / 0 ROW_WRONG / 0 CODE_DEVIATES**, L2.4 4x100 PASS, and
+  genuine Design-A evidence from **50 Karr seeds x 50 OC seeds x 100 ticks**
+  over all 2,892 monomer positions.
+- The MATLAB installation currently fails with license-expired error 10. The
+  genuine ProteinTranslocation seed-1...49 traces were recovered from nine
+  local historical worktrees only after byte-hash and embedded-metadata
+  verification, then copied to the canonical gitignored data root.
+- Explicit debt remains: the repository-wide L2.2 evidence-index audit is stale
+  for unrelated blocked processes because of earlier shared-helper/production
+  changes. The official generator independently derives ProteinTranslocation's
+  bundled row as green/PASS with no reasons or warnings; no unrelated row is
+  claimed refreshed.
+- No live agents or processes. Recommended next bounded task is to re-audit the
+  actual `ChromosomeCondensation` blockers against MATLAB/fixtures before
+  choosing implementation scope; do not begin L2.5 composition work.
+
+**Current status (2026-10-11) — ProteinTranslocation promoted to honest 5/28; integration next:**
+
+- Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `e1ca0f8`; nothing
+  pushed and no live processes or agents.
+- Code review and the returned full-vector evidence-harness review both ended
+  **`VERDICT: MATCHED`** with zero blockers. The accepted implementation has
+  fail-closed one-based RNG handling, explicit constructor dependencies, full
+  119-WID compartment transfer, Karr-exact request algebra, and no legacy
+  location/queue authority.
+- Final parent validation: frozen Stage-2 suite **50/50**, related Stage-1 /
+  replay suite **70 PASS / 1 audited N/A skip**, L1b **115/115** and **28/28**,
+  L1b integration **19/19**, L2.4 four seeds x 100 ticks PASS, honesty tests
+  **8/8**, Ruff/diff-check clean.
+- Semantic audit is **10 VERIFIED / 0 ROW_WRONG / 0 CODE_DEVIATES**.
+  ProteinTranslocation wiring now cites executable MATLAB and current OC
+  anchors.
+- Genuine Design-A evidence is bundled at
+  `docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest`:
+  **50 canonical Karr seeds x 50 OC seeds x 100 ticks**, full 2,892-position
+  monomer vectors, PASS, zero warnings, monomer W1 `0.0`, substrate W1
+  `0.005714`.
+- Machine baseline is `INTEGRITY_OK`, **5/28 eligible / 23 blocked**, source
+  digest `9dcb2830b3d4b8e75edda88512ebad10b5ef82c01914d398edb38a1896bcab81`.
+- Explicit non-blocking debt: the repository-wide L2.2 evidence index audit is
+  already stale for unrelated processes (shared helper and prior production
+  changes). The official generator independently derives the new
+  ProteinTranslocation row as green/PASS with no reasons or warnings; this work
+  does not claim to refresh unrelated rows.
+- Next action: fast-forward/merge `e1ca0f8` into
+  `audit/pre-l25-honesty-rebaseline-20260917`, rerun the baseline integrity
+  check there, and do not push unless explicitly requested.
+
+**Current status (2026-10-11) — fresh GPT review MATCHED; evidence refresh next:**
+
+- Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
+  branch `fix/protein-translocation-stage2-20261001`, HEAD `130bec9`; nothing
+  pushed. No live process or agent currently owns the worktree.
+- Gemini test repairs landed at `19dcc4e` / `94dd26f`, with final B4/B5
+  hardening at `ac5761a` / `7e4a368` and a narrow regex correction at
+  `4cf4e3a` / `08079e6`. Parent WSL reproduction matched
+  **37 GREEN / 8 intentional RED** across 45 focused tests, with zero skips or
+  collection errors.
+- B1-C5 now executes nine real writers and rejects undeclared migrated-WID
+  output; B2-C11 pins the exact three-call observable sequence; B3-C12 executes
+  request, allocation, and evolution in a real Engine tick. B4 behaviorally
+  proves both chassis seeders preserve `MatlabRandStream` and kills a blind
+  overwrite with an unused-token laundering canary. B5 separately rejects
+  missing and wrong-type dependencies for every constructor slot.
+- Sonnet production repair landed at `cef6542` with provenance `41b960b`.
+  ProteinTranslocation now rejects non-`MatlabRandStream` RNGs before reading
+  state, both chassis seeders preserve/reseed MATLAB streams, and all three
+  request-calculator constructors reject missing or wrong-type dependencies.
+  Only the four authorized production/script files changed.
+- Sonnet's first implementation pass correctly stopped without committing when
+  the frozen test used `slot.replace("_proc", "")`, producing the impossible
+  regex `proteinessing_i`. The test author replaced only those three calls with
+  `removesuffix`. Sonnet's clean four-file production patch is preserved at
+  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\b4b5_production_repair.patch`;
+  it was then applied unchanged.
+- Parent acceptance is clean: frozen B1-B5 suite **45/45**, related Stage-1 /
+  authority / replay suite **70 PASS / 1 audited N/A skip**, process-file Ruff
+  PASS, `git diff --check` PASS, and L2.4 four seeds x 100 ticks PASS with
+  `exchange_wids_skipped=124`.
+- Fresh independent GPT reviewer `590e3aa4-9fad-43ac-b9f0-792e6f951548`
+  returned **`VERDICT: MATCHED`** for `4b08282..41b960b`, with zero blocking
+  and zero non-blocking findings. It independently re-probed all five prior
+  blockers, 119/116/124/7,440 cardinality, all four request cases, one-based
+  fixture-order RNG, the 2,892-position replay totals, +4,203 seed accounting,
+  and untouched downstream evidence surfaces.
+- The previous 74/74 result remains invalid historical evidence; the corrected
+  acceptance above supersedes it for code review only. Keep evidence, wiring
+  YAML, semantic audit, and the fail-closed baseline unchanged at 4/28.
+- The reviewer verdict permits, but does not itself perform, promotion work.
+  Half-A/half-B anchors and ProteinTranslocation wiring were refreshed at
+  `bc52f33`; L1b is restored to **115/115** and **28/28**, the L1b integration
+  suite is **19/19**, and the semantic audit is **10 VERIFIED / 0 ROW_WRONG /
+  0 CODE_DEVIATES**.
+- Next long process uses shell ID `ptrans-l22-evidence` to force-regenerate only
+  ProteinTranslocation Design-A evidence at 50 seeds x 100 ticks under
+  `artifacts/l2_2_gates/ProteinTranslocation/latest`. Its report is written to
+  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\ptrans_l22_sweep_report.json`.
+- That first sweep failed safely after 28.7 s with no evidence swap:
+  `could not broadcast input array from shape (2892,) into shape (482,)`.
+  The stale Design-A oracle loader still sums six compartments to 482 totals,
+  while the Stage-2 process and replay contract now preserve all 2,892
+  compartment positions. Retaining the collapse would launder the exact
+  cytosol-to-e/m movement this repair is meant to validate.
+- The old tracked bundle and old live `latest/` remain intact. Next sequence is
+  a narrow Gemini test freeze for full 2,892-position oracle/input/output
+  behavior, Sonnet harness repair without production changes, parent rerun, and
+  a focused independent GPT review before refiring the 50-seed sweep.
+- Gemini froze that contract at `3e71f27` with provenance `7f0b8e4`.
+  Parent reproduced **5 collected: 1 mutation-canary GREEN / 4 intentional
+  RED**. The REDs separately prove the oracle adapter and real one-seed loader
+  collapse to 482, the tick runner loses non-authority positions without a
+  `before_vector` pass-through, and `run_design_a` broadcasts 2,892 into 482.
+- Sonnet may now edit only
+  `tests/vivarium/_l2_2_design_a_runner_helpers.py` plus provenance: preserve
+  full 2,892 vectors in the ProteinTranslocation oracle adapter/loader and pass
+  the full pre-state vector through projection so non-authority positions remain
+  exact. Tests, production, metadata, evidence, and baseline remain frozen.
+- Sonnet's first helper pass correctly stopped because Contract 5 asserted a
+  top-level verdict instead of the established `payload["result"]["verdict"]`.
+  Gemini corrected only that test at `e3c7e46` / `4835fde`; parent reproduced
+  the same **1 GREEN / 4 intentional RED** boundary. The clean helper patch is
+  preserved at
+  `C:\Users\sdrona\.copilot\session-state\5c51d44b-5a9f-4b23-85ff-0fddaadf2212\files\ptransloc_fullvector_helper.patch`
+  and still passes `git apply --check`.
+- Sonnet then landed the helper-only repair at `a5117f1` with provenance
+  `dc97776`: the oracle adapter/loader retain all 2,892 positions and the tick
+  projection overlays authority updates on the full pre-state vector. Parent
+  acceptance is **50/50** across the five full-vector contracts plus the frozen
+  B1-B5 suite; Ruff and diff-check are clean.
+- Next sequence: focused independent GPT review of `3e71f27..dc97776`,
+  explicitly checking for output-oracle input, compartment-order mistakes,
+  non-authority laundering, and evidence-provenance blast radius. Only a
+  `VERDICT: MATCHED` permits the 50-seed sweep to be refired.
+- Fresh GPT reviewer `c73d1d04-47ac-49bc-9543-c1e20bd2f253` returned
+  **`VERDICT: MATCHED`** with zero blockers. Independent probes confirmed raw
+  `(6,482)` / 2,892-position order, 13 real movement ticks hidden by 482-total
+  collapse, exact non-authority pass-through, and oracle-after independence.
+- Non-blocking debt is explicit: the shared generic helper hash changed from
+  `016c0d86...` to `b1fc70e5...`, so unrelated Design-A rows that bind that
+  shared hash remain stale. Fresh ProteinTranslocation evidence is trustworthy
+  because it will record the current helper and tick-runner hashes; this repair
+  does not claim to refresh unrelated rows.
+- Refire the forced 50-seed x 100-tick sweep under shell ID
+  `ptrans-l22-evidence-2`, preserving atomic replacement semantics.
+- That sweep executed 50 OC seeds but found only canonical Karr seed 0.
+  `sweep.py status` accepted the files structurally, while the evidence
+  evaluator correctly returned mechanical FAIL with
+  `SENTINEL_FAIL: KARR_SINGLE_SEED_REUSED`; nothing was bundled or promoted.
+- MATLAB is installed but its license is expired. Before accepting that as a
+  blocker, local verification found nine historical worktrees containing
+  genuine `ProteinTranslocation` seeds 1-49. Two complete sets were byte-for-
+  byte identical; the selected set had 49/49 correct embedded `rng_seed`,
+  `n_ticks=100`, `tick_offset=0`, matching channel schemas, and `(6,482)`
+  monomer matrices. The verified files were copied into the canonical
+  `E:\opencell\data\m1_sources\karr_native` root with zero hash mismatches.
+- Current loader probe is now genuinely
+  `canonical_seed_count=50`, `before/after=(50,100,2892)`, warnings empty.
+  Refire under shell ID `ptrans-l22-evidence-3`; the current one-seed live
+  evidence is not promotion authority and must be atomically replaced.
+- After a PASS: bundle the compact authority files, regenerate and audit
+  `evidence_index.json`, update the baseline entry and source digest, and require
+  `pre_l25_honesty.py audit` to return `INTEGRITY_OK` at 5/28 before integration.
+
+**Current status (2026-10-01 20:30 IST) — Gemini tests frozen; Sonnet next:**
+
+- Gemini test-writer agent `535084f1-232b-402d-b524-77d3e2844419`
+  committed Stage-2 tests/harness at `6fd19e6` and C11/replay hardening at
+  `42be5bd`. Production remains unchanged.
+- Scoped pre-implementation result: **51 collected, 24 intentional RED,
+  27 GREEN**, no skips/collection errors. Seven mutation canaries pass.
+- Parent rejected the initial hollow C11; corrected C11 now fails current code
+  on seed-2 fixture ordering (MG_191 must be selected before MG_468) while
+  separately proving the existing RNG stream advances.
+- Frozen acceptance covers 124 source-derived WIDs / 7,440 leaves, no legacy
+  location/queue authority, exact Karr requests, pool independence, capacity
+  mins, full 2,892-position replay, persistent fixture-ordered RNG mapping,
+  same-tick Engine request/allocation/evolution, and +4,203 mature seed
+  accounting.
+- Sonnet may edit only the nine production files authorized by the plan plus
+  provenance. The 124-WID enrollment and all writer re-homing are one atomic
+  commit; tests, evidence, metadata, and L2.5 surfaces are frozen/out of scope.
+
+**Current status (2026-10-01 18:55 IST) — Opus Stage-2 plan complete:**
+
+- Opus planner agent `eec252a2-30cd-4f2f-8fc9-1bf7ec4c1faf`
+  committed `docs/design/protein_translocation_stage2.md` at `a522437`
+  (provenance `0d5dd7d`). No production or test code changed.
+- Primary-source result: exactly **119** translocatable WIDs (20 extracellular,
+  99 membrane; 34 SRP, 85 direct). Three are already migrated, so Stage 2
+  adds **116** WIDs and expands the authority from 8 to **124 WIDs / 7,440
+  leaves**. The prior “117+2” wording was wrong.
+- Karr request algebra is now explicit. Current-pool flooring can inflate a
+  zero-enzyme request to 500000/400000/900000. Correct requests are bounded by
+  pending processed-I copies and enzyme capacity; SRP cap and water identity
+  require constructed tests because the F trace never binds capacity.
+- Additional defects found: request-calculator legacy leaves for the three
+  Stage-1 WIDs; fixture-order violation from appending a hash-ordered migrated
+  set; replay currently routes monomers into a branch Stage 2 deletes and
+  compares only cytosolic departures, not e/m arrivals.
+- Source-faithful Stage 2 is bounded to nine production files plus test-harness
+  routing. It preserves all 358 nontranslocating WIDs. Expected t0 mature seed
+  increase is +4,203 copies and must be measured by L2.4.
+- Gemini must freeze C1-C14 and planted inversions before any implementation.
+  Row/audit corrections remain reviewer work after code; no eligibility
+  promotion from documentation alone.
+
+**Current status (2026-10-01 18:20 IST) — ProteinTranslocation Stage 2 wave:**
+
+- Active worktree `E:\opencell-worktrees\fix-protein-translocation-stage2`,
+  branch `fix/protein-translocation-stage2-20261001`, base `4b08282`; nothing
+  pushed.
+- Sequential separated roles:
+  **Opus planner -> Gemini test writer -> Sonnet doer -> GPT reviewer**.
+  Every role receives the three-slot prompt. Tests commit before implementation
+  and are frozen for the doer.
+- Primary authority is local
+  `ProteinTranslocation.m`, `ProteinMonomer.m`, `Process.m`, the canonical
+  ProteinTranslocation/ProteinMonomer fixtures, and the existing F trace.
+  No network fetch is needed.
+- Stage-2 target: extend `protein.compartment_counts.processed_i` ownership
+  from MG_191/MG_192/MG_318 to the complete source-derived translocatable WID
+  set, eliminate their legacy `protein.location`/`unprocessed_counts`
+  bookkeeping, and replace the request calculator's current-pool floor with
+  Karr's capacity- and pending-copy-bounded ATP/GTP/H2O request.
+- Preserve the existing per-copy randperm, allocator contract, energy
+  writeback, all non-translocating protein state, and the 4/28 authority.
+  No L2.5 pair work, trace hints, output-oracle inputs, dual-write mode, or
+  test-only production configuration.
+- Expected honest outcome after full review: ProteinTranslocation becomes
+  eligible and the fail-closed baseline moves from 4/28 to 5/28. If source
+  preflight reveals another blocker, stop before implementation rather than
+  narrow the claim.
+
+**Current status (2026-10-01 18:15 IST) — 4/28 integration base complete:**
+
+- `fix/compartmental-protein-state-20260923` fast-forwarded into
+  `audit/pre-l25-honesty-rebaseline-20260917`; current published `main`
+  (blog + append-only provenance) merged at `c18c1bd`. Nothing pushed.
+- Merge changed two hash-locked audit files only by CRLF checkout. They were
+  normalized back to LF; the original verified source digest
+  `dd80f0892e35936c1ac808f4de247337cb9ae94007bd251f1b28306382520310`
+  returned exactly.
+- Combined-tree verification: baseline `INTEGRITY_OK` at **4/28**, L1b
+  **115/115** and **28/28**, migration/v6 **47 PASS** with warnings-as-errors,
+  and L2.4 four seeds x100 ticks PASS.
+- This merge commit is the required base for the next repair. Recommended next
+  scope remains ProteinTranslocation Stage 2: migrate the remaining
+  translocatable WIDs and remove the request-floor deviation; do not begin
+  L2.5 pair execution.
+
+**Current status (2026-09-23 22:05 IST) — four-role migration complete; TOA eligible:**
+
+- Four-role workflow completed:
+  Opus plan `7875728`; Gemini frozen tests and corrections through `3932b5f`;
+  Sonnet Stage 1a `192f949`, atomic Stage 1b `21f6961`, reviewer-return fix
+  `397950b`; GPT reviewer cleanup `0fcea56`. All agents are idle; no live
+  background processes remain.
+- TerminalOrganelleAssembly now has one authoritative compartmental
+  ProteinMonomer state, exact full-count fixed-point localization, biological
+  c/m/tc/tm routing, correct requirement planes, and no trace hint/private
+  matrix/activity gate/counter cap. The eight-WID authority contains exactly
+  480 leaves and rejects direct flat-count writes.
+- Machine baseline is `INTEGRITY_OK`, **4/28 eligible / 24 blocked**, source
+  digest `dd80f0892e35936c1ac808f4de247337cb9ae94007bd251f1b28306382520310`.
+  All four deterministic terminal processes are eligible.
+- Final independent verification: migration/v6 **47 PASS** with
+  warnings-as-errors; honesty/wiring validator tests **27 PASS**; L1b method
+  completeness **115/115** and wiring **28/28**; Rule 8 and Ruff PASS; L2.4
+  four seeds x100 ticks PASS. The v4 suite remains its reproduced baseline of
+  7 PASS / 3 known failure classes (folding progression plus two absent
+  protein-count seeding paths).
+- ProteinTranslocation benefits partially: MG_191/MG_192/MG_318 now move on
+  authoritative processed-I compartments, but the remaining translocatable
+  set still uses the legacy location/queue representation, so its honesty
+  blocker remains open. ProteinDecay algorithm work is likewise not claimed.
+- Branch/worktree:
+  `fix/compartmental-protein-state-20260923` /
+  `E:\opencell-worktrees\fix-compartmental-protein-state`; not pushed.
+
+**Current status (2026-09-23 21:30 IST) — GPT review reopened two acceptance gaps:**
+
+- Independent reviewer gates pass: 91 targeted tests, 33/33 frozen migration
+  tests with warnings-as-errors, Rule 8, Ruff, L2.4 4x100, L1b 115/115 and
+  28/28 after mechanical anchor refresh. Machine eligibility is being
+  re-derived at 4/28.
+- Reviewer removed the obsolete v6 `steps` insertion-order workaround; reader
+  schemas now share the same rejecting updater, so correctness no longer
+  depends on "last schema wins."
+- Acceptance gap 1: ProteinProcessingII declares an empty `counts` schema
+  while still emitting dynamic non-migrated keys. This preserves legacy
+  behavior but games the branch-level C2b AST test and does not make those
+  writes declared. Stage 1 is authorized only for the eight migrated WIDs;
+  Gemini must replace C2b with a migrated-WID write-path invariant and add a
+  guard that an empty declaration cannot masquerade as exhaustive coverage.
+  Sonnet must then remove the empty declaration while retaining the explicitly
+  out-of-scope non-migrated legacy behavior.
+- Acceptance gap 2: TOA rounds fractional authority counts with `round()`.
+  Karr counts are integral; fractional input must fail loudly rather than be
+  silently coerced. Gemini must freeze that inversion test, then Sonnet fixes
+  production.
+- Do not promote or push until both returned tests are green and reviewer
+  reruns the complete gate set.
+
+**Current status (2026-09-23 20:45 IST) — Stage 1b behavior green; warning fix pending:**
+
+- Sonnet completed the atomic Stage 1b production edit in the worktree but
+  correctly left it uncommitted when three frozen tests proved invalid.
+  Gemini corrected those framework assumptions in test commit `87d67b4`.
+- Parent now reproduces **33/33 frozen tests PASS**, exact TOA replay PASS,
+  mutation canaries PASS, L2.4 4x100 PASS, and direct Engine authority
+  assertions PASS. No frozen test is modified by the doer.
+- The 33-test run still emits 80 incompatible-updater warnings. Root cause:
+  `karr_host_interaction.py` and `karr_observability_step.py` are read-only
+  consumers of migrated flat counts but declare `accumulate` updater ownership
+  for those leaves, conflicting with the projection's rejecting updater.
+- Extend doer scope only to filter the eight `MIGRATED_WIDS` from those two
+  reader schema declarations while preserving their WID read lists and runtime
+  behavior. Required result: 33/33 with warnings-as-errors and v6 one-tick
+  warning gate green. Then commit the entire Stage 1b production slice
+  atomically and log provenance.
+- L1b method/wiring line anchors remain intentionally stale until the final
+  code commit fixes line positions; parent reviewer will regenerate/refresh
+  anchors afterward, not the doer.
+
+**Current status (2026-09-23 16:50 IST) — Stage 1a accepted; atomic Stage 1b next:**
+
+- Sonnet doer agent `7e4b5ffd-447f-4ebc-842b-1c085cd4c8ac`
+  committed behavior-neutral Stage 1a infrastructure in `192f949` and
+  provenance in `0ab244b`. `MIGRATED_WIDS` remains empty; no frozen test was
+  edited. L2.4 4x100 PASS and representative v6 state is byte-identical to
+  baseline.
+- The doer correctly stopped on a frozen C12 defect instead of modifying it.
+  Gemini fixed path resolution/relative ordering in `6417c9d`; parent
+  reproduced C12 GREEN and C13 RED only because the eight WIDs are not yet
+  enrolled.
+- L1b method completeness remains 115/115. Wiring is temporarily 27/28 only
+  because the RNADecay absolute line anchor for `build_karr_chassis_v6`
+  shifted after required upstream composite edits. Refresh this anchor once,
+  after final Stage 1b line positions settle; do not churn it mid-migration.
+- Stage 1b is one atomic WID slice: enroll all eight TOA WIDs across all ten
+  forms/six compartments, seed exact ProteinMonomer fixture state, rewrite
+  TOA, route the three Stage-1 translocation WIDs, and re-home every legacy
+  writer. No commit boundary may leave one of the eight WIDs with two writable
+  authorities.
+- ProteinProcessingII correction must preserve non-migrated behavior: declare
+  and retain its legacy `counts` write for non-migrated WIDs while routing the
+  eight migrated WIDs through the authority. Do not delete the entire write
+  merely because it was previously undeclared.
+
+**Current status (2026-09-23 14:20 IST) — Gemini tests frozen; Sonnet Stage 1a next:**
+
+- Gemini test-writer agent `e03c394d-81ff-448b-bea6-0b3705918678`
+  committed the Stage-1 acceptance suite in `f6dac97`, followed by review
+  cleanup commits `55d123b`, `9f4d4bf`, and `7fdee02`. Production code was
+  untouched and the tests are now frozen for the doer.
+- Parent independently reproduced **33 collected: 21 intentional RED,
+  12 GREEN, 0 skips/xfails**. Ruff and `git diff --check` pass. All count
+  comparisons are integer-exact; TOA replay has no calibrated-tolerance path.
+- Mutation canaries execute and reject one-copy transfer, single-pass
+  localization, and swapped requirement planes. Static probes prove
+  DNASupercoiling's only protein WID is `MG_122_MONOMER` (zero intersection
+  with the eight TOA WIDs) and no persistence/divider protein writer exists.
+- Sonnet doer must not edit any frozen test. Implementation is decomposed:
+  Stage 1a adds behavior-neutral authority/projection infrastructure with an
+  empty migrated set and commits it; parent reviews before Stage 1b flips the
+  eight WIDs and rewrites TOA/writers. Stage 1a is not expected to make the
+  combined frozen suite green; it must preserve all pre-existing behavior.
+- Note the frozen C13 test asserts the final eight-WID Stage-1b state, so it
+  remains intentionally RED after an empty-set Stage 1a even though the
+  infrastructure is correct. C12 plus existing regression gates distinguish
+  Stage 1a.
+
+**Current status (2026-09-23 13:25 IST) — Opus plan complete; Gemini tests next:**
+
+- Opus planner agent `9f7335a9-251f-46ee-ae40-afc7d8b7a6d4` completed
+  `docs/design/compartmental_protein_state_migration.md` in commit `7875728`.
+  No production or test code changed.
+- Primary finding: Karr TOA owns no private state. Its 8x2 substrate matrix is
+  a linear-index view of `ProteinMonomer.counts[4820,6]`, refreshed and written
+  back by `Process.m`. The design therefore rejects any TOA-private matrix.
+- New source defects found: current TOA reads localization requirement planes
+  transposed (`TOA-PLANE-SWAP`), and ProteinProcessingII writes an undeclared
+  `protein.counts` branch. The existing TOA oracle's only active ticks move one
+  copy, so it cannot distinguish Karr's full-count transfer from the old +1
+  fallback; constructed multi-copy/fixed-point tests are mandatory.
+- Accepted defaults for the authorized first slice: biological compartment id
+  `d` for the unused second column; rewrite the TOA replay against the authority
+  and drop unused TOA enzyme ports; flat compatibility view is the mature-row
+  sum across six compartments; split implementation into behavior-neutral
+  Stage 1a then eight-WID Stage 1b; defer ProteinDecay algorithm work.
+- Before implementation, Gemini must freeze Stage-1 adversarial tests and run
+  the two unresolved inventory probes: dynamic DNASupercoiling intersection
+  with the eight TOA WIDs, and persistence/divider writable-flat-state sweep.
+  No production edits are allowed in the test-writer role.
+- Active worktree/branch remain
+  `E:\opencell-worktrees\fix-compartmental-protein-state` /
+  `fix/compartmental-protein-state-20260923`; nothing pushed.
+
+**Current status (2026-09-23 12:25 IST) — compartmental ProteinMonomer migration wave:**
+
+- Active worktree `E:\opencell-worktrees\fix-compartmental-protein-state`,
+  branch `fix/compartmental-protein-state-20260923`, base `962ce79`; nothing
+  pushed.
+- The authorized workflow is sequential and role-separated:
+  **Opus planner -> Gemini test writer -> Sonnet doer -> GPT reviewer**.
+  Every role receives a three-slot prompt. Tests must be committed before the
+  doer starts; the doer may not weaken or replace them.
+- Planner authority is the local primary MATLAB source, especially
+  `ProteinMonomer.m`, `TerminalOrganelleAssembly.m`, and
+  `ProteinTranslocation.m`, plus the canonical ProteinMonomer and TOA fixtures.
+  Existing OpenCell code is evidence about the current implementation, not the
+  specification.
+- Target property: one authoritative compartmental ProteinMonomer state with
+  an exact derived aggregate view for legacy readers; no private TOA matrix,
+  dual-writer synchronization, `trace_hint`, `states_after` input, production
+  trace read, or test-only production mode.
+- Migration must explicitly cover TOA and ProteinTranslocation and inventory
+  every flat `protein.counts` reader/writer before implementation scope is
+  approved. TerminalOrganelle remains blocked until the planner and frozen
+  adversarial tests establish this ownership contract.
+- Operational traps: run Python/tests only through WSL wrappers; do not remove
+  worktrees recursively; no role may push; parent orchestrator owns integration
+  and baseline digest updates.
+
+**Current status (2026-09-22 20:08 IST) — deterministic parallel integration verified:**
+
+- Audit branch now contains the locally merged HostInteraction,
+  ChromosomeSegregation, and ProteinActivation repair code. ProteinActivation
+  integration completed in merge commit `3d07103`; the branch is not pushed.
+- Combined baseline is **3/28 eligible**, source digest
+  `6dbf656c4dba53e44954ee82cd64e69285c8256712025f91433a849910a14308`.
+- TerminalOrganelleAssembly remains BLOCKED with no edits: exact repair requires
+  compartmental ProteinMonomer state to become authoritative across the
+  chassis, not a private TOA matrix.
+- Combined verification: 91 deterministic/replay/v6/baseline tests PASS;
+  genuine Host and ChromSeg active replays PASS; L1b method completeness
+  115/115 and wiring 28/28 PASS; honesty baseline `INTEGRITY_OK`, 3/28;
+  L2.4 PASS at four seeds x 100 ticks; Rule-8 no-oracle-read test and Ruff
+  PASS. The v4 integration suite remains at its independently reproduced
+  pre-repair baseline of 7 PASS / 3 FAIL (one folding-progression assertion
+  and two tests seeding absent protein-count paths). No pushes.
+
+**Current status (2026-09-22 19:28 IST) — ChromosomeSegregation repaired:**
+
+- Worktree `E:\opencell-worktrees\fix-chromseg-fidelity`, branch
+  `fix/chromseg-fidelity-20260922`, repair commit `824cf00`, based on audit tip
+  `26905b8`; not pushed or merged.
+- Agent `b4174bdc-cc7c-4f94-8d4d-e0fa684e692a` completed the three-slot repair.
+  Production now runs request-only Process -> Karr allocation Step ->
+  segregation evolution Step -> coordinator in one Engine tick.
+- Unused duplicate `enzymes`/`boundEnzymes` ports were removed; enzyme presence
+  reads canonical protein/complex stores, eliminating the prior updater warning
+  from ChromosomeSegregation.
+- Verification: 33 scoped tests + genuine 100-tick active-window replay pass;
+  L2.4 4 seeds x100 ticks PASS; L1b 115/115 + 28/28; baseline integrity OK at
+  `e9c6a63ce70387b3858ea4b6aae411ce592b87765ceaa553907353e06d096fc8`,
+  now **2/28 eligible**; Ruff/diff clean.
+- No trace hint, states-after input, trace read, threshold change, or test-only
+  production configuration was added. Repair is committed pending integration.
+
+**Current status (2026-09-22 19:42 IST) — ProteinActivation repaired:**
+
+- Worktree `E:\opencell-worktrees\fix-protein-activation-fidelity`, branch
+  `fix/protein-activation-fidelity-20260922`, repair commit `24f03ec`, based on
+  audit tip `26905b8`; not pushed or merged.
+- Agent `e835dd8d-691f-4296-896b-f9eb29759e21` completed the validated
+  three-slot repair. Production now stores canonical active/inactive state for
+  all six regulated proteins x six compartments in shared protein/complex
+  roots, maps live geometry/stimuli, preserves true stimuli raw, and applies
+  Karr count-to-mM conversion to every other signal.
+- `protein.activity` is derived only; the old metabolite-seeded
+  `activation_substrates` store is removed. Canonical ProteinMonomer/
+  ProteinComplex projections are checked at construction.
+- Verification: scoped/v6 **21 passed**; L2.1 replay passed; L2.4 4x100 PASS;
+  L1b 115/115 +28/28; baseline integrity OK at
+  `dd1a43a6221a731975259d4a57fee562aa6de889f85dd3acb91116a78986ad70`,
+  now **2/28 eligible**; Ruff/diff clean. PI=1000 converts to
+  `0.1382689681128521 mM` and follows the concentration decision, not raw count.
+- Full v4 suite remains 3 failures, reproduced identically on the pre-repair
+  Host-integrated base (folding progression plus two test seeding paths); no new
+  ProteinActivation regression was introduced.
+- No trace hint, states-after input, trace read, hardcoded rule outcome,
+  threshold change, or test-only production mode was added. Repair is
+  committed pending integration.
+
+**Current status (2026-09-22 18:36 IST) — three deterministic repair lanes:**
+
+- HostInteraction is complete and locally integrated at audit tip `d71a5b5`;
+  baseline is 1/28 eligible. Nothing is pushed.
+- Three isolated background coding lanes are about to start from `d71a5b5`,
+  each with a validated three-slot prompt and no permission to touch another
+  process:
+  - ChromosomeSegregation:
+    `E:\opencell-worktrees\fix-chromseg-fidelity`,
+    branch `fix/chromseg-fidelity-20260922`, agent
+    `b4174bdc-cc7c-4f94-8d4d-e0fa684e692a`.
+  - ProteinActivation:
+    `E:\opencell-worktrees\fix-protein-activation-fidelity`,
+    branch `fix/protein-activation-fidelity-20260922`, agent
+    `e835dd8d-691f-4296-896b-f9eb29759e21`.
+  - TerminalOrganelleAssembly:
+    `E:\opencell-worktrees\fix-terminal-organelle-fidelity`,
+    branch `fix/terminal-organelle-fidelity-20260922`, agent
+    `be3e0d57-5b07-4c7c-97f9-7954da8bd666`.
+- Agents must preflight primary MATLAB source and canonical fixtures before
+  editing; fail closed if fixture state cannot support the proposed repair.
+  Hard bans: `trace_hint`, `states_after`/event-tick inputs, production trace
+  reads, test-only configuration, threshold/metric edits, or documentation as
+  a substitute for code.
+- Expected merge order after independent review: ChromosomeSegregation,
+  ProteinActivation, TerminalOrganelleAssembly. All three may touch
+  `karr_composite.py`; integrate deliberately, never auto-resolve by choosing
+  one branch's version.
+- TerminalOrganelle preflight result: **BLOCKED with no edits**. Its fixture
+  is exactly 8 proteins x 2 compartments and exactly matches canonical
+  ProteinMonomer counts, but chassis production exposes only aggregate
+  `protein.counts`. A private 8x2 TOA store would become an unsynchronized
+  second authority. Exact repair first requires compartmental ProteinMonomer
+  state to become authoritative and all aggregate protein consumers to migrate
+  or derive views from it. Worktree remains clean at `26905b8`.
+- Operational traps remain: Python/tests only through WSL wrappers; raw traces
+  are read-only; do not remove worktrees recursively; no agent commits/pushes.
+
+**Current status (2026-09-17 21:05 IST) — HostInteraction fidelity repair:**
+
+- Active worktree:
+  `E:\opencell-worktrees\fix-host-interaction-fidelity`; branch
+  `fix/host-interaction-fidelity-20260917`; repair commit `039e82f`, based on
+  `c179ef4`; not pushed or merged.
+- Background coding agent `db9a8323-4cfd-48b8-985c-325f93e929ce` completed
+  HostInteraction from the validated three-slot prompt. No other deterministic
+  process was touched.
+- Preflight facts: MATLAB `initializeState` calls `evolveState`; the process
+  has 14 monomer enzymes plus one complex enzyme, with local/global type maps
+  present in the Host fixture. In current chassis-v6 all required monomers are
+  zero in `protein.counts`, `MG_410_411_412_PENTAMER=17` exists only in
+  `complex.counts`, Host reads only `protein.counts`, and all six Host booleans
+  remain false after tick 1 versus true in Karr's fitted positive condition.
+- Canonical state fixtures exist at
+  `data/karr_fixtures/per_process/ProteinMonomer_flat.mat` and
+  `ProteinComplex_flat.mat`. Before editing, the agent must prove their mapped
+  counts agree with Host's fixture projection; invented Host-only seed values
+  are forbidden.
+- Anti-laundering: no `trace_hint`, no `states_after` input, no trace reads from
+  production code, no hardcoded output booleans, no test-only constructor or
+  configuration. Traces may be used only as post-update comparison oracles.
+- Operational traps: Python/tests only through WSL wrappers; edit this worktree
+  only; do not modify the audit worktree or raw trace corpus; do not commit or
+  push—the parent will review and integrate.
+- Result: Host's 15-element enzyme projection matches canonical
+  ProteinMonomer/ProteinComplex fixtures exactly (14 monomers + one complex,
+  zero mismatches). Production now reads both live stores, seeds those shared
+  stores from canonical fitted state, and initializes the six Host booleans
+  through the same `calculate_host_state` helper used every tick.
+- Measured production values: before tick and after tick 1 are
+  `(T,T,T,T,T,T)`. Preregistered vectors match: POSITIVE `TTTTTT`,
+  NEG_ADHERENCE `FFFFFF`, PARTIAL `TFFFFF`, TLR12 `TTTFTT`, TLR26
+  `TFTTTT`, ANTIGEN_ONLY `TFFFFT`. Pentamer `17 -> 0` changes
+  `TTTFTT -> TFFFFF` through `complex.counts`.
+- Validation: 40 final scoped/baseline tests pass; genuine 100-tick active
+  replay passes; L1b 115/115 and 28/28; L2.4 4 seeds x 100 ticks PASS;
+  pre-L2.5 baseline integrity OK at
+  `07a937dc0f7b4c52547b093e56e35132def7c66993a7ea943332c0325507b591`,
+  now **1/28 eligible**. Canonical-fixture +1 mutation fails construction as
+  required. Existing ChromSeg/DNAS updater warnings remain unrelated/open.
+
+**Current status (2026-09-17 17:24 IST) — pre-L2.5 honesty rebaseline:**
+
+- Deterministic-first fidelity correction (2026-09-17 19:30 IST): source audit
+  corrected the terminal split to **4 deterministic processes whose fidelity
+  rung ends at L2.1** (ChromosomeSegregation, HostInteraction,
+  ProteinActivation, TerminalOrganelleAssembly) and **24 stochastic/event-driven
+  processes that require L2.2**. ChromosomeCondensation calls stochastic
+  chromosome binding; TranscriptionalRegulation performs affinity-weighted
+  random binding via the shared Chromosome RNG. The historical "L2.1 11/11"
+  was an active-window repair-manifest subset spanning process categories, not
+  the canonical L2.1 denominator. The corrected L2.2 board is
+  **22 PASS / 2 MISSING_EVIDENCE / 24 required**.
+- Machine status corrected: `PROCESS_CATALOG.yaml` now places
+  ChromosomeCondensation in `ALGORITHMIC_DEEP` and TranscriptionalRegulation in
+  `EVENT_CLASS`; regenerated evidence index has 24 rows with those two
+  `MISSING_EVIDENCE`.
+- Six-process implementation fidelity result (not documentation status):
+  **0/6 currently L2.5-eligible**.
+  - ChromosomeCondensation: seed-0 autonomous core replay is informative and
+    exact on the tested surfaces, but it lacks L2.2 evidence; production omits
+    live enzyme/bound-enzyme topology, uses previous-tick allocation, differs
+    from Karr initialization, and retains non-Karr fallback/aggregate/hint
+    paths.
+  - ChromosomeSegregation: literal deterministic event/stoichiometry passes the
+    genuine active window, but the process consumes the previous-tick grant
+    before its current request is allocated; a shared enzyme updater conflict
+    also remains.
+  - HostInteraction: literal per-tick boolean cascade passes, but measured
+    production initialization starts all six host booleans false while Karr's
+    validated tick-0 pre-state has all six true.
+  - ProteinActivation: active/inactive transfer algebra is implemented, but
+    rule inputs omit Karr concentration conversion and compartment axes;
+    production omits the inactive-state store and seeds a flat surrogate.
+  - TerminalOrganelleAssembly: production uses activity-gated counters, not
+    Karr two-compartment full-count fixed-point transfer; substrate state is not
+    connected and a states-after hint path remains.
+  - TranscriptionalRegulation: ledger-bound active replay passes, but L2.2 is
+    missing; production omits shared chromosome/authoritative occupancy and
+    enzyme writeback, uses a non-interleaved RNG stand-in, emits one of two
+    fold-change columns, and skips Karr t=0 pre-binding.
+- Evidence reruns: six implementation suites **63 passed**; final active-window
+  ChromSeg/Host/TxReg **3 passed**; corrected L2.2 board tests **24 passed**.
+  Standard autonomous rubric: ChromCond/ProteinActivation/TOA GENUINE,
+  ChromSeg/Host UNINFORMATIVE on standard quiescent windows, TxReg standard
+  trace structurally obsolete (final 4000-tick ledger-bound window passes).
+- The first background documentation agent
+  `d4addf9c-b0db-4e99-bee2-1f3892506b45` was cleared before returning and
+  left no file edits. Replacement agent
+  `195a57b6-db9d-4beb-a61f-6b4da8ea5618` completed the six wiring rows and six
+  semantic audits: every row now has zero `ROW_WRONG` and zero `MISSING`;
+  implementation deviations remain explicit.
+- Active worktree:
+  `E:\opencell-worktrees\pre-l25-honesty-rebaseline`; branch
+  `audit/pre-l25-honesty-rebaseline-20260917`; base/published main
+  `6a038b1d084543ddd847528ff6e698a9dba37626`.
+- Live processes/agents: none. Read-only deviation-classifier
+  `ffb6aecd-0de1-4a0f-b753-3437c7e65a7f` and documentation agent
+  `195a57b6-db9d-4beb-a61f-6b4da8ea5618` completed; no MATLAB process is active.
+- Scope: freeze a machine-readable 28-process pre-L2.5 eligibility baseline
+  before any biology fix. The baseline must distinguish lower-gate PASS from
+  source-faithful/no-known-gap eligibility and must fail closed on unresolved
+  MATLAB-to-OpenCell deviations.
+- Re-verified lower-gate facts: L1b method completeness 115/115 PASS and L1b
+  wiring rows 28/28 PASS. Published main's old L2.2 board said 22/22; corrected
+  classification is 22 PASS / 2 MISSING / 24 required. Important trap: L1b
+  validates documented deviations; it does not require them to be fixed.
+- Metabolism is the first confirmed blocker. Its L2.2 authority uses
+  `dynamic_bounds=True`, Karr substrate writeback, GLPK, and FVA-feasibility
+  acceptance, while the v6 chassis enables allocator budgeting but retains
+  default HiGHS and does not enable Karr writeback. The tracked semantic audit
+  records four `CODE_DEVIATES`; do not call Metabolism L2.5-eligible until
+  these are re-adjudicated and closed.
+- Frozen result: `docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml`
+  validates with integrity OK at source-tree digest
+  `91431e572a3516f74840012742353d09077df923ae0b65bc38a450bb541b5a89`
+  over 128 dependencies. Eligibility is **0/28**: 2 blocked first by missing
+  L2.2 evidence and the remaining 26 by open code deviations; none remain
+  blocked merely by documentation incompleteness.
+  `scripts/pre_l25_honesty.py` derives this result and
+  `scripts/derive_l25_scope.py` now refuses selection unless the hash-locked
+  baseline also marks both pair members eligible.
+- Branch tip is `7be565e` for the committed six-process fidelity correction;
+  the pending provenance/handoff update references that commit. Earlier
+  baseline commits are implementation `7b405c1`, provenance `ceee3bc`, and
+  handoff `cc1ef69`. The branch is not pushed or merged. Added the honesty
+  validator, baseline, focused tests, CI integrity job, scope integration, and
+  `docs/phase_f/PRE_L25_HONESTY_REBASELINE.md`. No process biology changed.
+- Fresh lower-authority reruns from this branch: L2.0a **5 passed**; L2.4
+  **PASS** for seeds 0,1,2,3 x 100 ticks, zero Part-A/Part-B failures and
+  `max_abs_unattributed=0` (124 exchange WIDs intentionally excluded).
+  L2.4 emitted an incompatible updater warning on
+  `enzymes/boundEnzymes.MG_203_204_TETRAMER`: DNASupercoiling declares `set`
+  while ChromosomeSegregation declares `accumulate`. The baseline records this
+  as open blocker `DNA-SUP-UPDATER-CONFLICT`.
+- Operational traps: edit this repo `plan.md`, never session-state plan files;
+  use WSL wrappers for Python/tests; do not touch the untracked canonical
+  division cohorts under `E:\opencell\data\m1_sources\karr_native`; do not
+  remove worktrees recursively because several contain junction-backed data.
 
 **Current status (2026-09-15 05:52 IST) — supersedes all
 earlier blocks below:**

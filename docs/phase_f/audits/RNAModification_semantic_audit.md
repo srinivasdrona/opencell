@@ -1,5 +1,61 @@
 # RNAModification Semantic Audit
 
+## Current-source independent acceptance — 2026-11-23
+
+`RMOD-DEVIATIONS` is resolved for measured source10393/source7586.
+Exact requests/shared live inputs, all347 processed/mature rows, processed
+aliases,309 no-reaction pass-through rows and the unbounded stochastic source
+loop are accepted (`karr_rna_modification.py:107-123,219-315,327-379,437-451`).
+No trace hint, capped deterministic shortcut or availability request remains.
+Same-tick phase/grant/public evolution is preserved in the actual chassis.
+The common source mapper/observer/CSV now weighs these forms with physical
+complex/Activation owners once; frozen mass81 and source gram proof pass.
+
+The actual full694-coordinate N50/M100/B1000 gate has87 consumed records,
+all50 distinct seeds and independent numerical/current-source/PORTABLE+STRICT
+ACCEPTANCE without reasons. Source/read visibility/capture and finding proof:
+`docs/phase_f/pre_l25/acceptance/cohort1_final_10393/FINDING_CLOSURE.md`;
+review/ preserves exact independent verdict/commands. Delayed completion
+revalidation is not a contemporaneous sweep; original files stay unchanged.
+Full raw OC tensors were not retained, so raw-sample reanalysis is unavailable.
+
+RNADecay/tRNA consumption, normal Translation binding/full1041 RNA lifecycle
+and other cohort2 findings remain OPEN on their consumer rows, not silently
+waived by this producer acceptance. Historical no-op/hinted replay/checkpoints
+below are not current-source evidence. Candidate eligibility is separately
+derived; no coupled whole-cell or L2.5 readiness claim.
+
+## 2026-10-15 implementation checkpoint (supersedes historical code descriptions below)
+
+- Source request (MATLAB 289-294) now lives in
+  `KarrRNAModificationProcess.calculate_request`, sharing the evolution input
+  reader. It uses configured dt, live fixture-indexed monomer/complex ownership,
+  and processed RNA, without availability caps or RNG draws.
+- All 347 processed/mature rows are exposed in the existing RNA authority;
+  overlapping nascent WIDs use RNAProcessing's `processed::` aliases. The
+  established 38-row active-vector attributes remain for standalone callers.
+  The 309 no-modification-required forms mature without substrate/enzyme use.
+- Evolution follows source stochastic rounding and weighted one-RNA selection;
+  water/H are excluded only from feasibility, not stoichiometric writeback.
+  Production `trace_hint` handling has been removed.
+- v4/v5/v6 register the real process as an evolution Step (retained under its
+  established `processes` lookup key, using Vivarium's supported Step dispatch).
+  A request Process arms a store-owned handshake; calculator -> allocator ->
+  public evolution runs once per tick and never at construction.
+- Conservation accounting records Step grants at actual use, normalizes phase
+  ownership, and retains pre-update grants for ordinary Processes.
+- Frozen modification fidelity: 24/24; existing + strict-zero: 12/12.
+  No L2 statistical eligibility is asserted; baseline remains 5/28.
+- Coordinated L2.4: four seeds (0,1,2,3), 100 ticks each, PASS with current
+  at-use grants. Both RNA processes' active-phase overspend canaries and an
+  unknown-consumer phase are detected by the budget observer.
+- Legacy canonical modification replay is explicitly N/A (no mutations);
+  the event replay still injects output hints and now fails at tick zero
+  (substrates index 0: OC 2 versus Karr 1). It is not valid evidence for this
+  implementation and no hint-based compatibility is restored.
+
+The original claim table is historical, not a current fidelity certification.
+
 ## Header
 - Process: `RNAModification` (`rna_modification`)
 - Audited files:

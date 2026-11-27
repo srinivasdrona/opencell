@@ -1,0 +1,7 @@
+{
+  "command": ".\\bin\\oc-py.cmd -B artifacts/m1_cohort/m1_pp2/independent_acceptance/review.py candidate",
+  "started_utc": "2026-10-19T10:37:49.3626193Z",
+  "finished_utc": "2026-10-19T10:38:01.3264373Z",
+  "powershell_pid": 7408,
+  "exit_code": 0
+}

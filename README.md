@@ -21,7 +21,7 @@ from MATLAB to Python, built on the Vivarium-core simulation framework.
    against the original MATLAB oracle traces: same-seed replay at L2.1 for
    all 28 processes, and distributional fidelity at L2.2 for the 22
    processes with a stochastic surface worth a distributional gate. This
-   is the target, not the current state — see [Status](#status--checkpoint-2026-08-03).
+   is the target, not the current state — see [Status](#status--accepted-cohort-one-2026-11-27).
 2. **Composable** — 28 biological processes + allocator, each a separate
    `Process` class with declared ports. Drop in a DNN surrogate, an ODE
    model, or a different algorithm without touching neighbors.
@@ -32,11 +32,37 @@ from MATLAB to Python, built on the Vivarium-core simulation framework.
    detector catches benchmarks that secretly read from the ground-truth
    trace instead of computing independently.
 
-## Status — checkpoint 2026-08-03
+## Status — accepted cohort one, 2026-11-27
+
+The integrated accepted source has **9/28 processes eligible for pre-L2.5
+consideration, 19 blocked**. Four retained genuine L2.1 scopes are
+ChromosomeSegregation, HostInteraction, ProteinActivation and
+TerminalOrganelleAssembly. Five independently accepted current M1 L2.2
+processes are ProteinModification, ProteinProcessingII, ProteinTranslocation,
+RNAModification and RNAProcessing (N50/B1000; PP2 M20, the others M100).
+
+The complete [L2.2 index](docs/phase_f/l2_2_design_a/evidence_index.json) is
+**5 PASS / 17 stale FAIL / 2 MISSING_EVIDENCE of 24 in scope**. Portable and
+strict evidence integrity and the finding-derived honesty audit are distinct
+from an all-green verdict. See the
+[main integration receipt](docs/phase_f/pre_l25/acceptance/cohort1_main_20261127/README.md)
+and [honesty baseline](docs/phase_f/pre_l25/PRE_L25_HONESTY_BASELINE.yaml).
+This is not L2.5 composition or whole-cell validation.
+
+Measured source HEAD `10393d59ca9f5b7e135e5098ebde854c0334cf9e` remains distinct
+from later publication commits. Completion sentinels explicitly document
+retrospective revalidation, not a new sweep. Raw OC tensors were not retained;
+raw-sample W1/bootstrap reanalysis is unavailable. M2 source, S2 and RNA API
+work in separate worktrees remains OPEN and is not part of this integration.
+
+The checkpoint below is preserved as **historical August status**, not the
+current source's coverage or eligibility count.
+
+## Historical checkpoint — 2026-08-03
 
 Rung *definitions* live in
 [`docs/phase_f/L_LADDER_CANONICAL.md`](docs/phase_f/L_LADDER_CANONICAL.md)
-(the only normative source; deliberately status-free). Current *state* lives
+(the only normative source; deliberately status-free). Historical *state* lives
 in [`docs/phase_f/CHECKPOINT_2026-08-03.md`](docs/phase_f/CHECKPOINT_2026-08-03.md).
 This section summarises that checkpoint and defers to it on every detail.
 

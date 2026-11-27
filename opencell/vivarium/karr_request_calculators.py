@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import math
 from pathlib import Path
 from typing import Any
 
@@ -16,6 +17,23 @@ from opencell.m3 import translation_v2 as tl_v2
 def _consumed_wids_from_stoich(substrate_wids: list[str], stoich: np.ndarray) -> list[str]:
     consumed_idx = np.flatnonzero(np.any(np.asarray(stoich, dtype=np.int64) < 0, axis=1))
     return [substrate_wids[int(idx)] for idx in consumed_idx]
+
+
+def _require_process_dependencies(
+    owner: str, parameters: dict[str, Any], expected: dict[str, type]
+) -> None:
+    """Fail closed at construction unless every named parameter is the exact process family."""
+    problems: list[str] = []
+    for parameter, expected_cls in expected.items():
+        value = parameters.get(parameter)
+        if value is None:
+            problems.append(f"{parameter} is missing (expected {expected_cls.__name__})")
+        elif not isinstance(value, expected_cls):
+            problems.append(
+                f"{parameter} must be a {expected_cls.__name__}, got {type(value).__name__}"
+            )
+    if problems:
+        raise ValueError(f"{owner} requires explicit process dependencies: " + "; ".join(problems))
 
 
 def _request_from_available(
@@ -168,10 +186,14 @@ class RequestCalculatorRibAsm(Step):
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
-        ribasm_proc = self.parameters.get("ribasm_proc")
-        if ribasm_proc is None:
-            raise ValueError("RequestCalculatorRibAsm requires parameter: ribasm_proc")
-        self._ribasm_proc = ribasm_proc
+        from opencell.vivarium.karr_ribosome_assembly import KarrRibosomeAssemblyProcess
+
+        _require_process_dependencies(
+            type(self).__name__,
+            self.parameters,
+            {"ribasm_proc": KarrRibosomeAssemblyProcess},
+        )
+        self._ribasm_proc = self.parameters["ribasm_proc"]
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -297,12 +319,6 @@ class RequestCalculatorRNAPathway(Step):
             raise ValueError(
                 "RequestCalculatorRNAPathway requires rna_processing_proc and rna_modification_proc"
             )
-        self._rp_consumed = _consumed_wids_from_stoich(
-            self._rp_proc.substrate_wids, self._rp_proc.reaction_stoich
-        )
-        self._rm_consumed = _consumed_wids_from_stoich(
-            self._rm_proc.substrate_wids, self._rm_proc.reaction_stoich
-        )
 
     def ports_schema(self) -> dict[str, Any]:
         return {
@@ -316,7 +332,25 @@ class RequestCalculatorRNAPathway(Step):
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
                     for wid in sorted(
-                        set(self._rp_proc.rna_wids) | set(self._rm_proc.unmodified_rna_wids)
+                        set(self._rp_proc.rna_wids) | set(self._rm_proc.processed_rna_wids)
+                    )
+                }
+            },
+            "protein": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in sorted(
+                        set(self._rp_proc.monomer_enzyme_wids)
+                        | set(self._rm_proc.monomer_enzyme_wids)
+                    )
+                }
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in sorted(
+                        set(self._rp_proc.complex_enzyme_wids)
+                        | set(self._rm_proc.complex_enzyme_wids)
                     )
                 }
             },
@@ -334,23 +368,8 @@ class RequestCalculatorRNAPathway(Step):
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
         del timestep
-        substrate_state = states.get("substrates", {})
-        rna_counts = states.get("rna", {}).get("counts", {})
-        rp_active = any(
-            float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rp_proc.unprocessed_rna_wids
-        )
-        rm_active = any(
-            float(rna_counts.get(wid, 0.0)) > 0.0 for wid in self._rm_proc.unmodified_rna_wids
-        )
-
-        rp_request = {wid: 0.0 for wid in self._rp_proc.substrate_wids}
-        rp_request.update(
-            _request_from_available(substrate_state, self._rp_consumed, active=rp_active)
-        )
-        rm_request = {wid: 0.0 for wid in self._rm_proc.substrate_wids}
-        rm_request.update(
-            _request_from_available(substrate_state, self._rm_consumed, active=rm_active)
-        )
+        rp_request = self._rp_proc.calculate_request(states)
+        rm_request = self._rm_proc.calculate_request(states)
         return {
             "requests": {
                 self._rp_proc.name: rp_request,
@@ -373,27 +392,41 @@ class RequestCalculatorProteinPathway(Step):
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
-        self._pp1_proc = self.parameters.get("protein_processing_i_proc")
-        self._pp2_proc = self.parameters.get("protein_processing_ii_proc")
-        self._pm_proc = self.parameters.get("protein_modification_proc")
-        self._pf_proc = self.parameters.get("protein_folding_proc")
-        self._pt_proc = self.parameters.get("protein_translocation_proc")
-        if any(
-            p is None
-            for p in (self._pp1_proc, self._pp2_proc, self._pm_proc, self._pf_proc, self._pt_proc)
-        ):
-            raise ValueError(
-                "RequestCalculatorProteinPathway requires all protein pathway process parameters"
-            )
+        from opencell.vivarium.karr_protein_folding import KarrProteinFoldingProcess
+        from opencell.vivarium.karr_protein_modification import (
+            KarrProteinModificationProcess,
+        )
+        from opencell.vivarium.karr_protein_processing_i import (
+            KarrProteinProcessingIProcess,
+        )
+        from opencell.vivarium.karr_protein_processing_ii import (
+            KarrProteinProcessingIIProcess,
+        )
+        from opencell.vivarium.karr_protein_translocation import (
+            KarrProteinTranslocationProcess,
+        )
 
-        self._pp2_consumed = _consumed_wids_from_stoich(
-            self._pp2_proc.substrate_wids, self._pp2_proc.reaction_stoich
+        _require_process_dependencies(
+            type(self).__name__,
+            self.parameters,
+            {
+                "protein_processing_i_proc": KarrProteinProcessingIProcess,
+                "protein_processing_ii_proc": KarrProteinProcessingIIProcess,
+                "protein_modification_proc": KarrProteinModificationProcess,
+                "protein_folding_proc": KarrProteinFoldingProcess,
+                "protein_translocation_proc": KarrProteinTranslocationProcess,
+            },
         )
-        self._pm_consumed = _consumed_wids_from_stoich(
-            self._pm_proc.substrate_wids, self._pm_proc.reaction_stoich
-        )
+        self._pp1_proc = self.parameters["protein_processing_i_proc"]
+        self._pp2_proc = self.parameters["protein_processing_ii_proc"]
+        self._pm_proc = self.parameters["protein_modification_proc"]
+        self._pf_proc = self.parameters["protein_folding_proc"]
+        self._pt_proc = self.parameters["protein_translocation_proc"]
 
     def ports_schema(self) -> dict[str, Any]:
+        from opencell.vivarium.protein_state import MIGRATED_WIDS, compartment_counts_schema
+
+        pp2_inputs = self._pp2_proc.input_protein_schema()
         all_substrate_wids = sorted(
             set(self._pp1_proc.substrate_wids)
             | set(self._pp2_proc.substrate_wids)
@@ -412,33 +445,60 @@ class RequestCalculatorProteinPathway(Step):
                     for wid in sorted(
                         set(self._pp1_proc.enzyme_wids)
                         | set(self._pp2_proc.enzyme_wids)
-                        | set(self._pm_proc.enzyme_wids)
+                        | set(self._pm_proc.monomer_enzyme_wids)
                         | set(self._pf_proc.enzyme_wids)
                         | set(self._pt_proc.protein_count_wids)
                     )
+                    if wid not in MIGRATED_WIDS
                 },
+                "compartment_counts": {
+                    **pp2_inputs["compartment_counts"],
+                    "folded": compartment_counts_schema(MIGRATED_WIDS)["folded"],
+                },
+                # Design D4: the PT-specific `location` declaration (the
+                # Stage-1 leak frozen-manifest C3 checks for) is deleted
+                # outright -- `protein.location` has no Karr analogue and no
+                # process declares it anywhere after Stage 2. `unprocessed_counts`
+                # is pp1/pp2's own nascent-queue surface and is filtered by
+                # `MIGRATED_WIDS` to match their own `ports_schema()` exactly
+                # (every translocatable WID is migrated, so its nascent pool
+                # lives at the compartment authority, not this legacy branch).
                 "unprocessed_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in sorted(
                         set(self._pp1_proc.unprocessed_monomer_wids)
                         | set(self._pp2_proc.unprocessed_monomer_wids)
                     )
+                    if wid not in MIGRATED_WIDS
                 },
+                # Design D1/C6: filtered the same way, even though this
+                # class's manifest entry is only checked on
+                # `unprocessed_counts`/`location` -- C6 walks the REALIZED
+                # store after a 100-tick chassis run, and an unfiltered
+                # schema declaration here would resurrect a migrated WID's
+                # leaf via mere default-value presence, independent of
+                # whether this Step's `next_update` ever writes a nonzero
+                # delta to it.
                 "processed_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self._pp2_proc.processed_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "unfolded_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self._pf_proc.unfolded_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "unmodified_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self._pm_proc.unmodified_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
-                "location": {
-                    wid: {"_default": "cytoplasm", "_updater": "set", "_emit": False}
-                    for wid in self._pt_proc.translocatable_wids
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self._pm_proc.complex_enzyme_wids
                 },
             },
             "requests": {
@@ -469,31 +529,15 @@ class RequestCalculatorProteinPathway(Step):
         del timestep
         substrate_state = states.get("substrates", {})
         protein_state = states.get("protein", {})
-        counts_state = protein_state.get("counts", {})
         unprocessed_state = protein_state.get("unprocessed_counts", {})
-        processed_state = protein_state.get("processed_counts", {})
         unfolded_state = protein_state.get("unfolded_counts", {})
-        unmodified_state = protein_state.get("unmodified_counts", {})
-        location_state = protein_state.get("location", {})
 
         pp1_active = any(
             float(unprocessed_state.get(wid, 0.0)) > 0.0
             for wid in self._pp1_proc.unprocessed_monomer_wids
         )
-        pp2_active = any(
-            float(processed_state.get(wid, 0.0)) > 0.0 for wid in self._pp2_proc.lipoprotein_wids
-        )
-        pm_active = any(
-            float(unmodified_state.get(wid, 0.0)) > 0.0
-            for wid in self._pm_proc.unmodified_monomer_wids
-        )
         pf_active = any(
             float(unfolded_state.get(wid, 0.0)) > 0.0 for wid in self._pf_proc.unfolded_monomer_wids
-        )
-        pt_active = any(
-            float(counts_state.get(wid, 0.0)) > 0.0
-            and str(location_state.get(wid, "cytoplasm")) == "cytoplasm"
-            for wid in self._pt_proc.translocatable_wids
         )
 
         pp1_req = {wid: 0.0 for wid in self._pp1_proc.substrate_wids}
@@ -510,13 +554,9 @@ class RequestCalculatorProteinPathway(Step):
             else 0.0
         )
 
-        pp2_req = {wid: 0.0 for wid in self._pp2_proc.substrate_wids}
-        pp2_req.update(
-            _request_from_available(substrate_state, self._pp2_consumed, active=pp2_active)
-        )
+        pp2_req = self._pp2_proc.calculate_request(states)
 
-        pm_req = {wid: 0.0 for wid in self._pm_proc.substrate_wids}
-        pm_req.update(_request_from_available(substrate_state, self._pm_consumed, active=pm_active))
+        pm_req = self._pm_proc.calculate_request(states)
 
         pf_req = {
             wid: (
@@ -533,18 +573,20 @@ class RequestCalculatorProteinPathway(Step):
             for wid in self._pf_proc.substrate_wids
         }
 
-        pt_req = {
-            wid: (max(0.0, float(substrate_state.get(wid, 0.0))) if pt_active else 0.0)
-            for wid in self._pt_proc.request_wids
-        }
-
+        # Design D4: this calculator's PT contribution is deleted outright
+        # (not merely zeroed) -- `RequestCalculatorPTransloc` is the sole
+        # writer of `requests[self._pt_proc.name]`; it reads only the
+        # compartment authority and enzyme pools, never this class's legacy
+        # `counts`/`location` reads (both gone). Leaving a second,
+        # now-reading-nothing writer here would be exactly the dual-writer
+        # shape this design bans, even though its value happened to be
+        # overwritten by the later-running PTransloc calculator today.
         return {
             "requests": {
                 self._pp1_proc.name: pp1_req,
                 self._pp2_proc.name: pp2_req,
                 self._pm_proc.name: pm_req,
                 self._pf_proc.name: pf_req,
-                self._pt_proc.name: pt_req,
             }
         }
 
@@ -656,43 +698,70 @@ class RequestCalculatorTranslation(_SafeDtMixin, Step):
 
 
 class RequestCalculatorPTransloc(_SafeDtMixin, Step):
-    """Compute allocator requests for protein translocation substrate demand."""
+    """Compute allocator requests for protein translocation substrate demand.
+
+    Literal transcription of `ProteinTranslocation.m:284-301`
+    `calcResourceRequirements_Current` (design D4): `translocases` and `SRPs`
+    are enzyme-capacity caps (complex/protein counts x rate x dt, in amino
+    acids -- no division by `aaTranslocatedPerATP`); `ATP`/`GTP` are each
+    capped by the corresponding capacity against the sum of pending
+    `processed_i["c"]` copies' exact cost. No substrate-pool read anywhere
+    in this class -- the pool-floor deviation (PT-S4-03) is deleted, not
+    guarded.
+    """
 
     name = "request_calculator_protein_translocation"
     defaults: dict[str, Any] = {"protein_translocation_proc": None}
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
-        pt_proc = self.parameters.get("protein_translocation_proc")
-        if pt_proc is None:
-            raise ValueError(
-                "RequestCalculatorPTransloc requires parameter: protein_translocation_proc"
-            )
+        from opencell.vivarium.karr_protein_translocation import (
+            KarrProteinTranslocationProcess,
+        )
+
+        _require_process_dependencies(
+            type(self).__name__,
+            self.parameters,
+            {"protein_translocation_proc": KarrProteinTranslocationProcess},
+        )
+        pt_proc = self.parameters["protein_translocation_proc"]
         self._pt_proc = pt_proc
         self._proc = pt_proc
         self._request_wids = list(self._pt_proc.allocation_substrate_wids)
         self._atp_wid = str(self._pt_proc.atp_wid)
         self._gtp_wid = str(self._pt_proc.gtp_wid)
         self._h2o_wid = str(self._pt_proc.h2o_wid)
+        self._complex_enzyme_wid_set = set(self._pt_proc.complex_enzyme_wids)
 
     def ports_schema(self) -> dict[str, Any]:
+        from opencell.vivarium.protein_state import MIGRATED_WIDS, compartment_counts_schema
+
+        processed_i_schema = compartment_counts_schema(MIGRATED_WIDS)["processed_i"]
         return {
+            # Design D4: declared for topology-wiring compatibility only
+            # (C12's own minimal composite wires it); `next_update` never
+            # reads from this port -- the pool-floor read path is deleted,
+            # not merely unused.
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                 for wid in self._request_wids
+            },
+            "complex": {
+                "counts": {
+                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
+                    for wid in self._pt_proc.complex_count_wids
+                }
             },
             "protein": {
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in sorted(set(self._pt_proc.protein_count_wids))
                 },
-                "unprocessed_counts": {
-                    wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
-                    for wid in self._pt_proc.translocatable_wids
-                },
-                "location": {
-                    wid: {"_default": "cytoplasm", "_updater": "set", "_emit": False}
-                    for wid in self._pt_proc.translocatable_wids
+                "compartment_counts": {
+                    "processed_i": {
+                        wid: processed_i_schema[wid]
+                        for wid in self._pt_proc.translocatable_wids_in_fixture_order
+                    }
                 },
             },
             "requests": {
@@ -703,54 +772,55 @@ class RequestCalculatorPTransloc(_SafeDtMixin, Step):
             },
         }
 
-    @staticmethod
-    def _read_nonnegative_count(state: dict[str, Any], wid: str) -> int:
-        return int(max(0.0, np.floor(float(state.get(wid, 0.0)))))
+    def _enzyme_count(self, states: dict[str, Any], wid: str) -> float:
+        if wid in self._complex_enzyme_wid_set:
+            complex_counts_state = states.get("complex", {}).get("counts", {})
+            return max(0.0, float(complex_counts_state.get(wid, 0.0)))
+        protein_counts_state = states.get("protein", {}).get("counts", {})
+        return max(0.0, float(protein_counts_state.get(wid, 0.0)))
 
     def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        del timestep
-        protein_state = states.get("protein", {})
-        counts_state = protein_state.get("counts", {})
-        queue_counts_state = protein_state.get("unprocessed_counts", counts_state)
-        location_state = protein_state.get("location", {})
-        substrate_state = states.get("substrates", {})
+        dt = self._safe_dt(timestep)
+        processed_i_state = (
+            states.get("protein", {}).get("compartment_counts", {}).get("processed_i", {})
+        )
         requests = {wid: 0.0 for wid in self._request_wids}
 
-        pending: dict[str, int] = {
-            wid: self._read_nonnegative_count(queue_counts_state, wid)
-            for wid in self._pt_proc.translocatable_wids
-            if str(location_state.get(wid, "cytoplasm")) == "cytoplasm"
-            and self._read_nonnegative_count(queue_counts_state, wid) > 0
-        }
-        if not pending:
-            pending = {
-                wid: self._read_nonnegative_count(queue_counts_state, wid)
-                for wid in self._pt_proc.translocatable_wids
-                if self._read_nonnegative_count(queue_counts_state, wid) > 0
-            }
-        if not pending:
-            return {"requests": {self._pt_proc.name: requests}}
+        atpase = self._enzyme_count(states, self._pt_proc.translocase_atpase_wid)
+        pore = self._enzyme_count(states, self._pt_proc.translocase_pore_wid)
+        srp = self._enzyme_count(states, self._pt_proc.srp_wid)
+        receptor = self._enzyme_count(states, self._pt_proc.srp_receptor_wid)
+
+        # `:284-285` -- translocases in amino acids (NOT divided by
+        # `aaTranslocatedPerATP`, unlike `evolveState`'s per-copy cost).
+        translocases = math.ceil(
+            min(atpase, pore) * self._pt_proc.translocase_specific_rate * dt
+        )
+        # `:286` -- SRPs in monomers.
+        srps = math.ceil(min(srp, receptor) * dt)
 
         atp_need = 0.0
-        gtp_need = 0.0
-        for wid, count in pending.items():
-            atp_need += float(count) * float(self._pt_proc.atp_cost_by_wid.get(wid, 0))
+        srp_pending = 0.0
+        for wid in self._pt_proc.translocatable_wids_in_fixture_order:
+            pending = max(0.0, float(processed_i_state.get(wid, {}).get("c", 0.0)))
+            if pending <= 0.0:
+                continue
+            atp_need += pending * float(self._pt_proc.atp_cost_by_wid[wid])
             if self._pt_proc.pathway_by_wid.get(wid) == "srp":
-                gtp_need += float(count) * float(self._pt_proc.srp_gtp_cost_per_monomer)
+                srp_pending += pending
 
-        hydrolysis_need = atp_need + gtp_need
-        requests[self._atp_wid] = max(
-            max(0.0, atp_need),
-            max(0.0, float(substrate_state.get(self._atp_wid, 0.0))),
+        # `:287` -- ATP capped by translocase capacity against pending-copy cost.
+        atp_request = min(float(translocases), atp_need)
+        # `:288` -- GTP capped by SRP capacity against pending SRP-pathway copies.
+        gtp_request = float(self._pt_proc.srp_gtp_cost_per_monomer) * min(
+            float(srps), srp_pending
         )
-        requests[self._gtp_wid] = max(
-            max(0.0, gtp_need),
-            max(0.0, float(substrate_state.get(self._gtp_wid, 0.0))),
-        )
-        requests[self._h2o_wid] = max(
-            max(0.0, hydrolysis_need),
-            max(0.0, float(substrate_state.get(self._h2o_wid, 0.0))),
-        )
+        # `:289` -- water identity.
+        h2o_request = atp_request + gtp_request
+
+        requests[self._atp_wid] = atp_request
+        requests[self._gtp_wid] = gtp_request
+        requests[self._h2o_wid] = h2o_request
         return {"requests": {self._pt_proc.name: requests}}
 
 

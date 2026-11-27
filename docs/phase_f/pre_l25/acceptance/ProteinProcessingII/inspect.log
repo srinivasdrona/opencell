@@ -1,0 +1,422 @@
+{"started_utc": "2026-10-19T10:34:50.222684+00:00", "pid": 2155, "ppid": 2154, "argv": ["artifacts/m1_cohort/m1_pp2/independent_acceptance/review.py", "inspect"], "cwd": "/mnt/e/opencell-worktrees/m1-pp2-20261017", "executable": "/mnt/e/opencell/.venv-wsl/bin/python", "opencell_file": "/mnt/e/opencell-worktrees/m1-pp2-20261017/opencell/__init__.py"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/independent_structure.json", "sha256": "e4909ed5167559f4ce969922818c753486fca2ef57b69fcfe139164dc9033656"}
+{
+  "result.json": {
+    "allocator_inputs_ref": "artifacts/l2_2_gates/ProteinProcessingII/latest/allocator_inputs.json",
+    "bootstrap_B": 1000,
+    "bucket": "TRIVIAL_RNG",
+    "canonical_seed_count": 50,
+    "channels": {
+      "monomers": {
+        "absolute_floor": 1.0,
+        "aggregation": "per_tick_vector_w1_mean",
+        "is_event_channel": false,
+        "is_primary": true,
+        "ks_pvalue": 1.0,
+        "ks_stat": 0.0,
+        "n_nonzero_karr": 33,
+        "n_nonzero_oc": 33,
+        "per_sample_w1_summary": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0
+        },
+        "q95_null": 9.128630705394158e-05,
+        "samples_karr": {
+          "kurtosis": 14601.212151394519,
+          "max": 1.0,
+          "mean": 6.846473029045643e-05,
+          "min": 0.0,
+          "skew": 120.8435003028793,
+          "stddev": 0.00827405842807281
+        },
+        "samples_oc": {
+          "kurtosis": 14601.212151394519,
+          "max": 1.0,
+          "mean": 6.846473029045643e-05,
+          "min": 0.0,
+          "skew": 120.8435003028793,
+          "stddev": 0.00827405842807281
+        },
+        "threshold": 1.0,
+        "verdict": "SEED_NOISE",
+        "w1_oc_vs_karr": 0.0,
+        "w1_oc_vs_karr_ci95": [
+          5.809128630705374e-05,
+          9.336099585062207e-05
+        ]
+      },
+      "substrates": {
+        "absolute_floor": 1.0,
+        "aggregation": "per_tick_vector_w1_mean",
+        "is_event_channel": false,
+        "is_primary": false,
+        "ks_pvalue": 1.0,
+        "ks_stat": 0.0,
+        "n_nonzero_karr": 51,
+        "n_nonzero_oc": 51,
+        "per_sample_w1_summary": {
+          "max": 0.0,
+          "mean": 0.0,
+          "min": 0.0
+        },
+        "q95_null": 180.14732999999993,
+        "samples_karr": {
+          "kurtosis": 95.48793562988325,
+          "max": 141887.0,
+          "mean": 1399.8272,
+          "min": 0.0,
+          "skew": 9.857760606796013,
+          "stddev": 13861.762930310857
+        },
+        "samples_oc": {
+          "kurtosis": 95.48793562988325,
+          "max": 141887.0,
+          "mean": 1399.8272,
+          "min": 0.0,
+          "skew": 9.857760606796013,
+          "stddev": 13861.762930310857
+        },
+        "threshold": 360.29465999999985,
+        "verdict": "SEED_NOISE",
+        "w1_oc_vs_karr": 0.0,
+        "w1_oc_vs_karr_ci95": [
+          33.69243999999999,
+          204.08068499999993
+        ]
+      }
+    },
+    "harness_version": "design_a_v1_3",
+    "joint_check": null,
+    "k_eng": {
+      "ALGORITHMIC_DEEP": 3.0,
+      "ALGORITHMIC_SHALLOW": 2.0,
+      "TRIVIAL_RNG": 2.0
+    },
+    "n_observations_per_channel": 1000,
+    "process": "ProteinProcessingII",
+    "provenance_ref": "artifacts/l2_2_gates/ProteinProcessingII/latest/provenance.json",
+    "seeds": {
+      "length": 50,
+      "first": [
+        0
+      ]
+    },
+    "ticks": 20,
+    "timestamp": "2026-10-19T10:24:29.697634+00:00",
+    "verdict": "PASS",
+    "warnings": {
+      "length": 1,
+      "first": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
+    }
+  },
+  "input_manifest.json": {
+    "generated_at": "2026-10-19T10:24:29.697634+00:00",
+    "inputs": {
+      "length": 61,
+      "first": [
+        {
+          "path": "tests/vivarium/l2_2_design_a_runner.py",
+          "sha256": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d"
+        }
+      ]
+    },
+    "m_ticks": 20,
+    "resolved_seeds": {
+      "length": 50,
+      "first": [
+        0
+      ]
+    }
+  },
+  "null_calibration.json": {
+    "generated_at": "2026-10-19T10:24:29.697634+00:00",
+    "process": "ProteinProcessingII",
+    "bucket": "TRIVIAL_RNG",
+    "channels": {
+      "substrates": {
+        "bootstrap_B": 1000,
+        "n_karr_seeds": 50,
+        "n_ticks": 20,
+        "q95_null": 180.14732999999993,
+        "bootstrap_values_summary": {
+          "mean": 108.89027139999997,
+          "stddev": 43.039165274969506,
+          "min": 5.485199999999999,
+          "max": 295.6059999999999
+        }
+      },
+      "monomers": {
+        "bootstrap_B": 1000,
+        "n_karr_seeds": 50,
+        "n_ticks": 20,
+        "q95_null": 9.128630705394158e-05,
+        "bootstrap_values_summary": {
+          "mean": 7.50788381742736e-05,
+          "stddev": 9.403320930242635e-06,
+          "min": 4.149377593360981e-05,
+          "max": 0.00010788381742738552
+        }
+      }
+    },
+    "warnings": {
+      "length": 1,
+      "first": [
+        "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+      ]
+    }
+  },
+  "allocator_inputs.json": {
+    "records": {
+      "length": 1000,
+      "first": [
+        {
+          "process": "ProteinProcessingII",
+          "seed": 0,
+          "tick": 0,
+          "substrates_sum_before": 0.0,
+          "substrates_nonzero_before": 0,
+          "primary_channel": "monomers",
+          "primary_sum_before": 0.0,
+          "enzymes_sum_before": 430.0,
+          "monomers_sum_before": 0.0
+        }
+      ]
+    }
+  },
+  "preflight.json": {
+    "activity_M20": {
+      "keys": [
+        "boundEnzymes",
+        "enzymes",
+        "processedMonomers",
+        "signalSequenceMonomers",
+        "substrates",
+        "unprocessedMonomers"
+      ],
+      "first": {
+        "boundEnzymes": 0
+      }
+    },
+    "elapsed_s": 134.30443261,
+    "gate_primary_shape": {
+      "length": 3,
+      "first": [
+        50
+      ]
+    },
+    "isolation": {
+      "keys": [
+        "distinct_same_seed_owners",
+        "first_output_primary_sha256",
+        "interleave_equal",
+        "interleaved_output_primary_sha256",
+        "positions",
+        "repeat_equal"
+      ],
+      "first": {
+        "distinct_same_seed_owners": true
+      }
+    },
+    "n_seeds": 50,
+    "opencell": "/mnt/e/opencell-worktrees/m1-pp2-20261017/opencell/__init__.py",
+    "oracle_load_inputs": {
+      "length": 50,
+      "first": [
+        {
+          "path": "/mnt/e/opencell-worktrees/m1-pp2-20261017/data/m1_sources/karr_native/per_process_traces_v2/ProteinProcessingII_100ticks.mat",
+          "seed": 0,
+          "sha256": "0d86b69b6896c76c36056a20d19e6c530b781b4413f70550d74cb95aeeda2387"
+        }
+      ]
+    },
+    "oracle_primary_shape": {
+      "length": 3,
+      "first": [
+        50
+      ]
+    },
+    "pid": 373,
+    "prefix": "/mnt/e/opencell/.venv-wsl",
+    "python": "/mnt/e/opencell/.venv-wsl/bin/python",
+    "registered_bootstrap_B": 1000,
+    "registered_m_ticks": 20,
+    "runtime_inputs": {
+      "length": 11,
+      "first": [
+        {
+          "path": "/mnt/e/opencell-worktrees/m1-pp2-20261017/tests/vivarium/l2_2_design_a_runner.py",
+          "sha256": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d"
+        }
+      ]
+    },
+    "seed_inventory": {
+      "length": 50,
+      "first": [
+        {
+          "activity": {
+            "boundEnzymes": {
+              "M100": 0,
+              "M20": 0,
+              "delta_sum_M20": 0.0
+            },
+            "enzymes": {
+              "M100": 0,
+              "M20": 0,
+              "delta_sum_M20": 0.0
+            },
+            "processedMonomers": {
+              "M100": 64,
+              "M20": 12,
+              "delta_sum_M20": 37.0
+            },
+            "signalSequenceMonomers": {
+              "M100": 4,
+              "M20": 1,
+              "delta_sum_M20": 1.0
+            },
+            "substrates": {
+              "M100": 4,
+              "M20": 1,
+              "delta_sum_M20": -1.0
+            },
+            "unprocessedMonomers": {
+              "M100": 64,
+              "M20": 12,
+              "delta_sum_M20": -37.0
+            }
+          },
+          "families": [
+            "boundEnzymes",
+            "enzymes",
+            "processedMonomers",
+            "signalSequenceMonomers",
+            "substrates",
+            "unprocessedMonomers"
+          ],
+          "n_ticks": 100,
+          "path": "data/m1_sources/karr_native/per_process_traces_v2/ProteinProcessingII_100ticks.mat",
+          "seed": 0,
+          "sha256": "0d86b69b6896c76c36056a20d19e6c530b781b4413f70550d74cb95aeeda2387",
+          "widths": {
+            "boundEnzymes": 2,
+            "enzymes": 2,
+            "processedMonomers": 482,
+            "signalSequenceMonomers": 482,
+            "substrates": 5,
+            "unprocessedMonomers": 482
+          }
+        }
+      ]
+    },
+    "source_hashes": {
+      "keys": [
+        "catalog_entry",
+        "evidence_schema_module",
+        "helpers",
+        "l2_replay_common",
+        "oc_module",
+        "projections",
+        "protein_state_module",
+        "runner",
+        "tick_runner",
+        "vivarium_init"
+      ],
+      "first": {
+        "catalog_entry": "d5c287f96a606ef09109786efa2045d2ee862f1f11f45fc81ae0731f2a56d163"
+      }
+    },
+    "started_at": "2026-10-16T21:47:33.906141+00:00"
+  },
+  "accepted-input-copy.json": {
+    "length": 50,
+    "first": [
+      {
+        "RelativePath": "per_process_traces_v2\\ProteinProcessingII_100ticks.mat",
+        "Source": "E:\\opencell-worktrees\\integrate-fidelity-batch\\data\\m1_sources\\karr_native\\per_process_traces_v2\\ProteinProcessingII_100ticks.mat",
+        "Destination": "E:\\opencell-worktrees\\m1-pp2-20261017\\data\\m1_sources\\karr_native\\per_process_traces_v2\\ProteinProcessingII_100ticks.mat",
+        "Sha256": "0d86b69b6896c76c36056a20d19e6c530b781b4413f70550d74cb95aeeda2387"
+      }
+    ]
+  },
+  "preflight_reuse_validation.json": {
+    "B": 1000,
+    "M": 20,
+    "N": 50,
+    "accepted_copy_sha256": "4eef0da1c18c270829214f91dd4c9ca1a0f8d514a087507d51e9bec8a023dcb4",
+    "activity_M20": {
+      "keys": [
+        "boundEnzymes",
+        "enzymes",
+        "processedMonomers",
+        "signalSequenceMonomers",
+        "substrates",
+        "unprocessedMonomers"
+      ],
+      "first": {
+        "boundEnzymes": 0
+      }
+    },
+    "consumed_seed_count": 50,
+    "elapsed_s": 5.477320610999996,
+    "exit_code": 0,
+    "finished_at": "2026-10-19T10:18:29.827932+00:00",
+    "input_count": 61,
+    "isolation": {
+      "keys": [
+        "distinct_same_seed_owners",
+        "first_output_primary_sha256",
+        "interleave_equal",
+        "interleaved_output_primary_sha256",
+        "positions",
+        "repeat_equal"
+      ],
+      "first": {
+        "distinct_same_seed_owners": true
+      }
+    },
+    "linux_pid": 663,
+    "opencell": "/mnt/e/opencell-worktrees/m1-pp2-20261017/opencell/__init__.py",
+    "population_manifest_sha256": "3868a78281f19161488f54768fd8756bdb7662dcd70b206f3ca10010232059e4",
+    "prefix": "/mnt/e/opencell/.venv-wsl",
+    "preflight_log_sha256": "8cd4ef568de059d0fcc2cfb1dd1815955e80e1922ebeceb936a236a44e76c126",
+    "preflight_sha256": "3e8833e19e0e84d6463babe39769645d7e3c37e16c07cc8dad8d92fc9d70ef0b",
+    "python": "/mnt/e/opencell/.venv-wsl/bin/python",
+    "reused_preflight": true,
+    "runtime_input_count": 11,
+    "source_hash_count": 10,
+    "source_hashes": {
+      "keys": [
+        "catalog_entry",
+        "evidence_schema_module",
+        "helpers",
+        "l2_replay_common",
+        "oc_module",
+        "projections",
+        "protein_state_module",
+        "runner",
+        "tick_runner",
+        "vivarium_init"
+      ],
+      "first": {
+        "catalog_entry": "d5c287f96a606ef09109786efa2045d2ee862f1f11f45fc81ae0731f2a56d163"
+      }
+    },
+    "started_at": "2026-10-19T10:18:24.350631+00:00",
+    "verified_inputs": {
+      "length": 61,
+      "first": [
+        {
+          "actual_sha256": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+          "path": "tests/vivarium/l2_2_design_a_runner.py",
+          "sha256": "4b76c05ec04c0a72feabf21e62ac91bc13bf3913cddbadf101886ad0548ae47d",
+          "size_bytes": 68897
+        }
+      ]
+    },
+    "width": 482
+  }
+}
+{"finished_utc": "2026-10-19T10:34:50.424383+00:00", "pid": 2155}

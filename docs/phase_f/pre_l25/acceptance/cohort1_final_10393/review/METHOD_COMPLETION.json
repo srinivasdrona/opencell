@@ -1,0 +1,8 @@
+{
+  "utc": "2026-11-23T17:17:40.6493125Z",
+  "method_verdict": "ACCEPT_DOCUMENTED_COMPLETED_EVIDENCE_REVALIDATION_METHOD",
+  "final_marker_exists": true,
+  "finalizer_not_relaunched": true,
+  "packet_acceptance": "NOT_YET_REVIEWED",
+  "method_sha256": "453cee6d347416231f47d7ca9b82cf1ff1fadbb681f30832f3f0880bdb428a5f"
+}

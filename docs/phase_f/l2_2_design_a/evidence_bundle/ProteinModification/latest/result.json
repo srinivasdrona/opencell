@@ -1,5 +1,5 @@
 {
-  "allocator_inputs_ref": "artifacts/l2_2_gates/ProteinModification/latest/allocator_inputs.json",
+  "allocator_inputs_ref": "artifacts/cohort1/final_source_freeze/finalized_evidence/runner_layout/ProteinModification/latest/allocator_inputs.json",
   "bootstrap_B": 1000,
   "bucket": "ALGORITHMIC_SHALLOW",
   "canonical_seed_count": 50,
@@ -9,13 +9,13 @@
       "aggregation": "per_tick_vector_w1_mean",
       "is_event_channel": false,
       "is_primary": true,
-      "ks_pvalue": 0.00018534787763601149,
-      "ks_stat": 0.0013879668049793237,
+      "ks_pvalue": 1.0,
+      "ks_stat": 2.9045643152869616e-06,
       "n_nonzero_karr": 2026024,
-      "n_nonzero_oc": 2032714,
+      "n_nonzero_oc": 2026010,
       "per_sample_w1_summary": {
-        "max": 0.022821576763485396,
-        "mean": 0.0028925311203319673,
+        "max": 0.004149377593361092,
+        "mean": 0.00010165975103734455,
         "min": 0.0
       },
       "q95_null": 0.05782120331950206,
@@ -28,19 +28,19 @@
         "stddev": 56.200950521517356
       },
       "samples_oc": {
-        "kurtosis": 52.03818532351262,
+        "kurtosis": 52.0383587128069,
         "max": 781.0,
         "mean": 21.159251037344397,
         "min": 0.0,
-        "skew": 5.687321035207248,
-        "stddev": 56.19840933074774
+        "skew": 5.68727626119501,
+        "stddev": 56.20095045876093
       },
       "threshold": 1.0,
       "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.0028925311203319673,
+      "w1_oc_vs_karr": 0.00010165975103734455,
       "w1_oc_vs_karr_ci95": [
-        0.05341882261410787,
-        0.0584913070539419
+        0.05290262966804977,
+        0.05814213174273855
       ]
     },
     "substrates": {
@@ -49,12 +49,12 @@
       "is_event_channel": false,
       "is_primary": false,
       "ks_pvalue": 1.0,
-      "ks_stat": 0.0006266666666666643,
+      "ks_stat": 0.0005199999999999649,
       "n_nonzero_karr": 5471,
-      "n_nonzero_oc": 5488,
+      "n_nonzero_oc": 5486,
       "per_sample_w1_summary": {
         "max": 1.3333333333333335,
-        "mean": 0.03502666666666667,
+        "mean": 0.037426666666666664,
         "min": 0.0
       },
       "q95_null": 12.896554666666663,
@@ -67,19 +67,19 @@
         "stddev": 48.52187644301212
       },
       "samples_oc": {
-        "kurtosis": 82.39516471536301,
+        "kurtosis": 82.40880471339773,
         "max": 990.0,
-        "mean": 8.212946666666667,
+        "mean": 8.213,
         "min": 0.0,
-        "skew": 8.238551422456885,
-        "stddev": 48.52181283076532
+        "skew": 8.239064955522576,
+        "stddev": 48.52080465463587
       },
       "threshold": 25.793109333333327,
       "verdict": "SEED_NOISE",
-      "w1_oc_vs_karr": 0.03502666666666667,
+      "w1_oc_vs_karr": 0.037426666666666664,
       "w1_oc_vs_karr_ci95": [
-        8.869111999999998,
-        13.168482333333328
+        8.868775999999999,
+        13.16831833333333
       ]
     }
   },
@@ -92,7 +92,7 @@
   },
   "n_observations_per_channel": 5000,
   "process": "ProteinModification",
-  "provenance_ref": "artifacts/l2_2_gates/ProteinModification/latest/provenance.json",
+  "provenance_ref": "artifacts/cohort1/final_source_freeze/finalized_evidence/runner_layout/ProteinModification/latest/provenance.json",
   "seeds": [
     0,
     1,
@@ -146,7 +146,7 @@
     49
   ],
   "ticks": 100,
-  "timestamp": "2026-08-06T11:25:44.549391+00:00",
+  "timestamp": "2026-11-21T20:19:27.140862+00:00",
   "verdict": "PASS",
   "warnings": []
 }

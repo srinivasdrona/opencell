@@ -1,0 +1,2 @@
+{"stage": "legacy_contiguous_actual_owner_start", "at": "2026-10-19T11:59:22.059664+00:00", "pid": 464, "argv": ["artifacts/m1_cohort/m1_pt/independent_acceptance/legacy_owner_receipt.py"], "cwd": "/mnt/e/opencell-worktrees/m1-pt-20261017"}
+{"stage": "legacy_contiguous_actual_owner_complete", "at": "2026-10-19T11:59:41.318126+00:00", "pid": 464, "argv": ["artifacts/m1_cohort/m1_pt/independent_acceptance/legacy_owner_receipt.py"], "cwd": "/mnt/e/opencell-worktrees/m1-pt-20261017", "ticks": 100, "distinct_owners": 1, "advancing_ticks": 20, "nonempty_updates": 13}

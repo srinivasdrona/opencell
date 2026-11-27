@@ -1,0 +1,23 @@
+{
+  "at": "2026-10-19T17:34:11.1932467+05:30",
+  "native_powershell_pid": 16324,
+  "head": "65df71c26553f42dd95759b948de42647987bf68",
+  "status": [],
+  "verdict": "ACCEPTED",
+  "finding1": "ACCEPTED",
+  "finding2": "ACCEPTED",
+  "delivery_hash_mismatches": [],
+  "delivery_files": 18,
+  "tests": {
+    "path": "artifacts/m1_cohort/m1_pt/independent_acceptance/controls_retry1.xml",
+    "sha256": "77f7dfb662d34dcf5e3c116ae3922532ce2a5aac8707f9a232b514b0494cbe87",
+    "tests": 27,
+    "passed": 27,
+    "errors": 0,
+    "failures": 0,
+    "skipped": 0,
+    "xfails": 0
+  },
+  "verdict_sha256": "2e868c3bf04831ba241cb3da4bf42ce8a5706ab2c5fb2151a8d9fef8acd481bf",
+  "scratch_exists": false
+}

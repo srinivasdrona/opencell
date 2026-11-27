@@ -1,0 +1,5 @@
+{"entrypoint": "scripts/l22_evidence/generator.py", "argv": ["generate", "--out", "artifacts/m1_cohort/m1_pp2/independent_acceptance/candidate_evidence_index.json", "--evidence-root", "artifacts/m1_cohort/m1_pp2/evidence_bundle"], "started_utc": "2026-10-19T10:37:50.567521+00:00", "pid": 4364}
+wrote artifacts/m1_cohort/m1_pp2/independent_acceptance/candidate_evidence_index.json (24 rows, aggregate=NON_GREEN)
+  evidence_root: artifacts/m1_cohort/m1_pp2/evidence_bundle
+  MISSING_EVIDENCE: 23
+  PASS: 1

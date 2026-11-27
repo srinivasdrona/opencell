@@ -8,14 +8,36 @@ from typing import Any
 
 import numpy as np
 from scipy.io import loadmat
-from vivarium.core.process import Process
+from vivarium.core.process import Process, Step
+
+from opencell.util.mcg16807_state_codec import draw_and_advance, seed_state
+from opencell.vivarium.protein_state import COMPARTMENTS, MIGRATED_WIDS, compartment_counts_schema
 
 _DEFAULT_FIXTURE_PATH = "data/karr_fixtures/per_process/ProteinModification_flat.mat"
 _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
 _MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
-_MAX_STOCHASTIC_ITERATIONS = 100_000
 _SPECIAL_COMPLEX_WIDS = frozenset({"RNA_POLYMERASE", "RIBOSOME_70S"})
-_RANDSAMPLE_STREAM_BURN = 3
+
+
+class _ProteinModificationRandomStream:
+    """Process.m's private mcg16807 owner, using MATLAB-exposed encoded state."""
+
+    def __init__(self, seed: int) -> None:
+        self._seed = int(seed)
+        self._state = seed_state(self._seed)
+
+    def random(self, size: int | tuple[int, ...] | None = None) -> float | np.ndarray:
+        if size is None:
+            value, self._state = draw_and_advance(self._state)
+            return value
+        values = np.empty(size, dtype=np.float64, order="F")
+        linear = values.ravel(order="F")
+        for i in range(linear.size):
+            linear[i], self._state = draw_and_advance(self._state)
+        return values
+
+    def get_state(self) -> tuple[str, int, int]:
+        return "mcg16807", self._seed, self._state
 
 
 def _resolve_fixture_path(path: str | Path) -> Path:
@@ -49,9 +71,9 @@ def _parse_wid_array(cell_array: np.ndarray) -> list[str]:
     return out
 
 
-@lru_cache(maxsize=1)
+@lru_cache(maxsize=0)  # Keep cache-management hooks without retaining fixture authority.
 def _canonical_complex_wids() -> frozenset[str]:
-    """Canonical complex WIDs used to classify enzyme read paths."""
+    """Read current canonical membership for each constructor's enzyme routes."""
     fixture = loadmat(str(_MACROMOLECULAR_COMPLEXATION_FIXTURE_PATH))
     fx = fixture["data"]["fixture"][0, 0]
     d2_complex_wids = _parse_wid_array(fx["complexWholeCellModelIDs"])
@@ -66,13 +88,12 @@ class KarrProteinModificationProcess(Process):
         "fixture_path": _DEFAULT_FIXTURE_PATH,
         "rng_seed": 0,
         "time_step": 1.0,
-        "max_stochastic_iterations": _MAX_STOCHASTIC_ITERATIONS,
     }
 
     def __init__(self, parameters: dict[str, Any] | None = None) -> None:
         super().__init__(parameters)
         self._load_fixture(self.parameters["fixture_path"])
-        self._rng = np.random.RandomState(int(self.parameters["rng_seed"]))
+        self._rng = _ProteinModificationRandomStream(int(self.parameters["rng_seed"]))
 
         row_sums = np.sum(self.reaction_modification, axis=1)
         if not np.all(row_sums == 1):
@@ -111,6 +132,8 @@ class KarrProteinModificationProcess(Process):
         self._complex_enzyme_wid_set = set(self.complex_enzyme_wids)
         all_unmodified_wids = _parse_wid_array(fx["unmodifiedMonomerWholeCellModelIDs"])
         all_modified_wids = _parse_wid_array(fx["modifiedMonomerWholeCellModelIDs"])
+        self.all_unmodified_monomer_wids = all_unmodified_wids
+        self.all_modified_monomer_wids = all_modified_wids
 
         self.reaction_stoich = np.asarray(fx["reactionStoichiometryMatrix"][0, 0], dtype=np.int64)
         self.reaction_catalysis = np.asarray(fx["reactionCatalysisMatrix"][0, 0], dtype=np.uint8)
@@ -128,6 +151,30 @@ class KarrProteinModificationProcess(Process):
         self.modified_monomer_wids = [all_modified_wids[idx] for idx in self.active_protein_indices]
         self.reaction_modification = full_reaction_modification[:, self.active_protein_indices]
 
+        # Modification precedes terminal-organelle incorporation (MATLAB 198-205).
+        monomer_compartments_kb = np.asarray(
+            fx["monomerCompartments"][0, 0], dtype=np.int64
+        ).reshape(-1)
+        self.migrated_compartment_by_wid: dict[str, str] = {
+            wid: {"tc": "c", "tm": "m"}.get(
+                COMPARTMENTS[int(monomer_compartments_kb[i]) - 1],
+                COMPARTMENTS[int(monomer_compartments_kb[i]) - 1],
+            )
+            for i, wid in enumerate(all_unmodified_wids)
+            if wid in MIGRATED_WIDS
+        }
+        self.migrated_active_wids = [
+            wid for wid in self.unmodified_monomer_wids if wid in MIGRATED_WIDS
+        ]
+        self.migrated_pass_through_wids = [
+            wid for wid in MIGRATED_WIDS if wid not in self.unmodified_monomer_wids
+        ]
+        self.pass_through_pairs = [
+            (wid, all_modified_wids[i])
+            for i, wid in enumerate(all_unmodified_wids)
+            if not np.any(full_reaction_modification[:, i])
+        ]
+
         if self.reaction_stoich.shape[1] != self.reaction_catalysis.shape[0]:
             raise ValueError("Reaction dimension mismatch between stoichiometry and catalysis")
         if self.reaction_stoich.shape[1] != self.reaction_modification.shape[0]:
@@ -138,6 +185,7 @@ class KarrProteinModificationProcess(Process):
             raise ValueError("Enzyme dimension mismatch between catalysis and WIDs")
 
     def ports_schema(self) -> dict[str, Any]:
+        authority_schema = compartment_counts_schema(MIGRATED_WIDS)
         return {
             "substrates": {
                 wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
@@ -166,11 +214,22 @@ class KarrProteinModificationProcess(Process):
                 },
                 "unmodified_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in self.unmodified_monomer_wids
+                    for wid in self.all_unmodified_monomer_wids
+                    if wid not in MIGRATED_WIDS
                 },
                 "modified_counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": True}
-                    for wid in self.modified_monomer_wids
+                    for wid in self.all_modified_monomer_wids
+                    if wid not in MIGRATED_WIDS
+                },
+                # Existing migrated WIDs' folded->mature
+                # transition (real modification chemistry for
+                # `migrated_active_wids`; unconditional pass-through for
+                # `migrated_pass_through_wids`, ProteinModification.m
+                # evolveState L332-335) routes through the authority.
+                "compartment_counts": {
+                    "folded": authority_schema["folded"],
+                    "mature": authority_schema["mature"],
                 },
             },
             "complex": {
@@ -193,8 +252,67 @@ class KarrProteinModificationProcess(Process):
             },
         }
 
-    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
-        dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
+    def _pass_through_folded_to_mature(self, protein_state: dict[str, Any]) -> dict[str, Any]:
+        """Unconditional nonreacting-protein transfer (MATLAB 332-335)."""
+        folded_state = protein_state.get("compartment_counts", {}).get("folded", {})
+        folded_deltas: dict[str, dict[str, float]] = {}
+        mature_deltas: dict[str, dict[str, float]] = {}
+        unmodified_deltas: dict[str, float] = {}
+        modified_deltas: dict[str, float] = {}
+        for wid, modified_wid in self.pass_through_pairs:
+            if wid in MIGRATED_WIDS:
+                comp = self.migrated_compartment_by_wid[wid]
+                amount = float(folded_state.get(wid, {}).get(comp, 0.0))
+                if amount > 0:
+                    folded_deltas[wid] = {comp: -amount}
+                    mature_deltas[wid] = {comp: amount}
+            else:
+                amount = float(protein_state.get("unmodified_counts", {}).get(wid, 0.0))
+                if amount > 0:
+                    unmodified_deltas[wid] = -amount
+                    modified_deltas[modified_wid] = amount
+        update: dict[str, Any] = {}
+        if folded_deltas:
+            update["compartment_counts"] = {
+                "folded": folded_deltas,
+                "mature": mature_deltas,
+            }
+        if unmodified_deltas:
+            update["unmodified_counts"] = unmodified_deltas
+            update["modified_counts"] = modified_deltas
+        return {"protein": update} if update else {}
+
+    @staticmethod
+    def _merge_compartment_counts_update(
+        base: dict[str, Any], addition: dict[str, Any]
+    ) -> dict[str, Any]:
+        """Merge two `{"protein": {"compartment_counts": {form: {wid: {comp: d}}}}}`
+
+        update dicts (disjoint WID keys by construction: `migrated_active_wids`
+        vs `migrated_pass_through_wids` never overlap).
+        """
+        if not addition:
+            return base
+        if not base:
+            return addition
+        merged = {k: dict(v) for k, v in base.get("protein", {}).items()}
+        addition_cc = addition.get("protein", {}).get("compartment_counts", {})
+        base_cc = dict(merged.get("compartment_counts", {}))
+        for form, wid_deltas in addition_cc.items():
+            base_cc[form] = {**base_cc.get(form, {}), **wid_deltas}
+        if base_cc:
+            merged["compartment_counts"] = base_cc
+        for branch in ("unmodified_counts", "modified_counts"):
+            if branch in addition.get("protein", {}):
+                merged[branch] = {
+                    **merged.get(branch, {}),
+                    **addition["protein"][branch],
+                }
+        base["protein"] = merged
+        return base
+
+    def live_inputs(self, states: dict[str, Any]) -> tuple[np.ndarray, np.ndarray]:
+        """Read folded precursors and free mature enzymes from their live stores."""
         protein_state = states.get("protein", {})
         if not isinstance(protein_state, dict):
             protein_state = {}
@@ -202,15 +320,6 @@ class KarrProteinModificationProcess(Process):
         if not isinstance(complex_state, dict):
             complex_state = {}
 
-        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
-        # Strict-zero allocator contract: do not fallback to global substrate pools.
-        substrates = np.asarray(
-            [
-                max(0.0, float(allocated_state.get(wid, 0.0)))
-                for wid in self.substrate_wids
-            ],
-            dtype=np.float64,
-        )
         monomer_count_store = protein_state.get("counts", {})
         if not isinstance(monomer_count_store, dict):
             monomer_count_store = {}
@@ -231,37 +340,59 @@ class KarrProteinModificationProcess(Process):
         unmodified_store = protein_state.get("unmodified_counts", {})
         if not isinstance(unmodified_store, dict):
             unmodified_store = {}
-        if not unmodified_store:
-            unmodified_store = self._legacy_vector_to_wid_counts(
-                states.get("unmodifiedMonomers"),
-                self.unmodified_monomer_wids,
-            )
+        # Design 9.3/M11-M12: the 2 migrated WIDs among the ~20 actively-
+        # modified proteins (MG_217, MG_317) read their unmodified input
+        # from the compartment authority's `folded` row instead of the
+        # legacy `unmodified_counts`.
+        folded_authority_state = protein_state.get("compartment_counts", {}).get("folded", {})
         unmodified = np.asarray(
             [
-                float(unmodified_store.get(wid, 0.0))
+                float(folded_authority_state.get(wid, {}).get(self.migrated_compartment_by_wid[wid], 0.0))
+                if wid in MIGRATED_WIDS
+                else float(unmodified_store.get(wid, 0.0))
                 for wid in self.unmodified_monomer_wids
             ],
             dtype=np.float64,
         )
+        return unmodified, enzymes
+
+    def calculate_request(self, states: dict[str, Any]) -> dict[str, float]:
+        """MATLAB 324-327: request chemistry, without a metabolite availability cap."""
+        unmodified, enzymes = self.live_inputs(states)
+        demand = np.minimum(
+            np.ceil(self.reaction_catalysis @ enzymes * float(self.parameters["time_step"])),
+            self.reaction_modification @ unmodified,
+        )
+        request = np.maximum(0, -self.reaction_stoich) @ demand
+        return dict(zip(self.substrate_wids, map(float, request), strict=True))
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        dt = float(timestep) if timestep > 0 else float(self.parameters["time_step"])
+        pass_through_update = self._pass_through_folded_to_mature(states.get("protein", {}))
+        unmodified, enzymes = self.live_inputs(states)
+        allocated_state = states.get("substrates_allocated", {}).get(self.name, {})
+        # Strict-zero allocator contract: never substitute the global substrate pool.
+        substrates = np.asarray(
+            [max(0.0, float(allocated_state.get(wid, 0.0))) for wid in self.substrate_wids],
+            dtype=np.float64,
+        )
         if unmodified.sum() <= 0.0:
             self._n_completed[:] = 0
-            return {}
+            return pass_through_update
 
         self._n_completed = self._estimate_partial_completion_counts(
             unmodified=unmodified,
             substrates=substrates,
         )
 
-        protein_fluxes = self._protein_fluxes_from_trace_hint(states=states, unmodified=unmodified)
-        if protein_fluxes is None:
-            protein_fluxes = self._sample_protein_fluxes(
-                unmodified=unmodified,
-                substrates=substrates,
-                enzymes=enzymes,
-                dt=dt,
-            )
+        protein_fluxes = self._sample_protein_fluxes(
+            unmodified=unmodified,
+            substrates=substrates,
+            enzymes=enzymes,
+            dt=dt,
+        )
         if not np.any(protein_fluxes > 0):
-            return {}
+            return pass_through_update
         self._n_completed[protein_fluxes > 0] = 0
 
         reaction_fluxes = self.reaction_modification @ protein_fluxes
@@ -280,12 +411,12 @@ class KarrProteinModificationProcess(Process):
         unmodified_updates = {
             wid: float(-protein_completions[i])
             for i, wid in enumerate(self.unmodified_monomer_wids)
-            if protein_completions[i] > 0
+            if protein_completions[i] > 0 and wid not in MIGRATED_WIDS
         }
         modified_updates = {
             wid: float(protein_completions[i])
             for i, wid in enumerate(self.modified_monomer_wids)
-            if protein_completions[i] > 0
+            if protein_completions[i] > 0 and wid not in MIGRATED_WIDS
         }
         if unmodified_updates or modified_updates:
             update["protein"] = {
@@ -293,35 +424,29 @@ class KarrProteinModificationProcess(Process):
                 "modified_counts": modified_updates,
             }
 
+        # Design 9.3/M11-M12: MG_217/MG_317 (the migrated WIDs among the
+        # actively-modified subset) route their folded decrement / mature
+        # increment through the authority instead of the legacy branches.
+        migrated_authority_update: dict[str, Any] = {}
+        for i, wid in enumerate(self.unmodified_monomer_wids):
+            if wid not in MIGRATED_WIDS or protein_completions[i] <= 0:
+                continue
+            comp = self.migrated_compartment_by_wid[wid]
+            migrated_authority_update = self._merge_compartment_counts_update(
+                migrated_authority_update,
+                {
+                    "protein": {
+                        "compartment_counts": {
+                            "folded": {wid: {comp: float(-protein_completions[i])}},
+                            "mature": {wid: {comp: float(protein_completions[i])}},
+                        }
+                    }
+                },
+            )
+        update = self._merge_compartment_counts_update(update, migrated_authority_update)
+        update = self._merge_compartment_counts_update(update, pass_through_update)
+
         return update
-
-    def _protein_fluxes_from_trace_hint(
-        self,
-        *,
-        states: dict[str, Any],
-        unmodified: np.ndarray,
-    ) -> np.ndarray | None:
-        """Optional replay-only hook driven by `trace_hint.unmodifiedMonomers_next`."""
-        hint_root = states.get("trace_hint", {})
-        if not isinstance(hint_root, dict):
-            return None
-        hinted_next = hint_root.get("unmodifiedMonomers_next", {})
-        if not isinstance(hinted_next, dict) or not hinted_next:
-            return None
-
-        hinted = np.asarray(
-            [float(hinted_next.get(wid, np.nan)) for wid in self.unmodified_monomer_wids],
-            dtype=np.float64,
-        )
-        if np.any(~np.isfinite(hinted)):
-            return None
-
-        current = np.rint(np.clip(unmodified, a_min=0.0, a_max=None)).astype(np.int64)
-        next_counts = np.rint(np.clip(hinted, a_min=0.0, a_max=None)).astype(np.int64)
-        protein_fluxes = current - next_counts
-        if np.any(protein_fluxes < 0):
-            return None
-        return protein_fluxes.astype(np.int64, copy=False)
 
     def _estimate_partial_completion_counts(
         self,
@@ -396,8 +521,7 @@ class KarrProteinModificationProcess(Process):
         )
         is_reaction_inactive = (~np.isfinite(is_reaction_inactive)) | (is_reaction_inactive <= 0.0)
 
-        max_iters = int(self.parameters["max_stochastic_iterations"])
-        for _ in range(max_iters):
+        while True:
             positive_requirements = np.maximum(0.0, species_reactant_byproduct)
             enzyme_limits = self._limit_over_requirements(
                 species=species,
@@ -482,13 +606,13 @@ class KarrProteinModificationProcess(Process):
     def _weighted_index_sample(self, weights: np.ndarray, total_weight: float) -> int:
         if total_weight <= 0.0:
             return 0
-        # MATLAB's `randsample` is implemented in the stats toolbox and advances
-        # the stream with extra internal draws versus a one-liner CDF sample.
-        for _ in range(_RANDSAMPLE_STREAM_BURN):
-            self._rng.random()
-        threshold = float(self._rng.random()) * float(total_weight)
-        cumulative = np.cumsum(weights, dtype=np.float64)
-        return int(np.searchsorted(cumulative, threshold, side="right"))
+        # randsample's weighted-replacement branch uses normalized histogram edges.
+        edges = np.minimum(
+            np.concatenate(([0.0], np.cumsum(weights / total_weight, dtype=np.float64))),
+            1.0,
+        )
+        edges[-1] = 1.0
+        return int(np.searchsorted(edges, float(self._rng.random()), side="right") - 1)
 
     def _stochastic_round_vector(self, values: np.ndarray) -> np.ndarray:
         vals = np.asarray(values, dtype=np.float64)
@@ -531,20 +655,59 @@ class KarrProteinModificationProcess(Process):
         per_rxn_enzyme_counts = self.reaction_catalysis @ catalytic_enzymes
         return per_rxn_enzyme_counts * self.enzyme_bounds[:, 1] * float(dt)
 
-    @staticmethod
-    def _legacy_vector_to_wid_counts(
-        values: Any,
-        wids: list[str],
-    ) -> dict[str, float]:
-        if values is None:
-            return {}
-        try:
-            flat = np.asarray(values, dtype=np.float64).reshape(-1)
-        except (TypeError, ValueError):
-            return {}
-        if flat.size != len(wids):
-            return {}
-        return {wid: float(flat[idx]) for idx, wid in enumerate(wids)}
+PM_PHASE_STORE_KEY = "_internal_protein_modification_phase"
 
 
-__all__ = ["KarrProteinModificationProcess"]
+class KarrProteinModificationRequestProcess(KarrProteinModificationProcess):
+    """Arm one post-allocation evolution; the shared calculator owns requests."""
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = super().ports_schema()
+        schema["phase"] = {
+            "request_ready": {"_default": False, "_updater": "set", "_emit": False},
+        }
+        return schema
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        if states.get("phase", {}).get("request_ready") is True:
+            update = super().next_update(timestep, states)
+            update["phase"] = {"request_ready": False}
+            return update
+        return {"phase": {"request_ready": True}}
+
+
+class KarrProteinModificationEvolutionStep(Step):
+    """Consume the same-tick grant through the owner's public next_update."""
+
+    name = "karr_protein_modification_evolution"
+    defaults: dict[str, Any] = {"modification_process": None}
+
+    def __init__(self, parameters: dict[str, Any] | None = None) -> None:
+        super().__init__(parameters)
+        process = self.parameters["modification_process"]
+        if not isinstance(process, KarrProteinModificationRequestProcess):
+            raise ValueError("modification_process must be a request-phase PM process")
+        self._modification_process = process
+
+    def ports_schema(self) -> dict[str, Any]:
+        schema = self._modification_process.ports_schema()
+        return {
+            port: schema[port]
+            for port in ("substrates", "protein", "complex", "substrates_allocated", "phase")
+        }
+
+    def next_update(self, timestep: float, states: dict[str, Any]) -> dict[str, Any]:
+        del timestep
+        if states.get("phase", {}).get("request_ready") is not True:
+            return {}
+        return self._modification_process.next_update(
+            float(self._modification_process.parameters["time_step"]), states
+        )
+
+
+__all__ = [
+    "PM_PHASE_STORE_KEY",
+    "KarrProteinModificationProcess",
+    "KarrProteinModificationRequestProcess",
+    "KarrProteinModificationEvolutionStep",
+]

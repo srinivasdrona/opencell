@@ -1,0 +1,42 @@
+{
+  "time": "2026-10-19T11:51:18.853804+00:00",
+  "pid": 386,
+  "executable": "/mnt/e/opencell/.venv-wsl/bin/python",
+  "prefix": "/mnt/e/opencell/.venv-wsl",
+  "imports": {
+    "opencell": "/mnt/e/opencell-worktrees/m1-pt-20261017/opencell/__init__.py",
+    "_l2_2_design_a_runner_helpers": "/mnt/e/opencell-worktrees/m1-pt-20261017/tests/vivarium/_l2_2_design_a_runner_helpers.py",
+    "l2_2_design_a_runner": "/mnt/e/opencell-worktrees/m1-pt-20261017/tests/vivarium/l2_2_design_a_runner.py",
+    "opencell.vivarium.karr_protein_translocation": "/mnt/e/opencell-worktrees/m1-pt-20261017/opencell/vivarium/karr_protein_translocation.py",
+    "opencell.vivarium.protein_state": "/mnt/e/opencell-worktrees/m1-pt-20261017/opencell/vivarium/protein_state.py",
+    "scripts.l22_evidence.generator": "/mnt/e/opencell-worktrees/m1-pt-20261017/scripts/l22_evidence/generator.py",
+    "scripts.l22_evidence.schema": "/mnt/e/opencell-worktrees/m1-pt-20261017/scripts/l22_evidence/schema.py",
+    "scripts.l22_evidence.verdict": "/mnt/e/opencell-worktrees/m1-pt-20261017/scripts/l22_evidence/verdict.py"
+  },
+  "native_git": {
+    "time": "2026-10-19T17:15:51.8204202+05:30",
+    "native_powershell_pid": 5392,
+    "head": "65df71c26553f42dd95759b948de42647987bf68",
+    "branch": "exec/m1-pt-20261017",
+    "status": [],
+    "ignored_status": "\"artifacts\\\\m1_cohort\\\\m1_pt\\\\independent_acceptance\\\\STATUS.md\"",
+    "cwd": "E:\\opencell-worktrees\\m1-pt-20261017",
+    "command": "git rev-parse HEAD; git branch --show-current; git status --porcelain=v1; git check-ignore <review STATUS>; git ls-files"
+  },
+  "catalog": {
+    "name": "ProteinTranslocation",
+    "bucket": "ALGORITHMIC_SHALLOW",
+    "harness_type": "design_a_per_tick",
+    "m_ticks": 100,
+    "n_seeds": 50,
+    "primary_channel": "monomers",
+    "closed_form_dominant": "confirmed_biology_validated",
+    "event_channels": [],
+    "output_channels": [
+      "substrates",
+      "monomers"
+    ],
+    "primary_distance": "per_tick_vector_w1_mean",
+    "oc_module": "opencell/vivarium/karr_protein_translocation.py"
+  }
+}

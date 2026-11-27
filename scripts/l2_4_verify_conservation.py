@@ -206,33 +206,69 @@ class ConservationCollector:
     def __init__(self, *, composite: Any, seed: int):
         self._composite = composite
         self._current_tick = {"tick": 0}
+        self._call_depth = 0
         self.per_tick_process_sums: dict[str, float] = defaultdict(float)
         self.per_tick_process_wid_deltas: dict[str, dict[str, float]] = defaultdict(
             lambda: defaultdict(float)
         )
+        self.per_tick_allocations_at_use: dict[str, dict[str, float]] = {}
         self._entities: dict[str, Any] = {}
         self._entities.update(getattr(composite, "processes", {}))
         self._entities.update(getattr(composite, "steps", {}))
         self._seed_entities(seed=seed)
+        self._seed_shared_chromosome_rand_stream(seed=seed)
         self._patch_entities()
 
     def set_tick(self, tick: int) -> None:
         self._current_tick["tick"] = int(tick)
         self.per_tick_process_sums.clear()
         self.per_tick_process_wid_deltas.clear()
+        self.per_tick_allocations_at_use.clear()
+
+    def _seed_shared_chromosome_rand_stream(self, *, seed: int) -> None:
+        """Set/reset the shared chromosome state RNG leaf
+        (``chromosome._shared_rand_stream_state``, dec-007/DC-2) to the
+        requested run seed, in place, on the composite's own
+        ``initial_state`` dict. Ordinary entity RNG seeding (above) is
+        unaffected -- this only touches the one state-owned chromosome
+        leaf so a requested run seed propagates to TxReg's sole-consumer
+        draw sequence (Stage B) exactly like every other entity's seed."""
+        from opencell.state.chromosome_store import CHROMOSOME_RAND_STREAM_KEY
+        from opencell.util.chromosome_state_rand import ChromosomeStateRandStream
+
+        initial_state = getattr(self._composite, "initial_state", None)
+        if not isinstance(initial_state, dict):
+            return
+        chrom_state = initial_state.get("chromosome")
+        if not isinstance(chrom_state, dict):
+            return
+        stream_state = ChromosomeStateRandStream(int(seed)).get_state()
+        chrom_state[CHROMOSOME_RAND_STREAM_KEY] = np.array(
+            [stream_state["seed"], stream_state["mcg_state"]], dtype=np.int64
+        )
 
     def _seed_entities(self, *, seed: int) -> None:
+        from opencell.util.matlab_rng import MatlabRandStream
+        from opencell.vivarium.karr_protein_processing_ii import (
+            KarrProteinProcessingIIEvolutionStep,
+        )
+
         names = sorted(self._entities.keys())
         children = np.random.SeedSequence(int(seed)).spawn(len(names))
         for idx, name in enumerate(names):
             entity = self._entities[name]
+            if isinstance(entity, KarrProteinProcessingIIEvolutionStep):
+                entity = entity.processing_process
             child = children[idx]
             entity_seed = int(child.generate_state(1, dtype=np.uint32)[0])
             params = getattr(entity, "parameters", None)
             if isinstance(params, dict) and "rng_seed" in params:
                 params["rng_seed"] = entity_seed
             if hasattr(entity, "_rng"):
-                entity._rng = np.random.default_rng(entity_seed)
+                if isinstance(entity._rng, MatlabRandStream):
+                    entity._rng = MatlabRandStream(entity_seed)
+                else:
+                    entity._rng = np.random.default_rng(entity_seed)
 
     def _patch_entities(self) -> None:
         for entity_name, entity_obj in self._entities.items():
@@ -253,6 +289,11 @@ class ConservationCollector:
             except Exception:
                 port_updaters = {}
             original_next_update = entity_obj.next_update
+            is_step = (
+                entity_name in getattr(self._composite, "steps", {})
+                or getattr(entity_obj, "is_step", lambda: False)()
+            )
+            owner = getattr(entity_obj, "allocation_owner", entity_name.removesuffix("_evolution"))
 
             def wrapped_next_update(
                 timestep: float,
@@ -262,8 +303,21 @@ class ConservationCollector:
                 _original: Any = original_next_update,
                 _shared_ports: dict[str, tuple[str, ...]] = shared_ports,
                 _port_updaters: dict[str, dict[str, str]] = port_updaters,
+                _is_step: bool = is_step,
+                _owner: str = owner,
             ) -> dict[str, Any]:
-                update = _original(timestep, states)
+                outermost = self._call_depth == 0
+                if outermost and _is_step:
+                    allocations = states.get("substrates_allocated", {})
+                    if isinstance(allocations, dict) and _owner in allocations:
+                        self.per_tick_allocations_at_use[_owner] = dict(allocations[_owner])
+                self._call_depth += 1
+                try:
+                    update = _original(timestep, states)
+                finally:
+                    self._call_depth -= 1
+                if not outermost:
+                    return update
                 if update is None:
                     update = {}
                 if not (isinstance(update, dict) and _shared_ports):
@@ -297,7 +351,13 @@ class ConservationCollector:
                             continue
                         if store_path and store_path[0] == "substrates":
                             self.per_tick_process_sums[wid_str] += float(delta)
-                            self.per_tick_process_wid_deltas[_entity_name][wid_str] += float(delta)
+                            self.per_tick_process_wid_deltas[_owner][wid_str] += float(delta)
+                            if _is_step and delta < 0:
+                                # A missing owner/leaf is a zero grant, not an
+                                # excuse to omit a consumer from Part B.
+                                self.per_tick_allocations_at_use.setdefault(_owner, {}).setdefault(
+                                    wid_str, 0.0
+                                )
                 return update
 
             entity_obj.next_update = wrapped_next_update
@@ -620,8 +680,7 @@ def run_seed_horizon(
     for tick in range(1, ticks + 1):
         collector.set_tick(tick)
         before = _snapshot_substrates(engine)
-        # Allocation of record for THIS tick is the value present BEFORE the
-        # update — processes read substrates_allocated during their next_update.
+        # Ordinary Processes consume the allocation present BEFORE the update.
         # Snapshotting it AFTER engine.update() captures the allocator's freshly
         # computed allocation for the NEXT tick (off-by-one) and spuriously
         # reports over_allocation once the pool depletes.
@@ -631,6 +690,9 @@ def run_seed_horizon(
         except Exception as exc:
             raise SeedStabilityError(seed=seed, tick=tick, exc=exc) from exc
         after = _snapshot_substrates(engine)
+        # Ordinary Processes use the pre-update snapshot; evolution Steps read
+        # freshly allocated grants, captured at their actual invocation.
+        substrates_allocated.update(collector.per_tick_allocations_at_use)
         per_process_wid_deltas = {
             process_name: dict(wid_deltas)
             for process_name, wid_deltas in collector.per_tick_process_wid_deltas.items()

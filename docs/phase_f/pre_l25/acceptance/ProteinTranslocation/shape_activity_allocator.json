@@ -1,0 +1,182 @@
+{
+  "activity": {
+    "monomers": {
+      "shape": [
+        50,
+        100,
+        2892
+      ],
+      "active_seed_ticks": 759,
+      "nonzero_delta_coordinates": 1726,
+      "active_ticks_per_seed": [
+        13,
+        18,
+        15,
+        15,
+        12,
+        13,
+        17,
+        16,
+        14,
+        12,
+        16,
+        10,
+        15,
+        13,
+        21,
+        14,
+        23,
+        14,
+        12,
+        21,
+        16,
+        19,
+        20,
+        19,
+        14,
+        17,
+        13,
+        10,
+        14,
+        10,
+        14,
+        21,
+        15,
+        14,
+        19,
+        10,
+        15,
+        16,
+        13,
+        22,
+        18,
+        16,
+        15,
+        11,
+        15,
+        11,
+        17,
+        13,
+        12,
+        16
+      ],
+      "after_nonzero": 7680
+    },
+    "substrates": {
+      "shape": [
+        50,
+        100,
+        7
+      ],
+      "active_seed_ticks": 759,
+      "nonzero_delta_coordinates": 4197,
+      "active_ticks_per_seed": [
+        13,
+        18,
+        15,
+        15,
+        12,
+        13,
+        17,
+        16,
+        14,
+        12,
+        16,
+        10,
+        15,
+        13,
+        21,
+        14,
+        23,
+        14,
+        12,
+        21,
+        16,
+        19,
+        20,
+        19,
+        14,
+        17,
+        13,
+        10,
+        14,
+        10,
+        14,
+        21,
+        15,
+        14,
+        19,
+        10,
+        15,
+        16,
+        13,
+        22,
+        18,
+        16,
+        15,
+        11,
+        15,
+        11,
+        17,
+        13,
+        12,
+        16
+      ],
+      "after_nonzero": 4207
+    }
+  },
+  "allocator_records_verified": 5000,
+  "all_seed_ticks_present": true,
+  "raw_monomer_shapes": {
+    "states_before/boundEnzymes": [
+      [
+        1,
+        4
+      ]
+    ],
+    "states_before/enzymes": [
+      [
+        1,
+        4
+      ]
+    ],
+    "states_before/monomers": [
+      [
+        6,
+        482
+      ]
+    ],
+    "states_before/substrates": [
+      [
+        1,
+        7
+      ]
+    ],
+    "states_after/boundEnzymes": [
+      [
+        1,
+        4
+      ]
+    ],
+    "states_after/enzymes": [
+      [
+        1,
+        4
+      ]
+    ],
+    "states_after/monomers": [
+      [
+        6,
+        482
+      ]
+    ],
+    "states_after/substrates": [
+      [
+        1,
+        7
+      ]
+    ]
+  },
+  "adapter_raw_full_array_equalities": "every seed, both groups, every available family",
+  "arrays_are": "Karr only; not retained original OC outputs nor fresh full biological rerun"
+}

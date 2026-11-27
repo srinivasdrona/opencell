@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorD2.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "87-87"
+        lines: "105-107"
         note: "Writes zero requests for karr_macromolecular_complexation."
         symbol: "RequestCalculatorD2.next_update"
       supporting:

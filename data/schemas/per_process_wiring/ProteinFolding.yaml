@@ -24,7 +24,7 @@ integration_touchpoints:
       symbol: "RequestCalculatorProteinPathway.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "468-468"
+        lines: "537-613"
         note: "Shared protein-pathway request helper; ProteinFolding request logic lives inside the shared calculator."
         symbol: "RequestCalculatorProteinPathway.next_update"
       supporting:
@@ -48,20 +48,20 @@ integration_touchpoints:
       symbol: "KarrProteinFoldingProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_folding.py"
-        lines: "237-237"
+        lines: "268-381"
         note: "Main per-tick update path."
         symbol: "KarrProteinFoldingProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_protein_folding.py"
-          lines: "320-391"
+          lines: "383-430"
           note: "Enzyme-pool reconstruction and clipping."
           symbol: KarrProteinFoldingProcess._read_enzyme_pool
         - path: "opencell/vivarium/karr_protein_folding.py"
-          lines: "392-426"
+          lines: "455-488"
           note: "Ion-binding phase."
           symbol: KarrProteinFoldingProcess._phase1_ion_binding
         - path: "opencell/vivarium/karr_protein_folding.py"
-          lines: "427-479"
+          lines: "490-540"
           note: "Chaperone-mediated folding phase."
           symbol: KarrProteinFoldingProcess._phase2_chaperone_folding
       note: "Current OC port keeps the same high-level two-phase flow and stochastic chaperone selection."
@@ -80,7 +80,7 @@ integration_touchpoints:
       symbol: "KarrProteinFoldingProcess"
       source:
         path: "opencell/vivarium/karr_protein_folding.py"
-        lines: "98-477"
+        lines: "100-540"
         note: "Current port has no calcFluxBounds routine. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrProteinFoldingProcess"
       note: "There is no ProteinFolding-specific flux-bounds implementation in OC. OC does not implement this Karr method."
@@ -128,7 +128,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "427-479"
+      lines: "490-540"
       note: "Phase-2 chaperone folding applies ATP feasibility via atp_remaining < 0 and decrements ATP by min(atp_remaining, 4) per accepted chaperone-dependent fold."
       symbol: KarrProteinFoldingProcess._phase2_chaperone_folding
     note: "MATLAB decrements prosthetic-group substrates; OC decrements ATP in phase 2. See known_deviations."
@@ -143,7 +143,7 @@ consume_stoichiometry:
       symbol: Karr Process - ProteinFolding
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "392-426"
+      lines: "455-488"
       note: "Ion-binding phase consumes required prosthetic-group ions."
       symbol: KarrProteinFoldingProcess._phase1_ion_binding
     kind: per_reaction
@@ -157,7 +157,7 @@ consume_stoichiometry:
       symbol: Karr Process - ProteinFolding
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "392-426"
+      lines: "455-488"
       note: "Ion-binding phase consumes required prosthetic-group ions."
       symbol: KarrProteinFoldingProcess._phase1_ion_binding
     kind: per_reaction
@@ -171,7 +171,7 @@ consume_stoichiometry:
       symbol: ProteinFolding
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "392-426"
+      lines: "455-488"
       note: "Ion-binding phase decrements required prosthetic-group ions from the configured matrix."
       symbol: KarrProteinFoldingProcess._phase1_ion_binding
     kind: per_reaction
@@ -185,7 +185,7 @@ consume_stoichiometry:
       symbol: ProteinFolding
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "392-426"
+      lines: "455-488"
       note: "Ion-binding phase decrements required prosthetic-group ions from the configured matrix."
       symbol: KarrProteinFoldingProcess._phase1_ion_binding
     kind: per_reaction
@@ -199,7 +199,7 @@ consume_stoichiometry:
       symbol: Karr Process - ProteinFolding
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "392-426"
+      lines: "455-488"
       note: "Ion-binding phase consumes required prosthetic-group ions."
       symbol: KarrProteinFoldingProcess._phase1_ion_binding
     kind: per_reaction
@@ -213,7 +213,7 @@ consume_stoichiometry:
       symbol: Karr Process - ProteinFolding
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "392-426"
+      lines: "455-488"
       note: "Ion-binding phase consumes required prosthetic-group ions."
       symbol: KarrProteinFoldingProcess._phase1_ion_binding
     kind: per_reaction
@@ -259,7 +259,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_protein_folding.py"
-        lines: "237-318"
+        lines: "268-381"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrProteinFoldingProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -300,27 +300,27 @@ source_anchors:
   oc_blocks:
     process_class_and_fixture_load:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "98-183"
+      lines: "100-540"
       note: "Class definition, fixture loading, and state-shape setup."
       symbol: KarrProteinFoldingProcess
     ports_schema:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "184-236"
+      lines: "201-266"
       note: "OC port surface for substrates, enzymes, folded/unfolded monomers, protein, and substrates_allocated."
       symbol: KarrProteinFoldingProcess.ports_schema
     next_update:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "237-318"
+      lines: "268-381"
       note: "Main per-tick update path."
       symbol: KarrProteinFoldingProcess.next_update
     ion_binding_helper:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "392-426"
+      lines: "455-488"
       note: "Phase-1 ion/prosthetic-group binding."
       symbol: KarrProteinFoldingProcess._phase1_ion_binding
     chaperone_folding_helper:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "427-479"
+      lines: "490-540"
       note: "Phase-2 stochastic chaperone folding."
       symbol: KarrProteinFoldingProcess._phase2_chaperone_folding
     request_calculator_protein_pathway:
@@ -358,7 +358,7 @@ deviations:
       symbol: Karr Process - ProteinFolding
     oc_anchor:
       path: "opencell/vivarium/karr_protein_folding.py"
-      lines: "98-479"
+      lines: "100-540"
       note: "Current OC port has no calcFluxBounds routine."
       symbol: KarrProteinFoldingProcess
   shared_pool_projection_merges_compartments: false

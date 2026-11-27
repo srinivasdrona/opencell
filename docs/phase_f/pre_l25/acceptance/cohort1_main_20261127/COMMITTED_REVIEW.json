@@ -1,0 +1,601 @@
+{
+  "actual_SHA_receipt_commit": "0c0dd11e5c452a2c627f01489f0d78342a788b55",
+  "authority_hashes": {
+    "DELIVERY.json": "bb0f39585adefb93b5c60f71b00fd220a9e7d83845ce765e03d227160a0e3e59",
+    "LANDING_PROOF.json": "8bd7d43558530e1ae79e3d2819b9fc6ad4940ffb56bc1562ebe75232564d1e6c"
+  },
+  "candidate_honesty": {
+    "all_eligible": false,
+    "blocked_count": 19,
+    "blockers": [
+      "ChromosomeCondensation: L2.2 verdict is MISSING_EVIDENCE",
+      "ChromosomeCondensation/CC-NONKARR-PATHS: The module retains aggregate compatibility state, a non-literal fallback, and a trace-hint outcome override outside the literal chromosome-binding path.",
+      "ChromosomeCondensation/CC-INITIALIZATION: Karr initializes with twenty stochastic warm-up calls under infinite ATP/H2O; OpenCell seeds fixture/trace-derived state instead.",
+      "Cytokinesis: L2.2 verdict is FAIL",
+      "Cytokinesis/CYT-DEVIATIONS: Request formulas, lifecycle resource behavior, and the retained zero-GTP compatibility surface differ from MATLAB.",
+      "DNADamage: L2.2 verdict is FAIL",
+      "DNADamage/DNA-DMG-DEVIATIONS: Small-molecule stoichiometry, rate semantics, and allocator/writeback behavior retain unresolved MATLAB-to-OpenCell differences.",
+      "DNARepair: L2.2 verdict is FAIL",
+      "DNARepair/DNA-REP-DEVIATIONS: Consumed/produced species, random subfunction ordering, and allocator mediation remain non-equivalent to MATLAB.",
+      "DNASupercoiling: L2.2 verdict is FAIL",
+      "DNASupercoiling/DNA-SUP-DEVIATIONS: The request formula differs and request-allocation-evolve ordering is not represented equivalently.",
+      "DNASupercoiling/DNA-SUP-UPDATER-CONFLICT: DNASupercoiling declares shared enzyme leaves with set semantics while ChromosomeSegregation declares the same leaves accumulate, producing an order-sensitive Vivarium schema conflict.",
+      "FtsZPolymerization: L2.2 verdict is FAIL",
+      "FtsZPolymerization/FTSZ-DEVIATIONS: Non-GTP species bypass allocation and the exact MATLAB request semantics remain unavailable for direct re-adjudication.",
+      "MacromolecularComplexation: L2.2 verdict is FAIL",
+      "MacromolecularComplexation/MCX-DEVIATIONS: The cluster-1 fallback guard is behaviorally different and complete substrate coverage is not yet established.",
+      "Metabolism: L2.2 verdict is FAIL",
+      "Metabolism/MET-CODE-DEVIATIONS: Request/allocation integration, execution order, LP-bound input source, and compartment projection remain behaviorally different.",
+      "Metabolism/MET-EVIDENCE-CONFIG: L2.2 uses dynamic bounds, Karr writeback, and GLPK, while the v6 chassis enables allocator budgeting but retains the default solver and writeback behavior.",
+      "ProteinDecay: L2.2 verdict is FAIL",
+      "ProteinDecay/PDEC-DEVIATIONS: Substrate stoichiometry and process formulas retain unresolved differences, with additional required claims missing.",
+      "ProteinFolding: L2.2 verdict is FAIL",
+      "ProteinFolding/PFOLD-DEVIATIONS: The recorded prosthetic-group versus ATP consumption difference is unresolved and direct source completeness remains unverified.",
+      "ProteinProcessingI: L2.2 verdict is FAIL",
+      "ProteinProcessingI/PPI-DEVIATIONS: Formula and writeback behavior retain two unresolved deviations.",
+      "RNADecay: L2.2 verdict is FAIL",
+      "RNADecay/RDECAY-DEVIATIONS: One implementation deviation remains open and two required semantic claims are missing.",
+      "Replication: L2.2 verdict is FAIL",
+      "Replication/REPL-DEVIATIONS: Two implementation deviations, four missing claims, and five wrong row claims remain unresolved.",
+      "ReplicationInitiation: L2.2 verdict is FAIL",
+      "ReplicationInitiation/REPLINIT-DEVIATIONS: Two implementation deviations remain, with one missing and two wrong row claims.",
+      "RibosomeAssembly: L2.2 verdict is FAIL",
+      "RibosomeAssembly/RIBO-DEVIATIONS: Two implementation deviations and one missing semantic claim remain.",
+      "Transcription: L2.2 verdict is FAIL",
+      "Transcription/TX-DEVIATIONS: Four implementation deviations remain open and two row claims are wrong.",
+      "TranscriptionalRegulation: L2.2 verdict is MISSING_EVIDENCE",
+      "TranscriptionalRegulation/TXREG-PRODUCTION-TOPOLOGY: Production now wires the chromosome port (Stage A+B, dec-007): TxReg reads/writes the state-owned, serialized `_shared_rand_stream_state` RNG leaf via `ChromosomeStore`. It still omits authoritative chromosome footprint/bound-state writeback -- TF-binding commits remain in TxReg's private `tf_bound_promoters`/`bound_tfs` surface rather than the shared `monomerBoundSites`/`complexBoundSites` store, and enzyme/ bound-enzyme deltas are not written back to the shared chromosome occupancy arrays (deferred to Stage C).",
+      "TranscriptionalRegulation/TXREG-SHARED-CHROMOSOME-WRITEBACK: Karr writes bound TF footprints into shared chromosome occupancy; OpenCell updates only process-local promoter occupancy.",
+      "TranscriptionalRegulation/TXREG-RNG-PROVENANCE: Autonomous OpenCell now draws from a single, state-owned, serialized `ChromosomeStateRandStream` reconstructed from the chromosome leaf every tick (Stage A+B, dec-007, sole TxReg consumer), preserving the prior draw sequence bit-for-bit under the dec-006 L2.1 replay. It does not yet reproduce Karr's multi-consumer inter-process shared-stream interleaving with other chromosome-binding processes (DNADamage, DNASupercoiling, Replication, ChromosomeCondensation), which requires the Stage E sequential commit owner (DC-9).",
+      "TranscriptionalRegulation/TXREG-COPY-REDUCTION: Karr produces a fold-change value for both chromosome copies; OpenCell sends only the primary-copy column to Transcription.",
+      "TranscriptionalRegulation/TXREG-INITIALIZATION: Karr pre-binds transcription factors during initializeState; OpenCell starts unbound and first binds during tick one.",
+      "Translation: L2.2 verdict is FAIL",
+      "Translation/TL-DEVIATIONS: Five implementation deviations remain open and four wiring-row claims are wrong.",
+      "tRNAAminoacylation: L2.2 verdict is FAIL",
+      "tRNAAminoacylation/TRNA-DEVIATIONS: Two implementation deviations and three missing semantic claims remain."
+    ],
+    "eligible_count": 9,
+    "integrity_ok": true,
+    "problems": [],
+    "process_count": 28,
+    "source_digest": "a479e3386f209d6aa0d7b20aa71684208df0fb1f49b8b3eb4625e328e0984e3a",
+    "source_file_count": 140
+  },
+  "clean_head": "0c0dd11e5c452a2c627f01489f0d78342a788b55",
+  "commands": [
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "docs/phase_f/l2_2_design_a/evidence_index.json",
+        "--evidence-root",
+        "docs/phase_f/l2_2_design_a/evidence_bundle"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-23T17:52:16.933071+00:00",
+      "label": "full_portable_audit",
+      "log": "artifacts/cohort1/final_source_freeze/committed_independent_acceptance/full_portable_audit.log",
+      "log_sha256": "bbed5ea52c48a4d9031ded8afe6d6c01c02a42e6e9cf35c8a4b697c7c0a22908",
+      "started_utc": "2026-11-23T17:51:51.944326+00:00"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/l22_evidence/generator.py",
+        "audit",
+        "--index",
+        "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_index.json",
+        "--evidence-root",
+        "docs/phase_f/l2_2_design_a/evidence_bundle",
+        "--verify-input-files"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-23T17:52:52.377408+00:00",
+      "label": "full_strict_audit",
+      "log": "artifacts/cohort1/final_source_freeze/committed_independent_acceptance/full_strict_audit.log",
+      "log_sha256": "36b2aa439a2e2a3341ac039e3fc6782f49bcdaa2b90a97e31584526b934d46f2",
+      "started_utc": "2026-11-23T17:52:16.944267+00:00"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/pre_l25_honesty.py",
+        "audit"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-23T17:52:53.893477+00:00",
+      "label": "honesty_audit",
+      "log": "artifacts/cohort1/final_source_freeze/committed_independent_acceptance/honesty_audit.log",
+      "log_sha256": "640fb89c78ec2ef642e5ac0f8fa93490cdc8c015120b53e4ccabee10efdcf96c",
+      "started_utc": "2026-11-23T17:52:52.394758+00:00"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "-m",
+        "pytest",
+        "tests/scripts/test_pre_l25_honesty.py",
+        "--capture=sys",
+        "-q",
+        "-rs",
+        "-rx",
+        "--tb=short",
+        "-o",
+        "junit_family=legacy",
+        "--basetemp=artifacts/cohort1/final_source_freeze/committed_independent_acceptance/pytest_scratch/original_full_honesty",
+        "--junitxml=artifacts/cohort1/final_source_freeze/committed_independent_acceptance/original_full_honesty.xml"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 1,
+      "finished_utc": "2026-11-23T17:53:07.474705+00:00",
+      "label": "original_full_honesty",
+      "log": "artifacts/cohort1/final_source_freeze/committed_independent_acceptance/original_full_honesty.log",
+      "log_sha256": "ab7f2d6cf0d022ea1858f17dab0d5ac7b7bf333a0448688744ca143972e967e6",
+      "started_utc": "2026-11-23T17:52:53.916517+00:00"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "-m",
+        "pytest",
+        "tests/scripts/test_pre_l25_honesty.py",
+        "tests/scripts/test_l22_evidence_portability.py",
+        "tests/scripts/test_l22_evidence_generator.py::test_catalog_scope_matches_expected_24_names",
+        "tests/scripts/test_l22_evidence_generator.py::test_index_has_exactly_one_row_per_in_scope_process_no_extras",
+        "tests/scripts/test_l22_evidence_generator.py::test_content_hash_is_deterministic_across_regenerations",
+        "tests/scripts/test_l22_evidence_generator.py::test_content_hash_changes_when_evidence_root_differs",
+        "tests/scripts/test_l22_evidence_generator.py::test_audit_reports_failure_when_index_file_absent",
+        "--capture=sys",
+        "-q",
+        "-rs",
+        "-rx",
+        "--tb=short",
+        "-o",
+        "junit_family=legacy",
+        "--basetemp=artifacts/cohort1/final_source_freeze/committed_independent_acceptance/pytest_scratch/complete_publication_honesty",
+        "--junitxml=artifacts/cohort1/final_source_freeze/committed_independent_acceptance/complete_publication_honesty.xml"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-23T17:55:52.426116+00:00",
+      "label": "complete_publication_honesty",
+      "log": "artifacts/cohort1/final_source_freeze/committed_independent_acceptance/complete_publication_honesty.log",
+      "log_sha256": "1ac740ac597619661255b29a6a7d0a49af88a26dd47561398c7ca9c51cf5c623",
+      "started_utc": "2026-11-23T17:54:04.179085+00:00"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "scripts/pre_l25_honesty.py",
+        "audit"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-23T17:55:53.997384+00:00",
+      "label": "honesty_audit_after",
+      "log": "artifacts/cohort1/final_source_freeze/committed_independent_acceptance/honesty_audit_after.log",
+      "log_sha256": "640fb89c78ec2ef642e5ac0f8fa93490cdc8c015120b53e4ccabee10efdcf96c",
+      "started_utc": "2026-11-23T17:55:52.455730+00:00"
+    },
+    {
+      "argv": [
+        "/mnt/e/opencell/.venv-wsl/bin/python",
+        "-m",
+        "ruff",
+        "check",
+        "tests/scripts/test_pre_l25_honesty.py"
+      ],
+      "cwd": "/mnt/e/opencell-worktrees/m1-accepted-20261019",
+      "exit": 0,
+      "finished_utc": "2026-11-23T17:55:54.300681+00:00",
+      "label": "targeted_ruff",
+      "log": "artifacts/cohort1/final_source_freeze/committed_independent_acceptance/targeted_ruff.log",
+      "log_sha256": "82b3e6a6c090a57601d22943bd23fca9218d1031dbe5a7b754092f9a156b4f18",
+      "started_utc": "2026-11-23T17:55:54.013802+00:00"
+    }
+  ],
+  "full_index": {
+    "aggregate": "NON_GREEN",
+    "mode_scope": "Portable and strict generated full indices preserve their genuine unrelated staleness-reason differences; target five PASS in both. Original canonical-index-as-strict RED remains preserved in landing validation.",
+    "portable": "INTEGRITY_OK",
+    "strict_index": "docs/phase_f/pre_l25/acceptance/cohort1_final_10393/validation/full_strict_index.json",
+    "strict_mode": "INTEGRITY_OK",
+    "tally": {
+      "FAIL": 17,
+      "MISSING_EVIDENCE": 2,
+      "PASS": 5
+    }
+  },
+  "landing_commit": "a480d90b4386d62f4d20d7c8b2489292b05e302a",
+  "landing_receipt_head": "c38afc203f34fa71f31c889ac3b4395e75e4426f",
+  "measured_generation_head": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+  "model": "unknown",
+  "own_helper_RED_receipts": {
+    "commit_attempt1.txt": "Ignored STATUS was not a tracked path; no commit/hook occurred; corrected exact tracked selector set without force-add",
+    "review_before_attempt1.log": "Read-only Windows-manifest separator handling corrected in own helper only"
+  },
+  "preservation": {
+    "bound_source": 135,
+    "committed_current_independent_packet_files": 40,
+    "header": "Existing ignored local STATUS superseded; historical suffix byte-exact, not force-added",
+    "historical_packet_Git_blobs_verified": 40,
+    "journal_entry_prefixes": "2 BYTE_EXACT;2 truthful append events each; no identity/content collision",
+    "original_campaign_files": 45,
+    "original_review_histories": "UNCHANGED",
+    "raw_inputs": 250,
+    "unrelated_bundle_files": 166
+  },
+  "processes": {
+    "ProteinModification": {
+      "committed_copy": "ACCEPT",
+      "committed_current_accepted_files": {
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/SUMMARY.json": {
+          "blob_oid": "63fd59d1bb01ecbbe845224ce0d1e4e18a5cf6b5",
+          "bytes": 709,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/SUMMARY.json",
+          "sha256": "d6d7bd61fbfc8a9e0ae28cf665dd9eff8fbc965b9d93e29139c9a8a637878640"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/analytical_check.json": {
+          "blob_oid": "24127f071fb0c74da6f68364cbda047552fa8c68",
+          "bytes": 94,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/analytical_check.json",
+          "sha256": "dec4518901818fb27944fbb0f7efaec4b2ea389140cd33864cce100c67d8462a"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/input_manifest.json": {
+          "blob_oid": "092f6174830de5657fe3430dd0f79dfef1cd71f0",
+          "bytes": 16917,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/input_manifest.json",
+          "sha256": "5d72703412fdcb4be5f672d5c15bb0839aa4234e736ca678891dc562376bc831"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/null_calibration.json": {
+          "blob_oid": "377c706b7f1037b3e30b6be2ca9dd505fc1724eb",
+          "bytes": 824,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/null_calibration.json",
+          "sha256": "5cc733c105fa010f46d25d03a8d9a8a4d369b911dc57d506a1bc85fa9f271176"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/provenance.json": {
+          "blob_oid": "8d1936c6d4c1478be9af00caffb6f95c2e3f98d3",
+          "bytes": 408,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/provenance.json",
+          "sha256": "2d9390997b6676e0830a84a5cc8edc4d5a280cff7285e905ee9281db1785d983"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/result.json": {
+          "blob_oid": "c83385cb2a90154f64e09be58b723c4ae6b59f98",
+          "bytes": 3331,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/result.json",
+          "sha256": "f0792b2949c5e00a4abc7bf099605c73ae949390127e148d910e5af3574a0d32"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/sweep_provenance.json": {
+          "blob_oid": "9800550da43bee7f0243f823974b7ec2d469ad97",
+          "bytes": 6411,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/sweep_provenance.json",
+          "sha256": "796645e6851c970fef1eb62f5ce4071fa503e2cc648b513d3e6930864b4f1be9"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinModification/latest/thresholds.json": {
+          "blob_oid": "a8e54c8e884736ac5360dd0785e7517483b9dc8f",
+          "bytes": 446,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinModification/latest/thresholds.json",
+          "sha256": "acabe5573118061ff227d116e0232f426fc498a28402c507a251cdadcaeed442"
+        }
+      },
+      "current_source": "ACCEPT_UNCHANGED_MEASURED_SOURCE",
+      "current_source_finding_proof": "SOURCE_FINDING_AND_SCOPE_PROOF.json",
+      "finding_dispositions": {
+        "PMOD-DEVIATIONS": "RESOLVED"
+      },
+      "numerical": "ACCEPT_PRIOR_GENUINE_CAMPAIGN",
+      "portable": "PASS",
+      "strict": "PASS"
+    },
+    "ProteinProcessingII": {
+      "committed_copy": "ACCEPT",
+      "committed_current_accepted_files": {
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/SUMMARY.json": {
+          "blob_oid": "927e658e13973fc208b9b50e7709987b5f7d92d1",
+          "bytes": 1028,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/SUMMARY.json",
+          "sha256": "32bdca902015632b86f0da5c294d2ac04d052f14c070c35d65df7385077cf832"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/analytical_check.json": {
+          "blob_oid": "b1e47b76f38dd066e25314ca52ec27219023afea",
+          "bytes": 94,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/analytical_check.json",
+          "sha256": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/input_manifest.json": {
+          "blob_oid": "0ef8cbda414ddd98eb963046b34630b177d14893",
+          "bytes": 16586,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/input_manifest.json",
+          "sha256": "40ad7e7c153293d4298c628a3eec5772f5c48329881381db6fb1955f0660eb1c"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/null_calibration.json": {
+          "blob_oid": "197cdeaaeafcfa714a9bd5ce9d8f8edcb08e9925",
+          "bytes": 1139,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/null_calibration.json",
+          "sha256": "b03e284ab04b69e840c7991fe1c65b3b891a86fe32b3f6fd54fe606b47c0e38a"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/provenance.json": {
+          "blob_oid": "648514e6a9874a2e4e91f01d158f9e45b0d343a7",
+          "bytes": 408,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/provenance.json",
+          "sha256": "52c64a2fee6ee296ad27527c4be8f997dcd2ee1bee7cf058584d31bd882f98fe"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/result.json": {
+          "blob_oid": "6b6b38a78040d5e1db2a8e32afdbf2bd267e3372",
+          "bytes": 3515,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/result.json",
+          "sha256": "eac8bb002c735d7751b4eea12fb8e3cfb88b444ca9dc678ce83126130b2df3c1"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/sweep_provenance.json": {
+          "blob_oid": "145598b64ae92d627ac3e3594942bfd879bdd238",
+          "bytes": 6307,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/sweep_provenance.json",
+          "sha256": "35993cbe6dfe707c1896ece5b3792a5df100c47dc9c28f1d0358aeeafad6f110"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest/thresholds.json": {
+          "blob_oid": "f8b3415c942f53bb89835ae52358177723a5046e",
+          "bytes": 440,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinProcessingII/latest/thresholds.json",
+          "sha256": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be"
+        }
+      },
+      "current_source": "ACCEPT_UNCHANGED_MEASURED_SOURCE",
+      "current_source_finding_proof": "SOURCE_FINDING_AND_SCOPE_PROOF.json",
+      "finding_dispositions": {
+        "PPII-DEVIATIONS": "RESOLVED",
+        "PPII-LEGACY-OWNERSHIP": "RESOLVED",
+        "PPII-PROJECTION-GUARD-INPUTS": "RESOLVED",
+        "PPII-REPLAY-INPUT-EVIDENCE": "RESOLVED"
+      },
+      "numerical": "ACCEPT_PRIOR_GENUINE_CAMPAIGN",
+      "portable": "PASS",
+      "strict": "PASS"
+    },
+    "ProteinTranslocation": {
+      "committed_copy": "ACCEPT",
+      "committed_current_accepted_files": {
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/SUMMARY.json": {
+          "blob_oid": "ee6dcf82ed867431d16e072d6554daff88930416",
+          "bytes": 710,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/SUMMARY.json",
+          "sha256": "58dab7e9824dc330ae00f16fad4c59d95ef9ecdffa746ee4facd757f9ac0616c"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/analytical_check.json": {
+          "blob_oid": "655ed6bdb1ddbd959a41c8e71547267adf74f655",
+          "bytes": 95,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/analytical_check.json",
+          "sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/input_manifest.json": {
+          "blob_oid": "5a9abdb3961a6ff8e3e9ec7aa0cf38c1e68de918",
+          "bytes": 17267,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/input_manifest.json",
+          "sha256": "29189fb7fefad725703dc62dddcf209e075b4c9519469b995efe19d095fc38ef"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/null_calibration.json": {
+          "blob_oid": "977cf532c0b8b2ec92059f478eb65ef8636f9216",
+          "bytes": 824,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/null_calibration.json",
+          "sha256": "c5a6b9e03601de2efb7fd940eac5ba76054783c8846a4384b83d21d7df1d87a7"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/provenance.json": {
+          "blob_oid": "a0b01774b1f72b7d789345654bafd96f98cc984c",
+          "bytes": 409,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/provenance.json",
+          "sha256": "dacbb95620a77b1311303230e17765b75647471a737f3d7778b2ad4c4fd536e6"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/result.json": {
+          "blob_oid": "c2da20b6823f224868cc18e14c7c2434e8093776",
+          "bytes": 3280,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/result.json",
+          "sha256": "ea2f7180b8f42dbe974fd42d949d6e56070469f37296b0ef7c2f5e85077ac934"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/sweep_provenance.json": {
+          "blob_oid": "0cb37630ed1af72d843af6fe70ebab89a4cbe9cb",
+          "bytes": 6495,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/sweep_provenance.json",
+          "sha256": "49686b466b1bcbb5dd7ac3e3e63424a497b671716a4bef9f41024d846ec16c16"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinTranslocation/latest/thresholds.json": {
+          "blob_oid": "cdb7e81ab4d66eba7b5bfd8ab87c20a4eda0bfaf",
+          "bytes": 445,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/ProteinTranslocation/latest/thresholds.json",
+          "sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+        }
+      },
+      "current_source": "ACCEPT_UNCHANGED_MEASURED_SOURCE",
+      "current_source_finding_proof": "SOURCE_FINDING_AND_SCOPE_PROOF.json",
+      "finding_dispositions": {
+        "PTRANS-COMPLETE-ATTESTATION": "RESOLVED",
+        "PTRANS-GENUINE-EVIDENCE": "RESOLVED",
+        "PTRANS-SAMPLE-ISOLATION": "RESOLVED",
+        "PTRANS-STAGE2-ALGORITHM": "RESOLVED"
+      },
+      "numerical": "ACCEPT_PRIOR_GENUINE_CAMPAIGN",
+      "portable": "PASS",
+      "strict": "PASS"
+    },
+    "RNAModification": {
+      "committed_copy": "ACCEPT",
+      "committed_current_accepted_files": {
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/SUMMARY.json": {
+          "blob_oid": "15bd7da2258af83b78aea0408c88d91338426129",
+          "bytes": 705,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/SUMMARY.json",
+          "sha256": "09cbafe90434fb2378564982647fada6ebda4282f84497a22c5af2b40400a175"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/analytical_check.json": {
+          "blob_oid": "c968d31a7e13c9cecf8d95eaefc37d72b7e9bf96",
+          "bytes": 90,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/analytical_check.json",
+          "sha256": "f1e020adeb86b62ed7c22bfe6a583ba85f3bea9a3e2619bc93e0b3ff7a3d84d4"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/input_manifest.json": {
+          "blob_oid": "9543fb5cbcff03f59f505d79aad81bc2e9b7d6bd",
+          "bytes": 17048,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/input_manifest.json",
+          "sha256": "b7e498550c0e32280e4c4ba207f9229595c5b806d140ca812106a455c353c02d"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/null_calibration.json": {
+          "blob_oid": "5d3309de912317dd2a75d578355036c82f3d1366",
+          "bytes": 806,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/null_calibration.json",
+          "sha256": "5f6e873035db33fac723021fd47fe67a8359c0e1e7a53871db8ce8a620a55161"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/provenance.json": {
+          "blob_oid": "b9ba50fc6b35c8dc2005329416d8db247dd8f99d",
+          "bytes": 404,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/provenance.json",
+          "sha256": "02ea867af9e6d8cf0b66989203a4603843447230c84e5c4c0f8d6543303e4dc5"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/result.json": {
+          "blob_oid": "8606c1e89279c8b842a73a2cccddf3f41e43aac0",
+          "bytes": 3371,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/result.json",
+          "sha256": "9f5e19a2db1fc6e70185f432c9e431909c8df98babc412b4a5d524fd05e3c3c0"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/sweep_provenance.json": {
+          "blob_oid": "35136c5dc644c16fe180f6d824484dd9183e9aba",
+          "bytes": 6304,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/sweep_provenance.json",
+          "sha256": "852cf4ae79c67f3aba3d3870a411037b4fdc423abc56e8b8ee5da9d9778f8fc0"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAModification/latest/thresholds.json": {
+          "blob_oid": "c471c7336f42c91362f243aee0dfaf66a7355710",
+          "bytes": 451,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAModification/latest/thresholds.json",
+          "sha256": "7604581adf3f814b52af2efb26a92c5120e0e3b8438ef258830eb2585195acbb"
+        }
+      },
+      "current_source": "ACCEPT_UNCHANGED_MEASURED_SOURCE",
+      "current_source_finding_proof": "SOURCE_FINDING_AND_SCOPE_PROOF.json",
+      "finding_dispositions": {
+        "RMOD-DEVIATIONS": "RESOLVED"
+      },
+      "numerical": "ACCEPT_PRIOR_GENUINE_CAMPAIGN",
+      "portable": "PASS",
+      "strict": "PASS"
+    },
+    "RNAProcessing": {
+      "committed_copy": "ACCEPT",
+      "committed_current_accepted_files": {
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/SUMMARY.json": {
+          "blob_oid": "c79b3ca3990931f48b9aae92882dcacc9b2b68ef",
+          "bytes": 703,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/SUMMARY.json",
+          "sha256": "c1fb374c923361f686a500dac583c91250e8a4063828fda1cad73c1e3c0e3e27"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/analytical_check.json": {
+          "blob_oid": "e988efa2c98e117f06a6a23c88ccbb1e10c5db94",
+          "bytes": 88,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/analytical_check.json",
+          "sha256": "43f43bf94235670d6aa110ff3def5da7635842f72c7bb4948682515fc23e2c8d"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/input_manifest.json": {
+          "blob_oid": "d7cbe896e24bd9139608422adfc9c3dfece07088",
+          "bytes": 17106,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/input_manifest.json",
+          "sha256": "5a783670b3dd183674e5aceda38f3e2fe864e303a2f18f0113515665a4705ec0"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/null_calibration.json": {
+          "blob_oid": "792def4c181c221d06a9b939b3545bc31f3e9067",
+          "bytes": 814,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/null_calibration.json",
+          "sha256": "abceb74486ab8c521eb6b56cb5861ccff171e67830f2f1078b944ed17fca3b5b"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/provenance.json": {
+          "blob_oid": "67467b73e52d7d0cdc151e8c85dbb2770635baf3",
+          "bytes": 402,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/provenance.json",
+          "sha256": "12898656c39b7a862302ee2cdc98b8e6e1aa905226e1ad7c3be412063890fff4"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/result.json": {
+          "blob_oid": "32dd04b5a831b76df81fccb733fc69082370f8f6",
+          "bytes": 3209,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/result.json",
+          "sha256": "20ece50e85ddaf0de8b685fb2d30b5c0e98826eeccf9e6c40856aca1ee952b78"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/sweep_provenance.json": {
+          "blob_oid": "1d3c9cebfe5121eab1a5bb3bf92bc3c578ffa6c6",
+          "bytes": 6407,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/sweep_provenance.json",
+          "sha256": "3883b337ed71273a34066b393a7f70e6188db06b89e8c839a5ebf2cfdc771de5"
+        },
+        "docs/phase_f/l2_2_design_a/evidence_bundle/RNAProcessing/latest/thresholds.json": {
+          "blob_oid": "82bd1e6cc4cd34ccad260ace8957867f0f3b089d",
+          "bytes": 437,
+          "independent_source": "artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle/RNAProcessing/latest/thresholds.json",
+          "sha256": "e5a23f18e677c15eccac2c8cf6c72261fbd00348f976a330fd0cdbc0e3c02a59"
+        }
+      },
+      "current_source": "ACCEPT_UNCHANGED_MEASURED_SOURCE",
+      "current_source_finding_proof": "SOURCE_FINDING_AND_SCOPE_PROOF.json",
+      "finding_dispositions": {
+        "RPROC-DEVIATIONS": "RESOLVED"
+      },
+      "numerical": "ACCEPT_PRIOR_GENUINE_CAMPAIGN",
+      "portable": "PASS",
+      "strict": "PASS"
+    }
+  },
+  "regression": {
+    "Ruff": "PASS",
+    "changed_functions_only": [
+      "test_tracked_baseline_is_current_and_fail_closed",
+      "test_txreg_stage_a_production_files_included_in_provenance_and_dependencies"
+    ],
+    "complete_affected_selection": "21 PASS",
+    "deselected": 0,
+    "error": 0,
+    "fail": 0,
+    "full_honesty_module": "9 PASS",
+    "native_whitespace": "PASS",
+    "original_full_module": "7 PASS/2 ordinary FAIL, XML/bytes retained",
+    "original_test_sha256": "74c3fe0bac42e118d26b3a5acf0bbbad648ebc4b022d37785052b220f8f8fe36",
+    "skip": 0,
+    "source_digest_unchanged": "a479e3386f209d6aa0d7b20aa71684208df0fb1f49b8b3eb4625e328e0984e3a",
+    "tested_committed_reference_sha256": "022ac24bde3cdfef41493e0dca94b5385442b3734d206a88dbd9c4ce22cfe8c5",
+    "xfail": 0
+  },
+  "remaining": {
+    "blocked_processes": 19,
+    "explicit_open_owner_rows": [
+      "Metabolism",
+      "TranscriptionalRegulation",
+      "RNADecay",
+      "Translation",
+      "tRNAAminoacylation",
+      "DNASupercoiling",
+      "RibosomeAssembly"
+    ],
+    "no_all28_L25_whole_cell_or_publication_claim": true,
+    "no_new_M1_blocker_demonstrated": true,
+    "raw_OC_tensors": "NOT_RETAINED; scalar input summaries are not outputs; no independent raw-sample reanalysis claim"
+  },
+  "runtime_source_commit": "7586be17b746c8e6f18068898859f346192ed892",
+  "scope": {
+    "candidate": "9/28 finding-derived;19 blocked",
+    "current_L22": [
+      "ProteinModification",
+      "ProteinProcessingII",
+      "ProteinTranslocation",
+      "RNAModification",
+      "RNAProcessing"
+    ],
+    "retained_L21": [
+      "ChromosomeSegregation",
+      "HostInteraction",
+      "ProteinActivation",
+      "TerminalOrganelleAssembly"
+    ],
+    "separate_canonical": "Retained4 unchanged and not recertified by this candidate review; no other worktree written"
+  },
+  "test_reference_commit": "65d7637139deb10e7e00173f25d21d1ce0941e65",
+  "utc": "2026-11-23T18:02:01.633686+00:00",
+  "verdict": "ACCEPT_COMMITTED_M1_EVIDENCE_AND_BOUNDED_HONESTY_REFERENCE_ADJUDICATION"
+}

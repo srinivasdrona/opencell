@@ -1,0 +1,90 @@
+{
+  "input_root": "artifacts/m1_cohort/m1_pt/evidence_bundle",
+  "owned_row": {
+    "artifact_hashes": {
+      "SUMMARY.json": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f",
+      "analytical_check.json": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183",
+      "null_calibration.json": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260",
+      "provenance.json": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c",
+      "result.json": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a",
+      "sweep_provenance.json": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605",
+      "thresholds.json": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+    },
+    "bucket": "ALGORITHMIC_SHALLOW",
+    "catalog_soft_flags": {
+      "M_ticks": 100,
+      "N_seeds": 50,
+      "closed_form_dominant": "confirmed_biology_validated",
+      "harness_type": "design_a_per_tick",
+      "in_scope_L2_2": true,
+      "primary_channel": "monomers",
+      "primary_distance": "per_tick_vector_w1_mean"
+    },
+    "channel_verdicts": {
+      "monomers": "SEED_NOISE",
+      "substrates": "SEED_NOISE"
+    },
+    "evidence_dir": "artifacts/m1_cohort/m1_pt/evidence_bundle/ProteinTranslocation/latest",
+    "green": true,
+    "harness_type": "design_a_per_tick",
+    "mechanical_verdict": "PASS",
+    "process": "ProteinTranslocation",
+    "provenance_git_sha": "unknown",
+    "reasons": [],
+    "sweep_provenance": {
+      "completion_status": "COMPLETE",
+      "evaluator_schema_version": 5,
+      "git_dirty": null,
+      "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
+      "inputs_verified": true,
+      "result_schema_version": 1
+    },
+    "warnings": []
+  },
+  "tally": {
+    "MISSING_EVIDENCE": 23,
+    "PASS": 1
+  },
+  "aggregate": "NON_GREEN",
+  "strict_portable_doer_content_hash": "2f65efcd99ef565318b7242f3261f97b8abd3884e23508dd63b9c133d6325f06",
+  "fresh_generator_module_sha256": "cee04e1c2cd506b386e2dcbe1c9c6c67c35d972c4ddbfd6c04ad0323bae2e1d1",
+  "candidate_index_sha256": "77f852f802723fe49a09968ae3eb842678c8c4d2041548af20b6f6bb144c2383",
+  "independent_index_strict_sha256": "0a2ae47424984e13ef0dc7ab79ff2ba8e41c65d59f9b06af0ee2d4d1e60c995a",
+  "independent_index_portable_sha256": "acb96e8bc35824d420ec9626d2356fd9dc78c6831a55326c4d1071ff8cba508d",
+  "normalized_input_paths": 64,
+  "independently_regenerated_and_live_candidate_identical": [
+    {
+      "name": "result.json",
+      "sha256": "37ff52c34d7998d94bcfeeb88d421a1f8544c82e14c567822c94372da811402a"
+    },
+    {
+      "name": "input_manifest.json",
+      "sha256": "bb9e7e0a3a3762dc38e0d1318c686650547c076d1f30e8c7bb879ddbce222a94"
+    },
+    {
+      "name": "provenance.json",
+      "sha256": "e963dd871c76bf6e8c372150407ed432e9126db941cfeade70fa5c6eeb99313c"
+    },
+    {
+      "name": "thresholds.json",
+      "sha256": "f952c143dad3a770343fc499804e0d63d174964d3d43749d0649c9c77a42f954"
+    },
+    {
+      "name": "null_calibration.json",
+      "sha256": "9cf0384662fe4722d67843d5e29524c9ab9cc63979dc6beb03ed3b57d2cec260"
+    },
+    {
+      "name": "SUMMARY.json",
+      "sha256": "9a6e92470fbbca146d7380cc4642d973831653bf5c6bff65665366de6e217d1f"
+    },
+    {
+      "name": "analytical_check.json",
+      "sha256": "3575e80493317fa383ba9c3a0850b6a4931204ce76bb75d4c805080b12605183"
+    },
+    {
+      "name": "sweep_provenance.json",
+      "sha256": "f9fea1160eb19aa81b75700ca7283cee39d8df627079ac7080495c47a7f78605"
+    }
+  ],
+  "portable_audit_meaning": "Default non-strict semantics exercised against explicit candidate; raw files remained mounted, not deleted or hidden."
+}

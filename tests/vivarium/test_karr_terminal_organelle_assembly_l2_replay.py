@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import sys
 from pathlib import Path
+from typing import Any
 
 import h5py
 import numpy as np
@@ -23,80 +24,131 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 from l2_replay_common import (
-    apply_count_update,
-    build_state_template,
-    cell_vector,
-    collect_count_delta_dicts,
-    infer_wids_for_observable,
-    overlay_observable_into_state,
-    project_observable_from_state,
-    refresh_allocator_views,
-    resolve_trace_path,
-)
-from l2_replay_common import (
     assert_delta_integral as _assert_delta_integral_shared,
 )
 from l2_replay_common import (
-    assert_identity_or_tolerance as _assert_identity_or_tolerance_shared,
+    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
 )
 from l2_replay_common import (
-    audit_trace_mutated_ticks as _audit_trace_mutated_ticks_shared,
+    cell_vector,
+    collect_count_delta_dicts,
+    resolve_trace_path,
 )
 
 from opencell.vivarium.karr_terminal_organelle_assembly import KarrTerminalOrganelleAssemblyProcess
 
 _TRACE_PROCESS_NAME = "TerminalOrganelleAssembly"
-_OBSERVABLES = ('substrates', 'enzymes', 'boundEnzymes')
+_OBSERVABLES = ("substrates", "enzymes", "boundEnzymes")
 
 # Observables Karr records but `next_update` does not write into. Their
-# `oc_after` MUST be rebuilt from `states_before` (Rule 7 pass-through
-# provenance).
-_PASS_THROUGH = frozenset({'boundEnzymes', 'enzymes'})
+# `oc_after` MUST be rebuilt from `states_before` (Rule 7 pass-through provenance).
+_PASS_THROUGH = frozenset({"boundEnzymes", "enzymes"})
 
 # Rule 4b manifest (declared for mechanical lint coverage).
 _SCRATCH_RESET = {}
 
-# Optional explicit observable->WID attribute mapping. Any missing or unknown
-# attr falls back to heuristic inference from process attrs / state schema.
-_OBSERVABLE_TO_WIDS_ATTR = {'substrates': 'substrate_wids', 'enzymes': 'enzyme_wids', 'boundEnzymes': 'enzyme_wids'}
+# Explicit observable->WID attribute mapping.
+_OBSERVABLE_TO_WIDS_ATTR = {
+    "substrates": "substrate_wids",
+    "enzymes": "enzyme_wids",
+    "boundEnzymes": "enzyme_wids",
+}
+
+TOA_MONOMERS = (
+    "MG_191_MONOMER",
+    "MG_192_MONOMER",
+    "MG_217_MONOMER",
+    "MG_218_MONOMER",
+    "MG_312_MONOMER",
+    "MG_317_MONOMER",
+    "MG_318_MONOMER",
+    "MG_386_MONOMER",
+)
+COMPARTMENTS = ("c", "d", "e", "m", "tc", "tm")
+TOA_COMPARTMENTS_INC = ("tm", "tm", "tc", "tc", "tc", "tc", "tm", "tc")
+TOA_COMPARTMENTS_UNINC = ("m", "m", "c", "c", "c", "c", "m", "c")
 
 
-def _assert_delta_integral(label: str, deltas: dict[str, float]) -> None:
-    _assert_delta_integral_shared(label, deltas)
+def _build_initial_replay_state() -> dict[str, Any]:
+    """Build clean state containing the compartmental ProteinMonomer authority."""
+    return {
+        "protein": {
+            "compartment_counts": {
+                "mature": {
+                    wid: {c: 0.0 for c in COMPARTMENTS}
+                    for wid in TOA_MONOMERS
+                }
+            }
+        },
+        "enzymes": {},
+        "boundEnzymes": {},
+    }
+
+
+def _overlay_substrates_into_authority(
+    state: dict[str, Any],
+    karr_substrates_vec: np.ndarray,
+) -> None:
+    """Overlay 16-element (8x2 Fortran order) substrate vector into authority."""
+    mat_8x2 = karr_substrates_vec.reshape((8, 2), order="F")
+    mature_store = state["protein"]["compartment_counts"]["mature"]
+    for i, wid in enumerate(TOA_MONOMERS):
+        inc_comp = TOA_COMPARTMENTS_INC[i]
+        uninc_comp = TOA_COMPARTMENTS_UNINC[i]
+        mature_store[wid][inc_comp] = float(mat_8x2[i, 0])
+        mature_store[wid][uninc_comp] = float(mat_8x2[i, 1])
+
+
+def _project_substrates_from_authority(state: dict[str, Any]) -> np.ndarray:
+    """Project 16-element (8x2 Fortran order) substrate vector from authority."""
+    mature_store = state["protein"]["compartment_counts"]["mature"]
+    mat_8x2 = np.zeros((8, 2), dtype=np.float64)
+    for i, wid in enumerate(TOA_MONOMERS):
+        inc_comp = TOA_COMPARTMENTS_INC[i]
+        uninc_comp = TOA_COMPARTMENTS_UNINC[i]
+        mat_8x2[i, 0] = mature_store.get(wid, {}).get(inc_comp, 0.0)
+        mat_8x2[i, 1] = mature_store.get(wid, {}).get(uninc_comp, 0.0)
+    return mat_8x2.reshape(16, order="F")
 
 
 def _apply_update(
-    state: dict[str, object],
-    update: dict[str, object],
-    process: KarrTerminalOrganelleAssemblyProcess,
+    state: dict[str, Any],
+    update: dict[str, Any],
 ) -> None:
-    del process  # state is rebuilt per tick; only delta application is needed here.
+    """Apply delta updates to authority store with delta-integrality check."""
     for label, deltas in collect_count_delta_dicts(update):
-        _assert_delta_integral(label, deltas)
-    apply_count_update(state, update)
+        _assert_delta_integral_shared(label, deltas)
+
+    # Apply to compartment_counts
+    protein_update = update.get("protein", {})
+    comp_counts = protein_update.get("compartment_counts", protein_update)
+    mature_update = comp_counts.get("mature", comp_counts)
+
+    target_mature = state["protein"]["compartment_counts"]["mature"]
+    for wid, comp_deltas in mature_update.items():
+        if isinstance(comp_deltas, dict) and wid in target_mature:
+            for comp, delta in comp_deltas.items():
+                if comp in target_mature[wid]:
+                    target_mature[wid][comp] = float(target_mature[wid][comp] + float(delta))
 
 
-def _audit_trace_mutated_ticks(
-    trace: h5py.File,
-    observables: tuple[str, ...],
-    n_ticks: int,
-) -> dict[str, int]:
-    return _audit_trace_mutated_ticks_shared(trace, observables, n_ticks)
-
-
-def _assert_identity_or_tolerance(
+def _assert_integer_exact_equality(
     *,
     tick: int,
     observable: str,
     oc_after: np.ndarray,
     karr_after: np.ndarray,
 ) -> None:
-    _assert_identity_or_tolerance_shared(
-        tick=tick,
-        observable=observable,
-        oc_after=oc_after,
-        karr_after=karr_after,
-    )
+    """Rule 2: Unconditional integer-exact compare on all count observables."""
+    assert np.array_equal(np.rint(karr_after), karr_after), f"Tick {tick}: Karr after {observable} non-integral"
+    assert np.array_equal(np.rint(oc_after), oc_after), f"Tick {tick}: OC after {observable} non-integral"
+    if not np.array_equal(oc_after, karr_after):
+        diff_indices = np.flatnonzero(oc_after != karr_after)
+        first_idx = int(diff_indices[0])
+        pytest.fail(
+            f"Tick {tick} {observable} exact integer mismatch at index {first_idx}: "
+            f"OC={oc_after[first_idx]}, Karr={karr_after[first_idx]}"
+        )
 
 
 @pytest.mark.parametrize("rng_seed", [0], ids=["rng_seed_0"])
@@ -111,7 +163,7 @@ def test_karr_terminal_organelle_assembly_l2_replay_identity_per_tick(rng_seed: 
             assert int(rng_seed) == recorded_seed
 
         mutated_obs = tuple(o for o in _OBSERVABLES if o not in _PASS_THROUGH)
-        mutated_tick_counts = _audit_trace_mutated_ticks(trace, mutated_obs, n_ticks)
+        mutated_tick_counts = _audit_trace_mutated_ticks_shared(trace, mutated_obs, n_ticks)
         if sum(mutated_tick_counts.values()) == 0:
             pytest.skip(
                 "L2.1 N/A: no-op trace. Every mutated observable "
@@ -120,61 +172,74 @@ def test_karr_terminal_organelle_assembly_l2_replay_identity_per_tick(rng_seed: 
                 f"nonzero-delta counts: {mutated_tick_counts}."
             )
 
+        # Construct process once outside the tick loop (Rule 5)
         process = KarrTerminalOrganelleAssemblyProcess({"rng_seed": int(rng_seed)})
-        state_template = build_state_template(process)
 
-        wids_by_observable: dict[str, list[str]] = {}
-        for observable in _OBSERVABLES:
-            karr_before = cell_vector(trace, "states_before", observable, 0)
-            explicit_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable)
-            wids_by_observable[observable] = infer_wids_for_observable(
-                process,
-                state_template,
-                observable,
-                karr_len=int(karr_before.shape[0]),
-                explicit_attr=explicit_attr,
-            )
+        # Known mutated oracle ticks in TOA
+        known_active_ticks = {6, 46, 68}
 
         for tick in range(n_ticks):
-            state = build_state_template(process)
+            # Per-tick state isolation (Rule 4)
+            state = _build_initial_replay_state()
+
             before_vectors = {
                 observable: cell_vector(trace, "states_before", observable, tick)
                 for observable in _OBSERVABLES
             }
 
-            for observable in _OBSERVABLES:
-                overlay_observable_into_state(
-                    process=process,
-                    state=state,
-                    observable=observable,
-                    vector=before_vectors[observable],
-                    wids=wids_by_observable[observable],
-                )
-            refresh_allocator_views(process, state)
+            # Overlay substrates into authority
+            _overlay_substrates_into_authority(state, before_vectors["substrates"])
 
+            # Rule 7: Pass-through observables (enzymes, boundEnzymes) rebuilt strictly from states_before
+            for obs in _PASS_THROUGH:
+                state[obs] = {
+                    f"{obs}_{i}": float(v)
+                    for i, v in enumerate(before_vectors[obs])
+                }
+
+            # Real public code path invocation (Rule 7)
             update = process.next_update(1.0, state)
-            _apply_update(state, update, process)
 
+            # Anti-identity and non-triviality guard (Rule 6 + Beat 4):
+            # On active ticks, update must be non-empty and projected output must differ from input
+            if tick in known_active_ticks:
+                assert update, f"Tick {tick}: expected non-empty update on known active tick"
+
+            _apply_update(state, update)
+
+            # Project observable vectors after update
+            projected_after: dict[str, np.ndarray] = {
+                "substrates": _project_substrates_from_authority(state),
+            }
+            # Rule 7 pass-through provenance: pass-through observables come from states_before
+            for obs in _PASS_THROUGH:
+                projected_after[obs] = before_vectors[obs].copy()
+
+            # Anti-identity assertion on active ticks: projected matrix MUST differ from input
+            if tick in known_active_ticks:
+                assert not np.array_equal(projected_after["substrates"], before_vectors["substrates"]), (
+                    f"Tick {tick}: anti-identity violation: output equals input on known active tick"
+                )
+
+            # Integer exactness comparison across all observables (Rule 2) and Rule 3 WID-length guard
             for observable in _OBSERVABLES:
                 karr_after = cell_vector(trace, "states_after", observable, tick)
-                expected_len = len(wids_by_observable[observable])
+                oc_after = projected_after[observable]
+
+                # Rule 3: WID-length alignment guard on every tick and observable
+                expected_len = 16 if observable == "substrates" else len(process.enzyme_wids)
                 if karr_after.shape[0] != expected_len:
-                    mapped_attr = _OBSERVABLE_TO_WIDS_ATTR.get(observable, "<heuristic>")
                     pytest.fail(
-                        "L2a wid-length drift: "
-                        f"tick={tick}, observable={observable}, "
-                        f"karr_len={karr_after.shape[0]}, "
-                        f"mapped_len={expected_len}, mapped_attr={mapped_attr}"
+                        f"L2a wid-length drift at tick={tick}, observable={observable}: "
+                        f"karr_len={karr_after.shape[0]}, expected_len={expected_len}"
+                    )
+                if oc_after.shape[0] != expected_len:
+                    pytest.fail(
+                        f"L2a OC wid-length drift at tick={tick}, observable={observable}: "
+                        f"oc_len={oc_after.shape[0]}, expected_len={expected_len}"
                     )
 
-                oc_after = project_observable_from_state(
-                    process=process,
-                    state=state,
-                    observable=observable,
-                    wids=wids_by_observable[observable],
-                    bound_enzymes_before=before_vectors.get("boundEnzymes"),
-                )
-                _assert_identity_or_tolerance(
+                _assert_integer_exact_equality(
                     tick=tick,
                     observable=observable,
                     oc_after=oc_after,

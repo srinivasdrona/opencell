@@ -9,74 +9,74 @@ process:
   whole_cell_model_id: "Process_ProteinTranslocation"
   functional_area: "protein-synthesis-and-maturation"
   state_shape_role: "state-shape catalog row; wiring row adds integration semantics"
-  notes: "The raw MATLAB file is absent from this checkout, so the row uses checked-in extract/audit docs plus the current OC port and fixture metadata."
+  notes: "Audited against the local executable MATLAB source, canonical fixtures, the F trace, and the current OpenCell implementation."
 integration_touchpoints:
   calcResourceRequirements_Current:
     matlab:
       symbol: "calcResourceRequirements_Current"
       source:
-        path: "docs/karr_extracts/process/22_ProteinTranslocation.md"
-        lines: "103-111"
-        note: "Process extract describes the ATP/GTP hydrolysis terms and cost scalars that drive allocation demand; raw MATLAB body is absent locally."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+        lines: "281-301"
+        note: "Executable MATLAB request method with translocase/SRP capacity clipping and ATP/GTP/H2O demand."
         symbol: "calcResourceRequirements_Current"
-      note: "Allocator demand is inferred from the process extract and fixture scalars."
+      note: "Allocator demand is transcribed directly from the executable MATLAB method."
     oc:
       symbol: "RequestCalculatorPTransloc.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "710-710"
-        note: "Current OC request calculator aggregates ATP/GTP/H2O demand from queued translocating proteins."
+        lines: "804-846"
+        note: "Current OC request calculator applies the MATLAB capacity mins to authoritative processed-I cytosolic counts."
         symbol: "RequestCalculatorPTransloc.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "758-784"
+          lines: "729-1014"
           note: "Chassis wiring that enrolls the ProteinTranslocation request calculator and consumer process."
           symbol: build_karr_chassis_v3
-      note: "The OC path is indirect but allocator-wired; it reads the translocation process's pending queue and emits ATP/GTP/H2O requests."
+      note: "The OC path is a separate allocator Step but implements the same ATP/GTP/H2O request algebra over authoritative compartment state."
     status: "implemented"
-    note: "OC preserves the three-request surface, but it caps requests by current substrate pool and is wired as a separate request-calculator step instead of a process method."
+    note: "OC preserves the MATLAB request formula and three-request surface in a separately wired allocator Step."
   evolveState:
     matlab:
       symbol: "evolveState"
       source:
-        path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
-        lines: "48-72"
-        note: "Parity audit of the Karr per-copy randperm loop, rate-scaled capacities, and first-insufficient-copy break semantics; raw MATLAB source is absent locally."
+        path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+        lines: "305-369"
+        note: "Executable MATLAB per-copy randperm loop, rate-scaled capacities, first-insufficient-copy break, compartment move, and hydrolysis writeback."
         symbol: "evolveState"
-      note: "The audit cites Karr lines 307-368 for the executable body."
+      note: "The executable MATLAB body is the direct authority."
     oc:
       symbol: "KarrProteinTranslocationProcess.next_update"
       source:
         path: "opencell/vivarium/karr_protein_translocation.py"
-        lines: "307-307"
+        lines: "347-517"
         note: "Current OC per-tick translocation update."
         symbol: "KarrProteinTranslocationProcess.next_update"
       supporting:
         - path: "opencell/vivarium/karr_request_calculators.py"
-          lines: "658-710"
+          lines: "722-846"
           note: "Allocator input path read by the process."
           symbol: RequestCalculatorPTransloc
         - path: "opencell/vivarium/karr_protein_translocation.py"
-          lines: "420-442"
+          lines: "347-517"
           note: "Flat substrate projection/writeback from per-copy hydrolysis totals into the shared `substrates` pool."
           symbol: KarrProteinTranslocationProcess.next_update
       note: "OC mirrors Karr's copy-level randperm traversal, rate-scaled translocase/SRP capacity checks, and break-on-first-insufficient-copy behavior."
     status: "implemented"
-    note: "Implemented with parity on per-copy ordering and rate-scaled capacities; residual differences are documented in known_deviations."
+    note: "Implemented with parity on per-copy ordering, one-based persistent RNG, rate-scaled capacities, compartment transfer, and hydrolysis writeback."
   calcFluxBounds:
     matlab:
       symbol: "ProteinTranslocation"
       source:
         path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
-        lines: "1-131"
-        note: "Process extract does not describe any flux-bounds method for ProteinTranslocation; slot retained because the schema requires it. Class-level anchor used to record calcFluxBounds absence."
+        lines: "1-380"
+        note: "The executable class contains no calcFluxBounds method; this class-level anchor records that intentional absence."
         symbol: "ProteinTranslocation"
-      note: "No ProteinTranslocation-specific flux-bound method is documented in the checked-in extract. This process does not have Karr's calcFluxBounds method; it does not participate in FBA."
+      note: "ProteinTranslocation has no calcFluxBounds method and does not participate in FBA."
     oc:
       symbol: "KarrProteinTranslocationProcess"
       source:
         path: "opencell/vivarium/karr_protein_translocation.py"
-        lines: "95-443"
+        lines: "102-517"
         note: "OC port has no flux-bounds implementation for this process. Representative OC anchor for non-implemented correspondence."
         symbol: "KarrProteinTranslocationProcess"
       note: "No equivalent OC symbol exists. OC does not implement this Karr method."
@@ -89,8 +89,8 @@ allocator:
     note: "OC reads only `substrates_allocated[self.name]`; the process itself is allocator-mediated."
   request_formula:
     matlab: "ATP_need = min(translocases, sum(count_i * ceil(monomerLength_i / preproteinTranslocase_aaTranslocatedPerATP))); GTP_need = min(SRPs, SRP_GTPUsedPerMonomer * count_srp); H2O_need = ATP_need + GTP_need; requests = [ATP_need; GTP_need; H2O_need]"
-    oc: "requests[ATP/GTP/H2O] = max(need, current_pool) after aggregating queued cytoplasmic proteins by pathway"
-    note: "MATLAB request terms include translocase/SRP capacity clipping before hydrolysis summation; OC over-requests by flooring at the current substrate pool."
+    oc: "ATP_need = min(translocases, sum(pending_c_i * ceil(monomerLength_i / preproteinTranslocase_aaTranslocatedPerATP))); GTP_need = SRP_GTPUsedPerMonomer * min(SRPs, count_pending_srp); H2O_need = ATP_need + GTP_need; every other request is zero"
+    note: "OC reads only authoritative processed_i cytosolic counts and applies the same capacity clipping and water identity as MATLAB; no current-pool floor remains."
   requests:
     - wid: "ATP"
       compartment: "cytosol"
@@ -126,13 +126,13 @@ consume_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "sum(translocated_count_i * ceil(monomerLength_i / preproteinTranslocase_aaTranslocatedPerATP))"
     matlab_anchor:
-      path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
-      lines: "70-72"
-      note: "Karr consumes ATP as part of the per-copy translocation loop; exact line span is cited in the parity audit."
-      symbol: 4. Substrate-availability handling
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "334-368"
+      note: "Executable per-copy ATP cost, feasibility check, and substrate writeback."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_translocation.py"
-      lines: "381-445"
+      lines: "347-517"
       note: "OC computes and subtracts ATP per translocated copy, then emits the aggregate delta."
       symbol: KarrProteinTranslocationProcess.next_update
     kind: per_reaction
@@ -140,13 +140,13 @@ consume_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "SRP_GTPUsedPerMonomer * count_srp_path_monomers"
     matlab_anchor:
-      path: "docs/karr_extracts/process/22_ProteinTranslocation.md"
-      lines: "107-110"
-      note: "Process extract names the SRP GTP cost term."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "334-368"
+      note: "Executable per-copy SRP/GTP cost, feasibility check, and substrate writeback."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_translocation.py"
-      lines: "381-445"
+      lines: "347-517"
       note: "OC applies the SRP GTP cost to SRP-path proteins only."
       symbol: KarrProteinTranslocationProcess.next_update
     kind: expression
@@ -154,13 +154,13 @@ consume_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "ATP_spent + GTP_spent"
     matlab_anchor:
-      path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
-      lines: "70-72"
-      note: "Hydrolysis water is part of the same per-copy loop in Karr."
-      symbol: 4. Substrate-availability handling
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "334-368"
+      note: "Executable per-copy water cost, feasibility check, and substrate writeback."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_translocation.py"
-      lines: "434-456"
+      lines: "347-517"
       note: "OC decrements H2O by the aggregate hydrolysis spent."
       symbol: KarrProteinTranslocationProcess.next_update
     kind: expression
@@ -169,13 +169,13 @@ produce_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "ATP_spent"
     matlab_anchor:
-      path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
-      lines: "63-72"
-      note: "Karr produces ADP alongside ATP consumption."
-      symbol: 2. Step-by-step mapping
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "362-368"
+      note: "Executable ADP writeback alongside ATP consumption."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_translocation.py"
-      lines: "434-456"
+      lines: "347-517"
       note: "OC emits ADP in the aggregate substrate delta."
       symbol: KarrProteinTranslocationProcess.next_update
     kind: expression
@@ -183,13 +183,13 @@ produce_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "GTP_spent"
     matlab_anchor:
-      path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
-      lines: "63-72"
-      note: "Karr produces GDP on SRP-path translocations."
-      symbol: 2. Step-by-step mapping
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "362-368"
+      note: "Executable GDP writeback on SRP-path translocation."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_translocation.py"
-      lines: "434-456"
+      lines: "347-517"
       note: "OC emits GDP when GTP is spent."
       symbol: KarrProteinTranslocationProcess.next_update
     kind: expression
@@ -197,13 +197,13 @@ produce_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "ATP_spent + GTP_spent"
     matlab_anchor:
-      path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
-      lines: "63-72"
-      note: "Karr produces Pi as part of the hydrolysis ledger."
-      symbol: 2. Step-by-step mapping
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "362-368"
+      note: "Executable phosphate writeback for total hydrolysis."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_translocation.py"
-      lines: "434-456"
+      lines: "347-517"
       note: "OC emits Pi as the aggregate hydrolysis total."
       symbol: KarrProteinTranslocationProcess.next_update
     kind: expression
@@ -211,13 +211,13 @@ produce_stoichiometry:
     compartment: "cytosol"
     formula_or_constant: "ATP_spent + GTP_spent"
     matlab_anchor:
-      path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
-      lines: "63-72"
-      note: "Karr produces H+ with hydrolysis."
-      symbol: 2. Step-by-step mapping
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "362-368"
+      note: "Executable hydrogen writeback for total hydrolysis."
+      symbol: evolveState
     oc_anchor:
       path: "opencell/vivarium/karr_protein_translocation.py"
-      lines: "434-456"
+      lines: "347-517"
       note: "OC emits H as the aggregate hydrolysis total."
       symbol: KarrProteinTranslocationProcess.next_update
     kind: expression
@@ -272,7 +272,7 @@ unit_conversion_chain:
       constants: []
       anchor:
         path: "opencell/vivarium/karr_protein_translocation.py"
-        lines: "307-445"
+        lines: "347-517"
         note: Process works directly in per-tick integer counts; no unit conversion needed.
         symbol: KarrProteinTranslocationProcess.next_update
       note: Process works directly in per-tick integer counts; no unit conversion needed.
@@ -291,39 +291,39 @@ ordering_constraints:
 source_anchors:
   matlab_blocks:
     docstring_summary:
-      path: "docs/karr_extracts/process/22_ProteinTranslocation.md"
-      lines: "1-131"
-      note: "Checked-in extract with the process header and executable-intent summary."
-      symbol: Karr Process - ProteinTranslocation
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "1-380"
+      note: "Executable MATLAB class, including biology, representation, request, and simulation methods."
+      symbol: ProteinTranslocation
     request_terms:
-      path: "docs/karr_extracts/process/22_ProteinTranslocation.md"
-      lines: "103-111"
-      note: "Per-monomer ATP and SRP/GTP cost terms described in the extract."
-      symbol: Verbatim docstring extract
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "281-301"
+      note: "Executable ATP/GTP/H2O request algebra."
+      symbol: calcResourceRequirements_Current
     evolve_state:
-      path: "docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md"
-      lines: "48-72"
-      note: "Parity audit anchored to Karr lines 307-368 for the executable loop body."
-      symbol: 1. Algorithm summary
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "305-369"
+      note: "Executable randomized per-copy translocation loop and writeback."
+      symbol: evolveState
   oc_blocks:
     process_class:
       path: "opencell/vivarium/karr_protein_translocation.py"
-      lines: "95-249"
+      lines: "102-517"
       note: "Process class definition, fixture loading, and port schema."
       symbol: KarrProteinTranslocationProcess
     next_update:
       path: "opencell/vivarium/karr_protein_translocation.py"
-      lines: "307-445"
+      lines: "347-517"
       note: "Current OC per-tick translocation update."
       symbol: KarrProteinTranslocationProcess.next_update
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "658-710"
+      lines: "722-846"
       note: "Allocator request path for ATP/GTP/H2O."
       symbol: RequestCalculatorPTransloc
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "758-784"
+      lines: "729-1014"
       note: "Chassis wiring that enrolls ProteinTranslocation in allocation."
       symbol: build_karr_chassis_v3
 provenance:
@@ -332,12 +332,13 @@ provenance:
     - "data/karr_fixtures/per_process/MacromolecularComplexation_flat.mat"
     - "data/karr_fixtures/per_process/RibosomeAssembly_flat.mat"
   kb_version: "unversioned_per_process_flat"
-  last_audited: "2026-06-29"
-  audited_by: "gpt-5.4-mini (codex; row authored Day-43 EOD)"
-  oc_commit_sha: "61a5a06e8031af3159dffa436655ade330be1fd9"
+  last_audited: "2026-10-11"
+  audited_by: "gpt-5.5 independent reviewer + gpt-5.6-sol parent adjudication"
+  oc_commit_sha: "cef6542901abae1c247c0f16f7128d51a18ca832"
   matlab_files_referenced:
-    - docs/karr_extracts/process/22_ProteinTranslocation.md
-    - docs/phase_f/sut_audits/ptransloc_oc_vs_karr.md
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/Process.m
+    - data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/@Simulation/evolveState.m
   oc_files_referenced:
     - "opencell/vivarium/karr_protein_translocation.py"
     - "opencell/vivarium/karr_request_calculators.py"
@@ -346,24 +347,21 @@ provenance:
     - "tests/integration/test_ptransloc_enrollment_v3_v4.py"
     - "tests/vivarium/test_karr_protein_translocation.py"
     - "tests/vivarium/test_karr_request_calculators.py"
-  notes: "The current checkout does not include a locally vendored `ProteinTranslocation.m`; MATLAB anchors therefore point to checked-in extracts and parity/audit notes rather than a raw local source file."
+  notes: "Mechanically refreshed after the Stage-2 124-WID authority migration, request-algebra repair, fail-closed RNG/dependency repair, and independent MATCHED review."
 deviations:
   lp_bounds_source:
     karr: "allocation"
     oc_current: "allocation"
     matlab_anchor:
-      path: "docs/karr_extracts/process/22_ProteinTranslocation.md"
-      lines: "103-111"
+      path: "data/m1_sources/WholeCell/src/+edu/+stanford/+covert/+cell/+sim/+process/ProteinTranslocation.m"
+      lines: "281-301"
       note: "The process demand is allocator-facing and does not use an LP bound layer."
-      symbol: Verbatim docstring extract
+      symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "658-710"
+      lines: "722-846"
       note: "OC request calculator emits allocator-facing ATP/GTP/H2O demand."
       symbol: RequestCalculatorPTransloc
   shared_pool_projection_merges_compartments: true
   known_deviations:
-    - "OC request magnitude uses a current-pool floor (`max(need, current_pool)`), which can over-request relative to pure need."
-    - "OC represents moved proteins with `protein.location` plus `protein.unprocessed_counts` deltas instead of Karr's compartment-resolved monomer matrix."
-    - "OC excludes `MG_191_MONOMER` and `MG_192_MONOMER` during fixture loading, which makes terminal-organelle handling a load-time omission rather than a compartment remap."
     - This process does not have Karr's calcFluxBounds method; it does not participate in FBA.

@@ -1,0 +1,6 @@
+bundled 5 process dir(s), 40 file(s) into artifacts/cohort1/final_source_freeze/finalized_independent_acceptance/portable_bundle
+  ProteinModification: ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json']
+  ProteinProcessingII: ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json']
+  ProteinTranslocation: ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json']
+  RNAModification: ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json']
+  RNAProcessing: ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json']

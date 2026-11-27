@@ -22,6 +22,7 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 import l2_2_design_a_runner as runner  # noqa: E402
+from _design_a_synthetic_oracle import bind_synthetic_oracle
 
 
 def _fake_metabolism_oracle(*, tick_count: int = 2, dim: int = 4) -> dict[str, object]:
@@ -193,7 +194,7 @@ def test_rna_primary_sample_processes_expose_combined_rna_wids() -> None:
 
 def test_batch_c_monomer_sample_processes_expose_monomer_wids() -> None:
     expected_lengths = {
-        "ProteinModification": 40,
+        "ProteinModification": 964,  # unchanged full folded+mature channel, not just active WIDs
         "ProteinFolding": 964,
         "ProteinTranslocation": 482,
     }
@@ -242,7 +243,7 @@ def test_run_design_a_emits_per_component_block_for_primary_projection_distance(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: _fake_metabolism_oracle())
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: bind_synthetic_oracle(_fake_metabolism_oracle(), tmp_path))
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_metabolism_process())
     monkeypatch.setattr(runner, "_process_primary_distance", lambda process: "per_component_scaled")
     monkeypatch.setattr(
@@ -284,7 +285,7 @@ def test_run_design_a_emits_hurdle_block_for_primary_projection_distance(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: _fake_metabolism_oracle())
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: bind_synthetic_oracle(_fake_metabolism_oracle(), tmp_path))
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_metabolism_process())
     monkeypatch.setattr(
         runner,
@@ -332,7 +333,7 @@ def test_run_design_a_emits_hurdle_block_for_primary_projection_distance(
 
 
 def test_event_channels_are_deferred_from_normal_gating(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: _fake_metabolism_oracle())
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: bind_synthetic_oracle(_fake_metabolism_oracle(), tmp_path))
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_metabolism_process())
     monkeypatch.setattr(runner, "_process_event_channels", lambda process: ("substrates",))
     monkeypatch.setattr(
@@ -358,7 +359,7 @@ def test_event_channels_are_deferred_from_normal_gating(monkeypatch, tmp_path: P
 
 
 def test_run_design_a_merges_loader_warnings_into_result(monkeypatch, tmp_path: Path) -> None:
-    oracle = _fake_metabolism_oracle(tick_count=1, dim=2)
+    oracle = bind_synthetic_oracle(_fake_metabolism_oracle(tick_count=1, dim=2), tmp_path)
     oracle["warnings"] = ["KARR_LEGACY_SINGLE_SEED_FALLBACK: synthetic test warning"]
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_metabolism_process(dim=2))

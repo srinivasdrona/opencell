@@ -21,6 +21,7 @@ if str(_HELPER_DIR) not in sys.path:
     sys.path.insert(0, str(_HELPER_DIR))
 
 import l2_2_design_a_runner as runner
+from _design_a_synthetic_oracle import bind_synthetic_oracle
 
 
 def _fake_oracle(*, seed_count: int = 3, tick_count: int = 4, dim: int = 8) -> dict[str, object]:
@@ -163,7 +164,7 @@ def _fake_protein_decay_process(
 
 
 def test_constant_zero_oc_fails(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: _fake_oracle())
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: bind_synthetic_oracle(_fake_oracle(), tmp_path))
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_process())
     monkeypatch.setattr(
         runner.runner_helpers,
@@ -185,7 +186,7 @@ def test_constant_zero_oc_fails(monkeypatch, tmp_path: Path) -> None:
 
 
 def test_oracle_laundering_warns(monkeypatch, tmp_path: Path) -> None:
-    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: _fake_oracle())
+    monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: bind_synthetic_oracle(_fake_oracle(), tmp_path))
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_process())
     monkeypatch.setattr(
         runner.runner_helpers,
@@ -208,7 +209,7 @@ def test_oracle_laundering_warns(monkeypatch, tmp_path: Path) -> None:
 
 
 def test_off_by_one_seed_caught(monkeypatch, tmp_path: Path) -> None:
-    oracle = _fake_oracle(seed_count=4)
+    oracle = bind_synthetic_oracle(_fake_oracle(seed_count=4), tmp_path)
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(runner.runner_helpers, "_metabolism_process", lambda seed: _fake_process())
 
@@ -235,7 +236,7 @@ def test_off_by_one_seed_caught(monkeypatch, tmp_path: Path) -> None:
 
 
 def test_transcription_oracle_laundering_flips_primary_channel(monkeypatch, tmp_path: Path) -> None:
-    oracle = _fake_transcription_oracle()
+    oracle = bind_synthetic_oracle(_fake_transcription_oracle(), tmp_path)
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(
         runner.runner_helpers,
@@ -297,7 +298,7 @@ def test_transcription_oracle_laundering_flips_primary_channel(monkeypatch, tmp_
 
 
 def test_translation_oracle_laundering_flips_primary_channel(monkeypatch, tmp_path: Path) -> None:
-    oracle = _fake_translation_oracle()
+    oracle = bind_synthetic_oracle(_fake_translation_oracle(), tmp_path)
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(
         runner.runner_helpers,
@@ -352,7 +353,7 @@ def test_translation_oracle_laundering_flips_primary_channel(monkeypatch, tmp_pa
 
 
 def test_protein_decay_primary_exact_zero_can_be_marked_legitimate_noop(monkeypatch, tmp_path: Path) -> None:
-    oracle = _fake_protein_decay_oracle()
+    oracle = bind_synthetic_oracle(_fake_protein_decay_oracle(), tmp_path)
     monkeypatch.setattr(runner.runner_helpers, "load_karr_oracle", lambda process: oracle)
     monkeypatch.setattr(
         runner.runner_helpers,

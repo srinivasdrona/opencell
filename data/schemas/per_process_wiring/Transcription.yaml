@@ -24,12 +24,12 @@ integration_touchpoints:
       symbol: "RequestCalculatorTranscription.next_update"
       source:
         path: "opencell/vivarium/karr_request_calculators.py"
-        lines: "586-586"
+        lines: "628-644"
         note: "Current OC allocator request calculator for mechanism-driven transcription."
         symbol: "RequestCalculatorTranscription.next_update"
       supporting:
         - path: "opencell/vivarium/karr_composite.py"
-          lines: "778-789"
+          lines: "729-1014"
           note: "Composite wiring that instantiates the transcription request calculator."
           symbol: build_karr_chassis_v3
       note: "Current OC requests only ATP/CTP/GTP/UTP; water is not part of the request calculator today."
@@ -81,7 +81,7 @@ integration_touchpoints:
         symbol: "KarrTranscriptionV3Process"
       supporting:
         - path: "opencell/vivarium/karr_request_calculators.py"
-          lines: "552-602"
+          lines: "616-666"
           note: "Allocator request analogue, not a flux-bounds method."
           symbol: RequestCalculatorTranscription
       note: "Transcription does not have a flux-bounds surface in either implementation. OC does not implement this Karr method."
@@ -197,7 +197,7 @@ consume_stoichiometry:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "552-602"
+      lines: "616-666"
       note: "Current OC request calculator does not request water; this is the main request-surface divergence."
       symbol: RequestCalculatorTranscription
     kind: expression
@@ -373,12 +373,12 @@ source_anchors:
       symbol: KarrTranscriptionV3Process.next_update
     request_calculator:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "552-602"
+      lines: "616-666"
       note: "Allocator request emission for mechanism-driven transcription."
       symbol: RequestCalculatorTranscription
     composite_wiring:
       path: "opencell/vivarium/karr_composite.py"
-      lines: "778-834"
+      lines: "729-1014"
       note: "Current composite instantiation and topology wiring for transcription."
       symbol: build_karr_chassis_v3
     mechanism_helper:
@@ -419,7 +419,7 @@ deviations:
       symbol: calcResourceRequirements_Current
     oc_anchor:
       path: "opencell/vivarium/karr_request_calculators.py"
-      lines: "552-602"
+      lines: "616-666"
       note: "Current OC allocator analogue; Transcription has no flux-bound method."
       symbol: RequestCalculatorTranscription
   shared_pool_projection_merges_compartments: false

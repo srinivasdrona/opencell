@@ -22,6 +22,8 @@ import numpy as np
 from scipy.io import loadmat
 from vivarium.core.process import Process
 
+from opencell.vivarium.protein_state import MIGRATED_WIDS
+
 _FIXTURE_DIR = Path(__file__).resolve().parents[2] / "data" / "karr_fixtures" / "per_process"
 _PROTEIN_DECAY_FLAT = _FIXTURE_DIR / "ProteinDecay_flat.mat"
 _MACROMOLECULAR_COMPLEXATION_FLAT = _FIXTURE_DIR / "MacromolecularComplexation_flat.mat"
@@ -365,9 +367,17 @@ class ProteinDecayLightProcess(Process):
                 for wid in self.substrate_wids
             },
             "protein": {
+                # Design 9.3/M17: `protein_complex_monomer_composition` (the
+                # sole source of this write, via monomer release when a
+                # complex decays) has a proven zero-row intersection with
+                # the 8 migrated WIDs (none of them are complex subunits in
+                # this fixture), so this schema filter is a no-op on
+                # runtime values -- it only removes the 8 migrated WIDs
+                # from the declared leaf set (frozen C2).
                 "counts": {
                     wid: {"_default": 0.0, "_updater": "accumulate", "_emit": False}
                     for wid in self.protein_wids
+                    if wid not in MIGRATED_WIDS
                 }
             },
             "rna": {
@@ -1014,7 +1024,7 @@ class ProteinDecayLightProcess(Process):
         protein_update = {
             wid: float(monomer_deltas[i])
             for i, wid in enumerate(self.protein_wids)
-            if monomer_deltas[i] != 0
+            if monomer_deltas[i] != 0 and wid not in MIGRATED_WIDS
         }
         rna_update = {
             wid: float(rna_deltas[i]) for i, wid in enumerate(self.rna_wids) if rna_deltas[i] != 0

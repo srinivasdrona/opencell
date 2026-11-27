@@ -1,0 +1,54 @@
+{
+  "call": "scripts.l22_evidence.generator.build_process_row",
+  "finished_utc": "2026-10-19T11:02:11.381682+00:00",
+  "kwargs": {
+    "evidence_root": "docs/phase_f/l2_2_design_a/evidence_bundle",
+    "process": "ProteinProcessingII",
+    "strict_input_files": true
+  },
+  "pid": 5418,
+  "row": {
+    "artifact_hashes": {
+      "SUMMARY.json": "903fdf08d7d68b2b178a6d275fcd5c717842ca361662cec81df042692546f771",
+      "analytical_check.json": "dd4dc35123a227c3e69526e949c90aefd27317f77634b5e9cea04f6da4091418",
+      "null_calibration.json": "d19a92529dfc7d6143198a17d7ec44e325d4cf7ed04bfec530f966340159c1b1",
+      "provenance.json": "0ba201ed52cc9518fc700014de3bd12b66d5f3ec81b7728c5cf621e2f657a7db",
+      "result.json": "3a16afc784b237355aad4bb8b8c9713b55faeb9bdca80a7343dec48fd7c607fa",
+      "sweep_provenance.json": "857707ba31c689086b0a8c9b9c03e88302c4173dd4814dbe7cb5a0d402626a19",
+      "thresholds.json": "4ca257b7fdb276d867d21d7ec7620e03024df612d9cdcb5002391e1ca9aed7be"
+    },
+    "bucket": "TRIVIAL_RNG",
+    "catalog_soft_flags": {
+      "M_ticks": 20,
+      "N_seeds": 50,
+      "closed_form_dominant": "confirmed_biology_validated",
+      "harness_type": "design_a_per_tick",
+      "in_scope_L2_2": true,
+      "primary_channel": "monomers",
+      "primary_distance": "per_tick_vector_w1_mean"
+    },
+    "channel_verdicts": {
+      "monomers": "SEED_NOISE",
+      "substrates": "SEED_NOISE"
+    },
+    "evidence_dir": "docs/phase_f/l2_2_design_a/evidence_bundle/ProteinProcessingII/latest",
+    "green": true,
+    "harness_type": "design_a_per_tick",
+    "mechanical_verdict": "PASS",
+    "process": "ProteinProcessingII",
+    "provenance_git_sha": "unknown",
+    "reasons": [],
+    "sweep_provenance": {
+      "completion_status": "COMPLETE",
+      "evaluator_schema_version": 5,
+      "git_dirty": null,
+      "git_sha": "65df71c26553f42dd95759b948de42647987bf68",
+      "inputs_verified": true,
+      "result_schema_version": 1
+    },
+    "warnings": [
+      "PRIMARY_CHANNEL_DETERMINISTIC_CONVERGENCE: OC matched the Karr oracle exactly on primary channel=monomers; per catalog this process has a closed_form_dominant=confirmed_biology_validated path that converges to Karr's stochastic output. See docs/phase_f/l2_2_design_a/LAUNDERING_VS_CONVERGENCE.md (H12 anchor)."
+    ]
+  },
+  "started_utc": "2026-10-19T11:02:07.864999+00:00"
+}

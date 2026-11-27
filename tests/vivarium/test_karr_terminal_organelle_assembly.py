@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import math
 import sys
 from pathlib import Path
 from typing import Any
 
-import pytest
+import numpy as np
 
 # Ensure pytest imports from this worktree even if another editable install exists.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -22,150 +21,133 @@ from opencell.vivarium.karr_terminal_organelle_assembly import (
     KarrTerminalOrganelleAssemblyProcess,
 )
 
-
-def _base_state(process: KarrTerminalOrganelleAssemblyProcess) -> dict[str, Any]:
-    return {
-        "protein": {"activity": {wid: 0.0 for wid in process.component_wids}},
-        "cell": {
-            "terminal_organelle_count": 0.0,
-            "terminal_organelle_components_assembled": {
-                wid: 0.0 for wid in process.component_wids
-            },
-        },
-    }
-
-
-def _enable_all_components(state: dict[str, Any], process: KarrTerminalOrganelleAssemblyProcess) -> None:
-    for wid in process.component_wids:
-        state["protein"]["activity"][wid] = 1.0
+EXPECTED_COMPONENT_WIDS = [
+    "MG_191_MONOMER",
+    "MG_192_MONOMER",
+    "MG_217_MONOMER",
+    "MG_218_MONOMER",
+    "MG_312_MONOMER",
+    "MG_317_MONOMER",
+    "MG_318_MONOMER",
+    "MG_386_MONOMER",
+]
+COMPARTMENTS = ("c", "d", "e", "m", "tc", "tm")
 
 
-def _apply_update(state: dict[str, Any], update: dict[str, Any]) -> None:
-    cell_update = update.get("cell", {})
-    if "terminal_organelle_count" in cell_update:
-        state["cell"]["terminal_organelle_count"] = float(
-            state["cell"]["terminal_organelle_count"] + float(cell_update["terminal_organelle_count"])
-        )
-    for wid, delta in cell_update.get("terminal_organelle_components_assembled", {}).items():
-        state["cell"]["terminal_organelle_components_assembled"][wid] = float(
-            state["cell"]["terminal_organelle_components_assembled"].get(wid, 0.0) + float(delta)
-        )
-
-
-def test_fixture_loads_and_schema_defaults() -> None:
+def test_fixture_loads_and_metadata() -> None:
+    """Preserve fixture-loading and biological metadata assertions from source."""
     process = KarrTerminalOrganelleAssemblyProcess({})
     assert process.name == "karr_terminal_organelle_assembly"
     assert len(process.component_wids) == 8
     assert len(process.reaction_wids) == 10
-    assert process.target_terminal_organelle_count == 1
-    assert process.component_wids == [
-        "MG_191_MONOMER",
-        "MG_192_MONOMER",
-        "MG_217_MONOMER",
-        "MG_218_MONOMER",
-        "MG_312_MONOMER",
-        "MG_317_MONOMER",
-        "MG_318_MONOMER",
-        "MG_386_MONOMER",
-    ]
+    assert list(process.component_wids) == EXPECTED_COMPONENT_WIDS
+
+
+def test_localization_matrices_and_thresholds() -> None:
+    """Verify localization reaction stoichiometry and threshold vectors from fixture."""
+    process = KarrTerminalOrganelleAssemblyProcess({})
+    # localizationReactions is 10 reactions x 8 substrates x 2 compartments (inc/uninc)
+    assert process.localization_reactions.shape == (10, 8, 2)
+    assert process.localization_substrates.shape == (10, 8)
+    expected_threshold = np.array([1, 0, 1, 1, 1, 1, 1, 1, 1, 1], dtype=np.int64)
+    threshold_arr = getattr(process, "localization_threshold", getattr(process, "localization_thresholds", None))
+    assert threshold_arr is not None, "Process must expose localization threshold"
+    assert np.array_equal(np.asarray(threshold_arr).reshape(-1), expected_threshold)
+
+
+
+def test_ports_schema_declares_only_protein_port() -> None:
+    """Design D4: Process declares ONE port ('protein'); dropped ports are cell,
+
+    substrates, enzymes, boundEnzymes.
+    """
+    process = KarrTerminalOrganelleAssemblyProcess({})
+    schema = process.ports_schema()
+
+    # Must declare protein port
+    assert "protein" in schema, "ports_schema must declare 'protein' port"
+
+    # Must NOT declare deleted legacy ports
+    forbidden_ports = {"cell", "substrates", "enzymes", "boundEnzymes"}
+    declared_forbidden = forbidden_ports & set(schema.keys())
+    assert not declared_forbidden, (
+        f"Design D4 violation: ports_schema still declares deleted ports: {declared_forbidden}"
+    )
+
+    # protein port must connect to compartmental authority (compartment_counts.mature)
+    protein_schema = schema["protein"]
+    assert "compartment_counts" in protein_schema or "mature" in protein_schema, (
+        f"protein port must declare compartment_counts.mature structure, got: {list(protein_schema.keys())}"
+    )
+
+
+def test_no_reduced_state_attributes_or_target_caps() -> None:
+    """Design D4: target_terminal_organelle_count cap and activity gates are deleted."""
+    process = KarrTerminalOrganelleAssemblyProcess({})
+    # Should not cap assembly by target count
+    assert not hasattr(process, "target_terminal_organelle_count") or process.target_terminal_organelle_count is None, (
+        "target_terminal_organelle_count must be deleted per Design D4"
+    )
 
     schema = process.ports_schema()
-    assert schema["cell"]["terminal_organelle_count"]["_updater"] == "accumulate"
-    assert (
-        schema["cell"]["terminal_organelle_components_assembled"]["MG_191_MONOMER"]["_updater"]
-        == "accumulate"
-    )
-    assert schema["protein"]["activity"]["MG_191_MONOMER"]["_updater"] == "set"
+    if "protein" in schema:
+        assert "activity" not in schema["protein"], (
+            "protein.activity gate must be deleted per Design D4"
+        )
 
 
-def test_one_tick_positive_component_delta_and_no_substrate_contract() -> None:
+def test_single_step_transfer_via_authority() -> None:
+    """Verify single-step transfer executes on protein.compartment_counts.mature."""
     process = KarrTerminalOrganelleAssemblyProcess({})
-    state = _base_state(process)
-    _enable_all_components(state, process)
+
+    # Setup state: MG_312 (HMW1) has 1 unincorporated copy in 'c', MG_218 (HMW2) has 33 in 'tc'
+    state: dict[str, Any] = {
+        "protein": {
+            "compartment_counts": {
+                "mature": {
+                    wid: {c: 0.0 for c in COMPARTMENTS}
+                    for wid in EXPECTED_COMPONENT_WIDS
+                }
+            }
+        }
+    }
+    state["protein"]["compartment_counts"]["mature"]["MG_312_MONOMER"]["c"] = 1.0
+    state["protein"]["compartment_counts"]["mature"]["MG_218_MONOMER"]["tc"] = 33.0
 
     update = process.next_update(1.0, state)
-    component_delta = update["cell"]["terminal_organelle_components_assembled"]
-    assert component_delta
-    assert all(float(delta) >= 0.0 for delta in component_delta.values())
-    assert update["cell"]["terminal_organelle_count"] == pytest.approx(1.0)
+    assert update, "Expected non-empty update for valid TOA transfer"
 
-    # No shared-substrate contract for this process in Karr fixture/docstring.
-    assert "requests" not in update
+    # Assert update is on protein port and not cell/substrates
+    assert "cell" not in update
     assert "substrates" not in update
-    assert "substrates_allocated" not in update
+    assert "protein" in update
+
+    # Verify deltas: MG_312_MONOMER must have c: -1.0, tc: +1.0 (integer-exact)
+    prot_up = update["protein"]
+    mature_up = prot_up.get("compartment_counts", prot_up).get("mature", prot_up)
+    assert "MG_312_MONOMER" in mature_up
+    assert mature_up["MG_312_MONOMER"]["c"] == -1.0
+    assert mature_up["MG_312_MONOMER"]["tc"] == 1.0
+    assert float(mature_up["MG_312_MONOMER"]["c"]).is_integer()
+    assert float(mature_up["MG_312_MONOMER"]["tc"]).is_integer()
 
 
-def test_activity_gate_blocks_all_assembly_when_off() -> None:
+def test_empty_update_when_unincorporated_is_zero() -> None:
+    """When all unincorporated counts are zero, next_update returns empty dict."""
     process = KarrTerminalOrganelleAssemblyProcess({})
-    state = _base_state(process)
-    update = process.next_update(1.0, state)
-    assert update == {}
-
-
-def test_hmw_pair_dependency_blocks_mg312_when_mg218_inactive() -> None:
-    process = KarrTerminalOrganelleAssemblyProcess({})
-    state = _base_state(process)
-    _enable_all_components(state, process)
-    state["protein"]["activity"]["MG_218_MONOMER"] = 0.0
-
-    update = process.next_update(1.0, state)
-    assembled_delta = update["cell"]["terminal_organelle_components_assembled"]
-    assert "MG_312_MONOMER" not in assembled_delta
-
-
-def test_incorporated_dependency_allows_mg218_with_preassembled_mg312() -> None:
-    process = KarrTerminalOrganelleAssemblyProcess({})
-    state = _base_state(process)
-    _enable_all_components(state, process)
-    state["protein"]["activity"]["MG_312_MONOMER"] = 0.0
-    state["cell"]["terminal_organelle_components_assembled"]["MG_312_MONOMER"] = 1.0
+    state: dict[str, Any] = {
+        "protein": {
+            "compartment_counts": {
+                "mature": {
+                    wid: {c: 0.0 for c in COMPARTMENTS}
+                    for wid in EXPECTED_COMPONENT_WIDS
+                }
+            }
+        }
+    }
+    # Only incorporated counts exist
+    state["protein"]["compartment_counts"]["mature"]["MG_312_MONOMER"]["tc"] = 26.0
+    state["protein"]["compartment_counts"]["mature"]["MG_218_MONOMER"]["tc"] = 33.0
 
     update = process.next_update(1.0, state)
-    assembled_delta = update["cell"]["terminal_organelle_components_assembled"]
-    # Reaction 4 uses MG_312 incorporated dependency; this should still allow MG_218.
-    assert assembled_delta.get("MG_218_MONOMER", 0.0) == pytest.approx(1.0)
-
-
-def test_100_tick_progression_reaches_and_holds_target_two() -> None:
-    process = KarrTerminalOrganelleAssemblyProcess({"target_terminal_organelle_count": 2})
-    state = _base_state(process)
-    _enable_all_components(state, process)
-
-    observed_count: list[int] = []
-    for _ in range(100):
-        update = process.next_update(1.0, state)
-        _apply_update(state, update)
-        observed_count.append(int(state["cell"]["terminal_organelle_count"]))
-
-    # Fixture-derived light trajectory: 0 -> 1 -> 2 then stable.
-    assert observed_count[0] == 1
-    assert observed_count[1] == 2
-    assert all(v == 2 for v in observed_count[2:])
-    for wid in process.component_wids:
-        assert int(state["cell"]["terminal_organelle_components_assembled"][wid]) == 2
-
-
-def test_no_nan_or_negative_regressions_over_100_ticks() -> None:
-    process = KarrTerminalOrganelleAssemblyProcess({"target_terminal_organelle_count": 2})
-    state = _base_state(process)
-    _enable_all_components(state, process)
-
-    for tick in range(100):
-        # Alternate one component gate to stress dependency checks.
-        state["protein"]["activity"]["MG_318_MONOMER"] = 0.0 if tick % 2 == 0 else 1.0
-        update = process.next_update(1.0, state)
-
-        if "cell" in update:
-            count_delta = float(update["cell"].get("terminal_organelle_count", 0.0))
-            assert math.isfinite(count_delta)
-            assert count_delta >= 0.0
-            for delta in update["cell"].get("terminal_organelle_components_assembled", {}).values():
-                val = float(delta)
-                assert math.isfinite(val)
-                assert val >= 0.0
-
-        _apply_update(state, update)
-        assert state["cell"]["terminal_organelle_count"] >= 0.0
-        for val in state["cell"]["terminal_organelle_components_assembled"].values():
-            assert math.isfinite(float(val))
-            assert float(val) >= 0.0
+    assert update == {}, f"Expected empty update when uninc is 0, got {update}"

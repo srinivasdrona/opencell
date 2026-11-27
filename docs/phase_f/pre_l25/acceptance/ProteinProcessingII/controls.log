@@ -1,0 +1,13 @@
+{"started_utc": "2026-10-19T10:34:50.222329+00:00", "pid": 2152, "ppid": 2151, "argv": ["artifacts/m1_cohort/m1_pp2/independent_acceptance/review.py", "controls"], "cwd": "/mnt/e/opencell-worktrees/m1-pp2-20261017", "executable": "/mnt/e/opencell/.venv-wsl/bin/python", "opencell_file": "/mnt/e/opencell-worktrees/m1-pp2-20261017/opencell/__init__.py"}
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/controls_argv.json", "sha256": "180cdd17b25161784973050130edc29b87e06a3e13275799fd292188a5d6aaf4"}
+.....PP2 executed mutation ticks={'substrates': 4, 'processedMonomers': 64, 'unprocessedMonomers': 64, 'signalSequenceMonomers': 4}; signal emissions=4.0
+.............................
+Simulation ID: f08b4efa-cba8-11f1-adf1-e9c9372306e0
+Created: 10/19/2026 at 16:06:28
+.....
+Simulation ID: f636c9b0-cba8-11f1-adf1-e9c9372306e0
+Created: 10/19/2026 at 16:06:37
+.................
+56 passed in 116.20s (0:01:56)
+{"report": "artifacts/m1_cohort/m1_pp2/independent_acceptance/controls_outcomes.json", "sha256": "a6a721ffa7f1e9164c9dcb6fa7ddef25d9c7708aa6ff3610a68bc448aa1f0ee0"}
+{"finished_utc": "2026-10-19T10:36:54.089042+00:00", "pid": 2152}

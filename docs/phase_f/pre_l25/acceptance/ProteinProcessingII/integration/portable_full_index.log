@@ -1,0 +1,158 @@
+{"entrypoint": "scripts/l22_evidence/generator.py", "argv": ["audit", "--index", "docs/phase_f/l2_2_design_a/evidence_index.json", "--evidence-root", "docs/phase_f/l2_2_design_a/evidence_bundle"], "pid": 5173, "started_utc": "2026-10-19T11:00:15.299797+00:00"}
+integrity: OK
+aggregate_verdict (mechanically re-derived): NON_GREEN
+  FAIL: 19
+  MISSING_EVIDENCE: 2
+  PASS: 3
+NON_GREEN_ROW: ChromosomeCondensation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['result.json', 'input_manifest.json', 'provenance.json', 'thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process ChromosomeCondensation
+NON_GREEN_ROW: DNADamage verdict=FAIL
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common_module source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+NON_GREEN_ROW: DNARepair verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: DNASupercoiling verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: FtsZPolymerization verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_replay_common.py sha256 changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+NON_GREEN_ROW: MacromolecularComplexation verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: Metabolism verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: karr_protein_decay_light_module source changed since evidence was generated (recorded=f00efd6f524f.., current=18cb108f8bf0..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: ProteinDecay verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=f00efd6f524f.., current=18cb108f8bf0..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: ProteinFolding verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=4e0c360dea3c.., current=700542266851..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: ProteinModification verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: tick_runner source changed since evidence was generated (recorded=db402eec1ee6.., current=8dd61e95ba82..)
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=c258068d3557.., current=c669476b5c69..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: ProteinProcessingI verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=9b4f9eebdf01.., current=a8cc517486ed..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: ProteinTranslocation verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=70eea3160d38.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=b1fc70e56d26.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: tick_runner source changed since evidence was generated (recorded=2c68d5a5bde1.., current=073a452e57bb..)
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=c80c096f2d7b.., current=5494ea378d41..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'protein_state_module'
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: RNADecay verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: RNAModification verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: tick_runner source changed since evidence was generated (recorded=1fa90fe1ce44.., current=254cedadf2f5..)
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=44477ef6f924.., current=692d3cce3bbb..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'rna_replay_inputs_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: RNAProcessing verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: tick_runner source changed since evidence was generated (recorded=57322ebeb17d.., current=e5ca8fbdf055..)
+  REASON: STALE_SWEEP_PROVENANCE: oc_module source changed since evidence was generated (recorded=e51c9d643b1c.., current=988a8948f759..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'rna_replay_inputs_module'
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: Replication verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: ReplicationInitiation verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: chromosome_store_module source changed since evidence was generated (recorded=de00a57b8a88.., current=06b0a6b0128f..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: Transcription verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: TranscriptionalRegulation verdict=MISSING_EVIDENCE
+  REASON: MISSING_EVIDENCE: missing required/mandatory file(s) ['thresholds.json', 'null_calibration.json', 'SUMMARY.json', 'analytical_check.json', 'sweep_provenance.json'] for process TranscriptionalRegulation
+NON_GREEN_ROW: Translation verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: karr_translation_v3_module source changed since evidence was generated (recorded=bd4e07e45eea.., current=66ca64329539..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
+NON_GREEN_ROW: tRNAAminoacylation verdict=FAIL
+  REASON: STALE_VS_TREE: input tests/vivarium/l2_2_design_a_runner.py sha256 changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_VS_TREE: input tests/vivarium/_l2_2_design_a_runner_helpers.py sha256 changed since evidence was generated (recorded=a5046d6e3357.., current=090dd4354b8d..)
+  REASON: STALE_SWEEP_PROVENANCE: runner source changed since evidence was generated (recorded=5cd107f5e64b.., current=4b76c05ec04c..)
+  REASON: STALE_SWEEP_PROVENANCE: helpers source changed since evidence was generated (recorded=016c0d8647aa.., current=ed9bde575ed9..)
+  REASON: STALE_SWEEP_PROVENANCE: l2_replay_common source changed since evidence was generated (recorded=1a534b3fadc5.., current=1914934316f8..)
+  REASON: STALE_SWEEP_PROVENANCE: sweep_provenance.json missing source hash for 'evidence_schema_module'
