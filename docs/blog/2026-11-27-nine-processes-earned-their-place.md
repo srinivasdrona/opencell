@@ -199,7 +199,7 @@ tags: [opencell, fidelity, l2.2, l2.5, rng, mass-conservation, provenance, vivar
 
 **Tehol:** And we cannot infer a seed because there are so many frames?
 
-**Bugg:** Not under this source contract. Nor may we burn an invented prefix or call a process-private stream the shared stream. The [accepted S2 owner contract](https://github.com/srinivasdrona/opencell/blob/e1786f4aa62308eef080e0e585ceef12b85ac712/decisions/dec-008-two-consumer-chromosome-owner-contract.md) is bounded technical progress, not process eligibility. The already-authorized closure does not need a new permission slip; it needs the missing technical inputs.
+**Bugg:** Not under this source contract. Nor may we burn an invented prefix or call a process-private stream the shared stream. The S2 owner contract builds on our [shared-state ownership decision](../../decisions/dec-007-production-shared-chromosome-randstream.md) and is independently accepted locally. That is bounded technical progress, not process eligibility. The already-authorized closure does not need a new permission slip; it needs the missing technical inputs.
 
 **Tehol:** Permission is not an RNG state. An excellent sentence to place above the cupboard.
 
