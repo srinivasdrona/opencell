@@ -2,6 +2,15 @@
 
 ## Current public-main integration — 2026-11-27
 
+- **Verified local merge committed:**
+  `19db513602f63f08ed896ce477e983821f91e466`, parents aadbb6f and0c0dd11,
+  normal catalog/provenance hooks PASS through canonical WSL/native Git.
+  Portable and strict audits EXIT0, honesty INTEGRITY_OK9/28/19 blocked,
+  all21 existing publication/honesty cases PASS without omissions, Ruff PASS.
+  All135 source/250 raw/40 packet hashes, main blog and main journal prefixes
+  are byte-exact; zero runtime changes against accepted0c0dd11. Authored
+  changes are whitespace-clean; one inherited accepted design-doc EOF blank
+  line remains unchanged and is disclosed in the verification receipt.
 - User authorized accepted cohort-one source/evidence as the default public
   main version, superseding the earlier branch-only publication limit.
   Local publication branch `publish/cohort1-main-20261127` integrates the

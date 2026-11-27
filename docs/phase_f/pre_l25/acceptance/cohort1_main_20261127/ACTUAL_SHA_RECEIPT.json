@@ -1,0 +1,111 @@
+{
+  "utc": "2026-11-27T17:48:25.720Z",
+  "model": "unknown",
+  "actual_main_integration_commit": "19db513602f63f08ed896ce477e983821f91e466",
+  "parents": [
+    "aadbb6f7f88d6b84b2ca4c3c20a0218f3afe770a",
+    "0c0dd11e5c452a2c627f01489f0d78342a788b55"
+  ],
+  "commit_command": {
+    "argv": [
+      "C:\\Program Files\\Git\\cmd\\git.exe",
+      "--no-pager",
+      "commit",
+      "-F",
+      "artifacts/cohort1/main_publication/commit_message_merge.txt"
+    ],
+    "cwd": "E:\\opencell-worktrees\\publish-cohort1-main-20261127",
+    "exit": 0,
+    "started_utc": "2026-11-27T17:46:20.864Z",
+    "finished_utc": "2026-11-27T17:46:33.601Z",
+    "process_local_python_bridge": "E:\\opencell-worktrees\\publish-cohort1-main-20261127\\artifacts\\cohort1\\main_publication\\hook_python_bin",
+    "installed_hooks_unchanged": true,
+    "exact_added_selectors": [
+      "README.md",
+      "plan.md",
+      "data/provenance/llm_interactions.jsonl",
+      "opencell/provenance/llm_interactions.jsonl",
+      "docs/phase_f/pre_l25/acceptance/cohort1_main_20261127/COMMITTED_REVIEW.json",
+      "docs/phase_f/pre_l25/acceptance/cohort1_main_20261127/README.md",
+      "docs/phase_f/pre_l25/acceptance/cohort1_main_20261127/INTEGRATION_VERIFICATION.json"
+    ],
+    "head": "19db513602f63f08ed896ce477e983821f91e466",
+    "output": "[publish/cohort1-main-20261127 19db513] Merge independently accepted cohort-one source and evidence for public main\ncommit-msg-l2: PASS (Catalog-Entry trailer with yaml block)\n[normal selective hook] canonical WSL Python; explicit native Git; no Git PATH shadow\n"
+  },
+  "normal_hook_evidence": [
+    {
+      "path": "artifacts/cohort1/main_publication/native_hook_387.json",
+      "sha256": "4365f7dc4af2e16772e825f25391334d9b84636298c346c29251fca6575d8f60",
+      "utc": "2026-11-27T17:46:32.357326+00:00",
+      "pid": 387,
+      "python": "/mnt/e/opencell/.venv-wsl/bin/python",
+      "argv": [
+        "/mnt/e/opencell-worktrees/publish-cohort1-main-20261127/scripts/hooks/check_llm_log_on_commit.py",
+        "/mnt/e/opencell/.git/worktrees/publish-cohort1-main-20261127/COMMIT_EDITMSG"
+      ],
+      "checker_sha256": "306c9e0b4db8a1a07e14a10a3523548e1209b1f2e5283e0e48207de78af1a11e",
+      "actual_native_git_calls": [
+        {
+          "command": [
+            "/mnt/c/Program Files/Git/cmd/git.exe",
+            "rev-parse",
+            "--show-toplevel"
+          ],
+          "returncode": 0
+        },
+        {
+          "command": [
+            "/mnt/c/Program Files/Git/cmd/git.exe",
+            "diff",
+            "--cached",
+            "--name-only"
+          ],
+          "returncode": 0
+        },
+        {
+          "command": [
+            "/mnt/c/Program Files/Git/cmd/git.exe",
+            "config",
+            "user.name"
+          ],
+          "returncode": 0
+        }
+      ],
+      "boundary": "Unchanged installed guard; transport only, no PATH Git shadow"
+    }
+  ],
+  "measured_generation_head": "10393d59ca9f5b7e135e5098ebde854c0334cf9e",
+  "runtime_source_commit": "7586be17b746c8e6f18068898859f346192ed892",
+  "immutable_current_acceptance_review_sha256": "167ec4ec7cfb0cf3730e953740b7b7ada934f83ebb0a6f888c28e1c9a94b9eeb",
+  "source135_packet40_raw250_preservation": "BYTE_EXACT",
+  "main_blog": {
+    "path": "docs/blog/2026-11-21-five-green-gates-an-expired-license-and-three-scales-for-one-cell.md",
+    "sha256": "c86ff5c77ddaf13265e0d0b146e03ba954c952e718633a57c7eb04d889771e4a",
+    "exact": true
+  },
+  "journals_at_SHA_receipt": {
+    "data/provenance/llm_interactions.jsonl": {
+      "main_prefix_bytes": 36938,
+      "main_prefix_sha256": "381ef2f7d81568f312be5ce26f15225b7c44c54bba926aaf87a57e0a4b124836",
+      "current_sha256": "06ef6e2eeec2c33842e0febe98fc52a804ececeb472f8d2e19286a58ab6afb1a",
+      "incoming_records_retained": true,
+      "collisions": 0
+    },
+    "opencell/provenance/llm_interactions.jsonl": {
+      "main_prefix_bytes": 715324,
+      "main_prefix_sha256": "1861441ba3d9b59fb0eb5ee37f5143e130938f2b30da63d0625b110cd4e1d304",
+      "current_sha256": "54b91964912f69960fb6f62f33dd2e27dee2dfd18cdada50c9193085bfac1ff1",
+      "incoming_records_retained": true,
+      "collisions": 0
+    }
+  },
+  "validation_receipt_sha256": "ce2fa4373bdb535f2a6ef0d62a111abab937bd17557cfeaa5c38f3243c3b454a",
+  "strict_index_sha256": "ef0e7b3e7d8e8824e8fb2c79f351d3c67f885a4669235a0059d32047ae434a91",
+  "source_of_final_tip": "Following append-only actual-SHA receipt commit; exact final tip in ignored DELIVER_JSON.json, never replace measured source identity",
+  "remaining_parent_actions": [
+    "Join separately authored milestone article",
+    "Verify combined tree",
+    "Normal public main push"
+  ],
+  "remote_push_performed": false
+}
